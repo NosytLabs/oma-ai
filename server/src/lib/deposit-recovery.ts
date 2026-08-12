@@ -1,7 +1,7 @@
 import { parseAbi, getAddress, formatUnits } from "viem";
 import { db } from "../db/client.js";
-import { creditBalances, deposits, user } from "../db/schema.js";
-import { eq, and, sql, or, like } from "drizzle-orm";
+import { creditBalances, deposits } from "../db/schema.js";
+import { eq, and, sql } from "drizzle-orm";
 import { logger } from "../lib/logger.js";
 import { logPaymentEvent } from "./payment-observability.js";
 
@@ -14,7 +14,6 @@ const TRANSFER_ABI = parseAbi([
 ]);
 
 interface DepositRecoveryClient {
-  getTransaction(args: { hash: `0x${string}` }): Promise<{ input?: string }>;
   getBlockNumber(): Promise<bigint>;
   getLogs(args: Record<string, unknown>): Promise<Array<{ transactionHash?: string; args?: unknown }>>;
 }
@@ -26,19 +25,6 @@ interface TransferEvent {
     to: string;
     value: bigint;
   };
-}
-
-export function extractUserIdFromMemo(data: string): string | null {
-  try {
-    const hex = data.startsWith("0x") ? data.slice(2) : data;
-    const rawText = Buffer.from(hex, "hex").toString("utf8");
-    const match = rawText.match(/oma-([a-zA-Z0-9_-]{8,})/);
-    if (!match) return null;
-    const suffix = match[1];
-    return suffix.startsWith("usr_") ? suffix : `usr_${suffix}`;
-  } catch {
-    return null;
-  }
 }
 
 export async function processTransfer(
@@ -58,47 +44,20 @@ export async function processTransfer(
     return;
   }
 
-  // Check if a pending or completed deposit already exists for this txHash
+  // Deposits are attributed by the authenticated wallet flow: the user
+  // connects their wallet in the app and submits txHash + fromAddress after
+  // signing the transfer. A transfer that was never recorded has no owner —
+  // the legacy memo-in-calldata rail was removed. Never auto-credit here.
   const [existingDeposit] = await db
     .select()
     .from(deposits)
     .where(eq(deposits.txHash, txHash))
     .limit(1);
 
-  let userId: string | null = existingDeposit?.userId ?? null;
-  let txInput: string | undefined;
-
-  // If no existing deposit by txHash, attempt resolution via memo in tx.input
-  if (!userId) {
-    const tx = await client.getTransaction({ hash: txHash as `0x${string}` });
-    txInput = tx?.input;
-    const memoUser = txInput ? extractUserIdFromMemo(txInput) : null;
-    if (memoUser) {
-      userId = memoUser;
-      const cleanSlice = memoUser.startsWith("usr_") ? memoUser.slice(4) : memoUser;
-      try {
-        const [matchedUser] = await db
-          .select({ id: user.id })
-          .from(user)
-          .where(
-            or(
-              eq(user.id, memoUser),
-              like(user.id, `${cleanSlice}%`),
-              like(user.id, `usr_${cleanSlice}%`)
-            )
-          )
-          .limit(1);
-        if (matchedUser) {
-          userId = matchedUser.id;
-        }
-      } catch {
-        // Ignore if user query fails in unmocked tests
-      }
-    }
-  }
+  const userId = existingDeposit?.userId ?? null;
 
   if (!userId) {
-    logger.debug({ txHash, input: txInput }, "[deposit-recovery] no valid memo in transaction input");
+    logger.debug({ txHash }, "[deposit-recovery] no recorded deposit for txHash, skipping (wallet-submitted deposits only)");
     return;
   }
 
@@ -114,6 +73,34 @@ export async function processTransfer(
       });
       logger.debug({ txHash, userId }, "[deposit-recovery] deposit already completed, skipping");
       return;
+    }
+
+    // Attribution guard: the deposit row records the wallet that submitted
+    // the txHash. Only credit when the on-chain sender actually matches —
+    // otherwise anyone could submit someone else's transfer hash first and
+    // claim the credits. Legacy rows (no fromAddress) keep the old behavior.
+    if (existingDeposit.fromAddress) {
+      const sender = (args.from ?? "").toLowerCase();
+      const recorded = existingDeposit.fromAddress.toLowerCase();
+      if (sender !== recorded) {
+        await db
+          .update(deposits)
+          .set({ status: "failed" })
+          .where(eq(deposits.id, existingDeposit.id));
+        logPaymentEvent({
+          kind: "usdc_deposit",
+          outcome: "attribution_mismatch",
+          userId,
+          amountCents: amountUsdCents,
+          signature: txHash,
+          latencyMs: Date.now() - startedAt,
+        });
+        logger.warn(
+          { txHash, userId, sender, recorded },
+          "[deposit-recovery] sender does not match recorded fromAddress, marked deposit failed",
+        );
+        return;
+      }
     }
 
   await db.transaction(async (tx) => {
@@ -169,50 +156,6 @@ export async function processTransfer(
     });
     return;
   }
-
-  const amountUsd = (amountUsdCents / 100).toFixed(2);
-  const [created] = await db
-    .insert(deposits)
-    .values({
-      userId,
-      type: "usdc_direct",
-      amountUsd,
-      creditsIssued: amountUsd,
-      txHash,
-      depositAddress,
-      status: "completed",
-      completedAt: new Date(),
-    })
-    .returning();
-
-  await db
-    .insert(creditBalances)
-    .values({
-      userId,
-      balanceCents: Math.round(amountUsdCents).toString(),
-      totalDepositedCents: Math.round(amountUsdCents).toString(),
-      totalUsedCents: "0",
-      lastActivityAt: new Date(),
-    })
-    .onConflictDoUpdate({
-      target: creditBalances.userId,
-      set: {
-        balanceCents: sql`${creditBalances.balanceCents} + ${Math.round(amountUsdCents)}`,
-        totalDepositedCents: sql`${creditBalances.totalDepositedCents} + ${Math.round(amountUsdCents)}`,
-        lastActivityAt: new Date(),
-        updatedAt: new Date(),
-      },
-    });
-
-  logPaymentEvent({
-    kind: "usdc_deposit",
-    outcome: "settled",
-    userId,
-    amountCents: amountUsdCents,
-    signature: txHash,
-    latencyMs: Date.now() - startedAt,
-  });
-  logger.info({ txHash, userId, depositId: created.id, amountUsdCents }, "[deposit-recovery] created and completed deposit, credited balance");
 }
 
 export async function runRecoveryIteration(

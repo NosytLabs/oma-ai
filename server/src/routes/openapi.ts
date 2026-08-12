@@ -256,7 +256,7 @@ const spec = {
 		},
 		"/v1/deposit/usdc": {
 			get: {
-				summary: "USDC deposit instructions (treasury address, network, memo)",
+				summary: "USDC deposit instructions (treasury address, network, bounds)",
 				responses: { "200": { description: "Instructions" } },
 			},
 			post: {

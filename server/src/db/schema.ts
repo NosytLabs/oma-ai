@@ -146,7 +146,7 @@ export const user = pgTable("user", {
   banReason: text("ban_reason"),
   banExpires: timestamp("ban_expires", { withTimezone: true }),
   // OMA-specific: a memorable 16-digit account number exposed to the
-  // user as their public handle (e.g. for the deposit page memo).
+  // user as their public handle (e.g. in admin search).
   // Nullable so existing rows aren't forced to backfill; the raw
   // admin search at routes/admin/index.ts falls back to ILIKE on
   // whatever shape the live column actually has.
@@ -285,6 +285,7 @@ export const deposits = pgTable(
     fromCoin: text("from_coin"),
     toCoin: text("to_coin"),
     depositAddress: text("deposit_address"),
+    fromAddress: text("from_address"),
     status: depositStatusEnum("status").default("pending").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()

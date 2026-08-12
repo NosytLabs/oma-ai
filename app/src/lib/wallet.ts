@@ -15,7 +15,7 @@
  *   const { address } = await connectWallet();
  *   const { message, signature } = await signSiweMessage(address, nonce, "oma-ai.com");
  */
-import { createWalletClient, custom, type WalletClient } from "viem";
+import { createWalletClient, custom, encodeFunctionData, type WalletClient } from "viem";
 import { base } from "viem/chains";
 import { SiweMessage } from "siwe";
 
@@ -116,5 +116,95 @@ async function _readChainId(): Promise<number | null> {
 	} catch {
 		return null;
 	}
+}
+
+/**
+ * Returns the currently authorized account without prompting
+ * (`eth_accounts`), or null when the wallet is locked / not connected.
+ */
+export async function getConnectedAccount(): Promise<`0x${string}` | null> {
+	const eth = getEthereum();
+	if (!eth) return null;
+	try {
+		const accounts = (await eth.request({ method: "eth_accounts" })) as string[];
+		return (accounts?.[0] as `0x${string}`) ?? null;
+	} catch {
+		return null;
+	}
+}
+
+/** Switches the wallet to Base mainnet, prompting when needed. */
+export async function ensureBaseChain(): Promise<void> {
+	const eth = getEthereum();
+	if (!eth) {
+		throw new Error(
+			"No EIP-1193 wallet detected. Install MetaMask, Rabby, or Coinbase Wallet.",
+		);
+	}
+	const hex = (await eth.request({ method: "eth_chainId" })) as string;
+	if (Number.parseInt(hex, 16) === OMA_CHAIN_ID) return;
+	try {
+		await eth.request({
+			method: "wallet_switchEthereumChain",
+			params: [{ chainId: `0x${OMA_CHAIN_ID.toString(16)}` }],
+		});
+	} catch {
+		throw new Error(
+			`Switch your wallet to Base mainnet (chain id ${OMA_CHAIN_ID}) and try again.`,
+		);
+	}
+}
+
+const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as const;
+
+const USDC_TRANSFER_ABI = [
+	{
+		type: "function",
+		name: "transfer",
+		stateMutability: "nonpayable",
+		inputs: [
+			{ type: "address", name: "to" },
+			{ type: "uint256", name: "value" },
+		],
+		outputs: [{ type: "bool", name: "" }],
+	},
+] as const;
+
+/**
+ * Sends `amountUsd` USDC from the connected wallet to `to` on Base.
+ * Prompts the user in their wallet (popup / extension). Returns the
+ * transaction hash once the user confirms and the tx is broadcast.
+ */
+export async function sendUsdcTransfer({
+	to,
+	amountUsd,
+	from,
+}: {
+	to: `0x${string}`;
+	amountUsd: number;
+	from: `0x${string}`;
+}): Promise<{ txHash: `0x${string}` }> {
+	const eth = getEthereum();
+	if (!eth) {
+		throw new Error(
+			"No EIP-1193 wallet detected. Install MetaMask, Rabby, or Coinbase Wallet.",
+		);
+	}
+	await ensureBaseChain();
+	const client = createWalletClient({
+		chain: base,
+		transport: custom(eth as never),
+	});
+	const value = BigInt(Math.round(amountUsd * 1_000_000)); // USDC is 6 decimals.
+	const txHash = await client.sendTransaction({
+		account: from,
+		to: USDC_BASE,
+		data: encodeFunctionData({
+			abi: USDC_TRANSFER_ABI,
+			functionName: "transfer",
+			args: [to, value],
+		}),
+	});
+	return { txHash };
 }
 

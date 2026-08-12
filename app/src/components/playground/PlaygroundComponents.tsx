@@ -45,7 +45,7 @@ function StatPill({ label, value, accent, title }: StatPillProps) {
 			}`}
 			title={title}
 		>
-			<span className="opacity-60">{label}</span>
+			<span className="opacity-80">{label}</span>
 			<span className="font-semibold tabular-nums">{value}</span>
 		</span>
 	);

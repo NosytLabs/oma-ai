@@ -342,7 +342,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 		path: "/v1/deposit/usdc",
 		anchor: "ep-deposit-usdc",
 		title: "USDC Deposit Instructions",
-		desc: "Returns the treasury USDC address on Base, your unique memo (oma-<userId8>), and min/max bounds. Send USDC with the memo in the transaction input; the watcher credits within ~12s of confirmation.",
+		desc: "Returns the treasury USDC address on Base and min/max bounds. Send USDC from your connected wallet directly to the treasury; credits post automatically once the transfer confirms and the sender matches your recorded wallet address.",
 		auth: "Bearer token (API key)",
 		body: undefined,
 		response: `{
@@ -350,9 +350,9 @@ export const ENDPOINTS: EndpointInfo[] = [
  "network": "base",
  "chainId": 8453,
  "usdcContract": "0x833589…",
- "memo": "oma-abc12345",
  "minDepositCents": 100,
- "maxDepositCents": 1000000
+ "maxDepositCents": 1000000,
+ "creditsPerCent": 1
 }`,
 	},
 	{

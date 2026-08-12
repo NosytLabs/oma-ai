@@ -85,6 +85,41 @@
       "when": 1781850000000,
       "tag": "0034_drop_redundant_usage_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1781850000000,
+      "tag": "0035_polar_sh_schema",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1781850000000,
+      "tag": "0036_usage_cost_precision",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1781850000000,
+      "tag": "0037_admin_controls_depth",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1781850000000,
+      "tag": "0038_provider_enum_oma_ai",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1781850000000,
+      "tag": "0039_deposit_from_address",
+      "breakpoints": true
     }
   ]
 }

@@ -67,7 +67,7 @@ OMA AI utilizes a cohesive, split cookie/bearer authentication framework powered
 
 The gateway exposes three independent, auditable payment rails:
 
-1. **USDC Direct Deposits (Base):** Direct wallet top-ups generate unique user transaction instructions (USDC contracts on Base mainnet, min/max limits, and `oma-${userId}` custom memo payloads). An asynchronous block-indexing daemon (`deposit-recovery.ts`) monitors logs, processes transaction inputs, handles memo/user mapping, and updates database records safely.
+1. **USDC Direct Deposits (Base):** Users connect their wallet in the app and send USDC directly to the OMA treasury on Base mainnet (with min/max limits checked). The authenticated submit records `txHash + fromAddress`; an asynchronous block-indexing daemon (`deposit-recovery.ts`) monitors Transfer logs to the treasury, verifies the on-chain sender matches the recorded wallet, and credits the balance. No memo or calldata payloads are used.
 2. **x402 Micropayments (Gasless):** Supports HTTP 402 Pay-Per-Request headers. When an agent calls an endpoint, OMA AI checks for EIP-3009 signed authorizations. Valid requests are either processed in gasless mode via the QuickNode Hosted Facilitator, or simulated locally for preview setups.
 
 ---

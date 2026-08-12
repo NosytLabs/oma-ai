@@ -10,15 +10,12 @@ import {
 	Inbox,
 	KeyRound,
 	type LucideIcon,
-	RefreshCw,
-	WifiOff,
 } from "lucide-react";
-import dynamic from "next/dynamic";
 import { Suspense, useMemo, useState } from "react";
 import { CreditBalanceCard } from "@/components/dashboard/CreditBalanceCard";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { OnboardingChecklist } from "@/components/dashboard/OnboardingChecklist";
-import { Skeleton } from "@/components/ui/Skeleton";
+import { buildTopModels, buildUsageByDay } from "@/lib/dashboard-aggregate";
 import type {
 	ApiKey,
 	ApiKeyWithSecret,
@@ -32,6 +29,18 @@ import { QuickActions } from "./QuickActions";
 import { QuickStatsCard } from "./QuickStatsCard";
 import { RecentTransactions } from "./RecentTransactions";
 import { AutoReloadCard } from "./AutoReloadCard";
+import { DashboardErrorBanner } from "./DashboardErrorBanner";
+import {
+	LazyApiKeyManager,
+	LazyCreatedKeyModal,
+	LazyExpiringCreditsWarning,
+	LazyModelUsageTable,
+	LazyProviderBreakdown,
+	LazyProviderHealthCard,
+	LazyProviderHealthSummary,
+	LazyRecentRequestsTable,
+	LazyUsageChart,
+} from "./lazy-widgets";
 
 const tabContentVariants = {
 	hidden: { opacity: 0, y: 8 },
@@ -82,95 +91,6 @@ function EmptyState({
 		</m.div>
 	);
 }
-const LazyExpiringCreditsWarning = dynamic(
-	() =>
-		import("@/components/dashboard/ExpiringCreditsWarning").then(
-			(mod) => mod.ExpiringCreditsWarning,
-		),
-	{ ssr: false, loading: () => <Skeleton className="h-20 w-full" /> },
-);
-
-const LazyProviderHealthSummary = dynamic(
-	() =>
-		import("@/components/dashboard/ProviderHealthSummary").then(
-			(mod) => mod.ProviderHealthSummary,
-		),
-	{
-		ssr: false,
-		loading: () => (
-			<div className="flex min-h-[12rem] flex-col bg-void p-6">
-				<Skeleton className="mb-2 h-4 w-28" />
-				<Skeleton className="mb-6 h-3 w-40" />
-				<Skeleton className="mb-2 h-4 w-32" />
-				<div className="space-y-2 border border-border p-2">
-					<Skeleton className="h-8 w-full" />
-					<Skeleton className="h-8 w-full" />
-				</div>
-			</div>
-		),
-	},
-);
-const LazyUsageChart = dynamic(
-	() =>
-		import("@/components/dashboard/UsageChart").then((mod) => mod.UsageChart),
-	{
-		ssr: false,
-		loading: () => (
-			<div className="grid grid-cols-1 lg:grid-cols-2 gap-px bg-border">
-				<div className="bg-void p-6">
-					<Skeleton className="h-4 w-20 mb-4" />
-					<Skeleton className="h-[300px] w-full" />
-				</div>
-				<div className="bg-void p-6">
-					<Skeleton className="h-4 w-24 mb-4" />
-					<Skeleton className="h-[280px] w-full" />
-				</div>
-			</div>
-		),
-	},
-);
-const LazyProviderHealthCard = dynamic(
-	() =>
-		import("@/components/dashboard/ProviderHealthCard").then(
-			(mod) => mod.ProviderHealthCard,
-		),
-	{ ssr: false, loading: () => <Skeleton className="h-48 w-full" /> },
-);
-const LazyApiKeyManager = dynamic(
-	() =>
-		import("@/components/dashboard/ApiKeyManager").then(
-			(mod) => mod.ApiKeyManager,
-		),
-	{ ssr: false, loading: () => <Skeleton className="h-64 w-full" /> },
-);
-const LazyRecentRequestsTable = dynamic(
-	() =>
-		import("@/components/dashboard/RecentRequestsTable").then(
-			(mod) => mod.RecentRequestsTable,
-		),
-	{ ssr: false, loading: () => <Skeleton className="h-48 w-full" /> },
-);
-const LazyModelUsageTable = dynamic(
-	() =>
-		import("@/components/dashboard/ModelUsageTable").then(
-			(mod) => mod.ModelUsageTable,
-		),
-	{ ssr: false, loading: () => <Skeleton className="h-48 w-full" /> },
-);
-const LazyProviderBreakdown = dynamic(
-	() =>
-		import("@/components/dashboard/ProviderBreakdown").then(
-			(mod) => mod.ProviderBreakdown,
-		),
-	{ ssr: false, loading: () => <Skeleton className="h-48 w-full" /> },
-);
-const LazyCreatedKeyModal = dynamic(
-	() =>
-		import("@/components/dashboard/CreatedKeyModal").then(
-			(mod) => mod.CreatedKeyModal,
-		),
-	{ ssr: false, loading: () => null },
-);
 
 /** Wraps a lazy component in a mini error boundary so one failing widget
  * doesn't crater the whole dashboard. */
@@ -320,155 +240,18 @@ export function DashboardGrid(props: DashboardGridProps) {
 		walletConnected = false,
 	} = props;
 
-	const [errorDismissed, setErrorDismissed] = useState(false);
-
 	// `usage` is already time-range filtered by the page (`filteredUsage`).
-	// Derive the chart datasets inline — the deleted `@/lib/api/usage-chart`
-	// module was a thin adapter over these exact shapes.
-	const usageData = useMemo(() => {
-		const byDay = new Map<string, { date: string; requests: number; cost: number }>();
-		for (const r of usage ?? []) {
-			const day = r.createdAt.slice(0, 10);
-			const prev = byDay.get(day) ?? { date: day, requests: 0, cost: 0 };
-			prev.requests += 1;
-			prev.cost += Number(r.totalCents ?? "0") / 100;
-			byDay.set(day, prev);
-		}
-		return Array.from(byDay.values()).sort((a, b) => (a.date < b.date ? -1 : 1));
-	}, [usage]);
-	const modelData = useMemo(() => {
-		const palette = ["#46d39a", "#3b82f6", "#f59e0b", "#ec4899", "#a855f7", "#ef4444"];
-		const byModel = new Map<string, { name: string; value: number; cost: number }>();
-		for (const r of usage ?? []) {
-			const prev = byModel.get(r.model) ?? {
-				name: r.model,
-				value: 0,
-				cost: 0,
-			};
-			prev.value += 1;
-			prev.cost += Number(r.totalCents ?? "0") / 100;
-			byModel.set(r.model, prev);
-		}
-		// Sort by cost (not request count) so the "expensive" models surface
-		// first — matches the chart title "Top models by cost" and the
-		// semantics of the legend.
-		const sorted = Array.from(byModel.values()).sort(
-			(a, b) => b.cost - a.cost,
-		);
-		const TOP_N = 5;
-		const top = sorted.slice(0, TOP_N);
-		const rest = sorted.slice(TOP_N);
-		const restRequests = rest.reduce((sum, m) => sum + m.value, 0);
-		const restCost = rest.reduce((sum, m) => sum + m.cost, 0);
-		const result = top.map((m, i) => ({
-			name: m.name,
-			value: m.value,
-			color: palette[i % palette.length],
-		}));
-		if (rest.length > 0) {
-			result.push({
-				name: `Other (${rest.length})`,
-				value: restRequests,
-				color: palette[TOP_N % palette.length],
-			});
-		}
-		// Touch restCost so the aggregation isn't flagged as dead-code — useful
-		// for future debugging if a tooltip needs to show the omitted totals.
-		void restCost;
-		return result;
-	}, [usage]);
+	// Derive the chart datasets via the shared aggregate helpers.
+	const usageData = useMemo(() => buildUsageByDay(usage ?? []), [usage]);
+	const modelData = useMemo(() => buildTopModels(usage ?? []), [usage]);
 
 	return (
 		<>
-			{error && !errorDismissed && (
-				<div
-					role="alert"
-					aria-live="polite"
-					className="mb-6 flex items-center justify-between gap-4 rounded-[var(--radius-xl)] border border-error/30 bg-error/5 p-4"
-				>
-					<div className="flex items-center gap-3 text-sm text-text">
-						{backendUnavailable ? (
-							<>
-								<WifiOff className="h-4 w-4 shrink-0 text-error" />
-								<div>
-									<div className="font-medium text-error">
-										Backend unavailable
-									</div>
-									<div className="text-xs text-text-muted mt-0.5">
-										Make sure the API server is reachable (configured via NEXT_PUBLIC_API_URL).
-									</div>
-								</div>
-							</>
-						) : error.includes("suspended") ? (
-							<>
-								<span className="inline-block h-2 w-2 shrink-0 rounded-full bg-error" />
-								<span>
-									<span className="font-medium text-error">
-										Account suspended
-									</span>{" "}
-									<span className="text-text-muted">. Contact support to appeal this action.</span>
-								</span>
-							</>
-						) : error.includes("payment required") ? (
-							<>
-								<span className="inline-block h-2 w-2 shrink-0 rounded-full bg-warning" />
-								<span>
-									<span className="font-medium text-warning">
-										Payment required
-									</span>{" "}
-									<span className="text-text-muted">. You have reached a block requiring a paid wallet transaction.</span>
-								</span>
-							</>
-						) : error.includes("limit exceeded") || error.includes("quota") ? (
-							<>
-								<span className="inline-block h-2 w-2 shrink-0 rounded-full bg-warning" />
-								<span>
-									<span className="font-medium text-warning">
-										Quota exceeded
-									</span>{" "}
-									<span className="text-text-muted">. Your free tier daily usage limit was reached. Deposit credits to continue.</span>
-								</span>
-							</>
-						) : (
-							<>
-								<span className="inline-block h-2 w-2 shrink-0 rounded-full bg-error animate-pulse" />
-								<span>
-									<span className="font-medium text-error">
-										Something went wrong.
-									</span>{" "}
-									<span className="text-text-muted">{error}</span>
-								</span>
-							</>
-						)}
-					</div>
-					<div className="flex shrink-0 items-center gap-2">
-						{backendUnavailable && (
-							<button
-								type="button"
-								onClick={onRefresh}
-								className="inline-flex items-center gap-1.5 rounded-[var(--radius-lg)] border border-error/40 bg-error/10 px-3 py-1.5 text-xs font-medium text-error transition-colors duration-200 ease-out hover:bg-error/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error active:scale-[0.97]"
-							>
-								<RefreshCw className="h-3 w-3" />
-								Retry
-							</button>
-						)}
-						{!(
-							error?.includes("suspended") ||
-							error?.includes("limit exceeded") ||
-							error?.includes("quota") ||
-							error?.includes("payment required")
-						) && (
-							<button
-								type="button"
-								onClick={() => setErrorDismissed(true)}
-								className="rounded-[var(--radius-lg)] border border-border bg-void px-3 py-1.5 text-xs font-medium text-text-muted transition-colors duration-200 ease-out hover:bg-surface hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-							>
-								Dismiss
-							</button>
-						)}
-					</div>
-				</div>
-			)}
+			<DashboardErrorBanner
+				error={error}
+				backendUnavailable={backendUnavailable}
+				onRefresh={onRefresh}
+			/>
 
 			<AnimatePresence mode="wait">
 				{/* Overview Tab */}

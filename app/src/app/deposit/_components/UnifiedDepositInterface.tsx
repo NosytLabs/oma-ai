@@ -1,42 +1,47 @@
 "use client";
 
 /**
- * USDC deposit interface — manual flow.
+ * USDC deposit interface — connect your wallet and pay in-app.
  *
- * 1. GET /v1/deposit/usdc returns the deposit address, USDC contract,
- * network, and min/max bounds.
- * 2. User copies the address, sends USDC on Base from any wallet,
- * and pastes the tx hash + amount below.
- * 3. POST /v1/deposit/usdc records a `pending` deposit. A background
- * watcher credits the balance after on-chain confirmation.
+ * 1. GET /v1/deposit/usdc returns the treasury deposit address, USDC
+ *    contract, network, and min/max bounds.
+ * 2. User connects their wallet (MetaMask, Rabby, Rainbow, Coinbase…),
+ *    enters an amount, and clicks "Send". The USDC `transfer()` is built
+ *    here and confirmed in the user's wallet popup.
+ * 3. POST /v1/deposit/usdc records a `pending` deposit (txHash +
+ *    fromAddress). A background watcher credits the balance after
+ *    on-chain confirmation, verifying the sender address matches.
  *
- * No wagmi / viem / SIWE — keeps the surface tiny and works for any
- * wallet (MetaMask, Rabby, Rainbow, Coinbase, even an exchange
- * withdrawal).
+ * No copy-paste, no memo, no manual tx-hash entry.
  */
 
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import {
 	AlertTriangle,
 	CheckCircle2,
-	Clipboard,
 	ExternalLink,
 	Loader2,
 	ShieldCheck,
+	Wallet,
 } from "lucide-react";
 import { useCallback, useEffect, useId, useState } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { request } from "@/lib/api";
 import { isAuthError } from "@/lib/api/client";
+import {
+	connectWallet,
+	ensureBaseChain,
+	getConnectedAccount,
+	hasWallet,
+	sendUsdcTransfer,
+} from "@/lib/wallet";
 
 interface DepositInstructions {
 	depositAddress: string;
 	network: string;
 	chainId: number;
 	usdcContract: string;
-	memo: string;
-	memoNote?: string;
 	minDepositCents: number;
 	maxDepositCents: number;
 	creditsPerCent: number;
@@ -79,11 +84,12 @@ export function UnifiedDepositInterface({
 	);
 	const [instructions, setInstructions] = useState<DepositInstructions | null>(null);
 	const [amountUsd, setAmountUsd] = useState("");
-	const [txHash, setTxHash] = useState("");
 	const [error, setError] = useState("");
 	const [processingStep, setProcessingStep] = useState("");
 	const [recent, setRecent] = useState<UserDeposit[]>([]);
 	const [loadingInstructions, setLoadingInstructions] = useState(true);
+	const [connectedAddress, setConnectedAddress] = useState<`0x${string}` | null>(null);
+	const [connecting, setConnecting] = useState(false);
 	const toast = useToast();
 	const id = useId();
 	const { isAuthenticated, isDemo } = useAuth();
@@ -129,37 +135,80 @@ export function UnifiedDepositInterface({
 		}
 	}, [isAuthenticated, isDemo, fetchInstructions, fetchRecent]);
 
+	// Prefill the already-authorized account without popping the wallet.
+	useEffect(() => {
+		if (!isAuthenticated || isDemo) return;
+		let cancelled = false;
+		void getConnectedAccount().then((addr) => {
+			if (!cancelled && addr) setConnectedAddress(addr);
+		});
+		return () => {
+			cancelled = true;
+		};
+	}, [isAuthenticated, isDemo]);
+
 	const handleAmountChange = (value: string) => {
 		if (value === "" || /^\d*\.?\d*$/.test(value)) setAmountUsd(value);
 	};
 
-	const handleCopy = useCallback(
-		async (text: string, label: string) => {
-			try {
-				await navigator.clipboard.writeText(text);
-				toast.success(`${label} copied`);
-			} catch {
-				toast.error("Could not copy — select the text manually");
-			}
-		},
-		[toast],
-	);
+	const handleConnect = useCallback(async () => {
+		setConnecting(true);
+		setError("");
+		try {
+			const wallet = await connectWallet();
+			await ensureBaseChain();
+			setConnectedAddress(wallet.address);
+			toast.success("Wallet connected");
+		} catch (err) {
+			setError(err instanceof Error ? err.message : "Wallet connection failed");
+		} finally {
+			setConnecting(false);
+		}
+	}, [toast]);
 
-	const handleSubmit = useCallback(async () => {
+	const handlePay = useCallback(async () => {
 		setError("");
 		const amount = parseFloat(amountUsd);
 		if (!amount || amount <= 0) {
 			setError("Enter the deposit amount in USD");
 			return;
 		}
-		if (!/^0x[a-fA-F0-9]{64}$/.test(txHash)) {
-			setError("Tx hash must be a 0x… 64-character Base transaction hash");
+		if (!instructions) {
+			setError("Deposit details are still loading — try again in a moment.");
 			return;
 		}
+		const minCents = instructions.minDepositCents;
+		const maxCents = instructions.maxDepositCents;
+		if (Math.round(amount * 100) < minCents) {
+			setError(`Minimum deposit is $${(minCents / 100).toFixed(2)}`);
+			return;
+		}
+		if (Math.round(amount * 100) > maxCents) {
+			setError(`Maximum deposit is $${(maxCents / 100).toFixed(2)}`);
+			return;
+		}
+		if (!connectedAddress) {
+			setError("Connect your wallet first");
+			return;
+		}
+
 		setStep("processing");
-		setProcessingStep("Submitting deposit for verification…");
+		setProcessingStep("Confirm the USDC transfer in your wallet…");
+		let txSent = false;
 		try {
-			const result = await submitDeposit({ amountUsd: amount, txHash });
+			const { txHash } = await sendUsdcTransfer({
+				to: instructions.depositAddress as `0x${string}`,
+				amountUsd: amount,
+				from: connectedAddress,
+			});
+			txSent = true;
+
+			setProcessingStep("Submitting deposit for verification…");
+			const result = await submitDeposit({
+				amountUsd: amount,
+				txHash,
+				fromAddress: connectedAddress,
+			});
 			toast.success(
 				`Deposit recorded. ${result.status === "pending" ? "Awaiting on-chain confirmation." : ""}`,
 			);
@@ -173,16 +222,23 @@ export function UnifiedDepositInterface({
 			setStep("complete");
 		} catch (e) {
 			const errMsg = e instanceof Error ? e.message : "Deposit failed";
-			setError(errMsg);
-			toast.error(errMsg);
-			setStep("error");
+			// Distinguish a wallet popup rejection (nothing left the account)
+			// from a submission failure after the tx was already broadcast.
+			if (!txSent && /rejected|denied|user refused/i.test(errMsg)) {
+				toast.error("Transfer rejected in your wallet");
+				setStep("select");
+				setError("The transfer was rejected in your wallet. No funds left your account.");
+			} else {
+				setError(errMsg);
+				toast.error(errMsg);
+				setStep("error");
+			}
 		}
-	}, [amountUsd, txHash, toast, onDeposit, fetchRecent]);
+	}, [amountUsd, instructions, connectedAddress, toast, onDeposit, fetchRecent]);
 
 	const handleReset = () => {
 		setStep("select");
 		setAmountUsd("");
-		setTxHash("");
 		setError("");
 		setProcessingStep("");
 	};
@@ -208,7 +264,7 @@ export function UnifiedDepositInterface({
 	}
 
 	const STEPS = [
-		{ key: "select" as const, label: "Send USDC" },
+		{ key: "select" as const, label: "Pay with wallet" },
 		{ key: "processing" as const, label: "Verify" },
 		{ key: "complete" as const, label: "Done" },
 	];
@@ -275,7 +331,7 @@ export function UnifiedDepositInterface({
 							{loadingInstructions && !instructions ? (
 								<div className="flex items-center gap-3 py-6 text-text-muted">
 									<Loader2 className="h-4 w-4 animate-spin" /> Loading deposit
-									instructions…
+									details…
 								</div>
 							) : !instructions ? (
 								<div className="rounded-[var(--radius-sm)] border border-warning/30 bg-warning/10 p-3 text-sm text-warning">
@@ -285,84 +341,62 @@ export function UnifiedDepositInterface({
 								</div>
 							) : (
 								<>
-									<div className="rounded-[var(--radius-lg)] border border-accent/20 bg-accent/5 p-4">
-										<div className="mb-2 flex items-center justify-between">
-											<h3 className="text-sm font-semibold text-text-bright">
-												Send USDC to this address
-											</h3>
-											<span className="rounded-[var(--radius-sm)] bg-surface px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-text-muted">
-												{instructions.network}
-											</span>
-										</div>
+									{!connectedAddress && (
 										<button
 											type="button"
-											onClick={() =>
-												void handleCopy(
-													instructions.depositAddress,
-													"Deposit address",
-												)
-											}
-											className="group flex w-full items-center justify-between gap-2 rounded-[var(--radius-sm)] border border-border bg-void px-3 py-2 font-mono text-sm text-text-bright transition-colors duration-200 ease-out hover:border-accent/40"
-											aria-label="Copy deposit address"
+											onClick={() => void handleConnect()}
+											disabled={connecting}
+											className="btn-primary flex w-full items-center justify-center gap-2 rounded-full py-4 text-sm disabled:cursor-not-allowed disabled:opacity-50"
 										>
-											<span className="truncate tabular-nums">
-												{shortAddr(instructions.depositAddress)}
-											</span>
-											<Clipboard
-												className="h-4 w-4 shrink-0 text-text-muted group-hover:text-accent"
-												aria-hidden="true"
-												aria-label="Copy icon"
-											/>
+											{connecting ? (
+												<>
+													<Loader2 className="h-4 w-4 animate-spin" />
+													Connecting…
+												</>
+											) : (
+												<>
+													<Wallet className="h-4 w-4" aria-hidden="true" />
+													Connect wallet to pay
+												</>
+											)}
 										</button>
-										<div className="mt-3 grid grid-cols-1 gap-1 text-[11px] text-text-muted sm:grid-cols-2">
-											<div className="flex items-center justify-between gap-2">
-												<span>USDC contract</span>
+									)}
+
+									{connectedAddress && (
+										<div className="flex items-center justify-between gap-2 rounded-[var(--radius-lg)] border border-success/25 bg-success/5 px-4 py-3">
+											<div className="min-w-0">
+												<div className="text-xs font-medium uppercase tracking-wider text-text-secondary">
+													Paying from
+												</div>
 												<button
 													type="button"
-													onClick={() =>
-														void handleCopy(
-															instructions.usdcContract,
-															"USDC contract",
-														)
-													}
-													aria-label="Copy USDC contract address"
-													className="font-mono text-text-secondary hover:text-accent tabular-nums"
+													onClick={() => void handleConnect()}
+													className="mt-0.5 font-mono text-sm text-text-bright tabular-nums hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+													title="Switch wallet account"
 												>
-													{shortAddr(instructions.usdcContract)}
+													{shortAddr(connectedAddress)}
 												</button>
 											</div>
-											<div className="flex items-center justify-between gap-2">
-												<span>Memo</span>
-												<button
-													type="button"
-													onClick={() =>
-														void handleCopy(instructions.memo, "Memo")
-													}
-													aria-label="Copy deposit identification memo"
-													className="font-mono text-text-secondary hover:text-accent tabular-nums"
-												>
-													{instructions.memo}
-												</button>
-											</div>
+											<span className="shrink-0 rounded-[var(--radius-sm)] bg-success/10 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-success">
+												Base
+											</span>
 										</div>
-										{instructions.memoNote && (
-											<p className="mt-3 text-[11px] leading-relaxed text-text-muted">
-												{instructions.memoNote}
-											</p>
-										)}
-										<p className="mt-2 text-[11px] text-text-muted tabular-nums">
-											Min ${(instructions.minDepositCents / 100).toFixed(2)} ·
-											Max ${(instructions.maxDepositCents / 100).toFixed(2)} · 1 USDC ={" "}
-											{instructions.creditsPerCent * 100} credits
-										</p>
-									</div>
+									)}
+
+									{!hasWallet() && (
+										<div className="rounded-[var(--radius-sm)] border border-warning/30 bg-warning/10 p-3 text-sm text-warning">
+											<AlertTriangle className="mr-2 inline h-4 w-4" />
+											No wallet detected. Install MetaMask, Rabby, or Coinbase
+											Wallet to pay with USDC — or use the Card tab.
+										</div>
+									)}
 
 									<div>
 										<label
 											htmlFor={`${id}-amount`}
 											className="mb-2 block text-xs font-medium uppercase tracking-wider text-text-secondary"
 										>
-											Amount you sent (USD)
+											Amount (USD)
 										</label>
 										<input
 											id={`${id}-amount`}
@@ -373,45 +407,50 @@ export function UnifiedDepositInterface({
 											onChange={(e) => handleAmountChange(e.target.value)}
 											className="w-full text-xl font-semibold bg-surface border border-border-bright rounded-[var(--radius-lg)] px-4 py-3 placeholder:text-text-muted focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent tabular-nums"
 										/>
+										<p className="mt-2 text-[11px] text-text-muted tabular-nums">
+											Min ${(instructions.minDepositCents / 100).toFixed(2)} ·
+											Max ${(instructions.maxDepositCents / 100).toFixed(2)} · 1 USDC ={" "}
+											{instructions.creditsPerCent * 100} credits
+										</p>
 									</div>
 
-									<div>
-										<label
-											htmlFor={`${id}-tx`}
-											className="mb-2 block text-xs font-medium uppercase tracking-wider text-text-secondary"
-										>
-											Transaction hash
-										</label>
-										<input
-											id={`${id}-tx`}
-											type="text"
-											placeholder="0x…"
-											value={txHash}
-											onChange={(e) => setTxHash(e.target.value.trim())}
-											className="w-full font-mono text-sm bg-surface border border-border-bright rounded-[var(--radius-lg)] px-4 py-3 placeholder:text-text-muted focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent tabular-nums"
-										/>
-										<p className="mt-2 text-[11px] text-text-muted">
-											Find this on{" "}
+									<p className="flex items-start gap-2 text-[11px] leading-relaxed text-text-muted">
+										<ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" aria-hidden="true" />
+										<span>
+											Your payment is sent directly from your wallet to the OMA
+											treasury on Base{" "}
 											<a
 												href={`https://basescan.io/address/${instructions.depositAddress}`}
 												target="_blank"
 												rel="noopener noreferrer"
-												className="inline-flex items-center gap-1 text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+												className="inline-flex items-center gap-1 font-mono text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent tabular-nums"
 											>
-												Basescan
+												{shortAddr(instructions.depositAddress)}
 												<ExternalLink className="h-3 w-3" />
 											</a>
-											.
-										</p>
-									</div>
+											. Credits post automatically once the transfer confirms
+											(typically &lt; 60 s). No memo needed.
+										</span>
+									</p>
+
+									{error && (
+										<div
+											role="alert"
+											className="rounded-[var(--radius-sm)] border border-error/30 bg-error/10 p-3 text-sm text-error"
+										>
+											{error}
+										</div>
+									)}
 
 									<button
 										type="button"
-										onClick={() => void handleSubmit()}
-										disabled={!amountUsd || !txHash}
+										onClick={() => void handlePay()}
+										disabled={!connectedAddress || !amountUsd || !instructions}
 										className="btn-primary w-full py-4 text-sm rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
 									>
-										Submit deposit for verification
+										{connectedAddress
+											? `Send ${amountUsd || "0"} USDC`
+											: "Connect wallet to pay"}
 									</button>
 
 									{recent.length > 0 && (
@@ -524,6 +563,7 @@ async function requestDepositStatus(): Promise<{ deposits: UserDeposit[] }> {
 async function submitDeposit(args: {
 	amountUsd: number;
 	txHash: string;
+	fromAddress: `0x${string}`;
 }): Promise<{
 	depositId: string;
 	status: UserDeposit["status"];
@@ -534,6 +574,11 @@ async function submitDeposit(args: {
 }> {
 	return request("/v1/deposit/usdc", {
 		method: "POST",
-		body: JSON.stringify({ amountUsd: args.amountUsd, txHash: args.txHash, network: "base" }),
+		body: JSON.stringify({
+			amountUsd: args.amountUsd,
+			txHash: args.txHash,
+			fromAddress: args.fromAddress,
+			network: "base",
+		}),
 	});
 }

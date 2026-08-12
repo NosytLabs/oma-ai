@@ -138,7 +138,7 @@ const SOCIAL_LINKS = [
 	},
 ];
 
-const CURRENT_YEAR = 2026;
+const CURRENT_YEAR = 2027;
 const LAST_DEPLOY = "2026-08-04";
 
 export function Footer() {

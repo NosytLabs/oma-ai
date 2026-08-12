@@ -22,5 +22,9 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/NosytLabs/oma-ai.git"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.18",
+    "typescript": "7.0.2"
   }
 }

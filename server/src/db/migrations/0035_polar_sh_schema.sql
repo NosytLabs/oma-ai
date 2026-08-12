@@ -14,7 +14,7 @@
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS polar_customers (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL UNIQUE REFERENCES "user"(id) ON DELETE CASCADE,
     polar_customer_id TEXT NOT NULL UNIQUE,
     email TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),

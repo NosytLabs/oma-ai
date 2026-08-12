@@ -15,6 +15,8 @@ import type { ExampleConversation, Message } from "@/components/chat";
 import { balanceToDollars, useBalance } from "@/components/chat/useBalance";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
+import { A2UI_SYSTEM_SUFFIX, formatA2UIAction } from "@/lib/a2ui";
+import { genConversationId } from "@/lib/gen-id";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { log } from "@/lib/logger";
 import {
@@ -24,15 +26,12 @@ import {
 import {
 	freeLeftLabel,
 	GUEST_DAILY_LIMIT_DEFAULT,
-	quotaFromServer,
-	readStoredGuestQuota,
-	writeStoredGuestQuota,
-	type GuestQuota,
 } from "@/lib/guest-daily-quota";
-import { DEFAULT_API_URL } from "@/lib/config";
 import { useChatPersistence } from "../_hooks/useChatPersistence";
 import { useChatScroll } from "../_hooks/useChatScroll";
 import { useChatShortcuts } from "../_hooks/useChatShortcuts";
+import { useConversationShare } from "../_hooks/useConversationShare";
+import { useGuestQuota } from "../_hooks/useGuestQuota";
 import { usePlaygroundState } from "../_hooks/usePlaygroundState";
 import { useStreamingChat } from "../_hooks/useStreamingChat";
 import { LiveModelsProvider } from "@/components/chat/chat-message-shared";
@@ -79,48 +78,6 @@ export interface ChatPlaygroundShellProps {
 	storageKey: string;
 	systemPromptKey: string;
 	conversationIdKey?: string;
-}
-
-function genConversationId(): string {
-	if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-		return crypto.randomUUID();
-	}
-	return `c-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
-}
-
-/**
- * Appended to the system prompt while UI MODE is enabled. Instructs the
- * model to emit A2UI v0.9.1 envelopes (createSurface / updateComponents /
- * updateDataModel) so the playground can render interactive surfaces
- * (buttons, forms, cards) instead of plain markdown.
- */
-const A2UI_SYSTEM_SUFFIX = `
-
-[UI MODE] You are also a UI designer. When the user asks for an interface,
-design, form, app, page, or anything visual or interactive, respond with ONE
-A2UI v0.9.1 JSON object (no markdown code fences, no text before or after the
-JSON) containing exactly these envelope keys, in order:
-{"version":"v0.9.1","createSurface":{"surfaceId":"app","catalogId":"https://a2ui.org/specification/v0_9_1/catalogs/basic/catalog.json"},"updateComponents":{"surfaceId":"app","components":[...]},"updateDataModel":{"surfaceId":"app","path":"/","value":{...}}}
-
-Component rules (flat adjacency list; every component has an id; one root id
-is "root"; children are referenced by id in "children" or single "child"):
-- "Text": {"id":"x","component":"Text","text":"...","variant":"h1"|"h2"|"h3"|"body"|"caption"}
-- "Markdown": {"id":"x","component":"Markdown","markdown":"..."}
-- "Button": {"id":"x","component":"Button","child":"label_id","variant":"primary"|"secondary"|"danger","action":{"event":{"name":"myEvent","context":{...}}}}
-- "TextField": {"id":"x","component":"TextField","label":"Email","value":{"path":"/email"},"checks":[{"call":"required","message":"..."},{"call":"email","message":"..."}]}
-- "CheckBox": {"id":"x","component":"CheckBox","label":"Subscribe","value":{"path":"/subscribe"}}
-- "ChoicePicker": {"id":"x","component":"ChoicePicker","options":[{"label":"A","value":"a"}],"value":{"path":"/choice"}}
-- "Row"/"Column": {"id":"x","component":"Column","children":["a","b"],"justify":"start"|"center"|"end"|"spaceBetween","align":"start"|"center"|"end"|"stretch"}
-- "Card": {"id":"x","component":"Card","title":"...","child":"root"} — Card child is usually the root
-- "Divider": {"id":"x","component":"Divider"}, "Icon": {"id":"x","component":"Icon","name":"mail"|"user"|"settings"|"check"|"sparkles"}, "Link": {"id":"x","component":"Link","url":"...","text":"..."}
-Bind values to the data model with {"path":"/key"} instead of literal values
-when they are user-editable. Keep the UI compact, dark-theme friendly, and
-functional. If the request is not UI-related, answer normally.`;
-
-/** Format an A2UI server action into a follow-up chat message. */
-function formatA2UIAction(event: { name: string; context?: Record<string, unknown> }): string {
-	const ctx = event.context && Object.keys(event.context).length > 0 ? `\n\nContext: \`\`\`json\n${JSON.stringify(event.context, null, 2)}\n\`\`\`` : "";
-	return `[UI action: ${event.name}]${ctx}\n\nPlease continue — act on this UI action result.`;
 }
 
 function ShellContent({
@@ -216,89 +173,16 @@ function ShellContent({
 		[],
 	);
 
-	// ─── Free message quota for guests (server is source of truth) ───
-	const [guestQuota, setGuestQuota] = useState<GuestQuota | null>(null);
-
-	const applyGuestQuota = useCallback(
-		(next: GuestQuota) => {
-			setGuestQuota(next);
-			writeStoredGuestQuota(next);
-			if (next.remaining <= 0 && !isAuthenticated) {
-				setAuthPromptReason("message-limit");
-				setAuthPromptModel(undefined);
-				// Don't force-open modal on every header sync — only when
-				// the user hits the wall (gatedSend / 429). Callers set open.
-			}
-		},
-		[isAuthenticated],
-	);
-
-	// Hydrate from localStorage, then refresh from GET /v1/usage/today.
-	useEffect(() => {
-		if (isAuthenticated) {
-			setGuestQuota(null);
-			return;
-		}
-		const cached = readStoredGuestQuota();
-		if (cached) setGuestQuota(cached);
-
-		let cancelled = false;
-		(async () => {
-			try {
-				const res = await fetch(`${DEFAULT_API_URL}/v1/usage/today`, {
-					credentials: "include",
-					headers: { Accept: "application/json" },
-				});
-				if (!res.ok || cancelled) return;
-				const body = (await res.json()) as {
-					remaining?: number;
-					limit?: number;
-					used?: number;
-				};
-				if (cancelled) return;
-				applyGuestQuota(quotaFromServer(body));
-			} catch {
-				/* offline — keep cache */
-			}
-		})();
-		return () => {
-			cancelled = true;
-		};
-	}, [isAuthenticated, applyGuestQuota]);
-
-	const onDailyQuota = useCallback(
-		(info: { remaining: number; limit: number; exhausted?: boolean }) => {
-			if (isAuthenticated) return;
-			applyGuestQuota(
-				quotaFromServer({
-					remaining: info.remaining,
-					limit: info.limit,
-					code: info.exhausted ? "daily_limit_exceeded" : undefined,
-				}),
-			);
-			if (info.exhausted || info.remaining <= 0) {
-				setAuthPromptReason("message-limit");
-				setAuthPromptModel(undefined);
-				setAuthPromptOpen(true);
-			}
-		},
-		[applyGuestQuota, isAuthenticated],
-	);
-
-	/** Block send only when server (or cached) remaining is known-zero. */
-	const allowGuestSend = useCallback(() => {
-		if (isAuthenticated) return true;
-		const left = freeLeftLabel(guestQuota, GUEST_DAILY_LIMIT_DEFAULT);
-		if (guestQuota != null && left <= 0) {
-			setAuthPromptReason("message-limit");
-			setAuthPromptModel(undefined);
-			setAuthPromptOpen(true);
-			return false;
-		}
-		// Do NOT optimistically increment — failed/429 sends must not
-		// burn the local counter ahead of the server.
-		return true;
-	}, [guestQuota, isAuthenticated]);
+	// ─── Guest free-tier quota (server is source of truth) ───
+	const handleQuotaExhausted = useCallback(() => {
+		setAuthPromptReason("message-limit");
+		setAuthPromptModel(undefined);
+		setAuthPromptOpen(true);
+	}, []);
+	const { guestQuota, onDailyQuota, allowGuestSend } = useGuestQuota({
+		isAuthenticated,
+		onExhausted: handleQuotaExhausted,
+	});
 
 	const inputRef = useRef<HTMLTextAreaElement | null>(null);
 	const messagesRef = useRef<Message[]>(messages);
@@ -543,61 +427,16 @@ function ShellContent({
 		newConversation,
 	});
 
-	const shareConversation = useCallback(async () => {
-		if (messages.length === 0) return;
-		const origin = typeof window !== "undefined" ? window.location.origin : "";
-
-		if (isChat) {
-			// Chat: copy a link that opens chat with the current model pre-selected
-			const url = `${origin}/chat?model=${encodeURIComponent(model)}`;
-			setShareStatus("default");
-			try {
-				await navigator.clipboard.writeText(url);
-				setShareStatus("success");
-				toast.success(
-					`Model link copied — opens chat with ${model} pre-selected`,
-				);
-				setTimeout(() => setShareStatus("default"), 2000);
-			} catch {
-				setShareStatus("error");
-				toast.error("Could not copy link — check clipboard permissions");
-				setTimeout(() => setShareStatus("default"), 2000);
-			}
-		} else {
-			// Playground: copy a replay link with conversation id + message count
-			let cid = conversationId;
-			if (!cid && conversationIdKey) {
-				cid = genConversationId();
-				setConversationId(cid);
-				try {
-					localStorage.setItem(conversationIdKey, cid);
-				} catch (e) {
-					/* private mode / corrupt storage */
-				}
-			}
-			const userMessageCount = messages.filter((m) => m.role === "user").length;
-			const url = `${origin}/chat?cid=${encodeURIComponent(cid ?? "")}&msgs=${userMessageCount}&model=${encodeURIComponent(model)}`;
-			setShareStatus("default");
-			try {
-				await navigator.clipboard.writeText(url);
-				setShareStatus("success");
-				toast.success("Replay link copied to clipboard");
-				setTimeout(() => setShareStatus("default"), 2000);
-			} catch {
-				setShareStatus("error");
-				toast.error("Could not copy share link — check clipboard permissions");
-				setTimeout(() => setShareStatus("default"), 2000);
-			}
-		}
-	}, [
+	const shareConversation = useConversationShare({
 		isChat,
 		messages,
 		model,
 		conversationId,
 		conversationIdKey,
 		toast,
+		setConversationId,
 		setShareStatus,
-	]);
+	});
 
 	return (
 		<div className="h-[calc(100dvh-3.5rem)] w-full flex flex-col bg-void text-text font-sans overflow-hidden">

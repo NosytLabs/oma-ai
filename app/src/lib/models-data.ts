@@ -194,9 +194,6 @@ export const TIER_COLORS: Record<
 	},
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const TIER_ORDER: Tier[] = ["budget", "mid", "premium", "frontier"];
-
 // ---------------------------------------------------------------------------
 // Catalog ingestion
 // ---------------------------------------------------------------------------

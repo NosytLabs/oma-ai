@@ -65,8 +65,8 @@ const METHODS: {
 		key: "crypto",
 		label: "USDC",
 		icon: Coins,
-		tag: "On-chain",
-		desc: "Send USDC on Base from any wallet.",
+		tag: "Wallet",
+		desc: "Connect your wallet and send USDC on Base — credited automatically.",
 		rail: "usdc",
 	},
 	{
@@ -96,7 +96,7 @@ function PaymentMethodsInfo({
 		name: r.label,
 		desc:
 			r.key === "usdc"
-				? "Direct deposit to the Base treasury. Instant credit once confirmed."
+				? "Pay with your wallet — USDC sent directly to the Base treasury. Instant credit once confirmed."
 				: r.key === "card"
 					? "Visa, Mastercard, Apple Pay via Polar. No wallet, no USDC required."
 					: "Gasless payments with automatic fee deduction per API request. No upfront deposit required.",

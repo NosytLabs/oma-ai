@@ -44,7 +44,7 @@ const STEPS: Step[] = [
  n: "03",
  title: "Fund credits or use x402",
  description:
- "Buy credits by card through , deposit USDC on Base, or let an agent settle each request with x402.",
+ "Buy credits by card through Polar, deposit USDC on Base, or let an agent settle each request with x402.",
  icon: Rocket,
  },
  {

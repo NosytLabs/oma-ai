@@ -47,7 +47,6 @@ import * as depositRecovery from "../lib/deposit-recovery.js";
 const mockClient = {
   getBlockNumber: vi.fn(),
   getLogs: vi.fn(),
-  getTransaction: vi.fn(),
 };
 
 describe("deposit-recovery lib", () => {
@@ -82,32 +81,8 @@ describe("deposit-recovery lib", () => {
     vi.restoreAllMocks();
   });
 
-  describe("extractUserIdFromMemo", () => {
-    it("extracts userId from valid oma- memo", () => {
-      const result = depositRecovery.extractUserIdFromMemo("0x6f6d612d6162633132333435");
-      expect(result).toBe("usr_abc12345");
-    });
-
-    it("returns null for invalid memo prefix", () => {
-      const result = depositRecovery.extractUserIdFromMemo("0x74657374616263");
-      expect(result).toBeNull();
-    });
-
-    it("returns null for short memo", () => {
-      const result = depositRecovery.extractUserIdFromMemo("0x6f6d612d616263");
-      expect(result).toBeNull();
-    });
-
-    it("handles 0x prefix correctly", () => {
-      const result = depositRecovery.extractUserIdFromMemo("6f6d612d6162633132333435");
-      expect(result).toBe("usr_abc12345");
-    });
-  });
-
   describe("processTransfer", () => {
     it("skips transfer to non-deposit address", async () => {
-      mockClient.getTransaction.mockResolvedValueOnce({ input: "0x" });
-
       await depositRecovery.processTransfer(mockClient as any, {
         transactionHash: "0xabc",
         args: { from: "0xfrom", to: "0xother", value: 1_000_000n },
@@ -117,8 +92,6 @@ describe("deposit-recovery lib", () => {
     });
 
     it("skips dust transfers below minimum", async () => {
-      mockClient.getTransaction.mockResolvedValueOnce({ input: "0x6f6d612d6162633132333435" });
-
       await depositRecovery.processTransfer(mockClient as any, {
         transactionHash: "0xabc",
         args: { from: "0xfrom", to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", value: 50_000n },
@@ -130,15 +103,11 @@ describe("deposit-recovery lib", () => {
       );
     });
 
-    it("creates new deposit and credits balance for new tx", async () => {
+    it("skips transfer with no recorded deposit (wallet-only flow)", async () => {
       vi.mocked(db.select as any).mockReturnValueOnce({
         from: vi.fn().mockReturnThis(),
         where: vi.fn().mockReturnThis(),
         limit: vi.fn().mockResolvedValueOnce([]),
-      });
-
-      mockClient.getTransaction.mockResolvedValueOnce({
-        input: "0x6f6d612d6162633132333435",
       });
 
       await depositRecovery.processTransfer(mockClient as any, {
@@ -146,11 +115,11 @@ describe("deposit-recovery lib", () => {
         args: { from: "0xfrom", to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", value: 1_000_000n },
       }, "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913");
 
-      expect(db.insert).toHaveBeenCalledTimes(2);
-      expect(logger.info).toHaveBeenCalledWith(
-        expect.objectContaining({ amountUsdCents: 100 }),
-        "[deposit-recovery] created and completed deposit, credited balance",
+      expect(logger.debug).toHaveBeenCalledWith(
+        expect.objectContaining({ txHash: "0xabc" }),
+        "[deposit-recovery] no recorded deposit for txHash, skipping (wallet-submitted deposits only)",
       );
+      expect(db.insert).not.toHaveBeenCalled();
     });
 
     it("marks existing pending deposit as completed and credits balance", async () => {
@@ -163,11 +132,8 @@ describe("deposit-recovery lib", () => {
           txHash: "0xabc",
           amountUsd: "1.00",
           status: "pending",
+          fromAddress: "0xfrom",
         }]),
-      });
-
-      mockClient.getTransaction.mockResolvedValueOnce({
-        input: "0x6f6d612d6162633132333435",
       });
 
       await depositRecovery.processTransfer(mockClient as any, {
@@ -183,7 +149,7 @@ describe("deposit-recovery lib", () => {
       );
     });
 
-    it("completes pending deposit by txHash even if tx.input has no memo", async () => {
+    it("marks pending deposit as completed even without fromAddress (legacy rows)", async () => {
       vi.mocked(db.select as any).mockReturnValueOnce({
         from: vi.fn().mockReturnThis(),
         where: vi.fn().mockReturnThis(),
@@ -193,6 +159,7 @@ describe("deposit-recovery lib", () => {
           txHash: "0xabc_nomemo",
           amountUsd: "5.00",
           status: "pending",
+          fromAddress: null,
         }]),
       });
 
@@ -219,11 +186,8 @@ describe("deposit-recovery lib", () => {
           txHash: "0xabc",
           amountUsd: "1.00",
           status: "completed",
+          fromAddress: "0xfrom",
         }]),
-      });
-
-      mockClient.getTransaction.mockResolvedValueOnce({
-        input: "0x6f6d612d6162633132333435",
       });
 
       await depositRecovery.processTransfer(mockClient as any, {
@@ -244,7 +208,7 @@ describe("deposit-recovery lib", () => {
         where: vi.fn().mockReturnThis(),
         limit: vi.fn().mockResolvedValueOnce([{
           id: "dep_123", userId: "usr_abc12345", txHash: "0xabc",
-          amountUsd: "1.00", status: "pending",
+          amountUsd: "1.00", status: "pending", fromAddress: "0xfrom",
         }]),
       });
       vi.mocked(db.update as any).mockReturnValueOnce({
@@ -252,7 +216,6 @@ describe("deposit-recovery lib", () => {
         where: vi.fn().mockReturnThis(),
         returning: vi.fn().mockResolvedValue([]),
       });
-      mockClient.getTransaction.mockResolvedValueOnce({ input: "0x6f6d612d6162633132333435" });
 
       await depositRecovery.processTransfer(mockClient as any, {
         transactionHash: "0xabc",
@@ -262,27 +225,30 @@ describe("deposit-recovery lib", () => {
       expect(db.insert).not.toHaveBeenCalled();
     });
 
-    it("handles transaction with no input data", async () => {
-      mockClient.getTransaction.mockResolvedValueOnce({ input: "0x" });
+    it("fails deposit when on-chain sender does not match recorded fromAddress", async () => {
+      vi.mocked(db.select as any).mockReturnValueOnce({
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValueOnce([{
+          id: "dep_123",
+          userId: "usr_abc12345",
+          txHash: "0xabc",
+          amountUsd: "1.00",
+          status: "pending",
+          fromAddress: "0xrealowner",
+        }]),
+      });
 
       await depositRecovery.processTransfer(mockClient as any, {
         transactionHash: "0xabc",
-        args: { from: "0xfrom", to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", value: 1_000_000n },
+        args: { from: "0xsomeoneelse", to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", value: 1_000_000n },
       }, "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913");
 
-      expect(logger.debug).toHaveBeenCalledWith(
-        expect.objectContaining({ txHash: "0xabc" }),
-        "[deposit-recovery] no valid memo in transaction input",
+      expect(db.update).toHaveBeenCalled();
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.objectContaining({ sender: "0xsomeoneelse", recorded: "0xrealowner" }),
+        "[deposit-recovery] sender does not match recorded fromAddress, marked deposit failed",
       );
-    });
-
-    it("continues on RPC error in getTransaction", async () => {
-      mockClient.getTransaction.mockRejectedValueOnce(new Error("RPC error"));
-
-      await expect(depositRecovery.processTransfer(mockClient as any, {
-        transactionHash: "0xabc",
-        args: { from: "0xfrom", to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", value: 1_000_000n },
-      }, "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913")).rejects.toThrow("RPC error");
     });
   });
 
@@ -301,7 +267,6 @@ describe("deposit-recovery lib", () => {
       mockClient.getLogs.mockResolvedValueOnce([
         { transactionHash: "0xabc", args: { from: "0xfrom", to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", value: 1_000_000n } },
       ]);
-      mockClient.getTransaction.mockResolvedValueOnce({ input: "0x6f6d612d6162633132333435" });
 
       vi.mocked(db.select as any).mockReturnValue({
         from: vi.fn().mockReturnThis(),
@@ -321,12 +286,17 @@ describe("deposit-recovery lib", () => {
         { transactionHash: "0xabc", args: { from: "0xfrom", to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", value: 1_000_000n } },
         { transactionHash: "0xdef", args: { from: "0xfrom", to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", value: 2_000_000n } },
       ]);
-      mockClient.getTransaction.mockRejectedValueOnce(new Error("RPC error")).mockResolvedValueOnce({ input: "0x6f6d612d6162633132333435" });
+
+      const mockFrom = vi.fn().mockReturnThis();
+      const mockWhere = vi.fn().mockReturnThis();
+      const mockLimit = vi.fn()
+        .mockRejectedValueOnce(new Error("DB connection lost"))
+        .mockResolvedValueOnce([]);
 
       vi.mocked(db.select as any).mockReturnValue({
-        from: vi.fn().mockReturnThis(),
-        where: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockResolvedValue([]),
+        from: mockFrom,
+        where: mockWhere,
+        limit: mockLimit,
       });
 
       const result = await depositRecovery.runRecoveryIteration(mockClient as any, "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", 500n);

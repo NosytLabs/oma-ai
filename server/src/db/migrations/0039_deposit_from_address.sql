@@ -1,0 +1,1 @@
+ALTER TABLE "deposits" ADD COLUMN "from_address" text;

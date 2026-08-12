@@ -5,13 +5,21 @@ import { useCallback, useEffect, useRef } from "react";
 import type { Message, SearchResult } from "@/components/chat";
 import { useToast } from "@/components/ui/Toast";
 import { api } from "@/lib/api";
+import {
+	BATCH_INTERVAL_MS,
+	consumeSSE,
+	createThinkRouter,
+	handleChatResponseStatus,
+	MAX_MESSAGE_LENGTH,
+	stripPendingAssistant,
+	type DailyQuota,
+} from "@/lib/chat-stream";
 import { DEFAULT_API_URL } from "@/lib/config";
 import { log } from "@/lib/logger";
 import {
 	FREE_CHAT_MODEL_IDS,
 	isFreeChatModel,
 } from "@/lib/model-utils";
-import { parseSSEBlock } from "@/lib/sse-parser";
 import { estimateTokens } from "@/lib/text";
 
 // Chat completions and web search both hit the backend directly — the Next
@@ -19,8 +27,6 @@ import { estimateTokens } from "@/lib/text";
 // short JSON hop doesn't gain anything from being same-origin.
 const CHAT_ENDPOINT = `${DEFAULT_API_URL}/v1/chat/completions`;
 const SEARCH_ENDPOINT = `${DEFAULT_API_URL}/v1/search`;
-const MAX_MESSAGE_LENGTH = 100 * 1024;
-const BATCH_INTERVAL_MS = 250;
 
 /**
  * Clean the conversation before it hits the upstream API. Two failure modes
@@ -92,11 +98,7 @@ export interface UseStreamingChatOptions {
 	 * Guest free-tier quota from server (X-DailyLimit-* headers or 429 body).
 	 * Called on success and on daily_limit_exceeded — never invents client counts.
 	 */
-	onDailyQuota?: (quota: {
-		remaining: number;
-		limit: number;
-		exhausted?: boolean;
-	}) => void;
+	onDailyQuota?: (quota: DailyQuota) => void;
 }
 
 export interface UseStreamingChatResult {
@@ -302,9 +304,8 @@ export function useStreamingChat(
 			// but no `oma_api_key` cookie, so chat returns 401. Free OMA-AI models
 			// never need a key, and 402 means insufficient credits rather than a
 			// missing key, so only repair paid-model 401 responses.
-			const freeModel = freeModelSelected;
 			if (
-				!freeModel &&
+				!freeModelSelected &&
 				response.status === 401 &&
 				!signal.aborted
 			) {
@@ -314,62 +315,13 @@ export function useStreamingChat(
 				}
 			}
 
-			// Sync free-tier remaining from daily-limit headers on every response
-			// that carries them (success and rate-limit).
-			const headerRem = response.headers.get("X-DailyLimit-Remaining");
-			const headerLim = response.headers.get("X-DailyLimit-Limit");
-			if (headerRem != null && opts.onDailyQuota) {
-				const remaining = Number(headerRem);
-				const limit = headerLim != null ? Number(headerLim) : 20;
-				if (Number.isFinite(remaining)) {
-					opts.onDailyQuota({
-						remaining: Math.max(0, Math.floor(remaining)),
-						limit:
-							Number.isFinite(limit) && limit > 0
-								? Math.floor(limit)
-								: 20,
-					});
-				}
-			}
-
-			if (response.status === 401) {
-				throw new Error(
-					freeModel
-						? "Free model request was rejected — try again or pick another OMA-AI free model"
-						: "Authentication required — sign in and create an API key for paid models (OMA-AI free models work without sign-in)",
-				);
-			}
-			if (response.status === 429) {
-				const errBody = await response.json().catch(() => null);
-				const err = errBody?.error as
-					| {
-							message?: string;
-							code?: string;
-							remaining?: number;
-							limit?: number;
-					  }
-					| undefined;
-				// Server daily cap — pin UI free-left to 0 (do not keep local optimistic count).
-				if (err?.code === "daily_limit_exceeded" && opts.onDailyQuota) {
-					opts.onDailyQuota({
-						remaining:
-							typeof err.remaining === "number" ? Math.max(0, err.remaining) : 0,
-						limit:
-							typeof err.limit === "number" && err.limit > 0 ? err.limit : 20,
-						exhausted: true,
-					});
-				}
-				throw new Error(
-					err?.message || "rate limit exceeded — please wait and try again",
-				);
-			}
-			if (!response.ok) {
-				const errBody = await response.json().catch(() => null);
-				const errMsg =
-					errBody?.error?.message ||
-					`HTTP ${response.status}: ${response.statusText}`;
-				throw new Error(errMsg);
-			}
+			// Sync free-tier quota from headers and classify the status
+			// (401 auth, 429 rate limit, other non-OK → HTTP error). Throws
+			// the user-facing Error for anything non-2xx.
+			await handleChatResponseStatus(response, {
+				freeModel: freeModelSelected,
+				onDailyQuota: opts.onDailyQuota,
+			});
 
 			// Surface server failover (OpenRouter-style transparency).
 			const usedFallback =
@@ -387,7 +339,6 @@ export function useStreamingChat(
 
 			if (opts.stream && response.body) {
 				const reader = response.body.getReader();
-				const decoder = new TextDecoder();
 				let accumulated = "";
 				let accumulatedReasoning = "";
 				let realTokenCount = 0;
@@ -445,66 +396,6 @@ export function useStreamingChat(
 					}
 				};
 
-				let sseBuffer = "";
-				const SSE_BUFFER_MAX_BYTES = 1024 * 1024; // 1 MB cap to prevent unbounded growth
-				// State machine for routing content tokens. Some models (OMA-AI/Gonka,
-				// DeepSeek R1, Qwen QwQ) wrap their reasoning inside  and 
-				// tags inside the `content` field rather than emitting a separate
-				// `reasoning_content` delta. We watch for those tags and route the
-				// enclosed text into `accumulatedReasoning` so the rendered
-				// answer never shows the raw markup.
-				const THINK_OPEN = "<think>";
-				const THINK_CLOSE = "</think>";
-				let inThinkingBlock = false;
-				// Carry-over buffer for partial tag matches that span two SSE chunks.
-				let tagCarry = "";
-				const routeToken = (token: string) => {
-					if (!token) return;
-					// Splice the carry-over so partial tags that arrived in the
-					// previous chunk now line up with the next one.
-					const stream = tagCarry + token;
-					tagCarry = "";
-					let cursor = 0;
-					while (cursor < stream.length) {
-						if (!inThinkingBlock) {
-							// Look for the next `` opening tag.
-							const openIdx = stream.indexOf(THINK_OPEN, cursor);
-							if (openIdx === -1) {
-								// No more tags in this slice. Before flushing, keep
-								// the last few chars as carry-over so a partial tag
-								// that landed at the chunk boundary isn't lost.
-								const safeLen = Math.max(0, stream.length - (THINK_OPEN.length - 1));
-								const safeSlice = stream.slice(cursor, safeLen);
-								const tail = stream.slice(safeLen);
-								if (safeSlice) {
-									appendToContent(safeSlice);
-								}
-								tagCarry = tail;
-								break;
-							}
-							// Flush the prose before the tag, then drop the tag itself.
-							const before = stream.slice(cursor, openIdx);
-							if (before) appendToContent(before);
-							cursor = openIdx + THINK_OPEN.length;
-							inThinkingBlock = true;
-						} else {
-							// Inside a thinking block — look for the closing tag.
-							const closeIdx = stream.indexOf(THINK_CLOSE, cursor);
-							if (closeIdx === -1) {
-								const safeLen = Math.max(0, stream.length - (THINK_CLOSE.length - 1));
-								const safeSlice = stream.slice(cursor, safeLen);
-								const tail = stream.slice(safeLen);
-								if (safeSlice) appendToReasoning(safeSlice);
-								tagCarry = tail;
-								break;
-							}
-							const inside = stream.slice(cursor, closeIdx);
-							if (inside) appendToReasoning(inside);
-							cursor = closeIdx + THINK_CLOSE.length;
-							inThinkingBlock = false;
-						}
-					}
-				};
 				const appendToContent = (chunk: string) => {
 					if (!chunk) return;
 					if (accumulated.length < MAX_MESSAGE_LENGTH) {
@@ -522,6 +413,10 @@ export function useStreamingChat(
 						accumulatedReasoning += chunk;
 					}
 				};
+				const router = createThinkRouter({
+					onContent: appendToContent,
+					onReasoning: appendToReasoning,
+				});
 				const processData = (raw: string) => {
 					const data = raw.trim();
 					if (!data || data === "[DONE]") return;
@@ -530,7 +425,7 @@ export function useStreamingChat(
 						const choice = parsed.choices?.[0];
 						const delta = choice?.delta?.content;
 						if (delta) {
-							routeToken(delta);
+							router.route(delta);
 							flushToState();
 						}
 						// Reasoning models (DeepSeek R1, Claude extended thinking) emit
@@ -562,96 +457,57 @@ export function useStreamingChat(
 						log.warn("Failed to parse streaming response", err);
 					}
 				};
-				const handleBlock = (block: string) => {
-					const parsed = parseSSEBlock(block);
-					if (!parsed) return;
-					for (const d of parsed.data) {
+
+				await consumeSSE(reader, (block) => {
+					for (const d of block.data) {
 						processData(d);
 					}
-				};
-				try {
-					while (true) {
-						const { done, value } = await reader.read();
-						if (done) break;
-						sseBuffer += decoder.decode(value, { stream: true });
-						if (sseBuffer.length > SSE_BUFFER_MAX_BYTES) {
-							throw new Error(
-								"SSE buffer exceeded 1 MB limit — connection may be stalled or sending non-SSE data",
-							);
-						}
-
-						// Per the SSE spec, events are delimited by a blank line. Normalize
-						// CRLF to LF so a single `\n\n` split handles all line endings.
-						const normalized = sseBuffer.replace(/\r\n/g, "\n");
-						const parts = normalized.split("\n\n");
-						sseBuffer = parts.pop() ?? "";
-						for (const block of parts) handleBlock(block);
-					}
-					if (sseBuffer.trim()) {
-						handleBlock(sseBuffer);
-						sseBuffer = "";
-					}
-					// Flush any partial think-tag carry-over at end of stream —
-					// trailing content that straddled a chunk boundary would
-					// otherwise be lost forever.
-					if (tagCarry) {
-						if (inThinkingBlock) appendToReasoning(tagCarry);
-						else appendToContent(tagCarry);
-						tagCarry = "";
-					}
-					flushToState(true);
-				} finally {
-					// Always release the underlying stream — otherwise the
-					// connection lingers in the browser's pool until GC.
-					try {
-						reader.cancel();
-					} catch {
-						// already closed / aborted — nothing to do
+				});
+				router.flushTail();
+				flushToState(true);
+			} else {
+				const data = await response.json();
+				let content = data.choices?.[0]?.message?.content || "";
+				let reasoning = data.choices?.[0]?.message?.reasoning_content || "";
+				// Non-streaming fallback: some models (DeepSeek V4 / R1-style)
+				// emit ` thinking... response` inline inside `content` rather than as a
+				// separate `reasoning_content` field. Strip those tags so the user
+				// sees a clean collapsible "Reasoning" block instead of raw markup.
+				if (!content.trim() && !reasoning.trim()) {
+					const thinkMatch = content.match(/ thinking([\s\S]*?)<\/think>/i);
+					if (thinkMatch) {
+						reasoning = thinkMatch[1].trim();
+						content = content.replace(/ thinking[\s\S]*?<\/think>/gi, "").trim();
 					}
 				}
-				} else {
-					const data = await response.json();
-					let content = data.choices?.[0]?.message?.content || "";
-					let reasoning = data.choices?.[0]?.message?.reasoning_content || "";
-					// Non-streaming fallback: some models (DeepSeek V4 / R1-style)
-					// emit `<think>...</think>` inline inside `content` rather than as a
-					// separate `reasoning_content` field. Strip those tags so the user
-					// sees a clean collapsible "Reasoning" block instead of raw markup.
-					if (!content.trim() && !reasoning.trim()) {
-						const thinkMatch = content.match(/<think>([\s\S]*?)<\/think>/i);
-						if (thinkMatch) {
-							reasoning = thinkMatch[1].trim();
-							content = content.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
-						}
+				const usage = data.usage;
+				const bodyModel =
+					typeof data.model === "string" && data.model
+						? data.model
+						: actualModel;
+				setMsgs((prev) => {
+					const updated = [...prev];
+					const lastIdx = updated.length - 1;
+					if (lastIdx >= 0) {
+						updated[lastIdx] = {
+							...updated[lastIdx],
+							content,
+							reasoning: reasoning || undefined,
+							tokens: usage?.total_tokens || 0,
+							inputTokens: usage?.prompt_tokens || updated[lastIdx].inputTokens,
+							outputTokens: usage?.completion_tokens || estimateTokens(content),
+							latency: Date.now() - startTime,
+							model: bodyModel,
+							viaFallback: usedFallback && bodyModel !== useModel,
+							searchResults:
+								searchResults.length > 0
+									? searchResults
+									: updated[lastIdx].searchResults,
+						};
 					}
-					const usage = data.usage;
-					const bodyModel =
-						typeof data.model === "string" && data.model
-							? data.model
-							: actualModel;
-					setMsgs((prev) => {
-						const updated = [...prev];
-						const lastIdx = updated.length - 1;
-						if (lastIdx >= 0) {
-							updated[lastIdx] = {
-								...updated[lastIdx],
-								content,
-								reasoning: reasoning || undefined,
-								tokens: usage?.total_tokens || 0,
-								inputTokens: usage?.prompt_tokens || updated[lastIdx].inputTokens,
-								outputTokens: usage?.completion_tokens || estimateTokens(content),
-								latency: Date.now() - startTime,
-								model: bodyModel,
-								viaFallback: usedFallback && bodyModel !== useModel,
-								searchResults:
-									searchResults.length > 0
-										? searchResults
-										: updated[lastIdx].searchResults,
-							};
-						}
-						return updated;
-					});
-				}
+					return updated;
+				});
+			}
 		// "opts" is intentionally excluded: the parent rebuilds a new options
 		// object each render. List primitive fields + ensureChatKeyOnce only.
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- opts object identity
@@ -786,37 +642,16 @@ export function useStreamingChat(
 					const message =
 						err instanceof Error ? err.message : "Compare model request failed";
 					opts.setError(`Compare: ${message}`);
-					opts.setCompareMessages((prev) => {
-						const updated = [...prev];
-						if (
-							updated.length > 0 &&
-							updated[updated.length - 1]?.content === ""
-						) {
-							return updated.slice(0, -1);
-						}
-						return updated;
-					});
+					opts.setCompareMessages((prev) => stripPendingAssistant(prev));
 				}
 			} catch (err: unknown) {
 				const aborted =
 					abortController.signal.aborted ||
 					(err instanceof Error && err.name === "AbortError");
 				if (aborted) {
-					opts.setMessages((prev) => {
-						const updated = [...prev];
-						if (updated[updated.length - 1]?.content === "") {
-							return updated.slice(0, -1);
-						}
-						return updated;
-					});
+					opts.setMessages((prev) => stripPendingAssistant(prev));
 					if (opts.compareMode) {
-						opts.setCompareMessages((prev) => {
-							const updated = [...prev];
-							if (updated[updated.length - 1]?.content === "") {
-								return updated.slice(0, -1);
-							}
-							return updated;
-						});
+						opts.setCompareMessages((prev) => stripPendingAssistant(prev));
 					}
 				} else {
 					// Network failures (backend down / CORS) surface as TypeError —
@@ -831,21 +666,9 @@ export function useStreamingChat(
 						message = "Unknown error";
 					}
 					opts.setError(message);
-					opts.setMessages((prev) => {
-						const updated = [...prev];
-						if (updated[updated.length - 1]?.content === "") {
-							return updated.slice(0, -1);
-						}
-						return updated;
-					});
+					opts.setMessages((prev) => stripPendingAssistant(prev));
 					if (opts.compareMode) {
-						opts.setCompareMessages((prev) => {
-							const updated = [...prev];
-							if (updated[updated.length - 1]?.content === "") {
-								return updated.slice(0, -1);
-							}
-							return updated;
-						});
+						opts.setCompareMessages((prev) => stripPendingAssistant(prev));
 					}
 				}
 			} finally {

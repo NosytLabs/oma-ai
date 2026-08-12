@@ -2,7 +2,7 @@
  * USDC deposit flow on Base.
  *
  *   GET  /v1/deposit/usdc     → returns deposit instructions
- *                                 (receiver address, USDC contract, memo,
+ *                                 (receiver address, USDC contract,
  *                                  min/max).
  *   POST /v1/deposit/usdc     → records a pending deposit for the
  *                                 supplied txHash. Actual on-chain
@@ -60,12 +60,10 @@ depositRoutes.get("/v1/balance", sessionOrBearerAuth, async (c) => {
 });
 
 // ─── GET /v1/deposit/usdc ────────────────────────────────────────────────────
-// Returns deposit instructions: address, network, USDC contract, memo,
+// Returns deposit instructions: address, network, USDC contract,
 // min/max. The frontend surfaces this on the /deposit page.
 
 depositRoutes.get("/v1/deposit/usdc", sessionOrBearerAuth, async (c) => {
-  const userId = c.get("userId");
-
   // Check if crypto deposits are disabled by admin
   try {
     const [settings] = await db.select({ cryptoPaymentsEnabled: siteSettings.cryptoPaymentsEnabled }).from(siteSettings).limit(1);
@@ -96,18 +94,14 @@ depositRoutes.get("/v1/deposit/usdc", sessionOrBearerAuth, async (c) => {
       503,
     );
   }
-  // The memo lets the operator's reconciliation script credit the right
-  // user. First 8 chars of the Better Auth user id are stable + unique enough
-  // for a lookup; the operator can match on a longer prefix server-side.
-  const memo = `oma-${userId.slice(0, 8)}`;
+  // The deposit is attributed to the authenticated user via the txHash they
+  // submit (the watcher additionally verifies the transfer's `from` matches
+  // the fromAddress recorded here), so no memo is needed.
   return c.json({
     depositAddress: config.USDC_DEPOSIT_ADDRESS,
     network: config.USDC_DEPOSIT_NETWORK,
     chainId: USDC_BASE_CHAIN_ID,
     usdcContract: USDC_BASE,
-    memo,
-    memoNote:
-      "Optional. Including the memo in your transfer lets the watcher credit your balance automatically.",
     minDepositCents: config.USDC_DEPOSIT_MIN_CENTS,
     maxDepositCents: config.USDC_DEPOSIT_MAX_CENTS,
     creditsPerCent: 1, // 1 cent = 1 credit (CREDITS_PER_USD / 100)
@@ -123,10 +117,9 @@ const submitSchema = z.object({
   amountUsd: z.number().positive().max(10_000),
   txHash: z.string().regex(/^0x[a-fA-F0-9]{64}$/),
   network: z.enum(["base"]).default("base"),
-  fromAddress: z
-    .string()
-    .regex(/^0x[a-fA-F0-9]{40}$/)
-    .optional(),
+  // Sending wallet address. The watcher verifies the on-chain sender
+  // matches this so credits can't be claimed for someone else's transfer.
+  fromAddress: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
 });
 
 depositRoutes.post(
@@ -209,7 +202,7 @@ depositRoutes.post(
       );
     }
     try {
-      const [created] = await db
+const [created] = await db
         .insert(deposits)
         .values({
           userId,
@@ -217,7 +210,8 @@ depositRoutes.post(
           amountUsd: amountUsd.toFixed(8),
           creditsIssued: "0",
           txHash,
-depositAddress,
+          depositAddress,
+          fromAddress,
           status: "pending",
         })
         .returning();
