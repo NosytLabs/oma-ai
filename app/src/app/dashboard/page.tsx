@@ -18,6 +18,13 @@ import { DashboardHeader } from "./_components/DashboardHeader";
 import { useDashboardData } from "./_hooks/useDashboardData";
 import { useDashboardKeyboard } from "./_hooks/useDashboardKeyboard";
 import { useDashboardStats } from "./_hooks/useDashboardStats";
+import {
+	DEMO_API_KEYS,
+	DEMO_BALANCE,
+	DEMO_BATCHES,
+	DEMO_TRANSACTIONS,
+	buildDemoUsage,
+} from "./_lib/demo-data";
 
 const DashboardGrid = nextDynamic(
 	() =>
@@ -75,18 +82,21 @@ function DashboardPageInner() {
 			? (searchParams?.get("tab") as TabId)
 			: "overview";
 
-	const {
-		balance,
-		apiKeys,
-		usage,
-		creditBatches,
-		models,
-		transactions,
-		loading,
-		error,
-		backendUnavailable,
-		refresh,
-	} = useDashboardData({ isAuthenticated: canLoadDashboard });
+	const live = useDashboardData({ isAuthenticated: canLoadDashboard });
+	const demoUsage = useMemo(
+		() => (isDemoView ? buildDemoUsage() : []),
+		[isDemoView],
+	);
+	const balance = isDemoView ? DEMO_BALANCE : live.balance;
+	const apiKeys = isDemoView ? DEMO_API_KEYS : live.apiKeys;
+	const usage = isDemoView ? demoUsage : live.usage;
+	const creditBatches = isDemoView ? DEMO_BATCHES : live.creditBatches;
+	const models = isDemoView ? [] : live.models;
+	const transactions = isDemoView ? DEMO_TRANSACTIONS : live.transactions;
+	const loading = isDemoView ? false : live.loading;
+	const error = isDemoView ? null : live.error;
+	const backendUnavailable = isDemoView ? false : live.backendUnavailable;
+	const refresh = live.refresh;
 
 	const [page, setPage] = useState(1);
 	const [creating, setCreating] = useState(false);
@@ -236,7 +246,8 @@ function DashboardPageInner() {
 		setShowCreateForm(true);
 	}, [handleTabChange]);
 
-	const content = !isReady ? (
+	// Demo tours (`?demo=1`) must not wait on Better Auth session resolution.
+	const content = !isReady && !isDemoView ? (
 		<AuthGateSkeleton />
 	) : !isAuthenticated && !isDemoView ? (
 		<div className="flex flex-col items-center justify-center gap-6 px-4 py-16">
@@ -274,7 +285,23 @@ function DashboardPageInner() {
 				id="dashboard-content"
 				className="bg-void text-text-secondary selection:bg-surface selection:text-text"
 			>
-				{evmAddress && (
+				{isDemoView && (
+					<div
+						role="status"
+						className="flex flex-wrap items-center justify-between gap-3 border-b border-accent/25 bg-accent/10 px-4 py-2 text-[11px] font-mono text-accent md:px-8"
+					>
+						<span className="uppercase tracking-wider">
+							Demo tour · sample charts &amp; balances (read-only)
+						</span>
+						<Link
+							href="/login?next=/dashboard"
+							className="shrink-0 rounded-[var(--radius-sm)] bg-accent px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-void hover:bg-accent-bright"
+						>
+							Sign in for live data →
+						</Link>
+					</div>
+				)}
+				{evmAddress && !isDemoView && (
 					<div
 						role="status"
 						className="flex flex-wrap items-center justify-between gap-3 border-b border-accent/25 bg-accent/10 px-4 py-2 text-[11px] font-mono text-accent md:px-8"
