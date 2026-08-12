@@ -61,7 +61,12 @@ const STYLE_OPTIONS = [
 const CREDITS_PER_IMAGE = 10;
 const USD_PER_CREDIT = 0.01;
 
-export function ImageGenerationPanel() {
+export function ImageGenerationPanel({
+	/** Hide outer page chrome when nested in MediaGenerationPanel. */
+	embedded = false,
+}: {
+	embedded?: boolean;
+} = {}) {
 	const [prompt, setPrompt] = useState("");
 	const [model, setModel] = useState("venice-sd35");
 	const [size, setSize] = useState("1024x1024");
@@ -105,23 +110,36 @@ export function ImageGenerationPanel() {
 	const costCredits = CREDITS_PER_IMAGE * count;
 
 	return (
-		<div className="mx-auto flex h-full w-full max-w-5xl flex-col overflow-y-auto px-3 py-4 sm:px-5 sm:py-6">
-			{/* Compact header for chat shell */}
-			<div className="mb-4 flex flex-wrap items-end justify-between gap-2">
-				<div>
-					<p className="text-[11px] font-mono uppercase tracking-widest text-accent">
-						Image · Venice
+		<div
+			className={
+				embedded
+					? "flex w-full flex-col"
+					: "mx-auto flex h-full w-full max-w-5xl flex-col overflow-y-auto px-3 py-4 sm:px-5 sm:py-6"
+			}
+		>
+			{/* Compact header — skipped when unified Create studio provides chrome */}
+			{!embedded && (
+				<div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+					<div>
+						<p className="text-[11px] font-mono uppercase tracking-widest text-accent">
+							Image · Venice
+						</p>
+						<h1 className="text-lg font-semibold text-text-bright sm:text-xl">
+							Image generation
+						</h1>
+					</div>
+					<p className="font-mono text-xs text-text-muted">
+						<span className="text-accent">{costCredits} cr</span>
+						{" · "}${(costCredits * USD_PER_CREDIT).toFixed(3)}
 					</p>
-					<h1 className="text-lg font-semibold text-text-bright sm:text-xl">
-						Image generation
-					</h1>
 				</div>
-				<p className="text-xs text-text-muted font-mono">
+			)}
+			{embedded && (
+				<p className="mb-3 text-right font-mono text-xs text-text-muted">
 					<span className="text-accent">{costCredits} cr</span>
-					{" ·"}
-					${(costCredits * USD_PER_CREDIT).toFixed(3)}
+					{" · "}${(costCredits * USD_PER_CREDIT).toFixed(3)}
 				</p>
-			</div>
+			)}
 
 			<div className="rounded-[var(--radius-xl)] border border-border bg-surface/80 p-3 sm:p-4">
 				<div className="grid gap-4 lg:grid-cols-5">

@@ -128,7 +128,12 @@ const RESOLUTION_OPTIONS = [
 const API_URL = "/api/v1/videos/generations";
 const RETRIEVE_URL = "/api/v1/videos/retrieve";
 
-export function VideoGenerationPanel() {
+export function VideoGenerationPanel({
+	/** Hide marketing chrome when nested in MediaGenerationPanel. */
+	embedded = false,
+}: {
+	embedded?: boolean;
+} = {}) {
 	const [mode, setMode] = useState<"text-to-video" | "image-to-video">(
 		"text-to-video",
 	);
@@ -320,20 +325,34 @@ export function VideoGenerationPanel() {
 	const selectedModel = VIDEO_MODELS.find((m) => m.id === model);
 
 	return (
-		<div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
-			<div className="mb-8">
-				<div className="mb-2 text-sm font-medium text-accent">
-					OMA AI Gateway
+		<div
+			className={
+				embedded
+					? "w-full"
+					: "mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8"
+			}
+		>
+			{!embedded && (
+				<div className="mb-8">
+					<div className="mb-2 text-sm font-medium text-accent">
+						OMA AI Gateway
+					</div>
+					<h1 className="h1-utility text-text-bright">Video Generation</h1>
+					<p className="mt-3 text-lg text-text-bright">
+						Generate videos from text prompts. Powered by Seedream 2.0 and Kling
+						V3 Pro. Priced per generation —{" "}
+						<span className="text-accent">from $0.44</span>.
+					</p>
 				</div>
-				<h1 className="h1-utility text-text-bright">Video Generation</h1>
-				<p className="mt-3 text-lg text-text-bright">
-					Generate videos from text prompts. Powered by Seedream 2.0 and Kling
-					V3 Pro. Priced per generation —{" "}
-					<span className="text-accent">from $0.44</span>.
-				</p>
-			</div>
+			)}
 
-			<div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
+			<div
+				className={
+					embedded
+						? "rounded-[var(--radius-xl)] border border-border bg-surface/80 p-3 sm:p-4"
+						: "rounded-2xl border border-border bg-surface p-6 shadow-sm"
+				}
+			>
 				<div
 					className="mb-6 flex rounded-[var(--radius-xl)] bg-surface p-1"
 					role="tablist"

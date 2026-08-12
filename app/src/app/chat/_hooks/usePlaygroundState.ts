@@ -34,7 +34,10 @@ const MEDIA_MODES: readonly MediaMode[] = ["text", "image", "video"] as const;
 
 export function parseMediaMode(raw: string | null | undefined): MediaMode {
 	const v = (raw ?? "").trim().toLowerCase();
-	if (v === "image" || v === "img") return "image";
+	// create/media → image studio (video via in-panel toggle or ?mode=video)
+	if (v === "image" || v === "img" || v === "create" || v === "media") {
+		return "image";
+	}
 	if (v === "video" || v === "vid") return "video";
 	if (v === "text" || v === "chat" || v === "") return "text";
 	return "text";

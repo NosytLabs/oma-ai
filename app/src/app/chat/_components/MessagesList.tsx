@@ -3,19 +3,9 @@
 /**
  * MESSAGES LIST — Scrollable message area
  *
- * Renders one of three things based on `mediaMode`:
- * - 'text' → either the welcome/example banner (empty) or the
- * AnimatePresence-wrapped message list (populated),
- * with a "Jump to bottom" pill when the user has
- * scrolled away from a streaming response
- * - 'image' → ImageGenerationPanel
- * - 'video' → VideoGenerationPanel
- *
- * Mobile improvements:
- * - Reduced padding on small screens (p-3 instead of p-4/p-8)
- * - Larger touch targets for jump-to-bottom pill
- * - Better scroll snapping behavior
- * - Feature discovery hints in empty state
+ * Renders based on `mediaMode`:
+ * - 'text' → welcome/examples or the message list (+ jump-to-bottom)
+ * - 'image' | 'video' → unified MediaGenerationPanel (Create studio)
  */
 
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
@@ -70,18 +60,10 @@ const LazyEmptyState = dynamic(
 	{ ssr: false, loading: () => <Skeleton className="h-48 w-full" /> },
 );
 
-const LazyImageGenerationPanel = dynamic(
+const LazyMediaGenerationPanel = dynamic(
 	() =>
-		import("@/components/chat/ImageGenerationPanel").then(
-			(mod) => mod.ImageGenerationPanel,
-		),
-	{ ssr: false, loading: () => <Skeleton className="h-96 w-full" /> },
-);
-
-const LazyVideoGenerationPanel = dynamic(
-	() =>
-		import("@/components/chat/VideoGenerationPanel").then(
-			(mod) => mod.VideoGenerationPanel,
+		import("@/components/chat/MediaGenerationPanel").then(
+			(mod) => mod.MediaGenerationPanel,
 		),
 	{ ssr: false, loading: () => <Skeleton className="h-96 w-full" /> },
 );
@@ -225,6 +207,8 @@ export interface MessagesListProps {
 	handleScroll: () => void;
 	deferredMessages: Message[];
 	mediaMode: "text" | "image" | "video";
+	/** Switch image ↔ video inside the Create studio. */
+	onMediaKindChange?: (kind: "image" | "video") => void;
 	handleCopy: () => void;
 	handlePreset: (prompt: string, model?: string) => void;
 	handleExampleSelect: (example: ExampleConversation) => void;
@@ -271,6 +255,7 @@ export function MessagesList({
 	handleScroll,
 	deferredMessages,
 	mediaMode,
+	onMediaKindChange,
 	handleCopy,
 	handlePreset,
 	handleExampleSelect,
@@ -299,10 +284,11 @@ export function MessagesList({
 				aria-hidden="true"
 			/>
 			<div className="max-w-4xl mx-auto relative z-0 min-h-full">
-				{mediaMode === "image" ? (
-					<LazyImageGenerationPanel />
-				) : mediaMode === "video" ? (
-					<LazyVideoGenerationPanel />
+				{mediaMode === "image" || mediaMode === "video" ? (
+					<LazyMediaGenerationPanel
+						kind={mediaMode}
+						onKindChange={(kind) => onMediaKindChange?.(kind)}
+					/>
 				) : deferredMessages.length === 0 ? (
 					<div className="pb-8">
 						<LazyWelcomeBanner

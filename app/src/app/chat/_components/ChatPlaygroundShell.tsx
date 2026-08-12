@@ -677,6 +677,7 @@ function ShellContent({
 						handleScroll={handleScroll}
 						deferredMessages={deferredMessages}
 						mediaMode={isChat ? mediaMode : "text"}
+						onMediaKindChange={(kind) => setMediaMode(kind)}
 						handleCopy={handleCopy}
 						handlePreset={handlePreset}
 						handleExampleSelect={handleExampleSelect}

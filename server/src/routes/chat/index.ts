@@ -221,8 +221,13 @@ chatRoutes.post(
       const actualPricing = getModelPricing(actualModelId);
 
       // Set OMA custom response headers to indicate routing & fallback choice
+      // (OpenRouter-style transparency: clients can detect failover).
       c.header("x-provider", actualModelDef.provider);
       c.header("x-actual-model", actualModelId);
+      if (actualModelId !== model) {
+        c.header("x-oma-fallback", "1");
+        c.header("x-oma-requested-model", model);
+      }
 
       if (stream) {
         c.header("Content-Type", "text/event-stream");

@@ -319,24 +319,31 @@ export async function routeRequestWithFallback(
         const e = readError(err);
         const message = e.message ?? String(err);
 
-        // Transient errors include server errors (5xx) or rate limits (429)
+        // Transient: 5xx, 408 request timeout, 429 rate limit, or network.
         const isTransient =
-          e.status !== undefined && (e.status >= 500 || e.status === 429);
+          e.status !== undefined &&
+          (e.status >= 500 || e.status === 429 || e.status === 408);
 
         const isNetworkError =
           e.status === undefined ||
           (typeof e.message === "string" &&
             (e.message.includes("unreachable") ||
               e.message.includes("timeout") ||
-              e.message.includes("fetch failed")));
+              e.message.includes("fetch failed") ||
+              e.message.includes("ECONNRESET") ||
+              e.message.includes("ETIMEDOUT")));
 
         if (attempt <= maxRetries && (isTransient || isNetworkError)) {
-          // Exponential backoff with random jitter: 100ms * 2^attempt, plus up to 50ms random jitter
-          const baseDelay = 100 * Math.pow(2, attempt - 1);
-          const jitter = Math.random() * 50;
-          const delay = Math.min(baseDelay + jitter, 2000);
+          // Exponential backoff with jitter. Cap higher on rate limits so we
+          // don't hammer a throttled provider (OpenRouter-style patience).
+          const baseDelay =
+            e.status === 429
+              ? 400 * Math.pow(2, attempt - 1)
+              : 100 * Math.pow(2, attempt - 1);
+          const jitter = Math.random() * (e.status === 429 ? 150 : 50);
+          const delay = Math.min(baseDelay + jitter, e.status === 429 ? 5000 : 2000);
           logger.warn(
-            { modelId: currentModelId, attempt, delay, error: message },
+            { modelId: currentModelId, attempt, delay, error: message, status: e.status },
             "[router] Transient error calling model. Retrying after backoff...",
           );
           await new Promise((resolve) => setTimeout(resolve, delay));

@@ -171,9 +171,9 @@ export function ChatToolbar({
 			)
 		) : null;
 
-	// 2026-08-02: IMAGE and VIDEO tabs restored — the underlying
-	// endpoints (/v1/images/generations, /v1/videos/generations) exist
-	// on the server and the generation panels are wired into MessagesList.
+	// Chat | Create — Create opens the unified image/video studio
+	// (sub-kind switch lives inside MediaGenerationPanel).
+	const createActive = mediaMode === "image" || mediaMode === "video";
 	const mediaTabs =
 		isChat && setMediaMode ? (
 			<div
@@ -190,29 +190,27 @@ export function ChatToolbar({
 					className={`${btnBase} !border-0 rounded-[var(--radius-md)] min-h-9 min-w-9 sm:min-h-10 sm:min-w-10 transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${mediaMode === "text" ? "!bg-accent/15 !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
 				>
 					<MessageSquare className="h-4 w-4" />
-					<span className="hidden md:inline text-[12px] font-medium tracking-wide">Chat</span>
+					<span className="hidden md:inline text-[12px] font-medium tracking-wide">
+						Chat
+					</span>
 				</button>
 				<button
 					type="button"
 					role="tab"
-					onClick={() => setMediaMode("image")}
-					aria-selected={mediaMode === "image"}
-					title="Image generation (credits)"
-					className={`${btnBase} !border-0 rounded-[var(--radius-md)] min-h-9 min-w-9 sm:min-h-10 sm:min-w-10 transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${mediaMode === "image" ? "!bg-accent/15 !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
+					onClick={() =>
+						setMediaMode(mediaMode === "video" ? "video" : "image")
+					}
+					aria-selected={createActive}
+					title="Create image or video (credits)"
+					className={`${btnBase} !border-0 rounded-[var(--radius-md)] min-h-9 min-w-9 gap-1 px-2 sm:min-h-10 sm:min-w-10 transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${createActive ? "!bg-accent/15 !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
 				>
-					<ImageIcon className="h-4 w-4" />
-					<span className="hidden md:inline text-[12px] font-medium tracking-wide">Image</span>
-				</button>
-				<button
-					type="button"
-					role="tab"
-					onClick={() => setMediaMode("video")}
-					aria-selected={mediaMode === "video"}
-					title="Video generation (credits)"
-					className={`${btnBase} !border-0 rounded-[var(--radius-md)] min-h-9 min-w-9 sm:min-h-10 sm:min-w-10 transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${mediaMode === "video" ? "!bg-accent/15 !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
-				>
-					<Film className="h-4 w-4" />
-					<span className="hidden md:inline text-[12px] font-medium tracking-wide">Video</span>
+					<span className="inline-flex items-center -space-x-0.5" aria-hidden="true">
+						<ImageIcon className="h-3.5 w-3.5" />
+						<Film className="h-3.5 w-3.5 opacity-80" />
+					</span>
+					<span className="hidden md:inline text-[12px] font-medium tracking-wide">
+						Create
+					</span>
 				</button>
 			</div>
 		) : null;

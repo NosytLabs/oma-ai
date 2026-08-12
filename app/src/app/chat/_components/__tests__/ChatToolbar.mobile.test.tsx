@@ -68,9 +68,12 @@ describe("ChatToolbar — single WEB / COMPARE path", () => {
 		expect(compare).toHaveLength(1);
 	});
 
-	it("keeps mode tabs for chat/image/video", () => {
+	it("keeps unified Chat | Create mode tabs", () => {
 		render(<ChatToolbar {...baseProps} />);
 		const tabs = screen.getAllByRole("tab");
-		expect(tabs.length).toBe(3);
+		// Chat + Create (image/video unified inside Create studio)
+		expect(tabs.length).toBe(2);
+		expect(tabs[0]).toHaveAccessibleName(/text chat|chat/i);
+		expect(tabs[1]).toHaveAccessibleName(/create|image or video/i);
 	});
 });

@@ -16,6 +16,8 @@ describe("parseMediaMode", () => {
 	it("accepts image aliases for legacy redirects", () => {
 		expect(parseMediaMode("image")).toBe("image");
 		expect(parseMediaMode("IMG")).toBe("image");
+		expect(parseMediaMode("create")).toBe("image");
+		expect(parseMediaMode("media")).toBe("image");
 	});
 
 	it("accepts video aliases", () => {
