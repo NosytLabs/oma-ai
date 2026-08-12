@@ -13,6 +13,8 @@ export interface UseChatShortcutsOptions {
 	setParamsOpen: Dispatch<SetStateAction<boolean>>;
 	compareMode: boolean;
 	setCompareMode: Dispatch<SetStateAction<boolean>>;
+	/** Toggle Chat ↔ Create studio (Cmd/Ctrl+Shift+C). */
+	toggleCreateMode?: () => void;
 	newConversation?: () => void;
 }
 
@@ -23,6 +25,7 @@ export interface UseChatShortcutsOptions {
  *   Escape            → close shortcuts → params → compare, in that order
  *   Cmd/Ctrl + K      → focus the model picker (clicks its DOM button)
  *   Cmd/Ctrl + /      → toggle the parameters panel
+ *   Cmd/Ctrl + Shift + C → toggle Create studio (image/video)
  *   Cmd/Ctrl + Enter  → send the current input (ref-based so we always
  *                       see the latest sendMessage without re-binding)
  *
@@ -41,6 +44,7 @@ export function useChatShortcuts({
 	setParamsOpen,
 	compareMode,
 	setCompareMode,
+	toggleCreateMode,
 	newConversation,
 }: UseChatShortcutsOptions): void {
 	useEffect(() => {
@@ -78,13 +82,25 @@ export function useChatShortcuts({
 				return;
 			}
 
+			// Cmd/Ctrl+Shift+C → Create studio (works even in text fields)
+			if (
+				e[modKey as "metaKey" | "ctrlKey"] &&
+				e.shiftKey &&
+				e.key.toLowerCase() === "c" &&
+				toggleCreateMode
+			) {
+				e.preventDefault();
+				toggleCreateMode();
+				return;
+			}
+
 			if (e[modKey as "metaKey" | "ctrlKey"] && e.key.toLowerCase() === "k") {
 				e.preventDefault();
 				// Focus the model selector by clicking it. We dispatch a custom event
 				// that the ModelSelector listens to (or we just click the toolbar's
 				// model selector button). For now, focus the first toolbar button.
 				const buttons = document.querySelectorAll<HTMLButtonElement>(
-					'header[aria-label="Playground toolbar"] button[aria-label="Select AI model"]',
+					'header[aria-label="Playground toolbar"] button[aria-label*="Select AI model"]',
 				);
 				buttons[0]?.click();
 				return;
@@ -116,5 +132,7 @@ export function useChatShortcuts({
 		setShortcutsOpen,
 		setParamsOpen,
 		setCompareMode,
+		toggleCreateMode,
+		newConversation,
 	]);
 }

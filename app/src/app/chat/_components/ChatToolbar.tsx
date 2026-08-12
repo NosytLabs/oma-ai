@@ -221,33 +221,38 @@ export function ChatToolbar({
 	return (
 		<header
 			aria-label="Playground toolbar"
-			className="z-20 flex min-h-14 min-w-0 flex-none flex-wrap items-center gap-x-1.5 gap-y-1.5 border-b border-border bg-void/95 px-2 py-1.5 sm:gap-x-3 sm:px-6 md:h-14 md:flex-nowrap md:py-0"
+			className="z-20 flex min-h-14 min-w-0 flex-none flex-wrap items-center gap-x-1.5 gap-y-1.5 border-b border-border bg-void/95 px-4 py-1.5 sm:gap-x-3 sm:px-6 md:h-14 md:flex-nowrap md:px-6 md:py-0 lg:px-8"
 		>
-			{/* Left: model + params — model is width-capped so it never
-			    slides under the params button on narrow screens. */}
+			{/* Left: chat model + params (hidden in Create — media models live
+			    inside the studio panel). Width-capped so model never slides
+			    under params on narrow screens. */}
 			<div className="flex min-w-0 max-w-full flex-1 items-center gap-1.5 sm:gap-2">
-				<div className="min-w-0 max-w-[min(12rem,calc(100%-2.75rem))] flex-1 overflow-hidden sm:max-w-[200px] md:max-w-[220px]">
-					<LazyModelSelector
-						model={model}
-						setModel={setModel}
-						isAuthenticated={isAuthenticated}
-						onAuthRequired={onAuthRequired}
-					/>
-				</div>
+				{!createActive && (
+					<>
+						<div className="min-w-0 max-w-[min(12rem,calc(100%-2.75rem))] flex-1 overflow-hidden sm:max-w-[200px] md:max-w-[220px]">
+							<LazyModelSelector
+								model={model}
+								setModel={setModel}
+								isAuthenticated={isAuthenticated}
+								onAuthRequired={onAuthRequired}
+							/>
+						</div>
 
-				<button
-					type="button"
-					onClick={() => setParamsOpen(!paramsOpen)}
-					aria-label="PARAMS — toggle parameters panel (Cmd+/)"
-					aria-pressed={paramsOpen}
-					className={`${btnBase} shrink-0 min-h-9 min-w-9 sm:min-h-10 sm:min-w-10 transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${paramsOpen ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
-					title="Toggle Parameters (Cmd+/)"
-				>
-					<Settings2 className="h-4 w-4" />
-					<span className="hidden lg:inline text-[11px] font-semibold tracking-wider">
-						PARAMS
-					</span>
-				</button>
+						<button
+							type="button"
+							onClick={() => setParamsOpen(!paramsOpen)}
+							aria-label="PARAMS — toggle parameters panel (Cmd+/)"
+							aria-pressed={paramsOpen}
+							className={`${btnBase} shrink-0 min-h-9 min-w-9 sm:min-h-10 sm:min-w-10 transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${paramsOpen ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
+							title="Toggle Parameters (Cmd+/)"
+						>
+							<Settings2 className="h-4 w-4" />
+							<span className="hidden lg:inline text-[11px] font-semibold tracking-wider">
+								PARAMS
+							</span>
+						</button>
+					</>
+				)}
 			</div>
 
 			{/* Primary actions — media tabs take their own row on mobile to

@@ -52,6 +52,10 @@ export interface Message {
 	// answer is incomplete rather than reacting to unbalanced markdown.
 	truncated?: boolean;
 	finishReason?: "stop" | "length" | "content_filter" | "tool_calls" | "function_call" | null;
+	/** Catalog id that served the reply (may differ from the selected model after failover). */
+	model?: string;
+	/** True when the server routed via a fallback peer (`x-oma-fallback: 1`). */
+	viaFallback?: boolean;
 }
 
 export interface ModelOption {

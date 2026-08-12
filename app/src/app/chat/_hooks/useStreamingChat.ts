@@ -7,7 +7,10 @@ import { useToast } from "@/components/ui/Toast";
 import { api } from "@/lib/api";
 import { DEFAULT_API_URL } from "@/lib/config";
 import { log } from "@/lib/logger";
-import { isFreeChatModel } from "@/lib/model-utils";
+import {
+	FREE_CHAT_MODEL_IDS,
+	isFreeChatModel,
+} from "@/lib/model-utils";
 import { parseSSEBlock } from "@/lib/sse-parser";
 import { estimateTokens } from "@/lib/text";
 
@@ -254,6 +257,13 @@ export function useStreamingChat(
 				messagesToSend = [sysMsg, ...messagesToSend];
 			}
 
+			// OpenRouter-style models[]: only attach free peers when the
+			// selected model is free, so guest chat can fail over without
+			// leaving the free tier. Paid models use the server FALLBACK_MAP.
+			const freeModelSelected = isFreeChatModel(useModel);
+			const freePeers = freeModelSelected
+				? [...FREE_CHAT_MODEL_IDS].filter((id) => id !== useModel)
+				: [];
 			const doFetch = () =>
 				fetch(CHAT_ENDPOINT, {
 					method: "POST",
@@ -265,6 +275,9 @@ export function useStreamingChat(
 					},
 					body: JSON.stringify({
 						model: useModel,
+						...(freePeers.length > 0
+							? { models: freePeers.slice(0, 4) }
+							: {}),
 						messages: messagesToSend.map((m) => ({
 							role: m.role,
 							content: m.content,
@@ -289,7 +302,7 @@ export function useStreamingChat(
 			// but no `oma_api_key` cookie, so chat returns 401. Free OMA-AI models
 			// never need a key, and 402 means insufficient credits rather than a
 			// missing key, so only repair paid-model 401 responses.
-			const freeModel = isFreeChatModel(useModel);
+			const freeModel = freeModelSelected;
 			if (
 				!freeModel &&
 				response.status === 401 &&
@@ -358,6 +371,18 @@ export function useStreamingChat(
 				throw new Error(errMsg);
 			}
 
+			// Surface server failover (OpenRouter-style transparency).
+			const usedFallback =
+				response.headers.get("x-oma-fallback") === "1" ||
+				response.headers.get("X-Oma-Fallback") === "1";
+			const actualModel =
+				response.headers.get("x-actual-model") ||
+				response.headers.get("X-Actual-Model") ||
+				useModel;
+			if (usedFallback && actualModel && actualModel !== useModel) {
+				toast.info(`Routed via fallback model · ${actualModel}`);
+			}
+
 			const startTime = Date.now();
 
 			if (opts.stream && response.body) {
@@ -407,6 +432,8 @@ export function useStreamingChat(
 									latency: now - startTime,
 									truncated: finishReason === "length",
 									finishReason,
+									model: actualModel,
+									viaFallback: usedFallback && actualModel !== useModel,
 									searchResults:
 										searchResults.length > 0
 											? searchResults
@@ -598,6 +625,10 @@ export function useStreamingChat(
 						}
 					}
 					const usage = data.usage;
+					const bodyModel =
+						typeof data.model === "string" && data.model
+							? data.model
+							: actualModel;
 					setMsgs((prev) => {
 						const updated = [...prev];
 						const lastIdx = updated.length - 1;
@@ -610,6 +641,8 @@ export function useStreamingChat(
 								inputTokens: usage?.prompt_tokens || updated[lastIdx].inputTokens,
 								outputTokens: usage?.completion_tokens || estimateTokens(content),
 								latency: Date.now() - startTime,
+								model: bodyModel,
+								viaFallback: usedFallback && bodyModel !== useModel,
 								searchResults:
 									searchResults.length > 0
 										? searchResults

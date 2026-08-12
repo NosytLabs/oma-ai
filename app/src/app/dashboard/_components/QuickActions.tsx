@@ -6,10 +6,9 @@ import type { LucideIcon } from "lucide-react";
 import {
 	ArrowUpRight,
 	BookOpen,
-	Image as ImageIcon,
+	Sparkles,
 	Shield,
 	Terminal,
-	Video as VideoIcon,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -21,6 +20,7 @@ interface QuickAction {
 	external?: boolean;
 }
 
+/** Unified playground surfaces — Create merges image + video (Venice/OpenRouter-style). */
 const ACTIONS: QuickAction[] = [
 	{
 		href: "/chat",
@@ -29,16 +29,10 @@ const ACTIONS: QuickAction[] = [
 		icon: Terminal,
 	},
 	{
-		href: "/chat?mode=image",
-		label: "Generate image",
-		description: "Text → image (credits)",
-		icon: ImageIcon,
-	},
-	{
-		href: "/chat?mode=video",
-		label: "Generate video",
-		description: "Text → video (credits)",
-		icon: VideoIcon,
+		href: "/chat?mode=create",
+		label: "Create",
+		description: "Image + video studio (credits)",
+		icon: Sparkles,
 	},
 	{
 		href: "/docs",
@@ -78,7 +72,7 @@ export function QuickActions({ className = "" }: QuickActionsProps) {
 						</p>
 					</div>
 				</div>
-				<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+				<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
 					{ACTIONS.map((action, i) => {
 						const Icon = action.icon;
 						const inner = (

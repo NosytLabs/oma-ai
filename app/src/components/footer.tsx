@@ -69,7 +69,7 @@ const PRODUCT: FooterSection = {
 	links: [
 		{ label: "Models", href: "/models", icon: Boxes },
 		{ label: "Chat", href: "/chat", icon: Terminal },
-		{ label: "Capabilities", href: "/capabilities", icon: Sparkles },
+		{ label: "Create", href: "/chat?mode=create", icon: Sparkles },
 		{ label: "Pricing", href: "/pricing", icon: Tag },
 		{ label: "Docs", href: "/docs", icon: FileText },
 		{ label: "Compare", href: "/compare" },

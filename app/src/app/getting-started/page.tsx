@@ -28,7 +28,7 @@ const STEPS = [
 			<>
 				Open the <Link href="/chat" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">chat playground</Link> and send a
 				message. Guests get a handful of free messages every day using our fast, intelligent budget models — just to see how it works.
-				You can chat, write code, or even generate <Link href="/chat?mode=image" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">images</Link> and video. No
+				You can chat, write code, or even generate <Link href="/chat?mode=create" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">images and video</Link> in one Create studio. No
 				sign-up, no credit card, nothing to install.
 			</>
 		),

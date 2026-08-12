@@ -47,6 +47,7 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 import { copyToClipboard } from "@/lib/clipboard";
+import { displayName } from "@/lib/model-utils";
 import { estimateTokens } from "@/lib/text";
 import {
   isWaitingForFirstToken,
@@ -408,6 +409,23 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
  `}
         >
           <span className="text-text-secondary">{time}</span>
+          {!isUser && msg.model && (
+            <span
+              className={`px-1.5 py-0.5 rounded-[var(--radius-sm)] text-[10px] border ${
+                msg.viaFallback
+                  ? "border-accent/40 bg-accent/10 text-accent"
+                  : "border-[var(--color-border)] bg-[var(--color-surface-elevated)] text-text-secondary"
+              }`}
+              title={
+                msg.viaFallback
+                  ? `Served via fallback · ${msg.model}`
+                  : msg.model
+              }
+            >
+              {displayName(msg.model)}
+              {msg.viaFallback ? " · fb" : ""}
+            </span>
+          )}
           {!isUser &&
             (msg.outputTokens ??
               (msg.content ? estimateTokens(msg.content) : 0)) > 0 && (

@@ -23,7 +23,7 @@ export function ChatSystemPromptPanel({
 				onClick={() => setSystemPromptOpen(!systemPromptOpen)}
 				aria-expanded={systemPromptOpen}
 				aria-label={`Toggle system prompt panel — Instructions ${systemPrompt.trim() ? "· Active" : "· Optional"}`}
-				className="w-full flex items-center justify-between px-4 md:px-6 py-3 text-[11.5px] font-mono text-text-secondary uppercase tracking-wider hover:text-text-bright hover:bg-surface/30 transition-colors duration-200 ease-out focus-ring"
+				className="w-full flex items-center justify-between px-4 md:px-6 lg:px-8 py-3 text-[11.5px] font-mono text-text-secondary uppercase tracking-wider hover:text-text-bright hover:bg-surface/30 transition-colors duration-200 ease-out focus-ring"
 			>
 				<span className="flex items-center gap-2.5">
 					<span
@@ -39,7 +39,7 @@ export function ChatSystemPromptPanel({
 				)}
 			</button>
 			{systemPromptOpen && (
-				<div className="px-4 md:px-6 pb-3">
+				<div className="px-4 md:px-6 lg:px-8 pb-3">
 					<textarea
 						value={systemPrompt}
 						onChange={(e) => setSystemPrompt(e.target.value)}

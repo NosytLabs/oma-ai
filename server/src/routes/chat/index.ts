@@ -61,6 +61,11 @@ function isFreeWebsiteModel(modelId: string): boolean {
 
 const chatSchema = z.object({
   model: z.string(),
+  /**
+   * OpenRouter-style fallback chain. Tried after `model` fails (and before
+   * the server peer map). Max 8 to bound worst-case fan-out.
+   */
+  models: z.array(z.string().min(1)).max(8).optional(),
   messages: z
     .array(
       z.object({
@@ -102,7 +107,17 @@ chatRoutes.post(
         400,
       );
     }
-    const { model, messages, stream, max_tokens, temperature, top_p, tools, tool_choice } = parsed.data;
+    const {
+      model,
+      models: clientModels,
+      messages,
+      stream,
+      max_tokens,
+      temperature,
+      top_p,
+      tools,
+      tool_choice,
+    } = parsed.data;
     const modelDef = getModelById(model);
     if (!modelDef) {
       return c.json(
@@ -201,6 +216,7 @@ chatRoutes.post(
 
       const { response: upstreamResp, actualModelId } = await routeRequestWithFallback({
         modelId: model,
+        clientFallbacks: clientModels,
         messages: messages.map((m) => ({
           role: m.role,
           content: m.content,

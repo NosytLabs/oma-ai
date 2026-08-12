@@ -131,6 +131,11 @@ export interface CallProviderOptions {
   providerOverride?: "venice" | "oma-ai";
   /** Skip credit deduction for free website chat */
   skipBilling?: boolean;
+  /**
+   * OpenRouter-style client fallback list (tried after the primary model,
+   * before the server FALLBACK_MAP peers). Invalid/unknown ids are ignored.
+   */
+  clientFallbacks?: string[];
 }
 
 /**
@@ -183,6 +188,16 @@ async function callProvider(opts: CallProviderOptions): Promise<Response> {
     ...(tool_choice ? { tool_choice } : {}),
   });
 
+  // Hard timeout so a hung upstream cannot pin a worker forever.
+  // Abort → 408 so the router retries / failovers; plain network fail → 502.
+  const upstreamController = new AbortController();
+  const timeoutMs = stream ? 120_000 : 60_000;
+  let timedOut = false;
+  const timeoutId = setTimeout(() => {
+    timedOut = true;
+    upstreamController.abort();
+  }, timeoutMs);
+  let fetchError: unknown = null;
   const upstreamResp = await fetch(upstreamUrl, {
     method: "POST",
     headers: {
@@ -190,12 +205,26 @@ async function callProvider(opts: CallProviderOptions): Promise<Response> {
       Authorization: `Bearer ${route.apiKey}`,
     },
     body: JSON.stringify(upstreamBody),
+    signal: upstreamController.signal,
   }).catch((err) => {
-    logger.error({ err, provider: route.providerLabel }, "[proxy] upstream fetch failed");
+    fetchError = err;
+    logger.error({ err, provider: route.providerLabel, timedOut }, "[proxy] upstream fetch failed");
     return null;
+  }).finally(() => {
+    clearTimeout(timeoutId);
   });
 
   if (!upstreamResp) {
+    if (
+      timedOut ||
+      (fetchError instanceof Error &&
+        (fetchError.name === "AbortError" || /aborted|timeout/i.test(fetchError.message)))
+    ) {
+      throw new ProviderError(
+        `Upstream inference timeout after ${timeoutMs}ms`,
+        408,
+      );
+    }
     throw new ProviderError("Upstream inference provider unreachable", 502);
   }
 
@@ -238,16 +267,29 @@ async function callProvider(opts: CallProviderOptions): Promise<Response> {
 export const FALLBACK_MAP: Record<string, string[]> = {
   // Frontier
   "openai-gpt-56-sol": ["kimi-k3", "gemini-3.1-pro-preview"],
-  "gemini-3.1-pro-preview": ["gpt-4.1", "openai-gpt-56-sol"],
+  "gemini-3.1-pro-preview": [
+    "gpt-4.1",
+    "gpt-4o",
+    "gemini-3-flash-preview",
+    "openai-gpt-56-sol",
+  ],
 
   // Premium
   "kimi-k3": ["zai-org-glm-5-2", "kimi-k2-6"],
   "zai-org-glm-5-2": ["kimi-k3", "kimi-k2-6"],
-  "kimi-k2-6": ["kimi-k3", "zai-org-glm-5-2"],
+  // OMA-AI OpenBroker Kimi — free peers first so freeOnly website chat can
+  // leave a dead OpenBroker key without falling into paid Venice.
+  "kimi-k2-6": [
+    "minimax-m2-7",
+    "gemini-3-flash-preview",
+    "gpt-4o",
+    "kimi-k3",
+    "zai-org-glm-5-2",
+  ],
   "deepseek-v4-pro": ["qwen-3-8-max", "kimi-k3"],
   "qwen-3-8-max": ["deepseek-v4-pro", "kimi-k3"],
-  "gpt-4.1": ["gpt-4o", "gemini-3.1-pro-preview"],
-  "gpt-4o": ["gpt-4.1", "gemini-3-flash-preview"],
+  "gpt-4.1": ["gpt-4o", "gemini-3.1-pro-preview", "gemini-3-flash-preview"],
+  "gpt-4o": ["gpt-4.1", "gemini-3-flash-preview", "minimax-m2-7"],
 
   // Mid
   "llama-3.3-70b": ["qwen-3-7-plus", "zai-org-glm-5-1"],
@@ -257,13 +299,49 @@ export const FALLBACK_MAP: Record<string, string[]> = {
 
   // Budget
   "xiaomi-mimo-v2-5": ["gemini-3-flash-preview", "minimax-m2-7"],
-  "minimax-m2-7": ["xiaomi-mimo-v2-5", "gemini-3-flash-preview"],
+  // OpenBroker MiniMax — free peers first (same freeOnly constraint as Kimi)
+  "minimax-m2-7": [
+    "gemini-3-flash-preview",
+    "gpt-4o",
+    "kimi-k2-6",
+    "xiaomi-mimo-v2-5",
+  ],
   "deepseek-v4-flash-0731": ["xiaomi-mimo-v2-5", "mistral-small-2603"],
   "mistral-small-2603": ["deepseek-v4-flash-0731", "xiaomi-mimo-v2-5"],
 
   // OMA-AI free default — prefer oma-ai peers first, then budget Venice
-  "gemini-3-flash-preview": ["minimax-m2-7", "gpt-4o", "xiaomi-mimo-v2-5"],
+  "gemini-3-flash-preview": [
+    "gpt-4o",
+    "minimax-m2-7",
+    "gpt-4.1",
+    "xiaomi-mimo-v2-5",
+  ],
 };
+
+/**
+ * Build the ordered model chain: primary → client `models[]` → server map.
+ * Dedupes and drops ids missing from the catalog. When `freeOnly` is set
+ * (anonymous website chat), Venice/paid peers are never attempted.
+ */
+export function buildFallbackChain(
+  primary: string,
+  clientFallbacks: string[] = [],
+  freeOnly = false,
+): string[] {
+  const serverPeers = FALLBACK_MAP[primary] ?? [];
+  const ordered = [primary, ...clientFallbacks, ...serverPeers];
+  const seen = new Set<string>();
+  const chain: string[] = [];
+  for (const id of ordered) {
+    if (!id || seen.has(id)) continue;
+    const def = getModelById(id);
+    if (!def) continue;
+    if (freeOnly && def.provider !== "oma-ai") continue;
+    seen.add(id);
+    chain.push(id);
+  }
+  return chain.length > 0 ? chain : [primary];
+}
 
 /**
  * Intelligent Router — routes a requested model with automatic retries (exponential backoff)
@@ -273,7 +351,12 @@ export async function routeRequestWithFallback(
   opts: CallProviderOptions,
 ): Promise<{ response: Response; actualModelId: string }> {
   const modelId = opts.modelId;
-  const fallbacks = [modelId, ...(FALLBACK_MAP[modelId] || [])];
+  const freeOnly = opts.skipBilling === true;
+  const fallbacks = buildFallbackChain(
+    modelId,
+    opts.clientFallbacks ?? [],
+    freeOnly,
+  );
 
   let lastError: unknown = null;
   const errorLog: unknown[] = [];
@@ -293,7 +376,10 @@ export async function routeRequestWithFallback(
 
   for (const currentModelId of fallbacks) {
     let attempt = 0;
-    const maxRetries = 3;
+    // Free website chat: fewer same-model retries so we fail over to the
+    // next free peer quickly (OpenRouter-style model layer). Paid API keeps
+    // a slightly deeper retry budget for transient 5xx/429.
+    const maxRetries = freeOnly ? 1 : 2;
     const modelDef = getModelById(currentModelId);
     if (!modelDef) continue;
 
@@ -319,6 +405,15 @@ export async function routeRequestWithFallback(
         const e = readError(err);
         const message = e.message ?? String(err);
 
+        // Auth / not-found / bad request: never thrash the same model —
+        // jump straight to the next peer in the chain.
+        const isImmediateFailover =
+          e.status === 401 ||
+          e.status === 403 ||
+          e.status === 404 ||
+          e.status === 400 ||
+          e.status === 503;
+
         // Transient: 5xx, 408 request timeout, 429 rate limit, or network.
         const isTransient =
           e.status !== undefined &&
@@ -333,7 +428,11 @@ export async function routeRequestWithFallback(
               e.message.includes("ECONNRESET") ||
               e.message.includes("ETIMEDOUT")));
 
-        if (attempt <= maxRetries && (isTransient || isNetworkError)) {
+        if (
+          !isImmediateFailover &&
+          attempt <= maxRetries &&
+          (isTransient || isNetworkError)
+        ) {
           // Exponential backoff with jitter. Cap higher on rate limits so we
           // don't hammer a throttled provider (OpenRouter-style patience).
           const baseDelay =
@@ -561,6 +660,36 @@ export interface StreamingProxyArgs {
  * and calls recordUsage when the stream ends (or errors).
  * Returns a new ReadableStream that pipes the upstream chunks through.
  */
+/**
+ * OpenRouter-style: rewrite `model` in SSE `data:` lines so clients always
+ * see the OMA catalog id that actually served the request (after failover).
+ * Leaves non-JSON / [DONE] lines untouched. Best-effort — malformed lines pass through.
+ */
+export function rewriteSseModelField(
+  chunkText: string,
+  actualModelId: string,
+): string {
+  if (!chunkText.includes("data:") || !actualModelId) return chunkText;
+  return chunkText
+    .split("\n")
+    .map((line) => {
+      if (!line.startsWith("data:")) return line;
+      const payload = line.slice(5).trim();
+      if (!payload || payload === "[DONE]") return line;
+      try {
+        const obj = JSON.parse(payload) as Record<string, unknown>;
+        if (obj && typeof obj === "object" && obj.model !== actualModelId) {
+          obj.model = actualModelId;
+          return `data: ${JSON.stringify(obj)}`;
+        }
+      } catch {
+        // pass through
+      }
+      return line;
+    })
+    .join("\n");
+}
+
 export function createStreamingProxy(
   upstreamResp: Response,
   recordArgs: StreamingProxyArgs,
@@ -570,16 +699,24 @@ export function createStreamingProxy(
   }
   const reader = upstreamResp.body.getReader();
   const decoder = new TextDecoder();
+  const encoder = new TextEncoder();
   let outputTokens = 0;
   let finalPromptTokens: number | null = null;
   let finalOutputTokens: number | null = null;
   let upstreamStatus: "completed" | "error" = "completed";
+  let sseCarry = "";
 
   return new ReadableStream<Uint8Array>({
     async pull(controller) {
       try {
         const { done, value } = await reader.read();
         if (done) {
+          // Flush any incomplete trailing SSE line
+          if (sseCarry) {
+            const rewritten = rewriteSseModelField(sseCarry, recordArgs.model);
+            controller.enqueue(encoder.encode(rewritten));
+            sseCarry = "";
+          }
           controller.close();
           // Use upstream-reported usage when available (OMA-AI sends a final
           // usage chunk at the end of the stream), falling back to estimates.
@@ -588,8 +725,13 @@ export function createStreamingProxy(
           await recordUsage({ ...recordArgs, promptTokens, outputTokens: finalTokens, status: upstreamStatus });
           return;
         }
-        const text = decoder.decode(value, { stream: true });
-        for (const line of text.split("\n")) {
+        const text = sseCarry + decoder.decode(value, { stream: true });
+        // Keep last incomplete line so we never split mid-JSON.
+        const lastNl = text.lastIndexOf("\n");
+        const complete = lastNl >= 0 ? text.slice(0, lastNl + 1) : "";
+        sseCarry = lastNl >= 0 ? text.slice(lastNl + 1) : text;
+
+        for (const line of complete.split("\n")) {
           if (!line.startsWith("data:")) continue;
           const payload = line.slice(5).trim();
           if (!payload || payload === "[DONE]") continue;
@@ -614,7 +756,8 @@ export function createStreamingProxy(
             // ignore unparseable SSE lines
           }
         }
-        controller.enqueue(value);
+        const out = rewriteSseModelField(complete, recordArgs.model);
+        controller.enqueue(encoder.encode(out));
         } catch (err) {
           logger.warn({ err }, "[proxy] stream read failed");
           upstreamStatus = "error";
@@ -664,6 +807,12 @@ export async function parseNonStreamingResponse(
     outputTokens: completionTokens,
     status: "completed",
   });
+
+  // OpenRouter-style: body.model is the model that actually served the request
+  // (may differ from the requested id after failover).
+  if (data && typeof data === "object" && recordArgs.model) {
+    (data as { model?: string }).model = recordArgs.model;
+  }
 
   return { data, promptTokens: finalPromptTokens, outputTokens: completionTokens };
 }

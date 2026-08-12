@@ -27,12 +27,15 @@ export const SITE_REDIRECTS: readonly SiteRedirect[] = [
 	// Standalone API-reference catalog merged into the docs endpoint reference.
 	{ source: "/network", destination: "/docs#endpoints" },
 	{ source: "/network/:path*", destination: "/docs#endpoints" },
-	// Image/video playgrounds merged into unified /chat media modes
-	// (OpenRouter-style single playground with modality tabs).
-	{ source: "/image-generation", destination: "/chat?mode=image" },
-	{ source: "/image-generation/:path*", destination: "/chat?mode=image" },
+	// Image/video playgrounds merged into unified /chat Create studio
+	// (OpenRouter/Venice-style single playground with modality tabs).
+	{ source: "/image-generation", destination: "/chat?mode=create" },
+	{ source: "/image-generation/:path*", destination: "/chat?mode=create" },
 	{ source: "/video-generation", destination: "/chat?mode=video" },
 	{ source: "/video-generation/:path*", destination: "/chat?mode=video" },
+	// Aliases for Create studio
+	{ source: "/create", destination: "/chat?mode=create" },
+	{ source: "/studio", destination: "/chat?mode=create" },
 	// Swap provider retired — fund via direct USDC deposit
 	{ source: "/swap", destination: "/deposit" },
 	{ source: "/swap/:path*", destination: "/deposit" },
@@ -61,6 +64,8 @@ export const REMOVED_PUBLIC_PATHS = [
 	"/playground",
 	"/image-generation",
 	"/video-generation",
+	"/create",
+	"/studio",
 	"/network",
 	"/swap",
 	"/credits",

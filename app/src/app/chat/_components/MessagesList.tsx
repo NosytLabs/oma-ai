@@ -10,7 +10,7 @@
 
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";
-import { ChevronDown, GitCompare, Keyboard, Zap } from "lucide-react";
+import { ChevronDown, GitCompare, Keyboard, Sparkles } from "lucide-react";
 import dynamic from "next/dynamic";
 import type { RefObject } from "react";
 import type { ExampleConversation, Message } from "@/components/chat";
@@ -226,6 +226,12 @@ export interface MessagesListProps {
  */
 const FEATURE_HINTS = [
 	{
+		icon: Sparkles,
+		label: "Create studio",
+		description:
+			"Image + video in one place — switch with the Create tab (or /chat?mode=create)",
+	},
+	{
 		icon: GitCompare,
 		label: "Compare Models",
 		description:
@@ -235,12 +241,7 @@ const FEATURE_HINTS = [
 		icon: Keyboard,
 		label: "Shortcuts",
 		description:
-			"Press ? for keyboard shortcuts — Cmd+K to switch models quickly",
-	},
-	{
-		icon: Zap,
-		label: "Web Search",
-		description: "Enable WEB to ground responses in real-time internet data",
+			"Press ? for keyboard shortcuts — Cmd+K models · Cmd+Shift+C Create",
 	},
 ];
 

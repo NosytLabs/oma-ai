@@ -24,6 +24,7 @@ import {
 	TIER_COLORS,
 	type Tier,
 } from "@/lib/models-data";
+import { playgroundHrefForModel } from "@/lib/playground-href";
 
 /** SSG: pre-render the hand-picked models in the static fallback catalog. */
 export function generateStaticParams() {
@@ -248,10 +249,14 @@ const response = await client.chat.completions.create({
 				</nav>
 
 				<header className="mb-10">
-					{/* Prominent Try in Playground CTA */}
+					{/* Prominent Try in Playground CTA — image/video open Create studio */}
 					<div className="mb-6">
 						<Link
-							href={`/chat?model=${model.id}`}
+							href={playgroundHrefForModel({
+								id: model.id,
+								modality: model.modality,
+								outputModalities: model.outputModalities,
+							})}
 							className="btn-primary w-full md:w-auto px-6 py-3 flex items-center justify-center gap-2 text-base font-semibold"
 						>
 							<Play className="h-4 w-4 fill-current" aria-hidden="true" /> Try
@@ -425,7 +430,14 @@ const response = await client.chat.completions.create({
 				</section>
 
 				<div className="flex flex-wrap gap-3 pt-6 border-t border-border">
-					<Link href={`/chat?model=${model.id}`} className="btn-primary">
+					<Link
+						href={playgroundHrefForModel({
+							id: model.id,
+							modality: model.modality,
+							outputModalities: model.outputModalities,
+						})}
+						className="btn-primary"
+					>
 						Use in Playground →
 					</Link>
 					<Link href="/pricing" className="btn-secondary">
@@ -548,7 +560,7 @@ const response = await client.chat.completions.create({
 					{/* Prominent Try in Playground CTA */}
 					<div className="mb-6">
 						<Link
-							href={`/chat?model=${encodeURIComponent(slug)}`}
+							href={playgroundHrefForModel({ id: slug })}
 							className="btn-primary w-full md:w-auto px-6 py-3 flex items-center justify-center gap-2 text-base font-semibold"
 						>
 							<Play className="h-4 w-4 fill-current" aria-hidden="true" /> Try
@@ -731,7 +743,7 @@ const response = await client.chat.completions.create({
 
 				<div className="flex flex-wrap gap-3 pt-6 border-t border-border">
 					<Link
-						href={`/chat?model=${encodeURIComponent(slug)}`}
+						href={playgroundHrefForModel({ id: slug })}
 						className="btn-primary"
 					>
 						Use in Playground →

@@ -38,10 +38,11 @@ export function MediaGenerationPanel({
 	kind,
 	onKindChange,
 }: MediaGenerationPanelProps) {
+	// max-w-4xl matches chat column + composer so Create doesn't jump wider
 	return (
-		<div className="mx-auto flex h-full w-full max-w-5xl flex-col">
+		<div className="mx-auto flex h-full w-full max-w-4xl flex-col">
 			{/* Unified Create chrome */}
-			<div className="mb-3 flex flex-wrap items-center justify-between gap-3 px-1 sm:mb-4">
+			<div className="mb-3 flex flex-wrap items-center justify-between gap-3 sm:mb-4">
 				<div>
 					<p className="text-[11px] font-mono uppercase tracking-widest text-accent">
 						Create · multimodal

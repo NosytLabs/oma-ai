@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FALLBACK_MAP } from "../proxy.js";
+import { FALLBACK_MAP, buildFallbackChain } from "../proxy.js";
 import { getModelById } from "../models.js";
 
 /**
@@ -34,5 +34,44 @@ describe("FALLBACK_MAP (inference router)", () => {
 		for (const [primary, fallbacks] of Object.entries(FALLBACK_MAP)) {
 			expect(fallbacks).not.toContain(primary);
 		}
+	});
+});
+
+describe("buildFallbackChain", () => {
+	it("orders primary → client models[] → server map and dedupes", () => {
+		const chain = buildFallbackChain(
+			"gemini-3-flash-preview",
+			["minimax-m2-7", "gemini-3-flash-preview", "not-a-real-model"],
+			false,
+		);
+		expect(chain[0]).toBe("gemini-3-flash-preview");
+		expect(chain[1]).toBe("minimax-m2-7");
+		expect(chain).not.toContain("not-a-real-model");
+		// primary appears only once
+		expect(chain.filter((id) => id === "gemini-3-flash-preview")).toHaveLength(1);
+		// server peers still present after client list
+		expect(chain.length).toBeGreaterThan(2);
+	});
+
+	it("freeOnly drops Venice/paid peers so guest chat stays free", () => {
+		const chain = buildFallbackChain(
+			"gemini-3-flash-preview",
+			["llama-3.3-70b", "minimax-m2-7"],
+			true,
+		);
+		expect(chain[0]).toBe("gemini-3-flash-preview");
+		expect(chain).toContain("minimax-m2-7");
+		expect(chain).not.toContain("llama-3.3-70b");
+		for (const id of chain) {
+			expect(getModelById(id)?.provider).toBe("oma-ai");
+		}
+	});
+
+	it("returns primary alone when freeOnly and primary has no free peers", () => {
+		// Venice primary + freeOnly → only primary if it were oma-ai; for a
+		// Venice id freeOnly filters everything — still return [primary]
+		// so callProvider can produce a real 401/404 rather than empty chain.
+		const chain = buildFallbackChain("llama-3.3-70b", [], true);
+		expect(chain).toEqual(["llama-3.3-70b"]);
 	});
 });

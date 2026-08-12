@@ -151,6 +151,11 @@ const corsOptions = {
     "X-Request-ID",
     "PAYMENT-RESPONSE",
     "X-PAYMENT-RESPONSE",
+    // OpenRouter-style routing transparency (read by website chat toast)
+    "x-provider",
+    "x-actual-model",
+    "x-oma-fallback",
+    "x-oma-requested-model",
   ],
   maxAge: 86400,
 };

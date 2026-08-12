@@ -43,6 +43,12 @@ export const primaryLinks: NavItem[] = [
 /** Tools dropdown — secondary, off the primary path. */
 export const toolsLinks: NavItem[] = [
 	{
+		href: "/chat?mode=create",
+		label: "Create",
+		icon: Sparkles,
+		desc: "Image + video studio",
+	},
+	{
 		href: "/compare",
 		label: "Compare",
 		icon: GitCompare,
@@ -51,7 +57,7 @@ export const toolsLinks: NavItem[] = [
 	{
 		href: "/capabilities",
 		label: "Capabilities",
-		icon: Sparkles,
+		icon: Activity,
 		desc: "Modalities · rails · protocols",
 	},
 	{

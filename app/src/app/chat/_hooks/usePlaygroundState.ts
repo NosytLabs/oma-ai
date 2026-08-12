@@ -196,11 +196,10 @@ export function usePlaygroundState(
 	const [shareStatus, setShareStatus] = useState<ShareStatus>("default");
 
 	// --- Compare mode ---
-	// chat playground is a free OMA-AI / OMA-AI surface. Default
-	// the compare slot to the second free model so guests never see a paid
-	// Venice model they can't call without signing in.
+	// Default the compare slot to a free OMA-AI peer so guests can run
+	// side-by-side without signing in for Venice models.
 	const [compareMode, setCompareMode] = useState<boolean>(false);
-	const [compareModel, setCompareModel] = useState<string>("kimi-k3");
+	const [compareModel, setCompareModel] = useState<string>("minimax-m2-7");
 	const [compareMessages, setCompareMessages] = useState<Message[]>([]);
 
 	// --- Misc UI ---
@@ -218,6 +217,12 @@ export function usePlaygroundState(
 			setMediaModeState((prev) => {
 				const resolved = typeof next === "function" ? next(prev) : next;
 				const mode = MEDIA_MODES.includes(resolved) ? resolved : "text";
+				// Create studio doesn't use chat params — close the drawer so
+				// it doesn't sit under the image/video panels.
+				if (mode !== "text") {
+					setParamsOpen(false);
+					setSystemPromptOpen(false);
+				}
 				// Reflect mode in the URL without a full navigation (shareable deep link).
 				if (typeof window !== "undefined" && pathname) {
 					const params = new URLSearchParams(searchParams?.toString() ?? "");

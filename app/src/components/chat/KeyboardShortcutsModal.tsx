@@ -13,7 +13,9 @@ export interface Shortcut {
 const SHORTCUTS: Shortcut[] = [
 	{ keys: ["Cmd", "K"], description: "Open model picker" },
 	{ keys: ["Cmd", "/"], description: "Toggle settings panel" },
+	{ keys: ["Cmd", "Shift", "C"], description: "Toggle Create studio (image/video)" },
 	{ keys: ["Cmd", "Enter"], description: "Send message" },
+	{ keys: ["Cmd", "N"], description: "New conversation" },
 	{ keys: ["?"], description: "Show keyboard shortcuts" },
 	{ keys: ["Shift", "Enter"], description: "New line in input" },
 	{ keys: ["Esc"], description: "Close modals" },

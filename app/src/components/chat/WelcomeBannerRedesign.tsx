@@ -24,7 +24,6 @@ import {
  Send,
  Sparkles,
  X,
- Zap,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { springs } from "@/lib/animation";
@@ -73,16 +72,16 @@ const STEPS = [
 
 const PRO_TIPS = [
  {
+ icon: Sparkles,
+ text: "Create studio: image + video in one place (Create tab or Cmd+Shift+C)",
+ },
+ {
  icon: GitCompare,
  text: "Compare two models side-by-side with the COMPARE button",
  },
  {
  icon: Keyboard,
- text: "Press ? for keyboard shortcuts — Cmd+K to switch models",
- },
- {
- icon: Zap,
- text: "Enable WEB SEARCH to ground responses in real-time data",
+ text: "Press ? for shortcuts — Cmd+K models · Cmd+Shift+C Create",
  },
 ];
 

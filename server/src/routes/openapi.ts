@@ -65,7 +65,17 @@ const spec = {
 				type: "object",
 				required: ["model", "messages"],
 				properties: {
-					model: { type: "string" },
+					model: {
+						type: "string",
+						description: "Primary OMA catalog model id",
+					},
+					models: {
+						type: "array",
+						maxItems: 8,
+						items: { type: "string" },
+						description:
+							"OpenRouter-style fallback chain tried after `model` fails (before server peer map). Response `model` + x-actual-model reflect the peer that served.",
+					},
 					messages: { type: "array", items: { $ref: "#/components/schemas/ChatMessage" } },
 					max_tokens: { type: "integer" },
 					stream: { type: "boolean" },
