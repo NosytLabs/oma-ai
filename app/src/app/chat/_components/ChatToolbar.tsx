@@ -223,14 +223,12 @@ export function ChatToolbar({
 	return (
 		<header
 			aria-label="Playground toolbar"
-			className="flex min-h-14 min-w-0 flex-none flex-wrap items-center gap-x-1 gap-y-1.5 border-b border-border bg-void/95 px-2 py-1.5 sm:gap-x-3 sm:px-6 z-20 md:h-14 md:flex-nowrap md:py-0"
+			className="z-20 flex min-h-14 min-w-0 flex-none flex-wrap items-center gap-x-1.5 gap-y-1.5 border-b border-border bg-void/95 px-2 py-1.5 sm:gap-x-3 sm:px-6 md:h-14 md:flex-nowrap md:py-0"
 		>
-			{/* Left: model + params (shrinks on mobile) */}
-			<div className="flex min-w-0 flex-1 items-center gap-1 sm:gap-2">
-				{/* Compact model badge — replaces the previous "OMA · Gemini 3 Flash" pill
-				 that was duplicating the navbar brand. Now just shows the current
-				 model with tier color so the active selection is always visible. */}
-				<div className="min-w-0 w-[clamp(5rem,24vw,13.75rem)] flex-none sm:w-auto sm:flex-1 sm:max-w-[200px] md:max-w-[220px]">
+			{/* Left: model + params — model is width-capped so it never
+			    slides under the params button on narrow screens. */}
+			<div className="flex min-w-0 max-w-full flex-1 items-center gap-1.5 sm:gap-2">
+				<div className="min-w-0 max-w-[min(12rem,calc(100%-2.75rem))] flex-1 overflow-hidden sm:max-w-[200px] md:max-w-[220px]">
 					<LazyModelSelector
 						model={model}
 						setModel={setModel}

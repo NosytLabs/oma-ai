@@ -376,10 +376,12 @@
 	   .display-headline over time and remove this rule. */
 	.h1-page {
 		font-family: var(--font-display), var(--font-body), ui-serif, Georgia, serif;
-		font-size: clamp(2.5rem, 5.5vw, 4.5rem);
-		line-height: 0.98;
+		font-size: clamp(2.25rem, 5.2vw, 4.25rem);
+		line-height: 1.02;
 		letter-spacing: -0.035em;
 		font-weight: 500;
+		max-width: 100%;
+		overflow-wrap: break-word;
 	}
 
 	/* model-logo.tsx — sizes SVG logo tiles via an inline CSS variable so the
@@ -957,10 +959,13 @@
 
 	.display-headline {
 		font-family: var(--font-display), var(--font-body), ui-serif, Georgia, serif;
-		font-size: clamp(2.5rem, 5.5vw, 4.5rem);
-		line-height: 0.98;
+		font-size: clamp(2.25rem, 5.2vw, 4.25rem);
+		line-height: 1.02;
 		letter-spacing: -0.035em;
 		font-weight: 500;
+		/* Prevent long display titles from clipping their own box on narrow widths */
+		max-width: 100%;
+		overflow-wrap: break-word;
 	}
 
 	.page-intro {
@@ -968,6 +973,20 @@
 		line-height: 1.65;
 		color: var(--color-text-secondary);
 		max-width: 60ch;
+		/* Consistent breathing room under display titles */
+		margin-top: 1.25rem;
+	}
+
+	/* Shared vertical rhythm for marketing/content pages that use container-page */
+	.page-content {
+		padding-top: 2.5rem;
+		padding-bottom: 3.5rem;
+	}
+	@media (min-width: 640px) {
+		.page-content {
+			padding-top: 3rem;
+			padding-bottom: 4.5rem;
+		}
 	}
 
 	.meta-strip {

@@ -112,18 +112,18 @@ function ModelsPageInner() {
 
 	return (
 		<div className="min-h-screen bg-void">
-			<div className="container-page py-12">
+			<div className="container-page py-10 sm:py-12">
 				{/* Breadcrumb */}
 				<Breadcrumb items={[{ label: "Models" }]} />
 
 				{/* Header */}
-				<div className="mb-8 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+				<div className="mb-8 flex flex-col gap-4 sm:mb-10 sm:flex-row sm:items-start sm:justify-between">
 					<div>
-						<h1 className="h1-page text-text-bright flex items-center gap-4">
-							<Brain className="h-8 w-8 text-accent" />
+						<h1 className="h1-utility flex items-center gap-3 text-text-bright">
+							<Brain className="h-7 w-7 shrink-0 text-accent" aria-hidden="true" />
 							Models
 						</h1>
-						<p className="text-text-secondary mt-1 font-mono text-sm">
+						<p className="mt-2 font-mono text-sm text-text-secondary">
 							{totalModels} models available
 							{isLoadingModels && (
 								<span className="text-text-muted ml-2">

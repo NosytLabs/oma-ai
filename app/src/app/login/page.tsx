@@ -73,7 +73,7 @@ function defaultNext(): string {
 function LoginFallback() {
 	return (
 		<div
-			className="page-shell relative flex flex-col items-center justify-center px-4 py-8"
+			className="page-shell relative flex flex-col items-center justify-center px-4 py-10 sm:py-12"
 			aria-busy="true"
 			aria-label="Loading sign-in"
 		>
@@ -167,8 +167,8 @@ function LoginInner() {
 	);
 
 	return (
-		<div className="page-shell relative flex flex-col items-center justify-center px-4 py-8">
-			<div className="container-page grid w-full max-w-5xl grid-cols-1 items-start gap-8 lg:grid-cols-[1fr_1fr]">
+		<div className="page-shell relative flex flex-col items-center justify-center px-4 py-10 sm:py-12">
+			<div className="container-page grid w-full max-w-5xl grid-cols-1 items-start gap-8 lg:grid-cols-[1fr_1fr] lg:gap-12">
 				<BrandPitch />
 				<div className="mx-auto w-full max-w-md">
 					<X402Callout />

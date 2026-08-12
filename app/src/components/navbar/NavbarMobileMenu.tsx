@@ -137,7 +137,7 @@ export function NavbarMobileMenu({
 						animate={{ opacity: 1 }}
 						exit={{ opacity: 0 }}
 						transition={springs.soft}
-						className="fixed inset-0 top-14 z-[60] bg-void/70 backdrop-blur-sm md:hidden"
+						className="fixed inset-0 top-14 z-[60] bg-void/70 backdrop-blur-sm lg:hidden"
 						aria-hidden="true"
 						onClick={() => onOpenChange(false)}
 					/>
@@ -154,7 +154,7 @@ export function NavbarMobileMenu({
 						animate={prefersReduced ? { opacity: 1 } : { x: 0, opacity: 1 }}
 						exit={prefersReduced ? { opacity: 0 } : { x: "100%", opacity: 0 }}
 						transition={springs.card}
-						className="fixed inset-y-0 right-0 z-[70] w-full max-w-sm overflow-y-auto border-l border-border bg-void font-mono md:hidden shadow-2xl"
+						className="fixed inset-y-0 right-0 z-[70] w-full max-w-sm overflow-y-auto border-l border-border bg-void font-mono shadow-2xl lg:hidden"
 					>
 						<div className="mx-auto flex max-w-6xl flex-col px-4 py-4 sm:px-6">
 							{/* Status row */}

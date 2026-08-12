@@ -195,18 +195,18 @@ export function ModelSelector({
 				aria-haspopup="listbox"
 				aria-label={`Select AI model — ${selectedName || "Choose model"}`}
 				className={`
- flex items-center gap-2 bg-[var(--color-surface)]/70 border border-[var(--color-border)]
+ flex w-full min-w-0 items-center gap-2 bg-[var(--color-surface)]/70 border border-[var(--color-border)]
  hover:border-[var(--color-accent)]/40 hover:bg-[var(--color-surface)] transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97]
- min-w-0 group rounded-[var(--radius-lg)]
+ group rounded-[var(--radius-lg)]
  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]
- ${compact ? "w-full justify-between px-3 py-2" : "px-3 py-2"}
+ ${compact ? "justify-between px-3 py-2" : "px-2.5 py-2 sm:px-3"}
  `}
 			>
 				{/* Status dot — static emerald indicator for active selection */}
 				<span className="relative flex h-2 w-2 shrink-0">
 					<span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--color-accent)] shadow-[0_0_8px_var(--color-accent-glow)]" />
 				</span>
-				<span className="text-[12px] text-text-bright font-mono font-bold uppercase tracking-wider truncate min-w-0 max-w-[12rem]">
+				<span className="min-w-0 flex-1 truncate text-left font-mono text-[11px] font-bold uppercase tracking-wider text-text-bright sm:text-[12px]">
 					{selectedName || "SELECT MODEL"}
 				</span>
 				<ChevronDown

@@ -51,7 +51,7 @@ export function NavbarToolsDropdown({
 	}, [open, onOpenChange]);
 
 	return (
-		<div ref={containerRef} className="relative hidden md:block">
+		<div ref={containerRef} className="relative hidden lg:block">
 			<m.div
 				whileHover={prefersReduced ? undefined : { y: -1 }}
 				whileTap={prefersReduced ? undefined : { scale: 0.96 }}
