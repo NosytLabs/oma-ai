@@ -28,23 +28,41 @@ export function middleware(request: NextRequest) {
 	response.headers.set("Cross-Origin-Opener-Policy", "same-origin");
 	response.headers.set("Cross-Origin-Embedder-Policy", "require-corp");
 
+	const secure = request.nextUrl.protocol === "https:";
+	const cookieBase = {
+		path: "/",
+		secure,
+		sameSite: "lax" as const,
+	};
+
 	// Demo tour: HttpOnly server guard + public client flag for useAuth /
 	// server demoModeGuard (mutations stay blocked).
+	// Leaving ?demo=1 routes MUST clear cookies — otherwise free /chat is
+	// stuck in "Demo mode is read-only" after a dashboard demo tour.
 	if (wantsDemo(request)) {
-		const secure = request.nextUrl.protocol === "https:";
 		response.cookies.set("oma-demo", "1", {
+			...cookieBase,
 			httpOnly: true,
-			sameSite: "lax",
-			path: "/",
-			secure,
 			maxAge: 60 * 60 * 4,
 		});
 		response.cookies.set("oma-demo-public", "1", {
+			...cookieBase,
 			httpOnly: false,
-			sameSite: "lax",
-			path: "/",
-			secure,
 			maxAge: 60 * 60 * 4,
+		});
+	} else if (
+		request.cookies.get("oma-demo")?.value === "1" ||
+		request.cookies.get("oma-demo-public")?.value === "1"
+	) {
+		response.cookies.set("oma-demo", "", {
+			...cookieBase,
+			httpOnly: true,
+			maxAge: 0,
+		});
+		response.cookies.set("oma-demo-public", "", {
+			...cookieBase,
+			httpOnly: false,
+			maxAge: 0,
 		});
 	}
 
