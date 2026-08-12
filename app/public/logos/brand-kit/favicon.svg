@@ -1,20 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
   <title>OMA</title>
-  <desc>OMA gateway mark — open emerald ring, terminal prompt chevron, signal dot at the gap. Dark keyline for light browser tabs.</desc>
-  <!-- Dark keyline so the mark reads on light chrome tabs -->
-  <circle cx="16" cy="16" r="10.4" stroke="#07090a" stroke-width="4" stroke-linecap="round"
-    stroke-dasharray="50.1 15.25" stroke-dashoffset="-7.63" opacity="0.88"/>
-  <rect x="10.4" y="13.85" width="10" height="4.3" rx="2.15" fill="#07090a" opacity="0.88" transform="rotate(45 20.2 16)"/>
-  <rect x="10.4" y="13.85" width="10" height="4.3" rx="2.15" fill="#07090a" opacity="0.88" transform="rotate(-45 20.2 16)"/>
-  <circle cx="19.1" cy="16" r="2.15" fill="#07090a" opacity="0.88"/>
-  <!-- Emerald gateway -->
-  <circle cx="16" cy="16" r="10.4" stroke="#46d39a" stroke-width="2.85" stroke-linecap="round"
-    stroke-dasharray="50.1 15.25" stroke-dashoffset="-7.63"/>
-  <rect x="11" y="14.5" width="8.8" height="3" rx="1.5" fill="#46d39a" transform="rotate(45 20.2 16)"/>
-  <rect x="11" y="14.5" width="8.8" height="3" rx="1.5" fill="#46d39a" transform="rotate(-45 20.2 16)"/>
-  <circle cx="19.1" cy="16" r="1.5" fill="#46d39a"/>
-  <!-- Signal dot -->
-  <circle cx="26.4" cy="16" r="3.4" fill="#46d39a" opacity="0.22"/>
-  <circle cx="26.4" cy="16" r="2.05" fill="#46d39a" stroke="#07090a" stroke-width="0.75"/>
-  <circle cx="26.4" cy="16" r="0.95" fill="#6ee7b7"/>
+  <desc>OMA gateway mark — open emerald ring, terminal chevron, signal dot. Optimized for browser tabs.</desc>
+  <!-- Dark plate so the mark reads on light tabs and dark chrome -->
+  <rect width="32" height="32" rx="8" fill="#07090a"/>
+  <!-- Soft inner panel -->
+  <rect x="1.5" y="1.5" width="29" height="29" rx="6.5" fill="#0d1110"/>
+  <!-- Glow -->
+  <circle cx="15.5" cy="16" r="9.5" fill="#46d39a" opacity="0.1"/>
+  <!-- Open ring (gap at 3 o'clock) — thicker for 16px -->
+  <circle cx="15.5" cy="16" r="8.2" stroke="#46d39a" stroke-width="3.2" stroke-linecap="round"
+    stroke-dasharray="39.5 12" stroke-dashoffset="-6"/>
+  <!-- Chevron -->
+  <path d="M11.2 11.6 L18.6 16 L11.2 20.4" stroke="#46d39a" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- Signal dot in gap -->
+  <circle cx="25.2" cy="16" r="2.6" fill="#46d39a"/>
+  <circle cx="25.2" cy="16" r="1.15" fill="#6ee7b7"/>
 </svg>

@@ -6,10 +6,12 @@
  * tokens so alternate accent themes stay coherent.
  */
 
+import { OMA_WORD_MD, OMA_WORD_SM } from "./oma-word-paths";
+
 const SIZE_MAP = {
-	sm: { px: 24, ring: 2.15, bar: 2.55, led: 1.65 },
-	md: { px: 32, ring: 2.4, bar: 2.9, led: 1.9 },
-	lg: { px: 42, ring: 2.65, bar: 3.2, led: 2.15 },
+	sm: { px: 24, ring: 2.4, chevron: 2.4, led: 1.7 },
+	md: { px: 32, ring: 2.7, chevron: 2.7, led: 2.0 },
+	lg: { px: 42, ring: 3.0, chevron: 3.0, led: 2.25 },
 } as const;
 
 type LogoSize = keyof typeof SIZE_MAP;
@@ -18,7 +20,7 @@ function OmaMark({
 	width,
 	height,
 	ring,
-	bar,
+	chevron,
 	led,
 	className,
 	ariaHidden = false,
@@ -26,7 +28,7 @@ function OmaMark({
 	width: number;
 	height: number;
 	ring: number;
-	bar: number;
+	chevron: number;
 	led: number;
 	className?: string;
 	ariaHidden?: boolean;
@@ -55,42 +57,54 @@ function OmaMark({
 				strokeWidth={1}
 			/>
 			{/* Soft aperture glow */}
-			<circle cx={20} cy={20} r={13.2} fill="var(--color-accent)" opacity={0.09} />
+			<circle cx={19} cy={20} r={12.5} fill="var(--color-accent)" opacity={0.1} />
 			{/* Open gateway ring — gap at 3 o'clock */}
 			<circle
-				cx={20}
+				cx={19}
 				cy={20}
-				r={12.9}
+				r={12}
 				stroke="var(--color-accent)"
 				strokeWidth={ring}
 				strokeLinecap="round"
-				strokeDasharray="62.2 18.9"
-				strokeDashoffset={-9.45}
+				strokeDasharray="57.5 17.5"
+				strokeDashoffset={-8.75}
 			/>
 			{/* Terminal prompt chevron pointing through the gap */}
-			<rect
-				x={13.6}
-				y={20 - bar / 2}
-				width={11.2}
-				height={bar}
-				rx={bar / 2}
-				fill="var(--color-accent)"
-				transform="rotate(45 25.2 20)"
+			<path
+				d="M13 13.5 L23.5 20 L13 26.5"
+				stroke="var(--color-accent)"
+				strokeWidth={chevron}
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				fill="none"
 			/>
-			<rect
-				x={13.6}
-				y={20 - bar / 2}
-				width={11.2}
-				height={bar}
-				rx={bar / 2}
-				fill="var(--color-accent)"
-				transform="rotate(-45 25.2 20)"
-			/>
-			<circle cx={24} cy={20} r={bar / 2} fill="var(--color-accent)" />
 			{/* Signal / token emission dot in the gap */}
-			<circle cx={33.1} cy={20} r={led * 2} fill="var(--color-accent)" opacity={0.2} />
-			<circle cx={33.1} cy={20} r={led * 1.2} fill="var(--color-accent)" />
-			<circle cx={33.1} cy={20} r={led * 0.55} fill="var(--color-accent-bright)" />
+			<circle cx={32.2} cy={20} r={led * 1.9} fill="var(--color-accent)" opacity={0.22} />
+			<circle cx={32.2} cy={20} r={led * 1.2} fill="var(--color-accent)" />
+			<circle cx={32.2} cy={20} r={led * 0.55} fill="var(--color-accent-bright)" />
+		</svg>
+	);
+}
+
+function OmaWordPath({
+	size,
+	className = "",
+}: {
+	size: LogoSize;
+	className?: string;
+}) {
+	const word = size === "lg" ? OMA_WORD_MD : size === "md" ? OMA_WORD_MD : OMA_WORD_SM;
+	const scale = size === "lg" ? 1.25 : size === "md" ? 1 : 1;
+	return (
+		<svg
+			viewBox={`0 0 ${word.w} ${word.h}`}
+			width={word.w * scale}
+			height={word.h * scale}
+			className={className}
+			aria-hidden="true"
+			fill="currentColor"
+		>
+			<path d={word.d} />
 		</svg>
 	);
 }
@@ -109,7 +123,7 @@ export function OmaLogo({
 			width={s.px}
 			height={s.px}
 			ring={s.ring}
-			bar={s.bar}
+			chevron={s.chevron}
 			led={s.led}
 			className={className}
 		/>
@@ -117,9 +131,8 @@ export function OmaLogo({
 }
 
 /**
- * Nav lockup: mark + refined lowercase wordmark.
- * Uses body sans (not the page mono stack) so the brand reads as a product
- * mark rather than terminal chrome.
+ * Nav lockup: mark + vector lowercase wordmark.
+ * Uses the same SF Pro geometry as the static brand kit for crisp consistency.
  */
 export function OmaNavLockup({
 	size = "sm",
@@ -129,25 +142,24 @@ export function OmaNavLockup({
 	className?: string;
 }) {
 	const s = SIZE_MAP[size];
-	const textSize = size === "sm" ? "text-[15px]" : size === "md" ? "text-[17px]" : "text-[20px]";
 
 	return (
 		<span
-			className={`inline-flex items-center gap-2 ${className}`}
+			className={`inline-flex items-center gap-2 text-text-bright ${className}`}
 			aria-label="OMA — Open Model Access"
 		>
 			<OmaMark
 				width={s.px}
 				height={s.px}
 				ring={s.ring}
-				bar={s.bar}
+				chevron={s.chevron}
 				led={s.led}
 				ariaHidden
 			/>
-			<span
-				className={`font-sans font-semibold tracking-[-0.045em] text-text-bright leading-none ${textSize}`}
-			>
-				oma
+			<span className="relative inline-flex transition-colors duration-200 ease-out group-hover:text-accent">
+				{/* Vector glyph is visual; keep plain text for a11y + tests. */}
+				<span className="sr-only">oma</span>
+				<OmaWordPath size={size} />
 			</span>
 		</span>
 	);
@@ -168,10 +180,11 @@ export function OmaWordmark({
 	const h = heights[size];
 	const mark = h * 0.9;
 	const s = SIZE_MAP[size];
+	const wordSize: LogoSize = size === "sm" ? "sm" : "md";
 
 	return (
 		<div
-			className={`inline-flex items-center gap-3 ${className}`}
+			className={`inline-flex items-center gap-3 text-text-bright ${className}`}
 			role="img"
 			aria-label="OMA — Open Model Access"
 		>
@@ -179,16 +192,20 @@ export function OmaWordmark({
 				width={mark}
 				height={mark}
 				ring={s.ring}
-				bar={s.bar}
+				chevron={s.chevron}
 				led={s.led}
 				ariaHidden
 			/>
 			<div className="flex flex-col leading-none">
 				<span
-					className="font-sans font-semibold tracking-[-0.05em] text-text-bright"
-					style={{ fontSize: h * 0.58, lineHeight: 1 }}
+					className="relative inline-flex items-center"
+					style={{ height: h * 0.58 }}
 				>
-					oma
+					<span className="sr-only">oma</span>
+					<OmaWordPath
+						size={wordSize}
+						className={size === "lg" ? "origin-left scale-125" : ""}
+					/>
 				</span>
 				{showTagline && (
 					<span

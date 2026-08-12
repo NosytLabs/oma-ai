@@ -97,13 +97,15 @@ describe("brand assets on disk (public/)", () => {
 		const svg = readFileSync(join(publicDir, "favicon.svg"), "utf8");
 		expect(svg).toContain("#07090a");
 		expect(svg).toContain("#46d39a");
-		// Open ring (stroked circle with dash gap)
+		// Open ring (stroked circle with dash gap at 3 o'clock)
 		expect(svg).toMatch(/stroke-dasharray/i);
-		// Signal bars (multiple filled rects with accent)
-		const barRects = svg.match(/fill="#46d39a"/g) ?? [];
-		expect(barRects.length).toBeGreaterThanOrEqual(3);
-		// LED at ring gap (small filled circles)
+		// Terminal chevron (path) pointing through the gap
+		expect(svg).toMatch(/<path\b/i);
+		// Signal / LED dots at the ring gap
+		const accentFills = svg.match(/fill="#46d39a"/g) ?? [];
+		expect(accentFills.length).toBeGreaterThanOrEqual(1);
 		expect(svg).toMatch(/circle[^>]+fill="#46d39a"/);
+		expect(svg).toContain("#6ee7b7");
 	});
 
 	it("lockup SVGs use the same brand hex tokens and canonical tagline", () => {
