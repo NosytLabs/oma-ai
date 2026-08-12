@@ -29,14 +29,20 @@ Do not redraw it, close the ring, recolor it, or place it on a busy background.
 | --- | --- |
 | `oma-icon.svg` | Master mark (vector) |
 | `oma-icon-192.png` / `512` / `1024` | PWA / press |
-| `oma-logo.svg` | Horizontal lockup |
-| `oma-wordmark.svg` / `.png` | Wordmark + tagline |
+| `oma-logo.svg` | Horizontal lockup (mark + oma + tagline) |
+| `oma-wordmark.svg` / `.png` | Same lockup as `oma-logo.svg` (alias for consumers) |
 | `oma-brand-card.svg` / `.png` | Social / press card |
 | `providers/*.svg` | Model provider tiles (`ModelLogo` fallbacks) |
 
 Favicons live one level up in `app/public/` (`favicon.svg`, `favicon-*.png`, `apple-touch-icon.png`).
 
-Regenerate flat PNG icons from SVG: `npm run brand:generate` in `app/` (needs `rsvg-convert`).
+Regenerate flat PNG icons from SVG masters:
+
+```bash
+cd app && npm run brand:generate   # needs rsvg-convert (brew install librsvg)
+```
+
+Inline React mark: `src/components/ui/oma-logo.tsx` (theme tokens at runtime).
 
 ## Safe use
 

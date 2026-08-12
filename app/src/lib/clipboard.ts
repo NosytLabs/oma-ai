@@ -1,3 +1,5 @@
+import { log } from "@/lib/logger";
+
 /**
  * copyToClipboard — safe wrapper around navigator.clipboard.writeText.
  *
@@ -15,7 +17,7 @@ export async function copyToClipboard(text: string): Promise<boolean> {
 		await navigator.clipboard.writeText(text);
 		return true;
 	} catch (err) {
-		console.error("Clipboard write failed:", err);
+		log.warn("Clipboard write failed", err);
 		return false;
 	}
 }
