@@ -65,6 +65,8 @@ vi.mock("framer-motion", async (importOriginal) => {
 
 vi.mock("@/components/ui/oma-logo", () => ({
 	OmaLogo: () => <span data-testid="oma-logo" />,
+	OmaNavLockup: () => <span data-testid="oma-logo" />,
+	OmaWordmark: () => <span data-testid="oma-wordmark" />,
 }));
 vi.mock("../api-status", () => ({
 	ApiStatus: () => <span data-testid="api-status" />,

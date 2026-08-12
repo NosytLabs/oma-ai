@@ -1,20 +1,41 @@
-<svg width="400" height="96" viewBox="0 0 400 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 96" fill="none">
   <title>OMA — Open Model Access</title>
-  <desc>OMA wordmark with the open gateway mark, emerald signal dot, and Open Model Access tagline.</desc>
-  <g transform="translate(8 12)">
+  <desc>OMA wordmark: gateway mark lockup with lowercase oma and Open Model Access tagline.</desc>
+
+  <g transform="translate(4 12)">
     <rect width="72" height="72" rx="18" fill="#07090a"/>
-    <rect x="2.5" y="2.5" width="67" height="67" rx="16" fill="#0d1110" stroke="#1c2822" stroke-width="1.5"/>
+    <rect x="2.25" y="2.25" width="67.5" height="67.5" rx="16" fill="#0d1110" stroke="#1c2822" stroke-width="1.4"/>
     <g transform="translate(12 12) scale(1.5)">
-      <circle cx="16" cy="16" r="13.5" fill="#46d39a" opacity="0.07"/>
-      <circle cx="16" cy="16" r="10.6" stroke="#46d39a" stroke-width="3" stroke-linecap="round" stroke-dasharray="51.06 15.54" stroke-dashoffset="-7.77"/>
-      <rect x="11.2" y="14.5" width="9.2" height="3" rx="1.5" fill="#46d39a" transform="rotate(45 20.4 16)"/>
-      <rect x="11.2" y="14.5" width="9.2" height="3" rx="1.5" fill="#46d39a" transform="rotate(-45 20.4 16)"/>
-      <circle cx="19.34" cy="16" r="1.5" fill="#46d39a"/>
-      <circle cx="26.6" cy="16" r="3.5" fill="#46d39a" opacity="0.25"/>
-      <circle cx="26.6" cy="16" r="2.1" fill="#46d39a"/>
-      <circle cx="26.6" cy="16" r="1" fill="#6ee7b7"/>
+      <circle cx="16" cy="16" r="13.2" fill="#46d39a" opacity="0.08"/>
+      <circle cx="16" cy="16" r="10.4" stroke="#46d39a" stroke-width="2.9" stroke-linecap="round"
+        stroke-dasharray="50.1 15.25" stroke-dashoffset="-7.63"/>
+      <rect x="11" y="14.5" width="8.8" height="3" rx="1.5" fill="#46d39a" transform="rotate(45 20.2 16)"/>
+      <rect x="11" y="14.5" width="8.8" height="3" rx="1.5" fill="#46d39a" transform="rotate(-45 20.2 16)"/>
+      <circle cx="19.1" cy="16" r="1.5" fill="#46d39a"/>
+      <circle cx="26.4" cy="16" r="3.4" fill="#46d39a" opacity="0.22"/>
+      <circle cx="26.4" cy="16" r="2.05" fill="#46d39a"/>
+      <circle cx="26.4" cy="16" r="0.95" fill="#6ee7b7"/>
     </g>
   </g>
-  <text x="100" y="50" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-weight="700" font-size="36" fill="#f5f7f3" letter-spacing="-1.4">oma</text>
-  <text x="100" y="72" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="500" font-size="11" fill="#9aa394" letter-spacing="2.6">OPEN MODEL ACCESS</text>
+
+  <!-- Tight lowercase wordmark — sans, heavy, negative tracking -->
+  <text
+    x="96"
+    y="54"
+    font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif"
+    font-weight="600"
+    font-size="42"
+    fill="#f5f7f3"
+    letter-spacing="-1.8"
+  >oma</text>
+
+  <text
+    x="96"
+    y="78"
+    font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
+    font-weight="500"
+    font-size="11"
+    fill="#46d39a"
+    letter-spacing="3"
+  >OPEN MODEL ACCESS</text>
 </svg>

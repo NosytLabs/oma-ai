@@ -7,20 +7,20 @@
   <circle cx="1000" cy="102" r="220" fill="#46d39a" fill-opacity="0.05"/>
   <circle cx="1000" cy="102" r="140" fill="#46d39a" fill-opacity="0.04"/>
   <g transform="translate(76 78) scale(1.75)">
-    <rect width="48" height="48" rx="12" fill="#07090a"/>
-    <rect x="1.5" y="1.5" width="45" height="45" rx="10.5" fill="#0d1110" stroke="#1c2822" stroke-width="1.5"/>
+    <rect width="48" height="48" rx="13" fill="#07090a"/>
+    <rect x="1.5" y="1.5" width="45" height="45" rx="11.5" fill="#0d1110" stroke="#1c2822" stroke-width="1.4"/>
     <g transform="translate(8 8)">
-      <circle cx="16" cy="16" r="13.5" fill="#46d39a" opacity="0.07"/>
-      <circle cx="16" cy="16" r="10.6" stroke="#46d39a" stroke-width="3" stroke-linecap="round" stroke-dasharray="51.06 15.54" stroke-dashoffset="-7.77"/>
-      <rect x="11.2" y="14.5" width="9.2" height="3" rx="1.5" fill="#46d39a" transform="rotate(45 20.4 16)"/>
-      <rect x="11.2" y="14.5" width="9.2" height="3" rx="1.5" fill="#46d39a" transform="rotate(-45 20.4 16)"/>
-      <circle cx="19.34" cy="16" r="1.5" fill="#46d39a"/>
-      <circle cx="26.6" cy="16" r="3.5" fill="#46d39a" opacity="0.25"/>
-      <circle cx="26.6" cy="16" r="2.1" fill="#46d39a"/>
-      <circle cx="26.6" cy="16" r="1" fill="#6ee7b7"/>
+      <circle cx="16" cy="16" r="13.2" fill="#46d39a" opacity="0.08"/>
+      <circle cx="16" cy="16" r="10.4" stroke="#46d39a" stroke-width="2.9" stroke-linecap="round" stroke-dasharray="50.1 15.25" stroke-dashoffset="-7.63"/>
+      <rect x="11" y="14.5" width="8.8" height="3" rx="1.5" fill="#46d39a" transform="rotate(45 20.2 16)"/>
+      <rect x="11" y="14.5" width="8.8" height="3" rx="1.5" fill="#46d39a" transform="rotate(-45 20.2 16)"/>
+      <circle cx="19.1" cy="16" r="1.5" fill="#46d39a"/>
+      <circle cx="26.4" cy="16" r="3.4" fill="#46d39a" opacity="0.22"/>
+      <circle cx="26.4" cy="16" r="2.05" fill="#46d39a"/>
+      <circle cx="26.4" cy="16" r="0.95" fill="#6ee7b7"/>
     </g>
   </g>
-  <text x="76" y="350" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-weight="700" font-size="112" fill="#f5f7f3" letter-spacing="-6">oma</text>
+  <text x="76" y="350" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-weight="600" font-size="108" fill="#f5f7f3" letter-spacing="-4.5">oma</text>
   <text x="84" y="405" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="22" font-weight="500" letter-spacing="7" fill="#46d39a">OPEN MODEL ACCESS</text>
   <text x="84" y="546" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="26" fill="#b4bbb0">One gateway. Every model. No lock-in.</text>
   <text x="1116" y="548" text-anchor="end" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18" letter-spacing="3" fill="#9aa394">OMA-AI.COM</text>

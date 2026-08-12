@@ -6,7 +6,7 @@ import { Menu, Settings, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { OmaLogo } from "@/components/ui/oma-logo";
+import { OmaNavLockup } from "@/components/ui/oma-logo";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { Magnetic, EASE_SPRING, springs } from "@/lib/animation";
 import { ApiStatus } from "./api-status";
@@ -74,16 +74,14 @@ export function Navbar() {
  {/* LEFT: logo + section breadcrumb + primary links + tools dropdown */}
  <div className="flex min-w-0 items-center gap-1.5 sm:gap-2 lg:gap-4">
  <Magnetic strength={6}>
- <div className="relative inline-block">
+ <div className="relative inline-flex items-center">
  <Link
  href="/"
- className="group inline-flex shrink-0 items-center gap-2 rounded-[var(--radius-md)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+ className="group relative z-[1] inline-flex shrink-0 items-center rounded-[var(--radius-md)] px-1 py-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+ aria-label="OMA home"
  >
- <span className="inline-flex transition-[filter] duration-300 group-hover:drop-shadow-[0_0_8px_var(--color-accent-glow)]">
- <OmaLogo size="sm" />
- </span>
- <span className="text-sm font-semibold text-text-bright tracking-tight group-hover:text-accent transition-colors duration-200 ease-out">
- oma
+ <span className="inline-flex transition-[filter,color] duration-300 group-hover:drop-shadow-[0_0_8px_var(--color-accent-glow)] [&_span]:group-hover:text-accent">
+ <OmaNavLockup size="sm" />
  </span>
  </Link>
  {!isAuthenticated && mounted && (
@@ -91,9 +89,9 @@ export function Navbar() {
  size="sm"
  duration={3}
  theme="auto"
- className="absolute inset-0 rounded-full pointer-events-none"
+ className="pointer-events-none absolute -inset-x-1 -inset-y-0.5 rounded-[var(--radius-lg)]"
  >
- <div className="h-full w-full rounded-full" />
+ <div className="h-full w-full rounded-[var(--radius-lg)]" />
  </BorderBeam>
  )}
  </div>

@@ -48,7 +48,7 @@ import {
 import { m } from "@/lib/framer-motion-client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { OmaLogo } from "@/components/ui/oma-logo";
+import { OmaNavLockup } from "@/components/ui/oma-logo";
 import { isCurrentPath } from "./navbar/_lib/nav-links";
 import { EASE_SPRING, fadeUp, StaggerReveal } from "@/lib/animation";
 import { useAuth } from "@/lib/hooks/useAuth";
@@ -181,18 +181,16 @@ export function Footer() {
 						<Link
 							href="/"
 							prefetch={false}
-							className="group inline-flex items-center gap-2.5 w-fit focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-sm"
+							className="group inline-flex w-fit items-center rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+							aria-label="OMA home"
 						>
 							<m.span
 								whileHover={{ y: -2 }}
 								transition={EASE_SPRING}
-								className="inline-flex transition-[filter] duration-300 group-hover:drop-shadow-[0_0_6px_var(--color-accent)]"
+								className="inline-flex transition-[filter] duration-300 group-hover:drop-shadow-[0_0_6px_var(--color-accent)] [&_span]:group-hover:text-accent"
 							>
-								<OmaLogo size="sm" />
+								<OmaNavLockup size="sm" />
 							</m.span>
-							<span className="text-sm text-text-bright font-semibold tracking-tight">
-								oma
-							</span>
 						</Link>
 
 						<p className="text-[13px] leading-relaxed text-text-secondary">
