@@ -320,7 +320,7 @@ function ShellContent({
 			try {
 				localStorage.setItem(conversationIdKey, storedCid);
 			} catch (e) {
-				console.error('Failed to parse search config:', e)
+				/* private mode / corrupt storage */
 			}
 		}
 		setConversationId(storedCid);
@@ -572,7 +572,7 @@ function ShellContent({
 				try {
 					localStorage.setItem(conversationIdKey, cid);
 				} catch (e) {
-					console.error('Failed to parse search config:', e)
+					/* private mode / corrupt storage */
 				}
 			}
 			const userMessageCount = messages.filter((m) => m.role === "user").length;

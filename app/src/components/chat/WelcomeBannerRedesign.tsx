@@ -182,8 +182,8 @@ export function WelcomeBanner({
  const handleDismiss = useCallback(() => {
  try {
  localStorage.setItem(STORAGE_KEY, "1");
- } catch (e) {
-	 console.error('Failed to parse saved active models:', e)
+ } catch {
+ /* private mode / quota */
  }
  setDismissed(true);
  setVisible(false);
@@ -224,8 +224,8 @@ export function WelcomeBanner({
   const dismissTips = () => {
   try {
   localStorage.setItem(TIPS_KEY, "1");
- } catch (e) {
-	 console.error('Failed to parse active providers:', e)
+ } catch {
+ /* private mode / quota */
  }
   setShowTips(false);
   };

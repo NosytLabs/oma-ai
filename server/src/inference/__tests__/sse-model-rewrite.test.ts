@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { rewriteSseModelField } from "../proxy.js";
+import { rewriteSseModelField } from "../fallback.js";
 
 describe("rewriteSseModelField", () => {
 	it("rewrites model id in SSE data lines", () => {

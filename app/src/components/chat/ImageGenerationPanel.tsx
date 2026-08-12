@@ -103,7 +103,7 @@ export function ImageGenerationPanel({
 			a.click();
 			URL.revokeObjectURL(a.href);
 		} catch {
-			console.error("Image download failed");
+			// Download failures are user-visible via empty file; avoid noisy console.
 		}
 	}, []);
 

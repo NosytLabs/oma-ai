@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FALLBACK_MAP, buildFallbackChain } from "../proxy.js";
+import { FALLBACK_MAP, buildFallbackChain } from "../fallback.js";
 import { getModelById } from "../models.js";
 
 /**
