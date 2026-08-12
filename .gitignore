@@ -45,9 +45,10 @@ screenshots/
 # Build/test artifacts
 .vercel
 .turbo/
-server/tsconfig.tsbuildinfo
-app/tsconfig.tsbuildinfo
+*.tsbuildinfo
+server/models.json.bak
 test-results/
+tmp/lighthouse/
 tmp/lighthouse/
 server/models.json.bak
 

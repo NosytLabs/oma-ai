@@ -19,7 +19,7 @@ const nextConfig: NextConfig = {
 	// Disable dev compression; production uses a reverse proxy for gzip.
 	compress: false,
 
-	// output: "standalone",
+	output: "standalone",
 	outputFileTracingRoot: __dirname,
 
 	env: {
@@ -36,7 +36,7 @@ const nextConfig: NextConfig = {
 	},
 
 
-	serverExternalPackages: ["porto", "@metamask/connect-evm", "ethers"],
+	serverExternalPackages: [],
 
 	webpack: (config, { isServer }) => {
 		config.resolve.extensionAlias = {
@@ -45,25 +45,6 @@ const nextConfig: NextConfig = {
 		};
 		config.module.exprContextCritical = false;
 
-		if (!isServer) {
-			config.resolve.alias = {
-				...(config.resolve.alias || {}),
-				"porto/internal": false,
-			};
-			config.resolve.fallback = {
-				...config.resolve.fallback,
-				ws: false,
-				accounts: false,
-				"@metamask/connect-evm": false,
-				"@base-org/account": false,
-				"@coinbase/wallet-sdk": false,
-				"@safe-global/safe-apps-sdk": false,
-				"@safe-global/safe-apps-provider": false,
-				"@walletconnect/ethereum-provider": false,
-				porto: false,
-				"porto/internal": false,
-			};
-		}
 		return config;
 	},
 
@@ -190,7 +171,6 @@ function generateContentSecurityPolicy(): string {
 
 nextConfig.experimental = {
   serverActions: {},
-  optimizeCss: {},
 };
 
 // Note: Use `npx @next/codemod@latest next-experimental-turbo-to-turbopack .` and reference Vercel docs to migrate to turbopack advanced mode if needed.

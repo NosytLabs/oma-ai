@@ -135,3 +135,18 @@ console.error = (...args: unknown[]) => {
 	}
 	originalError(...args);
 };
+
+/**
+ * jsdom's HTMLCanvasElement.getContext prints a "Not implemented" warning
+ * on every call and returns null. Components null-guard the result, so a
+ * stub that returns null preserves behavior while silencing the noise.
+ */
+if (typeof HTMLCanvasElement !== "undefined") {
+	Object.defineProperty(HTMLCanvasElement.prototype, "getContext", {
+		writable: true,
+		configurable: true,
+		value: function getContext() {
+			return null;
+		},
+	});
+}

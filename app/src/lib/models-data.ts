@@ -143,10 +143,7 @@ export function normalizeProvider(raw: string | undefined | null): Provider {
 	const s = (raw ?? "").trim().toLowerCase();
 	if (!s) return "OMA-AI";
 	// Catalog + UI labels: "OMA-AI"/"OpenBroker" upstream names now branded as OMA-AI
-	if (s.includes("oma-ai") || s.includes("openbroker") || s.includes("obk")) {
-		return "OMA-AI";
-	}
-	if (s === "oma-ai" || s === "oma" || s.includes("oma-ai")) {
+	if (s.includes("oma-ai") || s.includes("openbroker") || s.includes("obk") || s === "oma") {
 		return "OMA-AI";
 	}
 	if (s.includes("surplus")) return "Surplus";
@@ -343,13 +340,7 @@ function toModel(entry: RawEntry): Model {
 		entry.category === "frontier"
 			? entry.category
 			: "mid";
-	const modality: Modality = (() => {
-		const cat = (entry.category ?? "").toLowerCase();
-		if (cat === "image" || cat === "video" || cat === "tts" || cat === "embedding" || cat === "asr" || cat === "music" || cat === "upscale" || cat === "inpaint") {
-			return cat as Modality;
-		}
-		return "chat";
-	})();
+	const modality: Modality = deriveModality({ category: entry.category } as ApiModelEntry);
 	const serverCaps = entry.capabilities ?? [];
 	return {
 		id: entry.id,
@@ -403,6 +394,8 @@ interface ApiModelEntry {
 	 * Backends differ: OMA + Pollinations return `provider`, OpenRouter returns
 	 * `owned_by`, etc. The loader picks whichever is present. */
 	provider?: string;
+	/** Video generation duration (e.g. "10s") for video models. */
+	duration?: string;
 	architecture?: { input_modalities?: string[]; output_modalities?: string[] };
 	supported_parameters?: string[];
 }
@@ -428,15 +421,47 @@ interface ApiModelsResponse {
 let _liveModels: Model[] | null = null;
 let _loadPromise: Promise<Model[]> | null = null;
 
+/**
+ * Raw /api/v1/models response cache, shared by loadModels() and anything
+ * that needs the unfiltered list (StatsStrip's live count, pricing's
+ * image/video section). Concurrent callers collapse into one fetch.
+ */
+let _rawResponse: ApiModelsResponse | null = null;
+let _rawPromise: Promise<ApiModelsResponse | null> | null = null;
+
+async function fetchRawModelsResponse(): Promise<ApiModelsResponse | null> {
+	if (_rawResponse) return _rawResponse;
+	if (_rawPromise) return _rawPromise;
+
+	_rawPromise = fetch("/api/v1/models")
+		.then(async (res) => {
+			if (!res.ok) return null;
+			const json: ApiModelsResponse = (await res.json()) as ApiModelsResponse;
+			_rawResponse = json;
+			return json;
+		})
+		.catch(() => null);
+
+	return _rawPromise;
+}
+
+/**
+ * Load the unfiltered model list (including image/video categories) from
+ * the live API. Shares the cache with loadModels().
+ */
+export async function loadRawModelEntries(): Promise<ApiModelEntry[]> {
+	const json = await fetchRawModelsResponse();
+	return json?.data ?? [];
+}
+
 export async function loadModels(): Promise<Model[]> {
 	if (_liveModels) return _liveModels;
 	if (_loadPromise) return _loadPromise;
 
 	_loadPromise = (async () => {
 		try {
-			const res = await fetch("/api/v1/models");
-			if (!res.ok) throw new Error(`API returned ${res.status}`);
-			const json: ApiModelsResponse = await res.json();
+			const json = await fetchRawModelsResponse();
+			if (!json?.data) throw new Error("API returned no models");
 			const models: Model[] = json.data
 				.filter((entry: ApiModelEntry) => entry.category !== "video")
 				.map((entry: ApiModelEntry) => {
@@ -451,11 +476,11 @@ export async function loadModels(): Promise<Model[]> {
 					const rawProvider =
 						entry.provider ?? entry.owned_by ?? entry.architecture?.output_modalities?.[0];
 const tier: Tier =
-		entry.category === "budget" ||
-		entry.category === "mid" ||
-		entry.category === "premium" ||
-		entry.category === "frontier"
-			? entry.category
+						entry.category === "budget" ||
+						entry.category === "mid" ||
+						entry.category === "premium" ||
+						entry.category === "frontier"
+							? entry.category
 							: "mid";
 					const modality = deriveModality(entry);
 					return {

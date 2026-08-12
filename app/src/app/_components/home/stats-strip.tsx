@@ -7,17 +7,16 @@
 
 import { useEffect, useState } from "react";
 import { Reveal } from "@/app/_components/home/reveal";
-import { MODEL_COUNT } from "@/lib/models-data";
+import { MODEL_COUNT, loadRawModelEntries } from "@/lib/models-data";
 
 function useLiveModelCount() {
  const [count, setCount] = useState<number | null>(null);
  useEffect(() => {
  let alive = true;
- fetch("/api/v1/models", { credentials: "same-origin" })
- .then((r) => (r.ok ? r.json() : null))
- .then((data) => {
- if (!alive || !data?.data?.length) return;
- setCount(data.data.length);
+ loadRawModelEntries()
+ .then((entries) => {
+ if (!alive || !entries.length) return;
+ setCount(entries.length);
  })
  .catch(() => {
  /* backend down — keep null → fall back to MODEL_COUNT */

@@ -15,7 +15,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { FloatingIcons } from "@/components/floating-icons";
 import { InViewFade } from "@/components/motion/in-view-fade";
-import { formatPricePerMillion, loadModels, MODEL_COUNT, type Model, MODELS } from "@/lib/models-data";
+import { formatPricePerMillion, loadModels, loadRawModelEntries, MODEL_COUNT, type Model, MODELS } from "@/lib/models-data";
 import {
 	prettyName,
 	toPricedModel,
@@ -213,8 +213,8 @@ export default function PricingPage() {
 	const modelCount = models.length;
 
 	// Pull image + video models from the same /v1/models response. The
-	// loadModels() helper above drops them; we re-fetch once for the
-	// generation section's per-image / per-generation pricing.
+	// loadModels() helper above drops them; we reuse the shared raw cache
+	// for the generation section's per-image / per-generation pricing.
 	const [generationModels, setGenerationModels] = useState<
 		Array<{
 			id: string;
@@ -226,11 +226,10 @@ export default function PricingPage() {
 	>([]);
 	useEffect(() => {
 		let cancelled = false;
-		fetch("/api/v1/models")
-			.then((r) => (r.ok ? r.json() : null))
-			.then((json: { data?: Array<{ id: string; category?: string; pricing?: { prompt?: string; generation?: string }; context_length?: number; duration?: string; architecture?: { input_modalities?: string[]; output_modalities?: string[] } }> } | null) => {
-				if (cancelled || !json?.data) return;
-				const gen = json.data
+		loadRawModelEntries()
+			.then((entries) => {
+				if (cancelled || !entries.length) return;
+				const gen = entries
 					.filter(
 						(m) =>
 							m.category === "image" || m.category === "video",
