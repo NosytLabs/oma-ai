@@ -76,8 +76,11 @@ function CreditBalanceCardComponent({
  <span className="text-text-muted">0 credits</span>
  ) : (
  <div className="flex items-baseline gap-2">
+ {/* balanceCents is integer-cent credits (1 credit = $0.01).
+     Do not dollar-prefix — that double-counts with the CR unit. */}
  <AnimatedNumber
  value={Math.round(parseFloat(balance.balanceCents))}
+ prefix=""
  />
  <span className="text-[16px] text-text-muted font-mono uppercase tracking-wider font-bold">
  CR

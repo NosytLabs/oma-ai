@@ -1,18 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
   <title>OMA</title>
-  <desc>OMA gateway mark — open emerald ring, terminal chevron, signal dot. Optimized for browser tabs.</desc>
-  <!-- Dark plate so the mark reads on light tabs and dark chrome -->
-  <rect width="32" height="32" rx="8" fill="#07090a"/>
-  <!-- Soft inner panel -->
-  <rect x="1.5" y="1.5" width="29" height="29" rx="6.5" fill="#0d1110"/>
-  <!-- Glow -->
-  <circle cx="15.5" cy="16" r="9.5" fill="#46d39a" opacity="0.1"/>
-  <!-- Open ring (gap at 3 o'clock) — thicker for 16px -->
-  <circle cx="15.5" cy="16" r="8.2" stroke="#46d39a" stroke-width="3.2" stroke-linecap="round"
-    stroke-dasharray="39.5 12" stroke-dashoffset="-6"/>
-  <!-- Chevron -->
-  <path d="M11.2 11.6 L18.6 16 L11.2 20.4" stroke="#46d39a" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-  <!-- Signal dot in gap -->
-  <circle cx="25.2" cy="16" r="2.6" fill="#46d39a"/>
-  <circle cx="25.2" cy="16" r="1.15" fill="#6ee7b7"/>
+  <desc>OMA gateway icon — open emerald ring, terminal chevron, signal.</desc>
+  <rect width="64" height="64" rx="16" fill="#07090a"/>
+  <rect x="2.5" y="2.5" width="59" height="59" rx="13.5" fill="#0d1110" stroke="#1a2420" stroke-width="1.5"/>
+  <circle cx="30.5" cy="32" r="18" fill="#46d39a" opacity="0.1"/>
+  <circle cx="30.5" cy="32" r="15.2" stroke="#46d39a" stroke-width="5.2" stroke-linecap="round"
+    stroke-dasharray="72.4 23" stroke-dashoffset="-11.5"/>
+  <path d="M20.8 22.4 L36.2 32 L20.8 41.6" stroke="#46d39a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <circle cx="50.2" cy="32" r="5.4" fill="#46d39a"/>
+  <circle cx="50.2" cy="32" r="2.3" fill="#6ee7b7"/>
 </svg>
