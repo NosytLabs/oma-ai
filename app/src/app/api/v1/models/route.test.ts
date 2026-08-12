@@ -32,7 +32,7 @@ describe("GET /api/v1/models", () => {
 		expect(response.status).toBe(200);
 		expect(fetchSpy).toHaveBeenCalledTimes(1);
 		expect(String(fetchSpy.mock.calls[0][0])).toBe(
-			"http://localhost:3002/v1/models",
+			"http://localhost:3001/v1/models",
 		);
 		const body = await response.json();
 		expect(body.object).toBe("list");
