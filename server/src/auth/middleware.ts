@@ -76,8 +76,12 @@ export function initAuth(): void {
 // one in-flight validateApiKey() promise so the underlying DB transaction
 // (with its SELECT ... FOR UPDATE + lastUsedAt write) runs at most once
 // per key.
-type SingleflightRecord = { promise: Promise<unknown> };
+type SingleflightRecord = {
+  promise: Promise<unknown>;
+  timer: ReturnType<typeof setTimeout>;
+};
 const singleflightInflight = new Map<string, SingleflightRecord>();
+const SINGLEFLIGHT_TIMEOUT_MS = 10_000;
 
 async function singleflight<T>(
   key: string,
@@ -85,15 +89,30 @@ async function singleflight<T>(
 ): Promise<T> {
   const existing = singleflightInflight.get(key);
   if (existing) return existing.promise as Promise<T>;
-  const promise = (async () => {
+
+  // Own a stable record so timeout/finally only clear *this* flight —
+  // never a replacement started after the safety-net timeout fired.
+  const record = {} as SingleflightRecord;
+  record.promise = (async () => {
     try {
       return await fn();
     } finally {
-      singleflightInflight.delete(key);
+      if (singleflightInflight.get(key) === record) {
+        clearTimeout(record.timer);
+        singleflightInflight.delete(key);
+      }
     }
   })();
-  singleflightInflight.set(key, { promise });
-  return promise;
+  // Safety net: if the underlying call hangs, drop the slot so later
+  // requests are not stuck behind a dead promise forever.
+  record.timer = setTimeout(() => {
+    if (singleflightInflight.get(key) === record) {
+      singleflightInflight.delete(key);
+    }
+  }, SINGLEFLIGHT_TIMEOUT_MS);
+  record.timer.unref();
+  singleflightInflight.set(key, record);
+  return record.promise as Promise<T>;
 }
 
 /**

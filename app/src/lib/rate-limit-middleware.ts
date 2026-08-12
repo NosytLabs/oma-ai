@@ -29,19 +29,23 @@ export interface RateLimitOptions {
 }
 
 /**
- * Extract the client IP from request headers, falling back to the
- * socket remote address.  Handles `x-forwarded-for` (may contain a
- * comma-separated chain — we take the first entry).
+ * Extract the client IP for rate-limit keys.
+ *
+ * SEC: Client-controlled proxy headers are only trusted when:
+ *   - Running on Vercel (`VERCEL=1`), where the edge sets x-forwarded-for, or
+ *   - `TRUSTED_PROXY_IPS` is set (non-empty) for other reverse proxies.
+ * Otherwise return "unknown" so spoofed XFF cannot bypass per-IP limits.
+ * Local dev collapsing to one bucket is acceptable.
  */
 function getClientIp(req: NextRequest | Request): string {
-	// Prefer x-forwarded-for (first IP in the chain is the client).
+	const trustProxyHeaders =
+		process.env.VERCEL === "1" || Boolean(process.env.TRUSTED_PROXY_IPS?.trim());
+	if (!trustProxyHeaders) return "unknown";
+
 	const xff = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
 	if (xff) return xff;
-
-	// Common proxy header.
-	const realIp = req.headers.get("x-real-ip");
+	const realIp = req.headers.get("x-real-ip")?.trim();
 	if (realIp) return realIp;
-
 	return "unknown";
 }
 

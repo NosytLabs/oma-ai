@@ -41,8 +41,16 @@ import { getPublicClient } from "./lib/rpc-client.js";
 // import, so test imports of the auth middleware don't exit the process.
 initAuth();
 
-// Boot-time model catalog load.
-void ensureCatalogLoaded();
+// Boot-time model catalog load. Await so the server doesn't accept traffic
+// before the catalog is ready — initial requests would fail with "Model not found".
+ensureCatalogLoaded()
+  .then(() => {
+    startServer();
+  })
+  .catch((err) => {
+    logger.error({ err }, "[startup] model catalog load failed; starting server anyway (will retry on first request)");
+    startServer();
+  });
 
 if (config.NODE_ENV !== "test" && config.USDC_DEPOSIT_ADDRESS) {
   const client = getPublicClient();
@@ -260,25 +268,9 @@ app.route("/", dailyUsageRoutes);
 app.route("/", usageRoutes);
 
 // Polar.sh checkout + webhook (no auth on webhook routes; signature-verified).
-// Dual-mount per polar-integration skill: Polar dashboard may be pointed at
-// either path by operators, so both must fire the same handler.
+// polarRoutes dual-mounts POST /webhooks/polar and POST /api/webhook/polar
+// with the same rate-limited, signature-verified handler.
 app.route("/", polarRoutes);
-polarRoutes.post("/api/webhook/polar", async (c) => {
-  // Re-use the same signature-verified handler body by forwarding to the
-  // canonical path. Hono routes share context; this keeps the handler logic
-  // in one place without duplicating imports.
-  const req = c.req.raw;
-  const res = await fetch(
-    `${new URL(req.url).origin}/webhooks/polar`,
-    {
-      method: "POST",
-      headers: Object.fromEntries(req.headers.entries()),
-      body: req.body ?? undefined,
-    },
-  );
-  const body = await res.text();
-  return new Response(body, { status: res.status, headers: { "content-type": res.headers.get("content-type") ?? "application/json" } });
-});
 
 app.notFound((c) =>
   c.json({ error: { message: `Route ${c.req.path} not found`, type: "not_found" } }, 404),
@@ -302,55 +294,57 @@ app.onError((err, c) => {
   return c.json({ error: { message: "Client error", type: "client_error" } }, status);
 });
 
-const server = serve({
-  fetch: app.fetch,
-  port: config.PORT,
-}, (info) => {
-  logger.info({ port: info.port }, "[OMA] API server running");
-  logger.info({ healthUrl: `http://localhost:${info.port}/health` }, "[OMA] Health endpoint");
-  logger.info({ modelsUrl: `http://localhost:${info.port}/v1/models` }, "[OMA] Models endpoint");
-});
+function startServer() {
+  const server = serve({
+    fetch: app.fetch,
+    port: config.PORT,
+  }, (info) => {
+    logger.info({ port: info.port }, "[OMA] API server running");
+    logger.info({ healthUrl: `http://localhost:${info.port}/health` }, "[OMA] Health endpoint");
+    logger.info({ modelsUrl: `http://localhost:${info.port}/v1/models` }, "[OMA] Models endpoint");
+  });
 
-server.on("error", (err: NodeJS.ErrnoException) => {
-  if (err.code === "EADDRINUSE") {
-    logger.error(
-      { port: config.PORT },
-      `[OMA] FATAL: port ${config.PORT} is already in use`,
-    );
-    process.exit(1);
-  }
-  throw err;
-});
-
-const shutdown = async (signal: string) => {
-  logger.info({ signal }, "[OMA] Shutdown signal received, closing gracefully...");
-  server.close(async () => {
-    logger.info("[OMA] HTTP server closed");
-    try {
-      const { closeRedisClient } = await import("./lib/redis-client.js");
-      await closeRedisClient();
-    } catch (err) {
-      logger.warn({ error: err }, "[OMA] Redis close error");
+  server.on("error", (err: NodeJS.ErrnoException) => {
+    if (err.code === "EADDRINUSE") {
+      logger.error(
+        { port: config.PORT },
+        `[OMA] FATAL: port ${config.PORT} is already in use`,
+      );
+      process.exit(1);
     }
-    process.exit(0);
+    throw err;
   });
-  setTimeout(() => {
-    logger.error("[OMA] Forced shutdown after timeout");
-    process.exit(1);
-  }, 10_000);
-};
 
-if (config.NODE_ENV !== "test") {
-  process.on("SIGTERM", () => shutdown("SIGTERM"));
-  process.on("SIGINT", () => shutdown("SIGINT"));
-  process.on("unhandledRejection", (reason) => {
-    logger.fatal({ err: reason }, "Unhandled promise rejection — shutting down");
-    shutdown("unhandledRejection");
-  });
-  process.on("uncaughtException", (err) => {
-    logger.fatal({ err }, "Uncaught exception — shutting down");
-    shutdown("uncaughtException");
-  });
+  const shutdown = async (signal: string) => {
+    logger.info({ signal }, "[OMA] Shutdown signal received, closing gracefully...");
+    server.close(async () => {
+      logger.info("[OMA] HTTP server closed");
+      try {
+        const { closeRedisClient } = await import("./lib/redis-client.js");
+        await closeRedisClient();
+      } catch (err) {
+        logger.warn({ error: err }, "[OMA] Redis close error");
+      }
+      process.exit(0);
+    });
+    setTimeout(() => {
+      logger.error("[OMA] Forced shutdown after timeout");
+      process.exit(1);
+    }, 10_000);
+  };
+
+  if (config.NODE_ENV !== "test") {
+    process.on("SIGTERM", () => shutdown("SIGTERM"));
+    process.on("SIGINT", () => shutdown("SIGINT"));
+    process.on("unhandledRejection", (reason) => {
+      logger.fatal({ err: reason }, "Unhandled promise rejection — shutting down");
+      shutdown("unhandledRejection");
+    });
+    process.on("uncaughtException", (err) => {
+      logger.fatal({ err }, "Uncaught exception — shutting down");
+      shutdown("uncaughtException");
+    });
+  }
 }
 
 export default app;

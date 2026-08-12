@@ -83,3 +83,6 @@ data/
 
 # Accidental Playwright path dumps (page.screenshot with undefined path)
 app/undefined/
+
+# Accidental npm lockfile (this monorepo uses pnpm)
+package-lock.json

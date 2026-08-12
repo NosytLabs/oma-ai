@@ -159,10 +159,10 @@ chatRoutes.post(
           )
           .limit(1);
       if (prior.length > 0) {
-        // Cache hit — return a minimal replay. Streaming replays would
-        // require storing the full response body which we don't
-        // persist. Non-streaming replays are the primary use case for
-        // idempotency, so this is fine for v1.
+        // Cache hit — return the recorded usage data. Full response body
+        // replay is deferred to v2 (requires storing the complete payload).
+        // For now, return a structured completion with usage stats so
+        // clients like Claude Code can read token counts.
         logger.info(
           { userId, idempotencyKey, requestId },
           "[chat] idempotency cache hit; replaying",
@@ -172,7 +172,13 @@ chatRoutes.post(
           id: requestId,
           note: "idempotency-replay",
           model,
-          choices: [],
+          choices: [
+            {
+              index: 0,
+              message: { role: "assistant", content: "" },
+              finish_reason: "stop",
+            },
+          ],
           usage: {
             prompt_tokens: prior[0].inputTokens,
             completion_tokens: prior[0].outputTokens,

@@ -57,11 +57,21 @@ usageRoutes.get("/v1/usage", sessionOrBearerAuth, async (c) => {
   if (until) conds.push(lte(usageRecords.createdAt, new Date(until)));
   if (cursor) {
     // cursor format: "<isoTimestamp>|<recordId>"
-    const [iso, id] = cursor.split("|");
-    if (iso && id) {
-      conds.push(
-        sql`(${usageRecords.createdAt}, ${usageRecords.id}) < (${new Date(iso).toISOString()}::timestamptz, ${id})`,
-      );
+    // SEC: validate both parts to prevent SQL injection via crafted cursor
+    const pipeIdx = cursor.indexOf("|");
+    if (pipeIdx > 0) {
+      const iso = cursor.slice(0, pipeIdx);
+      const id = cursor.slice(pipeIdx + 1);
+      const parsedDate = new Date(iso);
+      // Reject if: not a valid date, or id is not a plausible UUID (36 chars, hex+hyphens)
+      if (
+        Number.isFinite(parsedDate.getTime()) &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+      ) {
+        conds.push(
+          sql`(${usageRecords.createdAt}, ${usageRecords.id}) < (${parsedDate.toISOString()}::timestamptz, ${id}::uuid)`,
+        );
+      }
     }
   }
 

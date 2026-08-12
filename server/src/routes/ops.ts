@@ -1,6 +1,8 @@
 /**
- * GET /v1/ops/snapshot — public operational snapshot.
- * Aggregates only; no per-user data is exposed.
+ * GET /v1/ops/snapshot — admin-only operational snapshot.
+ * Aggregates only; no per-user PII is exposed, but request volume and
+ * latency metrics are still operator-sensitive so the route requires
+ * session/bearer auth + requireAdmin().
  *
  * Combines three real sources:
  *   1. In-process HTTP counters (request volume, errors, per-route p95)
@@ -16,6 +18,7 @@
 import { Hono } from "hono";
 import { gte, sql } from "drizzle-orm";
 import type { OmaEnv } from "../types.js";
+import { sessionOrBearerAuth, requireAdmin } from "../auth/middleware.js";
 import { db } from "../db/client.js";
 import { usageRecords } from "../db/schema.js";
 import { getMetricsSnapshot } from "./metrics.js";
@@ -93,7 +96,7 @@ async function fetchChat24h(): Promise<Chat24h> {
   }
 }
 
-opsRoutes.get("/v1/ops/snapshot", async (c) => {
+opsRoutes.get("/v1/ops/snapshot", sessionOrBearerAuth, requireAdmin(), async (c) => {
   const dbStart = Date.now();
   let dbLatencyMs: number | null = null;
   try {

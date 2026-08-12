@@ -73,7 +73,7 @@ export const auditDebugTasks: AuditDebugTask[] = [
     id: 'typecheck-lint-test',
     name: 'Typecheck/Lint/Test',
     description: 'Run type checking, linting, and tests across app and server.',
-    status: 'pending',
+    status: 'completed',
   }
 ];
 
