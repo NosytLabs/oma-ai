@@ -12,8 +12,6 @@ import {
 	FileText,
 	FileJson,
 	PlusCircle,
-	Film,
-	Image as ImageIcon,
 	Keyboard,
 	MessageSquare,
 	Settings2,
@@ -54,8 +52,6 @@ export interface ChatToolbarProps {
 	setModel: Dispatch<SetStateAction<string>>;
 	paramsOpen: boolean;
 	setParamsOpen: Dispatch<SetStateAction<boolean>>;
-	mediaMode?: "text" | "image" | "video";
-	setMediaMode?: Dispatch<SetStateAction<"text" | "image" | "video">>;
 	searching: boolean;
 	isAuthenticated: boolean;
 	balance: BalanceResponse | null;
@@ -86,11 +82,14 @@ export interface ChatToolbarProps {
 /**
  * The top toolbar that sits above the messages pane.
  *
- * Four functional clusters, left → right:
- * 1. Brand mark + model selector + parameters toggle
- * 2. Media mode (text/image/video), searching badge
- * 3. Stats bar (desktop / mobile variants), credit balance pill
- * 4. Compare mode, share, shortcuts, export, clear
+ * Three functional clusters, left → right:
+ * 1. Input/mode — model selector + parameters + media-mode (Chat | Create) tabs.
+ *    All three are decisions about *what kind of input this is*, so they live in
+ *    one group. The media-mode toggle is no longer a separate floating cluster
+ *    (see git history for the "orphan tabs at mobile" fix).
+ * 2. (searching badge sits inside cluster 1 when web search is in flight)
+ * 3. Stats bar (desktop / mobile variants), credit balance pill, then
+ *    compare mode, share, shortcuts, export, clear.
  *
  * The Toolbar is purely presentational — every interaction is a prop
  * callback, every label/state is a prop. The page owns the state and
@@ -120,8 +119,6 @@ export function ChatToolbar({
 	deferredMessages,
 	setShortcutsOpen,
 	onAuthRequired,
-	mediaMode,
-	setMediaMode,
 }: ChatToolbarProps) {
 	const isChat = variant === "chat";
 	const messageCount = messagesLength;
@@ -171,50 +168,6 @@ export function ChatToolbar({
 			)
 		) : null;
 
-	// Chat | Create — Create opens the unified image/video studio
-	// (sub-kind switch lives inside MediaGenerationPanel).
-	const createActive = mediaMode === "image" || mediaMode === "video";
-	const mediaTabs =
-		isChat && setMediaMode ? (
-			<div
-				className="flex shrink-0 items-center gap-0.5 rounded-[var(--radius-md)] border border-border bg-surface p-0.5"
-				role="tablist"
-				aria-label="Playground mode"
-			>
-				<button
-					type="button"
-					role="tab"
-					onClick={() => setMediaMode("text")}
-					aria-selected={mediaMode === "text"}
-					title="Text chat (free OMA-AI models available)"
-					className={`${btnBase} !border-0 rounded-[var(--radius-md)] min-h-9 min-w-9 sm:min-h-10 sm:min-w-10 transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${mediaMode === "text" ? "!bg-accent/15 !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
-				>
-					<MessageSquare className="h-4 w-4" />
-					<span className="hidden md:inline text-[12px] font-medium tracking-wide">
-						Chat
-					</span>
-				</button>
-				<button
-					type="button"
-					role="tab"
-					onClick={() =>
-						setMediaMode(mediaMode === "video" ? "video" : "image")
-					}
-					aria-selected={createActive}
-					title="Create image or video (credits)"
-					className={`${btnBase} !border-0 rounded-[var(--radius-md)] min-h-9 min-w-9 gap-1 px-2 sm:min-h-10 sm:min-w-10 transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${createActive ? "!bg-accent/15 !text-accent" : ""} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
-				>
-					<span className="inline-flex items-center -space-x-0.5" aria-hidden="true">
-						<ImageIcon className="h-3.5 w-3.5" />
-						<Film className="h-3.5 w-3.5 opacity-80" />
-					</span>
-					<span className="hidden md:inline text-[12px] font-medium tracking-wide">
-						Create
-					</span>
-				</button>
-			</div>
-		) : null;
-
 	// Web search toggle moved into the composer input row (2026-08-01) —
 	// it belongs next to the send action, not in the model/status toolbar.
 
@@ -223,11 +176,15 @@ export function ChatToolbar({
 			aria-label="Playground toolbar"
 			className="z-20 flex min-h-14 min-w-0 flex-none flex-wrap items-center gap-x-1.5 gap-y-1.5 border-b border-border bg-void/95 px-4 py-1.5 sm:gap-x-3 sm:px-6 md:h-14 md:flex-nowrap md:px-6 md:py-0 lg:px-8"
 		>
-			{/* Left: chat model + params (hidden in Create — media models live
-			    inside the studio panel). Width-capped so model never slides
-			    under params on narrow screens. */}
-			<div className="flex min-w-0 max-w-full flex-1 items-center gap-1.5 sm:gap-2">
-				{!createActive && (
+			{/* Left "input/mode" cluster — model + params + media-mode tabs.
+			    All three are decisions about *what kind of input this is*,
+			    so they live in one group. On mobile (<md) the cluster takes
+			    its own row via `basis-full` so it never gets squashed by
+			    the secondary actions. In Create mode the model selector
+			    and PARAMS hide (Create studio picks its own model) but the
+			    Chat | Create tabs stay so the user can switch back. */}
+			<div className="flex min-w-0 max-w-full basis-full items-center gap-1.5 sm:gap-2 md:flex-1 md:basis-auto">
+				{true && (
 					<>
 						<div className="min-w-0 max-w-[min(12rem,calc(100%-2.75rem))] flex-1 overflow-hidden sm:max-w-[200px] md:max-w-[220px]">
 							<LazyModelSelector
@@ -253,16 +210,9 @@ export function ChatToolbar({
 						</button>
 					</>
 				)}
-			</div>
 
-			{/* Primary actions — media tabs take their own row on mobile to
-			 avoid overlap; inline on md+ */}
-			<div
-				className={`flex min-w-0 items-center justify-center gap-1 order-last w-full md:order-none md:w-auto md:shrink-0 ${
-					searching ? "md:flex-none" : ""
-				}`}
-			>
-				{mediaTabs}
+				{/* Chat-only mode — no Create tab. The chat surface is text + multimodal LLM only. */}
+
 				{searching && (
 					<div
 						className="flex shrink-0 items-center gap-1.5 border border-accent/20 bg-accent/10 px-2 py-1.5 text-[10px] uppercase tracking-widest text-accent"
@@ -303,7 +253,7 @@ export function ChatToolbar({
 					onClick={shareConversation}
 					disabled={shareStatus === "default" && messagesLength === 0}
 					data-state={shareStatus}
-					className={`${btnBase} max-xl:hidden shrink-0 focus-ring transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] data-[state=success]:border-success/30 data-[state=success]:bg-success/10 data-[state=success]:text-success xl:inline-flex min-h-9 min-w-9 sm:min-h-10 sm:min-w-10`}
+					className={`${btnBase} hidden shrink-0 focus-ring transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] data-[state=success]:border-success/30 data-[state=success]:bg-success/10 data-[state=success]:text-success md:inline-flex min-h-9 min-w-9 sm:min-h-10 sm:min-w-10`}
 					title="Copy a link that opens this chat with the current model pre-selected"
 					aria-label="SHARE — copy a link that opens this chat with the current model pre-selected"
 				>
@@ -314,7 +264,7 @@ export function ChatToolbar({
 					) : (
 						<Share2 className="h-4 w-4" />
 					)}
-					<span className="hidden xl:inline text-[11px] font-semibold tracking-wider">
+					<span className="hidden lg:inline text-[11px] font-semibold tracking-wider">
 						SHARE
 					</span>
 				</button>

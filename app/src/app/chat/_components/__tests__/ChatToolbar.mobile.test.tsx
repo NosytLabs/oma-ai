@@ -2,6 +2,9 @@
  * Ensures the playground toolbar renders exactly one COMPARE control.
  * The web-search toggle moved into the composer (MessageInputRedesign),
  * so it no longer lives in the toolbar.
+ *
+ * The Create / image-video tab was removed in R8 — chat surface is
+ * text + multimodal LLM only.
  */
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -35,8 +38,6 @@ const baseProps = {
 	setModel: vi.fn(),
 	paramsOpen: false,
 	setParamsOpen: vi.fn(),
-	mediaMode: "text" as const,
-	setMediaMode: vi.fn(),
 	searching: false,
 	isAuthenticated: false,
 	balance: null,
@@ -68,12 +69,9 @@ describe("ChatToolbar — single WEB / COMPARE path", () => {
 		expect(compare).toHaveLength(1);
 	});
 
-	it("keeps unified Chat | Create mode tabs", () => {
+	it("does not render Create / image-video tab (text-only chat surface)", () => {
 		render(<ChatToolbar {...baseProps} />);
-		const tabs = screen.getAllByRole("tab");
-		// Chat + Create (image/video unified inside Create studio)
-		expect(tabs.length).toBe(2);
-		expect(tabs[0]).toHaveAccessibleName(/text chat|chat/i);
-		expect(tabs[1]).toHaveAccessibleName(/create|image or video/i);
+		const create = screen.queryByRole("tab", { name: /create/i });
+		expect(create).toBeNull();
 	});
 });

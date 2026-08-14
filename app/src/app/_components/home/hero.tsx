@@ -62,6 +62,7 @@ export function Hero() {
       <div className="container-page relative z-10 min-w-0 py-20 lg:py-32 flex-1">
         <div className="flex flex-col items-center justify-center text-center max-w-4xl mx-auto">
           <m.div
+            key={entrance ? "in-badge" : "out-badge"}
             {...reveal(0, entrance)}
             className="mb-8 flex items-center justify-center"
           >
@@ -70,11 +71,12 @@ export function Hero() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
               </span>
-              Gateway online · v2
+              Gateway online
             </span>
           </m.div>
 
           <m.h1
+            key={entrance ? "in-h1" : "out-h1"}
             {...reveal(1, entrance)}
             className="text-balance text-5xl font-display font-medium leading-[1.05] tracking-tight text-text-bright sm:text-6xl md:text-7xl lg:text-8xl drop-shadow-[0_0_16px_rgba(255,255,255,0.08)]"
           >
@@ -86,6 +88,7 @@ export function Hero() {
           </m.h1>
 
           <m.p
+            key={entrance ? "in-p" : "out-p"}
             {...reveal(2, entrance)}
             className="mt-8 text-balance text-lg text-text-secondary md:text-xl max-w-2xl mx-auto leading-relaxed"
           >
@@ -95,6 +98,7 @@ export function Hero() {
           </m.p>
 
           <m.div
+            key={entrance ? "in-cta" : "out-cta"}
             {...reveal(3, entrance)}
             className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto"
           >
@@ -128,6 +132,7 @@ export function Hero() {
           </m.div>
 
           <m.div
+            key={entrance ? "in-card" : "out-card"}
             {...reveal(4, entrance)}
             className="mt-16 w-full max-w-4xl mx-auto flex justify-center perspective-[1200px] min-h-[420px] md:min-h-[400px]"
           >

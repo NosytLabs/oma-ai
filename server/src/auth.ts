@@ -26,14 +26,112 @@ import { agentAuth as agentAuthPlugin } from "@better-auth/agent-auth";
 import { verifyMessage, createPublicClient, http, getAddress } from "viem";
 import { mainnet } from "viem/chains";
 import { generateRandomString } from "better-auth/crypto";
+import { sql } from "drizzle-orm";
 import { db } from "./db/client.js";
 import * as schema from "./db/schema.js";
-import { creditBalances } from "./db/schema.js";
+import { creditBalances, creditGrants } from "./db/schema.js";
 import { config } from "./config.js";
 import { logger } from "./lib/logger.js";
 import { ensureCatalogLoaded, listAllModels } from "./inference/models.js";
+import { getRedisClient } from "./lib/redis-client.js";
 
 const RESEND_FROM = config.RESEND_FROM ?? "OMA-AI <noreply@nosytlabs.com>";
+
+// SECURITY (audit 1.2): per-email cooldown for magic-link + email-OTP sends.
+// Without this, the IP-level 40/min bucket lets an attacker flood any inbox
+// at the same rate. Cooldown: 60s for OTP, 60s for magic link. When Redis is
+// down we fail OPEN so we don't lock everyone out, but the IP bucket still
+// gates the request.
+const EMAIL_SEND_COOLDOWN_SECONDS = 60;
+
+export async function checkEmailSendCooldown(
+	email: string,
+	kind: "magic" | "otp",
+): Promise<{ ok: true } | { ok: false; retryAfter: number }> {
+	const normalized = email.trim().toLowerCase();
+	const key = `auth:cooldown:${kind}:${normalized}`;
+	const redis = await getRedisClient();
+	if (!redis) {
+		// Fail open if Redis is down — the IP-level mutation bucket
+		// (40/min) is the secondary gate.
+		return { ok: true };
+	}
+	try {
+		const set = await redis.set(key, "1", { NX: true, EX: EMAIL_SEND_COOLDOWN_SECONDS });
+		if (set === "OK") return { ok: true };
+		const ttl = await redis.ttl(key);
+		return { ok: false, retryAfter: ttl > 0 ? ttl : EMAIL_SEND_COOLDOWN_SECONDS };
+	} catch (err) {
+		logger.warn({ err, kind, email: normalized }, "[auth] email cooldown check failed; fail-open");
+		return { ok: true };
+	}
+}
+
+/**
+ * Free-trial credit grant — recorded against the email so the grant
+ * survives user deletion.
+ *
+ * SECURITY (audit 1.3 / CRITICAL): The legacy `databaseHooks.user.create.after`
+ * path credited `creditBalances` on every new user; an attacker could
+ * sign up → delete → re-signup the same email to farm `$1` per cycle
+ * because FK cascade wiped the balance row. Recording the grant against
+ * `lower(email)` (via `creditGrants` with a unique index on
+ * (emailNormalized, grantType)) makes the trial one-shot per email,
+ * even if the user row is deleted.
+ *
+ * Returns true if the trial was newly granted, false if it was already
+ * recorded (no-op). On DB error returns false and logs (the auth signup
+ * still proceeds so we never block a real user on a transient blip).
+ */
+async function grantFreeTrialOnce(email: string, cents: number, userId: string): Promise<boolean> {
+	if (cents <= 0) return false;
+	const normalized = email.trim().toLowerCase();
+	try {
+		await db.transaction(async (tx) => {
+			const inserted = await tx
+				.insert(creditGrants)
+				.values({
+					emailNormalized: normalized,
+					userId,
+					grantType: "free_signup",
+					cents: cents.toString(),
+				})
+				.onConflictDoNothing({
+					target: [creditGrants.emailNormalized, creditGrants.grantType],
+				})
+				.returning({ id: creditGrants.id });
+
+			if (inserted.length === 0) {
+				// Already granted for this email — do nothing.
+				return;
+			}
+
+			await tx
+				.insert(creditBalances)
+				.values({
+					userId,
+					balanceCents: cents.toString(),
+					totalDepositedCents: cents.toString(),
+					totalUsedCents: "0",
+				})
+				.onConflictDoUpdate({
+					target: creditBalances.userId,
+					set: {
+						balanceCents: sql`${creditBalances.balanceCents}::numeric + ${cents}::numeric`,
+						totalDepositedCents: sql`${creditBalances.totalDepositedCents}::numeric + ${cents}::numeric`,
+						lastActivityAt: sql`NOW()`,
+					},
+				});
+		});
+		return true;
+	} catch (err) {
+		logger.warn(
+			{ err, email: normalized },
+			"[auth] failed to record free-trial credit grant",
+		);
+		return false;
+	}
+}
 
 async function sendMagicLink({
 	email,
@@ -44,6 +142,12 @@ async function sendMagicLink({
 	token: string;
 	metadata?: Record<string, unknown>;
 }): Promise<void> {
+	const cooldown = await checkEmailSendCooldown(email, "magic");
+	if (!cooldown.ok) {
+		throw new Error(
+			`A magic link was sent to this address ${cooldown.retryAfter}s ago. Please wait before requesting another.`,
+		);
+	}
 	// Dev / failover — log the magic-link URL only when Resend is unset in
 	// non-production. Never put bearer-like login URLs in production logs;
 	// a configured sender failure is surfaced as an auth failure instead.
@@ -150,38 +254,34 @@ const ensClient = createPublicClient({
 	transport: http(ensRpcUrl),
 });
 
+// SECURITY (audit 1.1): treat `preview` as production for cookie
+// security. Preview deployments ship with a real domain and HTTPS,
+// so insecure cookies (secure:false) leak the session token on every
+// non-HTTPS hop. Dev-only environments keep secure:false so localhost
+// HTTP works.
+const isSecureCookieEnv =
+	config.NODE_ENV === "production" || config.NODE_ENV === "preview";
+
 export const auth = betterAuth({
 	baseURL: config.BETTER_AUTH_URL ?? config.PUBLIC_APP_URL ?? "http://localhost:3000",
 	secret: config.BETTER_AUTH_SECRET,
 	database: drizzleAdapter(db, { provider: "pg", schema }),
 
 	databaseHooks: {
-		// Seed the user's credit balance on first sign-in so they have
-		// something to spend before they hit a deposit path. Without this,
-		// /v1/balance returns 0 forever and the user silently bypasses
-		// billing (proxy.ts used to read the row and skip the deduction
-		// when no row existed — fixed in 2026-07-30 audit).
+		// SECURITY (audit 1.3 / CRITICAL): Record the free-trial grant
+		// against the *email*, not the user row. FK cascade on user
+		// delete used to wipe creditBalances, letting an attacker
+		// sign-up → delete → re-signup the same email to farm $1 per
+		// cycle. The creditGrants table has a unique index on
+		// (lower(email), grantType) so the trial is one-shot per email.
 		user: {
 			create: {
 				after: async (createdUser) => {
-					const freeTrialCents = String(config.FREE_SIGNUP_CENTS ?? 0);
-					if (Number(freeTrialCents) <= 0) return;
-					try {
-						await db
-							.insert(creditBalances)
-							.values({
-								userId: createdUser.id,
-								balanceCents: freeTrialCents,
-								totalDepositedCents: freeTrialCents,
-								totalUsedCents: "0",
-							})
-							.onConflictDoNothing();
-					} catch (err) {
-						logger.warn(
-							{ err, userId: createdUser.id },
-							"[auth] failed to seed free-trial credit balance",
-						);
-					}
+					const freeTrialCents = Number(config.FREE_SIGNUP_CENTS ?? 0);
+					if (freeTrialCents <= 0) return;
+					const email = (createdUser as { email?: string | null }).email ?? "";
+					if (!email) return;
+					await grantFreeTrialOnce(email, freeTrialCents, createdUser.id);
 				},
 			},
 		},
@@ -216,20 +316,20 @@ user: {
     enabled: false,
   },
 
-  // Account linking — lets a wallet (SIWE) identity and an email (magic-link
-  // / email-OTP) identity resolve to ONE account instead of two siloed users.
-  // Linking is implicit at sign-in: when a trusted provider's verified email
-  // matches an existing verified local account, better-auth attaches the new
-  // identity to that account rather than creating a duplicate. There is NO
-  // standalone /link-account endpoint — it happens inside the sign-in flow.
-  // requireLocalEmailVerified defaults true → no account takeover. NOTE: SIWE
-  // mints wallet-derived emails ({address}@oma-ai.com) that never match a real
-  // email, so merging a wallet INTO an existing email account needs a signed-in
-  // "connect wallet" flow on the frontend, not implicit linking.
+  // Account linking — DISABLED.
+  //
+  // SECURITY (audit 1.4 / 6.1): accountLinking.enabled was previously
+  // true with trustedProviders: ["siwe", "credential"]. The bridge was
+  // a NO-OP for SIWE because wallet-derived emails ({address}@oma-ai.com)
+  // never match a real account email — implicit linking only ever fired
+  // for the "credential" provider (password, never enabled in this app).
+  // Keeping it enabled surfaced a phantom attack surface in the security
+  // model without any actual functionality. A future "Connect wallet"
+  // flow must use an explicit, signed-in endpoint (server-side FK) — not
+  // better-auth's implicit trusted-provider matching.
   account: {
     accountLinking: {
-      enabled: true,
-      trustedProviders: ["siwe", "credential"],
+      enabled: false,
     },
   },
 
@@ -243,14 +343,19 @@ user: {
 
   advanced: {
     cookiePrefix: "oma",
-    useSecureCookies: config.NODE_ENV === "production",
+    // SECURITY (audit 1.1): treat `preview` as production for cookie
+    // security. Preview deployments ship with a real domain and HTTPS,
+    // so insecure cookies (secure:false) leak the session token on every
+    // non-HTTPS hop. Dev-only environments keep secure:false so localhost
+    // HTTP works.
+    useSecureCookies: isSecureCookieEnv,
     defaultCookieAttributes: {
       httpOnly: true,
       sameSite: "lax",
-      secure: config.NODE_ENV === "production",
+      secure: isSecureCookieEnv,
       path: "/",
     },
-    ...(config.NODE_ENV === "production" && config.PUBLIC_APP_URL?.includes(".")
+    ...(isSecureCookieEnv && config.PUBLIC_APP_URL?.includes(".")
       ? {
           crossSubDomainCookies: {
             enabled: true,
@@ -259,10 +364,10 @@ user: {
         }
       : {}),
     // Dev: share cookies across ports (3000 frontend + 3001 backend) so
-    // sign-in works on both. Production sets the explicit domain above;
-    // dev stays on host-only cookies. Setting sameSite: "lax" + secure:false
-    // lets the browser send cookies over http on localhost.
-    ...(config.NODE_ENV !== "production"
+    // sign-in works on both. Production/preview set the explicit domain
+    // above; dev stays on host-only cookies. Setting sameSite: "lax" +
+    // secure:false lets the browser send cookies over http on localhost.
+    ...(!isSecureCookieEnv
       ? {
           defaultCookieAttributes: {
             httpOnly: true,
@@ -331,12 +436,28 @@ user: {
     // Uses the same Resend API key as magicLink for sending OTP emails.
     emailOTP({
       async sendVerificationOTP({ email, otp, type }) {
-        if (!config.RESEND_API_KEY) {
-          logger.info(
-            { email, otp, type },
-            "[emailOTP] (dev) no RESEND_API_KEY — OTP not sent",
+        const cooldown = await checkEmailSendCooldown(email, "otp");
+        if (!cooldown.ok) {
+          throw new Error(
+            `An OTP was sent to this address ${cooldown.retryAfter}s ago. Please wait before requesting another.`,
           );
-          return;
+        }
+        if (!config.RESEND_API_KEY) {
+          // SECURITY (audit 1.5): never log the OTP code in non-development
+          // envs. A misconfigured `NODE_ENV=preview` otherwise leaks the
+          // OTP to server logs and breaks the email-OTP threat model.
+          if (config.NODE_ENV === "development") {
+            logger.info(
+              { email, otp, type },
+              "[emailOTP] (dev) no RESEND_API_KEY — OTP not sent",
+            );
+            return;
+          }
+          logger.error(
+            { email, type },
+            "[emailOTP] RESEND_API_KEY is not configured; refusing to send OTP",
+          );
+          throw new Error("OTP delivery is not configured");
         }
         const res = await fetch("https://api.resend.com/emails", {
           method: "POST",

@@ -125,7 +125,7 @@ export function ApiStatus({ onRetry, showRetryButton = true }: ApiStatusProps) {
  className="flex items-center gap-1.5 rounded-full border border-border bg-surface/60 px-2.5 py-1"
  role="status"
  aria-live="polite"
- aria-label={`API Status: ${info.text}`}
+ aria-label={`${info.text}`}
  title={`API status: ${info.text} — polls /api/health every 30s`}
  >
  <span className={`relative flex h-2 w-2`}>

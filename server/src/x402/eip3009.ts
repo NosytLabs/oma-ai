@@ -40,12 +40,47 @@ import type { PaymentPayload, PaymentResponse } from "./types.js";
 // we fall back to an eth_call simulation and return a deterministic synthetic
 // txHash so the verify+settle API surface still produces a receipt.
 
-const USDC_EIP712_DOMAIN = {
-  name: "USD Coin",
-  version: "2",
-  chainId: 8453,
-  verifyingContract: USDC_BASE,
-} as const;
+// SECP256K1_N/2 — EIP-2 mandates a low-S signature. We enforce it explicitly
+// because viem's `recoverTypedDataAddress` does not reject high-S; a
+// malleated signature would still recover the same address and pass the
+// upstream equality check. Reject at the verify path so the contract call
+// (which the contract itself rejects) never even reaches submission.
+const SECP256K1_N_OVER_2 =
+  0x7fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a0n;
+
+// USDC contracts and their chain IDs. OMA settles on Base mainnet today
+// but the chainId for EIP-712 must match the actual chain the
+// authorization is bound to, otherwise the typed-data hash differs and
+// the signature doesn't recover. We derive chainId from the request's
+// networkId via `USDC_DOMAIN_BY_NETWORK`.
+type UsdcDomain = {
+  name: string;
+  version: string;
+  chainId: number;
+  verifyingContract: `0x${string}`;
+};
+
+const USDC_DOMAIN_BY_NETWORK: Record<string, UsdcDomain> = {
+  base: {
+    name: "USD Coin",
+    version: "2",
+    chainId: 8453,
+    verifyingContract: USDC_BASE,
+  },
+};
+
+function usdcDomainForNetwork(networkId: string | undefined): UsdcDomain {
+  // SECURITY (audit 3.1): the chainId is derived from the request's
+  // networkId, never hardcoded. The default is Base mainnet, which is
+  // the only chain OMA settles on today. Adding a new network requires
+  // adding the corresponding entry to USDC_DOMAIN_BY_NETWORK.
+  const key = (networkId ?? "base").toLowerCase();
+  return (
+    USDC_DOMAIN_BY_NETWORK[key] ?? {
+      ...USDC_DOMAIN_BY_NETWORK.base,
+    }
+  );
+}
 
 const EIP3009_TRANSFER_WITH_AUTH_TYPES = {
   TransferWithAuthorization: [
@@ -93,21 +128,23 @@ export function isEip3009Authorization(value: unknown): value is Eip3009Authoriz
 
 /**
  * Signature recovery logic for EIP-3009 compliant authorize payloads.
- * 
+ *
  * Why: Resolves the canonical public key address that authorized the specified transfer,
  * allowing the facilitator to verify that the signer is indeed the owner of the funds
  * before spending gas on-chain or generating synthetic receipts.
- * 
+ *
  * @param auth - The detailed EIP-3009 transfer authorization payload structure.
  * @param signature - The 65-byte ECDSA signature over the typed domain.
+ * @param networkId - The x402 network id from the payload (drives USDC chainId).
  * @returns The verified, lowercase Ethereum address.
  */
 async function recoverEip3009Signer(
   auth: Eip3009Authorization,
   signature: Hex,
+  networkId: string,
 ): Promise<string> {
   const recovered = await recoverTypedDataAddress({
-    domain: USDC_EIP712_DOMAIN,
+    domain: usdcDomainForNetwork(networkId),
     types: EIP3009_TRANSFER_WITH_AUTH_TYPES,
     primaryType: "TransferWithAuthorization",
     message: {
@@ -324,8 +361,18 @@ export async function verifyEip3009Payment(
   } catch (err) {
     return { valid: false, error: `Invalid amount: ${err instanceof Error ? err.message : String(err)}` };
   }
+  if (requiredAtomic <= 0n) {
+    return { valid: false, error: "Required payment amount must be a positive USDC value" };
+  }
   if (authAtomic < requiredAtomic) {
     return { valid: false, error: `Insufficient payment: ${authAtomic} < ${requiredAtomic}` };
+  }
+  // SECURITY (audit 3.3 / HIGH): reject overpayment. We pin the x402 invoice
+  // to the exact request price; any surplus would otherwise be silently
+  // absorbed by the treasury. Clients must re-issue a payment with the
+  // exact requiredAtomic amount.
+  if (authAtomic > requiredAtomic) {
+    return { valid: false, error: `Overpayment rejected: ${authAtomic} > ${requiredAtomic} required` };
   }
 
   // 5. Time-bounds check. Authorization is valid while
@@ -346,9 +393,23 @@ export async function verifyEip3009Payment(
   if (sigHex.length !== 132) {
     return { valid: false, error: `Invalid EIP-712 signature length: expected 65 bytes (132 hex chars), got ${(sigHex.length - 2) / 2} bytes` };
   }
+  // SECURITY (audit 3.1 / MEDIUM): reject high-S signatures explicitly.
+  // EIP-2 mandates low-S; a high-S variant is a malleated signature that
+  // recovers the same address but is non-canonical. Without this check
+  // the same authorization could be replayed under a different signature
+  // and bypass nonce-based replay protection if the nonce key were
+  // recovered from the auth tuple (we use the raw nonce here, so it
+  // wouldn't actually bypass — but rejecting is defense in depth and
+  // matches the contract's on-chain behavior).
+  //
+  // signature layout: 0x || r (32 bytes = 64 hex) || s (32 bytes = 64 hex) || v (1 byte = 2 hex)
+  const sigS = BigInt(("0x" + sigHex.slice(66, 130)) as Hex);
+  if (sigS > SECP256K1_N_OVER_2) {
+    return { valid: false, error: "High-S signature rejected (EIP-2 mandates low-S)" };
+  }
   let recovered: string;
   try {
-    recovered = await recoverEip3009Signer(auth, sigHex);
+    recovered = await recoverEip3009Signer(auth, sigHex, payload.networkId);
   } catch (err) {
     return { valid: false, error: `Invalid EIP-712 signature: ${err instanceof Error ? err.message : String(err)}` };
   }

@@ -10,7 +10,7 @@ import {
 	FileText,
 	Lightbulb,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ThinkingOrb } from "thinking-orbs";
 
 interface Preset {
@@ -20,6 +20,12 @@ interface Preset {
 	icon: typeof Code2;
 	prompt: string;
 	model?: string;
+	/**
+	 * Optional model-family hints. Each hint is a lowercase substring
+	 * matched against the current model id. A preset with no hints
+	 * matches every model (the legacy behavior).
+	 */
+	modelHints?: readonly string[];
 	/** Static Tailwind hue classes applied on hover (bg + border tint). */
 	tint: string;
 }
@@ -31,6 +37,7 @@ const PRESETS: Preset[] = [
 		description: "Line-by-line walkthrough",
 		icon: Lightbulb,
 		tint: "bg-violet/10 border-violet/30",
+		modelHints: ["claude", "opus", "sonnet", "haiku"],
 		prompt:
 			"Explain this code line by line, as if teaching a junior developer:\n\n```python\ndef merge_sort(arr):\n if len(arr) <= 1:\n return arr\n mid = len(arr) // 2\n left = merge_sort(arr[:mid])\n right = merge_sort(arr[mid:])\n return merge(left, right)\n```",
 	},
@@ -40,6 +47,7 @@ const PRESETS: Preset[] = [
 		description: "Find and explain the issue",
 		icon: Bug,
 		tint: "bg-warning/10 border-warning/30",
+		modelHints: ["gpt", "openai", "codex", "qwen", "coder"],
 		prompt:
 			"What's wrong with this code and how do I fix it?\n\n```javascript\nconst nums = [1, 2, 3, 4, 5];\nconst result = nums.filter(n => n % 2 = 0);\n```",
 	},
@@ -49,6 +57,7 @@ const PRESETS: Preset[] = [
 		description: "Bullet-point summary",
 		icon: FileText,
 		tint: "bg-secondary/10 border-secondary/30",
+		modelHints: ["gemini", "flash", "pro", "llama", "mistral"],
 		prompt:
 			"Summarize this in 3 concise bullet points, focusing on actionable takeaways:\n\nThe rise of edge computing is transforming how we architect distributed systems. By processing data closer to the source, organizations can reduce latency by 50-70%, lower bandwidth costs, and enable real-time decision-making. However, edge deployments introduce complexity in data consistency, security patching, and monitoring. Companies like Cloudflare and Fastly are leading the charge with serverless edge platforms that abstract away infrastructure management while providing sub-millisecond cold start times.",
 	},
@@ -58,6 +67,7 @@ const PRESETS: Preset[] = [
 		description: "Natural language to query",
 		icon: Code2,
 		tint: "bg-accent/10 border-accent/30",
+		// Universal — every modern LLM writes decent SQL.
 		prompt:
 			"Write a SQL query to find the top 5 customers by total spending in the last 30 days, including their name, email, and order count. Assume tables: customers (id, name, email), orders (id, customer_id, total, created_at).",
 	},
@@ -65,10 +75,34 @@ const PRESETS: Preset[] = [
 
 interface EmptyStateProps {
 	onPreset: (prompt: string, model?: string) => void;
+	/**
+	 * The currently selected model id (e.g. "claude-sonnet-4-20250514").
+	 * When provided, presets tagged with `modelHints` filter to those
+	 * that match the current model. When omitted, every preset shows.
+	 */
+	currentModel?: string;
 }
 
-export function ChatEmptyState({ onPreset }: EmptyStateProps) {
+export function ChatEmptyState({ onPreset, currentModel }: EmptyStateProps) {
 	const [hoveredId, setHoveredId] = useState<string | null>(null);
+
+	// Filter presets by model hints; fall back to all presets when the
+	// current model is missing, unknown, or no preset matches it. The
+	// fallback guarantees we never render an empty grid (would look broken).
+	const visiblePresets = useMemo(() => {
+		if (!currentModel) return PRESETS;
+		const needle = currentModel.toLowerCase();
+		const matched = PRESETS.filter((p) => {
+			// Universal preset (no hints declared) — show for every model.
+			if (!p.modelHints || p.modelHints.length === 0) return true;
+			return p.modelHints.some((hint) => needle.includes(hint));
+		});
+		// Fallback to ALL presets when no model-specific preset matched.
+		// We require >1 so that an unknown model (only the universal
+		// "Write SQL" preset matches) still surfaces every preset — otherwise
+		// the grid looks empty/broken.
+		return matched.length > 1 ? matched : PRESETS;
+	}, [currentModel]);
 
 	return (
 		<div className="flex flex-col items-center justify-center text-center px-4 py-8 md:py-12">
@@ -126,7 +160,7 @@ export function ChatEmptyState({ onPreset }: EmptyStateProps) {
 				transition={{ delay: 0.25, ...springs.soft }}
 				className="grid w-full max-w-xl grid-cols-2 gap-3"
 			>
-				{PRESETS.map((preset, i) => {
+				{visiblePresets.map((preset, i) => {
 					const Icon = preset.icon;
 					const isHovered = hoveredId === preset.id;
 					return (

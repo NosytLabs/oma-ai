@@ -313,9 +313,7 @@ export function PricingTable({
 														? "bg-[color-mix(in_srgb,var(--color-accent)_20%,transparent)] text-[var(--color-accent)]"
 														: mm.provider === "OMA-AI"
 															? "bg-[color-mix(in_srgb,var(--color-provider-oma-ai)_20%,transparent)] text-[var(--color-provider-oma-ai)]"
-															: mm.provider === "OMA-AI"
-																? "bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)] text-[var(--color-accent)]"
-																: "bg-[color-mix(in_srgb,var(--color-secondary)_20%,transparent)] text-[var(--color-secondary)]"
+															: "bg-[color-mix(in_srgb,var(--color-secondary)_20%,transparent)] text-[var(--color-secondary)]"
 												}`}
 											>
 												{mm.provider}

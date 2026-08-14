@@ -29,6 +29,6 @@ describe("sectionLabelFor", () => {
 	});
 
 	it("falls back to the first path segment for an unlisted route", () => {
-		expect(sectionLabelFor("/faq")).toBe("faq");
+		expect(sectionLabelFor("/faq")).toBe("FAQ");
 	});
 });

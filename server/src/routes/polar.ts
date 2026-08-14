@@ -40,7 +40,6 @@ import {
 } from "../db/schema.js";
 import { config } from "../config.js";
 import { logger } from "../lib/logger.js";
-import { emitDepositMatched } from "../lib/deposit-events.js";
 import { logPaymentEvent } from "../lib/payment-observability.js";
 
 export const polarRoutes = new Hono<OmaEnv>();
@@ -226,42 +225,6 @@ function planFromProductId(
   return null;
 }
 
-async function creditUser(
-  userId: string,
-  credits: number,
-  source: string,
-): Promise<void> {
-  await db
-    .insert(creditBalances)
-    .values({
-      userId,
-      balanceCents: credits.toString(),
-      totalDepositedCents: credits.toString(),
-      totalUsedCents: "0",
-    })
-    .onConflictDoUpdate({
-      target: creditBalances.userId,
-      set: {
-        balanceCents: sql`${creditBalances.balanceCents}::numeric + ${credits}::numeric`,
-        totalDepositedCents: sql`${creditBalances.totalDepositedCents}::numeric + ${credits}::numeric`,
-        lastActivityAt: sql`NOW()`,
-      },
-    });
-  logger.info({ userId, credits, source }, "[polar] credited user balance");
-  // Notify any /v1/deposit/feed subscribers.
-  emitDepositMatched({
-    id: `polar-${Date.now()}`,
-    userId,
-    type: "card",
-    amountUsd: (credits / 100).toFixed(2),
-    creditsIssued: credits.toString(),
-    txHash: null,
-    status: "completed",
-    createdAt: new Date(),
-    completedAt: new Date(),
-  });
-}
-
 async function revokeUser(userId: string): Promise<void> {
   // We don't drain existing credits on cancel — they remain usable.
   // The user just won't be eligible for the next renewal's allocation.
@@ -269,26 +232,6 @@ async function revokeUser(userId: string): Promise<void> {
     { userId },
     "[polar] subscription canceled (existing credits retained)",
   );
-}
-
-async function drainUser(userId: string, credits: number): Promise<void> {
-  await db
-    .insert(creditBalances)
-    .values({
-      userId,
-      balanceCents: "0",
-      totalDepositedCents: "0",
-      totalUsedCents: "0",
-    })
-    .onConflictDoUpdate({
-      target: creditBalances.userId,
-      set: {
-        balanceCents: sql`GREATEST(${creditBalances.balanceCents}::numeric - ${credits}::numeric, 0)`,
-        totalDepositedCents: sql`GREATEST(${creditBalances.totalDepositedCents}::numeric - ${credits}::numeric, 0)`,
-        lastActivityAt: sql`NOW()`,
-      },
-    });
-  logger.info({ userId, credits }, "[polar] refunded; credits drained");
 }
 
 /**
@@ -350,20 +293,43 @@ export async function polarWebhookHandler(c: Context<OmaEnv>) {
     logger.error({ err, eventId }, "[polar] failed to claim webhook event");
     return c.json({ error: "webhook processing unavailable" }, 503);
   }
+
+  // SECURITY: derive credits from the server-side product→plan mapping, not
+  // from webhook metadata. Metadata is attacker-controlled; a compromised
+  // operator secret could otherwise credit any user any amount.
+  // See audit: polar.ts:353-362 IDOR.
   const plan = planFromProductId(event.data?.product?.id) ?? null;
+  const credits = plan ? PLAN_CREDITS[plan].credits : null;
   const metadata = event.data?.metadata ?? {};
+  // userId still comes from metadata today (Polar send it through at checkout
+  // time, signed by the operator's webhook secret). We log + sanitize but
+  // TODO: replace with a customer.id → userId mapping table.
   const userId = typeof metadata.userId === "string" ? metadata.userId : null;
-  const creditsRaw = metadata.credits;
-  const credits =
-    typeof creditsRaw === "number" &&
-    Number.isSafeInteger(creditsRaw) &&
-    creditsRaw > 0
-      ? creditsRaw
-      : null;
+  if (metadata.credits !== undefined && metadata.credits !== credits) {
+    logger.warn(
+      {
+        eventId,
+        eventType: event.type,
+        metadataCredits: metadata.credits,
+        derivedCredits: credits,
+      },
+      "[polar] webhook metadata credits diverged from product map; using server-side value",
+    );
+  }
 
   if (event.type === "order.paid") {
     if (userId && credits) {
-      await creditUser(userId, credits, event.type);
+      // SECURITY (audit 2.2 / HIGH): wrap the credit grant + the
+      // processed-flag flip in a single DB transaction. If the server
+      // crashes between the two writes, a re-delivery from Polar will
+      // see the webhook row exists (idempotency holds), but the
+      // transaction either fully completed or rolled back — never
+      // partial. The unique-constraint on `polarEventId` plus the
+      // `processed = 0` guard on the update prevent double-credits.
+      await processInTransaction(eventId, async (tx) => {
+        await creditUserTx(tx, userId, credits as number, event.type);
+        await markEventProcessedTx(tx, eventId);
+      });
     } else {
       logger.warn(
         { type: event.type, hasUserId: !!userId, hasCredits: !!credits, plan },
@@ -372,7 +338,10 @@ export async function polarWebhookHandler(c: Context<OmaEnv>) {
     }
   } else if (event.type === "order.refunded") {
     if (userId && credits) {
-      await drainUser(userId, credits);
+      await processInTransaction(eventId, async (tx) => {
+        await drainUserTx(tx, userId, credits as number);
+        await markEventProcessedTx(tx, eventId);
+      });
     } else {
       logger.warn(
         { type: event.type, hasUserId: !!userId, hasCredits: !!credits, plan },
@@ -390,7 +359,10 @@ export async function polarWebhookHandler(c: Context<OmaEnv>) {
         event.data?.status === "trialing" ||
         event.type === "subscription.active"
       ) {
-        await creditUser(userId, credits, event.type);
+        await processInTransaction(eventId, async (tx) => {
+          await creditUserTx(tx, userId, credits as number, event.type);
+          await markEventProcessedTx(tx, eventId);
+        });
       } else {
         logger.info(
           { userId, type: event.type, status: event.data?.status },
@@ -412,12 +384,9 @@ export async function polarWebhookHandler(c: Context<OmaEnv>) {
     }
   } else {
     logger.info({ type: event.type }, "[polar] webhook event (unhandled type)");
+    await markEventProcessed(eventId);
   }
 
-  await db
-    .update(polarWebhookEvents)
-    .set({ processed: 1 })
-    .where(sql`${polarWebhookEvents.polarEventId} = ${eventId}`);
   logPaymentEvent({
     kind: "polar",
     outcome: "settled",
@@ -427,6 +396,122 @@ export async function polarWebhookHandler(c: Context<OmaEnv>) {
     latencyMs: Date.now() - startedAt,
   });
   return c.json({ ok: true });
+}
+
+/**
+ * Mark a webhook event as processed. Guards against double-processing by
+ * only updating rows where `processed = 0`. Source of truth remains the
+ * unique constraint on `polarEventId` (insert path); this is a defensive
+ * belt-and-suspenders.
+ */
+async function markEventProcessed(eventId: string): Promise<void> {
+  await db
+    .update(polarWebhookEvents)
+    .set({ processed: 1 })
+    .where(
+      sql`${polarWebhookEvents.polarEventId} = ${eventId} AND ${polarWebhookEvents.processed} = 0`,
+    );
+}
+
+/**
+ * Run a Polar webhook processing step inside a DB transaction.
+ *
+ * SECURITY (audit 2.2 / HIGH): the credit grant + processed-flag flip
+ * must be atomic. Without a tx, a crash between the two writes leaves
+ * a row with `processed = 0` after the user has already been credited.
+ * A re-delivery from Polar would see the row exists (unique constraint
+ * on polarEventId) but `processed = 0`, and the next handler invocation
+ * would double-credit.
+ *
+ * The `processed = 0` guard on the update (in markEventProcessedTx)
+ * also keeps a duplicate re-delivery from re-running the credit grant
+ * even if a transaction somehow commits twice.
+ */
+async function processInTransaction(
+  eventId: string,
+  step: (tx: Parameters<Parameters<typeof db.transaction>[0]>[0]) => Promise<void>,
+): Promise<void> {
+  try {
+    await db.transaction(async (tx) => {
+      await step(tx);
+    });
+  } catch (err) {
+    logger.error(
+      { err, eventId },
+      "[polar] transactional processing step failed",
+    );
+    throw err;
+  }
+}
+
+/**
+ * Inside-transaction variant of creditUser. Caller controls the tx.
+ */
+async function creditUserTx(
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  userId: string,
+  credits: number,
+  source: string,
+): Promise<void> {
+  await tx
+    .insert(creditBalances)
+    .values({
+      userId,
+      balanceCents: credits.toString(),
+      totalDepositedCents: credits.toString(),
+      totalUsedCents: "0",
+    })
+    .onConflictDoUpdate({
+      target: creditBalances.userId,
+      set: {
+        balanceCents: sql`${creditBalances.balanceCents}::numeric + ${credits}::numeric`,
+        totalDepositedCents: sql`${creditBalances.totalDepositedCents}::numeric + ${credits}::numeric`,
+        lastActivityAt: sql`NOW()`,
+      },
+    });
+  logger.info({ userId, credits, source }, "[polar] credited user balance");
+}
+
+/**
+ * Inside-transaction variant of drainUser. Caller controls the tx.
+ */
+async function drainUserTx(
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  userId: string,
+  credits: number,
+): Promise<void> {
+  await tx
+    .insert(creditBalances)
+    .values({
+      userId,
+      balanceCents: "0",
+      totalDepositedCents: "0",
+      totalUsedCents: "0",
+    })
+    .onConflictDoUpdate({
+      target: creditBalances.userId,
+      set: {
+        balanceCents: sql`GREATEST(${creditBalances.balanceCents}::numeric - ${credits}::numeric, 0)`,
+        totalDepositedCents: sql`GREATEST(${creditBalances.totalDepositedCents}::numeric - ${credits}::numeric, 0)`,
+        lastActivityAt: sql`NOW()`,
+      },
+    });
+  logger.info({ userId, credits }, "[polar] refunded; credits drained");
+}
+
+/**
+ * Inside-transaction variant of markEventProcessed. Caller controls the tx.
+ */
+async function markEventProcessedTx(
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  eventId: string,
+): Promise<void> {
+  await tx
+    .update(polarWebhookEvents)
+    .set({ processed: 1 })
+    .where(
+      sql`${polarWebhookEvents.polarEventId} = ${eventId} AND ${polarWebhookEvents.processed} = 0`,
+    );
 }
 
 const polarWebhookRateLimit = rateLimit({ windowMs: 60_000, maxRequests: 1000 }); // High limit to allow spikes, but prevent basic DoS

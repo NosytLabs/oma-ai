@@ -45,7 +45,7 @@ Manage API keys, monitor real-time usage and spend, inspect request logs, and co
 Drop-in replacement for any OpenAI or Anthropic SDK. Support for chat completions, image generation, and video generation through a single, unified API surface.
 
 ### 🎯 Curated Model Registry
-Twelve vetted chat models across Venice and OMA-AI providers. We curate the best models so you don't have to sift through 100+ low-quality alternatives.
+26 curated chat models (18 Venice + 8 OMA-AI) across providers. We curate the best models so you don't have to sift through 100+ low-quality alternatives.
 
 ### 🆓 Free Guest Chat
 Budget-friendly, sign-in-free chat via OMA-AI models with a generous daily limit for anonymous visitors. Perfect for evaluating the platform before upgrading.

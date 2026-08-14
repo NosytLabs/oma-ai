@@ -43,7 +43,6 @@ import {
 	BookOpen,
 	CircleHelp,
 	BookMarked,
-	Sparkles,
 } from "lucide-react";
 import { m } from "@/lib/framer-motion-client";
 import Link from "next/link";
@@ -69,10 +68,8 @@ const PRODUCT: FooterSection = {
 	links: [
 		{ label: "Models", href: "/models", icon: Boxes },
 		{ label: "Chat", href: "/chat", icon: Terminal },
-		{ label: "Create", href: "/chat?mode=create", icon: Sparkles },
 		{ label: "Pricing", href: "/pricing", icon: Tag },
 		{ label: "Docs", href: "/docs", icon: FileText },
-		{ label: "Compare", href: "/compare" },
 	],
 };
 
@@ -80,7 +77,6 @@ const TOOLS: FooterSection = {
 	title: "Tools",
 	links: [
 		{ label: "API Reference", href: "/docs#endpoints", icon: Network },
-		{ label: "Changelog", href: "/changelog", icon: Newspaper },
 	],
 };
 
@@ -138,8 +134,8 @@ const SOCIAL_LINKS = [
 	},
 ];
 
-const CURRENT_YEAR = 2027;
-const LAST_DEPLOY = "2026-08-04";
+const CURRENT_YEAR = 2026;
+const LAST_DEPLOY = "2026-08-14";
 
 export function Footer() {
 	const pathname = usePathname() ?? "";

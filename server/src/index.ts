@@ -18,7 +18,6 @@ import { metricsRoutes, metricsMiddleware } from "./routes/metrics.js";
 import { opsRoutes } from "./routes/ops.js";
 import { x402Routes } from "./x402/facilitator.js";
 import { chatRoutes } from "./routes/chat/index.js";
-import { mediaRouter } from "./routes/media.js";
 import { anthropicRoutes } from "./routes/anthropic/index.js";
 import { searchRoutes } from "./routes/search.js";
 import { depositRoutes } from "./routes/deposit/index.js";
@@ -28,6 +27,7 @@ import { dailyUsageRoutes } from "./routes/daily-usage.js";
 import { usageRoutes } from "./routes/usage.js";
 import { openapiRoutes } from "./routes/openapi.js";
 import { polarRoutes } from "./routes/polar.js";
+import { adminRoutes } from "./routes/admin.js";
 import type { OmaEnv } from "./types.js";
 import { generateCorrelationId } from "./tracing.js";
 import { rateLimit } from "./middleware/rate-limit.js";
@@ -203,7 +203,7 @@ app.use("*", async (c, next) => {
 // for rationale. Mounted AFTER the maintenance check (so a 503 for
 // maintenance still wins) and BEFORE route mounting (so it covers
 // every /v1 mutation: deposit, checkout, keys, account, credits,
-// admin, chat, media, etc. without per-route edits).
+// admin, chat, etc. without per-route edits).
 app.use("/v1/*", demoModeGuard);
 
 // Public operational routes.
@@ -256,7 +256,6 @@ app.route("/", authRoutes);
 // OpenAI-compatible gateway surface.
 app.route("/", modelRoutes);
 app.route("/", chatRoutes);
-app.route("/", mediaRouter);
 app.route("/", anthropicRoutes);
 app.route("/", searchRoutes);
 app.route("/", depositRoutes);
@@ -276,6 +275,10 @@ app.route("/", usageRoutes);
 // polarRoutes dual-mounts POST /webhooks/polar and POST /api/webhook/polar
 // with the same rate-limited, signature-verified handler.
 app.route("/", polarRoutes);
+
+// Admin operator endpoints (site-settings, credit-adjust, user-suspend, list-users).
+// All require session/bearer auth + requireAdmin().
+app.route("/", adminRoutes);
 
 app.notFound((c) =>
   c.json({ error: { message: `Route ${c.req.path} not found`, type: "not_found" } }, 404),

@@ -14,15 +14,15 @@ describe("parseMediaMode", () => {
 	// generation panels are wired into MessagesList.
 
 	it("accepts image aliases for legacy redirects", () => {
-		expect(parseMediaMode("image")).toBe("image");
-		expect(parseMediaMode("IMG")).toBe("image");
-		expect(parseMediaMode("create")).toBe("image");
-		expect(parseMediaMode("media")).toBe("image");
+		expect(parseMediaMode("image")).toBe("text");
+		expect(parseMediaMode("IMG")).toBe("text");
+		expect(parseMediaMode("create")).toBe("text");
+		expect(parseMediaMode("media")).toBe("text");
 	});
 
 	it("accepts video aliases", () => {
-		expect(parseMediaMode("video")).toBe("video");
-		expect(parseMediaMode("vid")).toBe("video");
+		expect(parseMediaMode("video")).toBe("text");
+		expect(parseMediaMode("vid")).toBe("text");
 	});
 
 	it("accepts chat as text alias", () => {

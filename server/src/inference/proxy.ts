@@ -34,7 +34,6 @@ export {
 // Re-export for existing test/route imports that pull helpers from proxy.
 export { FALLBACK_MAP, buildFallbackChain, rewriteSseModelField } from "./fallback.js";
 
-// Local imports for callProvider (the only logic still in this file).
 import { ProviderError, resolveProvider } from "./provider-route.js";
 import { estimateTokens, flattenMessageContent } from "./token-utils.js";
 

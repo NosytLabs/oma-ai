@@ -6,7 +6,7 @@ import type { LucideIcon } from "lucide-react";
 import {
 	ArrowUpRight,
 	BookOpen,
-	Sparkles,
+	Coins,
 	Shield,
 	Terminal,
 } from "lucide-react";
@@ -20,7 +20,8 @@ interface QuickAction {
 	external?: boolean;
 }
 
-/** Unified playground surfaces — Create merges image + video (Venice/OpenRouter-style). */
+/** Common next steps after sign-in. Image/video generation was removed
+ *  in R8 — the playground is text + multimodal LLM only. */
 const ACTIONS: QuickAction[] = [
 	{
 		href: "/chat",
@@ -29,10 +30,10 @@ const ACTIONS: QuickAction[] = [
 		icon: Terminal,
 	},
 	{
-		href: "/chat?mode=create",
-		label: "Create",
-		description: "Image + video studio (credits)",
-		icon: Sparkles,
+		href: "/deposit",
+		label: "Buy credits",
+		description: "Top up via card or USDC on Base",
+		icon: Coins,
 	},
 	{
 		href: "/docs",

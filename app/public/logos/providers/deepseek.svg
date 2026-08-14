@@ -1,4 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-label="DS">
-  <rect width="24" height="24" rx="6" fill="#4d6bfe"/>
-  <text x="12" y="16" text-anchor="middle" font-family="system-ui,sans-serif" font-size="8" font-weight="700" fill="#fff">DS</text>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-label="DeepSeek"><rect width="24" height="24" rx="6" fill="#4D6BFE"/><path fill="#fff" d="M12.94 11.157c-.85 0-1.706.336-2.475 1.019L7.55 15.087l-1.038-1.038 2.913-2.913a2.026 2.026 0 0 1 2.857 0 2.026 2.026 0 0 1 0 2.857l-1.456 1.456a3.105 3.105 0 0 1-4.378 0 3.105 3.105 0 0 1 0-4.378l2.913-2.913a3.105 3.105 0 0 1 4.378 0 3.105 3.105 0 0 1 0 4.378l-1.456 1.456-.519-.519 1.456-1.456a2.026 2.026 0 0 0 0-2.857Z" opacity=".9"/><ellipse cx="12.5" cy="9" rx="2.2" ry="3.4" fill="#fff" opacity=".85"/></svg>

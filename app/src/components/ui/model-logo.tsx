@@ -87,7 +87,6 @@ const LOGO_MAP: Record<string, string> = {
  "xai": "x",
  "grok": "x",
  "grok-4-5": "x",
- "grok-4-20": "x",
 
  // Moonshot / Kimi
  "moonshot": "moonshotai",
@@ -101,9 +100,21 @@ const LOGO_MAP: Record<string, string> = {
  "alibaba": "alibabacloud",
  "qwen": "alibabacloud",
  "qwen3-235b": "alibabacloud",
+ "qwen3-235b-a22b-openbroker": "alibabacloud",
  "qwen3-coder-480b-a35b-instruct-turbo": "alibabacloud",
  "qwen-3-7-plus": "alibabacloud",
  "qwen-3-6-plus": "alibabacloud",
+ "qwen-3-8-max": "alibabacloud",
+
+ // Google Gemini + Gemma
+ "gemma": "google",
+ "google-gemma-4-31b-it": "google",
+
+ // DeepSeek — openbroker variant shares the DeepSeek logo
+ "deepseek-v4-flash-0731-openbroker": "deepseek",
+
+ // Grok / xAI — all grok IDs route to the xAI mark
+ "grok-4-20": "x",
 
  // MiniMax
  "minimax": "minimax",
@@ -137,6 +148,7 @@ const LOCAL_PROVIDER_ICONS: Record<string, string> = {
  openai: "/logos/providers/openai.svg",
  anthropic: "/logos/providers/anthropic.svg",
  google: "/logos/providers/google.svg",
+ gemini: "/logos/providers/gemini.svg",
  meta: "/logos/providers/meta.svg",
  deepseek: "/logos/providers/deepseek.svg",
  mistral: "/logos/providers/mistral.svg",
@@ -153,6 +165,7 @@ const LOCAL_PROVIDER_ICONS: Record<string, string> = {
  inceptionai: "/logos/providers/mercury.svg",
  mercury: "/logos/providers/mercury.svg",
  venice: "/logos/providers/venice.svg",
+ coinbase: "/logos/providers/coinbase.svg",
 };
 // Fallback colors for known providers (used by SimpleIcons CDN tinting)
 const PROVIDER_COLORS: Record<string, string> = {
@@ -183,6 +196,7 @@ function getProviderFromModelId(modelId: string): string {
  if (lower.includes("llama") || lower.includes("meta")) return "meta";
  if (lower.includes("deepseek")) return "deepseek";
  if (lower.includes("mistral")) return "mistral";
+ if (lower.includes("gemma")) return "google";
  if (lower.includes("grok") || lower.includes("xai")) return "xai";
  if (lower.includes("kimi") || lower.includes("moonshot")) return "moonshotai";
  if (lower.includes("qwen")) return "alibabacloud";

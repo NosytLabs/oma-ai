@@ -8,21 +8,20 @@ describe("playgroundHrefForModel", () => {
 		).toBe("/chat?model=gemini-3-flash-preview");
 	});
 
-	it("routes image models into Create studio", () => {
+	it("routes multimodal models into text chat with model= id", () => {
+		// OMA only ships text/multimodal LLM inference; image/video models
+		// would have routed to the Create studio, but the studio is gone.
 		expect(
-			playgroundHrefForModel({ id: "venice-sd35", modality: "image" }),
-		).toBe("/chat?mode=image");
-		expect(
-			playgroundHrefForModel({
-				id: "flux",
-				outputModalities: ["image"],
-			}),
-		).toBe("/chat?mode=image");
+			playgroundHrefForModel({ id: "flux", modality: "image" }),
+		).toBe("/chat?model=flux");
 	});
 
-	it("routes video models into Create video", () => {
+	it("ignores outputModalities (legacy fall-through)", () => {
 		expect(
-			playgroundHrefForModel({ id: "ltx", modality: "video" }),
-		).toBe("/chat?mode=video");
+			playgroundHrefForModel({
+				id: "ltx",
+				outputModalities: ["video"],
+			}),
+		).toBe("/chat?model=ltx");
 	});
 });

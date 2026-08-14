@@ -158,7 +158,7 @@ export function OmaNavLockup({
 
 	return (
 		<span
-			className={`inline-flex items-center gap-2.5 text-text-bright ${className}`}
+			className={`inline-flex items-center gap-2 text-text-bright ${className}`}
 			aria-label="OMA — Open Model Access"
 		>
 			<OmaMark
@@ -199,7 +199,7 @@ export function OmaWordmark({
 
 	return (
 		<div
-			className={`inline-flex items-center gap-3.5 text-text-bright ${className}`}
+			className={`inline-flex items-center gap-2.5 text-text-bright ${className}`}
 			role="img"
 			aria-label="OMA — Open Model Access"
 		>

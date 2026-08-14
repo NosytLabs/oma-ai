@@ -3,14 +3,14 @@
 /**
  * MESSAGES LIST — Scrollable message area
  *
- * Renders based on `mediaMode`:
- * - 'text' → welcome/examples or the message list (+ jump-to-bottom)
- * - 'image' | 'video' → unified MediaGenerationPanel (Create studio)
+ * Renders the welcome banner + examples when no messages are present,
+ * otherwise the message list with jump-to-bottom controls. The chat
+ * surface is text + multimodal LLM only — no image / video studio.
  */
 
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";
-import { ChevronDown, GitCompare, Keyboard, Sparkles } from "lucide-react";
+import { ChevronDown, GitCompare, Keyboard } from "lucide-react";
 import dynamic from "next/dynamic";
 import type { RefObject } from "react";
 import type { ExampleConversation, Message } from "@/components/chat";
@@ -58,14 +58,6 @@ const LazyEmptyState = dynamic(
 			(mod) => mod.ChatEmptyState,
 		),
 	{ ssr: false, loading: () => <Skeleton className="h-48 w-full" /> },
-);
-
-const LazyMediaGenerationPanel = dynamic(
-	() =>
-		import("@/components/chat/MediaGenerationPanel").then(
-			(mod) => mod.MediaGenerationPanel,
-		),
-	{ ssr: false, loading: () => <Skeleton className="h-96 w-full" /> },
 );
 
 /** Safe JSON parse that returns null on failure or non-object input. */
@@ -171,9 +163,26 @@ class ClassificationCache {
 
 const classificationCache = new ClassificationCache();
 
+/**
+ * FNV-1a 32-bit hash of the content. Cheap, no deps, deterministic.
+ * Used as the cache key so a streaming message that flips from plain → A2UI
+ * after a partial JSONL envelope arrives re-classifies correctly.
+ * (Previously the key was `${length}:${startsWithBrace}` — the same length
+ * could hit a stale "plain" entry mid-stream and silently swallow A2UI.)
+ */
+function contentHash(s: string): string {
+	let h = 0x811c9dc5;
+	for (let i = 0; i < s.length; i++) {
+		h ^= s.charCodeAt(i);
+		h = Math.imul(h, 0x01000193);
+	}
+	return (h >>> 0).toString(36);
+}
 
 function classifyMessage(content: string): Classification {
-	const key = `${content.length}:${content.startsWith("{") ? "1" : "0"}`;
+	// Hash the *full* content so a streaming message that grows into A2UI
+	// gets a fresh cache key on each token flush.
+	const key = `${content.length}:${contentHash(content)}`;
 	const cached = classificationCache.get(key);
 	if (cached) return cached;
 
@@ -206,9 +215,6 @@ export interface MessagesListProps {
 	jumpToBottom: () => void;
 	handleScroll: () => void;
 	deferredMessages: Message[];
-	mediaMode: "text" | "image" | "video";
-	/** Switch image ↔ video inside the Create studio. */
-	onMediaKindChange?: (kind: "image" | "video") => void;
 	handleCopy: () => void;
 	handlePreset: (prompt: string, model?: string) => void;
 	handleExampleSelect: (example: ExampleConversation) => void;
@@ -226,12 +232,6 @@ export interface MessagesListProps {
  */
 const FEATURE_HINTS = [
 	{
-		icon: Sparkles,
-		label: "Create studio",
-		description:
-			"Image + video in one place — switch with the Create tab (or /chat?mode=create)",
-	},
-	{
 		icon: GitCompare,
 		label: "Compare Models",
 		description:
@@ -241,7 +241,7 @@ const FEATURE_HINTS = [
 		icon: Keyboard,
 		label: "Shortcuts",
 		description:
-			"Press ? for keyboard shortcuts — Cmd+K models · Cmd+Shift+C Create",
+			"Press ? for keyboard shortcuts — Cmd+K models · Cmd+Shift+P params",
 	},
 ];
 
@@ -255,8 +255,6 @@ export function MessagesList({
 	jumpToBottom,
 	handleScroll,
 	deferredMessages,
-	mediaMode,
-	onMediaKindChange,
 	handleCopy,
 	handlePreset,
 	handleExampleSelect,
@@ -285,12 +283,7 @@ export function MessagesList({
 				aria-hidden="true"
 			/>
 			<div className="max-w-4xl mx-auto relative z-0 min-h-full">
-				{mediaMode === "image" || mediaMode === "video" ? (
-					<LazyMediaGenerationPanel
-						kind={mediaMode}
-						onKindChange={(kind) => onMediaKindChange?.(kind)}
-					/>
-				) : deferredMessages.length === 0 ? (
+				{deferredMessages.length === 0 ? (
 					<div className="pb-8">
 						<LazyWelcomeBanner
 							onSelectExample={() => {

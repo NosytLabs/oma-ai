@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import {
 	ArrowDownLeft,
 	ArrowLeftRight,
@@ -39,6 +40,18 @@ const TX_LABELS: Record<string, string> = {
  * collapsing the row (which would leave a noticeable gap on the Overview tab).
  */
 export function RecentTransactions({ transactions }: RecentTransactionsProps) {
+	// Sort by createdAt descending using Date.parse so the newest is always on
+	// top. Server returns rows in insertion order (deposit then usage), which
+	// puts an older deposit above a newer usage — the previous lexicographic
+	// string compare on ISO timestamps worked for YYYY-MM-DD slices but
+	// silently mis-ordered full ISO strings with sub-second precision.
+	const sorted = useMemo(
+		() =>
+			[...transactions].sort(
+				(a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt),
+			),
+		[transactions],
+	);
 	return (
 		<div className="mb-8 bg-surface/30 border border-border rounded-[var(--radius-lg)] shadow-[var(--shadow-md)] p-6 relative overflow-hidden transition-colors duration-200 ease-out hover:border-accent/40">
 			<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-warning/40 via-warning/20 to-transparent" />
@@ -73,7 +86,7 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
 				</div>
 			) : (
 				<div className="mt-5 border border-border/50 rounded-[var(--radius-md)] overflow-hidden bg-void shadow-sm">
-					{transactions.slice(0, 5).map((tx) => {
+					{sorted.slice(0, 5).map((tx) => {
 						const Icon = TX_ICONS[tx.type] ?? ArrowDownLeft;
 						const iconClass =
 							TX_ICONS_BY_TYPE_COLOR[tx.type] ?? "text-text-muted";

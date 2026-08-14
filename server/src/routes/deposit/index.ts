@@ -266,30 +266,44 @@ const [created] = await db
 // ─── GET /v1/site-settings ───────────────────────────────────────────────────
 // Public. Lets the frontend render honest rail statuses instead of
 // discovering a 503 after the user picks a rail.
+//
+// Resilience: if the DB is unreachable (dev DB down, network blip) we still
+// serve a best-effort config from env vars so the deposit page never 5xxs
+// for an anonymous visitor. The toggle states (maintenance, payment on/off)
+// fall back to "open" defaults — the admin panel can re-apply them once
+// the DB recovers.
 
 depositRoutes.get("/v1/site-settings", async (c) => {
-  try {
-    const [settings] = await db.select().from(siteSettings).limit(1);
-    const polarConfigured =
+  const envDefaults = {
+    maintenanceMode: false,
+    cardPaymentsEnabled: true,
+    cryptoPaymentsEnabled: true,
+    usdcDepositConfigured: Boolean(config.USDC_DEPOSIT_ADDRESS),
+    polarConfigured:
       Boolean(config.POLAR_ACCESS_TOKEN) &&
       Boolean(
         config.POLAR_HOBBY_PRODUCT_ID ||
           config.POLAR_BUILDER_PRODUCT_ID ||
           config.POLAR_SCALE_PRODUCT_ID,
-      );
+      ),
+  };
+  try {
+    const [settings] = await db.select().from(siteSettings).limit(1);
     return c.json({
-      maintenanceMode: settings?.maintenanceMode ?? false,
-      cardPaymentsEnabled: settings?.cardPaymentsEnabled ?? true,
-      cryptoPaymentsEnabled: settings?.cryptoPaymentsEnabled ?? true,
-      usdcDepositConfigured: Boolean(config.USDC_DEPOSIT_ADDRESS),
-      polarConfigured,
+      maintenanceMode: settings?.maintenanceMode ?? envDefaults.maintenanceMode,
+      cardPaymentsEnabled:
+        settings?.cardPaymentsEnabled ?? envDefaults.cardPaymentsEnabled,
+      cryptoPaymentsEnabled:
+        settings?.cryptoPaymentsEnabled ?? envDefaults.cryptoPaymentsEnabled,
+      usdcDepositConfigured: envDefaults.usdcDepositConfigured,
+      polarConfigured: envDefaults.polarConfigured,
     });
   } catch (err) {
-    logger.error({ err }, "[deposit] site-settings fetch failed");
-    return c.json(
-      { error: { message: "Failed to fetch site settings", type: "server_error" } },
-      500,
+    logger.warn(
+      { err: (err as Error).message },
+      "[deposit] site-settings DB read failed; serving env defaults",
     );
+    return c.json(envDefaults);
   }
 });
 

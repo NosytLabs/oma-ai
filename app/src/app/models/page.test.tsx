@@ -1,13 +1,13 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import ModelsPage from "./page";
 
 vi.mock("next/navigation", () => ({
 	useRouter: () => ({ replace: vi.fn(), push: vi.fn(), back: vi.fn() }),
 	useSearchParams: () => new URLSearchParams(),
 	usePathname: () => "/models",
 }));
-
-import ModelsPage from "./page";
 
 const originalIntersectionObserver = global.IntersectionObserver;
 
@@ -28,79 +28,106 @@ afterEach(() => {
 });
 
 describe("ModelsPage", () => {
-	it("renders the models page heading", () => {
+	it("renders the models page heading", async () => {
 		render(<ModelsPage />);
-		expect(
-			screen.getByRole("heading", { name: /Models$/i }),
-		).toBeInTheDocument();
+		await act(async () => {
+			await waitFor(() => {
+				expect(
+					screen.getByRole("heading", { name: /Models$/i }),
+				).toBeInTheDocument();
+			});
+		});
 	});
 
-	it("renders category filter buttons", () => {
+	it("renders category filter buttons", async () => {
 		render(<ModelsPage />);
-		const buttons = screen.getAllByRole("button");
-		const buttonTexts = buttons.map((b) => b.textContent);
-		// Tier filter buttons: All Tiers, Budget, Mid-Range, Premium, Frontier
-		expect(buttonTexts.some((t) => t === "All Tiers")).toBe(true);
-		expect(buttonTexts.some((t) => t === "Budget")).toBe(true);
-		expect(buttonTexts.some((t) => t === "Mid-Range")).toBe(true);
-		expect(buttonTexts.some((t) => t === "Premium")).toBe(true);
-		expect(buttonTexts.some((t) => t === "Frontier")).toBe(true);
+		await act(async () => {
+			await waitFor(() => {
+				const buttons = screen.getAllByRole("button");
+				const buttonTexts = buttons.map((b) => b.textContent);
+				expect(buttonTexts.some((t) => t === "All Tiers")).toBe(true);
+				expect(buttonTexts.some((t) => t === "Budget")).toBe(true);
+				expect(buttonTexts.some((t) => t === "Mid-Range")).toBe(true);
+				expect(buttonTexts.some((t) => t === "Premium")).toBe(true);
+				expect(buttonTexts.some((t) => t === "Frontier")).toBe(true);
+			});
+		});
 	});
 
 	it("renders the stats bar showing model count", async () => {
 		render(<ModelsPage />);
-		await waitFor(() => {
-			expect(screen.getByText(/models available/i)).toBeInTheDocument();
+		await act(async () => {
+			await waitFor(() => {
+				expect(screen.getByText(/models available/i)).toBeInTheDocument();
+			});
 		});
 	});
 
 	it("renders model cards when models are present", async () => {
 		render(<ModelsPage />);
-		await waitFor(() => {
-			// Real Zyloo catalog labels Gemini 3 Flash correctly now.
-			// Use a regex so the assertion stays valid across catalog refreshes.
-			expect(screen.getAllByText(/Gemini 3 Flash/i).length).toBeGreaterThan(0);
+		await act(async () => {
+			await waitFor(() => {
+				// Real Zyloo catalog labels Gemini 3 Flash correctly now.
+				// Use a regex so the assertion stays valid across catalog refreshes.
+				expect(screen.getAllByText(/Gemini 3 Flash/i).length).toBeGreaterThan(0);
+			});
 		});
 	});
 
 	it("category filter click changes active filter", async () => {
 		render(<ModelsPage />);
-		await waitFor(() => {
-			const budgetButton = screen.getByRole("button", { name: /budget/i });
-			fireEvent.click(budgetButton);
+		await act(async () => {
+			await waitFor(() => {
+				const budgetButton = screen.getByRole("button", { name: /budget/i });
+				fireEvent.click(budgetButton);
+			});
 		});
-		await waitFor(() => {
-			expect(screen.getAllByText(/Budget/i).length).toBeGreaterThan(0);
+		await act(async () => {
+			await waitFor(() => {
+				expect(screen.getAllByText(/Budget/i).length).toBeGreaterThan(0);
+			});
 		});
 	});
 
 	it("search input filters models", async () => {
 		render(<ModelsPage />);
-		await waitFor(() => {
-			const searchInput = screen.getByPlaceholderText(/search models/i);
-			fireEvent.change(searchInput, { target: { value: "gemini" } });
-			expect(screen.getAllByText(/gemini/i).length).toBeGreaterThan(0);
+		await act(async () => {
+			await waitFor(() => {
+				const searchInput = screen.getByPlaceholderText(/search models/i);
+				fireEvent.change(searchInput, { target: { value: "gemini" } });
+			});
+		});
+		await act(async () => {
+			await waitFor(() => {
+				expect(screen.getAllByText(/gemini/i).length).toBeGreaterThan(0);
+			});
 		});
 	});
 
 	it("search with no results shows reset message", async () => {
 		render(<ModelsPage />);
-		await waitFor(() => {
-			const searchInput = screen.getByPlaceholderText(/search models/i);
-			fireEvent.change(searchInput, { target: { value: "xyznonexistent123" } });
+		await act(async () => {
+			await waitFor(() => {
+				const searchInput = screen.getByPlaceholderText(/search models/i);
+				fireEvent.change(searchInput, { target: { value: "xyznonexistent123" } });
+			});
 		});
-		await waitFor(() => {
-			expect(
-				screen.getByText(/No models match your search/i),
-			).toBeInTheDocument();
+		await act(async () => {
+			await waitFor(() => {
+				expect(
+					screen.getByText(/No models match your search/i),
+				).toBeInTheDocument();
+			});
 		});
 	});
 
 	it("renders model cards with pricing per token", async () => {
 		render(<ModelsPage />);
-		await waitFor(() => {
-			// Model cards show "in" suffix next to input price per token
-			expect(screen.getAllByText(/in$/i).length).toBeGreaterThan(0);
+		await act(async () => {
+			await waitFor(() => {
+				// Model cards show "in" suffix next to input price per token
+				expect(screen.getAllByText(/in$/i).length).toBeGreaterThan(0);
+			});
 		});
 	});
 

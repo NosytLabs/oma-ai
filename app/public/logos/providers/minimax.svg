@@ -1,4 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-label="MM">
-  <rect width="24" height="24" rx="6" fill="#7c3aed"/>
-  <text x="12" y="16" text-anchor="middle" font-family="system-ui,sans-serif" font-size="8" font-weight="700" fill="#fff">MM</text>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-label="MiniMax"><rect width="24" height="24" rx="6" fill="#0e0a1f"/><path fill="#8b5cf6" d="M5 5h3v3H5V5Zm0 5h3v3H5v-3Zm0 5h3v3H5v-3Z"/><path fill="#ec4899" d="M11 5h3v3h-3V5Zm0 5h3v3h-3v-3Zm0 5h3v3h-3v-3Z"/><path fill="#a78bfa" d="M9 9.5h2v1H9zM9 13.5h2v1H9z"/></svg>

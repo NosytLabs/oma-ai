@@ -44,24 +44,23 @@ export async function GET() {
 		defaultInputModes: ["text", "image"],
 		defaultOutputModes: [
 			"text",
-			"image",
-			"video",
 			"application/a2ui+json",
 		],
 		skills: [
 			{
 				id: "chat-completions",
 				name: "Chat Completions",
-				description: `OpenAI-compatible chat across ${MODEL_COUNT_LABEL} models: frontier, premium, mid, and budget tiers. Streaming + tool/function calling + system prompts + JSON mode.`,
+				description: `OpenAI-compatible chat across ${MODEL_COUNT_LABEL} models: frontier, premium, mid, and budget tiers. Streaming + tool/function calling + system prompts + JSON mode + multimodal input.`,
 				tags: [
 					"openai-compatible",
 					"chat",
+					"multimodal",
 					"streaming",
 					"tool-calling",
 					"json-mode",
 				],
-				inputModes: ["text"],
-				outputModes: ["text"],
+				inputModes: ["text", "image"],
+				outputModes: ["text", "application/a2ui+json"],
 				endpoint: "https://api.oma-ai.com/v1/chat/completions",
 				examples: [
 					{
@@ -71,22 +70,13 @@ export async function GET() {
 				],
 			},
 			{
-				id: "image-generation",
-				name: "Image Generation",
-				description: "Text-to-image via Venice. Flat $0.10 per image. OpenAI-compatible response shape.",
-				tags: ["image", "generation", "openai-compatible", "venice"],
-				inputModes: ["text"],
-				outputModes: ["image"],
-				endpoint: "https://api.oma-ai.com/v1/images/generations",
-			},
-			{
-				id: "video-generation",
-				name: "Video Generation",
-				description: "Async text-to-video and image-to-video. Flat $0.92 per generation. Poll /v1/videos/retrieve for status.",
-				tags: ["video", "generation", "async", "venice"],
+				id: "anthropic-messages",
+				name: "Anthropic Messages API",
+				description: "Anthropic-compatible /v1/messages endpoint. Translates Anthropic Messages API to OpenAI internally, routes through the same provider pool, and translates the response back to Anthropic shape.",
+				tags: ["anthropic-compatible", "chat", "multimodal"],
 				inputModes: ["text", "image"],
-				outputModes: ["video"],
-				endpoint: "https://api.oma-ai.com/v1/videos/generations",
+				outputModes: ["text"],
+				endpoint: "https://api.oma-ai.com/v1/messages",
 			},
 			{
 				id: "x402-pay-per-request",
@@ -116,15 +106,16 @@ export async function GET() {
 					description:
 						"Gasless EIP-3009 transferWithAuthorization. The agent signs the payment; the gateway pays gas and settles on-chain.",
 				},
-			},				{
-					id: "web-search",
-					name: "Web Search",
-					description: "Web search used by the chat playground to ground answers in real-time data. Query via GET; the chat UI attaches the results as context.",
-					tags: ["search", "real-time", "grounding"],
-					inputModes: ["text"],
-					outputModes: ["text"],
-					endpoint: "https://api.oma-ai.com/v1/search",
-				},
+			},
+			{
+				id: "web-search",
+				name: "Web Search",
+				description: "Web search used by the chat playground to ground answers in real-time data. Query via GET; the chat UI attaches the results as context.",
+				tags: ["search", "real-time", "grounding"],
+				inputModes: ["text"],
+				outputModes: ["text"],
+				endpoint: "https://api.oma-ai.com/v1/search",
+			},
 		],
 		payment: {
 			protocol: "x402",

@@ -7,21 +7,26 @@
  * stay server-side). Surfaces real aggregated operational data:
  *   - /v1/ops/snapshot — runtime, HTTP counters, 24h chat aggregates
  *   - /v1/models      — provider health (available vs missing keys)
- *
- * No per-user data is shown; that requires wallet admin routes.
+ *   - /v1/admin/users — paginated user list + balance
+ *   - /v1/admin/site-settings — kill switch toggles
  */
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	Activity,
 	AlertTriangle,
 	CheckCircle2,
 	Cpu,
 	Gauge,
+	Loader2,
+	PowerOff,
 	ShieldCheck,
+	UserMinus,
+	UserPlus,
+	Users as UsersIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/hooks/useAuth";
 
@@ -96,17 +101,6 @@ function fmtUptime(sec: number): string {
 
 export default function AdminPage() {
 	const { isReady, isAuthenticated, isAdmin, user } = useAuth();
-	
-	if (isReady && !isAdmin) {
-		return (
-			<div className="flex min-h-screen items-center justify-center p-4 text-center bg-void text-text">
-				<div>
-					<h1 className="text-2xl font-bold mb-2">404</h1>
-					<p className="text-text-muted">This page could not be found.</p>
-				</div>
-			</div>
-		);
-	}
 
 	const snapshot = useQuery({
 		queryKey: ["ops", "snapshot"],
@@ -149,6 +143,17 @@ export default function AdminPage() {
 			<div className="mx-auto flex max-w-5xl flex-col gap-4 p-6">
 				<div className="h-8 w-48 animate-shimmer rounded bg-surface-elevated" />
 				<div className="h-40 w-full animate-shimmer rounded bg-surface-elevated" />
+			</div>
+		);
+	}
+
+	if (isReady && !isAdmin) {
+		return (
+			<div className="flex min-h-screen items-center justify-center p-4 text-center bg-void text-text">
+				<div>
+					<h1 className="text-2xl font-bold mb-2">404</h1>
+					<p className="text-text-muted">This page could not be found.</p>
+				</div>
 			</div>
 		);
 	}
@@ -366,7 +371,374 @@ export default function AdminPage() {
 						disabled in the chat model selector.
 					</p>
 				</section>
+
+				<SiteSettingsSection />
+				<UsersSection />
 			</div>
 		</div>
+	);
+}
+
+/* =============================================================================
+   Operator controls — users, site settings
+   ============================================================================= */
+
+interface AdminUser {
+	id: string;
+	email: string | null;
+	name: string | null;
+	role: string | null;
+	suspended: boolean;
+	suspendedReason: string | null;
+	createdAt: string | null;
+	balanceCents: string;
+	totalDepositedCents: string;
+}
+
+function UsersSection() {
+	const [q, setQ] = useState("");
+	const queryClient = useQueryClient();
+
+	const users = useQuery({
+		queryKey: ["admin-users", q],
+		queryFn: async () => {
+			const params = new URLSearchParams({ limit: "50" });
+			if (q) params.set("q", q);
+			const res = await fetch(`/api/v1/admin/users?${params.toString()}`, {
+				credentials: "include",
+				headers: { Accept: "application/json" },
+			});
+			if (!res.ok) throw new Error(`list users failed: ${res.status}`);
+			return (await res.json()) as { items: AdminUser[]; nextCursor: string | null };
+		},
+		staleTime: 30_000,
+	});
+
+	const suspend = useMutation({
+		mutationFn: async (input: { userId: string; suspended: boolean; reason: string }) => {
+			const res = await fetch("/api/v1/admin/user-suspend", {
+				method: "POST",
+				credentials: "include",
+				headers: { "Content-Type": "application/json", Accept: "application/json" },
+				body: JSON.stringify(input),
+			});
+			if (!res.ok) throw new Error(`suspend failed: ${res.status}`);
+		},
+		onSuccess: () => {
+			void queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+		},
+	});
+
+	const creditAdjust = useMutation({
+		mutationFn: async (input: {
+			userId: string;
+			deltaCents: number;
+			reason: string;
+		}) => {
+			const res = await fetch("/api/v1/admin/credit-adjust", {
+				method: "POST",
+				credentials: "include",
+				headers: { "Content-Type": "application/json", Accept: "application/json" },
+				body: JSON.stringify(input),
+			});
+			if (!res.ok) throw new Error(`credit adjust failed: ${res.status}`);
+		},
+		onSuccess: () => {
+			void queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+		},
+	});
+
+	return (
+		<section
+			className="rounded-[var(--radius-lg)] border border-border bg-surface p-4"
+			aria-label="User management"
+		>
+			<header className="mb-3 flex items-center justify-between gap-3">
+				<h2 className="font-mono text-[10px] uppercase tracking-widest text-text-muted">
+					Users
+				</h2>
+				<input
+					type="search"
+					value={q}
+					onChange={(e) => setQ(e.target.value)}
+					placeholder="Search email or name…"
+					className="w-56 rounded-[var(--radius-md)] border border-border bg-void px-2.5 py-1.5 text-xs text-text-bright placeholder:text-text-muted focus:border-accent/50 focus:outline-none"
+				/>
+			</header>
+
+			{users.isLoading ? (
+				<p className="text-xs text-text-muted">Loading users…</p>
+			) : users.isError ? (
+				<p className="text-xs text-error">Failed to load users.</p>
+			) : (users.data?.items.length ?? 0) === 0 ? (
+				<p className="text-xs text-text-muted">No users found.</p>
+			) : (
+				<div className="overflow-x-auto">
+					<table className="w-full text-left text-xs">
+						<thead className="text-[10px] font-mono uppercase tracking-widest text-text-muted">
+							<tr>
+								<th className="py-1.5 pr-3">Email</th>
+								<th className="py-1.5 pr-3">Role</th>
+								<th className="py-1.5 pr-3">Balance</th>
+								<th className="py-1.5 pr-3">Status</th>
+								<th className="py-1.5 pr-3">Created</th>
+								<th className="py-1.5 pr-3 text-right">Actions</th>
+							</tr>
+						</thead>
+						<tbody>
+							{users.data?.items.map((u) => (
+								<tr
+									key={u.id}
+									className="border-t border-border/40 hover:bg-surface/40"
+								>
+									<td className="py-2 pr-3 font-mono text-text-secondary">
+										{u.email ?? <span className="text-text-muted">—</span>}
+									</td>
+									<td className="py-2 pr-3 font-mono text-[10px] uppercase tracking-wider text-text-muted">
+										{u.role ?? "user"}
+									</td>
+									<td className="py-2 pr-3 font-mono tabular-nums">
+										${(Number(u.balanceCents) / 100).toFixed(2)}
+									</td>
+									<td className="py-2 pr-3">
+										{u.suspended ? (
+											<span className="inline-flex items-center gap-1 rounded-full border border-error/30 bg-error/10 px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider text-error">
+												Suspended
+											</span>
+										) : (
+											<span className="inline-flex items-center gap-1 rounded-full border border-success/30 bg-success/10 px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider text-success">
+												Active
+											</span>
+										)}
+									</td>
+									<td className="py-2 pr-3 font-mono text-[10px] text-text-muted">
+										{u.createdAt
+											? new Date(u.createdAt).toLocaleDateString()
+											: "—"}
+									</td>
+									<td className="py-2 pr-3 text-right">
+										<div className="inline-flex items-center gap-1">
+											<button
+												type="button"
+												onClick={() => {
+													const cents = window.prompt(
+														`Adjust credits for ${u.email ?? u.id}\n(positive = add, negative = deduct)`,
+														"100",
+													);
+													if (!cents) return;
+													const delta = parseInt(cents, 10);
+													if (!Number.isFinite(delta) || delta === 0) return;
+													const reason = window.prompt(
+														"Reason (audit log):",
+														"admin adjustment",
+													) ?? "admin adjustment";
+													creditAdjust.mutate({
+														userId: u.id,
+														deltaCents: delta,
+														reason,
+													});
+												}}
+												className="rounded-[var(--radius-sm)] border border-border bg-surface px-2 py-1 text-[10px] font-mono uppercase tracking-wider text-text-secondary hover:border-accent/40 hover:text-accent"
+												title="Adjust credits"
+											>
+												<UsersIcon className="h-3 w-3" />
+											</button>
+											<button
+												type="button"
+												onClick={() => {
+													const reason = window.prompt(
+														u.suspended
+															? "Reason to unsuspend (audit log):"
+															: "Reason to suspend (audit log):",
+														"policy violation",
+													) ?? "";
+													if (reason.length < 3) return;
+													suspend.mutate({
+														userId: u.id,
+														suspended: !u.suspended,
+														reason,
+													});
+												}}
+												className={`rounded-[var(--radius-sm)] border px-2 py-1 text-[10px] font-mono uppercase tracking-wider ${
+													u.suspended
+														? "border-success/30 bg-success/10 text-success hover:border-success/50"
+														: "border-error/30 bg-error/10 text-error hover:border-error/50"
+												}`}
+												title={u.suspended ? "Unsuspend" : "Suspend"}
+											>
+												{u.suspended ? (
+													<UserPlus className="h-3 w-3" />
+												) : (
+													<UserMinus className="h-3 w-3" />
+												)}
+											</button>
+										</div>
+									</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</div>
+			)}
+
+			{(creditAdjust.isError || suspend.isError) && (
+				<p className="mt-3 text-xs text-error">
+					{(creditAdjust.error as Error)?.message ??
+						(suspend.error as Error)?.message ??
+						"Action failed."}
+				</p>
+			)}
+		</section>
+	);
+}
+
+function SiteSettingsSection() {
+	const [maintenance, setMaintenance] = useState(false);
+	const [cardEnabled, setCardEnabled] = useState(true);
+	const [cryptoEnabled, setCryptoEnabled] = useState(true);
+	const [message, setMessage] = useState("");
+	const queryClient = useQueryClient();
+
+	const setSettings = useMutation({
+		mutationFn: async (input: {
+			maintenanceMode?: boolean;
+			cardPaymentsEnabled?: boolean;
+			cryptoPaymentsEnabled?: boolean;
+			maintenanceMessage?: string;
+		}) => {
+			const res = await fetch("/api/v1/admin/site-settings", {
+				method: "POST",
+				credentials: "include",
+				headers: { "Content-Type": "application/json", Accept: "application/json" },
+				body: JSON.stringify(input),
+			});
+			if (!res.ok) throw new Error(`site-settings failed: ${res.status}`);
+			return res.json();
+		},
+		onSuccess: () => {
+			void queryClient.invalidateQueries({ queryKey: ["site-settings"] });
+		},
+	});
+
+	return (
+		<section
+			className="rounded-[var(--radius-lg)] border border-border bg-surface p-4"
+			aria-label="Site settings"
+		>
+			<header className="mb-3 flex items-center justify-between gap-3">
+				<h2 className="font-mono text-[10px] uppercase tracking-widest text-text-muted">
+					Kill switches
+				</h2>
+				{setSettings.isPending && (
+					<Loader2 className="h-3 w-3 animate-spin text-text-muted" />
+				)}
+			</header>
+
+			<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+				<ToggleRow
+					label="Maintenance mode"
+					hint="Returns 503 to all routes except /health."
+					checked={maintenance}
+					onChange={setMaintenance}
+					tone="danger"
+				/>
+				<ToggleRow
+					label="Card payments"
+					hint="Disable Polar checkout (USDC + x402 remain)."
+					checked={cardEnabled}
+					onChange={setCardEnabled}
+				/>
+				<ToggleRow
+					label="Crypto payments"
+					hint="Disable USDC + x402 deposits (card remains)."
+					checked={cryptoEnabled}
+					onChange={setCryptoEnabled}
+				/>
+			</div>
+
+			<label className="mt-4 block text-xs font-mono text-text-muted">
+				Maintenance message
+				<input
+					type="text"
+					value={message}
+					onChange={(e) => setMessage(e.target.value)}
+					placeholder="Be back in 30 minutes."
+					maxLength={500}
+					className="mt-1 w-full rounded-[var(--radius-md)] border border-border bg-void px-2.5 py-1.5 text-xs text-text-bright placeholder:text-text-muted focus:border-accent/50 focus:outline-none"
+				/>
+			</label>
+
+			<div className="mt-4 flex items-center justify-end gap-2">
+				<button
+					type="button"
+					disabled={setSettings.isPending}
+					onClick={() =>
+						setSettings.mutate({
+							maintenanceMode: maintenance,
+							cardPaymentsEnabled: cardEnabled,
+							cryptoPaymentsEnabled: cryptoEnabled,
+							maintenanceMessage: message,
+						})
+					}
+					className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-border bg-accent/15 px-3 py-1.5 text-xs font-mono text-accent transition hover:bg-accent/25 disabled:opacity-50"
+				>
+					<PowerOff className="h-3 w-3" />
+					Apply changes
+				</button>
+			</div>
+
+			{setSettings.isError && (
+				<p className="mt-3 text-xs text-error">
+					{(setSettings.error as Error)?.message ?? "Failed to save."}
+				</p>
+			)}
+			{setSettings.isSuccess && (
+				<p className="mt-3 text-xs text-success">Saved. Audit log written.</p>
+			)}
+		</section>
+	);
+}
+
+function ToggleRow({
+	label,
+	hint,
+	checked,
+	onChange,
+	tone = "default",
+}: {
+	label: string;
+	hint: string;
+	checked: boolean;
+	onChange: (v: boolean) => void;
+	tone?: "default" | "danger";
+}) {
+	return (
+		<label className="flex items-start gap-3 rounded-[var(--radius-md)] border border-border bg-void/40 p-3">
+			<button
+				type="button"
+				role="switch"
+				aria-checked={checked}
+				onClick={() => onChange(!checked)}
+				className={`relative mt-0.5 inline-flex h-5 w-9 shrink-0 items-center rounded-full border transition ${
+					checked
+						? tone === "danger"
+							? "border-error/40 bg-error/40"
+							: "border-accent/40 bg-accent/40"
+						: "border-border bg-surface"
+				}`}
+			>
+				<span
+					className={`inline-block h-3 w-3 rounded-full bg-text-bright transition ${
+						checked ? "translate-x-5" : "translate-x-1"
+					}`}
+				/>
+			</button>
+			<span className="min-w-0">
+				<span className="block text-xs font-semibold text-text-bright">{label}</span>
+				<span className="mt-0.5 block text-[10px] leading-relaxed text-text-muted">
+					{hint}
+				</span>
+			</span>
+		</label>
 	);
 }

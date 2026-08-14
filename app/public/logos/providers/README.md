@@ -8,7 +8,8 @@ and zero console noise.
 |------|----------|
 | `openai.svg` | GPT / OpenAI-family ids |
 | `anthropic.svg` | Claude / Anthropic |
-| `google.svg` | Gemini |
+| `google.svg` | Google (Gemma) |
+| `gemini.svg` | Gemini |
 | `meta.svg` | Llama |
 | `deepseek.svg` | DeepSeek |
 | `mistral.svg` | Mistral |
@@ -20,5 +21,6 @@ and zero console noise.
 | `zai.svg` | GLM / Zhipu |
 | `mercury.svg` | Mercury / Inception |
 | `venice.svg` | Venice-routed generic |
+| `coinbase.svg` | Base / Coinbase payment rails |
 
 Keep tiles 24×24, rounded `rx=6`, high-contrast initials.

@@ -49,12 +49,10 @@ export function IntegrationsSection() {
 						<code className="font-mono text-xs">POST /v1/messages</code>
 					</li>
 					<li>
-						Playground{" "}
-						<Link href="/chat" className="text-accent underline-offset-2 hover:underline">
-							WEB search
+						<Link href="/agent-skill.md" className="text-accent underline-offset-2 hover:underline" target="_blank" rel="noopener noreferrer">
+							System instructions
 						</Link>
-						: DuckDuckGo via{" "}
-						<code className="font-mono text-xs">GET /v1/search</code> (no extra key)
+						: For custom agent setups, see our <code className="font-mono text-xs">agent-skill.md</code> file.
 					</li>
 				</ul>
 			</div>

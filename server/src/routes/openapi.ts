@@ -270,40 +270,6 @@ const spec = {
 				responses: { "200": { description: "Counter" } },
 			},
 		},
-		"/v1/images/generations": {
-			post: {
-				summary: "Image generation (Venice-backed)",
-				description: "OpenAI-style image generation. Auth: Bearer oma_sk_… or x402.",
-				responses: {
-					"200": { description: "Image URL(s) or b64 payloads" },
-					"401": { description: "Auth required" },
-					"402": { description: "Insufficient credits" },
-				},
-			},
-		},
-		"/v1/videos/generations": {
-			post: {
-				summary: "Async video generation",
-				description: "Queues a video job; poll GET /v1/videos/retrieve.",
-				responses: {
-					"200": { description: "Job id / quote" },
-					"401": { description: "Auth required" },
-					"402": { description: "Insufficient credits" },
-				},
-			},
-		},
-		"/v1/videos/retrieve": {
-			get: {
-				summary: "Poll async video job",
-				parameters: [
-					{ in: "query", name: "id", required: true, schema: { type: "string" } },
-				],
-				responses: {
-					"200": { description: "Job status + output when ready" },
-					"404": { description: "Unknown job" },
-				},
-			},
-		},
 		"/v1/search": {
 			get: {
 				summary: "Web search (chat playground grounding)",
@@ -322,6 +288,130 @@ const spec = {
 					"200": {
 						description: "Search results (may be empty)",
 					},
+				},
+			},
+		},
+		"/v1/site-settings": {
+			get: {
+				summary: "Public rail/config status (card + crypto toggles, treasury + Polar configured flags)",
+				description:
+					"Lets the frontend render honest rail statuses. When the DB is unreachable the endpoint falls back to env-derived defaults so the deposit page never 5xxs for an anonymous visitor.",
+				security: [],
+				responses: {
+					"200": {
+						description: "Settings snapshot",
+						content: {
+							"application/json": {
+								schema: {
+									type: "object",
+									properties: {
+										maintenanceMode: { type: "boolean" },
+										cardPaymentsEnabled: { type: "boolean" },
+										cryptoPaymentsEnabled: { type: "boolean" },
+										usdcDepositConfigured: { type: "boolean" },
+										polarConfigured: { type: "boolean" },
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		"/v1/admin/site-settings": {
+			post: {
+				summary: "Toggle site-level kill switches (maintenance, card, crypto)",
+				description:
+					"Admin-only. Mutations write an audit log row tagged SITE_SETTINGS_UPDATED.",
+				responses: {
+					"200": { description: "Updated settings echoed" },
+					"400": { description: "Invalid body" },
+					"401": { description: "Not authenticated" },
+					"403": { description: "Not an admin" },
+				},
+			},
+		},
+		"/v1/admin/credit-adjust": {
+			post: {
+				summary: "Add or deduct credits for a user (cents)",
+				description:
+					"Admin-only. Server clamps delta to ±$1k per operation. Writes CREDIT_ADJUSTED or CREDIT_DEDUCTED audit row.",
+				responses: {
+					"200": { description: "OK" },
+					"400": { description: "Invalid body" },
+					"404": { description: "User not found" },
+					"401": { description: "Not authenticated" },
+					"403": { description: "Not an admin" },
+				},
+			},
+		},
+		"/v1/admin/user-suspend": {
+			post: {
+				summary: "Flip the user.suspended flag",
+				description:
+					"Admin-only. Writes USER_SUSPENDED or USER_UNSUSPENDED audit row with reason.",
+				responses: {
+					"200": { description: "OK" },
+					"400": { description: "Invalid body" },
+					"404": { description: "User not found" },
+					"401": { description: "Not authenticated" },
+					"403": { description: "Not admin" },
+				},
+			},
+		},
+		"/v1/admin/rate-limit-override": {
+			post: {
+				summary: "Set or clear a per-user rate-limit override",
+				description:
+					"Admin-only. Pass maxRequestsPerMinute: null to clear. Writes RATE_LIMIT_OVERRIDE_SET or _REMOVED audit row.",
+				responses: {
+					"200": { description: "OK" },
+					"400": { description: "Invalid body" },
+					"404": { description: "User not found" },
+					"401": { description: "Not authenticated" },
+					"403": { description: "Not admin" },
+				},
+			},
+		},
+		"/v1/admin/users": {
+			get: {
+				summary: "Paginated user list with balance",
+				description:
+					"Admin-only. Cursor-based pagination over (id ASC). Optional q filter searches email + name ILIKE.",
+				parameters: [
+					{ in: "query", name: "limit", schema: { type: "integer", minimum: 1, maximum: 100, default: 20 } },
+					{ in: "query", name: "cursor", schema: { type: "string" } },
+					{ in: "query", name: "q", schema: { type: "string", maxLength: 100 } },
+				],
+				responses: {
+					"200": { description: "{ items: AdminUser[], nextCursor: string|null }" },
+					"401": { description: "Not authenticated" },
+					"403": { description: "Not admin" },
+				},
+			},
+		},
+		"/x402/verify": {
+			post: {
+				summary: "Verify an EIP-3009 PAYMENT-SIGNATURE envelope (no settlement)",
+				description:
+					"Strict amount checks (no zero, no overpayment), payee pinned to SERVER_TREASURY, EIP-2 low-S signature mandate. Rate-limited at 10/min/IP.",
+				security: [],
+				responses: {
+					"200": { description: "Verified (cached for downstream settle)" },
+					"400": { description: "Invalid signature / amount / payee" },
+					"402": { description: "Payment required (insufficient or malformed)" },
+				},
+			},
+		},
+		"/x402/settle": {
+			post: {
+				summary: "Settle a previously-verified payment (writes USDC tx on Base)",
+				description:
+					"Session-auth required. Idempotent — concurrent calls collapse into a single DB write + on-chain settlement.",
+				responses: {
+					"200": { description: "Receipt payload (signed)" },
+					"401": { description: "Not authenticated" },
+					"402": { description: "No verified payment" },
 				},
 			},
 		},

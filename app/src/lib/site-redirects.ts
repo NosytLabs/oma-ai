@@ -10,8 +10,11 @@ export type SiteRedirect = {
 export const SITE_REDIRECTS: readonly SiteRedirect[] = [
 	// /about restored as a live E-E-A-T page (no longer redirects)
 	// /faq restored as a live public page (no longer redirects)
-	{ source: "/blog", destination: "/changelog" },
-	{ source: "/blog/:path*", destination: "/changelog" },
+	{ source: "/blog", destination: "/docs" },
+	{ source: "/blog/:path*", destination: "/docs" },
+	{ source: "/capabilities", destination: "/models" },
+	{ source: "/compare", destination: "/models" },
+	{ source: "/changelog", destination: "/docs" },
 	{ source: "/status", destination: "/docs#endpoints" },
 	{ source: "/support", destination: "/contact" },
 	{ source: "/signup", destination: "/login" },
@@ -27,15 +30,14 @@ export const SITE_REDIRECTS: readonly SiteRedirect[] = [
 	// Standalone API-reference catalog merged into the docs endpoint reference.
 	{ source: "/network", destination: "/docs#endpoints" },
 	{ source: "/network/:path*", destination: "/docs#endpoints" },
-	// Image/video playgrounds merged into unified /chat Create studio
-	// (OpenRouter/Venice-style single playground with modality tabs).
-	{ source: "/image-generation", destination: "/chat?mode=create" },
-	{ source: "/image-generation/:path*", destination: "/chat?mode=create" },
-	{ source: "/video-generation", destination: "/chat?mode=video" },
-	{ source: "/video-generation/:path*", destination: "/chat?mode=video" },
-	// Aliases for Create studio
-	{ source: "/create", destination: "/chat?mode=create" },
-	{ source: "/studio", destination: "/chat?mode=create" },
+	// Image/video generation was removed — redirect legacy deep links
+	// to the unified text/multimodal chat surface.
+	{ source: "/image-generation", destination: "/chat" },
+	{ source: "/image-generation/:path*", destination: "/chat" },
+	{ source: "/video-generation", destination: "/chat" },
+	{ source: "/video-generation/:path*", destination: "/chat" },
+	{ source: "/create", destination: "/chat" },
+	{ source: "/studio", destination: "/chat" },
 	// Swap provider retired — fund via direct USDC deposit
 	{ source: "/swap", destination: "/deposit" },
 	{ source: "/swap/:path*", destination: "/deposit" },
@@ -52,6 +54,9 @@ export const SITE_REDIRECTS: readonly SiteRedirect[] = [
 /** Exact legacy paths that must never appear as live sitemap URLs. */
 export const REMOVED_PUBLIC_PATHS = [
 	"/blog",
+	"/capabilities",
+	"/compare",
+	"/changelog",
 	"/status",
 	"/support",
 	"/signup",

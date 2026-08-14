@@ -9,20 +9,38 @@ import { describe, expect, it } from "vitest";
 function openapiSourcePaths(): string[] {
 	const basePath = process.cwd().endsWith("/server") ? "" : "server/";
 	const src = readFileSync(resolve(process.cwd(), basePath + "src/routes/openapi.ts"), "utf8");
-	return [...src.matchAll(/"(\/v1\/[^"]+|\/health)":\s*\{/g)].map((m) => m[1]);
+	// Match /v1/*, /x402/*, /health keys
+	return [
+		...src.matchAll(/"(\/v1\/[^"]+)":\s*\{/g),
+		...src.matchAll(/"(\/x402\/[^"]+)":\s*\{/g),
+		...src.matchAll(/"(\/health)":\s*\{/g),
+	].map((m) => m[1]);
 }
 
 describe("OpenAPI path inventory", () => {
 	const required = [
+		// Public SDK surface
 		"/v1/models",
 		"/v1/chat/completions",
 		"/v1/messages",
-		"/v1/images/generations",
-		"/v1/videos/generations",
-		"/v1/videos/retrieve",
 		"/v1/search",
 		"/v1/balance",
 		"/v1/keys",
+		"/v1/usage",
+		"/v1/deposit/usdc",
+		"/v1/usage/today",
+		// Public rail status (anon)
+		"/v1/site-settings",
+		// Admin operator surface
+		"/v1/admin/site-settings",
+		"/v1/admin/credit-adjust",
+		"/v1/admin/user-suspend",
+		"/v1/admin/rate-limit-override",
+		"/v1/admin/users",
+		// x402 agent billing
+		"/x402/verify",
+		"/x402/settle",
+		// Liveness
 		"/health",
 	];
 

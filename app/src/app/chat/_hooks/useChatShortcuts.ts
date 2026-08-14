@@ -13,8 +13,6 @@ export interface UseChatShortcutsOptions {
 	setParamsOpen: Dispatch<SetStateAction<boolean>>;
 	compareMode: boolean;
 	setCompareMode: Dispatch<SetStateAction<boolean>>;
-	/** Toggle Chat ↔ Create studio (Cmd/Ctrl+Shift+C). */
-	toggleCreateMode?: () => void;
 	newConversation?: () => void;
 }
 
@@ -25,7 +23,7 @@ export interface UseChatShortcutsOptions {
  *   Escape            → close shortcuts → params → compare, in that order
  *   Cmd/Ctrl + K      → focus the model picker (clicks its DOM button)
  *   Cmd/Ctrl + /      → toggle the parameters panel
- *   Cmd/Ctrl + Shift + C → toggle Create studio (image/video)
+ *   Cmd/Ctrl + Shift + P → toggle the system-prompt panel
  *   Cmd/Ctrl + Enter  → send the current input (ref-based so we always
  *                       see the latest sendMessage without re-binding)
  *
@@ -44,7 +42,6 @@ export function useChatShortcuts({
 	setParamsOpen,
 	compareMode,
 	setCompareMode,
-	toggleCreateMode,
 	newConversation,
 }: UseChatShortcutsOptions): void {
 	useEffect(() => {
@@ -82,15 +79,15 @@ export function useChatShortcuts({
 				return;
 			}
 
-			// Cmd/Ctrl+Shift+C → Create studio (works even in text fields)
+			// Cmd/Ctrl+Shift+P → toggle the system prompt panel
 			if (
 				e[modKey as "metaKey" | "ctrlKey"] &&
 				e.shiftKey &&
-				e.key.toLowerCase() === "c" &&
-				toggleCreateMode
+				e.key.toLowerCase() === "p"
 			) {
 				e.preventDefault();
-				toggleCreateMode();
+				// Dispatch a custom event the system-prompt panel listens to.
+				window.dispatchEvent(new CustomEvent("oma:toggle-system-prompt"));
 				return;
 			}
 
@@ -132,7 +129,6 @@ export function useChatShortcuts({
 		setShortcutsOpen,
 		setParamsOpen,
 		setCompareMode,
-		toggleCreateMode,
 		newConversation,
 	]);
 }

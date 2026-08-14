@@ -35,16 +35,20 @@ const envSchema = z.object({
   ZYLOO_API_URL: z.string().url().optional().default("https://api.zyloo.io"),
   OPENBROKER_API_KEY: z.string().min(1).optional(),
   OPENBROKER_API_URL: z.string().url().optional().default("https://api.openbroker.gonka.gg"),
+  // Surplus Intelligence (https://api.surplusintelligence.ai) — marketplace
+  // resale upstream. Opt-in: leave SURPLUS_API_KEY unset to disable the Surplus
+  // catalog entirely (provider is never selected for real traffic).
+  SURPLUS_API_KEY: z.string().min(1).optional(),
+  SURPLUS_API_URL: z.string().url().optional().default("https://api.surplusintelligence.ai"),
   // Allow Venice non-private mode. By default all Venice requests set
   // venice_parameters.private=true. Set OMMA_ALLOW_NON_PRIVATE_VENICE=true to
   // let callers opt out per-request (private:false) for non-sensitive traffic.
   // Production should leave this unset (defaults to false).
   OMMA_ALLOW_NON_PRIVATE_VENICE: envBoolean.default(false),
-  // Non-private providers (OpenRouter, Together, DeepInfra, Claude,
-  // Gemini, Morpheus, AntSeed, LiteLLM, CheapTokens, Surplus) removed. OMA
-  // routes exclusively through Venice + OMA-AI providers to guarantee
-  // zero-data-retention privacy. If you need a non-private provider, add it to
-  // provider-selector.ts, call-provider.ts, and models.ts in the same commit.
+  // Surplus Intelligence (api.surplusintelligence.ai) is the only opt-in
+  // non-private resale upstream. It's gated behind SURPLUS_API_KEY — when unset,
+  // Surplus catalog entries are not selected for traffic. See
+  // docs/research/surplus-intelligence.md for trust/security notes.
   // Primary Base mainnet RPC. Default = QuickNode multichain endpoint (active
   // production endpoint). Set to https://base-rpc.publicnode.com or another
   // provider for dev/test environments.
@@ -203,6 +207,21 @@ if (isProductionEnv && config.BETTER_AUTH_SECRET.startsWith("dev-")) {
   process.exit(1);
 }
 
+// SECURITY (audit 7.6): Reject dev-grade placeholder prefixes in any
+// non-development environment. `staging-` and `preview-` are easy to
+// typo into production by accident, and the placeholder format is
+// obvious enough to leak via secret scans if misconfigured.
+const BETTER_AUTH_PLACEHOLDER_PREFIXES = ["dev-", "staging-", "preview-", "test-"];
+if (
+  isProductionEnv &&
+  BETTER_AUTH_PLACEHOLDER_PREFIXES.some((prefix) => config.BETTER_AUTH_SECRET.startsWith(prefix))
+) {
+  console.error(
+    `[FATAL] BETTER_AUTH_SECRET must not start with a dev/staging/preview/test prefix in production. Run \`openssl rand -hex 32\` and set the result.`,
+  );
+  process.exit(1);
+}
+
 if (isProductionEnv && config.BETTER_AUTH_SECRET.length < 64) {
   console.error("[FATAL] BETTER_AUTH_SECRET must be at least 64 hex characters in production for adequate entropy.");
   process.exit(1);
@@ -235,6 +254,17 @@ if (isProductionEnv) {
   if (PLACEHOLDER_ADDRESSES.includes(treasuryAddress)) {
     throw new Error("FATAL: TREASURY_BASE_ADDRESS is a placeholder address. Set a real address in production.");
   }
+}
+
+// SECURITY (audit 7.5): Reject Polar sandbox mode in production. Operators
+// who accidentally point POLAR_SERVER=sandbox at the production build will
+// silently collect revenue into a sandbox account — never the operator's
+// real merchant of record. Fail-fast at startup.
+if (isProductionEnv && config.POLAR_SERVER === "sandbox") {
+  console.error(
+    "[FATAL] POLAR_SERVER='sandbox' is not allowed in production. Set POLAR_SERVER='production' or unset (defaults to production).",
+  );
+  process.exit(1);
 }
 
 // SECURITY (A12): Require a Base RPC endpoint in production.

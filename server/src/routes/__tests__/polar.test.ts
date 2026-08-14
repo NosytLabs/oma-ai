@@ -21,7 +21,15 @@ const mockDb = vi.hoisted(() => {
 	const insertMock = vi.fn().mockReturnValue({ values: valuesMock });
 	const selectMock = vi.fn().mockReturnThis();
 	const fromMock = vi.fn().mockReturnThis();
-	
+	// SECURITY (audit 2.2): the route now wraps credit + processed-flag
+	// updates in `db.transaction`. The transaction receives a tx that
+	// exposes the same insert/update surface as the top-level db. Inside
+	// the callback we forward to the same chained mocks so call counts
+	// stay comparable across tests.
+	const transactionMock = vi.fn(async (fn: (tx: typeof mockDb) => Promise<void>) =>
+		fn(mockDb),
+	);
+
 	return {
 		insert: insertMock,
 		values: valuesMock,
@@ -32,6 +40,7 @@ const mockDb = vi.hoisted(() => {
 		select: selectMock,
 		from: fromMock,
 		limit: limitMock,
+		transaction: transactionMock,
 	};
 });
 
@@ -203,16 +212,20 @@ describe("polar routes", () => {
 		});
 
 		it("processes order.paid successfully and credits user", async () => {
+			// Pass `product.id` so `planFromProductId` can resolve a plan — the
+			// webhook handler no longer trusts metadata.credits (security fix).
+			// Test product id maps to "builder" via mockConfig.POLAR_BUILDER_PRODUCT_ID.
 			const body = JSON.stringify({
 				type: "order.paid",
 				data: {
+					product: { id: "prod_builder" },
 					metadata: { userId: "user_123", credits: 5000 }
 				}
 			});
 			const id = "evt_456";
 			const ts = Math.floor(Date.now() / 1000);
 			const sig = generateSignature("test-secret", id, ts, body);
-			
+
 			const res = await app.request("/webhooks/polar", {
 				method: "POST",
 				body,
@@ -222,27 +235,27 @@ describe("polar routes", () => {
 					"webhook-signature": sig
 				}
 			});
-			
+
 			expect(res.status).toBe(200);
-			// Verify db insert values (polarWebhookEvents)
-			expect(mockDb.insert).toHaveBeenCalledTimes(2); // One for event, one for credit
+			// Verify db insert values (polarWebhookEvents + credit balance)
+			expect(mockDb.insert).toHaveBeenCalledTimes(2);
 			expect(mockDb.values).toHaveBeenCalledWith(expect.objectContaining({
 				polarEventId: id,
 				eventType: "order.paid"
 			}));
-			// Verify user was credited
+			// Verify user was credited with the plan-derived amount (5000)
 			expect(mockDb.values).toHaveBeenCalledWith(expect.objectContaining({
 				userId: "user_123",
-				balanceCents: "5000" // the value was cast to string in the code
+				balanceCents: "5000"
 			}));
 			expect(mockDb.onConflictDoUpdate).toHaveBeenCalled();
-            // Allow this test to pass without emitting deposit since the mock is having trouble binding
 		});
 
 		it("processes order.refunded successfully and drains user", async () => {
 			const body = JSON.stringify({
 				type: "order.refunded",
 				data: {
+					product: { id: "prod_builder" },
 					metadata: { userId: "user_123", credits: 5000 }
 				}
 			});
@@ -261,7 +274,8 @@ describe("polar routes", () => {
 			});
 			
 			expect(res.status).toBe(200);
-			expect(mockDb.insert).toHaveBeenCalledTimes(2); // Event + drain
+			// Event row + drain upsert (drain uses onConflictDoUpdate upsert pattern)
+			expect(mockDb.insert).toHaveBeenCalledTimes(2);
 			expect(mockDb.values).toHaveBeenCalledWith(expect.objectContaining({
 				userId: "user_123",
 				balanceCents: "0" // Drain inserts 0 and sets balance to GREATEST(..., 0)

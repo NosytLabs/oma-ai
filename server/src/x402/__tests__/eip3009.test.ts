@@ -409,3 +409,118 @@ describe('EIP-3009 isEip3009Authorization type guard', () => {
     expect(true).toBe(true)
   })
 })
+
+// ── Audit fix tests (round 3) ──────────────────────────────────────────
+//
+// Covers three Round 3 fixes:
+//   1. STRICT amount: overpayment is rejected (audit 3.3 / HIGH)
+//   2. High-S signature: rejected (audit 3.1 / MEDIUM)
+//   3. chainId: derived from the request's networkId, never hardcoded
+//      (audit 3.1 / MEDIUM)
+describe('EIP-3009 audit round-3 fixes', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    settlementCache.clear()
+    resetChain()
+    mockRedis.set.mockResolvedValue('OK')
+    mockRedis.get.mockResolvedValue(null)
+    mockRedis.del.mockResolvedValue(1)
+    recoverTypedDataAddressMock.mockResolvedValue(PAYER)
+    callMock.mockResolvedValue({ data: '0x' + '00'.repeat(32) })
+    writeContractMock.mockResolvedValue('0x' + 'cc'.repeat(32))
+    mockConfig.FACILITATOR_PRIVATE_KEY = undefined
+  })
+
+  // SECP256K1_N/2 — EIP-2 boundary. Any signature with s > this value is
+  // a non-canonical (high-S) signature and must be rejected.
+  const SECP256K1_N_OVER_2_HEX = '7fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a0'
+
+  // Build a 65-byte signature whose `s` component lands above the
+  // EIP-2 boundary. Layout: r (32 bytes = 64 hex) + s (32 bytes = 64
+  // hex) + v (1 byte = 2 hex). We use a fixed r (any 32 bytes), set s
+  // to N/2 + 1, and v to 0x1b (27, a valid EIP-155 v).
+  function buildHighSSigHex(): string {
+    const r = '11'.repeat(32) // 32 bytes of arbitrary r
+    // s = N/2 + 1, big-endian, 32 bytes
+    const sBig = BigInt('0x' + SECP256K1_N_OVER_2_HEX) + 1n
+    const s = sBig.toString(16).padStart(64, '0')
+    const v = '1b'
+    return '0x' + r + s + v
+  }
+
+  // ── Fix #15: strict payment amount (reject overpayment) ─────────
+  it('rejects overpayment (auditAtomic > requiredAtomic)', async () => {
+    const sig = makeEip3009PaymentSig({
+      amount: '1.00', // required
+      authorization: {
+        from: PAYER,
+        to: TREASURY,
+        value: (USDC_AMOUNT_ATOMIC * 2n).toString(), // 2 USDC > 1 USDC required
+        validAfter: (Math.floor(Date.now() / 1000) - 60).toString(),
+        validBefore: (Math.floor(Date.now() / 1000) + 3600).toString(),
+        nonce: '0x' + 'ee'.repeat(32),
+      },
+    })
+    const result = await verifyPayment(sig)
+    expect(result.valid).toBe(false)
+    expect(result.error).toMatch(/overpayment/i)
+  })
+
+  it('rejects a zero required amount (would otherwise be a free pass)', async () => {
+    const sig = makeEip3009PaymentSig({
+      amount: '0',
+      authorization: {
+        from: PAYER,
+        to: TREASURY,
+        value: '1000000',
+        validAfter: (Math.floor(Date.now() / 1000) - 60).toString(),
+        validBefore: (Math.floor(Date.now() / 1000) + 3600).toString(),
+        nonce: '0x' + 'ee'.repeat(32),
+      },
+    })
+    const result = await verifyPayment(sig)
+    expect(result.valid).toBe(false)
+    expect(result.error).toMatch(/positive/i)
+  })
+
+  // ── Fix #16: reject high-S signatures (EIP-2) ──────────────────────
+  it('rejects a signature with s > secp256k1 N/2 (EIP-2 low-S rule)', async () => {
+    const highSSig = buildHighSSigHex()
+    expect(highSSig.length).toBe(132) // sanity: still 65 bytes
+    const sig = makeEip3009PaymentSig({ signature: highSSig })
+    const result = await verifyPayment(sig)
+    expect(result.valid).toBe(false)
+    expect(result.error).toMatch(/high-s/i)
+  })
+
+  it('accepts a signature with s exactly at secp256k1 N/2 (boundary)', async () => {
+    // s = N/2 — the high-S check uses `>`, so this is on the low-S side
+    // and must pass through to the recovery step (where viem is mocked to
+    // recover PAYER, completing a happy-path verify).
+    const r = '11'.repeat(32)
+    const s = SECP256K1_N_OVER_2_HEX
+    const v = '1b'
+    const boundarySig = '0x' + r + s + v
+    const sig = makeEip3009PaymentSig({ signature: boundarySig })
+    const result = await verifyPayment(sig)
+    expect(result.valid).toBe(true)
+  })
+
+  // ── Fix #17: chainId derived from networkId ─────────────────────────
+  it('passes the networkId-derived chainId to recoverTypedDataAddress', async () => {
+    const sig = makeEip3009PaymentSig()
+    await verifyPayment(sig)
+    expect(recoverTypedDataAddressMock).toHaveBeenCalledTimes(1)
+    const recoverArgs = recoverTypedDataAddressMock.mock.calls[0][0]
+    expect(recoverArgs.domain.chainId).toBe(8453) // Base mainnet (default network)
+  })
+
+  it('falls back to the Base chainId when an unknown networkId is supplied', async () => {
+    const sig = makeEip3009PaymentSig()
+    sig.payload.networkId = 'unknown-network'
+    await verifyPayment(sig)
+    expect(recoverTypedDataAddressMock).toHaveBeenCalledTimes(1)
+    const recoverArgs = recoverTypedDataAddressMock.mock.calls[0][0]
+    expect(recoverArgs.domain.chainId).toBe(8453)
+  })
+})

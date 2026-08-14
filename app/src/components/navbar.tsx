@@ -59,6 +59,7 @@ export function Navbar() {
 	const onPrimaryLink = primaryLinks.some((l) =>
 		isCurrentPath(pathname ?? "/", l.href),
 	);
+	const loginHref = `/login?next=${encodeURIComponent(pathname ?? "/")}`;
 
 	return (
 		<header
@@ -212,17 +213,17 @@ export function Navbar() {
 							/>
 						) : (
 							<div className="flex items-center gap-1.5 sm:gap-2">
-								<Link
-									href="/login"
-									className="hidden h-11 items-center gap-1 px-3 text-xs font-medium text-text-secondary transition-colors duration-200 hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:inline-flex"
-								>
-									Sign in
-								</Link>
-								<Magnetic strength={6}>
-									<Link
-										href="/login"
-										className="inline-flex h-11 items-center gap-1.5 rounded-[var(--radius-md)] border border-accent/40 bg-accent px-3 text-xs font-bold text-void transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out hover:bg-accent-bright hover:shadow-[0_0_18px_var(--color-accent-glow)] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:px-4"
+<Link
+										href={loginHref}
+										className="hidden h-11 items-center gap-1 px-3 text-xs font-medium text-text-secondary transition-colors duration-200 hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:inline-flex"
 									>
+										Sign in
+									</Link>
+									<Magnetic strength={6}>
+										<Link
+											href={loginHref}
+											className="inline-flex h-11 items-center gap-1.5 rounded-[var(--radius-md)] border border-accent/40 bg-accent px-3 text-xs font-bold text-void transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out hover:bg-accent-bright hover:shadow-[0_0_18px_var(--color-accent-glow)] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:px-4"
+										>
 										Get started
 										<svg
 											className="hidden h-3 w-3 sm:block"

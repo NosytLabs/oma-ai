@@ -139,8 +139,6 @@ function ShellContent({
 		setCompareMessages,
 		shortcutsOpen,
 		setShortcutsOpen,
-		mediaMode,
-		setMediaMode,
 	} = usePlaygroundState();
 
 	const toast = useToast();
@@ -337,21 +335,19 @@ function ShellContent({
 				const next = pickModelForGuest(modelOverride);
 				if (next) {
 					setModel(next);
-					setMediaMode("text");
 				}
 				inputRef.current?.focus();
 			},
-			[setInput, setModel, pickModelForGuest, setMediaMode],
+			[setInput, setModel, pickModelForGuest],
 		);
-	
+
 		const handleExampleSelect = useCallback(
 			(example: ExampleConversation) => {
 				setInput(example.prompt);
 				setModel(pickModelForGuest(example.model) ?? FREE_DEFAULT_CHAT_MODEL);
-				setMediaMode("text");
 				inputRef.current?.focus();
 			},
-			[setModel, setInput, pickModelForGuest, setMediaMode],
+			[setModel, setInput, pickModelForGuest],
 		);
 
 	const handleCopy = useCallback(() => {
@@ -421,9 +417,6 @@ function ShellContent({
 		setParamsOpen,
 		compareMode,
 		setCompareMode,
-		toggleCreateMode: () => {
-			setMediaMode((prev) => (prev === "text" ? "image" : "text"));
-		},
 		newConversation,
 	});
 
@@ -438,11 +431,11 @@ function ShellContent({
 		setShareStatus,
 	});
 
-	return (
+		return (
 		<div className="h-[calc(100dvh-3.5rem)] w-full flex flex-col bg-void text-text font-sans overflow-hidden">
 			<h1 className="sr-only">
 				{isChat
-					? "OMA Playground — chat, image, and video generation"
+					? "OMA Playground — text and multimodal LLM chat"
 					: "OMA API Playground"}
 			</h1>
 			<MemoizedChatToolbar
@@ -451,8 +444,6 @@ function ShellContent({
 				setModel={setModel}
 				paramsOpen={paramsOpen}
 				setParamsOpen={setParamsOpen}
-				mediaMode={mediaMode}
-				setMediaMode={setMediaMode}
 				searching={searching}
 				isAuthenticated={isAuthenticated}
 				balance={balance}
@@ -501,14 +492,12 @@ function ShellContent({
 						)}
 
 					{/* System instructions only apply to text chat */}
-					{mediaMode === "text" && (
-						<ChatSystemPromptPanel
-							systemPrompt={systemPrompt}
-							setSystemPrompt={setSystemPrompt}
-							systemPromptOpen={systemPromptOpen}
-							setSystemPromptOpen={setSystemPromptOpen}
-						/>
-					)}
+					<ChatSystemPromptPanel
+						systemPrompt={systemPrompt}
+						setSystemPrompt={setSystemPrompt}
+						systemPromptOpen={systemPromptOpen}
+						setSystemPromptOpen={setSystemPromptOpen}
+					/>
 
 					<MessagesList
 						scrollContainerRef={scrollContainerRef}
@@ -518,8 +507,6 @@ function ShellContent({
 						jumpToBottom={jumpToBottom}
 						handleScroll={handleScroll}
 						deferredMessages={deferredMessages}
-						mediaMode={isChat ? mediaMode : "text"}
-						onMediaKindChange={(kind) => setMediaMode(kind)}
 						handleCopy={handleCopy}
 						handlePreset={handlePreset}
 						handleExampleSelect={handleExampleSelect}
@@ -530,8 +517,8 @@ function ShellContent({
 						}}
 					/>
 
-					{/* Text composer only for chat mode — image/video use their own panels */}
-					{mediaMode === "text" && (
+					{/* Text composer — chat surface is text-only */}
+					{isChat && (
 						// Added safe-area-inset padding so the composer never sits flush
 						// against the browser edge (mobile bottom bar / iOS notch home bar)
 						// and there's breathing room above the copyright/footer.

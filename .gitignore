@@ -23,9 +23,11 @@ coverage/
 # Images: ignore stray screenshots everywhere, but keep real app/public assets
 *.png
 *.jpg
+*.jpeg
 *.ico
 !app/public/**/*.png
 !app/public/**/*.jpg
+!app/public/**/*.jpeg
 !app/public/**/*.ico
 !app/public/**/*.svg
 
@@ -36,8 +38,14 @@ test-screenshots/
 audit-screenshots/
 .audit-screenshots/
 .audit-2026-08-01/
+.audit-fix/
+.audit/
+.audit-r3/
+.audit-r4/
 .visual-audit/
 screenshots/
+# Audit reports left at repo root after a session
+audit-*.md
 
 # Root-level public only (Next app assets live in app/public/)
 /public/

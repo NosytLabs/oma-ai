@@ -53,6 +53,9 @@ export function CostEstimate({
 	const totalCredits = usdToCredits(totalCostUsd).toFixed(4);
 	const inputCredits = usdToCredits(inputCostUsd).toFixed(4);
 	const estimatedOutputCredits = usdToCredits(estimatedOutputCostUsd).toFixed(4);
+	// Visible value: 2 decimals so it doesn't read as "$0.0000" for free models.
+	// 4-decimal precision stays in the tooltip so power users can still see it.
+	const visibleCredits = usdToCredits(totalCostUsd).toFixed(2);
 
 	return (
 		<div className="flex items-center gap-3 text-[11.5px] font-mono text-text-muted uppercase tracking-wider">
@@ -64,8 +67,10 @@ export function CostEstimate({
 				<Coins className="w-3 h-3 text-[var(--color-success)]" />
 				<span
 					title={`In: ${inputCredits} cr · Out: ~${estimatedOutputCredits} cr (${(outputBudget / 1000).toFixed(1)}k TK est) · 1 credit = $0.01`}
+					role="status"
+					aria-live="polite"
 				>
-					{totalCredits} cr EST
+					{totalCostUsd === 0 ? "FREE" : `${visibleCredits} cr EST`}
 				</span>
 			</div>
 		</div>

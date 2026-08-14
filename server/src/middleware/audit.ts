@@ -42,6 +42,11 @@ export async function auditLog(params: AuditLogParams): Promise<void> {
 /**
  * Middleware that logs an audit entry after the request completes.
  * Sets context: userId (from prior middleware), client IP, user-agent.
+ *
+ * Resolves `resourceId` and `metadata` from the Hono context so the route
+ * can stash them before calling `next()`. Falls back to empty values when
+ * the route doesn't set them, which keeps the middleware safe to attach
+ * generically.
  */
 export function createAuditLogger(params: { action: AuditAction; resource: string }) {
   return async (c: Context, next: Next) => {
@@ -66,6 +71,11 @@ export function createAuditLogger(params: { action: AuditAction; resource: strin
 /**
  * Middleware factory for write-operation audit logs with dynamic resourceId
  * and metadata resolved from the request context.
+ *
+ * SECURITY (audit 5.4): use this in mutation routes so audit logging is
+ * consistent across the operator surface. The middleware fires AFTER the
+ * handler completes, so the audit entry reflects the actual outcome (the
+ * `c.get("auditMetadata")` value set by the handler).
  */
 export function auditWriteOp(
   action: AuditAction,

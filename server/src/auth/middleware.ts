@@ -121,11 +121,14 @@ async function singleflight<T>(
  * has either the legacy `banned` flag or the Slice-6 `suspended` flag, or
  * `undefined` when the user is clear to proceed.
  *
- * On DB failure it fails OPEN (logs and continues), matching the existing
- * convention: the session/API key was already validated upstream, and
- * failing closed here would lock out every user during a transient DB
- * blip. Keep the 403 payload identical across all three callers so the
- * contract can't drift.
+ * SECURITY (audit 1.6 / MEDIUM): On DB failure we still fail open (the
+ * session/API key was already validated upstream, and a transient DB blip
+ * must not lock out every user), but we now log at `fatal` so an SRE
+ * alert fires. The `error` level was previously silent in normal alerting
+ * configs.
+ *
+ * Keep the 403 payload identical across all three callers so the contract
+ * can't drift.
  */
 async function rejectIfSuspended(
   c: Context<OmaEnv>,
@@ -142,7 +145,12 @@ async function rejectIfSuspended(
       return c.json(SUSPENDED_PAYLOAD, 403);
     }
   } catch (err) {
-    logger.error({ err }, `[${source}] failed to check if user is banned/suspended`);
+    // fatal (not error) so monitoring alerts trip — the suspension gate
+    // is a security control and "DB blip" must surface immediately.
+    logger.fatal(
+      { err, userId, source },
+      `[SECURITY] ${source}: failed to check banned/suspended — fail-open path active`,
+    );
   }
   return undefined;
 }

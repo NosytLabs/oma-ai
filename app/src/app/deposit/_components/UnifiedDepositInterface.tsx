@@ -442,16 +442,18 @@ export function UnifiedDepositInterface({
 										</div>
 									)}
 
-									<button
-										type="button"
-										onClick={() => void handlePay()}
-										disabled={!connectedAddress || !amountUsd || !instructions}
-										className="btn-primary w-full py-4 text-sm rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
-									>
-										{connectedAddress
-											? `Send ${amountUsd || "0"} USDC`
-											: "Connect wallet to pay"}
-									</button>
+									{connectedAddress && (
+										<button
+											type="button"
+											onClick={() => void handlePay()}
+											disabled={!connectedAddress || !amountUsd || !instructions}
+											className="btn-primary w-full py-4 text-sm rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
+										>
+											{connectedAddress
+												? `Send ${amountUsd || "0"} USDC`
+												: "Connect wallet to pay"}
+										</button>
+									)}
 
 									{recent.length > 0 && (
 										<div className="border-t border-border pt-4">

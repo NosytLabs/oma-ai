@@ -28,6 +28,7 @@ import {
   integer,
   pgEnum,
   uuid,
+  check,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
@@ -92,6 +93,8 @@ export const auditActionEnum = pgEnum("audit_action", [
   "USER_SUSPENDED",
   "USER_UNSUSPENDED",
   "CREDIT_ADJUSTED",
+  "CREDIT_DEDUCTED",
+  "SITE_SETTINGS_UPDATED",
   "REFUND_ISSUED",
 ]);
 
@@ -157,6 +160,7 @@ export const user = pgTable("user", {
   // The PATCH endpoint on banned is retained for back-compat with the
   // existing operator workflow.
   suspended: boolean("suspended").notNull().default(false),
+  suspendedReason: text("suspended_reason"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -171,6 +175,11 @@ export const user = pgTable("user", {
   index("idx_user_is_anonymous").on(t.isAnonymous),
   index("idx_user_suspended").on(t.suspended),
   index("idx_user_account_number").on(t.accountNumber),
+  // SECURITY (audit 1.6): role values are restricted to the Better Auth
+  // admin plugin's allowed set ("admin" | "user"). Anything else — a
+  // typo, a stale value from a deprecated role — fails at the DB layer
+  // instead of silently elevating a row. Backed by migration 0040.
+  check("user_role_check", sql`${t.role} IS NULL OR ${t.role} IN ('admin', 'user')`),
 ]);
 
 export const session = pgTable("session", {
@@ -328,6 +337,38 @@ export const creditBalances = pgTable("credit_balances", {
     .notNull()
     .$onUpdateFn(() => new Date()),
 });
+
+/**
+ * Per-email credit grants — survives user deletion.
+ *
+ * Why: the prior `user.create.after` hook seeded `FREE_SIGNUP_CENTS` on every
+ * new user, but FK cascade on user delete wiped the credit row. An attacker
+ * could sign up → delete → re-signup to farm `$1` per cycle. Recording the
+ * grant against the email (with a unique constraint) makes the trial
+ * one-shot per email, even if the user row is deleted.
+ *
+ * NOTE: `emailNormalized` is `lower(email)` — case-insensitive matching so
+ * `Foo@Bar.com` and `foo@bar.com` collapse to the same grant.
+ */
+export const creditGrants = pgTable(
+  "credit_grants",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    emailNormalized: text("email_normalized").notNull(),
+    userId: text("user_id"), // nullable — the user row may be deleted
+    grantType: text("grant_type").notNull(), // "free_signup" | "manual_admin"
+    cents: numeric("cents", { precision: 18, scale: 8 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (t) => [
+    uniqueIndex("uniq_credit_grants_email_type").on(
+      t.emailNormalized,
+      t.grantType,
+    ),
+  ],
+);
 
 export const usageRecords = pgTable(
   "usage_records",
@@ -569,9 +610,31 @@ export const auditLogs = pgTable(
 export const siteSettings = pgTable("site_settings", {
   id: text("id").primaryKey().default("default"),
   maintenanceMode: boolean("maintenance_mode").notNull().default(false),
+  maintenanceMessage: text("maintenance_message"),
   cardPaymentsEnabled: boolean("card_payments_enabled").notNull().default(true),
   cryptoPaymentsEnabled: boolean("crypto_payments_enabled").notNull().default(true),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
 });
+
+/**
+ * Per-user rate-limit overrides. Admin sets via /v1/admin/rate-limit-override.
+ * Consulted by the `rateLimit` middleware before falling back to the IP bucket.
+ */
+export const rateLimitOverrides = pgTable(
+  "rate_limit_overrides",
+  {
+    userId: text("user_id")
+      .references(() => user.id, { onDelete: "cascade" })
+      .primaryKey(),
+    maxRequestsPerMinute: integer("max_requests_per_minute").notNull(),
+    reason: text("reason").notNull(),
+    setBy: text("set_by").references(() => user.id, { onDelete: "set null" }),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull()
+      .$onUpdateFn(() => new Date()),
+  },
+  (t) => [index("idx_rate_limit_overrides_set_by").on(t.setBy)],
+);

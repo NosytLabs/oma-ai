@@ -77,7 +77,7 @@ export function StatsBar({ messages, model = "llama-3.3-70b" }: StatsBarProps) {
 					<StatPill label="TOK" value={totalTokens.toString().padStart(4, "0")} />
 					<StatPill
 						label="CST"
-						value={`$${totalCost.toFixed(4)}`}
+						value={totalCost === 0 ? "FREE" : `$${totalCost.toFixed(2)}`}
 						accent
 						title={`Session cost — estimated from ${model} list pricing (in: $${inCost.toFixed(4)} · out: $${outCost.toFixed(4)})`}
 					/>
@@ -121,7 +121,7 @@ export function MobileStatsBar({
 						tok
 					</span>
 					<span className="bg-success-dim text-success px-1.5 py-0.5 rounded-[var(--radius-sm)] border border-success/30">
-						${totalCost.toFixed(4)}
+						{totalCost === 0 ? "FREE" : `$${totalCost.toFixed(2)}`}
 					</span>
 				</>
 			)}

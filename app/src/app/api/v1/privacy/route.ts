@@ -23,15 +23,16 @@ const PRIVACY_MANIFEST = {
 	data_stored: {
 		account: {
 			description:
-				"Wallet-based account identity. No email or password required.",
+				"Account identity via Better Auth: passwordless email magic link OR EIP-4361 wallet (SIWE) sign-in. No password stored. Email is required for the email-OTP path; the SIWE path auto-derives {address}@oma-ai.com when no email is supplied.",
 			fields: [
-				"wallet_address",
-				"nonce",
-				"optional_email",
-				"two_factor_secret (encrypted at rest)",
+				"email (optional — required for magic-link + OTP, derived for SIWE-only)",
+				"wallet_address (lowercased EVM address; populated when SIWE is used)",
+				"user_id (Better Auth UUID, primary key)",
+				"suspended (boolean + reason, set via /v1/admin/user-suspend)",
+				"role (default 'user'; 'admin' for operators)",
 			],
 			retention:
-				"Until the user requests deletion; wallet address is the primary key.",
+				"Until the user requests deletion via /v1/account/delete. The user row + linked creditBalances + sessions are removed in a single transaction.",
 		},
 		api_keys: {
 			description:

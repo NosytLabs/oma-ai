@@ -37,7 +37,10 @@ describe("SITE_REDIRECTS (shipped next.config source)", () => {
 		// /about and /faq are live E-E-A-T pages (not redirected)
 		expect(bySource["/about"]).toBeUndefined();
 		expect(bySource["/faq"]).toBeUndefined();
-		expect(bySource["/blog"]).toBe("/changelog");
+		expect(bySource["/blog"]).toBe("/docs");
+		expect(bySource["/capabilities"]).toBe("/models");
+		expect(bySource["/compare"]).toBe("/models");
+		expect(bySource["/changelog"]).toBe("/docs");
 		expect(bySource["/status"]).toBe("/docs#endpoints");
 		expect(bySource["/network"]).toBe("/docs#endpoints");
 		expect(bySource["/support"]).toBe("/contact");
@@ -47,10 +50,10 @@ describe("SITE_REDIRECTS (shipped next.config source)", () => {
 		expect(bySource["/register"]).toBe("/login");
 		expect(bySource["/signin"]).toBe("/login");
 		expect(bySource["/playground"]).toBe("/chat");
-		expect(bySource["/image-generation"]).toBe("/chat?mode=create");
-		expect(bySource["/video-generation"]).toBe("/chat?mode=video");
-		expect(bySource["/create"]).toBe("/chat?mode=create");
-		expect(bySource["/studio"]).toBe("/chat?mode=create");
+		expect(bySource["/image-generation"]).toBe("/chat");
+		expect(bySource["/video-generation"]).toBe("/chat");
+		expect(bySource["/create"]).toBe("/chat");
+		expect(bySource["/studio"]).toBe("/chat");
 		expect(bySource["/swap"]).toBe("/deposit");
 		expect(bySource["/credits"]).toBe("/deposit");
 		expect(bySource["/account"]).toBe("/settings");

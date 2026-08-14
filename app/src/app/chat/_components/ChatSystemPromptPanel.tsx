@@ -23,19 +23,19 @@ export function ChatSystemPromptPanel({
 				onClick={() => setSystemPromptOpen(!systemPromptOpen)}
 				aria-expanded={systemPromptOpen}
 				aria-label={`Toggle system prompt panel — Instructions ${systemPrompt.trim() ? "· Active" : "· Optional"}`}
-				className="w-full flex items-center justify-between px-4 md:px-6 lg:px-8 py-3 text-[11.5px] font-mono text-text-secondary uppercase tracking-wider hover:text-text-bright hover:bg-surface/30 transition-colors duration-200 ease-out focus-ring"
+				className="w-full flex items-center justify-between px-4 md:px-6 lg:px-8 py-3 text-[11.5px] font-mono text-[var(--color-text-secondary)] uppercase tracking-wider hover:text-[var(--color-text-bright)] hover:bg-[var(--color-surface)]/30 transition-colors duration-200 ease-out focus-ring"
 			>
 				<span className="flex items-center gap-2.5">
 					<span
-						className={`w-1.5 h-1.5 rounded-full ${systemPrompt.trim() ? "bg-success" : "bg-surface-elevated"}`}
+						className={`w-1.5 h-1.5 rounded-full ${systemPrompt.trim() ? "bg-[var(--color-success)]" : "bg-[var(--color-surface-elevated)]"}`}
 					/>
 					Instructions{" "}
 					{systemPrompt.trim() ? "· Active" : "· Optional"}
 				</span>
 				{systemPromptOpen ? (
-					<ChevronUp className="w-4 h-4 text-text-muted" />
+					<ChevronUp className="w-4 h-4 text-[var(--color-text-muted)]" />
 				) : (
-					<ChevronDown className="w-4 h-4 text-text-muted" />
+					<ChevronDown className="w-4 h-4 text-[var(--color-text-muted)]" />
 				)}
 			</button>
 			{systemPromptOpen && (
@@ -46,7 +46,7 @@ export function ChatSystemPromptPanel({
 						placeholder="Set behavior, persona, or instructions for the model. Sent as the first message of every request."
 						aria-label="System prompt"
 						rows={3}
-						className="w-full resize-y bg-surface border border-border px-3 py-2 rounded-[var(--radius-lg)] text-sm text-text-secondary font-sans leading-relaxed placeholder-text-muted focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
+						className="w-full resize-y bg-[var(--color-surface)] border border-[var(--color-border)] px-3 py-2 rounded-[var(--radius-lg)] text-sm text-[var(--color-text-secondary)] font-sans leading-relaxed placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-accent)]/50 focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]/30"
 						style={{ minHeight: "64px", maxHeight: "160px" }}
 					/>
 				</div>

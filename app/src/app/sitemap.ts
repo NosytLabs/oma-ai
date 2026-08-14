@@ -37,13 +37,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
 		entry("/chat", 0.85, "weekly"),
 		entry("/pricing", 0.9, "weekly"),
 		entry("/docs", 0.9, "weekly"),
-		entry("/capabilities", 0.8, "weekly"),
 		entry("/getting-started", 0.85, "weekly"),
 		entry("/faq", 0.7, "monthly"),
 		entry("/glossary", 0.6, "monthly"),
-		entry("/compare", 0.75, "weekly"),
 		entry("/about", 0.6, "monthly"),
-		entry("/changelog", 0.55, "weekly"),
 		entry("/contact", 0.4, "yearly"),
 		// Legal
 		entry("/privacy", 0.25, "yearly"),

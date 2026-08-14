@@ -152,7 +152,7 @@ export function QuickStartSection() {
 					/>
 					<ModalityExample
 						title="Video generation"
-						code={`curl https://api.oma-ai.com/v1/videos/quote \\
+						code={`curl https://api.oma-ai.com/v1/videos/generations \\
  -H "Authorization: Bearer oma_sk_your_key_here" \\
  -H "Content-Type: application/json" \\
  -d '{

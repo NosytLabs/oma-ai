@@ -3,13 +3,14 @@ import {
 	BookOpen,
 	Bot,
 	Box,
+	CircleHelp,
+	Coins,
 	FileText,
 	GitCompare,
 	type LucideIcon,
 	Network,
 	Newspaper,
 	ShieldCheck,
-	Sparkles,
 	Tag,
 	Terminal,
 } from "lucide-react";
@@ -34,7 +35,7 @@ export const primaryLinks: NavItem[] = [
 		href: "/chat",
 		label: "Chat",
 		icon: Terminal,
-		desc: "Chat · image · video",
+		desc: "Multimodal LLM playground",
 	},
 	{ href: "/pricing", label: "Pricing", icon: Tag, desc: "Transparent cost" },
 	{ href: "/docs", label: "Docs", icon: FileText, desc: "API reference" },
@@ -43,22 +44,10 @@ export const primaryLinks: NavItem[] = [
 /** Tools dropdown — secondary, off the primary path. */
 export const toolsLinks: NavItem[] = [
 	{
-		href: "/chat?mode=create",
-		label: "Create",
-		icon: Sparkles,
-		desc: "Image + video studio",
-	},
-	{
-		href: "/compare",
-		label: "Compare",
-		icon: GitCompare,
-		desc: "vs Portkey, LiteLLM, OpenRouter",
-	},
-	{
-		href: "/capabilities",
-		label: "Capabilities",
-		icon: Activity,
-		desc: "Modalities · rails · protocols",
+		href: "/deposit",
+		label: "Buy credits",
+		icon: Coins,
+		desc: "Card or USDC on Base",
 	},
 	{
 		href: "/docs#endpoints",
@@ -79,16 +68,10 @@ export const toolsLinks: NavItem[] = [
 		desc: "5-minute walkthrough",
 	},
 	{
-		href: "/changelog",
-		label: "Changelog",
-		icon: Newspaper,
-		desc: "Release notes",
-	},
-	{
-		href: "/agent-skill.md",
-		label: "Agent skill file",
-		icon: Bot,
-		desc: "Copy into your agent instructions",
+		href: "/faq",
+		label: "FAQ",
+		icon: CircleHelp,
+		desc: "Common questions",
 	},
 ];
 

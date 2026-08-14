@@ -1,4 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-label="Zhipu">
-  <rect width="24" height="24" rx="6" fill="#3859ff"/>
-  <text x="12" y="16" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" font-weight="700" fill="#fff">Z</text>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-label="Z.AI · GLM"><rect width="24" height="24" rx="6" fill="#0a0a14"/><path fill="#3859ff" d="M4 7h16L17 18h-3l1.2-3.5H8.8L10 18H7L4 7Z"/><path fill="#fff" d="M9.5 9.8h5L13.7 12H8.7l.8-2.2Z" opacity=".55"/></svg>

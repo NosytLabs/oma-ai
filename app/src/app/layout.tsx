@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Instrument_Serif, Geist, Geist_Mono } from "next/font/google";
+import { Instrument_Serif, Geist } from "next/font/google";
 import { BRAND_COLORS } from "@/lib/brand";
 import { MotionProvider } from "@/lib/animation/MotionProvider";
 import { ErrorBoundary } from "@/components/error-boundary";
@@ -29,14 +29,12 @@ const body = Geist({
 	preload: true,
 });
 
-const mono = Geist_Mono({
-	subsets: ["latin"],
-	variable: "--font-mono",
-	display: "swap",
-	// Code/mono text is route-specific; loading it on demand avoids
-	// unused-preload warnings on pages that never render mono.
-	preload: false,
-});
+// Note: we previously loaded Geist_Mono from Google Fonts as --font-mono,
+// but next/font kept injecting a preload link even with preload: false,
+// causing a "woff2 preloaded but not used" warning on routes without mono
+// text. The system stack (ui-monospace, SF Mono, Menlo, monospace) defined
+// in globals.css is more than good enough for the few mono labels. Drop the
+// web font entirely — saves ~14 KB and silences the console warning.
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://oma-ai.com";
 
@@ -113,7 +111,7 @@ export default function RootLayout({
 		<html
 			lang="en"
 			suppressHydrationWarning
-			className={`${display.variable} ${body.variable} ${mono.variable}`}
+			className={`${display.variable} ${body.variable}`}
 		>
 			<head>
 				<script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('oma-theme');if(t==='emerald'||t==='amber'||t==='mono'||t==='synth'){if(t==='emerald'){document.documentElement.removeAttribute('data-theme');}else{document.documentElement.setAttribute('data-theme',t);}}document.documentElement.style.colorScheme='dark';}catch(e){}})();` }} />

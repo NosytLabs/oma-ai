@@ -19,27 +19,16 @@ type ExportStatus = "default" | "loading" | "success" | "error";
 type ShareStatus = "default" | "success" | "error";
 
 /**
- * Media mode toggles between text chat, image generation, and video
- * generation panels. Synced with `?mode=text|image|video` so deep links
- * and redirects from /image-generation + /video-generation work.
- *
- * 2026-08-02: re-enabled — the /v1/images/generations and
- * /v1/videos/generations routes exist on the server and the
- * ImageGenerationPanel / VideoGenerationPanel components were kept
- * as lazy imports in MessagesList.
+ * Media mode is now text-only — OMA sells text + multimodal LLM
+ * inference. Legacy `?mode=image|video|create` deep links still resolve
+ * to the chat surface so old share URLs don't break. The previous image
+ * and video generation routes have been removed from the server.
  */
-export type MediaMode = "text" | "image" | "video";
-
-const MEDIA_MODES: readonly MediaMode[] = ["text", "image", "video"] as const;
+export type MediaMode = "text";
 
 export function parseMediaMode(raw: string | null | undefined): MediaMode {
-	const v = (raw ?? "").trim().toLowerCase();
-	// create/media → image studio (video via in-panel toggle or ?mode=video)
-	if (v === "image" || v === "img" || v === "create" || v === "media") {
-		return "image";
-	}
-	if (v === "video" || v === "vid") return "video";
-	if (v === "text" || v === "chat" || v === "") return "text";
+	// All non-text deep links (image, video, create, media) redirect to
+	// the chat surface — image/video generation is no longer offered.
 	return "text";
 }
 
@@ -204,39 +193,20 @@ export function usePlaygroundState(
 
 	// --- Misc UI ---
 	const [shortcutsOpen, setShortcutsOpen] = useState<boolean>(false);
-	const [mediaMode, setMediaModeState] = useState<MediaMode>(initialMode);
+	const [mediaMode, setMediaMode] = useState<MediaMode>("text");
 
-	// Keep mode in sync if the user lands with a new ?mode= (redirects, back/forward).
+	// Strip legacy `?mode=` query params on mount so old share URLs
+	// land cleanly on the chat surface instead of carrying dead state.
 	useEffect(() => {
-		const fromUrl = parseMediaMode(searchParams?.get("mode"));
-		setMediaModeState((prev) => (prev === fromUrl ? prev : fromUrl));
-	}, [searchParams]);
-
-	const setMediaMode = useCallback(
-		(next: SetStateAction<MediaMode>) => {
-			setMediaModeState((prev) => {
-				const resolved = typeof next === "function" ? next(prev) : next;
-				const mode = MEDIA_MODES.includes(resolved) ? resolved : "text";
-				// Create studio doesn't use chat params — close the drawer so
-				// it doesn't sit under the image/video panels.
-				if (mode !== "text") {
-					setParamsOpen(false);
-					setSystemPromptOpen(false);
-				}
-				// Reflect mode in the URL without a full navigation (shareable deep link).
-				if (typeof window !== "undefined" && pathname) {
-					const params = new URLSearchParams(searchParams?.toString() ?? "");
-					if (mode === "text") params.delete("mode");
-					else params.set("mode", mode);
-					const qs = params.toString();
-					const href = qs ? `${pathname}?${qs}` : pathname;
-					router.replace(href, { scroll: false });
-				}
-				return mode;
-			});
-		},
-		[pathname, router, searchParams],
-	);
+		if (typeof window === "undefined" || !pathname) return;
+		const raw = searchParams?.get("mode");
+		if (!raw) return;
+		const params = new URLSearchParams(searchParams?.toString() ?? "");
+		params.delete("mode");
+		const qs = params.toString();
+		const href = qs ? `${pathname}?${qs}` : pathname;
+		router.replace(href, { scroll: false });
+	}, [pathname, router, searchParams]);
 
 	return {
 		// Core chat

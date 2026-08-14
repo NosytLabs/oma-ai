@@ -17,6 +17,12 @@ export type OmaEnv = {
     correlationId?: string;
     payment?: { txHash?: string; amount: string; networkId: string };
     teamRole?: string;
+    // Set by route handlers when using the audit middleware factories
+    // (createAuditLogger / auditWriteOp) so the post-response hook can
+    // capture the actual mutation outcome. resourceId is a string,
+    // metadata is a JSON-serializable object.
+    resourceId?: string;
+    auditMetadata?: Record<string, unknown>;
     // Set by the Better Auth session middleware. `user` is the canonical
     // session payload; route handlers can read it directly.
     session?: {

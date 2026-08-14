@@ -116,8 +116,8 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 				a: "Start with a budget or mid model for everyday chat, and reach for frontier models for hard math, code, or long documents. The chat UI shows each model's price, context length, and strengths, and /models has the full catalog.",
 			},
 			{
-				q: "Can I generate images and videos?",
-				a: "Yes. Use the image and video tabs in the playground, or the /v1/images/generations and /v1/videos/generations API endpoints. Images are $0.10, videos $0.92.",
+				q: "Do you support multimodal inputs?",
+				a: "Yes — frontier and premium models accept image inputs alongside text. Send them in the OpenAI multimodal `messages[].content` array shape (array of `{type:'text'|'image_url',...}` parts). The chat UI uploads images directly via the composer.",
 			},
 		],
 	},

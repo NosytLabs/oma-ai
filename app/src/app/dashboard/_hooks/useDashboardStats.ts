@@ -69,10 +69,11 @@ export function useDashboardStats(
 
 	// Count of distinct models that appear in the current usage window.
 	// More meaningful than "available models" — reflects what the user
-	// has actually called.
+	// has actually called. Honors the time-range filter so switching
+	// 24h/7d/30d/all updates the count alongside the chart.
 	const activeModels = useMemo(
-		() => new Set(usage.map((u) => u.model)).size,
-		[usage],
+		() => new Set(filteredUsage.map((u) => u.model)).size,
+		[filteredUsage],
 	);
 
 	const totalTokens = useMemo(

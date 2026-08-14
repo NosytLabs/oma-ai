@@ -232,7 +232,7 @@ export default function PricingPage() {
 				const gen = entries
 					.filter(
 						(m) =>
-							m.category === "image" || m.category === "video",
+							m.modality === "image" || m.modality === "video",
 					)
 					.map((m) => ({
 						id: m.id,
@@ -240,7 +240,7 @@ export default function PricingPage() {
 						priceUsd: Number(
 							m.pricing?.generation ?? m.pricing?.prompt ?? 0,
 						),
-						category: m.category as "image" | "video",
+						category: m.modality as "image" | "video",
 						duration: m.duration,
 					}))
 					.sort((a, b) => a.priceUsd - b.priceUsd);

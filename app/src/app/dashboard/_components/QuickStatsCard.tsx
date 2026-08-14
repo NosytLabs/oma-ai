@@ -38,7 +38,9 @@ export function QuickStatsCard({
 
 	const rows = [
 		{ label: "Requests", value: loading ? "\u2026" : todayRequests.toLocaleString() },
-		{ label: "Spend", value: loading ? "\u2026" : `$${todayCost.toFixed(2)}`, accent: true },
+		// Show "FREE" instead of "$0.00" so a brand-new account never flashes
+		// a misleading "$0.00 spent" — matches the playground cost chip.
+		{ label: "Spend", value: loading ? "\u2026" : todayCost === 0 ? "FREE" : `$${todayCost.toFixed(2)}`, accent: true },
 		{ label: "Tokens", value: loading ? "\u2026" : formatTokens(totalTokens), mono: true },
 		{ label: "Avg latency", value: loading ? "\u2026" : formatLatency(avgLatencyMs), mono: true },
 		{ label: "Active models", value: loading ? "\u2026" : String(activeModels) },
