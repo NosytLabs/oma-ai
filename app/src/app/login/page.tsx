@@ -3,19 +3,19 @@
 
 
 /**
- * /login — Better Auth sign-in entry point.
- *
- * Two sign-in methods:
- *
- * 1. Magic link — passwordless email sign-in via Resend.
- * 2. SIWE wallet — EIP-4361 sign-in on Base mainnet via viem.
- * Better Auth owns the nonce, signature verification, and session.
- *
- * Cross-cutting:
- * - No CSRF pre-fetch dance (Better Auth manages CSRF internally).
- * - Errors bubble through Better Auth — friendly messages shaped
- * server-side; we just toast them here.
- */
+	* /login — Better Auth sign-in entry point.
+	*
+	* Two sign-in methods:
+	*
+	* 1. Magic link — passwordless email sign-in via Resend.
+	* 2. SIWE wallet — EIP-4361 sign-in on Base mainnet via viem.
+	* Better Auth owns the nonce, signature verification, and session.
+	*
+	* Cross-cutting:
+	* - No CSRF pre-fetch dance (Better Auth manages CSRF internally).
+	* - Errors bubble through Better Auth — friendly messages shaped
+	* server-side; we just toast them here.
+	*/
 
 import {
 	AlertTriangle,
@@ -54,10 +54,10 @@ const LazyWalletSignInPanel = dynamic(
 type Method = "magic" | "wallet";
 
 /**
- * Resolve post-login destination. Only same-origin relative paths are allowed
- * (blocks open redirects via `//evil` or absolute URLs).
- * Exported for unit tests — keep the guard in one place.
- */
+	* Resolve post-login destination. Only same-origin relative paths are allowed
+	* (blocks open redirects via `//evil` or absolute URLs).
+	* Exported for unit tests — keep the guard in one place.
+	*/
 export function safeLoginNext(raw: string | null | undefined): string {
 	if (!raw) return "/dashboard";
 	if (!raw.startsWith("/") || raw.startsWith("//")) return "/dashboard";
@@ -393,7 +393,7 @@ function BrandPitch() {
 				<OmaWordmark size="md" />
 				<h1 className="mt-6 text-3xl font-bold tracking-tight text-text-bright sm:text-4xl">
 					Sign in once.{" "}
-					<span className="text-[var(--color-accent)] ml-2">Ship without friction.</span>
+					<span className="text-[var(--color-accent)] ml-1">Ship without friction.</span>
 				</h1>
 				<p className="mt-3 text-sm text-text-secondary">
 					One OpenAI-compatible gateway. Magic link or wallet, credits by USDC on Base, x402 for agents.
