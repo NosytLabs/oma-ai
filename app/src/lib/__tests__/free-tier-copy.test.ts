@@ -1,8 +1,8 @@
 /**
- * Free-tier marketing/chat copy must only name real OMA-AI free models.
- * Drives FREE_CHAT_MODEL_IDS from model-utils and scans shipped source for
- * "(free)" example labels + known-bad Venice free claims.
- */
+	* Free-tier marketing/chat copy must only name real OMA-AI free models.
+	* Drives FREE_CHAT_MODEL_IDS from model-utils and scans shipped source for
+	* "(free)" example labels + known-bad Venice free claims.
+	*/
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -15,15 +15,15 @@ function readApp(rel: string): string {
 }
 
 describe("free-tier copy accuracy", () => {
-	it("FREE_CHAT_MODEL_IDS contains all free models", () => {
-		expect([...FREE_CHAT_MODEL_IDS].sort()).toEqual([
-			"gemini-3.1-pro-preview",
-			"gemini-3-flash-preview",
-			"gpt-4.1",
-			"gpt-4o",
-			"kimi-k2-6",
-			"minimax-m2-7",
-		].sort());
+	it("FREE_CHAT_MODEL_IDS contains all Gonka openbroker models", () => {
+		expect([...FREE_CHAT_MODEL_IDS].sort()).toEqual(
+			[
+				"deepseek-v4-flash-0731-openbroker",
+				"gemini-3-flash-preview",
+				"kimi-k2-6",
+				"minimax-m2-7",
+			].sort(),
+		);
 		expect(FREE_CHAT_MODEL_IDS.has(FREE_DEFAULT_CHAT_MODEL)).toBe(true);
 	});
 
@@ -48,11 +48,12 @@ describe("free-tier copy accuracy", () => {
 		}
 	});
 
-	it("WelcomeBanner tip names free OMA-AI models, not Venice", () => {
+	it("WelcomeBanner tip names free Gonka models, not Venice", () => {
 		const src = readApp("components/chat/WelcomeBannerRedesign.tsx");
-		expect(src).toMatch(/Gemini 3 Flash/);
-		expect(src).toMatch(/GPT-4o/);
-		expect(src).not.toMatch(/DeepSeek V4 Flash.*free/i);
+		expect(src).toMatch(/DeepSeek V4 Flash/);
+		expect(src).not.toMatch(/GPT-4o.*free/i);
+		expect(src).not.toMatch(/Gemini 3 Flash.*free/i);
+		expect(src).not.toMatch(/Kimi K2\.6.*free/i);
 		expect(src).not.toMatch(/GLM 5\.1.*free/i);
 	});
 

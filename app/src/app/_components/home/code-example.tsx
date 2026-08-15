@@ -1,9 +1,9 @@
 "use client";
 
 /**
- * CodeExample — section 5 of the homepage.
- * Full-width terminal showing a real fetch call with USDC payment.
- */
+	* CodeExample — section 5 of the homepage.
+	* Full-width terminal showing a real fetch call with USDC payment.
+	*/
 
 import { Copy, Terminal } from "lucide-react";
 import { useState } from "react";
@@ -19,19 +19,19 @@ function buildExampleCode(modelCount: number) {
 	return `import OpenAI from "openai";
 
 const client = new OpenAI({
- apiKey: process.env.OMA_KEY, // one key for every model
- baseURL: "https://api.oma-ai.com/v1",
+	apiKey: process.env.OMA_KEY, // one key for every model
+	baseURL: "https://api.oma-ai.com/v1",
 });
 
 const response = await client.chat.completions.create({
- model: "llama-3.3-70b", // or any of ${modelCount}+ models
- messages: [
- { role: "system", content: "You are concise." },
- { role: "user", content: "Ship a minimal RAG agent in 3 lines." }
- ],
+	model: "llama-3.3-70b", // or any of ${modelCount}+ models
+	messages: [
+	{ role: "system", content: "You are concise." },
+	{ role: "user", content: "Ship a minimal RAG agent in 3 lines." }
+	],
 });
 
- // → billed in USDC, settled on Base, no subscription`;
+	// → billed in USDC, settled on Base, no subscription`;
 }
 
 export function CodeExample({ modelCount }: CodeExampleProps) {
@@ -136,7 +136,7 @@ function TerminalExample({ code }: { code: string }) {
 				<pre
 					tabIndex={0}
 					aria-label="OpenAI-compatible OMA SDK client setup code example"
-					className="w-full overflow-x-auto whitespace-pre p-4 text-text-secondary bg-[#040608]/90 border-t border-border/80 leading-relaxed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:p-8"
+					className="w-full overflow-x-auto whitespace-pre p-4 text-text-secondary bg-void/90 border-t border-border/80 leading-relaxed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:p-8"
 				>
 					<code className="block w-max min-w-full font-mono text-[12px] sm:text-[14px]">
 						<TokenizedCode code={code} />

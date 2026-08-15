@@ -1,8 +1,8 @@
 /**
- * Locks the shipped stream-UI contract in message-stream-ui.ts
- * (used by ChatMessageRedesign): no infinite THINKING… while reasoning
- * tokens are already flowing; expand reasoning when answer body is empty.
- */
+	* Locks the shipped stream-UI contract in message-stream-ui.ts
+	* (used by ChatMessageRedesign): no infinite THINKING… while reasoning
+	* tokens are already flowing; expand reasoning when answer body is empty.
+	*/
 import { describe, expect, it } from "vitest";
 import {
 	isWaitingForFirstToken,

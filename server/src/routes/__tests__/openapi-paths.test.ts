@@ -1,7 +1,7 @@
 /**
- * OpenAPI source must advertise the public surface we ship in llms.txt /
- * agent docs. Parses openapi.ts paths so drift fails CI.
- */
+	* OpenAPI source must advertise the public surface we ship in llms.txt /
+	* agent docs. Parses openapi.ts paths so drift fails CI.
+	*/
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";

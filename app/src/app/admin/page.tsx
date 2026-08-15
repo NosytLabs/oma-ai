@@ -1,15 +1,15 @@
 "use client";
 
 /**
- * /admin — Operator dashboard.
- *
- * Role-gated (server session role === "admin"; wallet-gated server routes
- * stay server-side). Surfaces real aggregated operational data:
- *   - /v1/ops/snapshot — runtime, HTTP counters, 24h chat aggregates
- *   - /v1/models      — provider health (available vs missing keys)
- *   - /v1/admin/users — paginated user list + balance
- *   - /v1/admin/site-settings — kill switch toggles
- */
+	* /admin — Operator dashboard.
+	*
+	* Role-gated (server session role === "admin"; wallet-gated server routes
+	* stay server-side). Surfaces real aggregated operational data:
+	*   - /v1/ops/snapshot — runtime, HTTP counters, 24h chat aggregates
+	*   - /v1/models      — provider health (available vs missing keys)
+	*   - /v1/admin/users — paginated user list + balance
+	*   - /v1/admin/site-settings — kill switch toggles
+	*/
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -380,8 +380,8 @@ export default function AdminPage() {
 }
 
 /* =============================================================================
-   Operator controls — users, site settings
-   ============================================================================= */
+			Operator controls — users, site settings
+			============================================================================= */
 
 interface AdminUser {
 	id: string;
@@ -521,14 +521,14 @@ function UsersSection() {
 											<button
 												type="button"
 												onClick={() => {
-													const cents = window.prompt(
+													const cents = prompt(
 														`Adjust credits for ${u.email ?? u.id}\n(positive = add, negative = deduct)`,
 														"100",
 													);
 													if (!cents) return;
 													const delta = parseInt(cents, 10);
 													if (!Number.isFinite(delta) || delta === 0) return;
-													const reason = window.prompt(
+													const reason = prompt(
 														"Reason (audit log):",
 														"admin adjustment",
 													) ?? "admin adjustment";
@@ -546,7 +546,7 @@ function UsersSection() {
 											<button
 												type="button"
 												onClick={() => {
-													const reason = window.prompt(
+													const reason = prompt(
 														u.suspended
 															? "Reason to unsuspend (audit log):"
 															: "Reason to suspend (audit log):",

@@ -1,51 +1,51 @@
 /**
- * Shared model-name humanization utilities.
- *
- * Used by both ChatMessage (live model display) and ModelSelector
- * (dropdown labels) so the two surfaces stay visually consistent.
- */
+	* Shared model-name humanization utilities.
+	*
+	* Used by both ChatMessage (live model display) and ModelSelector
+	* (dropdown labels) so the two surfaces stay visually consistent.
+	*/
 
 import { MODELS, normalizeProvider } from "@/lib/models-data";
 import type { ModelOption } from "@/lib/types/model";
 
 /**
- * Default free website-chat model. Must be provider=oma-ai on the server
- * (`isFreeWebsiteModel` in server/src/routes/chat) — Venice ids require auth.
+ * Free catalog ids (upstream=openbroker — Gonka Network only).
+ * Mirrors server-side logic in `server/src/inference/fallback.ts`:
+ * every model whose `upstream === "openbroker"` (api.openbroker.gonka.gg)
+ * is free in /chat and /playground. All other models — Venice-routed
+ * chats, OMA-AI resale through Zyloo, anything paid upstream — require
+ * auth + credits in chat, playground, and the /v1 API surface.
  */
-export const FREE_DEFAULT_CHAT_MODEL = "gemini-3-flash-preview";
-
-/**
- * Known free catalog ids (provider=oma-ai). Keep in sync with live
- * GET /v1/models where provider === "oma-ai". Mirrors server-side
- * `isFreeWebsiteModel` (server/src/routes/chat) — ids listed here must
- * resolve to provider=oma-ai on the server, otherwise anonymous website
- * chat gets 401'd for a "free" model.
- */
-export const FREE_CHAT_MODEL_IDS = new Set([
-	"gemini-3.1-pro-preview",
+export const FREE_CHAT_MODEL_IDS = new Set<string>([
 	"gemini-3-flash-preview",
-	"gpt-4.1",
-	"gpt-4o",
 	"kimi-k2-6",
 	"minimax-m2-7",
+	"deepseek-v4-flash-0731-openbroker",
 ]);
+
+/**
+ * Default free website-chat model. Must resolve to upstream=openbroker
+ * (Gonka Network) on the server (`isFreeWebsiteModel` in
+ * server/src/routes/chat). Anything else is paid in /chat and /playground.
+ */
+export const FREE_DEFAULT_CHAT_MODEL = "deepseek-v4-flash-0731-openbroker";
 
 /** Canonical model id for docs / marketing code samples (paid Venice path). */
 export const DOCS_EXAMPLE_MODEL = "llama-3.3-70b";
 
 /**
- * Live-API display-name overrides. The upstream `/v1/models` endpoint returns
- * low-quality names for some entries (e.g. "Google Gemini 3" instead of "Gemini 3 Flash").
- * This map canonicalises them on the client without touching the server
- * catalog.
- */
+	* Live-API display-name overrides. The upstream `/v1/models` endpoint returns
+	* low-quality names for some entries (e.g. "Google Gemini 3" instead of "Gemini 3 Flash").
+	* This map canonicalises them on the client without touching the server
+	* catalog.
+	*/
 const LIVE_DISPLAY_NAME_OVERRIDES: Record<string, string> = {};
 
 /**
- * Pick the canonical display name for a model coming from the live API.
- * Used by `mapLiveModel` so the chat dropdown shows the right name even when
- * the upstream server is stale.
- */
+	* Pick the canonical display name for a model coming from the live API.
+	* Used by `mapLiveModel` so the chat dropdown shows the right name even when
+	* the upstream server is stale.
+	*/
 function liveDisplayName(
 	id: string,
 	rawName: string | undefined,
@@ -56,18 +56,16 @@ function liveDisplayName(
 }
 
 /**
- * Whether the website chat may call completions without sign-in / API key.
- * Free OMA-AI models are resold cheaply enough to offer as guest chat.
- */
+	* Whether the website chat may call completions without sign-in / API key.
+	* Only Gonka Network (openbroker upstream) models are free in /chat and
+	* /playground. Everything else (Venice + Zyloo OMA-AI resale) is paid.
+	*/
 export function isFreeChatModel(
 	modelId: string,
 	provider?: ModelOption["provider"] | string | null,
 ): boolean {
 	if (FREE_CHAT_MODEL_IDS.has(modelId)) return true;
-	const p = typeof provider === "string" ? normalizeProvider(provider) : provider;
-	// OMA-AI (own routing) and OMA-AI/OpenBroker (ultra-low-cost) models are
-	// free at the chat surface; Venice / Surplus are paid.
-	return p === "OMA-AI";
+	return false;
 }
 
 // ---------------------------------------------------------------------------
@@ -102,18 +100,18 @@ const RETAIN_UPPER = new Set([
 ]);
 
 /**
- * Convert a raw model ID to a human-friendly display name.
- *
- * Strips common provider prefixes (`openai/`, `minimax/`, etc.),
- * splits on `-`, and title-cases each part while preserving known
- * uppercase patterns like "32B" and "Instruct".
- *
- * Examples:
- *   "claude-3-5-sonnet"          → "Claude 3 5 Sonnet"
- *   "gpt-4o"                     → "Gpt 4o"
- *   "openai/gpt-4o"              → "Gpt 4o"
- *   "qwen-2.5-coder-32b-instruct" → "Qwen 2.5 Coder 32B Instruct"
- */
+	* Convert a raw model ID to a human-friendly display name.
+	*
+	* Strips common provider prefixes (`openai/`, `minimax/`, etc.),
+	* splits on `-`, and title-cases each part while preserving known
+	* uppercase patterns like "32B" and "Instruct".
+	*
+	* Examples:
+	*   "claude-3-5-sonnet"          → "Claude 3 5 Sonnet"
+	*   "gpt-4o"                     → "Gpt 4o"
+	*   "openai/gpt-4o"              → "Gpt 4o"
+	*   "qwen-2.5-coder-32b-instruct" → "Qwen 2.5 Coder 32B Instruct"
+	*/
 function humanizeModelId(id: string): string {
 	// Strip well-known provider prefixes
 	const stripped = id.replace(/^(openai|minimax|together|deepinfra)\//i, "");
@@ -137,12 +135,12 @@ function humanizeModelId(id: string): string {
 }
 
 /**
- * Resolve a display name for a model: prefer the static catalog name,
- * fall back to a provided `fallback`, and ultimately humanize the raw ID.
- * The NAME_OVERRIDES map is the highest-priority source — used to canonicalise
- * model names whose upstream `display_name` is wrong without touching the
- * server catalog.
- */
+	* Resolve a display name for a model: prefer the static catalog name,
+	* fall back to a provided `fallback`, and ultimately humanize the raw ID.
+	* The NAME_OVERRIDES map is the highest-priority source — used to canonicalise
+	* model names whose upstream `display_name` is wrong without touching the
+	* server catalog.
+	*/
 export function displayName(id: string, fallback?: string): string {
 	return (
 		NAME_OVERRIDES[id.toLowerCase()] ??
@@ -176,8 +174,8 @@ function formatCtx(n: number): string {
 }
 
 /**
- * Map a raw live-model object from the `/v1/models` API to a `ModelOption`.
- */
+	* Map a raw live-model object from the `/v1/models` API to a `ModelOption`.
+	*/
 export function mapLiveModel(m: LiveModelRaw): ModelOption {
 	const validCats: ModelOption["category"][] = [
 		"frontier",

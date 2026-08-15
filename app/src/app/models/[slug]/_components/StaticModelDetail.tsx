@@ -18,25 +18,19 @@ function formatPrice(per1M: number): string {
 	return `$${per1M.toFixed(2)}`;
 }
 
-function formatContextWithVisual(
-	contextLength: number | string | undefined | null,
-): string {
-	if (!contextLength) return "—";
-	const num =
-		typeof contextLength === "string"
-			? parseInt(contextLength.replace(/[^\d]/g, ""), 10)
-			: contextLength;
-	if (!Number.isFinite(num) || num <= 0) return "—";
-
+function formatContextWithVisual(tokens: number | undefined | null): string {
+	if (typeof tokens !== "number" || !Number.isFinite(tokens) || tokens <= 0) {
+		return "—";
+	}
 	const wordsPerPage = 250;
 	const tokensPerWord = 1.5;
 	const tokensPerPage = wordsPerPage * tokensPerWord;
-	const pages = Math.round(num / tokensPerPage);
+	const pages = Math.round(tokens / tokensPerPage);
 
 	if (pages >= 1000) {
-		return `${Math.round(pages / 1000)}k pages (${num.toLocaleString()} tokens)`;
+		return `${Math.round(pages / 1000)}k pages (${tokens.toLocaleString()} tokens)`;
 	}
-	return `${pages} pages (${num.toLocaleString()} tokens)`;
+	return `${pages} pages (${tokens.toLocaleString()} tokens)`;
 }
 
 export function StaticModelDetail({ model }: { model: Model }) {
@@ -46,31 +40,31 @@ export function StaticModelDetail({ model }: { model: Model }) {
 	const outputPrice = formatPrice(model.outputPricePer1M);
 
 	const curlExample = `curl https://api.oma-ai.com/v1/chat/completions \\
- -H "Content-Type: application/json" \\
- -H "Authorization: Bearer $OMA_API_KEY" \\
- -d '{
- "model": "${model.id}",
- "messages": [
- { "role": "user", "content": "Hello, how are you?" }
- ],
- "max_tokens": 150,
- "temperature": 0.7
- }'`;
+	-H "Content-Type: application/json" \\
+	-H "Authorization: Bearer $OMA_API_KEY" \\
+	-d '{
+	"model": "${model.id}",
+	"messages": [
+	{ "role": "user", "content": "Hello, how are you?" }
+	],
+	"max_tokens": 150,
+	"temperature": 0.7
+	}'`;
 
 	const pythonExample = `import openai
 
 client = openai.OpenAI(
- api_key=os.getenv("OMA_API_KEY"),
- base_url="https://api.oma-ai.com/v1"
+	api_key=os.getenv("OMA_API_KEY"),
+	base_url="https://api.oma-ai.com/v1"
 )
 
 response = client.chat.completions.create(
- model="${model.id}",
- messages=[
- {"role": "user", "content": "Hello, how are you?"}
- ],
- max_tokens=150,
- temperature=0.7
+	model="${model.id}",
+	messages=[
+	{"role": "user", "content": "Hello, how are you?"}
+	],
+	max_tokens=150,
+	temperature=0.7
 )
 
 print(response.choices[0].message.content)`;
@@ -78,17 +72,17 @@ print(response.choices[0].message.content)`;
 	const jsExample = `import OpenAI from "openai";
 
 const client = new OpenAI({
- apiKey: process.env.OMA_API_KEY,
- baseURL: "https://api.oma-ai.com/v1"
+	apiKey: process.env.OMA_API_KEY,
+	baseURL: "https://api.oma-ai.com/v1"
 });
 
 const response = await client.chat.completions.create({
- model: "${model.id}",
- messages: [
- { role: "user", content: "Hello, how are you?" }
- ],
- max_tokens: 150,
- temperature: 0.7
+	model: "${model.id}",
+	messages: [
+	{ role: "user", content: "Hello, how are you?" }
+	],
+	max_tokens: 150,
+	temperature: 0.7
 });`;
 
 	return (
@@ -141,7 +135,7 @@ const response = await client.chat.completions.create({
 					<Stat label="Output" value={outputPrice} unit="/ 1M tokens" />
 					<Stat
 						label="Context window"
-						value={formatContextWithVisual(model.contextLength)}
+						value={formatContextWithVisual(model.contextTokens)}
 						unit=""
 					/>
 				</div>

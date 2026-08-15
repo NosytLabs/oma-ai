@@ -1,8 +1,8 @@
 /**
- * JSON-LD structured data for SEO.
- * Renders <script type="application/ld+json"> blocks for search engines.
- * See: https://developers.google.com/search/docs/appearance/structured-data
- */
+	* JSON-LD structured data for SEO.
+	* Renders <script type="application/ld+json"> blocks for search engines.
+	* See: https://developers.google.com/search/docs/appearance/structured-data
+	*/
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://oma-ai.com";
 

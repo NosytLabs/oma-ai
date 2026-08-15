@@ -5,14 +5,14 @@ export const dynamic = "force-static";
 export const revalidate = 3600;
 
 /**
- * Well-known A2A Agent Card for OMA.
- *
- * Implements the A2A v0.3 / Bazaar discovery shape: each `skills[]` entry
- * advertises `inputModes` + `outputModes` + tags so agent directories and
- * tool-using models can route themselves to the right endpoint without a
- * follow-up probe request. The x402 payment block mirrors the v2 spec so
- * the card is self-describing for the pay-per-request flow.
- */
+	* Well-known A2A Agent Card for OMA.
+	*
+	* Implements the A2A v0.3 / Bazaar discovery shape: each `skills[]` entry
+	* advertises `inputModes` + `outputModes` + tags so agent directories and
+	* tool-using models can route themselves to the right endpoint without a
+	* follow-up probe request. The x402 payment block mirrors the v2 spec so
+	* the card is self-describing for the pay-per-request flow.
+	*/
 const USDC_BASE_MAINNET = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 const FALLBACK_TREASURY = "0x8581784D3E598cCa3482375CFF2409Ac9DD8c402";
 const MODEL_COUNT_LABEL = `${MODEL_COUNT}+`;

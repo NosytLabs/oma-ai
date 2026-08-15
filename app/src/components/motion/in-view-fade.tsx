@@ -1,26 +1,26 @@
 "use client";
 
 /**
- * InViewFade — small client-side entrance animation for server components.
- *
- * Wraps any block with a fade-up reveal the first time it scrolls into
- * view. Uses framer-motion's `useInView` (so reduced-motion users get an
- * instant render with no transform), and exposes a `delay` prop for
- * staging child sections.
- *
- * Includes a short safety timeout: if IntersectionObserver doesn't fire
- * quickly (SSR, headless, restricted containers), the content paints
- * anyway so it is never blank for long.
- *
- * Set `eager` for above-the-fold primary content (model catalog, hero
- * grids) that must never start at opacity:0.
- *
- * Usage from a server component:
- * import { InViewFade } from "@/components/motion/in-view-fade";
- * <InViewFade><h1>…</h1></InViewFade>
- * <InViewFade delay={0.1}><p>…</p></InViewFade>
- * <InViewFade eager><ModelGrid /></InViewFade>
- */
+	* InViewFade — small client-side entrance animation for server components.
+	*
+	* Wraps any block with a fade-up reveal the first time it scrolls into
+	* view. Uses framer-motion's `useInView` (so reduced-motion users get an
+	* instant render with no transform), and exposes a `delay` prop for
+	* staging child sections.
+	*
+	* Includes a short safety timeout: if IntersectionObserver doesn't fire
+	* quickly (SSR, headless, restricted containers), the content paints
+	* anyway so it is never blank for long.
+	*
+	* Set `eager` for above-the-fold primary content (model catalog, hero
+	* grids) that must never start at opacity:0.
+	*
+	* Usage from a server component:
+	* import { InViewFade } from "@/components/motion/in-view-fade";
+	* <InViewFade><h1>…</h1></InViewFade>
+	* <InViewFade delay={0.1}><p>…</p></InViewFade>
+	* <InViewFade eager><ModelGrid /></InViewFade>
+	*/
 
 import { m, useInView, useReducedMotion } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";

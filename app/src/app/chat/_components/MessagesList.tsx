@@ -1,12 +1,12 @@
 "use client";
 
 /**
- * MESSAGES LIST — Scrollable message area
- *
- * Renders the welcome banner + examples when no messages are present,
- * otherwise the message list with jump-to-bottom controls. The chat
- * surface is text + multimodal LLM only — no image / video studio.
- */
+	* MESSAGES LIST — Scrollable message area
+	*
+	* Renders the welcome banner + examples when no messages are present,
+	* otherwise the message list with jump-to-bottom controls. The chat
+	* surface is text + multimodal LLM only — no image / video studio.
+	*/
 
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";
@@ -81,10 +81,10 @@ type Classification =
 // flips at most once per assistant message (when it finishes); the cache
 // key uses content length so we re-evaluate at terminal chunks only.
 /** LRU Cache with TTL for message classification.
- * - Max 1000 entries
- * - 30 minute TTL (1800000 ms)
- * - O(1) get/set operations
- */
+	* - Max 1000 entries
+	* - 30 minute TTL (1800000 ms)
+	* - O(1) get/set operations
+	*/
 class ClassificationCache {
 	private cache = new Map<string, { value: Classification; timestamp: number }>();
 	private accessOrder = new Map<string, number>(); // key -> access counter
@@ -164,12 +164,12 @@ class ClassificationCache {
 const classificationCache = new ClassificationCache();
 
 /**
- * FNV-1a 32-bit hash of the content. Cheap, no deps, deterministic.
- * Used as the cache key so a streaming message that flips from plain → A2UI
- * after a partial JSONL envelope arrives re-classifies correctly.
- * (Previously the key was `${length}:${startsWithBrace}` — the same length
- * could hit a stale "plain" entry mid-stream and silently swallow A2UI.)
- */
+	* FNV-1a 32-bit hash of the content. Cheap, no deps, deterministic.
+	* Used as the cache key so a streaming message that flips from plain → A2UI
+	* after a partial JSONL envelope arrives re-classifies correctly.
+	* (Previously the key was `${length}:${startsWithBrace}` — the same length
+	* could hit a stale "plain" entry mid-stream and silently swallow A2UI.)
+	*/
 function contentHash(s: string): string {
 	let h = 0x811c9dc5;
 	for (let i = 0; i < s.length; i++) {
@@ -226,10 +226,10 @@ export interface MessagesListProps {
 }
 
 /**
- * Feature hints shown below the empty state on first visit.
- * These help users discover advanced capabilities they might
- * not find on their own (compare mode, system prompts, etc.).
- */
+	* Feature hints shown below the empty state on first visit.
+	* These help users discover advanced capabilities they might
+	* not find on their own (compare mode, system prompts, etc.).
+	*/
 const FEATURE_HINTS = [
 	{
 		icon: GitCompare,
@@ -383,8 +383,8 @@ export function MessagesList({
 						</AnimatePresence>
 						<div ref={messagesEndRef} />
 						{/* Floating "Jump to bottom" pill — only visible while the
- user is scrolled up AND a response is loading. Standard
- chat-UI affordance (Discord, ChatGPT, Slack). */}
+	user is scrolled up AND a response is loading. Standard
+	chat-UI affordance (Discord, ChatGPT, Slack). */}
 						<AnimatePresence>
 							{isScrolledAway && loading && (
 								<m.button
@@ -396,14 +396,14 @@ export function MessagesList({
 									transition={springs.soft}
 									aria-label="Jump to latest message"
 									className="
- sticky bottom-4 left-1/2 -translate-x-1/2 z-10
- inline-flex items-center gap-1.5 rounded-full
- border border-accent/40 bg-accent/10
- px-4 py-2 text-[11px] font-mono uppercase tracking-wider text-accent
- shadow-lg backdrop-blur-md hover:bg-accent/20 transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97]
- min-h-[44px]
- focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
- "
+	sticky bottom-4 left-1/2 -translate-x-1/2 z-10
+	inline-flex items-center gap-1.5 rounded-full
+	border border-accent/40 bg-accent/10
+	px-4 py-2 text-[11px] font-mono uppercase tracking-wider text-accent
+	shadow-lg backdrop-blur-md hover:bg-accent/20 transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97]
+	min-h-[44px]
+	focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
+	"
 								>
 									<ChevronDown className="w-3 h-3" aria-hidden="true" />
 									New messages

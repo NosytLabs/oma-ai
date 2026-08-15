@@ -14,8 +14,8 @@ local tokens = tonumber(bucket[1])
 local last_refill = tonumber(bucket[2])
 
 if tokens == nil then
-  tokens = bucket_size
-  last_refill = now
+		tokens = bucket_size
+		last_refill = now
 end
 
 local elapsed = (now - last_refill) / 1000
@@ -25,16 +25,16 @@ tokens = math.floor(math.min(bucket_size, tokens + new_tokens))
 last_refill = now
 
 if tokens >= requested then
-  tokens = tokens - requested
-  redis.call('HMSET', key, 'tokens', tokens, 'last_refill', last_refill)
-  redis.call('EXPIRE', key, 3600)
-  return {1, tokens, 0}
+		tokens = tokens - requested
+		redis.call('HMSET', key, 'tokens', tokens, 'last_refill', last_refill)
+		redis.call('EXPIRE', key, 3600)
+		return {1, tokens, 0}
 else
-  local tokens_needed = requested - tokens
-  local ms_until_full = math.ceil((tokens_needed / refill_rate) * 1000)
-  redis.call('HMSET', key, 'tokens', tokens, 'last_refill', last_refill)
-  redis.call('EXPIRE', key, 3600)
-  return {0, tokens, ms_until_full}
+		local tokens_needed = requested - tokens
+		local ms_until_full = math.ceil((tokens_needed / refill_rate) * 1000)
+		redis.call('HMSET', key, 'tokens', tokens, 'last_refill', last_refill)
+		redis.call('EXPIRE', key, 3600)
+		return {0, tokens, ms_until_full}
 end
 `;
 
@@ -64,17 +64,17 @@ redis.call('ZREMRANGEBYSCORE', key, 0, math.floor(now - window))
 local count = redis.call('ZCARD', key)
 
 if count + requested <= limit then
-  for i = 1, requested do
-    redis.call('ZADD', key, now, math.floor(now + i))
-  end
-  redis.call('EXPIRE', key, math.ceil(window / 1000) + 1)
-  return {1, count + requested, 0}
+		for i = 1, requested do
+				redis.call('ZADD', key, now, math.floor(now + i))
+		end
+		redis.call('EXPIRE', key, math.ceil(window / 1000) + 1)
+		return {1, count + requested, 0}
 else
-  local oldest = redis.call('ZRANGE', key, 0, 0, 'WITHSCORES')
-  local reset_time = 0
-  if #oldest > 0 then
-    reset_time = math.ceil(oldest[2] + window - now)
-  end
-  return {0, count, reset_time}
+		local oldest = redis.call('ZRANGE', key, 0, 0, 'WITHSCORES')
+		local reset_time = 0
+		if #oldest > 0 then
+				reset_time = math.ceil(oldest[2] + window - now)
+		end
+		return {0, count, reset_time}
 end
 `;

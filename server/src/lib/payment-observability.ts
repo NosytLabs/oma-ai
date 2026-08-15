@@ -9,21 +9,21 @@ type PaymentOutcome =
 	| "attribution_mismatch";
 
 interface PaymentEvent {
-  kind: PaymentKind;
-  outcome: PaymentOutcome;
-  userId?: string;
-  amountCents?: number;
-  signature?: string;
-  latencyMs: number;
+		kind: PaymentKind;
+		outcome: PaymentOutcome;
+		userId?: string;
+		amountCents?: number;
+		signature?: string;
+		latencyMs: number;
 }
 
 export function logPaymentEvent(event: PaymentEvent): void {
-  logger.info({
-    "payment.kind": event.kind,
-    "payment.outcome": event.outcome,
-    "payment.userId": event.userId,
-    "payment.amountCents": event.amountCents,
-    "payment.signaturePrefix": event.signature?.slice(0, 8),
-    "payment.latencyMs": event.latencyMs,
-  }, "payment event");
+		logger.info({
+				"payment.kind": event.kind,
+				"payment.outcome": event.outcome,
+				"payment.userId": event.userId,
+				"payment.amountCents": event.amountCents,
+				"payment.signaturePrefix": event.signature?.slice(0, 8),
+				"payment.latencyMs": event.latencyMs,
+		}, "payment event");
 }

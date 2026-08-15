@@ -8,25 +8,34 @@ import {
 
 describe("isFreeChatModel (guest website chat)", () => {
 	it("defaults free chat to a gonka catalog id", () => {
-		expect(FREE_DEFAULT_CHAT_MODEL).toBe("gemini-3-flash-preview");
+		expect(FREE_DEFAULT_CHAT_MODEL).toBe("deepseek-v4-flash-0731-openbroker");
 		expect(FREE_CHAT_MODEL_IDS.has(FREE_DEFAULT_CHAT_MODEL)).toBe(true);
 	});
 
-	it("allows known free OMA-AI model ids without provider hint", () => {
+	it("only gonka-network openbroker models are free; everything else requires auth", () => {
+		// Free — every model with server-side upstream === "openbroker"
+		// (api.openbroker.gonka.gg). See server/src/inference/models.ts.
+		expect(isFreeChatModel("deepseek-v4-flash-0731-openbroker")).toBe(true);
 		expect(isFreeChatModel("gemini-3-flash-preview")).toBe(true);
-		expect(isFreeChatModel("gpt-4o")).toBe(true);
-		expect(isFreeChatModel("kimi-k3")).toBe(false); // Venice-routed on the server — requires auth
-		expect(isFreeChatModel("glm-5.2-fp8")).toBe(false); // removed from OpenBroker
-	});
+		expect(isFreeChatModel("kimi-k2-6")).toBe(true);
+		expect(isFreeChatModel("minimax-m2-7")).toBe(true);
 
-	it("allows OMA-AI provider even for unknown ids", () => {
-		expect(isFreeChatModel("some-new-oma-ai-model", "OMA-AI")).toBe(true);
-	});
+		// Paid — OMA-AI resale through Zyloo (NOT Gonka openbroker) requires auth.
+		// qwen3-235b-a22b-openbroker has "openbroker" in its id but routes via
+		// Zyloo per server/src/inference/models.ts — paid everywhere.
+		expect(isFreeChatModel("qwen3-235b-a22b-openbroker")).toBe(false);
+		expect(isFreeChatModel("gpt-4o")).toBe(false);
+		expect(isFreeChatModel("gemini-3.1-pro-preview")).toBe(false);
 
-	it("requires auth for Venice / paid models", () => {
+		// Paid — Venice-routed models always require auth
+		expect(isFreeChatModel("kimi-k3")).toBe(false);
 		expect(isFreeChatModel("llama-3.3-70b")).toBe(false);
 		expect(isFreeChatModel("llama-3.3-70b", "Venice")).toBe(false);
-		expect(isFreeChatModel("deepseek-v4-flash", "venice")).toBe(false);
+	});
+
+	it("only allowlisted openbroker ids are free; unknown ids require auth", () => {
+		expect(isFreeChatModel("some-new-oma-ai-model", "OMA-AI")).toBe(false);
+		expect(isFreeChatModel("some-gonka-model")).toBe(false); // not yet allowlisted
 	});
 
 	it("exports a docs example model that is not free", () => {

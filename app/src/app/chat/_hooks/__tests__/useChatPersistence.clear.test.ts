@@ -1,6 +1,6 @@
 /**
- * Ensures empty conversation clears storage key (no resurrect-after-clear race).
- */
+	* Ensures empty conversation clears storage key (no resurrect-after-clear race).
+	*/
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useRef, useState } from "react";

@@ -47,13 +47,13 @@ interface DashboardHeaderProps {
 }
 
 /** Auto-poll interval (ms). Picked to be low enough that "live" feels live
- * but high enough that an idle tab doesn't hammer the API. */
+	* but high enough that an idle tab doesn't hammer the API. */
 const POLL_INTERVAL_MS = 120_000;
 
 /**
- * Dashboard page heading + status line + refresh button + tab navigation.
- * Auto-polls every 120 seconds. Shows live status with relative time.
- */
+	* Dashboard page heading + status line + refresh button + tab navigation.
+	* Auto-polls every 120 seconds. Shows live status with relative time.
+	*/
 
 export function DashboardHeader({
 	loading,
@@ -312,11 +312,11 @@ export function DashboardHeader({
 }
 
 /**
- * Compact "all providers up?" pill in the dashboard status row. Pulls from
- * the same /health endpoint the ProviderHealthSummary uses, with its own
- * 30s refetch so it never goes stale while the user is on the overview.
- * Renders nothing while loading to avoid a layout shift.
- */
+	* Compact "all providers up?" pill in the dashboard status row. Pulls from
+	* the same /health endpoint the ProviderHealthSummary uses, with its own
+	* 30s refetch so it never goes stale while the user is on the overview.
+	* Renders nothing while loading to avoid a layout shift.
+	*/
 function SystemStatus() {
 	const { data } = useHealthQuery();
 	if (!data) return null;
@@ -364,14 +364,14 @@ function SystemStatus() {
 }
 
 /**
- * Time-range radio group with roving-tabindex keyboard navigation.
- *
- * Implements the WAI-ARIA radiogroup pattern: only the selected radio is
- * tabbable (tabIndex=0), the rest are tabIndex=-1. Arrow Left/Right (or
- * Up/Down) move both focus and selection; Home/End jump to the first/last
- * option. Space/Enter activates the focused option. Wrapping at the ends
- * keeps the keyboard experience continuous.
- */
+	* Time-range radio group with roving-tabindex keyboard navigation.
+	*
+	* Implements the WAI-ARIA radiogroup pattern: only the selected radio is
+	* tabbable (tabIndex=0), the rest are tabIndex=-1. Arrow Left/Right (or
+	* Up/Down) move both focus and selection; Home/End jump to the first/last
+	* option. Space/Enter activates the focused option. Wrapping at the ends
+	* keeps the keyboard experience continuous.
+	*/
 function TimeRangeRadiogroup({
 	timeRange,
 	onTimeRangeChange,

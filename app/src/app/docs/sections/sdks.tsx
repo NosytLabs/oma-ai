@@ -6,18 +6,18 @@ export function SDKsSection() {
 	const pythonChatCode = `from openai import OpenAI
 
 client = OpenAI(
- api_key="oma_sk_your_key_here",
- base_url="https://api.oma-ai.com/v1"
+	api_key="oma_sk_your_key_here",
+	base_url="https://api.oma-ai.com/v1"
 )
 
 response = client.chat.completions.create(
- model="llama-3.3-70b",
- messages=[
- {"role": "system", "content": "You are a helpful assistant."},
- {"role": "user", "content": "Explain quantum computing in one sentence."}
- ],
- temperature=0.7,
- max_tokens=256
+	model="llama-3.3-70b",
+	messages=[
+	{"role": "system", "content": "You are a helpful assistant."},
+	{"role": "user", "content": "Explain quantum computing in one sentence."}
+	],
+	temperature=0.7,
+	max_tokens=256
 )
 
 print(response.choices[0].message.content)`;
@@ -25,32 +25,32 @@ print(response.choices[0].message.content)`;
 	const tsChatCode = `import OpenAI from "openai";
 
 const client = new OpenAI({
- apiKey: "oma_sk_your_key_here",
- baseURL: "https://api.oma-ai.com/v1",
+	apiKey: "oma_sk_your_key_here",
+	baseURL: "https://api.oma-ai.com/v1",
 });
 
 const response = await client.chat.completions.create({
- model: "llama-3.3-70b",
- messages: [
- { role: "system", content: "You are a helpful assistant." },
- { role: "user", content: "Explain quantum computing in one sentence." },
- ],
- temperature: 0.7,
- max_tokens: 256,
+	model: "llama-3.3-70b",
+	messages: [
+	{ role: "system", content: "You are a helpful assistant." },
+	{ role: "user", content: "Explain quantum computing in one sentence." },
+	],
+	temperature: 0.7,
+	max_tokens: 256,
 });`;
 
 	const curlChatCode = `curl https://api.oma-ai.com/v1/chat/completions \\
- -H "Authorization: Bearer oma_sk_your_key_here" \\
- -H "Content-Type: application/json" \\
- -d '{
- "model": "llama-3.3-70b",
- "messages": [
- {"role": "system", "content": "You are a helpful assistant."},
- {"role": "user", "content": "Explain quantum computing in one sentence."}
- ],
- "temperature": 0.7,
- "max_tokens": 256
- }'`;
+	-H "Authorization: Bearer oma_sk_your_key_here" \\
+	-H "Content-Type: application/json" \\
+	-d '{
+	"model": "llama-3.3-70b",
+	"messages": [
+	{"role": "system", "content": "You are a helpful assistant."},
+	{"role": "user", "content": "Explain quantum computing in one sentence."}
+	],
+	"temperature": 0.7,
+	"max_tokens": 256
+	}'`;
 
 	const goChatCode = `package main
 
@@ -93,46 +93,46 @@ func main() {
 	const pythonStreamCode = `from openai import OpenAI
 
 client = OpenAI(
- api_key="oma_sk_your_key_here",
- base_url="https://api.oma-ai.com/v1"
+	api_key="oma_sk_your_key_here",
+	base_url="https://api.oma-ai.com/v1"
 )
 
 stream = client.chat.completions.create(
- model="llama-3.3-70b",
- messages=[{"role": "user", "content": "Write a haiku about coding"}],
- stream=True
+	model="llama-3.3-70b",
+	messages=[{"role": "user", "content": "Write a haiku about coding"}],
+	stream=True
 )
 
 for chunk in stream:
- if chunk.choices[0].delta.content:
- print(chunk.choices[0].delta.content, end="")`;
+	if chunk.choices[0].delta.content:
+	print(chunk.choices[0].delta.content, end="")`;
 
 	const tsStreamCode = `import OpenAI from "openai";
 
 const client = new OpenAI({
- apiKey: "oma_sk_your_key_here",
- baseURL: "https://api.oma-ai.com/v1",
+	apiKey: "oma_sk_your_key_here",
+	baseURL: "https://api.oma-ai.com/v1",
 });
 
 const stream = await client.chat.completions.create({
- model: "llama-3.3-70b",
- messages: [{ role: "user", content: "Write a haiku about coding" }],
- stream: true,
+	model: "llama-3.3-70b",
+	messages: [{ role: "user", content: "Write a haiku about coding" }],
+	stream: true,
 });
 
 for await (const chunk of stream) {
- const content = chunk.choices[0]?.delta?.content;
- if (content) process.stdout.write(content);
+	const content = chunk.choices[0]?.delta?.content;
+	if (content) process.stdout.write(content);
 }`;
 
 	const curlStreamCode = `curl https://api.oma-ai.com/v1/chat/completions \\
- -H "Authorization: Bearer oma_sk_your_key_here" \\
- -H "Content-Type: application/json" \\
- -d '{
- "model": "llama-3.3-70b",
- "messages": [{"role": "user", "content": "Write a haiku about coding"}],
- "stream": true
- }'`;
+	-H "Authorization: Bearer oma_sk_your_key_here" \\
+	-H "Content-Type: application/json" \\
+	-d '{
+	"model": "llama-3.3-70b",
+	"messages": [{"role": "user", "content": "Write a haiku about coding"}],
+	"stream": true
+	}'`;
 
 	const goStreamCode = `package main
 
@@ -188,28 +188,28 @@ func main() {
 	const pythonModelsCode = `from openai import OpenAI
 
 client = OpenAI(
- api_key="oma_sk_your_key_here",
- base_url="https://api.oma-ai.com/v1"
+	api_key="oma_sk_your_key_here",
+	base_url="https://api.oma-ai.com/v1"
 )
 
 models = client.models.list()
 for model in models.data:
- print(f"{model.id} ({model.get('category', 'chat')})")`;
+	print(f"{model.id} ({model.get('category', 'chat')})")`;
 
 	const tsModelsCode = `import OpenAI from "openai";
 
 const client = new OpenAI({
- apiKey: "oma_sk_your_key_here",
- baseURL: "https://api.oma-ai.com/v1",
+	apiKey: "oma_sk_your_key_here",
+	baseURL: "https://api.oma-ai.com/v1",
 });
 
 const models = await client.models.list();
 for (const model of models.data) {
- // Do something with model.id
+	// Do something with model.id
 }`;
 
 	const curlModelsCode = `curl https://api.oma-ai.com/v1/models \\
- -H "Authorization: Bearer oma_sk_your_key_here" | jq '.data[].id'`;
+	-H "Authorization: Bearer oma_sk_your_key_here" | jq '.data[].id'`;
 
 	const goModelsCode = `package main
 
@@ -372,13 +372,13 @@ func main() {
 import { createOpenAI } from '@ai-sdk/openai';
 
 const oma = createOpenAI({
- baseURL: 'https://api.oma-ai.com/v1',
- apiKey: 'oma_sk_your_key_here',
+	baseURL: 'https://api.oma-ai.com/v1',
+	apiKey: 'oma_sk_your_key_here',
 });
 
 const { text } = await generateText({
- model: oma('llama-3.3-70b'),
- prompt: 'Explain quantum computing in one sentence.',
+	model: oma('llama-3.3-70b'),
+	prompt: 'Explain quantum computing in one sentence.',
 });`}
 					lang="javascript"
 				/>

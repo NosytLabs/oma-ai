@@ -1,7 +1,7 @@
 /* OMA · Privacy page
- * conversational legal layout · sections: hero · summary · collection · auth · logs · retention · third parties · rights · contact
- * copy: plain English summary at the top, active voice
- */
+	* conversational legal layout · sections: hero · summary · collection · auth · logs · retention · third parties · rights · contact
+	* copy: plain English summary at the top, active voice
+	*/
 
 // Imports client visuals (FloatingIcons etc); opt out of static prerender.
 export const revalidate = 86400;

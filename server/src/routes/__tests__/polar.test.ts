@@ -147,7 +147,7 @@ describe("polar routes", () => {
 
 		it("rejects invalid signature", async () => {
 			// Override the timingSafeEqual specifically for this test
-            vi.mocked(crypto.timingSafeEqual).mockReturnValueOnce(false);
+												vi.mocked(crypto.timingSafeEqual).mockReturnValueOnce(false);
 			const body = JSON.stringify({ type: "test" });
 			const id = "evt_123";
 			const ts = Math.floor(Date.now() / 1000).toString();

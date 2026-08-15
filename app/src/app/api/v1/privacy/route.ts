@@ -5,13 +5,13 @@ import { generalLimiter } from "@/lib/rate-limiter";
 export const runtime = "nodejs";
 
 /**
- * Privacy manifest endpoint.
- *
- * Returns a machine-readable description of what data OMA does and
- * does not store, plus retention policies. This is the canonical
- * answer to "what do you do with my data?" and is referenced by the
- * public privacy page and by automated GDPR/CCPA compliance tools.
- */
+	* Privacy manifest endpoint.
+	*
+	* Returns a machine-readable description of what data OMA does and
+	* does not store, plus retention policies. This is the canonical
+	* answer to "what do you do with my data?" and is referenced by the
+	* public privacy page and by automated GDPR/CCPA compliance tools.
+	*/
 const PRIVACY_MANIFEST = {
 	service: "OMA AI",
 	version: "1.0.0",

@@ -1,304 +1,198 @@
 /**
- * ModelLogo — real brand logos for AI models via SimpleIcons CDN.
- *
- * Uses https://cdn.simpleicons.org/{slug} for brand-accurate SVGs.
- * Falls back to a styled initials badge when no CDN icon exists.
- *
- * SimpleIcons is MIT-licensed with 3000+ brand icons — all fill-based
- * SVGs that accept color via the URL path (no CSS needed).
- */
+	* ModelLogo — real brand logos sourced from homarr-labs/dashboard-icons.
+	*
+	* Loads authentic brand SVGs from `/logos/providers/{slug}.svg` (locally
+	* vendored from https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/,
+	* MIT licensed). Falls back to a styled initials badge when no icon
+	* resolves. All OMA-AI resale models collapse to the oma-ai tile.
+	*/
 import { useState, type CSSProperties } from "react";
 
-// Slugs that have been observed returning 404 from
-// https://cdn.simpleicons.org. Skipped to avoid network noise + console
-// errors. Add new entries here when an upstream brand renames.
-// (Verified 2026-07-31: openai/zhipuai/zai/mistral/inceptionai 404 on the
-// CDN; everything else in LOGO_MAP resolves to a real brand icon.)
-// Prefer local tiles for these — SimpleIcons 404s or we want offline paint.
-const KNOWN_MISSING_SLUGS = new Set<string>([
- "zhipuai",
- "zai",
- "openai",
- "mistral",
- "inceptionai",
- "inception",
- "anthropic",
- "google",
- "meta",
- "deepseek",
- "moonshotai",
- "alibabacloud",
-
- "xiaomi",
- "x",
- "venice",
-]);
+// Map model provider → locally-vendored dashboard-icons SVG filename.
+// These files live in /public/logos/providers/ and are mirrored from the
+// upstream homarr-labs/dashboard-icons repo (MIT licensed). The `grok`
+// slug is what dashboard-icons uses for xAI (no `xai` entry exists upstream).
+// Slugs follow the canonical upstream names — using the wrong slug returns
+// 404 and falls back to the hand-tuned local tile (Venice, Mercury, Coinbase,
+// Gonka) — see /public/logos/providers/README.md.
+const DASHBOARD_ICON_SLUGS: Record<string, string> = {
+	openai: "openai",
+	anthropic: "anthropic",
+	claude: "anthropic",
+	google: "google",
+	gemma: "google",
+	gemini: "google-gemini",
+	meta: "meta",
+	llama: "meta",
+	deepseek: "deepseek",
+	mistral: "mistral-ai",
+	xai: "grok",
+	grok: "grok",
+	moonshotai: "kimi-ai",
+	kimi: "kimi-ai",
+	alibabacloud: "aliyun",
+	qwen: "qwen",
+	minimax: "minimax",
+	xiaomi: "xiaomi-global",
+	mimo: "xiaomi-global",
+	zhipuai: "z-ai",
+	zai: "z-ai",
+	glm: "z-ai",
+	ethereum: "ethereum",
+	coinbase: "coinbase",
+};
 
 interface ModelLogoProps {
- /** Model ID or provider name — used to resolve the brand icon. */
- modelId: string;
- /** Display size in px (default 20). */
- size?: number;
- /** Optional CSS class. */
- className?: string;
+	/** Model ID or provider name — used to resolve the brand icon. */
+	modelId: string;
+	/** Display size in px (default 20). */
+	size?: number;
+	/** Optional CSS class. */
+	className?: string;
 }
 
-// SimpleIcons slug map — model/provider → SimpleIcons brand slug.
-// See https://simpleicons.org for the full list.
-const LOGO_MAP: Record<string, string> = {
- // OpenAI / GPT
- "openai": "openai",
- "openai-gpt-54": "openai",
- "openai-gpt-52": "openai",
- "openai-gpt-56-sol": "openai",
- "gpt-5.4": "openai",
- "gpt-5.2": "openai",
- "gpt-5.6": "openai",
-
- // Anthropic / Claude
- "anthropic": "anthropic",
- "claude": "anthropic",
- "claude-opus-5": "anthropic",
- "claude-sonnet-5": "anthropic",
- "claude-fable-5": "anthropic",
-
- // Google Gemini
- "google": "google",
- "gemini": "google",
- "gemini-3-5-flash": "google",
- "gemini-3-flash-preview": "google",
-
- // Meta / Llama
- "meta": "meta",
- "llama": "meta",
- "llama-3.3-70b": "meta",
-
- // DeepSeek
- "deepseek": "deepseek",
- "deepseek-v4-pro": "deepseek",
- "deepseek-v4-flash": "deepseek",
-
- // Mistral
- "mistral": "mistral",
- "mistral-small-2603": "mistral",
- "mistral-small-3-2-24b-instruct": "mistral",
-
- // xAI / Grok
- "xai": "x",
- "grok": "x",
- "grok-4-5": "x",
-
- // Moonshot / Kimi
- "moonshot": "moonshotai",
- "kimi": "moonshotai",
- "kimi-k3": "moonshotai",
- "kimi-k2.6": "moonshotai",
- "kimi-k2-5": "moonshotai",
- "kimi-k2-7-code": "moonshotai",
-
- // Alibaba / Qwen
- "alibaba": "alibabacloud",
- "qwen": "alibabacloud",
- "qwen3-235b": "alibabacloud",
- "qwen3-235b-a22b-openbroker": "alibabacloud",
- "qwen3-coder-480b-a35b-instruct-turbo": "alibabacloud",
- "qwen-3-7-plus": "alibabacloud",
- "qwen-3-6-plus": "alibabacloud",
- "qwen-3-8-max": "alibabacloud",
-
- // Google Gemini + Gemma
- "gemma": "google",
- "google-gemma-4-31b-it": "google",
-
- // DeepSeek — openbroker variant shares the DeepSeek logo
- "deepseek-v4-flash-0731-openbroker": "deepseek",
-
- // Grok / xAI — all grok IDs route to the xAI mark
- "grok-4-20": "x",
-
- // MiniMax
- "minimax": "minimax",
- "minimax-m2-7": "minimax",
-
- // Xiaomi MiMo
- "xiaomi": "xiaomi",
- "xiaomi-mimo-v2-5": "xiaomi",
-
- // GLM / Zhipu — Z.ai rebrand. SimpleIcons doesn't ship a `zhipuai`
- // or `zai` slug, so we render the styled initials fallback for
- // these providers.
- "zhipu": "zhipuai",
- "glm": "zhipuai",
- "zai-org-glm-5-2": "zhipuai",
- "zai-org-glm-5-1": "zhipuai",
- "z-ai": "zhipuai",
-
- // Mercury / Inception
- "mercury": "inception",
- "mercury-2": "inceptionai",
-
- // Crypto / payment
- "usdc": "usdcoin",
- "ethereum": "ethereum",
- "base": "coinbase",
-};
-
-/** Local tiles — preferred over CDN for reliability and no CORS/CDN flakiness. */
-const LOCAL_PROVIDER_ICONS: Record<string, string> = {
- openai: "/logos/providers/openai.svg",
- anthropic: "/logos/providers/anthropic.svg",
- google: "/logos/providers/google.svg",
- gemini: "/logos/providers/gemini.svg",
- meta: "/logos/providers/meta.svg",
- deepseek: "/logos/providers/deepseek.svg",
- mistral: "/logos/providers/mistral.svg",
- x: "/logos/providers/xai.svg",
- xai: "/logos/providers/xai.svg",
- moonshotai: "/logos/providers/moonshot.svg",
- alibabacloud: "/logos/providers/alibaba.svg",
- minimax: "/logos/providers/minimax.svg",
-
- xiaomi: "/logos/providers/xiaomi.svg",
- zhipuai: "/logos/providers/zai.svg",
- zai: "/logos/providers/zai.svg",
- inception: "/logos/providers/mercury.svg",
- inceptionai: "/logos/providers/mercury.svg",
- mercury: "/logos/providers/mercury.svg",
- venice: "/logos/providers/venice.svg",
- coinbase: "/logos/providers/coinbase.svg",
-};
-// Fallback colors for known providers (used by SimpleIcons CDN tinting)
-const PROVIDER_COLORS: Record<string, string> = {
- openai: "10a37f",
- anthropic: "d4a574",
- google: "4285f4",
- meta: "0668e1",
- deepseek: "4d6bfe",
- mistral: "ff7000",
- xai: "1d9bf0",
- moonshotai: "6366f1",
- alibabacloud: "ff6a00",
- minimax: "e11d48",
-
- xiaomi: "ff6900",
- zhipuai: "818cf8",
- zai: "818cf8",
- inception: "3b82f6",
- inceptionai: "3b82f6",
- coinbase: "0052ff",
-};
-
 function getProviderFromModelId(modelId: string): string {
- const lower = modelId.toLowerCase();
- if (lower.includes("openai") || lower.includes("gpt")) return "openai";
- if (lower.includes("claude") || lower.includes("anthropic")) return "anthropic";
- if (lower.includes("gemini")) return "google";
- if (lower.includes("llama") || lower.includes("meta")) return "meta";
- if (lower.includes("deepseek")) return "deepseek";
- if (lower.includes("mistral")) return "mistral";
- if (lower.includes("gemma")) return "google";
- if (lower.includes("grok") || lower.includes("xai")) return "xai";
- if (lower.includes("kimi") || lower.includes("moonshot")) return "moonshotai";
- if (lower.includes("qwen")) return "alibabacloud";
- if (lower.includes("minimax")) return "minimax";
-
- if (lower.includes("xiaomi") || lower.includes("mimo")) return "xiaomi";
- if (lower.includes("glm") || lower.includes("zhipu")) return "zhipuai";
- if (lower.includes("mercury")) return "inception";
- if (lower.includes("venice")) return "venice";
- return "";
+	const lower = modelId.toLowerCase();
+	if (lower.includes("openai") || lower.includes("gpt")) return "openai";
+	if (lower.includes("claude") || lower.includes("anthropic")) return "anthropic";
+	if (lower.includes("gemini")) return "gemini";
+	if (lower.includes("llama") || lower.includes("meta")) return "meta";
+	if (lower.includes("deepseek")) return "deepseek";
+	if (lower.includes("mistral")) return "mistral";
+	if (lower.includes("gemma")) return "google";
+	if (lower.includes("grok") || lower.includes("xai")) return "xai";
+	if (lower.includes("kimi") || lower.includes("moonshot")) return "moonshotai";
+	if (lower.includes("qwen")) return "qwen";
+	if (lower.includes("minimax")) return "minimax";
+	if (lower.includes("xiaomi") || lower.includes("mimo")) return "xiaomi";
+	if (lower.includes("glm") || lower.includes("zhipu") || lower.includes("z-ai")) return "zai";
+	if (lower.includes("mercury") || lower.includes("inception")) return "mercury";
+	if (lower.includes("venice")) return "venice";
+	if (lower.includes("usdc") || lower.includes("usd-coin")) return "usdcoin";
+	if (lower.includes("ethereum") || lower.includes("eth")) return "ethereum";
+	if (lower.includes("base") || lower.includes("coinbase")) return "coinbase";
+	if (lower.includes("oma-ai") || lower.includes("oma")) return "oma-ai";
+	return "";
 }
 
 function getInitials(modelId: string): string {
- const parts = modelId.replace(/^(openai-|claude-|zai-org-|google-)/, "").split(/[-_]/);
- if (parts.length >= 2) {
- return (parts[0][0] + parts[1][0]).toUpperCase();
- }
- return modelId.slice(0, 2).toUpperCase();
+	const parts = modelId
+		.replace(/^(openai-|claude-|zai-org-|google-|venice-|mercury-)/, "")
+		.split(/[-_]/);
+	if (parts.length >= 2) {
+		return (parts[0][0] + parts[1][0]).toUpperCase();
+	}
+	return modelId.slice(0, 2).toUpperCase();
 }
 
-function getProviderColor(slug: string): string {
-	return PROVIDER_COLORS[slug] ?? "6366f1";
-}
+// Providers without a dashboard-icons entry — fall back to local tile.
+const LOCAL_FALLBACKS: Record<string, string> = {
+	mercury: "/logos/providers/mercury.svg",
+	inception: "/logos/providers/mercury.svg",
+	inceptionai: "/logos/providers/mercury.svg",
+	venice: "/logos/providers/venice.svg",
+	coinbase: "/logos/providers/coinbase.svg",
+	"oma-ai": "/logos/providers/gonka.svg",
+	gonka: "/logos/providers/gonka.svg",
+};
 
-function lighten(hex: string, amount: number): string {
-	const n = parseInt(hex.slice(1), 16);
-	const mix = (c: number) => Math.round(c + (255 - c) * amount);
-	const h = (v: number) => v.toString(16).padStart(2, "0");
-	return `#${h(mix((n >> 16) & 0xff))}${h(mix((n >> 8) & 0xff))}${h(mix(n & 0xff))}`;
-}
+// Colors for the initials fallback when no icon resolves.
+const FALLBACK_COLORS: Record<string, string> = {
+	openai: "#10a37f",
+	anthropic: "#d4a574",
+	google: "#4285f4",
+	gemini: "#4285f4",
+	meta: "#0668e1",
+	deepseek: "#4d6bfe",
+	mistral: "#ff7000",
+	xai: "#1d9bf0",
+	moonshotai: "#6366f1",
+	alibabacloud: "#ff6a00",
+	minimax: "#e11d48",
+	xiaomi: "#ff6900",
+	zhipuai: "#818cf8",
+	zai: "#818cf8",
+	mercury: "#3b82f6",
+	venice: "#8b5cf6",
+	coinbase: "#0052ff",
+	"oma-ai": "#22d3ee",
+};
 
 export function ModelLogo({
- modelId,
- size = 20,
- className = "",
+	modelId,
+	size = 20,
+	className = "",
 }: ModelLogoProps) {
- const [hasError, setHasError] = useState(false);
+	const [errorStage, setErrorStage] = useState<"none" | "local">(
+		"none",
+	);
 
- // Resolve the SimpleIcons slug
- const directSlug = LOGO_MAP[modelId.toLowerCase()];
- const providerSlug = directSlug ?? getProviderFromModelId(modelId);
- const slug = directSlug ?? providerSlug;
- const color = getProviderColor(slug || "6366f1");
+	const provider = getProviderFromModelId(modelId);
+	const cdnSlug = provider ? DASHBOARD_ICON_SLUGS[provider] : undefined;
+	const localSrc = provider ? LOCAL_FALLBACKS[provider] : undefined;
+	const color = FALLBACK_COLORS[provider] ?? "#6366f1";
 
- const localSrc = slug ? LOCAL_PROVIDER_ICONS[slug] : undefined;
- if (localSrc && !hasError) {
- return (
- // eslint-disable-next-line @next/next/no-img-element -- local static SVG
- <img
- src={localSrc}
- alt=""
- width={size}
- height={size}
- className={`model-logo-svg inline-block shrink-0 rounded-[var(--radius-sm)] ${className}`}
- style={{ "--ml-size": `${size}px` } as CSSProperties}
- onError={() => setHasError(true)}
- loading="lazy"
- decoding="async"
- />
- );
- }
+	// 1) Try local vendored dashboard-icons tile first (authentic brand
+	// colors, no network round-trip, MIT-licensed).
+	if (cdnSlug && errorStage === "none") {
+		const url = `/logos/providers/${cdnSlug}.svg`;
+		return (
+			<img
+				src={url}
+				alt=""
+				width={size}
+				height={size}
+				className={`model-logo-svg shrink-0 rounded-[var(--radius-sm)] ${className}`}
+				style={{ "--ml-size": `${size}px` } as CSSProperties}
+				onError={() => setErrorStage("local")}
+				loading="lazy"
+				decoding="async"
+			/>
+		);
+	}
 
- // Try CDN logo first; skip slugs that 404 on SimpleIcons.
- if (slug && !hasError && !KNOWN_MISSING_SLUGS.has(slug)) {
- const url = `https://cdn.simpleicons.org/${slug}/${color}`;
- return (
- // eslint-disable-next-line @next/next/no-img-element -- remote icon CDN; next/image would need allowlist
- <img
- src={url}
- alt=""
- width={size}
- height={size}
- className={`model-logo-svg shrink-0 ${className}`}
- style={{ "--ml-size": `${size}px` } as CSSProperties}
- onError={() => setHasError(true)}
- loading="lazy"
- />
- );
- }
+	// 2) Try local tile (for providers not in dashboard-icons catalog)
+	if (localSrc) {
+		return (
+			<img
+				src={localSrc}
+				alt=""
+				width={size}
+				height={size}
+				className={`model-logo-svg inline-block shrink-0 rounded-[var(--radius-sm)] ${className}`}
+				style={{ "--ml-size": `${size}px` } as CSSProperties}
+				loading="lazy"
+				decoding="async"
+			/>
+		);
+	}
 
-// Fallback: styled initials badge
+	// 3) Initials badge fallback
 	const initials = getInitials(modelId);
-	const bgColor = color ? `#${color}20` : "var(--color-accent-dim)";
-	// Lighten the brand color so the monogram meets 4.5:1 contrast on the
-	// tinted badge (bare provider hex on the dark tint was ~3.8:1).
-	const textColor = color ? lighten(color, 0.35) : "var(--color-accent)";
+	const bgColor = `${color}20`;
+	const lighten = (hex: string, amount: number): string => {
+		const n = parseInt(hex.slice(1), 16);
+		const mix = (c: number) => Math.round(c + (255 - c) * amount);
+		const h = (v: number) => v.toString(16).padStart(2, "0");
+		return `#${h(mix((n >> 16) & 0xff))}${h(mix((n >> 8) & 0xff))}${h(mix(n & 0xff))}`;
+	};
+	const textColor = lighten(color, 0.35);
 
- return (
- <span
- className={`inline-flex items-center justify-center shrink-0 font-mono font-bold ${className}`}
- style={{
- width: size,
- height: size,
- borderRadius: size * 0.22,
- backgroundColor: bgColor,
- color: textColor,
- fontSize: size * 0.38,
- lineHeight: 1,
- }}
- aria-hidden="true"
- >
- {initials}
- </span>
- );
+	return (
+		<span
+			className={`inline-flex items-center justify-center shrink-0 font-mono font-bold ${className}`}
+			style={{
+				width: size,
+				height: size,
+				borderRadius: size * 0.22,
+				backgroundColor: bgColor,
+				color: textColor,
+				fontSize: size * 0.38,
+				lineHeight: 1,
+			}}
+			aria-hidden="true"
+		>
+			{initials}
+		</span>
+	);
 }

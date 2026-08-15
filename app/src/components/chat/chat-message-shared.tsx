@@ -2,14 +2,13 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { normalizeProvider } from "@/lib/models-data";
+import { MODELS, normalizeProvider, type Provider } from "@/lib/models-data";
 import { type LiveModelRaw, mapLiveModel } from "@/lib/model-utils";
-import { MODELS } from "@/lib/models-data";
 
 /**
- * Validate that an unknown value conforms to the LiveModelRaw shape.
- * Replaces `as unknown as` casts with a runtime check that narrows the type.
- */
+	* Validate that an unknown value conforms to the LiveModelRaw shape.
+	* Replaces `as unknown as` casts with a runtime check that narrows the type.
+	*/
 function isLiveModelRaw(v: unknown): v is LiveModelRaw {
 	if (typeof v !== "object" || v === null) return false;
 	const obj = v as Record<string, unknown>;
@@ -69,7 +68,12 @@ export interface ModelOption {
 		| "reasoning"
 		| "coding"
 		| "uncensored";
-	provider: "Venice" | "Gonka" | "OMA-AI" | "Both" | "Surplus";
+	/**
+	 * User-facing provider label. Surplus Intelligence is internal-only
+	 * procurement (never surfaced to users), so the only valid values are
+	 * the customer-visible brands: Venice and OMA-AI.
+	 */
+	provider: Provider;
 	inputPer1M: number;
 	outputPer1M: number;
 	ctx: string;
@@ -120,10 +124,13 @@ let liveModelsInFlight: Promise<ModelOption[]> | null = null;
 
 function fetchLiveModels(): Promise<ModelOption[]> {
 	if (liveModelsInFlight) return liveModelsInFlight;
-	liveModelsInFlight = api
+	// Bind to a local so TS can narrow the type — the reassignment below
+	// widens `liveModelsInFlight` to `Promise<ModelOption[]> | null` and
+	// we don't want that leak to contaminate the return type.
+	const promise = api
 		.models.list()
 		.then((data) => {
-			if (!data?.data?.length) return [];
+			if (!data?.data?.length) return [] as ModelOption[];
 			const mapped = (data.data as unknown[])
 				.filter(
 					(m): m is LiveModelRaw =>
@@ -135,7 +142,8 @@ function fetchLiveModels(): Promise<ModelOption[]> {
 		.finally(() => {
 			liveModelsInFlight = null;
 		});
-	return liveModelsInFlight;
+	liveModelsInFlight = promise;
+	return promise;
 }
 
 // shared `["models"]` key so dashboard / settings / chat all
@@ -171,10 +179,10 @@ export function useLiveModels(enabled = true): ModelOption[] {
 }
 
 /**
- * LiveModelsContext — shares a single useLiveModels fetch across all consumers.
- * Wrap the component tree (or a subtree) with <LiveModelsProvider> to avoid
- * duplicate fetches on every render of ModelSelector, CostEstimate, etc.
- */
+	* LiveModelsContext — shares a single useLiveModels fetch across all consumers.
+	* Wrap the component tree (or a subtree) with <LiveModelsProvider> to avoid
+	* duplicate fetches on every render of ModelSelector, CostEstimate, etc.
+	*/
 const LiveModelsContext = createContext<ModelOption[] | null>(null);
 
 interface LiveModelsProviderProps {
@@ -191,10 +199,10 @@ export function LiveModelsProvider({ children }: LiveModelsProviderProps) {
 }
 
 /**
- * Hook to consume shared live models. Must be used within a LiveModelsProvider.
- * Falls back to the standalone useLiveModels() if no provider is present
- * (useful for components that might render outside the provider).
- */
+	* Hook to consume shared live models. Must be used within a LiveModelsProvider.
+	* Falls back to the standalone useLiveModels() if no provider is present
+	* (useful for components that might render outside the provider).
+	*/
 export function useSharedLiveModels(): ModelOption[] {
 	const context = useContext(LiveModelsContext);
 	// Always call the hook to satisfy rules-of-hooks; the effect is a no-op

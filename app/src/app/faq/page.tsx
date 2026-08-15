@@ -38,7 +38,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "What can I do with it?",
-				a: `Chat, write code, summarize documents, analyze data, generate images and short videos, and more — across ${MODEL_COUNT}+ models from many providers through one API.`,
+				a: `Chat, write code, summarize documents, analyze data, work with image inputs, and more — across ${MODEL_COUNT}+ models from many providers through one API.`,
 			},
 		],
 	},
@@ -80,7 +80,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "How much does it cost?",
-				a: `A typical chat answer costs a fraction of a cent. Budget models start around $0.015 per million tokens of input. Images are $0.10 each and videos $0.92. There is no subscription and no monthly fee — you only pay for what you use. See /pricing for the full breakdown.`,
+				a: `A typical chat answer costs a fraction of a cent. Budget models start around a few cents per million tokens of input. OMA-AI currently focuses on curating chat models. There is no subscription and no monthly fee — you only pay for what you use. See /pricing for the full breakdown.`,
 			},
 			{
 				q: "What happens when I run out of credits?",
@@ -153,13 +153,13 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 ];
 
 /**
- * Renders FAQ answer prose with safe inline links.
- *
- * Only known internal site routes become links. Everything else that
- * looks like a path (API endpoints like /v1/images/generations, files
- * like /agent-skill.md, /.well-known/agent-card.json) renders as inline
- * code instead of a broken link.
- */
+	* Renders FAQ answer prose with safe inline links.
+	*
+	* Only known internal site routes become links. Everything else that
+	* looks like a path (API endpoints like /v1/chat/completions, files
+	* like /agent-skill.md, /.well-known/agent-card.json) renders as inline
+	* code instead of a broken link.
+	*/
 const FAQ_LINK_ROUTES = new Set([
 	"/chat",
 	"/contact",
@@ -174,7 +174,7 @@ const FAQ_LINK_ROUTES = new Set([
 	"/privacy",
 ]);
 
-// Matches path-like tokens: /v1/images/generations, /agent-skill.md,
+// Matches path-like tokens: /v1/chat/completions, /agent-skill.md,
 // /.well-known/agent-card.json, /docs#x402, /chat
 const PATH_TOKEN_RE =
 	/(\/[a-z0-9-]+(?:\.[a-z0-9-]+)?(?:#[a-z0-9-]+)?(?:\/[a-z0-9-]+(?:\.[a-z0-9-]+)?)*)/g;

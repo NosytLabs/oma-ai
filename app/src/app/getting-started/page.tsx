@@ -27,8 +27,8 @@ const STEPS = [
 		body: (
 			<>
 				Open the <Link href="/chat" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">chat playground</Link> and send a
-				message. Guests get a handful of free messages every day using our fast, intelligent budget models — just to see how it works.
-				You can chat, write code, or even generate <Link href="/chat?mode=create" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">images and video</Link> in one Create studio. No
+				message. Guests get a handful of free messages every day on the Gonka network — just to see how it works.
+				Chat, write code, or analyze images with frontier multimodal models. No
 				sign-up, no credit card, nothing to install.
 			</>
 		),
@@ -40,7 +40,7 @@ const STEPS = [
 			<>
 				Head to <Link href="/login" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">login</Link>. Choose{" "}
 				<strong className="text-text-bright"> email magic link</strong> (simplest — we email you a secure sign-in link, no password to remember)
-				or <strong className="text-text-bright">connect wallet</strong> if you already use web3 apps. Signing in unlocks {MODEL_COUNT}+ frontier models like GPT-4o and Gemini, saved conversations, and higher rate limits.
+				or <strong className="text-text-bright">connect wallet</strong> if you already use web3 apps. Signing in unlocks {MODEL_COUNT}+ curated models across the full Venice and OMA-AI catalog, saved conversations, and higher rate limits.
 			</>
 		),
 	},
@@ -78,23 +78,23 @@ const STEPS = [
 ];
 
 const SAMPLE_CODE = `curl https://api.oma-ai.com/v1/chat/completions \\
- -H "Authorization: Bearer $OMA_KEY" \\
- -H "Content-Type: application/json" \\
- -d '{
-  "model": "gemini-3-flash-preview",
-  "messages": [{"role": "user", "content": "Say hello in one short sentence"}],
-  "max_tokens": 64
- }'`;
+	-H "Authorization: Bearer $OMA_KEY" \\
+	-H "Content-Type: application/json" \\
+	-d '{
+		"model": "gemini-3-flash-preview",
+		"messages": [{"role": "user", "content": "Say hello in one short sentence"}],
+		"max_tokens": 64
+	}'`;
 
 const SAMPLE_PY = `from openai import OpenAI
 
 client = OpenAI(
- base_url="https://api.oma-ai.com/v1",
- api_key=os.environ["OMA_KEY"],
+	base_url="https://api.oma-ai.com/v1",
+	api_key=os.environ["OMA_KEY"],
 )
 reply = client.chat.completions.create(
- model="llama-3.3-70b",
- messages=[{"role": "user", "content": "Say hello in one short sentence"}],
+	model="llama-3.3-70b",
+	messages=[{"role": "user", "content": "Say hello in one short sentence"}],
 )
 print(reply.choices[0].message.content)`;
 

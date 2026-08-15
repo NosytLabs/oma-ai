@@ -11,10 +11,10 @@ interface QuickStatsCardProps {
 }
 
 /**
- * Compact "Today" stats card extracted from the inline grid in DashboardGrid.
- * Shows requests, spend, tokens, latency, active models, and errors for the
- * last 24 hours.
- */
+	* Compact "Today" stats card extracted from the inline grid in DashboardGrid.
+	* Shows requests, spend, tokens, latency, active models, and errors for the
+	* last 24 hours.
+	*/
 export function QuickStatsCard({
 	loading,
 	todayRequests,
@@ -48,7 +48,7 @@ export function QuickStatsCard({
 
 	return (
 		<div className="flex flex-col p-6 bg-surface/30 border border-border rounded-[var(--radius-xl)] shadow-[var(--shadow-md)] relative h-full transition-colors duration-200 ease-out hover:border-accent/40">
- <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-accent/40 via-accent/20 to-transparent" />
+	<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-accent/40 via-accent/20 to-transparent" />
 			<div className="mb-5">
 				<h2 className="text-[14.5px] font-bold text-text-bright tracking-tight">Today</h2>
 				<p className="mt-1 text-[11px] font-mono text-text-muted uppercase tracking-wider">Last 24 hours</p>

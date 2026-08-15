@@ -1,12 +1,12 @@
 "use client";
 
 /**
- * PlaygroundLoaderLottie — pure-CSS loader (three bouncing dots).
- *
- * Replaces a single-dot opacity-pulse Lottie (~1.4 KB JSON + lottie-react
- * runtime overhead) with three staggered bouncing dots. Zero JavaScript
- * at runtime, GPU-composited animation.
- */
+	* PlaygroundLoaderLottie — pure-CSS loader (three bouncing dots).
+	*
+	* Replaces a single-dot opacity-pulse Lottie (~1.4 KB JSON + lottie-react
+	* runtime overhead) with three staggered bouncing dots. Zero JavaScript
+	* at runtime, GPU-composited animation.
+	*/
 
 export function PlaygroundLoaderLottie() {
 	return (

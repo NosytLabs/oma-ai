@@ -9,28 +9,28 @@ import { config } from '../config.js';
 // completes (i.e. on first use, never at module-init time).
 
 type LoggerConfig = {
-  nodeEnv: string;
-  logLevel: string | undefined;
+		nodeEnv: string;
+		logLevel: string | undefined;
 };
 
 let cachedConfig: LoggerConfig | undefined;
 function readConfig(): LoggerConfig {
-  if (cachedConfig) return cachedConfig;
-  const cfg = config as { NODE_ENV?: string; LOG_LEVEL?: string };
-  cachedConfig = {
-    nodeEnv: cfg.NODE_ENV ?? process.env.NODE_ENV ?? 'production',
-    logLevel: cfg.LOG_LEVEL ?? process.env.LOG_LEVEL,
-  };
-  return cachedConfig;
+		if (cachedConfig) return cachedConfig;
+		const cfg = config as { NODE_ENV?: string; LOG_LEVEL?: string };
+		cachedConfig = {
+				nodeEnv: cfg.NODE_ENV ?? process.env.NODE_ENV ?? 'production',
+				logLevel: cfg.LOG_LEVEL ?? process.env.LOG_LEVEL,
+		};
+		return cachedConfig;
 }
 
 function resolveIsDevelopment(): boolean {
-  return readConfig().nodeEnv !== 'production' && readConfig().nodeEnv !== 'staging';
+		return readConfig().nodeEnv !== 'production' && readConfig().nodeEnv !== 'staging';
 }
 
 function resolveLevel(): string {
-  const c = readConfig();
-  return c.logLevel || (resolveIsDevelopment() ? 'debug' : 'info');
+		const c = readConfig();
+		return c.logLevel || (resolveIsDevelopment() ? 'debug' : 'info');
 }
 
 // Resolve initial values from process.env only. Reading `config` at
@@ -40,35 +40,35 @@ const isDevelopment = initialNodeEnv !== 'production' && initialNodeEnv !== 'sta
 const initialLevel = process.env.LOG_LEVEL ?? (isDevelopment ? 'debug' : 'info');
 
 export const logger: Logger = pino({
-  level: initialLevel,
-  transport: isDevelopment
-    ? {
-        target: 'pino-pretty',
-        options: {
-          colorize: true,
-          translateTime: 'SYS:standard',
-          ignore: 'pid,hostname',
-        },
-      }
-    : undefined,
-  formatters: {
-    level: (label: string) => ({ level: label }),
-  },
-  base: {
-    service: 'oma-server',
-  },
-  mixin() {
-    return {
-      timestamp: new Date().toISOString(),
-    };
-  },
+		level: initialLevel,
+		transport: isDevelopment
+				? {
+								target: 'pino-pretty',
+								options: {
+										colorize: true,
+										translateTime: 'SYS:standard',
+										ignore: 'pid,hostname',
+								},
+						}
+				: undefined,
+		formatters: {
+				level: (label: string) => ({ level: label }),
+		},
+		base: {
+				service: 'oma-server',
+		},
+		mixin() {
+				return {
+						timestamp: new Date().toISOString(),
+				};
+		},
 });
 
 // Re-export for callers that need to inspect resolved config (e.g., a
 // runtime health check). Avoids leaking the lazy proxy.
 export function getLoggerEnv(): { isDevelopment: boolean; level: string } {
-  return {
-    isDevelopment: resolveIsDevelopment(),
-    level: resolveLevel(),
-  };
+		return {
+				isDevelopment: resolveIsDevelopment(),
+				level: resolveLevel(),
+		};
 }

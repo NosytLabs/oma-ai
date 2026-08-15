@@ -1,20 +1,20 @@
 "use client";
 
 /**
- * EXAMPLE CONVERSATIONS — Sophisticated prompt showcase
- *
- * These examples demonstrate the range of OMA AI's capabilities,
- * from quick one-liners to complex multi-step analysis. Each is
- * designed to feel like a real prompt a power user would write —
- * not a toy demo.
- *
- * Categories:
- * - Code: Real debugging, architecture, optimization
- * - Analysis: Data reasoning, comparison, extraction
- * - Creative: Writing, ideation, storytelling
- * - Research: Multi-source synthesis, fact-checking
- * - Quick: One-shot tasks that show speed
- */
+	* EXAMPLE CONVERSATIONS — Sophisticated prompt showcase
+	*
+	* These examples demonstrate the range of OMA AI's capabilities,
+	* from quick one-liners to complex multi-step analysis. Each is
+	* designed to feel like a real prompt a power user would write —
+	* not a toy demo.
+	*
+	* Categories:
+	* - Code: Real debugging, architecture, optimization
+	* - Analysis: Data reasoning, comparison, extraction
+	* - Creative: Writing, ideation, storytelling
+	* - Research: Multi-source synthesis, fact-checking
+	* - Quick: One-shot tasks that show speed
+	*/
 
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";
@@ -54,27 +54,27 @@ export const EXAMPLES: ExampleConversation[] = [
 
 \`\`\`typescript
 async function processPayment(orderId: string) {
- const order = await db.orders.findById(orderId);
- if (order.status !== 'pending') return { error: 'Already processed' };
- 
- const charge = await stripe.charges.create({
- amount: order.amount,
- currency: 'usd',
- customer: order.stripeCustomerId,
- });
+	const order = await db.orders.findById(orderId);
+	if (order.status !== 'pending') return { error: 'Already processed' };
+	
+	const charge = await stripe.charges.create({
+	amount: order.amount,
+	currency: 'usd',
+	customer: order.stripeCustomerId,
+	});
 
- await db.orders.update(orderId, {
- status: 'paid',
- chargeId: charge.id,
- });
+	await db.orders.update(orderId, {
+	status: 'paid',
+	chargeId: charge.id,
+	});
 
- return { success: true, chargeId: charge.id };
+	return { success: true, chargeId: charge.id };
 }
 \`\`\`
 
 		Two concurrent requests with the same orderId can both pass the status check before either updates it. Show me a proper fix using database-level locking or an idempotency key.`,
-		model: "gemini-3-flash-preview",
-		modelName: "Gemini 3 Flash (free)",
+		model: "deepseek-v4-flash-0731-openbroker",
+		modelName: "DeepSeek V4 Flash (free)",
 		difficulty: "advanced",
 	},
 	{
@@ -90,8 +90,8 @@ async function processPayment(orderId: string) {
 - Graceful degradation if Redis is down
 
 Give me the TypeScript implementation with proper types, tests, and middleware integration for Express/Hono.`,
-		model: "gemini-3-flash-preview",
-		modelName: "Gemini 3 Flash (free)",
+		model: "deepseek-v4-flash-0731-openbroker",
+		modelName: "DeepSeek V4 Flash (free)",
 		difficulty: "advanced",
 	},
 
@@ -106,15 +106,15 @@ Give me the TypeScript implementation with proper types, tests, and middleware i
 
 \`\`\`sql
 SELECT 
- u.name,
- COUNT(DISTINCT o.id) as order_count,
- SUM(oi.quantity * oi.price) as total_spent,
- MAX(o.created_at) as last_order_date
+	u.name,
+	COUNT(DISTINCT o.id) as order_count,
+	SUM(oi.quantity * oi.price) as total_spent,
+	MAX(o.created_at) as last_order_date
 FROM users u
 LEFT JOIN orders o ON o.user_id = u.id
 LEFT JOIN order_items oi ON oi.order_id = o.id
 WHERE o.created_at >= NOW() - INTERVAL '90 days'
- AND u.country = 'US'
+	AND u.country = 'US'
 GROUP BY u.id, u.name
 HAVING total_spent > 100
 ORDER BY total_spent DESC
@@ -122,8 +122,8 @@ LIMIT 50;
 \`\`\`
 
 		The users table has 500K rows, orders has 2M, order_items has 8M. Current indexes: users(id), orders(user_id), order_items(order_id).`,
-		model: "gemini-3-flash-preview",
-		modelName: "Gemini 3 Flash (free)",
+		model: "deepseek-v4-flash-0731-openbroker",
+		modelName: "DeepSeek V4 Flash (free)",
 		difficulty: "moderate",
 	},
 	{
@@ -138,8 +138,8 @@ LIMIT 50;
 - User presence indicators — who's online
 
 Compare WebSocket, Server-Sent Events, and polling for this use case. Consider: connection overhead, browser support, scaling behind a load balancer, and what happens when a connection drops. Give me a concrete recommendation with implementation notes.`,
-		model: "gemini-3-flash-preview",
-		modelName: "Gemini 3 Flash (free)",
+		model: "deepseek-v4-flash-0731-openbroker",
+		modelName: "DeepSeek V4 Flash (free)",
 		difficulty: "moderate",
 	},
 
@@ -160,8 +160,8 @@ Target audience: Backend engineers who've heard of CRDTs but never implemented o
 5. When NOT to use CRDTs
 
 Tone: Technical but conversational. Like explaining to a colleague over coffee. ~2000 words.`,
-		model: "gemini-3-flash-preview",
-		modelName: "Gemini 3 Flash (free)",
+		model: "deepseek-v4-flash-0731-openbroker",
+		modelName: "DeepSeek V4 Flash (free)",
 		difficulty: "moderate",
 	},
 	{
@@ -182,8 +182,8 @@ Requirements:
 - Easy to say and spell
 
 For each name, explain the reasoning in one sentence.`,
-		model: "gemini-3-flash-preview",
-		modelName: "Gemini 3 Flash (free)",
+		model: "deepseek-v4-flash-0731-openbroker",
+		modelName: "DeepSeek V4 Flash (free)",
 		difficulty: "quick",
 	},
 
@@ -198,24 +198,24 @@ For each name, explain the reasoning in one sentence.`,
 
 \`\`\`typescript
 app.use('/api/admin/*', async (req, res, next) => {
- const token = req.headers.authorization?.split(' ')[1];
- if (!token) return res.status(401).json({ error: 'No token' });
- 
- const decoded = jwt.verify(token, SECRET_KEY);
- const user = await db.users.findById(decoded.userId);
- 
- if (user.role !== 'admin') {
- return res.status(403).json({ error: 'Forbidden' });
- }
- 
- req.user = user;
- next();
+	const token = req.headers.authorization?.split(' ')[1];
+	if (!token) return res.status(401).json({ error: 'No token' });
+	
+	const decoded = jwt.verify(token, SECRET_KEY);
+	const user = await db.users.findById(decoded.userId);
+	
+	if (user.role !== 'admin') {
+	return res.status(403).json({ error: 'Forbidden' });
+	}
+	
+	req.user = user;
+	next();
 });
 \`\`\`
 
 Be specific about each vulnerability and provide the corrected code.`,
-		model: "gemini-3-flash-preview",
-		modelName: "Gemini 3 Flash (free)",
+		model: "deepseek-v4-flash-0731-openbroker",
+		modelName: "DeepSeek V4 Flash (free)",
 		difficulty: "advanced",
 	},
 
@@ -233,8 +233,8 @@ Be specific about each vulnerability and provide the corrected code.`,
 \`\`\`
 
 Then suggest 3 passwords that would pass and 3 that would fail, with explanations.`,
-		model: "gemini-3-flash-preview",
-		modelName: "Gemini 3 Flash (free)",
+		model: "deepseek-v4-flash-0731-openbroker",
+		modelName: "DeepSeek V4 Flash (free)",
 		difficulty: "quick",
 		estimatedCost: "< $0.001",
 	},
@@ -247,8 +247,8 @@ Then suggest 3 passwords that would pass and 3 that would fail, with explanation
 		prompt: `Write a conventional commit message for this change:
 
 Moved the rate limiter from middleware/rateLimit.ts to lib/rate-limiter.ts, switched from in-memory Map to Redis, added configurable window sizes per endpoint, and updated all route handlers to use the new interface. Old middleware is removed.`,
-		model: "gemini-3-flash-preview",
-		modelName: "Gemini 3 Flash (free)",
+		model: "deepseek-v4-flash-0731-openbroker",
+		modelName: "DeepSeek V4 Flash (free)",
 		difficulty: "quick",
 		estimatedCost: "< $0.001",
 	},

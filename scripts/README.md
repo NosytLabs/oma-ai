@@ -1,16 +1,13 @@
 # Scripts
 
-Tooling for local development, operations, and page audits.
+Tooling for local development and operations.
 
 ## Layout
 
 | Directory | Purpose |
 |-----------|---------|
 | `dev/` | Day-to-day local development |
-| `ops/` | Deploy, bootstrap, wallets, cost checks, seed smoke |
-| `audit/` | Accessibility / visual / UX capture (writes under gitignored dirs) |
-
-A thin shim `scripts/start-dev.sh` still works for older docs and muscle memory.
+| `ops/` | Production environment helper scripts |
 
 ## Dev
 
@@ -23,28 +20,8 @@ A thin shim `scripts/start-dev.sh` still works for older docs and muscle memory.
 ## Ops
 
 ```bash
-./scripts/ops/validate-launch.sh              # pre-launch env / config checks
-./scripts/ops/deploy.sh                       # VPS deploy helper
 ./scripts/ops/start-prod.sh                   # docker compose prod up (or down|logs)
-# root shim: ./start-prod.sh → scripts/ops/start-prod.sh
-node --env-file=.env scripts/ops/blockchain-bootstrap.mjs
-node scripts/ops/generate-platform-wallet.mjs # one-shot keypair (prints only)
-./scripts/ops/neon-cost-check.sh [project_id]
-node scripts/ops/e2e-seed-user.mjs            # seed-session dashboard smoke
 ```
-
-## Audit
-
-Requires a running frontend (usually `http://127.0.0.1:3000`) and Playwright from the `app` workspace.
-
-```bash
-node scripts/audit/axe-audit.mjs       # axe-core a11y pass
-node scripts/audit/visual-audit.mjs    # screenshots + overflow/metrics → .visual-audit/
-node scripts/audit/ux-audit-pages.mjs  # authenticated UX captures → $TMPDIR/oma-ux-audit/
-```
-
-Screenshot dumps (`.visual-audit/`, `app/public/screenshots-ux/`, etc.) are gitignored.
-Set `VISUAL_AUDIT_OUT=/path` to redirect `visual-audit.mjs` output.
 
 ## Root monorepo
 

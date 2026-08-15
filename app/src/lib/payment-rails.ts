@@ -1,9 +1,9 @@
 /**
- * payment-rails.ts — single source of truth for deposit rail status.
- *
- * Mirrors public GET /v1/site-settings so home/pricing/deposit never
- * claim a rail is Available while the same env would 503 that rail.
- */
+	* payment-rails.ts — single source of truth for deposit rail status.
+	*
+	* Mirrors public GET /v1/site-settings so home/pricing/deposit never
+	* claim a rail is Available while the same env would 503 that rail.
+	*/
 
 export type SitePaymentSettings = {
 	maintenanceMode: boolean;
@@ -29,9 +29,9 @@ export type RailStatus = {
 };
 
 /**
- * Derive per-rail status from public site settings.
- * Defaults are optimistic (Available) only when flags are unknown (null settings).
- */
+	* Derive per-rail status from public site settings.
+	* Defaults are optimistic (Available) only when flags are unknown (null settings).
+	*/
 export function railStatuses(
 	settings: SitePaymentSettings | null | undefined,
 ): RailStatus[] {

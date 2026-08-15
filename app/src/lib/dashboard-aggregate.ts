@@ -29,9 +29,9 @@ export function buildUsageByDay(usage: UsageRecord[]): UsageByDay[] {
 }
 
 /**
- * Aggregates usage records into the top models by cost, bucketing the tail
- * into an "Other (N)" slice so the donut legend stays readable.
- */
+	* Aggregates usage records into the top models by cost, bucketing the tail
+	* into an "Other (N)" slice so the donut legend stays readable.
+	*/
 export function buildTopModels(usage: UsageRecord[]): ModelSlice[] {
 	const byModel = new Map<string, { name: string; value: number; cost: number }>()
 	for (const r of usage) {

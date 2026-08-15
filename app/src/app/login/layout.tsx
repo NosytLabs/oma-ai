@@ -1,11 +1,9 @@
-// Auth-gated product surface — render at request time only.
-
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-	title: "Sign in",
+	title: "Sign in — OMA AI",
 	description:
-		"Sign in with a passwordless email link or SIWE on Base. Buy AI inference credits by card through  (1 credit = $0.01) or deposit USDC.",
+		"Sign in to OMA with a passwordless email magic link or SIWE on Base. No password required.",
 	alternates: { canonical: "/login" },
 	robots: { index: false, follow: false },
 };

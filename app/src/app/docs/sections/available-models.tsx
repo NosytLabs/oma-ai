@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Sparkles, Terminal } from "lucide-react";
+import { BookOpen, Terminal } from "lucide-react";
 import { useEffect, useState } from "react";
 import { loadModels } from "@/lib/models-data";
 import { AnimatedSection, CodeBlock, fmt, MODELS, MODEL_COUNT, SectionHeading } from "./shared";
@@ -61,27 +61,33 @@ export function AvailableModelsSection() {
 				id="models"
 				icon={<BookOpen className="h-5 w-5" />}
 				title="Available Models"
-				subtitle={`${MODEL_COUNT} curated models — chat, image, and video, plus web search in the playground.`}
+				subtitle={`${MODEL_COUNT} curated chat models across four tiers, plus web search in the playground.`}
 			/>
 
 			<div className="mb-6 grid gap-4 sm:grid-cols-2">
 				<div className="rounded-[var(--radius-xl)] border border-border bg-panel p-4 shadow-[var(--shadow-md)] transition-transform duration-200 ease-out hover:border-accent/40 active:scale-[0.97]">
 					<div className="mb-2 flex items-center gap-2">
 						<Terminal className="h-4 w-4 text-accent" />
-						<span className="font-semibold text-text">Text Models</span>
+						<span className="font-semibold text-text">Chat Completions</span>
 					</div>
 					<p className="text-sm text-text-muted">
-						Chat, reasoning, coding, and instruction-following models from
-						multiple providers.
+						Text and reasoning models from Venice (frontier/premium/mid/budget) and
+						from the OMA-AI resale layer (Gemini, GPT-4.x, Kimi, MiniMax, Qwen,
+						DeepSeek).
 					</p>
 				</div>
 				<div className="rounded-[var(--radius-xl)] border border-border bg-panel p-4 shadow-[var(--shadow-md)] transition-transform duration-200 ease-out hover:border-accent/40 active:scale-[0.97]">
 					<div className="mb-2 flex items-center gap-2">
-						<Sparkles className="h-4 w-4 text-accent" />
-						<span className="font-semibold text-text">Multimodal</span>
+						<svg className="h-4 w-4 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+							<rect x="3" y="3" width="18" height="18" rx="2" />
+							<circle cx="8.5" cy="8.5" r="1.5" />
+							<path d="M21 15l-5-5L5 21" />
+						</svg>
+						<span className="font-semibold text-text">Vision-capable models</span>
 					</div>
 					<p className="text-sm text-text-muted">
-						Image generation and video generation models alongside the full chat catalog.
+						A subset of premium / frontier models accept image inputs alongside
+						text in the OpenAI multimodal <code className="font-mono">content</code> array shape.
 					</p>
 				</div>
 			</div>

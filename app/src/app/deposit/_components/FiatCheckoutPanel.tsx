@@ -1,16 +1,16 @@
 "use client";
 
 /**
- * Polar (Visa / Mastercard) credit purchase interface.
- *
- * Calls the server's POST /v1/checkout endpoint which creates a Polar
- * checkout session for one of three plans (hobby / builder / scale) and
- * returns a redirect URL. The user is sent to Polar's hosted checkout,
- * pays with card, and on `subscription.created` the server credits their
- * account.
- *
- * No wallet required — this is the fiat-friendly path.
- */
+	* Polar (Visa / Mastercard) credit purchase interface.
+	*
+	* Calls the server's POST /v1/checkout endpoint which creates a Polar
+	* checkout session for one of three plans (hobby / builder / scale) and
+	* returns a redirect URL. The user is sent to Polar's hosted checkout,
+	* pays with card, and on `subscription.created` the server credits their
+	* account.
+	*
+	* No wallet required — this is the fiat-friendly path.
+	*/
 
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import {
@@ -43,14 +43,14 @@ interface PlanCard {
 
 import { CREDIT_PLANS, perCreditPrice } from "@/lib/credit-utils";
 const PLANS: PlanCard[] = CREDIT_PLANS.map((plan, idx) => ({
- plan: (["hobby","builder","scale"] as const)[idx],
- name: plan.tag,
- credits: plan.credits,
- price: `$${plan.usd}`,
- priceCents: plan.usd * 100,
- perCredit: perCreditPrice(),
- tagline: ["Side projects & exploration", "Production apps & agents", "High-volume workloads"][idx],
- highlight: idx === 1
+	plan: (["hobby","builder","scale"] as const)[idx],
+	name: plan.tag,
+	credits: plan.credits,
+	price: `$${plan.usd}`,
+	priceCents: plan.usd * 100,
+	perCredit: perCreditPrice(),
+	tagline: ["Side projects & exploration", "Production apps & agents", "High-volume workloads"][idx],
+	highlight: idx === 1
 }));
 
 import Image from 'next/image';

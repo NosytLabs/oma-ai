@@ -1,8 +1,8 @@
 /**
- * Wordmark metrics for the geometric "oma" lockup.
- * Rendered as system-font SVG text (not hand-traced paths) so letterforms
- * stay optically correct at 14–24px beside the gateway mark.
- */
+	* Wordmark metrics for the geometric "oma" lockup.
+	* Rendered as system-font SVG text (not hand-traced paths) so letterforms
+	* stay optically correct at 14–24px beside the gateway mark.
+	*/
 
 export const OMA_WORD_SM = {
 	w: 40,

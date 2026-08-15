@@ -1,33 +1,33 @@
 "use client";
 
 /**
- * Footer
- * =====
- * Single source of truth for site map links and the deployment
- * signature shown in the bottom bar.
- *
- * Build-time constants (`CURRENT_YEAR`, `LAST_DEPLOY`) are hard-coded
- * because any `new Date()` call at render time will produce
- * server/client hydration mismatches when midnight UTC rolls over
- * between SSR and hydration. Bump in source on each deploy.
- *
- * `suppressHydrationWarning` must sit on the exact element whose text
- * can differ (the build-date `<span>`), not an ancestor — React only
- * suppresses mismatches for the element's own direct text. A stale
- * server bundle (constant bumped while `next dev` is running) otherwise
- * throws a hydration error on every page.
- *
- * Layout (desktop, lg+):
- * ┌────────────────────────────────────────────────────────────────┐
- * │ Logo · tagline · socials (3 cols of nav) │
- * ├────────────────────────────────────────────────────────────────┤
- * │ © 2026 NosytLabs. All rights reserved. │
- * └────────────────────────────────────────────────────────────────┘
- *
- * Layout (mobile):
- * Brand stack, then a 2-column nav grid (Product | Resources),
- * then the legal row, then the bottom bar.
- */
+	* Footer
+	* =====
+	* Single source of truth for site map links and the deployment
+	* signature shown in the bottom bar.
+	*
+	* Build-time constants (`CURRENT_YEAR`, `LAST_DEPLOY`) are hard-coded
+	* because any `new Date()` call at render time will produce
+	* server/client hydration mismatches when midnight UTC rolls over
+	* between SSR and hydration. Bump in source on each deploy.
+	*
+	* `suppressHydrationWarning` must sit on the exact element whose text
+	* can differ (the build-date `<span>`), not an ancestor — React only
+	* suppresses mismatches for the element's own direct text. A stale
+	* server bundle (constant bumped while `next dev` is running) otherwise
+	* throws a hydration error on every page.
+	*
+	* Layout (desktop, lg+):
+	* ┌────────────────────────────────────────────────────────────────┐
+	* │ Logo · tagline · socials (3 cols of nav) │
+	* ├────────────────────────────────────────────────────────────────┤
+	* │ © 2026 NosytLabs. All rights reserved. │
+	* └────────────────────────────────────────────────────────────────┘
+	*
+	* Layout (mobile):
+	* Brand stack, then a 2-column nav grid (Product | Resources),
+	* then the legal row, then the bottom bar.
+	*/
 
 import {
 	ArrowUpRight,
@@ -245,7 +245,7 @@ export function Footer() {
 													href={link.href}
 													prefetch={false}
 													aria-current={isCurrent ? "page" : undefined}
-className={`group/link inline-flex items-center gap-2 rounded-sm px-1.5 py-1.5 -ml-1.5 text-[12px] transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+													className={`group/link inline-flex items-center gap-2 rounded-sm px-1.5 py-1.5 -ml-1.5 text-[12px] transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
 														isCurrent
 															? "text-accent bg-accent-dim font-semibold underline underline-offset-2"
 															: "text-text-secondary hover:text-accent hover:bg-surface/60 hover:underline underline-offset-2 hover:font-semibold"

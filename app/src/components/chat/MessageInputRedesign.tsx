@@ -1,18 +1,18 @@
 "use client";
 
 /**
- * MESSAGE INPUT — "Terminal Noir" composer
- *
- * Two-row layout (industry-standard chat composer anatomy):
- *   Row 1: auto-resizing textarea + 44px send/stop action
- *   Row 2: tool rail (UI mode / WEB search) + key-hint
- *
- * - 44px minimum touch targets (iOS/Android guidelines)
- * - Auto-resize textarea with smooth height transitions
- * - Glass surface with animated focus border (BorderBeam)
- * - Stop button swaps in during streaming and hides the moment it ends
- * - Reduced-motion respected everywhere
- */
+	* MESSAGE INPUT — "Terminal Noir" composer
+	*
+	* Two-row layout (industry-standard chat composer anatomy):
+	*   Row 1: auto-resizing textarea + 44px send/stop action
+	*   Row 2: tool rail (UI mode / WEB search) + key-hint
+	*
+	* - 44px minimum touch targets (iOS/Android guidelines)
+	* - Auto-resize textarea with smooth height transitions
+	* - Glass surface with animated focus border (BorderBeam)
+	* - Stop button swaps in during streaming and hides the moment it ends
+	* - Reduced-motion respected everywhere
+	*/
 
 import { m } from "@/lib/framer-motion-client";
 import { BorderBeam } from "border-beam";

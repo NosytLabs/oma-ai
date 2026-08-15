@@ -25,19 +25,19 @@ const FOCUSABLE =
 	'a[href], button:not([disabled]):not([tabindex="-1"]), input:not([disabled]):not([tabindex="-1"]), textarea:not([disabled]):not([tabindex="-1"]), select:not([disabled]):not([tabindex="-1"]), [tabindex]:not([tabindex="-1"])';
 
 /**
- * Generic focus trap for modals/menus. While `active` is true:
- *   - focuses the first tabbable element inside `containerRef` on mount
- *   - cycles Tab/Shift+Tab within the container
- *   - calls `onClose` on Escape (parent decides what "close" means)
- *   - restores focus to `restoreFocusRef.current` on close (if provided)
- *
- * Usage:
- * ```tsx
- * const containerRef = useRef<HTMLDivElement>(null);
- * useFocusTrap({ active: isOpen, containerRef, onClose: () => setOpen(false) });
- * return <div ref={containerRef}>{children}</div>;
- * ```
- */
+	* Generic focus trap for modals/menus. While `active` is true:
+	*   - focuses the first tabbable element inside `containerRef` on mount
+	*   - cycles Tab/Shift+Tab within the container
+	*   - calls `onClose` on Escape (parent decides what "close" means)
+	*   - restores focus to `restoreFocusRef.current` on close (if provided)
+	*
+	* Usage:
+	* ```tsx
+	* const containerRef = useRef<HTMLDivElement>(null);
+	* useFocusTrap({ active: isOpen, containerRef, onClose: () => setOpen(false) });
+	* return <div ref={containerRef}>{children}</div>;
+	* ```
+	*/
 export function useFocusTrap({
 	active,
 	containerRef,

@@ -17,21 +17,21 @@ export interface UseChatShortcutsOptions {
 }
 
 /**
- * Global keyboard shortcuts for the playground.
- *
- *   ? / Shift+/       → open the shortcuts modal (when not in a text field)
- *   Escape            → close shortcuts → params → compare, in that order
- *   Cmd/Ctrl + K      → focus the model picker (clicks its DOM button)
- *   Cmd/Ctrl + /      → toggle the parameters panel
- *   Cmd/Ctrl + Shift + P → toggle the system-prompt panel
- *   Cmd/Ctrl + Enter  → send the current input (ref-based so we always
- *                       see the latest sendMessage without re-binding)
- *
- * The listener binds to `window` and inspects `e.target` so it stays out
- * of the way while the user is typing in the input or any other text
- * field. `sendMessage` is held in a ref that the page updates in a
- * useEffect — see page.tsx for the P1 #10 fix.
- */
+	* Global keyboard shortcuts for the playground.
+	*
+	*   ? / Shift+/       → open the shortcuts modal (when not in a text field)
+	*   Escape            → close shortcuts → params → compare, in that order
+	*   Cmd/Ctrl + K      → focus the model picker (clicks its DOM button)
+	*   Cmd/Ctrl + /      → toggle the parameters panel
+	*   Cmd/Ctrl + Shift + P → toggle the system-prompt panel
+	*   Cmd/Ctrl + Enter  → send the current input (ref-based so we always
+	*                       see the latest sendMessage without re-binding)
+	*
+	* The listener binds to `window` and inspects `e.target` so it stays out
+	* of the way while the user is typing in the input or any other text
+	* field. `sendMessage` is held in a ref that the page updates in a
+	* useEffect — see page.tsx for the P1 #10 fix.
+	*/
 export function useChatShortcuts({
 	sendMessageRef,
 	input,

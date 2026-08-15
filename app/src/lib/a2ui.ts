@@ -1,13 +1,13 @@
 /**
- * A2UI (v0.9.1) prompt helpers for playground UI MODE. When enabled, the
- * model is instructed to emit A2UI envelopes (createSurface /
- * updateComponents / updateDataModel) so the playground can render
- * interactive surfaces (buttons, forms, cards) instead of plain markdown.
- */
+	* A2UI (v0.9.1) prompt helpers for playground UI MODE. When enabled, the
+	* model is instructed to emit A2UI envelopes (createSurface /
+	* updateComponents / updateDataModel) so the playground can render
+	* interactive surfaces (buttons, forms, cards) instead of plain markdown.
+	*/
 
 /**
- * Appended to the system prompt while UI MODE is enabled.
- */
+	* Appended to the system prompt while UI MODE is enabled.
+	*/
 export const A2UI_SYSTEM_SUFFIX = `
 
 [UI MODE] You are also a UI designer. When the user asks for an interface,

@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * ThemeToggle — accent theme switcher (dark void is fixed).
- */
+	* ThemeToggle — accent theme switcher (dark void is fixed).
+	*/
 
 import { Check, Palette } from "lucide-react";
 import { useEffect, useRef, useState } from "react";

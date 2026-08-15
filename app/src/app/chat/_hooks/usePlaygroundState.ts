@@ -6,24 +6,24 @@ import { useCallback, useEffect, useState } from "react";
 import type { Message } from "@/components/chat";
 
 /**
- * Status enum for the export-conversation button. Cycles through loading
- * → success/error → default so the toolbar can render the right icon
- * without spawning extra toast spam.
- */
+	* Status enum for the export-conversation button. Cycles through loading
+	* → success/error → default so the toolbar can render the right icon
+	* without spawning extra toast spam.
+	*/
 type ExportStatus = "default" | "loading" | "success" | "error";
 
 /**
- * Status enum for the share-conversation button. No 'loading' state —
- * the share copy is gated on the clipboard write resolving.
- */
+	* Status enum for the share-conversation button. No 'loading' state —
+	* the share copy is gated on the clipboard write resolving.
+	*/
 type ShareStatus = "default" | "success" | "error";
 
 /**
- * Media mode is now text-only — OMA sells text + multimodal LLM
- * inference. Legacy `?mode=image|video|create` deep links still resolve
- * to the chat surface so old share URLs don't break. The previous image
- * and video generation routes have been removed from the server.
- */
+	* Media mode is now text-only — OMA sells text + multimodal LLM
+	* inference. Legacy `?mode=image|video|create` deep links still resolve
+	* to the chat surface so old share URLs don't break. The previous image
+	* and video generation routes have been removed from the server.
+	*/
 export type MediaMode = "text";
 
 export function parseMediaMode(raw: string | null | undefined): MediaMode {
@@ -109,30 +109,30 @@ export interface PlaygroundState {
 }
 
 /**
- * Playground state container.
- *
- * Bundles every `useState` slot the playground chat page owns into a
- * single hook so the page component stays focused on wiring + callbacks.
- * No cross-cutting logic lives here — just plain state + setters. The
- * side-effects (persistence, streaming, scroll, shortcuts) stay in their
- * own hooks and consume the destructured fields from this one.
- *
- * The `model` initial value is sourced from the `?model=` query param
- * via `useSearchParams`. Callers MUST be wrapped in a `<Suspense>`
- * boundary (the Next.js rule for any client component that reads
- * search params during SSR).
- */
+	* Playground state container.
+	*
+	* Bundles every `useState` slot the playground chat page owns into a
+	* single hook so the page component stays focused on wiring + callbacks.
+	* No cross-cutting logic lives here — just plain state + setters. The
+	* side-effects (persistence, streaming, scroll, shortcuts) stay in their
+	* own hooks and consume the destructured fields from this one.
+	*
+	* The `model` initial value is sourced from the `?model=` query param
+	* via `useSearchParams`. Callers MUST be wrapped in a `<Suspense>`
+	* boundary (the Next.js rule for any client component that reads
+	* search params during SSR).
+	*/
 export function usePlaygroundState(
 	options: UsePlaygroundStateOptions = {},
 ): PlaygroundState {
 	const searchParams = useSearchParams();
 	const router = useRouter();
 	const pathname = usePathname();
-	// Default to free OMA-AI (OpenBroker) model so guests can chat without sign-in.
+	// Default to free Gonka (OpenBroker) model so guests can chat without sign-in.
 	// Lazy string keeps this hook free of a models-data import cycle; value must
 	// match FREE_DEFAULT_CHAT_MODEL in @/lib/model-utils.
 	const defaultModel =
-		options.defaultModel ?? searchParams?.get("model") ?? "gemini-3-flash-preview";
+		options.defaultModel ?? searchParams?.get("model") ?? "deepseek-v4-flash-0731-openbroker";
 	const initialMode = parseMediaMode(searchParams?.get("mode"));
 
 	// --- Core chat ---

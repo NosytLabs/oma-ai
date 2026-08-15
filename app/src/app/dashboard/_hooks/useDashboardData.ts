@@ -35,12 +35,12 @@ const STALE_DEFAULT = 60_000;
 const STALE_MODELS = 300_000;
 
 /**
- * Aggregated dashboard data hook.
- * React Query against live APIs (auth + key + usage + batches + models +
- * recent transactions). Returns null balance and empty arrays when
- * unauthenticated so the page can render the sign-in wall without
- * noisy loading skeletons.
- */
+	* Aggregated dashboard data hook.
+	* React Query against live APIs (auth + key + usage + batches + models +
+	* recent transactions). Returns null balance and empty arrays when
+	* unauthenticated so the page can render the sign-in wall without
+	* noisy loading skeletons.
+	*/
 export function useDashboardData({
 	isAuthenticated,
 }: UseDashboardDataOptions): UseDashboardDataResult {

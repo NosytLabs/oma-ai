@@ -1,10 +1,10 @@
 /**
- * OMA brand mark and wordmark.
- *
- * Geometry is shared by the favicon, static SVG kit, and inline UI mark:
- * open emerald ring, terminal chevron, signal dot. Inline colors use theme
- * tokens so alternate accent themes stay coherent.
- */
+	* OMA brand mark and wordmark.
+	*
+	* Geometry is shared by the favicon, static SVG kit, and inline UI mark:
+	* open emerald ring, terminal chevron, signal dot. Inline colors use theme
+	* tokens so alternate accent themes stay coherent.
+	*/
 
 import { OMA_WORD_MD, OMA_WORD_SM } from "./oma-word-paths";
 
@@ -87,9 +87,9 @@ function OmaMark({
 }
 
 /**
- * Lowercase "oma" wordmark. System UI font at optical weight so letters
- * stay correct at every size (hand-traced paths blur at 14px).
- */
+	* Lowercase "oma" wordmark. System UI font at optical weight so letters
+	* stay correct at every size (hand-traced paths blur at 14px).
+	*/
 function OmaWordText({
 	size,
 	className = "",
@@ -145,8 +145,8 @@ export function OmaLogo({
 }
 
 /**
- * Nav lockup: mark + geometric lowercase wordmark.
- */
+	* Nav lockup: mark + geometric lowercase wordmark.
+	*/
 export function OmaNavLockup({
 	size = "sm",
 	className = "",

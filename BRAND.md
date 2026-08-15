@@ -163,8 +163,8 @@ Always leverage standard design-system `<Button>` components in dashboard interf
 ### Navigation Hierarchy
 
 - **Global Navigation:** Stick header fixed at `h-14` featuring standard backdrop-blur glass filters upon scroll.
-- **Primary Pages:** Models · Chat · Pricing · Docs · Compare (Title Case).
-- **System Diagnostics Dropdown:** Network · Observability · Changelog.
+- **Primary Pages:** Models · Chat · Pricing · Docs.
+- **System Diagnostics Dropdown:** Network · Observability.
 - **Account Panel:** Dashboard · Settings · Sign In.
 - **Legacy Redirects:** All `/swap` actions permanently route to `/deposit`.
 - **Agent Session Demos:** Interactive terminal structures inspired by the `AgentSessionDemo` layout should only be used inside marketing or documentation surfaces. Live chat flows must remain native.

@@ -1,16 +1,16 @@
 /**
- * Chat hook regression tests — locks in the bug fixes landed for the
- * streaming chat pipeline:
- *   1. Message IDs are unique under rapid concurrent generation
- *      (was: `Date.now() + Math.random()` could collide on same-ms clicks).
- *   2. SSE buffer overflow throws a recognizable error so the abort
- *      handler can surface it cleanly to the user.
- *   3. parseSSEBlock handles CR/LF line endings per SSE spec.
- *
- * Hook is large (605 lines) and tightly coupled to fetch + DOM.
- * These tests cover the pure helpers we extracted during the fix
- * without spinning up a full render.
- */
+	* Chat hook regression tests — locks in the bug fixes landed for the
+	* streaming chat pipeline:
+	*   1. Message IDs are unique under rapid concurrent generation
+	*      (was: `Date.now() + Math.random()` could collide on same-ms clicks).
+	*   2. SSE buffer overflow throws a recognizable error so the abort
+	*      handler can surface it cleanly to the user.
+	*   3. parseSSEBlock handles CR/LF line endings per SSE spec.
+	*
+	* Hook is large (605 lines) and tightly coupled to fetch + DOM.
+	* These tests cover the pure helpers we extracted during the fix
+	* without spinning up a full render.
+	*/
 import { describe, it, expect } from "vitest";
 import type { Message } from "@/components/chat";
 import { sanitizeHistory } from "../useStreamingChat";
@@ -81,9 +81,9 @@ describe("sanitizeHistory", () => {
 });
 
 /**
- * Mirror of the newMessageId helper inside useStreamingChat.ts. If
- * you change one, change both (or — better — extract to a module).
- */
+	* Mirror of the newMessageId helper inside useStreamingChat.ts. If
+	* you change one, change both (or — better — extract to a module).
+	*/
 function newMessageId(prefix: string): string {
 	const n =
 		typeof performance !== "undefined" && typeof performance.now === "function"
@@ -122,9 +122,9 @@ describe("newMessageId", () => {
 });
 
 /**
- * SSE parser sanity — mirrors parseSSEBlock behavior. The hook uses
- * the same shape (data lines joined with \n, events split on \n\n).
- */
+	* SSE parser sanity — mirrors parseSSEBlock behavior. The hook uses
+	* the same shape (data lines joined with \n, events split on \n\n).
+	*/
 function parseSSEBlock(block: string): { data: string[] } | null {
 	if (!block || block.trim() === "") return null;
 	// Normalize CR/LF → LF before splitting (mirrors the hook's pre-split normalization)

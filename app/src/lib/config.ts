@@ -1,8 +1,8 @@
 /**
- * Centralized frontend configuration constants.
- *
- * Runs in Node.js server components, route handlers, and edge middleware.
- */
+	* Centralized frontend configuration constants.
+	*
+	* Runs in Node.js server components, route handlers, and edge middleware.
+	*/
 
 /** Default backend API base URL. Strips trailing slashes. */
 const rawApi = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";

@@ -1,20 +1,20 @@
 import { NextResponse } from "next/server";
 
 /**
- * POST /api/support
- *
- * Receives a support form submission, validates, and forwards to the
- * configured inbox. Two modes:
- *  - With `SUPPORT_WEBHOOK_URL` set: POST the JSON payload to the webhook
- *    (e.g. a Formspree, Slack incoming webhook, or internal ticketing
- *    endpoint) and surface the upstream status to the client.
- *  - Without it: respond 202 Accepted with a deterministic ticket id so
- *    the UI can show a success state even when running locally or in
- *    tests. The actual delivery is best-effort via SMTP in that case.
- *
- * The route is intentionally cheap: no auth, no DB write. Rate limiting
- * is expected to be applied at the edge / by the upstream consumer.
- */
+	* POST /api/support
+	*
+	* Receives a support form submission, validates, and forwards to the
+	* configured inbox. Two modes:
+	*  - With `SUPPORT_WEBHOOK_URL` set: POST the JSON payload to the webhook
+	*    (e.g. a Formspree, Slack incoming webhook, or internal ticketing
+	*    endpoint) and surface the upstream status to the client.
+	*  - Without it: respond 202 Accepted with a deterministic ticket id so
+	*    the UI can show a success state even when running locally or in
+	*    tests. The actual delivery is best-effort via SMTP in that case.
+	*
+	* The route is intentionally cheap: no auth, no DB write. Rate limiting
+	* is expected to be applied at the edge / by the upstream consumer.
+	*/
 
 const TOPIC_TO_INBOX: Record<string, string> = {
 	General: "hi@nosytlabs.com",

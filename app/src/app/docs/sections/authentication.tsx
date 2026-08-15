@@ -4,31 +4,31 @@ import { AnimatedSection, SectionHeading, TabbedCode } from "./shared";
 export function AuthenticationSection() {
 	const pythonCode = `from openai import OpenAI
 client = OpenAI(
- api_key="oma_sk_your_key_here",
- base_url="https://api.oma-ai.com/v1"
+	api_key="oma_sk_your_key_here",
+	base_url="https://api.oma-ai.com/v1"
 )
 response = client.chat.completions.create(
- model="llama-3.3-70b",
- messages=[{"role": "user", "content": "Hello!"}]
+	model="llama-3.3-70b",
+	messages=[{"role": "user", "content": "Hello!"}]
 )`;
 
 	const jsCode = `import OpenAI from "openai";
 const client = new OpenAI({
- apiKey: "oma_sk_your_key_here",
- baseURL: "https://api.oma-ai.com/v1"
+	apiKey: "oma_sk_your_key_here",
+	baseURL: "https://api.oma-ai.com/v1"
 });
 const response = await client.chat.completions.create({
- model: "llama-3.3-70b",
- messages: [{ role: "user", content: "Hello!" }]
+	model: "llama-3.3-70b",
+	messages: [{ role: "user", content: "Hello!" }]
 });`;
 
 	const goCode = `package main
 import (
- openai "github.com/sashabaranov/go-openai"
+	openai "github.com/sashabaranov/go-openai"
 )
 func main() {
- client := openai.New("oma_sk_your_key_here")
- client.BaseURL = "https://api.oma-ai.com/v1"
+	client := openai.New("oma_sk_your_key_here")
+	client.BaseURL = "https://api.oma-ai.com/v1"
 }`;
 
 	return (
@@ -37,7 +37,7 @@ func main() {
 				id="authentication"
 				icon={<Key className="h-5 w-5" />}
 				title="Authentication"
-				subtitle="Paid models and the public API need a Bearer API key (or wallet session). Free OMA-AI website chat does not."
+				subtitle="Paid models and the public API need a Bearer API key (or wallet session). Free OMA-AI/Gonka website chat does not."
 			/>
 
 			<div
@@ -45,13 +45,13 @@ func main() {
 				className="rounded-[var(--radius-xl)] border border-accent/20 bg-accent/5 p-4 mb-6 scroll-mt-24"
 			>
 				<h3 className="font-semibold text-accent text-sm mb-2">
-					Free OMA-AI models (website chat)
+					Free OMA-AI/Gonka models (website chat)
 				</h3>
 				<p className="text-sm text-text-muted mb-2">
-					Models routed via OMA-AI (OpenBroker /{" "}
+					Models routed via OMA-AI (Gonka/OpenBroker /{" "}
 					<code className="text-accent font-mono text-xs">provider: oma-ai</code>
 					) — e.g. <code className="text-accent font-mono text-xs">gemini-3-flash-preview</code>,{" "}
-					<code className="text-accent font-mono text-xs">gpt-4o</code> — can be
+					<code className="text-accent font-mono text-xs">deepseek-v4-flash-0731-openbroker</code> — can be
 					used on <code className="text-accent font-mono text-xs">/chat</code>{" "}
 					without sign-in, API key, or wallet. Rate limits still apply. Upgrade to a paid plan to unlock the entire Venice catalog, unlimited concurrency, and dedicated throughput.
 				</p>
@@ -59,7 +59,7 @@ func main() {
 					Programmatic API access to free models still works with a key if you
 					prefer; unauthenticated requests to{" "}
 					<code className="text-accent font-mono text-xs">/v1/chat/completions</code>{" "}
-					are accepted only for free OMA-AI model ids.
+					are accepted only for free OMA-AI/Gonka model ids.
 				</p>
 			</div>
 
@@ -77,9 +77,9 @@ func main() {
 						label: "cURL",
 						lang: "bash",
 						code: `curl https://api.oma-ai.com/v1/chat/completions \\
- -H "Authorization: Bearer oma_sk_your_key_here" \\
- -H "Content-Type: application/json" \\
- -d '{"model":"llama-3.3-70b","messages":[{"role":"user","content":"Hello"}]}'`,
+	-H "Authorization: Bearer oma_sk_your_key_here" \\
+	-H "Content-Type: application/json" \\
+	-d '{"model":"llama-3.3-70b","messages":[{"role":"user","content":"Hello"}]}'`,
 					},
 					{ label: "Python", lang: "python", code: pythonCode },
 					{ label: "JavaScript", lang: "javascript", code: jsCode },

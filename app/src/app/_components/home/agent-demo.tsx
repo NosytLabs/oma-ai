@@ -1,7 +1,7 @@
 "use client";
 /**
- * Homepage section — brainless-inspired agent session demo (OMA-themed).
- */
+	* Homepage section — brainless-inspired agent session demo (OMA-themed).
+	*/
 
 import { AgentSessionDemo } from "@/components/marketing/AgentSessionDemo";
 import { Reveal } from "@/app/_components/home/reveal";

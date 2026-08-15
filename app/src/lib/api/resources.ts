@@ -1,7 +1,7 @@
 /**
- * Balance / usage / model catalog endpoints.
- * Cached with TTL since they don't change frequently.
- */
+	* Balance / usage / model catalog endpoints.
+	* Cached with TTL since they don't change frequently.
+	*/
 
 import { getCached, STALE_TTL, setCache } from "./client.js";
 import type { BalanceResponse, ModelsResponse, UsageRecord } from "./types.js";

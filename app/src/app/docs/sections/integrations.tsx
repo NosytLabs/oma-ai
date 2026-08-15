@@ -6,9 +6,9 @@ import { AnimatedSection, CodeBlock, SectionHeading } from "./shared";
 import { DOCS_EXAMPLE_MODEL } from "@/lib/model-utils";
 
 /**
- * How to point popular agent CLIs / IDEs at OMA with a standard OpenAI-compatible
- * base URL + Bearer key. Keep model ids in sync with the live catalog.
- */
+	* How to point popular agent CLIs / IDEs at OMA with a standard OpenAI-compatible
+	* base URL + Bearer key. Keep model ids in sync with the live catalog.
+	*/
 export function IntegrationsSection() {
 	const baseUrl = "https://api.oma-ai.com/v1";
 	const model = DOCS_EXAMPLE_MODEL;
@@ -90,19 +90,19 @@ export OPENAI_MODEL="${model}"
 					lang="json"
 					code={`// opencode.json / provider settings (shape varies by OpenCode version)
 {
- "provider": {
- "oma": {
- "npm": "@ai-sdk/openai-compatible",
- "name": "OMA",
- "options": {
- "baseURL": "${baseUrl}",
- "apiKey": "{env:OMA_API_KEY}"
- },
- "models": {
- "${model}": { "name": "${model}" }
- }
- }
- }
+	"provider": {
+	"oma": {
+	"npm": "@ai-sdk/openai-compatible",
+	"name": "OMA",
+	"options": {
+	"baseURL": "${baseUrl}",
+	"apiKey": "{env:OMA_API_KEY}"
+	},
+	"models": {
+	"${model}": { "name": "${model}" }
+	}
+	}
+	}
 }`}
 				/>
 				<p className="mt-2 text-xs text-text-muted">
@@ -138,21 +138,21 @@ export ANTHROPIC_BASE_URL="https://api.oma-ai.com"
 					lang="bash"
 					code={`# One-shot smoke test (Messages API — x-api-key style)
 curl https://api.oma-ai.com/v1/messages \\
- -H "x-api-key: oma_sk_your_key_here" \\
- -H "anthropic-version: 2023-06-01" \\
- -H "Content-Type: application/json" \\
- -d '{
- "model": "kimi-k3",
- "max_tokens": 64,
- "messages": [{"role": "user", "content": "ping"}]
- }'
+	-H "x-api-key: oma_sk_your_key_here" \\
+	-H "anthropic-version: 2023-06-01" \\
+	-H "Content-Type: application/json" \\
+	-d '{
+	"model": "kimi-k3",
+	"max_tokens": 64,
+	"messages": [{"role": "user", "content": "ping"}]
+	}'
 
 # Same call with Bearer (OpenAI-style auth also accepted)
 curl https://api.oma-ai.com/v1/messages \\
- -H "Authorization: Bearer oma_sk_your_key_here" \\
- -H "anthropic-version: 2023-06-01" \\
- -H "Content-Type: application/json" \\
- -d '{"model":"kimi-k3","max_tokens":64,"messages":[{"role":"user","content":"ping"}]}'`}
+	-H "Authorization: Bearer oma_sk_your_key_here" \\
+	-H "anthropic-version: 2023-06-01" \\
+	-H "Content-Type: application/json" \\
+	-d '{"model":"kimi-k3","max_tokens":64,"messages":[{"role":"user","content":"ping"}]}'`}
 				/>
 				<p className="mt-3 text-xs text-text-muted">
 					Prefer one auth style consistently. Streaming: set{" "}
@@ -180,15 +180,15 @@ curl https://api.oma-ai.com/v1/messages \\
 					lang="json"
 					code={`// Example Continue config snippet (~/.continue/config.json)
 {
- "models": [
- {
- "title": "OMA ${model}",
- "provider": "openai",
- "model": "${model}",
- "apiBase": "${baseUrl}",
- "apiKey": "oma_sk_your_key_here"
- }
- ]
+	"models": [
+	{
+	"title": "OMA ${model}",
+	"provider": "openai",
+	"model": "${model}",
+	"apiBase": "${baseUrl}",
+	"apiKey": "oma_sk_your_key_here"
+	}
+	]
 }`}
 				/>
 			</div>
@@ -203,14 +203,14 @@ curl https://api.oma-ai.com/v1/messages \\
 					code={`from openai import OpenAI
 
 client = OpenAI(
- api_key="oma_sk_your_key_here",
- base_url="${baseUrl}",
+	api_key="oma_sk_your_key_here",
+	base_url="${baseUrl}",
 )
 
 r = client.chat.completions.create(
- model="${model}",
- messages=[{"role": "user", "content": "Hello from OMA"}],
- max_tokens=64,
+	model="${model}",
+	messages=[{"role": "user", "content": "Hello from OMA"}],
+	max_tokens=64,
 )
 print(r.choices[0].message.content)`}
 				/>

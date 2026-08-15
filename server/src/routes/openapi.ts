@@ -1,11 +1,11 @@
 /**
- * GET /openapi.json — minimal OpenAPI 3.1 spec for the public API.
- *
- * Hand-maintained (no zod-to-openapi codegen yet). The spec covers the
- * routes an SDK consumer needs to call: model catalog, chat completions,
- * balance, deposit, and the usage / keys lifecycle. Marked `infoOnly`
- * to remind callers this is documentation, not enforcement.
- */
+	* GET /openapi.json — minimal OpenAPI 3.1 spec for the public API.
+	*
+	* Hand-maintained (no zod-to-openapi codegen yet). The spec covers the
+	* routes an SDK consumer needs to call: model catalog, chat completions,
+	* balance, deposit, and the usage / keys lifecycle. Marked `infoOnly`
+	* to remind callers this is documentation, not enforcement.
+	*/
 import { Hono } from "hono";
 import type { OmaEnv } from "../types.js";
 import { config } from "../config.js";
@@ -224,7 +224,7 @@ const spec = {
 				summary: "Paginated per-request usage history (model, provider, token counts, cents)",
 				parameters: [
 					{ in: "query", name: "model", schema: { type: "string" } },
-					{ in: "query", name: "provider", schema: { type: "string", enum: ["venice", "oma-ai"] } },
+					{ in: "query", name: "provider", schema: { type: "string", enum: ["venice", "oma-ai", "litellm"] } },
 					{ in: "query", name: "since", schema: { type: "string", format: "date-time" } },
 					{ in: "query", name: "until", schema: { type: "string", format: "date-time" } },
 					{ in: "query", name: "limit", schema: { type: "integer", minimum: 1, maximum: 200, default: 50 } },

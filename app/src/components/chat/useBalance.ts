@@ -8,15 +8,15 @@ import { api, type BalanceResponse } from "@/lib/api";
 import { isAuthError } from "@/lib/api/client";
 
 /**
- * Live credit balance for the playground. Polls `/v1/balance` every 30 s via
- * React Query so the toolbar pill and the low-balance warning stay current
- * without hammering the API. Returns null when unauthenticated and surfaces
- * a `loading` flag for the first paint.
- *
- * On a 401 (expired session / signed-out wallet), surfaces a one-time toast
- * and clears the pill so the user knows to reconnect — previously the pill
- * silently disappeared which looked like a billing bug.
- */
+	* Live credit balance for the playground. Polls `/v1/balance` every 30 s via
+	* React Query so the toolbar pill and the low-balance warning stay current
+	* without hammering the API. Returns null when unauthenticated and surfaces
+	* a `loading` flag for the first paint.
+	*
+	* On a 401 (expired session / signed-out wallet), surfaces a one-time toast
+	* and clears the pill so the user knows to reconnect — previously the pill
+	* silently disappeared which looked like a billing bug.
+	*/
 export function useBalance(): {
 	balance: BalanceResponse | null;
 	loading: boolean;
@@ -76,8 +76,8 @@ export function balanceToDollars(b: BalanceResponse | null): number {
 }
 
 /** Format a dollar value as a compact string for the toolbar pill.
- *  Returns '—' for null/negative so the pill renders something visible
- *  instead of "0.00 cr" when the balance isn't known yet. */
+	*  Returns '—' for null/negative so the pill renders something visible
+	*  instead of "0.00 cr" when the balance isn't known yet. */
 export function formatCreditsShort(value: number | null | undefined): string {
 	if (value == null || !Number.isFinite(value) || value < 0) return "—";
 	const credits = Math.round(value * 100);

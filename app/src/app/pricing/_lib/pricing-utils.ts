@@ -14,7 +14,8 @@ export interface PricedModel {
 }
 
 const VENDOR_DISPLAY: Record<string, string> = {
-	Venice: "Venice",
+	venice: "Venice",
+	"oma-ai": "OMA-AI",
 };
 
 export function toPricedModel(model: Model): PricedModel {
@@ -30,10 +31,21 @@ export function toPricedModel(model: Model): PricedModel {
 	};
 }
 
+/**
+	* Format a USD-per-1M price for display. Rounds to the nearest $0.05
+	* so we never show awkward 4-decimal figures like $0.6125. Below the
+	* rounding floor we just show the floor so the table stays visually
+	* balanced.
+	*/
 export function fmtPrice(value: number): string {
-	if (value < 0.01) return "$0.01";
-	if (value < 1) return `$${value.toFixed(4)}`;
-	return `$${value.toFixed(2)}`;
+	if (value <= 0) return "Free";
+	if (value < 0.05) return "$0.05";
+	if (value < 1) {
+		const rounded = Math.ceil(value * 20) / 20;
+		return `$${rounded.toFixed(2)}`;
+	}
+	const rounded = Math.ceil(value * 20) / 20;
+	return `$${rounded.toFixed(2)}`;
 }
 
 export function prettyName(id: string): string {

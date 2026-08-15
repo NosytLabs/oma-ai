@@ -1,19 +1,19 @@
 "use client";
 
 /**
- * Reveal — scroll-triggered viewport entry animation.
- * Thin wrapper around framer-motion's `m.div` with our signature easing.
- *
- * Audit 2026-07-15 fix: the previous version set `initial: "hidden"` at
- * mount unconditionally, which made headless screenshots (Playwright
- * fullPage + social-card scrapers + print stylesheets + JS-disabled
- * crawlers) render every Reveal block as an empty black void because
- * IntersectionObserver never fired for offscreen elements during the
- * synchronous fullPage capture. The fix below renders plain HTML (full
- * opacity) until the IntersectionObserver has fired, then swaps to the
- * animated MotionTag. Functionally identical for human visitors; rescues
- * SEO + OG + print + audit-tool coverage.
- */
+	* Reveal — scroll-triggered viewport entry animation.
+	* Thin wrapper around framer-motion's `m.div` with our signature easing.
+	*
+	* Audit 2026-07-15 fix: the previous version set `initial: "hidden"` at
+	* mount unconditionally, which made headless screenshots (Playwright
+	* fullPage + social-card scrapers + print stylesheets + JS-disabled
+	* crawlers) render every Reveal block as an empty black void because
+	* IntersectionObserver never fired for offscreen elements during the
+	* synchronous fullPage capture. The fix below renders plain HTML (full
+	* opacity) until the IntersectionObserver has fired, then swaps to the
+	* animated MotionTag. Functionally identical for human visitors; rescues
+	* SEO + OG + print + audit-tool coverage.
+	*/
 
 import { m, useReducedMotion } from "@/lib/framer-motion-client";
 import type { Variants } from "@/lib/framer-motion-client";
@@ -54,11 +54,11 @@ export const childFadeUp: Variants = {
 };
 
 /**
- * useHasBeenInView — flips `true` once the page has been scrolled or
- * after the first paint, whichever the IntersectionObserver confirms. Until
- * then, the consumer renders plain HTML so SSR + crawlers + screenshots
- * always show real content.
- */
+	* useHasBeenInView — flips `true` once the page has been scrolled or
+	* after the first paint, whichever the IntersectionObserver confirms. Until
+	* then, the consumer renders plain HTML so SSR + crawlers + screenshots
+	* always show real content.
+	*/
 export function useHasBeenInView(): boolean {
 	const [seen, setSeen] = useState(false);
 	useEffect(() => {

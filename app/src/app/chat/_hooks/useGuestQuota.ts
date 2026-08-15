@@ -31,10 +31,10 @@ export interface UseGuestQuotaResult {
 }
 
 /**
- * Guest free-tier daily quota for website chat. Server is the source of
- * truth (X-DailyLimit-* headers + 429 body); localStorage is a soft cache
- * hydrated on load and refreshed from GET /v1/usage/today.
- */
+	* Guest free-tier daily quota for website chat. Server is the source of
+	* truth (X-DailyLimit-* headers + 429 body); localStorage is a soft cache
+	* hydrated on load and refreshed from GET /v1/usage/today.
+	*/
 export function useGuestQuota(opts: UseGuestQuotaOptions): UseGuestQuotaResult {
 	const [guestQuota, setGuestQuota] = useState<GuestQuota | null>(null);
 

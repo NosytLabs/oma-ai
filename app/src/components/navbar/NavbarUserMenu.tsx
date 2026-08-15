@@ -18,10 +18,10 @@ interface NavbarUserMenuProps {
 const shortAddress = (addr: string) => (addr ? formatAddress(addr) : "");
 
 /**
- * User dropdown — only rendered when a Better Auth session is active.
- * Shows the linked EVM address (if any), API keys / settings / credits
- * links, and a confirmation-gated sign-out.
- */
+	* User dropdown — only rendered when a Better Auth session is active.
+	* Shows the linked EVM address (if any), API keys / settings / credits
+	* links, and a confirmation-gated sign-out.
+	*/
 export function NavbarUserMenu({ evmAddress, onSignOut, isAdmin = false }: NavbarUserMenuProps) {
 	const containerRef = useRef<HTMLDivElement | null>(null);
 	const [open, setOpen] = useState(false);

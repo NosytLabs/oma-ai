@@ -3,15 +3,15 @@ import { withRateLimit } from "@/lib/rate-limit-middleware";
 import { generalLimiter } from "@/lib/rate-limiter";
 
 /**
- * JSON-RPC proxy for wagmi transports.
- *
- * Why: the QuickNode / dedicated RPC URL must never reach the browser,
- * otherwise the key leaks into the client bundle. This route forwards
- * JSON-RPC POSTs to the configured upstream and returns the response
- * verbatim. Auth-free, rate-limited, method-allowlisted, body-capped,
- * and chained to a known set of chain ids so it can't be repurposed
- * as an open proxy.
- */
+	* JSON-RPC proxy for wagmi transports.
+	*
+	* Why: the QuickNode / dedicated RPC URL must never reach the browser,
+	* otherwise the key leaks into the client bundle. This route forwards
+	* JSON-RPC POSTs to the configured upstream and returns the response
+	* verbatim. Auth-free, rate-limited, method-allowlisted, body-capped,
+	* and chained to a known set of chain ids so it can't be repurposed
+	* as an open proxy.
+	*/
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 

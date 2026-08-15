@@ -47,11 +47,11 @@ const ACCOUNT_LINKS: { href: string; label: string; icon: typeof Key }[] = [
 ];
 
 /**
- * Grouped card layout for the mobile navigation drawer. Owns its body-scroll
- * lock. Focus trap (Tab/Shift+Tab cycle, Escape close, focus restore on
- * close) is delegated to `useFocusTrap` with the toggle as the restore
- * target — identical to the original behavior.
- */
+	* Grouped card layout for the mobile navigation drawer. Owns its body-scroll
+	* lock. Focus trap (Tab/Shift+Tab cycle, Escape close, focus restore on
+	* close) is delegated to `useFocusTrap` with the toggle as the restore
+	* target — identical to the original behavior.
+	*/
 export function NavbarMobileMenu({
 	open,
 	onOpenChange,

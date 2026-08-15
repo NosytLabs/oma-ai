@@ -21,11 +21,11 @@ interface ModelStats {
 }
 
 /**
- * Internal accumulator used inside the aggregation loop. Tracks the running
- * latency sum (`avgLatency` doubles as a sum until we divide by `_latencyCount`
- * in the final map) plus the number of records that actually had a usable
- * latency reading. Strips `_latencyCount` before returning the public shape.
- */
+	* Internal accumulator used inside the aggregation loop. Tracks the running
+	* latency sum (`avgLatency` doubles as a sum until we divide by `_latencyCount`
+	* in the final map) plus the number of records that actually had a usable
+	* latency reading. Strips `_latencyCount` before returning the public shape.
+	*/
 interface ModelStatsAccumulator extends ModelStats {
 	_latencyCount: number;
 }

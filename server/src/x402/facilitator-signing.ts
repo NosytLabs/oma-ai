@@ -1,17 +1,17 @@
 /**
- * x402 receipt signing + USDC amount parsing.
- *
- * Extracted from `facilitator.ts` so the payment verification core
- * (verify/settle flows, cache state) stays focused on the hot path.
- * These helpers are pure or near-pure and safe to unit-test in isolation.
- */
+	* x402 receipt signing + USDC amount parsing.
+	*
+	* Extracted from `facilitator.ts` so the payment verification core
+	* (verify/settle flows, cache state) stays focused on the hot path.
+	* These helpers are pure or near-pure and safe to unit-test in isolation.
+	*/
 
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { config } from "../config.js";
 import {
-  USDC_DECIMALS,
-  USDC_MAX_ATOMIC,
-  RECEIPT_EXPIRY_SECONDS,
+		USDC_DECIMALS,
+		USDC_MAX_ATOMIC,
+		RECEIPT_EXPIRY_SECONDS,
 } from "../constants.js";
 
 const RECEIPT_VERSION = "1";

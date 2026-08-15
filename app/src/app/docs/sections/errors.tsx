@@ -3,25 +3,25 @@ import { AnimatedSection, CodeBlock, ERROR_CODES, SectionHeading } from "./share
 
 export function ErrorsSection() {
 	const errorFormatCode = `{
- "error": {
- "message": "Rate limit exceeded. Please slow down.",
- "type": "rate_limit_error",
- "code": "rate_limit_exceeded"
- }
+	"error": {
+	"message": "Rate limit exceeded. Please slow down.",
+	"type": "rate_limit_error",
+	"code": "rate_limit_exceeded"
+	}
 }`;
 
 	const retryCode = `import time
 from openai import OpenAI
 client = OpenAI(api_key="oma_sk_...", base_url="https://api.oma-ai.com/v1")
 for attempt in range(5):
- try:
- response = client.chat.completions.create(model="llama-3.3-70b", messages=[{"role": "user", "content": "Hi"}])
- break
- except Exception as e:
- if hasattr(e, 'status_code') and e.status_code == 429:
- time.sleep(2 ** attempt)
- else:
- raise`;
+	try:
+	response = client.chat.completions.create(model="llama-3.3-70b", messages=[{"role": "user", "content": "Hi"}])
+	break
+	except Exception as e:
+	if hasattr(e, 'status_code') and e.status_code == 429:
+	time.sleep(2 ** attempt)
+	else:
+	raise`;
 
 	return (
 		<AnimatedSection delay={600}>

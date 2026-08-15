@@ -15,6 +15,10 @@ allowBuilds:
 
 minimumReleaseAgeExclude:
   - '@base-org/account@2.5.7'
+  - '@csstools/color-helpers'
+  - '@csstools/css-color-parser'
+  - '@csstools/css-syntax-patches-for-csstree'
+  - 'jose'
 
 overrides:
   ws: '>=8.21.0'

@@ -79,9 +79,9 @@ export function formatContextRange(tokens: number): string {
 
 export function formatPriceRange(price: number): string {
 	if (!Number.isFinite(price) || price <= 0) return "$0.00";
-	if (price < 0.01) return `$${price.toFixed(4)}`;
-	if (price < 1) return `$${price.toFixed(3)}`;
-	return `$${price.toFixed(2)}`;
+	// Round UP to the nearest $0.05 to match standard catalog pricing.
+	const rounded = Math.ceil(price * 20) / 20;
+	return `$${rounded.toFixed(2)}`;
 }
 
 interface ModelGroup {

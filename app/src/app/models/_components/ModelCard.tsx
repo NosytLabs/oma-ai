@@ -46,16 +46,16 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 							</p>
 						</div>
 					</div>
-					<div className="flex flex-col items-end gap-1.5 shrink-0">
+					<div className="flex flex-col items-end gap-2 shrink-0">
 						{model.provider && (
 							<span
-								className={`px-2 py-0.5 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider border ${providerStyle.bg} ${providerStyle.text} ${providerStyle.border}`}
+								className={`px-2.5 py-1 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider border ${providerStyle.bg} ${providerStyle.text} ${providerStyle.border}`}
 							>
 								{model.provider}
 							</span>
 						)}
 						{model.modality && model.modality !== "chat" && (
-							<span className="px-2 py-0.5 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider border border-blue/30 bg-blue/10 text-blue">
+							<span className="px-2.5 py-1 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider border border-blue/30 bg-blue/10 text-blue">
 								{MODALITY_LABELS[model.modality]}
 							</span>
 						)}
@@ -63,85 +63,85 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 				</div>
 
 				<div className="mt-4 flex flex-wrap gap-2">
-					<div className="flex flex-wrap gap-1.5">
+					<div className="flex flex-wrap gap-2">
 						{inModalities.includes("text") && (
 							<span
 								title="Text input"
-								className="px-2 py-0.5 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-surface text-text-secondary border border-border"
+								className="px-2.5 py-1 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-surface text-text-secondary border border-border"
 							>
-								T IN
+								Text
 							</span>
 						)}
 						{inModalities.includes("image") && (
 							<span
 								title="Image input"
-								className="px-2 py-0.5 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-surface text-text-secondary border border-border"
+								className="px-2.5 py-1 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-surface text-text-secondary border border-border"
 							>
-								I IN
+								Image
 							</span>
 						)}
 						{inModalities.includes("audio") && (
 							<span
 								title="Audio input"
-								className="px-2 py-0.5 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-surface text-text-secondary border border-border"
+								className="px-2.5 py-1 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-surface text-text-secondary border border-border"
 							>
-								A IN
+								Audio
 							</span>
 						)}
 						{inModalities.includes("video") && (
 							<span
 								title="Video input"
-								className="px-2 py-0.5 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-surface text-text-secondary border border-border"
+								className="px-2.5 py-1 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-surface text-text-secondary border border-border"
 							>
-								V IN
+								Video
 							</span>
 						)}
 						{outModalities.includes("image") && (
 							<span
 								title="Image output"
-								className="px-2 py-0.5 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-blue/10 text-blue border border-blue/30"
+								className="px-2.5 py-1 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-blue/10 text-blue border border-blue/30"
 							>
-								IMAGE
+								Image
 							</span>
 						)}
 						{outModalities.includes("audio") && (
 							<span
 								title="Audio output"
-								className="px-2 py-0.5 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-violet/10 text-violet border border-violet/30"
+								className="px-2.5 py-1 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-violet/10 text-violet border border-violet/30"
 							>
-								AUDIO
+								Audio
 							</span>
 						)}
 						{outModalities.includes("video") && (
 							<span
 								title="Video output"
-								className="px-2 py-0.5 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-amber/10 text-amber border border-amber/30"
+								className="px-2.5 py-1 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-amber/10 text-amber border border-amber/30"
 							>
-								VIDEO
+								Video
 							</span>
 						)}
 						{outModalities.includes("embeddings") && (
 							<span
 								title="Embeddings output"
-								className="px-2 py-0.5 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-tertiary/10 text-tertiary border border-tertiary/30"
+								className="px-2.5 py-1 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-tertiary/10 text-tertiary border border-tertiary/30"
 							>
-								EMBED
+								Embed
 							</span>
 						)}
 					</div>
 
-					<div className="flex flex-wrap gap-1.5">
+					<div className="flex flex-wrap gap-2">
 						{model.capabilities.slice(0, 3).map((cap) => (
 							<span
 								key={String(cap)}
-								className="px-2 py-0.5 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-surface text-text-secondary border border-border"
+								className="px-2.5 py-1 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-surface text-text-secondary border border-border"
 							>
 								{cap}
 							</span>
 						))}
 						{model.capabilities.length > 3 && (
 							<span
-								className="px-2 py-0.5 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider text-text-muted cursor-help border border-transparent"
+								className="px-2.5 py-1 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider text-text-muted cursor-help border border-transparent"
 								title={`Additional capabilities: ${model.capabilities
 									.slice(3)
 									.join(", ")}`}

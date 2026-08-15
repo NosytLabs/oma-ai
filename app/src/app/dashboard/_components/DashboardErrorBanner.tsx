@@ -4,10 +4,10 @@ import { useState } from "react";
 import { RefreshCw, WifiOff } from "lucide-react";
 
 /**
- * Inline error banner for the dashboard. Classifies the message into
- * backend-unavailable / suspended / payment-required / quota / generic,
- * and offers Retry (backend down) or Dismiss actions.
- */
+	* Inline error banner for the dashboard. Classifies the message into
+	* backend-unavailable / suspended / payment-required / quota / generic,
+	* and offers Retry (backend down) or Dismiss actions.
+	*/
 export function DashboardErrorBanner({
 	error,
 	backendUnavailable,

@@ -21,7 +21,7 @@ interface QuickAction {
 }
 
 /** Common next steps after sign-in. Image/video generation was removed
- *  in R8 — the playground is text + multimodal LLM only. */
+	*  in R8 — the playground is text + multimodal LLM only. */
 const ACTIONS: QuickAction[] = [
 	{
 		href: "/chat",
@@ -55,9 +55,9 @@ interface QuickActionsProps {
 }
 
 /**
- * Compact "what can I do next" row for the dashboard overview. Reduces the
- * "I have an account, now what?" gap between sign-in and first request.
- */
+	* Compact "what can I do next" row for the dashboard overview. Reduces the
+	* "I have an account, now what?" gap between sign-in and first request.
+	*/
 export function QuickActions({ className = "" }: QuickActionsProps) {
 	return (
 		<div className={`mb-8 bg-surface/30 border border-border rounded-[var(--radius-lg)] shadow-[var(--shadow-md)] relative overflow-hidden transition-colors duration-200 ease-out hover:border-accent/40 ${className}`}>

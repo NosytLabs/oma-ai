@@ -1,17 +1,17 @@
 "use client";
 
 /**
- * Kinetics spring curves — copy-pasted from kinetics.colorion.co and
- * tuned for OMA's UI. Two-number springs (stiffness/damping) instead
- * of fixed-duration easings so they integrate from interrupted
- * positions without snapping.
- *
- * Use these in framer-motion's `transition` block:
- *   <motion.div transition={spring("card")} />
- *
- * `MotionConfig reducedMotion="user"` in motion-provider.tsx already
- * no-ops these for users with prefers-reduced-motion: reduce.
- */
+	* Kinetics spring curves — copy-pasted from kinetics.colorion.co and
+	* tuned for OMA's UI. Two-number springs (stiffness/damping) instead
+	* of fixed-duration easings so they integrate from interrupted
+	* positions without snapping.
+	*
+	* Use these in framer-motion's `transition` block:
+	*   <motion.div transition={spring("card")} />
+	*
+	* `MotionConfig reducedMotion="user"` in motion-provider.tsx already
+	* no-ops these for users with prefers-reduced-motion: reduce.
+	*/
 export type SpringName = "card" | "counter" | "tab" | "toast" | "magnet" | "soft";
 
 export const springs: Record<SpringName, { type: "spring"; stiffness: number; damping: number; mass?: number }> = {

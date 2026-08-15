@@ -1,9 +1,9 @@
 /**
- * Health namespace: backend readiness probe (DB + Redis + dependency checks).
- *
- * Hits `GET /ready` for the rich dependency check map and `/health` for
- * the simple liveness ping.
- */
+	* Health namespace: backend readiness probe (DB + Redis + dependency checks).
+	*
+	* Hits `GET /ready` for the rich dependency check map and `/health` for
+	* the simple liveness ping.
+	*/
 
 import { request } from "./client.js";
 import type { HealthResponse } from "./types.js";

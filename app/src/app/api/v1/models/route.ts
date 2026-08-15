@@ -6,13 +6,13 @@ import { generalLimiter } from "@/lib/rate-limiter";
 export const runtime = "nodejs";
 
 /**
- * /api/v1/models — proxies GET to backend /v1/models.
- *
- * Returns the full model catalog (chat + video) as an OpenAI-compatible
- * `{"object": "list", "data": [...]}` payload. Linked from the docs
- * `/api/v1/models` (ModelsSection.tsx). Cache-Control from the backend
- * is preserved so we don't re-proxy on every page load.
- */
+	* /api/v1/models — proxies GET to backend /v1/models.
+	*
+	* Returns the full model catalog (chat + video) as an OpenAI-compatible
+	* `{"object": "list", "data": [...]}` payload. Linked from the docs
+	* `/api/v1/models` (ModelsSection.tsx). Cache-Control from the backend
+	* is preserved so we don't re-proxy on every page load.
+	*/
 export const dynamic = "force-dynamic";
 
 export const GET = withRateLimit(

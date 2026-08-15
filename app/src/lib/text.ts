@@ -1,11 +1,11 @@
 /**
- * Token estimate for client-side cost previews.
- *
- * Mirrors the server-side heuristic in `server/src/inference/token-utils.ts`
- * — words × 1.33 + punctuation × 0.5. Roughly 10–15% drift vs. tiktoken,
- * vs. ~30% for the naive `length/4` (current upstream-reported usage is
- * preferred when available).
- */
+	* Token estimate for client-side cost previews.
+	*
+	* Mirrors the server-side heuristic in `server/src/inference/token-utils.ts`
+	* — words × 1.33 + punctuation × 0.5. Roughly 10–15% drift vs. tiktoken,
+	* vs. ~30% for the naive `length/4` (current upstream-reported usage is
+	* preferred when available).
+	*/
 export function estimateTokens(text: string): number {
 	if (!text) return 0;
 	const wordCount = (text.match(/\S+/g) ?? []).length;

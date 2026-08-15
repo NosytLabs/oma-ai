@@ -1,9 +1,9 @@
 /**
- * Database client.
- *
- * - Neon cloud (`*.neon.tech`): HTTP driver via `@neondatabase/serverless`.
- * - Local / self-hosted Postgres: TCP via `pg` + `drizzle-orm/node-postgres`.
- */
+	* Database client.
+	*
+	* - Neon cloud (`*.neon.tech`): HTTP driver via `@neondatabase/serverless`.
+	* - Local / self-hosted Postgres: TCP via `pg` + `drizzle-orm/node-postgres`.
+	*/
 
 import { neon } from "@neondatabase/serverless";
 import { drizzle as drizzleNeon } from "drizzle-orm/neon-http";
@@ -14,7 +14,7 @@ import { config } from "../config.js";
 import { logger } from "../lib/logger.js";
 
 /** Canonical app DB type. Neon HTTP is API-compatible at runtime; we cast
- *  so call sites keep full `returning()` / query typing without union collapse. */
+	*  so call sites keep full `returning()` / query typing without union collapse. */
 export type AppDb = NodePgDatabase<typeof schema>;
 
 let _db: AppDb | null = null;

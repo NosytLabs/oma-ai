@@ -1,7 +1,7 @@
 /**
- * Shared API response types for the oma-ai frontend.
- * Mirrors the shapes returned by the Hono backend in `server/src/routes/`.
- */
+	* Shared API response types for the oma-ai frontend.
+	* Mirrors the shapes returned by the Hono backend in `server/src/routes/`.
+	*/
 
 // ─── Auth ──────────────────────────────────────────────────────────────────────
 
@@ -82,10 +82,10 @@ export interface BalanceResponse {
 }
 
 /**
- * One row from GET /v1/usage/recent.
- * Token counts are numbers; all cents fields are decimal strings (may be
- * sub-cent, e.g. "0.03"). `latencyMs` is null for in-flight/failed requests.
- */
+	* One row from GET /v1/usage/recent.
+	* Token counts are numbers; all cents fields are decimal strings (may be
+	* sub-cent, e.g. "0.03"). `latencyMs` is null for in-flight/failed requests.
+	*/
 export interface UsageRecord {
 	id: string;
 	requestId: string;

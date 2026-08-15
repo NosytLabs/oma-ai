@@ -1,16 +1,16 @@
 /**
- * Unit tests for `facilitator-signing.ts` (x402 receipt signing + USDC parsing).
- *
- * Covers the pure helpers extracted from `facilitator.ts` so the payment
- * verification core stays focused on the hot path. These were previously
- * private functions tested only indirectly; now that they're exported
- * we test them directly.
- *
- * `parseUsdcAtomic` already has extensive coverage in
- * `audit-2026-06-25.test.ts` (the AUDIT-1 regression suite) — the small
- * smoke test here documents the public-surface re-export from
- * `facilitator.ts` and ensures the new module stays in sync.
- */
+	* Unit tests for `facilitator-signing.ts` (x402 receipt signing + USDC parsing).
+	*
+	* Covers the pure helpers extracted from `facilitator.ts` so the payment
+	* verification core stays focused on the hot path. These were previously
+	* private functions tested only indirectly; now that they're exported
+	* we test them directly.
+	*
+	* `parseUsdcAtomic` already has extensive coverage in
+	* `audit-2026-06-25.test.ts` (the AUDIT-1 regression suite) — the small
+	* smoke test here documents the public-surface re-export from
+	* `facilitator.ts` and ensures the new module stays in sync.
+	*/
 import { createHmac } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 

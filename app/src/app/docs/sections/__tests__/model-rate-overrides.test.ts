@@ -4,10 +4,10 @@ import { resolve } from "node:path";
 import { MODEL_RATE_OVERRIDES } from "../shared";
 
 /**
- * Docs rate-limit table must match server MODEL_LIMITS
- * (server/src/middleware/rate-limit/utils.ts). Parses the server source so
- * this fails if either side drifts.
- */
+	* Docs rate-limit table must match server MODEL_LIMITS
+	* (server/src/middleware/rate-limit/utils.ts). Parses the server source so
+	* this fails if either side drifts.
+	*/
 function parseServerModelLimits(): Record<string, { rpm: number; tpm: number }> {
 	const utilsPath = resolve(
 		process.cwd(),

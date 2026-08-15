@@ -113,18 +113,18 @@ export const ENDPOINTS: EndpointInfo[] = [
 			response_format: 'object (optional), e.g. { type: "json_object" }',
 		},
 		response: `{
- "id": "chatcmpl-9f3k2a",
- "object": "chat.completion",
- "created": 1717194000,
- "model": "llama-3.3-70b",
- "choices": [
- {
- "index": 0,
- "message": { "role": "assistant", "content": "Hello. How can I help today?" },
- "finish_reason": "stop"
- }
- ],
- "usage": { "prompt_tokens": 18, "completion_tokens": 12, "total_tokens": 30 }
+	"id": "chatcmpl-9f3k2a",
+	"object": "chat.completion",
+	"created": 1717194000,
+	"model": "llama-3.3-70b",
+	"choices": [
+	{
+	"index": 0,
+	"message": { "role": "assistant", "content": "Hello. How can I help today?" },
+	"finish_reason": "stop"
+	}
+	],
+	"usage": { "prompt_tokens": 18, "completion_tokens": 12, "total_tokens": 30 }
 }`,
 	},
 	{
@@ -143,13 +143,13 @@ export const ENDPOINTS: EndpointInfo[] = [
 			temperature: "number (optional)",
 		},
 		response: `{
- "id": "msg_…",
- "type": "message",
- "role": "assistant",
- "content": [{ "type": "text", "text": "Hello." }],
- "model": "kimi-k3",
- "stop_reason": "end_turn",
- "usage": { "input_tokens": 12, "output_tokens": 8 }
+	"id": "msg_…",
+	"type": "message",
+	"role": "assistant",
+	"content": [{ "type": "text", "text": "Hello." }],
+	"model": "kimi-k3",
+	"stop_reason": "end_turn",
+	"usage": { "input_tokens": 12, "output_tokens": 8 }
 }`,
 	},
 	{
@@ -162,11 +162,11 @@ export const ENDPOINTS: EndpointInfo[] = [
 		params: [{ name: "query", type: "string", desc: "Search query (1–500 chars, required)" }],
 		body: undefined,
 		response: `{
- "query": "open model access",
- "provider": "duckduckgo",
- "results": [
- { "title": "…", "url": "https://…", "snippet": "…", "site_name": "…" }
- ]
+	"query": "open model access",
+	"provider": "duckduckgo",
+	"results": [
+	{ "title": "…", "url": "https://…", "snippet": "…", "site_name": "…" }
+	]
 }`,
 	},
 	{
@@ -174,32 +174,33 @@ export const ENDPOINTS: EndpointInfo[] = [
 		path: "/v1/models",
 		anchor: "ep-models",
 		title: "List Models",
-		desc: "Returns every model currently routable: text, image, video. No auth required. Cached for 1h.",
+		desc: "Returns every model currently routable (chat completions). No auth required. Cached for 1h.",
 		auth: "None",
 		response: `{
- "object": "list",
- "data": [
- {
- "id": "llama-3.3-70b",
- "object": "model",
- "created": 1717194000,
- "owned_by": "oma",
- "permission": [],
- "root": "llama-3.3-70b",
- "parent": null,
- "pricing": { "prompt": "0.00000006", "completion": "0.00000012" },
- "category": "chat",
- "context_length": 8192
- },
- {
- "id": "flux-schnell",
- "object": "model",
- "created": 1717194000,
- "owned_by": "oma",
- "pricing": { "prompt": "0.00001000" },
- "category": "image"
- }
- ]
+	"object": "list",
+	"data": [
+	{
+	"id": "llama-3.3-70b",
+	"object": "model",
+	"created": 1717194000,
+	"owned_by": "oma",
+	"permission": [],
+	"root": "llama-3.3-70b",
+	"parent": null,
+	"pricing": { "prompt": "0.00000150", "completion": "0.00000550" },
+	"category": "chat",
+	"context_length": 8192
+	},
+	{
+	"id": "deepseek-v4-flash-0731-openbroker",
+	"object": "model",
+	"created": 1717194000,
+	"owned_by": "gonka",
+	"pricing": { "prompt": "0.00000000", "completion": "0.00000000" },
+	"category": "budget",
+	"context_length": 262144
+	}
+	]
 }`,
 	},
 	{
@@ -210,78 +211,17 @@ export const ENDPOINTS: EndpointInfo[] = [
 		desc: "Returns pricing, capabilities, and provider metadata for a single model. No auth required.",
 		auth: "None",
 		response: `{			"id": "llama-3.3-70b",
- "object": "model",
- "created": 1717194000,
- "owned_by": "venice",
- "display_name": "Llama 3.3 70B",
- "provider": "venice",
- "category": "mid",
- "context_length": 128000,
- "supports_streaming": true,
- "supports_tools": true,
- "pricing": { "prompt": 0.7, "completion": 2.8 }
+	"object": "model",
+	"created": 1717194000,
+	"owned_by": "venice",
+	"display_name": "Llama 3.3 70B",
+	"provider": "venice",
+	"category": "mid",
+	"context_length": 128000,
+	"supports_streaming": true,
+	"supports_tools": true,
+	"pricing": { "prompt": "1.50", "completion": "5.50" }
 }`,
-	},
-	{
-		method: "POST",
-		path: "/v1/images/generations",
-		anchor: "ep-images",
-		title: "Image Generation",
-		desc: "Text-to-image via Venice image models (FLUX, GPT Image, Ideogram, Recraft, Qwen Image, Wan, Hunyuan, Seedream, Luma, Nano Banana, Krea, Chroma, Z-Image — listed in /v1/models). Pricing is per-image; markup is applied on top of wholesale.",
-		auth: "Bearer token (API key) or PAYMENT-SIGNATURE (x402)",
-		body: {
-			model: 'string (required), e.g. "flux-2-pro" (see GET /v1/models for all image models)',
-			prompt: "string (required), max 4000 chars",
-			n: "integer 1 to 10 (optional, default 1)",
-			size: 'string (optional), e.g. "1024x1024"',
-		},
-		response: `{
- "created": 1717194000,
- "data": [
- {
- "url": "https://files.oma-ai.com/img_4f3k2a.png",
- "revised_prompt": "A cat wearing a small felt hat, soft window light, 35mm"
- }
- ]
-}`,
-	},
-	{
-		method: "POST",
-		path: "/v1/videos/generations",
-		anchor: "ep-video",
-		title: "Video Generation",
-		desc: "Text-to-video via Venice video models. Returns a queue id. Poll /v1/videos/retrieve.",
-		auth: "Bearer token (API key) or PAYMENT-SIGNATURE (x402)",
-		body: {
-			model: 'string (required), e.g. "kling-v3-pro-text-to-video"',
-			prompt: "string (required), max 4000 chars",
-			duration: 'string (optional), e.g. "5s", "10s"',
-			aspect_ratio: 'string (optional), e.g. "16:9", "9:16"',
-			resolution: 'string (optional), e.g. "720p", "1080p"',
-			image_url: "string URL (optional). Source image for image-to-video",
-		},
-		response: `{
- "id": "vid_abc123",
- "object": "video",
- "status": "processing",
- "queue_id": "abc123"
-}`,
-	},
-	{
-		method: "GET",
-		path: "/v1/videos/retrieve",
-		anchor: "ep-video-retrieve",
-		title: "Video Retrieve",
-		desc: "Polls the status of a video generation job by queue_id.",
-		auth: "Bearer token (API key)",
-		body: undefined,
-		response: `// 200 OK
-// {
-// "id": "vid_abc123",
-// "object": "video",
-// "status": "completed", // "processing" | "completed"
-// "video_url": "https://files.oma-ai.com/vid_abc123.mp4"
-// }`,
 	},
 	{
 		method: "GET",
@@ -292,8 +232,8 @@ export const ENDPOINTS: EndpointInfo[] = [
 		auth: "Session cookie (set by magic-link or SIWE sign-in)",
 		body: undefined,
 		response: `{
- "user": { "id": "usr_…", "email": "…" },
- "session": { "expiresAt": "…" }
+	"user": { "id": "usr_…", "email": "…" },
+	"session": { "expiresAt": "…" }
 }`,
 	},
 	{
@@ -310,7 +250,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 			chainId: "number (required). 8453 for Base mainnet",
 		},
 		response: `{
- "user": { "id": "usr_…", "walletAddress": "0x…" }
+	"user": { "id": "usr_…", "walletAddress": "0x…" }
 }`,
 	},
 	{
@@ -332,9 +272,9 @@ export const ENDPOINTS: EndpointInfo[] = [
 		auth: "Bearer token (API key)",
 		body: undefined,
 		response: `{
- "balanceCents": "1234.50",
- "totalDepositedCents": "10000.00",
- "totalUsedCents": "8765.50"
+	"balanceCents": "1234.50",
+	"totalDepositedCents": "10000.00",
+	"totalUsedCents": "8765.50"
 }`,
 	},
 	{
@@ -346,13 +286,13 @@ export const ENDPOINTS: EndpointInfo[] = [
 		auth: "Bearer token (API key)",
 		body: undefined,
 		response: `{
- "depositAddress": "0x8335…",
- "network": "base",
- "chainId": 8453,
- "usdcContract": "0x833589…",
- "minDepositCents": 100,
- "maxDepositCents": 1000000,
- "creditsPerCent": 1
+	"depositAddress": "0x8335…",
+	"network": "base",
+	"chainId": 8453,
+	"usdcContract": "0x833589…",
+	"minDepositCents": 100,
+	"maxDepositCents": 1000000,
+	"creditsPerCent": 1
 }`,
 	},
 	{
@@ -377,10 +317,10 @@ export const ENDPOINTS: EndpointInfo[] = [
 		auth: "Bearer token (API key) — anonymous allowed",
 		body: undefined,
 		response: `{
- "used": 12,
- "limit": 20,
- "remaining": 8,
- "resetMs": 12345678
+	"used": 12,
+	"limit": 20,
+	"remaining": 8,
+	"resetMs": 12345678
 }`,
 	},
 	{
@@ -388,7 +328,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 		path: "/v1/usage",
 		anchor: "ep-usage",
 		title: "Usage History",
-		desc: "Paginated usage records for your dashboard. Every chat/image/video request becomes a row with model, tokens, costCents, and status.",
+		desc: "Paginated usage records for your dashboard. Every chat request becomes a row with model, tokens, costCents, and status.",
 		auth: "Bearer token (API key)",
 		body: undefined,
 		params: [
@@ -398,10 +338,10 @@ export const ENDPOINTS: EndpointInfo[] = [
 			{ name: "cursor", type: "string", desc: "Opaque pagination cursor" },
 		],
 		response: `{
- "object": "list",
- "data": [{ "id": "…", "model": "…", "totalCents": "…" }],
- "next_cursor": "2026-08-03T…|…",
- "totals": { "requests": 42, "totalCents": "12.34" }
+	"object": "list",
+	"data": [{ "id": "…", "model": "…", "totalCents": "…" }],
+	"next_cursor": "2026-08-03T…|…",
+	"totals": { "requests": 42, "totalCents": "12.34" }
 }`,
 	},
 	{
@@ -473,9 +413,10 @@ export const QUICK_START_STEPS = [
 /* ==================== HELPERS ==================== */
 
 export function fmt(n: number): string {
-	if (n === 0) return "$0.00";
-	if (n < 0.01) return "$0.01";
-	return `$${n.toFixed(2)}`;
+	if (n <= 0) return "$0.00";
+	// Round UP to the nearest $0.05 — standardized billing increments.
+	const rounded = Math.ceil(n * 20) / 20;
+	return `$${rounded.toFixed(2)}`;
 }
 
 function CopyButton({ text, id }: { text: string; id: string }) {

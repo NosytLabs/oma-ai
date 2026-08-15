@@ -9,7 +9,7 @@ export const SERVER_TREASURY = (config.TREASURY_BASE_ADDRESS || "").toLowerCase(
 // facilitator cannot verify payee pinning. Refuse to verify payments rather
 // than silently accepting payments to any address.
 if (!SERVER_TREASURY && config.FACILITATOR_MODE === "live") {
-  throw new Error("[FACILITATOR] FATAL: SERVER_TREASURY is empty in live mode. Set TREASURY_BASE_ADDRESS before starting.");
+		throw new Error("[FACILITATOR] FATAL: SERVER_TREASURY is empty in live mode. Set TREASURY_BASE_ADDRESS before starting.");
 } else if (!SERVER_TREASURY) {
-  logger.warn("[FACILITATOR] SERVER_TREASURY is empty in mock mode — payee validation disabled. This is NOT safe for production.");
+		logger.warn("[FACILITATOR] SERVER_TREASURY is empty in mock mode — payee validation disabled. This is NOT safe for production.");
 }

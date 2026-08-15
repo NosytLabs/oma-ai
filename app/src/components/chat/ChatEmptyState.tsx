@@ -113,7 +113,7 @@ export function ChatEmptyState({ onPreset, currentModel }: EmptyStateProps) {
 				className="mb-8 mt-4 flex h-[60px] w-[60px] items-center justify-center rounded-[var(--radius-xl)] border border-[var(--color-accent)]/30 bg-[color-mix(in_srgb,var(--color-accent)_12%,var(--color-surface))] shadow-[0_0_30px_-5px_var(--color-accent-glow)]"
 			>
 				<span className="text-[22px] font-mono font-bold text-[var(--color-accent)]" aria-hidden="true">
-					{">"}_
+					{">"}
 				</span>
 			</m.div>
 

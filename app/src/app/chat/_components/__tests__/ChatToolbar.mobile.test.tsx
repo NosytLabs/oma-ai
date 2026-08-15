@@ -1,11 +1,11 @@
 /**
- * Ensures the playground toolbar renders exactly one COMPARE control.
- * The web-search toggle moved into the composer (MessageInputRedesign),
- * so it no longer lives in the toolbar.
- *
- * The Create / image-video tab was removed in R8 — chat surface is
- * text + multimodal LLM only.
- */
+	* Ensures the playground toolbar renders exactly one COMPARE control.
+	* The web-search toggle moved into the composer (MessageInputRedesign),
+	* so it no longer lives in the toolbar.
+	*
+	* The Create / image-video tab was removed in R8 — chat surface is
+	* text + multimodal LLM only.
+	*/
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ChatToolbar } from "../ChatToolbar";

@@ -14,18 +14,18 @@ interface UseDashboardKeyboardOptions {
 }
 
 /**
- * Dashboard-wide keyboard shortcuts.
- *
- *   R         — refresh dashboard
- *   1 / 2 / 3 / 4 — switch to Overview / Usage / API keys / Health
- *   ArrowLeft / ArrowRight (Usage tab only) — paginate recent-requests
- *
- * Ignored while focus is in an input/textarea/select/contenteditable, and
- * when any modifier key is held (leaves Cmd+R etc. to the browser).
- *
- * `onRefresh` is captured via ref so the effect doesn't rebind every time
- * the caller re-creates the callback — same trick the inline handler used.
- */
+	* Dashboard-wide keyboard shortcuts.
+	*
+	*   R         — refresh dashboard
+	*   1 / 2 / 3 / 4 — switch to Overview / Usage / API keys / Health
+	*   ArrowLeft / ArrowRight (Usage tab only) — paginate recent-requests
+	*
+	* Ignored while focus is in an input/textarea/select/contenteditable, and
+	* when any modifier key is held (leaves Cmd+R etc. to the browser).
+	*
+	* `onRefresh` is captured via ref so the effect doesn't rebind every time
+	* the caller re-creates the callback — same trick the inline handler used.
+	*/
 export function useDashboardKeyboard({
 	setActiveTab,
 	setPage,

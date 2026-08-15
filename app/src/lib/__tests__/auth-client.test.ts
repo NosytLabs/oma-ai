@@ -1,7 +1,7 @@
 /**
- * Structural tests for Better Auth browser client wiring + login redirect guard.
- * Proves shipped exports without network I/O.
- */
+	* Structural tests for Better Auth browser client wiring + login redirect guard.
+	* Proves shipped exports without network I/O.
+	*/
 import { describe, expect, it } from "vitest";
 import { authClient, signIn, signOut, useSession } from "@/lib/auth-client";
 import { safeLoginNext } from "@/app/login/page";

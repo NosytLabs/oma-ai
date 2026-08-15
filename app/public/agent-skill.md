@@ -20,13 +20,18 @@
   (`createSurface` / `updateComponents` / `updateDataModel`) so the
   playground renders interactive cards and forms in-stream. See
   https://a2ui.org/specification/v0_9_1/.
+- Image and video generation endpoints (`/v1/images/generations`,
+  `/v1/videos/generations`) are intentionally **not** part of OMA's
+  current surface — only chat completions and Anthropic-compatible messages
+  are served. The chat UI accepts image inputs for vision-capable models.
 
 ## What is OMA?
 
 OMA (Open Model Access) is an OpenAI-compatible AI inference gateway:
 - **Base URL:** `https://api.oma-ai.com/v1`
 - **One API for 26 curated models** (18 Venice + 8 OMA-AI)
-  across chat completions, image generation, and video generation
+  across chat completions (text + multimodal input). Image and video
+  generation are not part of the current catalog — only chat LLMs.
 - **Pay your way:**
   1. **API key + credits** — sign in, create a key (`oma_sk_...`), buy credits
      with a card (Visa/Mastercard/Apple Pay via Polar) or USDC deposit,
@@ -68,10 +73,9 @@ OMA (Open Model Access) is an OpenAI-compatible AI inference gateway:
 ## Costs (ballpark)
 
 - Budget chat models from ~$0.015–$0.10 per 1M tokens (1 credit = $0.01).
-- Premium models higher; images billed $0.10 per image, video $0.92 per
-  generation.
-- Always check `/v1/models` for live per-model pricing before committing to a
-  long task, and prefer cheap models for bulk/mechanical work.
+- Premium and frontier models are higher per 1M; check `/v1/models` for the
+  exact price before committing to a long task, and prefer budget models for
+  bulk/mechanical work.
 
 ## Pointing tools at OMA
 

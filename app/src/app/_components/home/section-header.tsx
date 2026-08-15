@@ -2,10 +2,10 @@ import { cn } from "@/components/ui/utils";
 import type { ReactNode } from "react";
 
 /**
- * SectionHeader — shared headline / subhead block used across sections.
- * Convention: max 1 eyebrow per 3 sections, headline + optional subhead.
- * `align` defaults to left; use "center" for narrow banner sections.
- */
+	* SectionHeader — shared headline / subhead block used across sections.
+	* Convention: max 1 eyebrow per 3 sections, headline + optional subhead.
+	* `align` defaults to left; use "center" for narrow banner sections.
+	*/
 
 export interface SectionHeaderProps {
 	eyebrow?: string;

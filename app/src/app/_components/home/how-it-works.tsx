@@ -1,16 +1,16 @@
 "use client";
 
 /**
- * HowItWorks — section 4 of the homepage.
- * 3-step horizontal process (vertical stack on mobile).
- * Numbered indicators use mono tabular numerals.
- */
+	* HowItWorks — section 4 of the homepage.
+	* 3-step horizontal process (vertical stack on mobile).
+	* Numbered indicators use mono tabular numerals.
+	*/
 
 import { Key, Rocket, Wallet, Terminal } from "lucide-react";
 import {
- Reveal,
- RevealStagger,
- childFadeUp,
+	Reveal,
+	RevealStagger,
+	childFadeUp,
 } from "@/app/_components/home/reveal";
 import { SectionHeader } from "@/app/_components/home/section-header";
 import { cn } from "@/components/ui/utils";
@@ -19,115 +19,115 @@ import { springs } from "@/lib/animation";
 import type { LucideIcon } from "lucide-react";
 
 interface Step {
- n: string;
- title: string;
- description: string;
- icon: LucideIcon;
+	n: string;
+	title: string;
+	description: string;
+	icon: LucideIcon;
 }
 
 const STEPS: Step[] = [
- {
- n: "01",
- title: "Create your account",
- description:
- "Use a passwordless email link or sign in with an EVM wallet via SIWE. No password to remember.",
- icon: Wallet,
- },
- {
- n: "02",
- title: "Get your API key",
- description:
- "One key works across every model and provider. Rotate, scope, and revoke from your dashboard at any time.",
- icon: Key,
- },
- {
- n: "03",
- title: "Fund credits or use x402",
- description:
- "Buy credits by card through Polar, deposit USDC on Base, or let an agent settle each request with x402.",
- icon: Rocket,
- },
- {
- n: "04",
- title: "Add MCP Agent Tools",
- description:
- "Extend your agents with Model Context Protocol. Provide custom tools directly in your workspace.",
- icon: Terminal,
- },
+	{
+	n: "01",
+	title: "Create your account",
+	description:
+	"Use a passwordless email link or sign in with an EVM wallet via SIWE. No password to remember.",
+	icon: Wallet,
+	},
+	{
+	n: "02",
+	title: "Get your API key",
+	description:
+	"One key works across every model and provider. Rotate, scope, and revoke from your dashboard at any time.",
+	icon: Key,
+	},
+	{
+	n: "03",
+	title: "Fund credits or use x402",
+	description:
+	"Buy credits by card through Polar, deposit USDC on Base, or let an agent settle each request with x402.",
+	icon: Rocket,
+	},
+	{
+	n: "04",
+	title: "Add MCP Agent Tools",
+	description:
+	"Extend your agents with Model Context Protocol. Provide custom tools directly in your workspace.",
+	icon: Terminal,
+	},
 ];
 
 export function HowItWorks() {
- return (
- <section
- aria-labelledby="how-it-works-headline"
- className="relative border-t border-border-subtle bg-surface py-16 sm:py-20"
- >
- <div className="container-page">
- <Reveal>
- <SectionHeader
- id="how-it-works-headline"
- headline={
- <>
- Four steps
- <br />
- <span className="gradient-text-accent">to first request.</span>
- </>
- }
- subhead="Sign in, create a key, fund credits (or use x402), and setup MCP. Point your OpenAI SDK at OMA and call."
- />
- </Reveal>
+	return (
+	<section
+	aria-labelledby="how-it-works-headline"
+	className="relative border-t border-border-subtle bg-surface py-16 sm:py-20"
+	>
+	<div className="container-page">
+	<Reveal>
+	<SectionHeader
+	id="how-it-works-headline"
+	headline={
+	<>
+	Four steps
+	<br />
+	<span className="gradient-text-accent">to first request.</span>
+	</>
+	}
+	subhead="Sign in, create a key, fund credits (or use x402), and setup MCP. Point your OpenAI SDK at OMA and call."
+	/>
+	</Reveal>
 
- <RevealStagger
- as="ol"
- className="mt-14 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 relative"
- amount={0.2}
- >
- {STEPS.map((step, idx) => (
- <m.li key={step.n} variants={childFadeUp} className="relative">
- <StepCard step={step} isLast={idx === STEPS.length - 1} />
- </m.li>
- ))}
- </RevealStagger>
- </div>
- </section>
- );
+	<RevealStagger
+	as="ol"
+	className="mt-14 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 relative"
+	amount={0.2}
+	>
+	{STEPS.map((step, idx) => (
+	<m.li key={step.n} variants={childFadeUp} className="relative">
+	<StepCard step={step} isLast={idx === STEPS.length - 1} />
+	</m.li>
+	))}
+	</RevealStagger>
+	</div>
+	</section>
+	);
 }
 
 function StepCard({ step, isLast }: { step: Step; isLast: boolean }) {
-  const Icon = step.icon;
-  return (
-  <m.div
-    whileHover={{ y: -4 }}
-    transition={springs.card}
-    className="relative h-full surface-card p-7 flex flex-col gap-5 transition-[border-color,box-shadow] duration-200 ease-out hover:shadow-[var(--shadow-md)] hover:border-border-hi"
-  >
-  <div className="flex items-center justify-between">
-  <span className="font-mono tabular-nums text-4xl sm:text-5xl font-bold text-accent leading-none">
-  {step.n}
-  </span>
-  <div
-  className={cn(
-  "flex h-10 w-10 items-center justify-center rounded-[var(--radius-sm)]",
-  "bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] text-accent",
-  )}
-  >
-  <Icon className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
-  </div>
-  </div>
-  <div>
+		const Icon = step.icon;
+		return (
+		<m.div
+	whileHover={{ y: -4 }}
+	transition={springs.card}
+	className="relative h-full surface-card p-7 flex flex-col gap-5 transition-[border-color,box-shadow] duration-200 ease-out hover:shadow-[var(--shadow-md)] hover:border-border-hi"
+		>
+		<div className="flex items-center justify-between">
+		<span className="font-mono tabular-nums text-4xl sm:text-5xl font-bold text-accent leading-none">
+		{step.n}
+		</span>
+		<div
+		className={cn(
+		"flex h-10 w-10 items-center justify-center rounded-[var(--radius-sm)]",
+		"bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] text-accent",
+		)}
+		>
+		<Icon className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
+		</div>
+		</div>
+		<div>
 	<h3 className="font-sans text-lg sm:text-xl font-semibold text-text-bright tracking-tight">
-  {step.title}
-  </h3>
-  <p className="mt-2 text-sm text-text-secondary leading-relaxed">
-  {step.description}
-  </p>
-  </div>
-  {!isLast && (
-  <div
-  className="hidden md:block absolute top-1/2 -right-4 w-px h-12 -translate-y-1/2 bg-gradient-to-b from-transparent via-accent to-transparent opacity-50"
-  aria-hidden="true"
-  />
-  )}
-  </m.div>
-  );
+		{step.title}
+		</h3>
+		<p className="mt-2 text-sm text-text-secondary leading-relaxed">
+		{step.description}
+		</p>
+		</div>
+		{!isLast && (
+		<div
+		className="hidden md:block absolute top-1/2 -right-4 w-px h-12 -translate-y-1/2 bg-gradient-to-b from-transparent via-accent to-transparent opacity-50"
+		aria-hidden="true"
+		/>
+		)}
+		</m.div>
+		);
 }

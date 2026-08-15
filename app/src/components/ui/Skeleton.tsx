@@ -2,11 +2,11 @@ import { cn } from "@/components/ui/utils";
 import type { HTMLAttributes } from "react";
 
 /**
- * Skeleton — shimmer or pulse placeholder.
- * Supports rendering staggered multi-line text representations,
- * multiple animation types (shimmer sweep, pulse breathing, static),
- * and accessibility considerations.
- */
+	* Skeleton — shimmer or pulse placeholder.
+	* Supports rendering staggered multi-line text representations,
+	* multiple animation types (shimmer sweep, pulse breathing, static),
+	* and accessibility considerations.
+	*/
 
 export interface SkeletonProps extends HTMLAttributes<HTMLDivElement> {
 	/** Tailwind-friendly class to override shape (e.g. "h-4 w-32 rounded-full") */

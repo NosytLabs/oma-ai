@@ -1,11 +1,11 @@
 /**
- * Credit-history endpoints exposed to the dashboard.
- *
- * Wraps the server `GET /v1/credits/transactions` endpoint that powers
- * the Credit History table on `/dashboard/credits`. The endpoint requires
- * a bearer session token; the request helper injects it from the
- * `oma_session` cookie automatically.
- */
+	* Credit-history endpoints exposed to the dashboard.
+	*
+	* Wraps the server `GET /v1/credits/transactions` endpoint that powers
+	* the Credit History table on `/dashboard/credits`. The endpoint requires
+	* a bearer session token; the request helper injects it from the
+	* `oma_session` cookie automatically.
+	*/
 import { request } from "./client.js";
 import type { AutoReloadSettings } from "./types.js";
 
@@ -33,10 +33,10 @@ export const creditHistory = {
 };
 
 /**
- * Credits namespace — credit batches (active/expired) and balance helpers.
- * The legacy `oma.getCreditBatches()` alias still works through the
- * composite `api` object in `./index.ts`.
- */
+	* Credits namespace — credit batches (active/expired) and balance helpers.
+	* The legacy `oma.getCreditBatches()` alias still works through the
+	* composite `api` object in `./index.ts`.
+	*/
 export const credits = {
 	getBatches() {
 		// Batches live on GET /v1/credits/balance (there is no /v1/credits/batches).

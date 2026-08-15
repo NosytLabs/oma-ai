@@ -1,6 +1,6 @@
 /**
- * Daily free-limit banner must offer Sign in / Buy credits, not a useless Retry.
- */
+	* Daily free-limit banner must offer Sign in / Buy credits, not a useless Retry.
+	*/
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ChatErrorBanner } from "../ChatErrorBanner";

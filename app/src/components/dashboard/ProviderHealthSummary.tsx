@@ -7,11 +7,11 @@ import { formatTime } from "@/lib/utils";
 import { type CheckStatus, TONE_DOT, TONE_TEXT, toneFor } from "./healthTone";
 
 /**
- * Compact "provider health" summary for the dashboard overview.
- * Shows a status pill + count of OK/degraded/circuit-open providers and a
- * "View all" link to the Health tab. Shares the /health polling stream with
- * ProviderHealthCard via TanStack queryKey dedup.
- */
+	* Compact "provider health" summary for the dashboard overview.
+	* Shows a status pill + count of OK/degraded/circuit-open providers and a
+	* "View all" link to the Health tab. Shares the /health polling stream with
+	* ProviderHealthCard via TanStack queryKey dedup.
+	*/
 export function ProviderHealthSummary() {
 	const { data, dataUpdatedAt } = useHealthQuery();
 

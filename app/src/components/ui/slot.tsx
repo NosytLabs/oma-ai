@@ -1,11 +1,11 @@
 import { forwardRef, type HTMLAttributes } from "react";
 
 /**
- * Slot — minimal Radix-Slot-equivalent for the `asChild` pattern.
- * Merges its props into the immediate child element via cloneElement.
- * Used by Button when asChild is true so callers can render <Link>,
- * <a>, or any element with the button styling applied.
- */
+	* Slot — minimal Radix-Slot-equivalent for the `asChild` pattern.
+	* Merges its props into the immediate child element via cloneElement.
+	* Used by Button when asChild is true so callers can render <Link>,
+	* <a>, or any element with the button styling applied.
+	*/
 import { cloneElement, isValidElement } from "react";
 import type { ReactElement, ReactNode, Ref } from "react";
 

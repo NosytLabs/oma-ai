@@ -2,10 +2,10 @@ import type { Message } from "@/components/chat";
 import { parseSSEBlock, type SSEBlock } from "@/lib/sse-parser";
 
 /**
- * Shared primitives for the SSE chat pipeline: raw block consumption,
- * think-tag routing, response-status classification, and empty-assistant
- * cleanup. Pure (React-free) so the logic runs in tests without a hook.
- */
+	* Shared primitives for the SSE chat pipeline: raw block consumption,
+	* think-tag routing, response-status classification, and empty-assistant
+	* cleanup. Pure (React-free) so the logic runs in tests without a hook.
+	*/
 
 export const MAX_MESSAGE_LENGTH = 100 * 1024;
 export const BATCH_INTERVAL_MS = 250;
@@ -17,11 +17,11 @@ export interface DailyQuota {
 }
 
 /**
- * Remove a trailing empty assistant placeholder. Sends that fail mid-flight
- * or abort before any token arrives leave an assistant message with
- * content === "" in the list; strip it so the conversation doesn't show a
- * phantom reply.
- */
+	* Remove a trailing empty assistant placeholder. Sends that fail mid-flight
+	* or abort before any token arrives leave an assistant message with
+	* content === "" in the list; strip it so the conversation doesn't show a
+	* phantom reply.
+	*/
 export function stripPendingAssistant(messages: Message[]): Message[] {
 	if (messages.length > 0 && messages[messages.length - 1]?.content === "") {
 		return messages.slice(0, -1);
@@ -40,13 +40,13 @@ export interface ThinkRouter {
 }
 
 /**
- * State machine that routes content deltas into prose vs. the "thinking"
- * section. Some models wrap reasoning inside <thinking>…</think> tags in
- * the `content` field rather than emitting a separate `reasoning_content`
- * delta; watch for those tags and route the enclosed text to the reasoning
- * handler so the rendered answer never shows the raw markup. A carry-over
- * buffer keeps partial tags that span two SSE chunks aligned.
- */
+	* State machine that routes content deltas into prose vs. the "thinking"
+	* section. Some models wrap reasoning inside <thinking>…</think> tags in
+	* the `content` field rather than emitting a separate `reasoning_content`
+	* delta; watch for those tags and route the enclosed text to the reasoning
+	* handler so the rendered answer never shows the raw markup. A carry-over
+	* buffer keeps partial tags that span two SSE chunks aligned.
+	*/
 export function createThinkRouter(handlers: ThinkRouterHandlers): ThinkRouter {
 	const THINK_OPEN = "<thinking>";
 	const THINK_CLOSE = "</think>";
@@ -122,13 +122,13 @@ export function createThinkRouter(handlers: ThinkRouterHandlers): ThinkRouter {
 }
 
 /**
- * Read a fetch Response body to completion, splitting the payload into SSE
- * blocks (blank-line delimited, CRLF-normalized), parsing each block, and
- * forwarding only valid blocks to the callback. The buffer is capped at
- * 1 MB to prevent unbounded growth on a stalled or non-SSE connection.
- * Always releases the reader in `finally` so the connection doesn't linger
- * in the browser's pool until GC.
- */
+	* Read a fetch Response body to completion, splitting the payload into SSE
+	* blocks (blank-line delimited, CRLF-normalized), parsing each block, and
+	* forwarding only valid blocks to the callback. The buffer is capped at
+	* 1 MB to prevent unbounded growth on a stalled or non-SSE connection.
+	* Always releases the reader in `finally` so the connection doesn't linger
+	* in the browser's pool until GC.
+	*/
 export async function consumeSSE(
 	reader: ReadableStreamDefaultReader<Uint8Array>,
 	onBlock: (block: SSEBlock) => void,
@@ -176,12 +176,12 @@ export interface ChatResponseOptions {
 }
 
 /**
- * Sync guest free-tier quota from daily-limit headers on every response
- * that carries them (success and rate-limit), then classify the status:
- * 401 → auth error, 429 → rate limit (surfacing daily_limit_exceeded to
- * the quota callback), anything else non-OK → HTTP error. Throws the
- * user-facing Error; returns normally for 2xx.
- */
+	* Sync guest free-tier quota from daily-limit headers on every response
+	* that carries them (success and rate-limit), then classify the status:
+	* 401 → auth error, 429 → rate limit (surfacing daily_limit_exceeded to
+	* the quota callback), anything else non-OK → HTTP error. Throws the
+	* user-facing Error; returns normally for 2xx.
+	*/
 export async function handleChatResponseStatus(
 	response: Response,
 	opts: ChatResponseOptions,

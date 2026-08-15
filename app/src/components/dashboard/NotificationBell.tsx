@@ -56,13 +56,13 @@ interface NotificationBellProps {
 }
 
 /**
- * Bell-icon dropdown that surfaces the user's deposit/payment notifications.
- * Pulls from `api.deposit.getNotifications()` with a 60s refetch so a fresh
- * deposit (or status change) shows up without a manual refresh.
- *
- * Designed to be slotted into any header — passes no position props; the
- * parent is responsible for the relative wrapper if needed.
- */
+	* Bell-icon dropdown that surfaces the user's deposit/payment notifications.
+	* Pulls from `api.deposit.getNotifications()` with a 60s refetch so a fresh
+	* deposit (or status change) shows up without a manual refresh.
+	*
+	* Designed to be slotted into any header — passes no position props; the
+	* parent is responsible for the relative wrapper if needed.
+	*/
 export function NotificationBell({ className = "" }: NotificationBellProps) {
 	const [open, setOpen] = useState(false);
 	const containerRef = useRef<HTMLDivElement>(null);

@@ -1,7 +1,7 @@
 /**
- * Sample dashboard data for `?demo=1` / demo-cookie tours.
- * Shapes match live API types so charts and stats reuse production code paths.
- */
+	* Sample dashboard data for `?demo=1` / demo-cookie tours.
+	* Shapes match live API types so charts and stats reuse production code paths.
+	*/
 import type {
 	ApiKey,
 	BalanceResponse,
@@ -18,9 +18,9 @@ function daysAgo(n: number, hour = 12): string {
 }
 
 const MODELS = [
-	{ model: "llama-3.3-70b", provider: "venice" },
-	{ model: "gemini-3-flash-preview", provider: "oma" },
-	{ model: "kimi-k3", provider: "venice" },
+	{ model: "gemini-3.1-pro-preview", provider: "Venice" },
+	{ model: "openai-gpt-56-sol", provider: "OMA-AI" },
+	{ model: "claude-opus-5", provider: "Venice" },
 ] as const;
 
 /** Synthetic usage spread across the last 14 days so range filters still chart. */
@@ -105,6 +105,6 @@ export const DEMO_TRANSACTIONS: CreditTransaction[] = [
 		amountCents: -42,
 		status: "completed",
 		createdAt: daysAgo(0, 9),
-		model: "llama-3.3-70b",
+		model: "gemini-3.1-pro-preview",
 	},
 ];

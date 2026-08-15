@@ -13,22 +13,22 @@ export interface UseChatScrollResult {
 }
 
 /**
- * Scroll position tracking for the messages pane.
- *
- * - `scrollContainerRef` → the outer scrollable element
- * - `messagesEndRef`     → the sentinel at the bottom of the message list
- *                          that we scrollIntoView
- * - `isNearBottomRef`    → ref mirror of "user is at the bottom" (read by
- *                          the auto-scroll effect + by useStreamingChat's
- *                          `sendMessage`, which resets it to true to snap
- *                          the view to the latest message)
- * - `isScrolledAway`     → React state copy of the same flag, so the
- *                          "Jump to bottom" pill can re-render when the
- *                          user scrolls up
- * - `handleScroll`       → onScroll handler: updates the ref + state
- *                          based on a 120px threshold
- * - `jumpToBottom`       → smooth-scroll to the bottom and reset flags
- */
+	* Scroll position tracking for the messages pane.
+	*
+	* - `scrollContainerRef` → the outer scrollable element
+	* - `messagesEndRef`     → the sentinel at the bottom of the message list
+	*                          that we scrollIntoView
+	* - `isNearBottomRef`    → ref mirror of "user is at the bottom" (read by
+	*                          the auto-scroll effect + by useStreamingChat's
+	*                          `sendMessage`, which resets it to true to snap
+	*                          the view to the latest message)
+	* - `isScrolledAway`     → React state copy of the same flag, so the
+	*                          "Jump to bottom" pill can re-render when the
+	*                          user scrolls up
+	* - `handleScroll`       → onScroll handler: updates the ref + state
+	*                          based on a 120px threshold
+	* - `jumpToBottom`       → smooth-scroll to the bottom and reset flags
+	*/
 export function useChatScroll(
 	loading: boolean,
 	_messages: unknown[],

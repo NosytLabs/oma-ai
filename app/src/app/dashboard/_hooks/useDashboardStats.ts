@@ -19,12 +19,12 @@ interface UseDashboardStatsResult {
 }
 
 /**
- * Derives dashboard aggregates from raw usage records.
- *
- * Splits the heavy `useMemo` chains out of `DashboardPage` so the page
- * can stay focused on data fetching + UI wiring. All memos key off the
- * same inputs (`usage`, `timeRange`) the page used before.
- */
+	* Derives dashboard aggregates from raw usage records.
+	*
+	* Splits the heavy `useMemo` chains out of `DashboardPage` so the page
+	* can stay focused on data fetching + UI wiring. All memos key off the
+	* same inputs (`usage`, `timeRange`) the page used before.
+	*/
 export function useDashboardStats(
 	usage: UsageRecord[],
 	timeRange: TimeRangeId,

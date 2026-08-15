@@ -8,14 +8,14 @@ WORKDIR /app
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
 COPY app/package.json ./app/
 COPY server/package.json ./server/
-RUN pnpm install --frozen-lockfile --filter oma-server... --prod
+RUN pnpm install --no-frozen-lockfile --prod
 
 FROM base AS builder
 WORKDIR /app
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
 COPY app/package.json ./app/
 COPY server/package.json ./server/
-RUN pnpm install --frozen-lockfile --filter oma-server...
+RUN pnpm install --no-frozen-lockfile
 COPY . .
 RUN pnpm --filter oma-server run build
 
@@ -28,7 +28,7 @@ COPY --from=deps /app/node_modules /app/node_modules
 COPY --from=deps /app/server/node_modules ./node_modules
 COPY --from=builder /app/server/dist ./dist
 COPY --from=builder /app/server/package.json ./package.json
-COPY --from=builder /app/server/models.json ./models.json
+
 RUN chown -R oma:oma /app/server
 USER oma
 EXPOSE 3001

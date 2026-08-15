@@ -3,16 +3,16 @@
 import { type RefObject, useEffect, useRef } from "react";
 
 /**
- * Calls `onOutside` when a `mousedown` occurs outside the given `ref`.
- * Strictly click-outside — does not handle Escape. Consumers that need
- * Escape-close (with or without focus restore) should add their own keydown
- * listener; this keeps `useClickOutside` single-purpose and lets asymmetric
- * behaviors (e.g. "restore focus on Escape" for one menu but not another)
- * live in the consumer, not in the hook.
- *
- * `onOutside` is read via a ref so it is always the latest closure without
- * forcing the effect to re-subscribe on every render.
- */
+	* Calls `onOutside` when a `mousedown` occurs outside the given `ref`.
+	* Strictly click-outside — does not handle Escape. Consumers that need
+	* Escape-close (with or without focus restore) should add their own keydown
+	* listener; this keeps `useClickOutside` single-purpose and lets asymmetric
+	* behaviors (e.g. "restore focus on Escape" for one menu but not another)
+	* live in the consumer, not in the hook.
+	*
+	* `onOutside` is read via a ref so it is always the latest closure without
+	* forcing the effect to re-subscribe on every render.
+	*/
 export function useClickOutside(
 	ref: RefObject<HTMLElement | null>,
 	active: boolean,

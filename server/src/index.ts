@@ -44,120 +44,121 @@ initAuth();
 // Boot-time model catalog load. Await so the server doesn't accept traffic
 // before the catalog is ready — initial requests would fail with "Model not found".
 ensureCatalogLoaded()
-  .then(() => {
-    startServer();
-  })
-  .catch((err) => {
-    logger.error({ err }, "[startup] model catalog load failed; starting server anyway (will retry on first request)");
-    startServer();
-  });
+		.then(() => {
+				startServer();
+		})
+		.catch((err) => {
+				logger.error({ err }, "[startup] model catalog load failed; starting server anyway (will retry on first request)");
+				startServer();
+		});
 
 if (config.NODE_ENV !== "test" && config.USDC_DEPOSIT_ADDRESS) {
-  const client = getPublicClient();
-  let fromBlock = 0n;
-  let isRunning = false;
-  const runDepositRecovery = async (): Promise<void> => {
-    // Concurrency guard. If an iteration takes longer than the 30s
-    // interval (slow RPC, large block range), don't fire a second loop
-    // that would race on `fromBlock` and waste RPC quota.
-    if (isRunning) {
-      logger.warn(
-        "[deposit-recovery] previous iteration still running, skipping this tick",
-      );
-      return;
-    }
-    isRunning = true;
-    try {
-      if (fromBlock === 0n) {
-        const current = await client.getBlockNumber();
-        fromBlock = current > 1_000n ? current - 1_000n : 0n;
-      }
-      fromBlock = await runRecoveryIteration(client, config.USDC_DEPOSIT_ADDRESS as string, fromBlock);
-    } catch (err) {
-      logger.error({ err, fromBlock }, "[deposit-recovery] scheduled iteration failed");
-    } finally {
-      isRunning = false;
-    }
-  };
-  void runDepositRecovery();
-  setInterval(() => void runDepositRecovery(), 30_000).unref();
+		const client = getPublicClient();
+		let fromBlock = 0n;
+		let isRunning = false;
+		const runDepositRecovery = async (): Promise<void> => {
+				// Concurrency guard. If an iteration takes longer than the 30s
+				// interval (slow RPC, large block range), don't fire a second loop
+				// that would race on `fromBlock` and waste RPC quota.
+				if (isRunning) {
+						logger.warn(
+								"[deposit-recovery] previous iteration still running, skipping this tick",
+						);
+						return;
+				}
+				isRunning = true;
+				try {
+						if (fromBlock === 0n) {
+								const current = await client.getBlockNumber();
+								fromBlock = current > 1_000n ? current - 1_000n : 0n;
+						}
+						fromBlock = await runRecoveryIteration(client, config.USDC_DEPOSIT_ADDRESS as string, fromBlock);
+				} catch (err) {
+						logger.error({ err, fromBlock }, "[deposit-recovery] scheduled iteration failed");
+				} finally {
+						isRunning = false;
+				}
+		};
+		void runDepositRecovery();
+		setInterval(() => void runDepositRecovery(), 30_000).unref();
 }
 
 if (config.CORS_ORIGIN === "*" && config.NODE_ENV === "production") {
-  logger.fatal("[SECURITY] CORS_ORIGIN='*' is not allowed in production. Refusing to start. Set specific origins (comma-separated).");
-  process.exit(1);
+		logger.fatal("[SECURITY] CORS_ORIGIN='*' is not allowed in production. Refusing to start. Set specific origins (comma-separated).");
+		process.exit(1);
 }
 
 const app = new Hono<OmaEnv>();
 
 app.use("*", async (c, next) => {
-  const correlationId = c.req.header("X-Correlation-ID") || generateCorrelationId();
-  c.set("correlationId", correlationId);
-  c.header("X-Request-ID", correlationId);
-  await next();
+		const correlationId = c.req.header("X-Correlation-ID") || generateCorrelationId();
+		c.set("correlationId", correlationId);
+		c.header("X-Request-ID", correlationId);
+		await next();
 });
 
 app.use("*", compress());
 app.use("*", securityHeaders);
 
 const corsOptions = {
-  origin: (origin: string | undefined): string | null => {
-    if (!origin) return null;
-    if (
-      config.NODE_ENV === "development" &&
-      (origin.startsWith("http://localhost") || origin.startsWith("http://127.0.0.1"))
-    ) {
-      return origin;
-    }
-    const allowedOrigins = config.CORS_ORIGIN.split(",").map((o) => o.trim());
-    for (const allowed of allowedOrigins) {
-      if (allowed === "*") {
-        logger.warn({ origin }, "[CORS] Wildcard origin '*' is set. Credentials will be denied by browsers. Set specific origins in production.");
-        return null;
-      }
-      try {
-        const allowedUrl = new URL(allowed);
-        const originUrl = new URL(origin);
-        if (allowed === origin || allowedUrl.origin === originUrl.origin) return origin;
-      } catch {
-        // ignore
-      }
-    }
-    return null;
-  },
-  credentials: true,
-  allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  // Include X-OMA-Source so website chat can identify itself for the free
-  // daily tier (20 anon / 100 signed-in) vs API key auth (credit-billed).
-  // Without this, CORS preflight rejects the browser request outright.
-  allowHeaders: [
-    "Content-Type",
-    "Authorization",
-    "PAYMENT-SIGNATURE",
-    "PAYMENT-REQUIRED",
-    "X-PAYMENT",
-    "X-OMA-Source",
-    "X-Correlation-ID",
-    "X-Requested-With",
-  ],
-  exposeHeaders: [
-    "X-RateLimit-Limit",
-    "X-RateLimit-Remaining",
-    "X-RateLimit-Reset",
-    "Retry-After",
-    "X-DailyLimit-Limit",
-    "X-DailyLimit-Remaining",
-    "X-DailyLimit-Reset",
-    "X-Request-ID",
-    "PAYMENT-RESPONSE",
-    "X-PAYMENT-RESPONSE",
-    // OpenRouter-style routing transparency (read by website chat toast)
-    "x-provider",
-    "x-actual-model",
-    "x-oma-fallback",
-    "x-oma-requested-model",
-  ],
-  maxAge: 86400,
+		origin: (origin: string | undefined): string | null => {
+				if (!origin) return null;
+				if (
+						config.NODE_ENV === "development" &&
+						(origin.startsWith("http://localhost") || origin.startsWith("http://127.0.0.1"))
+				) {
+						return origin;
+				}
+				const allowedOrigins = config.CORS_ORIGIN.split(",").map((o) => o.trim());
+				for (const allowed of allowedOrigins) {
+						if (allowed === "*") {
+								logger.warn({ origin }, "[CORS] Wildcard origin '*' is set. Credentials will be denied by browsers. Set specific origins in production.");
+								logger.info({ allowedOrigins }, "[CORS] Allowed origins loaded");
+								return null;
+						}
+						try {
+								const allowedUrl = new URL(allowed);
+								const originUrl = new URL(origin);
+								if (allowed === origin || allowedUrl.origin === originUrl.origin) return origin;
+						} catch {
+								// ignore
+						}
+				}
+				return null;
+		},
+		credentials: true,
+		allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+		// Include X-OMA-Source so website chat can identify itself for the free
+		// daily tier (20 anon / 100 signed-in) vs API key auth (credit-billed).
+		// Without this, CORS preflight rejects the browser request outright.
+		allowHeaders: [
+				"Content-Type",
+				"Authorization",
+				"PAYMENT-SIGNATURE",
+				"PAYMENT-REQUIRED",
+				"X-PAYMENT",
+				"X-OMA-Source",
+				"X-Correlation-ID",
+				"X-Requested-With",
+		],
+		exposeHeaders: [
+				"X-RateLimit-Limit",
+				"X-RateLimit-Remaining",
+				"X-RateLimit-Reset",
+				"Retry-After",
+				"X-DailyLimit-Limit",
+				"X-DailyLimit-Remaining",
+				"X-DailyLimit-Reset",
+				"X-Request-ID",
+				"PAYMENT-RESPONSE",
+				"X-PAYMENT-RESPONSE",
+				// OpenRouter-style routing transparency (read by website chat toast)
+				"x-provider",
+				"x-actual-model",
+				"x-oma-fallback",
+				"x-oma-requested-model",
+		],
+		maxAge: 86400,
 };
 
 app.use("*", cors(corsOptions));
@@ -165,37 +166,37 @@ app.use("*", metricsMiddleware);
 
 // Global Maintenance Mode Check
 app.use("*", async (c, next) => {
-  const path = c.req.path;
-  // Bypass maintenance mode for essential system & admin endpoints
-  if (
-    path.startsWith("/api/auth/") ||
-    path === "/v1/site-settings" ||
-    path.startsWith("/v1/admin") ||
-    path === "/v1/health" ||
-    path === "/v1/metrics" ||
-    path.startsWith("/.well-known")
-  ) {
-    return await next();
-  }
+		const path = c.req.path;
+		// Bypass maintenance mode for essential system & admin endpoints
+		if (
+				path.startsWith("/api/auth/") ||
+				path === "/v1/site-settings" ||
+				path.startsWith("/v1/admin") ||
+				path === "/v1/health" ||
+				path === "/v1/metrics" ||
+				path.startsWith("/.well-known")
+		) {
+				return await next();
+		}
 
-  try {
-    const [settings] = await db.select({ maintenanceMode: siteSettings.maintenanceMode }).from(siteSettings).limit(1);
-    if (settings?.maintenanceMode) {
-      return c.json(
-        {
-          error: {
-            message: "OMA-AI is currently undergoing scheduled maintenance. Please try again later.",
-            type: "service_unavailable",
-          },
-        },
-        503,
-      );
-    }
-  } catch (err) {
-    logger.error({ err }, "[maintenance] failed to check site settings");
-  }
+		try {
+				const [settings] = await db.select({ maintenanceMode: siteSettings.maintenanceMode }).from(siteSettings).limit(1);
+				if (settings?.maintenanceMode) {
+						return c.json(
+								{
+										error: {
+												message: "OMA-AI is currently undergoing scheduled maintenance. Please try again later.",
+												type: "service_unavailable",
+										},
+								},
+								503,
+						);
+				}
+		} catch (err) {
+				logger.error({ err }, "[maintenance] failed to check site settings");
+		}
 
-  await next();
+		await next();
 });
 
 // Demo mode guard — blocks mutations under /v1/* when the HttpOnly
@@ -219,35 +220,35 @@ app.route("/", openapiRoutes);
 //   - GET get-session / session: generous (browser polling)
 //   - everything else (magic-link, SIWE, sign-out…): still strict
 const authSessionReadLimit = rateLimit({
-  windowMs: 60_000,
-  maxRequests: 180,
-  keyPrefix: "auth-session",
+		windowMs: 60_000,
+		maxRequests: 180,
+		keyPrefix: "auth-session",
 });
 const authMutationLimit = rateLimit({
-  windowMs: 60_000,
-  maxRequests: 40,
-  keyPrefix: "auth",
+		windowMs: 60_000,
+		maxRequests: 40,
+		keyPrefix: "auth",
 });
 app.use("/api/auth/*", async (c, next) => {
-  const path = c.req.path;
-  const isSessionRead =
-    c.req.method === "GET" &&
-    (path.includes("get-session") ||
-      path.endsWith("/session") ||
-      path.includes("/get-session"));
-  if (isSessionRead) {
-    return authSessionReadLimit(c, next);
-  }
-  return authMutationLimit(c, next);
+		const path = c.req.path;
+		const isSessionRead =
+				c.req.method === "GET" &&
+				(path.includes("get-session") ||
+						path.endsWith("/session") ||
+						path.includes("/get-session"));
+		if (isSessionRead) {
+				return authSessionReadLimit(c, next);
+		}
+		return authMutationLimit(c, next);
 });
 app.all("/api/auth/*", (c) => auth.handler(c.req.raw));
 
 // Agent Auth Protocol discovery document. The plugin serves it under the
 // /api/auth basePath but advertises the well-known path, so forward it.
 app.get("/.well-known/agent-configuration", (c) => {
-  const url = new URL(c.req.url);
-  url.pathname = "/api/auth/agent-configuration";
-  return auth.handler(new Request(url, c.req.raw));
+		const url = new URL(c.req.url);
+		url.pathname = "/api/auth/agent-configuration";
+		return auth.handler(new Request(url, c.req.raw));
 });
 
 // OMA-specific auth-adjacent routes (CSRF, /user, /keys).
@@ -281,78 +282,78 @@ app.route("/", polarRoutes);
 app.route("/", adminRoutes);
 
 app.notFound((c) =>
-  c.json({ error: { message: `Route ${c.req.path} not found`, type: "not_found" } }, 404),
+		c.json({ error: { message: `Route ${c.req.path} not found`, type: "not_found" } }, 404),
 );
 
 app.onError((err, c) => {
-  if (err instanceof HTTPException) {
-    return err.getResponse();
-  }
-  const correlationId = c.get("correlationId") as string | undefined;
-  logger.error({ correlationId, error: err.message }, "[OMA] Unhandled error");
-  const errWithStatus = err as Error & { status?: ContentfulStatusCode };
-  const status = errWithStatus.status ?? 500;
-  if (status >= 500) {
-    return c.json({ error: { message: "Internal server error", type: "server_error" } }, 500);
-  }
-  const safeClientStatuses: ContentfulStatusCode[] = [400, 401, 403, 404, 409, 422, 429];
-  if (safeClientStatuses.includes(status)) {
-    return c.json({ error: { message: err.message, type: "client_error" } }, status);
-  }
-  return c.json({ error: { message: "Client error", type: "client_error" } }, status);
+		if (err instanceof HTTPException) {
+				return err.getResponse();
+		}
+		const correlationId = c.get("correlationId") as string | undefined;
+		logger.error({ correlationId, error: err.message }, "[OMA] Unhandled error");
+		const errWithStatus = err as Error & { status?: ContentfulStatusCode };
+		const status = errWithStatus.status ?? 500;
+		if (status >= 500) {
+				return c.json({ error: { message: "Internal server error", type: "server_error" } }, 500);
+		}
+		const safeClientStatuses: ContentfulStatusCode[] = [400, 401, 403, 404, 409, 422, 429];
+		if (safeClientStatuses.includes(status)) {
+				return c.json({ error: { message: err.message, type: "client_error" } }, status);
+		}
+		return c.json({ error: { message: "Client error", type: "client_error" } }, status);
 });
 
 function startServer() {
-  const server = serve({
-    fetch: app.fetch,
-    port: config.PORT,
-  }, (info) => {
-    logger.info({ port: info.port }, "[OMA] API server running");
-    logger.info({ healthUrl: `http://localhost:${info.port}/health` }, "[OMA] Health endpoint");
-    logger.info({ modelsUrl: `http://localhost:${info.port}/v1/models` }, "[OMA] Models endpoint");
-  });
+		const server = serve({
+				fetch: app.fetch,
+				port: config.PORT,
+		}, (info) => {
+				logger.info({ port: info.port }, "[OMA] API server running");
+				logger.info({ healthUrl: `http://localhost:${info.port}/health` }, "[OMA] Health endpoint");
+				logger.info({ modelsUrl: `http://localhost:${info.port}/v1/models` }, "[OMA] Models endpoint");
+		});
 
-  server.on("error", (err: NodeJS.ErrnoException) => {
-    if (err.code === "EADDRINUSE") {
-      logger.error(
-        { port: config.PORT },
-        `[OMA] FATAL: port ${config.PORT} is already in use`,
-      );
-      process.exit(1);
-    }
-    throw err;
-  });
+		server.on("error", (err: NodeJS.ErrnoException) => {
+				if (err.code === "EADDRINUSE") {
+						logger.error(
+								{ port: config.PORT },
+								`[OMA] FATAL: port ${config.PORT} is already in use`,
+						);
+						process.exit(1);
+				}
+				throw err;
+		});
 
-  const shutdown = async (signal: string) => {
-    logger.info({ signal }, "[OMA] Shutdown signal received, closing gracefully...");
-    server.close(async () => {
-      logger.info("[OMA] HTTP server closed");
-      try {
-        const { closeRedisClient } = await import("./lib/redis-client.js");
-        await closeRedisClient();
-      } catch (err) {
-        logger.warn({ error: err }, "[OMA] Redis close error");
-      }
-      process.exit(0);
-    });
-    setTimeout(() => {
-      logger.error("[OMA] Forced shutdown after timeout");
-      process.exit(1);
-    }, 10_000);
-  };
+		const shutdown = async (signal: string) => {
+				logger.info({ signal }, "[OMA] Shutdown signal received, closing gracefully...");
+				server.close(async () => {
+						logger.info("[OMA] HTTP server closed");
+						try {
+								const { closeRedisClient } = await import("./lib/redis-client.js");
+								await closeRedisClient();
+						} catch (err) {
+								logger.warn({ error: err }, "[OMA] Redis close error");
+						}
+						process.exit(0);
+				});
+				setTimeout(() => {
+						logger.error("[OMA] Forced shutdown after timeout");
+						process.exit(1);
+				}, 10_000);
+		};
 
-  if (config.NODE_ENV !== "test") {
-    process.on("SIGTERM", () => shutdown("SIGTERM"));
-    process.on("SIGINT", () => shutdown("SIGINT"));
-    process.on("unhandledRejection", (reason) => {
-      logger.fatal({ err: reason }, "Unhandled promise rejection — shutting down");
-      shutdown("unhandledRejection");
-    });
-    process.on("uncaughtException", (err) => {
-      logger.fatal({ err }, "Uncaught exception — shutting down");
-      shutdown("uncaughtException");
-    });
-  }
+		if (config.NODE_ENV !== "test") {
+				process.on("SIGTERM", () => shutdown("SIGTERM"));
+				process.on("SIGINT", () => shutdown("SIGINT"));
+				process.on("unhandledRejection", (reason) => {
+						logger.fatal({ err: reason }, "Unhandled promise rejection — shutting down");
+						shutdown("unhandledRejection");
+				});
+				process.on("uncaughtException", (err) => {
+						logger.fatal({ err }, "Uncaught exception — shutting down");
+						shutdown("uncaughtException");
+				});
+		}
 }
 
 export default app;

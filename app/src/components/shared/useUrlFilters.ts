@@ -5,9 +5,9 @@ import { useCallback, useTransition } from "react";
 import { copyToClipboard } from "@/lib/clipboard";
 
 /**
- * useUrlFilters — syncs filter state to URL search params.
- * Supports tier, provider, search, and sort params.
- */
+	* useUrlFilters — syncs filter state to URL search params.
+	* Supports tier, provider, search, and sort params.
+	*/
 export function useUrlFilters() {
 	const router = useRouter();
 	const pathname = usePathname();

@@ -125,8 +125,8 @@ describe("ModelsPage", () => {
 		render(<ModelsPage />);
 		await act(async () => {
 			await waitFor(() => {
-				// Model cards show "in" suffix next to input price per token
-				expect(screen.getAllByText(/in$/i).length).toBeGreaterThan(0);
+				// Model cards show "per 1M" text next to input price per token
+				expect(screen.getAllByText(/per 1M/i).length).toBeGreaterThan(0);
 			});
 		});
 	});

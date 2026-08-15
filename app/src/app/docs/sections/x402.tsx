@@ -4,8 +4,8 @@ import { AnimatedSection, CodeBlock, SectionHeading } from "./shared";
 export function X402Section() {
 	const flowCode = `# 1. Request without credentials — API returns 402 with the price
 curl -i https://api.oma-ai.com/v1/chat/completions \\
- -H "Content-Type: application/json" \\
- -d '{"model":"llama-3.3-70b","messages":[{"role":"user","content":"Hello"}]}'
+	-H "Content-Type: application/json" \\
+	-d '{"model":"llama-3.3-70b","messages":[{"role":"user","content":"Hello"}]}'
 
 # Response: 402 Payment Required
 # Header: PAYMENT-REQUIRED: {"x402Version":"2","scheme":"evm","networkId":"base",
@@ -18,9 +18,9 @@ curl -i https://api.oma-ai.com/v1/chat/completions \\
 
 # 3. Retry with the PAYMENT-SIGNATURE envelope — verified, settled, served
 curl https://api.oma-ai.com/v1/chat/completions \\
- -H "Content-Type: application/json" \\
- -H 'PAYMENT-SIGNATURE: {"signature":"0x...","payload":{...}}' \\
- -d '{"model":"llama-3.3-70b","messages":[{"role":"user","content":"Hello"}]}'
+	-H "Content-Type: application/json" \\
+	-H 'PAYMENT-SIGNATURE: {"signature":"0x...","payload":{...}}' \\
+	-d '{"model":"llama-3.3-70b","messages":[{"role":"user","content":"Hello"}]}'
 
 # Sustained usage? Deposit once via the same envelope at /x402/verify
 # (or the /deposit page) and spend credits with an API key instead.`;
@@ -40,26 +40,26 @@ const account = privateKeyToAccount(process.env.AGENT_KEY);
 // See https://x402.org for the protocol shape.
 
 const payReq = await fetch('https://api.oma-ai.com/x402/verify', {
- method: 'POST',
- headers: {
- 'Content-Type': 'application/json',
- 'PAYMENT-SIGNATURE': JSON.stringify({ signature, payload }),
- },
+	method: 'POST',
+	headers: {
+	'Content-Type': 'application/json',
+	'PAYMENT-SIGNATURE': JSON.stringify({ signature, payload }),
+	},
 });
 
 if (payReq.ok) {
- // Credits land as soon as settlement confirms.
- const res = await fetch('https://api.oma-ai.com/v1/chat/completions', {
- method: 'POST',
- headers: {
- 'Content-Type': 'application/json',
- Authorization: \`Bearer \${process.env.OMA_KEY}\`,
- },
- body: JSON.stringify({
- model: 'llama-3.3-70b',
- messages: [{ role: 'user', content: 'Write a smart contract' }],
- }),
- });
+	// Credits land as soon as settlement confirms.
+	const res = await fetch('https://api.oma-ai.com/v1/chat/completions', {
+	method: 'POST',
+	headers: {
+	'Content-Type': 'application/json',
+	Authorization: \`Bearer \${process.env.OMA_KEY}\`,
+	},
+	body: JSON.stringify({
+	model: 'llama-3.3-70b',
+	messages: [{ role: 'user', content: 'Write a smart contract' }],
+	}),
+	});
 }`;
 
 	return (
@@ -100,8 +100,7 @@ if (payReq.ok) {
 								x402 protocol
 							</a>
 							. The server verifies, settles on-chain, and serves the
-							completion — no human in the loop. Spec v2 transport is also
-							supported: the 402 body carries an{" "}
+							completion — no human in the loop. The 402 body carries an{" "}
 							<code className="text-accent font-mono">accepts</code> array
 							(CAIP-2 <code className="text-accent font-mono">eip155:8453</code>
 							, atomic units) and payments can be sent as a base64{" "}
@@ -139,7 +138,7 @@ if (payReq.ok) {
 					>
 						agent-skill.md
 					</a>{" "}
-					— a copy-paste instruction file that teaches your agent to use OMA
+					— a copy-paste instruction file that teaches an agent to use OMA
 					autonomously (API key flow, x402 pay-per-request, and cost
 					guidance), including an optional self-verification step.
 				</p>

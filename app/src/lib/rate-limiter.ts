@@ -1,13 +1,13 @@
 /**
- * In-memory rate limiter for Node.js runtime API routes.
- *
- * Tracks request counts per (IP, route) key inside a sliding window.
- * Expired entries are pruned automatically on every `check()` call
- * and on a background interval so the Map doesn't grow unbounded.
- *
- * NOT suitable for multi-instance / serverless deployments — use Redis
- * or an external rate-limit service there.
- */
+	* In-memory rate limiter for Node.js runtime API routes.
+	*
+	* Tracks request counts per (IP, route) key inside a sliding window.
+	* Expired entries are pruned automatically on every `check()` call
+	* and on a background interval so the Map doesn't grow unbounded.
+	*
+	* NOT suitable for multi-instance / serverless deployments — use Redis
+	* or an external rate-limit service there.
+	*/
 
 export interface RateLimitResult {
 	/** Whether the request is allowed */

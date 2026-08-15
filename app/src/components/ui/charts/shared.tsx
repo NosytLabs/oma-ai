@@ -1,17 +1,17 @@
 /**
- * Shared utilities for the OMA-AI chart components.
- *
- * - **Color tokens**: chart colors are referenced via `var(--color-*)` so
- * they follow theme changes from `app/src/app/globals.css`. recharts
- * forwards these strings straight into the rendered SVG and the browser
- * resolves them at draw time.
- * - **Formatters**: currency, compact number, and adaptive date formatters
- * used by every chart axis and tooltip.
- * - **Empty/Loading states**: small composable pieces that any chart can
- * slot in to handle the "no data" and "loading" cases consistently.
- * - **Accessibility**: each chart sets `role="img"` + `aria-label` on the
- * recharts root so screen readers get a one-line description.
- */
+	* Shared utilities for the OMA-AI chart components.
+	*
+	* - **Color tokens**: chart colors are referenced via `var(--color-*)` so
+	* they follow theme changes from `app/src/app/globals.css`. recharts
+	* forwards these strings straight into the rendered SVG and the browser
+	* resolves them at draw time.
+	* - **Formatters**: currency, compact number, and adaptive date formatters
+	* used by every chart axis and tooltip.
+	* - **Empty/Loading states**: small composable pieces that any chart can
+	* slot in to handle the "no data" and "loading" cases consistently.
+	* - **Accessibility**: each chart sets `role="img"` + `aria-label` on the
+	* recharts root so screen readers get a one-line description.
+	*/
 
 import { Inbox } from "lucide-react";
 import { m } from "@/lib/framer-motion-client";
@@ -58,12 +58,12 @@ export const CHART_PALETTE: readonly string[] = [
 ];
 
 /**
- * Build a stable, unique gradient id for a given chart instance. recharts
- * shares the DOM so two `<linearGradient id="costGradient">` defs on the
- * same page will collide and only the first will be referenced. By suffixing
- * with a per-instance token (often the React `useId()` value) we keep
- * every gradient isolated.
- */
+	* Build a stable, unique gradient id for a given chart instance. recharts
+	* shares the DOM so two `<linearGradient id="costGradient">` defs on the
+	* same page will collide and only the first will be referenced. By suffixing
+	* with a per-instance token (often the React `useId()` value) we keep
+	* every gradient isolated.
+	*/
 export function makeGradientId(base: string, instanceId?: string): string {
 	const suffix = instanceId
 		? `-${instanceId}`
@@ -72,10 +72,10 @@ export function makeGradientId(base: string, instanceId?: string): string {
 }
 
 /**
- * Pick a color for a given provider name. Falls back to the accent if the
- * provider is unknown, keeping the legend stable for new providers that
- * haven't been branded yet.
- */
+	* Pick a color for a given provider name. Falls back to the accent if the
+	* provider is unknown, keeping the legend stable for new providers that
+	* haven't been branded yet.
+	*/
 export function providerColor(provider: string): string {
 	const p = provider.toLowerCase();
 	if (p.includes("venice")) return CHART_COLORS.providerVenice;
@@ -98,9 +98,9 @@ interface ChartEmptyStateProps {
 }
 
 /**
- * Standardized empty state for every chart. Shows an inbox icon, a one-line
- * title, optional description, and an optional action node.
- */
+	* Standardized empty state for every chart. Shows an inbox icon, a one-line
+	* title, optional description, and an optional action node.
+	*/
 export function ChartEmptyState({
 	title = "No data yet",
 	description = "Once you start using the API, your activity will show up here.",
@@ -133,13 +133,13 @@ interface ChartContainerProps {
 }
 
 /**
- * Standardized responsive wrapper for recharts.
- *
- * Every chart needs the same `m.div` entrance animation + `ResponsiveContainer`
- * with `minWidth={1} minHeight={1}` (silences recharts' negative-dimension
- * warning on first paint before ResizeObserver fires). Extracted so chart
- * components don't each duplicate this boilerplate.
- */
+	* Standardized responsive wrapper for recharts.
+	*
+	* Every chart needs the same `m.div` entrance animation + `ResponsiveContainer`
+	* with `minWidth={1} minHeight={1}` (silences recharts' negative-dimension
+	* warning on first paint before ResizeObserver fires). Extracted so chart
+	* components don't each duplicate this boilerplate.
+	*/
 export function ChartContainer({
 	heightClass = "h-[300px]",
 	className,

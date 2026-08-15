@@ -3,11 +3,11 @@ import Link from "next/link";
 import { AnimatedSection, SectionHeading } from "./shared";
 
 /**
- * Docs FAQ — points to the canonical novice-friendly /faq and /glossary
- * pages instead of duplicating their content. The /docs surface is the
- * technical reference; user-facing Q&A and term definitions live at
- * /faq and /glossary so they can be indexed and translated independently.
- */
+	* Docs FAQ — points to the canonical novice-friendly /faq and /glossary
+	* pages instead of duplicating their content. The /docs surface is the
+	* technical reference; user-facing Q&A and term definitions live at
+	* /faq and /glossary so they can be indexed and translated independently.
+	*/
 export function FAQSection() {
 	return (
 		<AnimatedSection delay={500}>

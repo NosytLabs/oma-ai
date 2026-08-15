@@ -1,10 +1,10 @@
 /**
- * /v1/search — DuckDuckGo web search for the chat playground.
- *
- * optionalAuth so anonymous free-chat can search without an account.
- * Pins rate-limit budget, HTML + Instant Answer paths, caps, and
- * graceful empty results (never 5xx to the chat UI).
- */
+	* /v1/search — DuckDuckGo web search for the chat playground.
+	*
+	* optionalAuth so anonymous free-chat can search without an account.
+	* Pins rate-limit budget, HTML + Instant Answer paths, caps, and
+	* graceful empty results (never 5xx to the chat UI).
+	*/
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Hono } from "hono";
 
@@ -46,10 +46,10 @@ function ddgHtmlPage(
 	return items
 		.map(
 			(item) => `
-    <div class="result results_links">
-      <a class="result__a" href="//duckduckgo.com/l/?uddg=${encodeURIComponent(item.url)}">${item.title}</a>
-      <a class="result__snippet" href="//duckduckgo.com/l/?uddg=${encodeURIComponent(item.url)}">${item.snippet}</a>
-    </div>`,
+				<div class="result results_links">
+						<a class="result__a" href="//duckduckgo.com/l/?uddg=${encodeURIComponent(item.url)}">${item.title}</a>
+						<a class="result__snippet" href="//duckduckgo.com/l/?uddg=${encodeURIComponent(item.url)}">${item.snippet}</a>
+				</div>`,
 		)
 		.join("\n");
 }

@@ -1,24 +1,24 @@
 "use client";
 
 /**
- * ElectricBorder — Originkit-inspired animated gradient border.
- *
- * Wraps children in a container with a running-light conic-gradient border.
- * Uses two nested divs (border layer + content layer) for reliable cross-
- * browser support without pseudo-element hacks.
- *
- * Use sparingly to draw attention to a single primary element (CTA button,
- * featured card, etc.). Respects reduced-motion.
- *
- * API:
- * - active: animate when true, static when false (default true)
- * - borderRadius: CSS border-radius (default "0.75rem")
- * - borderWidth: px (default 1)
- * - color: accent color (default var(--color-accent))
- * - children
- * - className: pass-through
- * - style: pass-through
- */
+	* ElectricBorder — Originkit-inspired animated gradient border.
+	*
+	* Wraps children in a container with a running-light conic-gradient border.
+	* Uses two nested divs (border layer + content layer) for reliable cross-
+	* browser support without pseudo-element hacks.
+	*
+	* Use sparingly to draw attention to a single primary element (CTA button,
+	* featured card, etc.). Respects reduced-motion.
+	*
+	* API:
+	* - active: animate when true, static when false (default true)
+	* - borderRadius: CSS border-radius (default "0.75rem")
+	* - borderWidth: px (default 1)
+	* - color: accent color (default var(--color-accent))
+	* - children
+	* - className: pass-through
+	* - style: pass-through
+	*/
 
 import { useReducedMotion } from "@/lib/framer-motion-client";
 import type { CSSProperties, ReactNode } from "react";

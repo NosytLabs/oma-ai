@@ -80,21 +80,21 @@ export interface ChatToolbarProps {
 }
 
 /**
- * The top toolbar that sits above the messages pane.
- *
- * Three functional clusters, left → right:
- * 1. Input/mode — model selector + parameters + media-mode (Chat | Create) tabs.
- *    All three are decisions about *what kind of input this is*, so they live in
- *    one group. The media-mode toggle is no longer a separate floating cluster
- *    (see git history for the "orphan tabs at mobile" fix).
- * 2. (searching badge sits inside cluster 1 when web search is in flight)
- * 3. Stats bar (desktop / mobile variants), credit balance pill, then
- *    compare mode, share, shortcuts, export, clear.
- *
- * The Toolbar is purely presentational — every interaction is a prop
- * callback, every label/state is a prop. The page owns the state and
- * the side effects (export blob creation, share link, clear, etc.).
- */
+	* The top toolbar that sits above the messages pane.
+	*
+	* Three functional clusters, left → right:
+	* 1. Input/mode — model selector + parameters + media-mode (Chat | Create) tabs.
+	*    All three are decisions about *what kind of input this is*, so they live in
+	*    one group. The media-mode toggle is no longer a separate floating cluster
+	*    (see git history for the "orphan tabs at mobile" fix).
+	* 2. (searching badge sits inside cluster 1 when web search is in flight)
+	* 3. Stats bar (desktop / mobile variants), credit balance pill, then
+	*    compare mode, share, shortcuts, export, clear.
+	*
+	* The Toolbar is purely presentational — every interaction is a prop
+	* callback, every label/state is a prop. The page owns the state and
+	* the side effects (export blob creation, share link, clear, etc.).
+	*/
 export function ChatToolbar({
 	variant = "chat",
 	model,

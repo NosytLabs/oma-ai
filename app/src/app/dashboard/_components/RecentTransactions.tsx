@@ -35,10 +35,10 @@ const TX_LABELS: Record<string, string> = {
 };
 
 /**
- * Compact "last 5 credit transactions" panel.
- * Always renders — when the list is empty, shows a call-to-action instead of
- * collapsing the row (which would leave a noticeable gap on the Overview tab).
- */
+	* Compact "last 5 credit transactions" panel.
+	* Always renders — when the list is empty, shows a call-to-action instead of
+	* collapsing the row (which would leave a noticeable gap on the Overview tab).
+	*/
 export function RecentTransactions({ transactions }: RecentTransactionsProps) {
 	// Sort by createdAt descending using Date.parse so the newest is always on
 	// top. Server returns rows in insertion order (deposit then usage), which

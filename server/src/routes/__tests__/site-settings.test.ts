@@ -2,15 +2,15 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { Hono } from "hono";
 
 /**
- * Tests for GET /v1/site-settings (public rail/config status endpoint).
- *
- * The endpoint must remain available even when the DB is unreachable:
- *   1. DB read succeeds → return DB state (with env fallback for missing fields)
- *   2. DB read throws → return env defaults (anonymous visitor never sees a 5xx)
- *
- * This guards the deposit page UX in dev environments where the Postgres
- * container is offline but the operator is browsing the marketing surfaces.
- */
+	* Tests for GET /v1/site-settings (public rail/config status endpoint).
+	*
+	* The endpoint must remain available even when the DB is unreachable:
+	*   1. DB read succeeds → return DB state (with env fallback for missing fields)
+	*   2. DB read throws → return env defaults (anonymous visitor never sees a 5xx)
+	*
+	* This guards the deposit page UX in dev environments where the Postgres
+	* container is offline but the operator is browsing the marketing surfaces.
+	*/
 
 const mockDb = vi.hoisted(() => {
 	const limitMock = vi.fn();

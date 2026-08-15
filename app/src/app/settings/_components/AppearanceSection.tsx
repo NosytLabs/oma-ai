@@ -4,10 +4,10 @@ import { Check } from "lucide-react";
 import { THEME_LIST, type Theme, useTheme } from "@/components/ThemeProvider";
 
 /**
- * Appearance settings — theme switcher surfaced inside /settings.
- * Mirrors the ThemeToggle chip but laid out as a full settings card
- * with labels, hints, and a live preview swatch.
- */
+	* Appearance settings — theme switcher surfaced inside /settings.
+	* Mirrors the ThemeToggle chip but laid out as a full settings card
+	* with labels, hints, and a live preview swatch.
+	*/
 export function AppearanceSection() {
 	const { theme, setTheme, accent } = useTheme();
 

@@ -86,32 +86,32 @@ export function LiveModelDetail({
 	const outputPrice = formatPrice(outputPricePer1M ?? 0);
 
 	const liveCurlExample = `curl https://api.oma-ai.com/v1/chat/completions \\
- -H "Content-Type: application/json" \\
- -H "Authorization: Bearer $OMA_API_KEY" \\
- -d '{
- "model": "${encodeURIComponent(slug)}",
- "messages": [
- { "role": "user", "content": "Hello, how are you?" }
- ],
- "max_tokens": 150,
- "temperature": 0.7
- }'`;
+	-H "Content-Type: application/json" \\
+	-H "Authorization: Bearer $OMA_API_KEY" \\
+	-d '{
+	"model": "${encodeURIComponent(slug)}",
+	"messages": [
+	{ "role": "user", "content": "Hello, how are you?" }
+	],
+	"max_tokens": 150,
+	"temperature": 0.7
+	}'`;
 
 	const livePythonExample = `import os
 import openai
 
 client = openai.OpenAI(
- api_key=os.getenv("OMA_API_KEY"),
- base_url="https://api.oma-ai.com/v1"
+	api_key=os.getenv("OMA_API_KEY"),
+	base_url="https://api.oma-ai.com/v1"
 )
 
 response = client.chat.completions.create(
- model="${encodeURIComponent(slug)}",
- messages=[
- {"role": "user", "content": "Hello, how are you?"}
- ],
- max_tokens=150,
- temperature=0.7
+	model="${encodeURIComponent(slug)}",
+	messages=[
+	{"role": "user", "content": "Hello, how are you?"}
+	],
+	max_tokens=150,
+	temperature=0.7
 )
 
 print(response.choices[0].message.content)`;
@@ -119,17 +119,17 @@ print(response.choices[0].message.content)`;
 	const liveJsExample = `import OpenAI from "openai";
 
 const client = new OpenAI({
- apiKey: process.env.OMA_API_KEY,
- baseURL: "https://api.oma-ai.com/v1"
+	apiKey: process.env.OMA_API_KEY,
+	baseURL: "https://api.oma-ai.com/v1"
 });
 
 const response = await client.chat.completions.create({
- model: "${encodeURIComponent(slug)}",
- messages: [
- { role: "user", content: "Hello, how are you?" }
- ],
- max_tokens: 150,
- temperature: 0.7
+	model: "${encodeURIComponent(slug)}",
+	messages: [
+	{ role: "user", content: "Hello, how are you?" }
+	],
+	max_tokens: 150,
+	temperature: 0.7
 });`;
 
 	return (

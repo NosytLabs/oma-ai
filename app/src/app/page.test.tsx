@@ -136,7 +136,8 @@ describe("HomePage", () => {
 		await waitFor(() => {
 			expect(screen.getByText(/routing through/i)).toBeInTheDocument();
 			expect(screen.getAllByText("Venice").length).toBeGreaterThan(0);
-			expect(screen.getAllByText("OMA-AI").length).toBeGreaterThan(0);
+			expect(screen.getAllByText("Zyloo").length).toBeGreaterThan(0);
+			expect(screen.getAllByText("Gonka").length).toBeGreaterThan(0);
 		});
 	});
 

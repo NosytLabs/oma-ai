@@ -19,7 +19,7 @@ const AgentSessionDemo = dynamic(
 );
 
 // Compact per-modality curl blocks. Each block's code defaults to a
-// bash snippet, matching the real /v1/* surface: chat, image, video.
+// bash snippet, matching the real /v1/* surface: chat completions.
 function ModalityExample({ title, code }: { title: string; code: string }) {
 	const [copied, setCopied] = useState(false);
 	const looksLikeCurl = code.trimStart().startsWith("curl");
@@ -64,12 +64,12 @@ function ModalityExample({ title, code }: { title: string; code: string }) {
 
 export function QuickStartSection() {
 	const curlCode = `curl https://api.oma-ai.com/v1/chat/completions \\
- -H "Authorization: Bearer oma_sk_your_key_here" \\
- -H "Content-Type: application/json" \\
- -d '{
- "model": "llama-3.3-70b",
- "messages": [{"role": "user", "content": "Hello!"}]
- }'`;
+	-H "Authorization: Bearer oma_sk_your_key_here" \\
+	-H "Content-Type: application/json" \\
+	-d '{
+	"model": "llama-3.3-70b",
+	"messages": [{"role": "user", "content": "Hello!"}]
+	}'`;
 
 	return (
 		<AnimatedSection>
@@ -124,41 +124,35 @@ export function QuickStartSection() {
 
 			{/* Per-modality examples — copyable from the docs page so users see
 			 every supported modality at a glance. Each block uses the
-			 OpenAI-compatible surface so SDKs work out-of-the-box. */}
+			 OpenAI-compatible surface so SDKs work out-of-the-box. OMA
+			 serves chat completions only (text + multimodal input); image
+			 and video generation endpoints were intentionally removed. */}
 			<div className="mt-10 space-y-4">
 				<p className="text-xs font-mono uppercase tracking-widest text-text-muted">
-					Chat · image · video · curl
+					Chat · Anthropic messages · curl
 				</p>
 				<div className="grid gap-3 md:grid-cols-2">
 					<ModalityExample
-						title="Chat"
+						title="Chat (OpenAI-compatible)"
 						code={`curl https://api.oma-ai.com/v1/chat/completions \\
- -H "Authorization: Bearer oma_sk_your_key_here" \\
- -H "Content-Type: application/json" \\
- -d '{
- "model": "llama-3.3-70b",
- "messages": [{"role": "user", "content": "Hello!"}]
- }'`}
+		-H "Authorization: Bearer oma_sk_your_key_here" \\
+		-H "Content-Type: application/json" \\
+		-d '{
+	"model": "llama-3.3-70b",
+	"messages": [{"role": "user", "content": "Hello!"}]
+	}'`}
 					/>
 					<ModalityExample
-						title="Image generation"
-						code={`curl https://api.oma-ai.com/v1/images/generations \\
- -H "Authorization: Bearer oma_sk_your_key_here" \\
- -H "Content-Type: application/json" \\
- -d '{
- "model": "venice-sd35",
- "prompt": "a serene mountain lake at dawn"
- }'`}
-					/>
-					<ModalityExample
-						title="Video generation"
-						code={`curl https://api.oma-ai.com/v1/videos/generations \\
- -H "Authorization: Bearer oma_sk_your_key_here" \\
- -H "Content-Type: application/json" \\
- -d '{
- "model": "kling-v3-pro-text-to-video",
- "duration": "5s"
- }'`}
+						title="Messages (Anthropic-compatible)"
+						code={`curl https://api.oma-ai.com/v1/messages \\
+	-H "x-api-key: oma_sk_your_key_here" \\
+	-H "anthropic-version: 2023-06-01" \\
+	-H "Content-Type: application/json" \\
+	-d '{
+	"model": "claude-sonnet-4-6",
+	"max_tokens": 256,
+	"messages": [{"role": "user", "content": "Hello!"}]
+	}'`}
 					/>
 				</div>
 			</div>

@@ -1,11 +1,11 @@
 import { request } from "./client.js";
 
 /**
- * localStorage key holding the user's per-deposit "seen" timestamps.
- * The server has no per-user notification read state (notifications are
- * derived from deposits on every fetch), so we track read state on the
- * client. The shape is `{ [depositId]: ISO8601-seen-at }`.
- */
+	* localStorage key holding the user's per-deposit "seen" timestamps.
+	* The server has no per-user notification read state (notifications are
+	* derived from deposits on every fetch), so we track read state on the
+	* client. The shape is `{ [depositId]: ISO8601-seen-at }`.
+	*/
 const READ_STATE_KEY = "oma.notifications.read";
 
 function readState(): Record<string, string> {

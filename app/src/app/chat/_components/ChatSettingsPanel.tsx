@@ -38,14 +38,14 @@ export interface ChatSettingsPanelProps {
 }
 
 /**
- * Right-side parameters panel, rendered in two flavors:
- * - desktop (≥md): inline aside that slides in from the right
- * - mobile (<md): fixed-position aside + scrim overlay
- *
- * Both surfaces share the same `<SettingsPanel>` body. The mobile
- * overlay also gets a click-to-dismiss scrim so the user can close
- * by tapping outside the panel.
- */
+	* Right-side parameters panel, rendered in two flavors:
+	* - desktop (≥md): inline aside that slides in from the right
+	* - mobile (<md): fixed-position aside + scrim overlay
+	*
+	* Both surfaces share the same `<SettingsPanel>` body. The mobile
+	* overlay also gets a click-to-dismiss scrim so the user can close
+	* by tapping outside the panel.
+	*/
 export function ChatSettingsPanel({
 	paramsOpen,
 	setParamsOpen,

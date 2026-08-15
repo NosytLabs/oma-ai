@@ -17,12 +17,12 @@ interface NavbarToolsDropdownProps {
 }
 
 /**
- * Tools dropdown (desktop only). Click-outside closes via `useClickOutside`.
- * Escape closes AND restores focus to the toggle button — that asymmetry vs
- * `NavbarUserMenu` is intentional (the original tools-menu behavior) and is
- * implemented as a separate keydown effect here so `useClickOutside` can
- * stay single-purpose.
- */
+	* Tools dropdown (desktop only). Click-outside closes via `useClickOutside`.
+	* Escape closes AND restores focus to the toggle button — that asymmetry vs
+	* `NavbarUserMenu` is intentional (the original tools-menu behavior) and is
+	* implemented as a separate keydown effect here so `useClickOutside` can
+	* stay single-purpose.
+	*/
 export function NavbarToolsDropdown({
 	open,
 	onOpenChange,

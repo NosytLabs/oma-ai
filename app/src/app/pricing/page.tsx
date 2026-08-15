@@ -15,9 +15,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { FloatingIcons } from "@/components/floating-icons";
 import { InViewFade } from "@/components/motion/in-view-fade";
-import { formatPricePerMillion, loadModels, loadRawModelEntries, MODEL_COUNT, type Model, MODELS } from "@/lib/models-data";
+import { formatPricePerMillion, loadModels, MODEL_COUNT, type Model, MODELS } from "@/lib/models-data";
 import {
-	prettyName,
 	toPricedModel,
 	type Category,
 } from "./_lib/pricing-utils";
@@ -212,46 +211,6 @@ export default function PricingPage() {
 	);
 	const modelCount = models.length;
 
-	// Pull image + video models from the same /v1/models response. The
-	// loadModels() helper above drops them; we reuse the shared raw cache
-	// for the generation section's per-image / per-generation pricing.
-	const [generationModels, setGenerationModels] = useState<
-		Array<{
-			id: string;
-			name: string;
-			priceUsd: number;
-			category: "image" | "video";
-			duration?: string;
-		}>
-	>([]);
-	useEffect(() => {
-		let cancelled = false;
-		loadRawModelEntries()
-			.then((entries) => {
-				if (cancelled || !entries.length) return;
-				const gen = entries
-					.filter(
-						(m) =>
-							m.modality === "image" || m.modality === "video",
-					)
-					.map((m) => ({
-						id: m.id,
-						name: prettyName(m.id),
-						priceUsd: Number(
-							m.pricing?.generation ?? m.pricing?.prompt ?? 0,
-						),
-						category: m.modality as "image" | "video",
-						duration: m.duration,
-					}))
-					.sort((a, b) => a.priceUsd - b.priceUsd);
-				setGenerationModels(gen);
-			})
-			.catch(() => {});
-		return () => {
-			cancelled = true;
-		};
-	}, []);
-
 	return (
 		<div className="relative min-h-screen overflow-hidden bg-void">
 			<BreadcrumbListJsonLd
@@ -274,6 +233,7 @@ export default function PricingPage() {
 			/>
 			{/* ── Ambient background ── */}
 			<div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
+				<div className="absolute inset-x-0 top-0 h-[480px] bg-[radial-gradient(ellipse_at_top,color-mix(in_srgb,var(--color-accent)_18%,transparent)_0%,transparent_70%)]" />
 				<div className="absolute inset-0 bg-grid opacity-[0.35] mask-radial" />
 				<FloatingIcons count={6} />
 			</div>
@@ -289,7 +249,7 @@ export default function PricingPage() {
 						for Venice-routed models. OMA-AI models have no additional fee.
 					</p>
 					<div className="meta-strip">
-							<span>{modelCount + generationModels.length} live models</span>
+							<span>{modelCount} live models</span>
 						<span>Usage-based billing</span>
 						<span>Card · USDC · x402</span>
 					</div>
@@ -429,81 +389,6 @@ export default function PricingPage() {
 						</div>
 					</section>
 				</InViewFade>
-
-				{generationModels.length > 0 && (
-					<InViewFade delay={0.3}>
-						<section className="relative border-t border-border-subtle py-16 sm:py-20">
-							<div className="mb-6 flex items-center gap-2">
-								<div className="h-px flex-1 bg-border" />
-								<span className="text-xs font-mono text-text-muted uppercase tracking-widest">
-									image & video generation
-								</span>
-								<div className="h-px flex-1 bg-border" />
-							</div>
-							<div className="surface-card p-4 sm:p-6 rounded-[var(--radius-xl)] shadow-[var(--shadow-sm)]">
-								<p className="mb-4 text-sm text-text-secondary">
-									Generation models bill per output (image or video), not per
-									token. Pricing shown is the customer-facing rate — wholesale
-									cost plus a {`25%`} markup. Image + video models also count
-									toward the live catalog total.
-								</p>
-								<div className="relative">
-									<div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-surface to-transparent pointer-events-none z-10 hidden sm:block" />
-									<div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent [-webkit-overflow-scrolling:touch]" tabIndex={0} role="region" aria-label="Pricing comparison">
-										<table className="w-full min-w-[32rem] text-left">
-											<thead>
-												<tr className="border-b border-border bg-surface-elevated">
-													<th className="px-4 py-3 text-xs font-display font-semibold uppercase tracking-widest text-text-muted">
-														Model
-													</th>
-													<th className="px-4 py-3 text-xs font-display font-semibold uppercase tracking-widest text-text-muted">
-														Type
-													</th>
-													<th className="px-4 py-3 text-xs font-display font-semibold uppercase tracking-widest text-text-muted text-right">
-														Price
-													</th>
-													<th className="px-4 py-3 text-xs font-display font-semibold uppercase tracking-widest text-text-muted text-right">
-														Notes
-													</th>
-												</tr>
-											</thead>
-											<tbody>
-												{generationModels.map((m) => (
-													<tr
-														key={m.id}
-														className="border-b border-border/40 hover:bg-surface-elevated/40 transition-colors duration-200 ease-out"
-													>
-														<td className="px-4 py-3 font-medium text-text-bright">
-															{m.name}
-														</td>
-														<td className="px-4 py-3">
-															<span
-																className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${m.category === "image" ? "bg-violet/15 text-violet" : "bg-accent/15 text-accent"}`}
-															>
-																{m.category}
-															</span>
-														</td>
-														<td className="px-4 py-3 font-mono text-text-bright text-right whitespace-nowrap">
-															${m.priceUsd.toFixed(4)}
-															<span className="ml-1 text-xs text-text-muted">
-																{m.category === "image"
-																	? "/image"
-																	: "/generation"}
-															</span>
-														</td>
-														<td className="px-4 py-3 text-text-muted text-right text-xs font-mono">
-															{m.duration ?? (m.category === "video" ? "—" : "")}
-														</td>
-													</tr>
-												))}
-											</tbody>
-										</table>
-									</div>
-								</div>
-							</div>
-						</section>
-					</InViewFade>
-				)}
 
 				<InViewFade delay={0.4}>
 					<section className="relative border-t border-border-subtle py-16 sm:py-20">

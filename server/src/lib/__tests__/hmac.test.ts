@@ -1,12 +1,12 @@
 /**
- * Unit tests for `hmac.ts` (HMAC-SHA256 verification helpers).
- *
- * The webhook handlers in routes/{deposit,onramp}.ts use this for
- * inbound signature verification of CCTP / LI.FI / Onramp webhooks.
- * The timing-safe semantics and length-mismatch handling are critical
- * to test directly — a non-constant-time comparison would leak timing
- * information about the signature bytes.
- */
+	* Unit tests for `hmac.ts` (HMAC-SHA256 verification helpers).
+	*
+	* The webhook handlers in routes/{deposit,onramp}.ts use this for
+	* inbound signature verification of CCTP / LI.FI / Onramp webhooks.
+	* The timing-safe semantics and length-mismatch handling are critical
+	* to test directly — a non-constant-time comparison would leak timing
+	* information about the signature bytes.
+	*/
 import { createHmac } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { hmacSha256Hex, verifyHmacSha256Hex } from "../hmac.js";

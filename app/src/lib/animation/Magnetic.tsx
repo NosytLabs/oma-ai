@@ -11,22 +11,22 @@ import { useEffect, useRef } from "react";
 import { springs } from "./springs";
 
 /**
- * Magnetic — element follows the cursor with a spring, snapping back on
- * leave. Kinetics ref: magnet.
- *
- * This is the merged magnetic primitive (formerly duplicated as
- * `Magnetic` in `@/lib/motion` and `MagneticButton` here). This
- * implementation won because:
- *   - Real spring physics (useMotionValue + useSpring) — interruptible,
- *     GPU-composited, no fixed-duration snap.
- *   - Explicit `useReducedMotion` guard — renders a static span for
- *     users who opt out. (The old CSS-var version bypassed framer, so
- *     `MotionConfig reducedMotion="user"` could not no-op it.)
- *   - Listener cleanup on unmount.
- *
- * The wrap is `display: inline-block` and does not capture pointer
- * events — the child stays clickable.
- */
+	* Magnetic — element follows the cursor with a spring, snapping back on
+	* leave. Kinetics ref: magnet.
+	*
+	* This is the merged magnetic primitive (formerly duplicated as
+	* `Magnetic` in `@/lib/motion` and `MagneticButton` here). This
+	* implementation won because:
+	*   - Real spring physics (useMotionValue + useSpring) — interruptible,
+	*     GPU-composited, no fixed-duration snap.
+	*   - Explicit `useReducedMotion` guard — renders a static span for
+	*     users who opt out. (The old CSS-var version bypassed framer, so
+	*     `MotionConfig reducedMotion="user"` could not no-op it.)
+	*   - Listener cleanup on unmount.
+	*
+	* The wrap is `display: inline-block` and does not capture pointer
+	* events — the child stays clickable.
+	*/
 
 interface MagneticProps {
 	children: ReactNode;

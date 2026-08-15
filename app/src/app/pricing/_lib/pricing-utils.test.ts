@@ -39,10 +39,17 @@ describe("pricing-utils", () => {
 	});
 
 	it("formats prices across the displayed precision tiers", () => {
-		expect(fmtPrice(0)).toBe("$0.01");
-		expect(fmtPrice(0.1234)).toBe("$0.1234");
+		expect(fmtPrice(0)).toBe("Free");
+		expect(fmtPrice(0.0125)).toBe("$0.05");
+		expect(fmtPrice(0.1234)).toBe("$0.15");
 		expect(fmtPrice(1.25)).toBe("$1.25");
 		expect(fmtPrice(12.5)).toBe("$12.50");
+	});
+
+	it("rounds to the nearest $0.05 step so prices stay visually clean", () => {
+		expect(fmtPrice(0.18)).toBe("$0.20");
+		expect(fmtPrice(0.13)).toBe("$0.15");
+		expect(fmtPrice(0.21)).toBe("$0.25");
 	});
 
 	it("humanizes hyphenated model ids while preserving numeric tokens", () => {

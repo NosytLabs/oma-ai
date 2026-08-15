@@ -54,7 +54,9 @@ for (const vp of VIEWPORTS) {
       await expect(menu).toBeVisible();
       await expect(menu.locator('a[href="/models"]')).toBeVisible();
       await expect(menu.locator('a[href="/pricing"]')).toBeVisible();
-      await toggle.click();
+      // Close via Escape — the focus trap inside the drawer catches Escape
+      // and invokes onClose, mirroring keyboard-only user behavior.
+      await page.keyboard.press("Escape");
       await expect(menu).toBeHidden();
     });
 
@@ -95,8 +97,8 @@ test.describe("desktop-only navbar interactions", () => {
     await toolsBtn.click();
     const menu = page.locator("#tools-menu");
     await expect(menu).toBeVisible();
-    for (const href of ["/chat?mode=create", "/getting-started"]) {
-      await expect(menu.locator(`a[href="${href}"]`)).toBeVisible();
+    for (const href of ["/deposit", "/docs#endpoints", "/getting-started", "/faq"]) {
+      await expect(menu.locator(`a[href="${href}"]`).first()).toBeVisible();
     }
     await page.keyboard.press("Escape");
     await expect(menu).toBeHidden();

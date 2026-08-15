@@ -1,10 +1,10 @@
 "use client";
 
 /**
- * AuthPromptModal — lightweight signup prompt shown when a guest user
- * hits a gated action (paid model selection, free message limit).
- * Renders a focused modal with a clear CTA to /login.
- */
+	* AuthPromptModal — lightweight signup prompt shown when a guest user
+	* hits a gated action (paid model selection, free message limit).
+	* Renders a focused modal with a clear CTA to /login.
+	*/
 
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";

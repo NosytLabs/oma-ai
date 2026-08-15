@@ -15,11 +15,11 @@ type CookieHeaders = Headers & {
 };
 
 /**
- * Rebuild an upstream response without dropping cookies or hop-by-hop
- * headers. `Headers.get()` is not sufficient for Set-Cookie because a
- * response may contain more than one cookie; append each value separately.
- * The body remains a stream so SSE/chat responses are not buffered.
- */
+	* Rebuild an upstream response without dropping cookies or hop-by-hop
+	* headers. `Headers.get()` is not sufficient for Set-Cookie because a
+	* response may contain more than one cookie; append each value separately.
+	* The body remains a stream so SSE/chat responses are not buffered.
+	*/
 export function proxyResponse(upstream: Response): Response {
 	const headers = new Headers();
 	for (const [key, value] of upstream.headers.entries()) {

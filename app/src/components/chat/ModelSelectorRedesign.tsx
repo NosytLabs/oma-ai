@@ -1,16 +1,16 @@
 "use client";
 
 /**
- * MODEL SELECTOR REDESIGN — "Terminal Noir" Aesthetic
- *
- * Key changes:
- * - Glassmorphism dropdown with animated gradient border
- * - Model items have subtle hover glow that matches tier color
- * - Search input has a pulsing accent border when focused
- * - Tier filter pills use filled+outlined states for clear selection
- * - Selected model gets a left accent bar indicator
- * - Smooth spring transitions on open/close
- */
+	* MODEL SELECTOR REDESIGN — "Terminal Noir" Aesthetic
+	*
+	* Key changes:
+	* - Glassmorphism dropdown with animated gradient border
+	* - Model items have subtle hover glow that matches tier color
+	* - Search input has a pulsing accent border when focused
+	* - Tier filter pills use filled+outlined states for clear selection
+	* - Selected model gets a left accent bar indicator
+	* - Smooth spring transitions on open/close
+	*/
 
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";
@@ -195,12 +195,12 @@ export function ModelSelector({
 				aria-haspopup="listbox"
 				aria-label={`Select AI model — ${selectedName || "Choose model"}`}
 				className={`
- flex w-full min-w-0 items-center gap-2 bg-[var(--color-surface)]/70 border border-[var(--color-border)]
- hover:border-[var(--color-accent)]/40 hover:bg-[var(--color-surface)] transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97]
- group rounded-[var(--radius-lg)]
- focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]
- ${compact ? "justify-between px-3 py-2" : "px-2.5 py-2 sm:px-3"}
- `}
+	flex w-full min-w-0 items-center gap-2 bg-[var(--color-surface)]/70 border border-[var(--color-border)]
+	hover:border-[var(--color-accent)]/40 hover:bg-[var(--color-surface)] transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97]
+	group rounded-[var(--radius-lg)]
+	focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]
+	${compact ? "justify-between px-3 py-2" : "px-2.5 py-2 sm:px-3"}
+	`}
 			>
 				{/* Status dot — static emerald indicator for active selection */}
 				<span className="relative flex h-2 w-2 shrink-0">
@@ -211,9 +211,9 @@ export function ModelSelector({
 				</span>
 				<ChevronDown
 					className={`
- w-3.5 h-3.5 text-text-muted shrink-0 transition-transform duration-200 ease-out
- ${open ? "rotate-180 text-[var(--color-accent)]" : ""}
- `}
+	w-3.5 h-3.5 text-text-muted shrink-0 transition-transform duration-200 ease-out
+	${open ? "rotate-180 text-[var(--color-accent)]" : ""}
+	`}
 				/>
 			</button>
 
@@ -226,8 +226,8 @@ export function ModelSelector({
 						exit="exit"
 						variants={dropdownVariants}
 						className="
- glass-strong absolute top-full left-0 mt-1.5 w-[calc(100vw-2rem)] max-w-sm sm:w-80 overflow-hidden z-50
- "
+	glass-strong absolute top-full left-0 mt-1.5 w-[calc(100vw-2rem)] max-w-sm sm:w-80 overflow-hidden z-50
+	"
 						style={{
 							boxShadow: "var(--shadow-dropdown)",
 							transformOrigin: "top left",
@@ -248,11 +248,11 @@ export function ModelSelector({
 										placeholder="SEARCH MODELS..."
 										aria-label="Search models"
 										className="
- w-full pl-9 pr-3 py-2 bg-[var(--color-void)] border border-[var(--color-border)] rounded-[var(--radius-md)]
- text-sm text-text-secondary font-mono placeholder-text-muted
- focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]
- transition-[border-color,box-shadow] duration-200 ease-out
- "
+	w-full pl-9 pr-3 py-2 bg-[var(--color-void)] border border-[var(--color-border)] rounded-[var(--radius-md)]
+	text-sm text-text-secondary font-mono placeholder-text-muted
+	focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]
+	transition-[border-color,box-shadow] duration-200 ease-out
+	"
 									/>
 								</div>
 								{/* Tier filter pills */}
@@ -282,16 +282,16 @@ export function ModelSelector({
 												aria-label={`Filter models by ${tier} tier`}
 												aria-pressed={isActive}
 												className={`
- px-2 py-1.5 min-h-[36px] text-[10px] font-mono uppercase tracking-wider
- transition-[background-color,color,border-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97] rounded-[var(--radius-sm)]
- ${
+	px-2 py-1.5 min-h-[36px] text-[10px] font-mono uppercase tracking-wider
+	transition-[background-color,color,border-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97] rounded-[var(--radius-sm)]
+	${
 														isActive
 															? `${style.bg} ${style.text} border`
 															: "bg-surface/50 text-text-muted hover:text-text-secondary border border-transparent"
 													}
- focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
- focus-visible:ring-offset-1 focus-visible:ring-offset-void
- `}
+	focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
+	focus-visible:ring-offset-1 focus-visible:ring-offset-void
+	`}
 												style={
 													isActive ? { borderColor: style.border } : undefined
 												}
@@ -344,19 +344,19 @@ const locked = !isAuthenticated && !free;
 											aria-selected={isSelected}
 											aria-label={`${name}, ${modelItem.category} tier, ${modelItem.ctx} context${locked ? ", requires sign-in" : ", free"}`}
 											className={`
- w-full flex items-center justify-between text-left
- ${compact ? "px-2 py-1.5" : "px-3 py-2.5"}
- transition-[background-color,color,transform] duration-200 ease-out active:scale-[0.98] relative
- ${
+	w-full flex items-center justify-between text-left
+	${compact ? "px-2 py-1.5" : "px-3 py-2.5"}
+	transition-[background-color,color,transform] duration-200 ease-out active:scale-[0.98] relative
+	${
 													isSelected
 															? "bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)] text-[var(--color-accent)]"
 															: blocked
 																? "hover:bg-[var(--color-surface)]/40 text-text-muted/60"
 																: "hover:bg-[var(--color-surface)]/80 text-text-secondary"
 													}
- focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]
- focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--color-void)]
- `}
+	focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]
+	focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--color-void)]
+	`}
 											>
 												{/* Left accent bar for selected */}
 												{isSelected && (
@@ -383,9 +383,9 @@ const locked = !isAuthenticated && !free;
 												<div>
 													<div
 														className={`
- text-[10px] px-1.5 py-0.5 font-mono uppercase rounded-[var(--radius-sm)]
- ${tierStyle.bg} ${tierStyle.text}
- `}
+	text-[10px] px-1.5 py-0.5 font-mono uppercase rounded-[var(--radius-sm)]
+	${tierStyle.bg} ${tierStyle.text}
+	`}
 													>
 														{modelItem.category}
 													</div>

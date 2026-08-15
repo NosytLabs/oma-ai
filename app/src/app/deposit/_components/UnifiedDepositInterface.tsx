@@ -1,19 +1,19 @@
 "use client";
 
 /**
- * USDC deposit interface — connect your wallet and pay in-app.
- *
- * 1. GET /v1/deposit/usdc returns the treasury deposit address, USDC
- *    contract, network, and min/max bounds.
- * 2. User connects their wallet (MetaMask, Rabby, Rainbow, Coinbase…),
- *    enters an amount, and clicks "Send". The USDC `transfer()` is built
- *    here and confirmed in the user's wallet popup.
- * 3. POST /v1/deposit/usdc records a `pending` deposit (txHash +
- *    fromAddress). A background watcher credits the balance after
- *    on-chain confirmation, verifying the sender address matches.
- *
- * No copy-paste, no memo, no manual tx-hash entry.
- */
+	* USDC deposit interface — connect your wallet and pay in-app.
+	*
+	* 1. GET /v1/deposit/usdc returns the treasury deposit address, USDC
+	*    contract, network, and min/max bounds.
+	* 2. User connects their wallet (MetaMask, Rabby, Rainbow, Coinbase…),
+	*    enters an amount, and clicks "Send". The USDC `transfer()` is built
+	*    here and confirmed in the user's wallet popup.
+	* 3. POST /v1/deposit/usdc records a `pending` deposit (txHash +
+	*    fromAddress). A background watcher credits the balance after
+	*    on-chain confirmation, verifying the sender address matches.
+	*
+	* No copy-paste, no memo, no manual tx-hash entry.
+	*/
 
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import {

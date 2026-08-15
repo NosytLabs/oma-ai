@@ -95,3 +95,8 @@ app/undefined/
 
 # Accidental npm lockfile (this monorepo uses pnpm)
 package-lock.json
+
+# Audit screenshots at repo root (transient)
+audit-*.jpeg
+audit-*.png
+audit-*.jpg

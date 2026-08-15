@@ -1,17 +1,17 @@
 "use client";
 
 /**
- * ThemeProvider — 4 accent themes on a locked dark void.
- *
- * emerald — default OMA brand (terminal emerald)
- * amber — warm CRT / mainframe
- * mono — grayscale austere
- * synth — violet network-op
- *
- * Persistence: localStorage `oma-theme`
- * DOM: `data-theme` on <html> (emerald removes attribute so :root wins)
- * FOUC: layout.tsx inline script applies stored theme before paint
- */
+	* ThemeProvider — 4 accent themes on a locked dark void.
+	*
+	* emerald — default OMA brand (terminal emerald)
+	* amber — warm CRT / mainframe
+	* mono — grayscale austere
+	* synth — violet network-op
+	*
+	* Persistence: localStorage `oma-theme`
+	* DOM: `data-theme` on <html> (emerald removes attribute so :root wins)
+	* FOUC: layout.tsx inline script applies stored theme before paint
+	*/
 
 import {
 	createContext,

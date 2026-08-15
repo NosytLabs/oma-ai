@@ -1,22 +1,22 @@
 "use client";
 
 /**
- * FloatingIcons — Originkit-inspired floating currency symbols background.
- *
- * Renders a scatter of semi-transparent crypto/currency symbols that drift
- * slowly upward with a subtle wobble. Uses CSS transform animations for GPU
- * compositing — zero JS animation cost after mount.
- *
- * Each icon gets a random position, size, and speed via inline CSS custom
- * properties. The `count` prop controls density. Respects reduced-motion.
- *
- * API:
- * - count: number of floating symbols (default 8)
- * - opacity: base opacity 0-1 (default 0.07)
- * - symbols: string[] of chars to scatter (default crypto-themed)
- * - speed: base drift seconds (default 18)
- * - className: pass-through
- */
+	* FloatingIcons — Originkit-inspired floating currency symbols background.
+	*
+	* Renders a scatter of semi-transparent crypto/currency symbols that drift
+	* slowly upward with a subtle wobble. Uses CSS transform animations for GPU
+	* compositing — zero JS animation cost after mount.
+	*
+	* Each icon gets a random position, size, and speed via inline CSS custom
+	* properties. The `count` prop controls density. Respects reduced-motion.
+	*
+	* API:
+	* - count: number of floating symbols (default 8)
+	* - opacity: base opacity 0-1 (default 0.07)
+	* - symbols: string[] of chars to scatter (default crypto-themed)
+	* - speed: base drift seconds (default 18)
+	* - className: pass-through
+	*/
 
 import { useReducedMotion } from "@/lib/framer-motion-client";
 import { useEffect, useState } from "react";

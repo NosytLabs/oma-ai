@@ -1,8 +1,8 @@
 /**
- * Stream-status predicates for assistant message UI.
- * Kept pure so unit tests can lock the "no infinite THINKING…" contract
- * without mounting the full ChatMessageRedesign tree.
- */
+	* Stream-status predicates for assistant message UI.
+	* Kept pure so unit tests can lock the "no infinite THINKING…" contract
+	* without mounting the full ChatMessageRedesign tree.
+	*/
 
 export function isWaitingForFirstToken(opts: {
 	streaming: boolean;

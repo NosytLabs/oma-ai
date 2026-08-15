@@ -1,9 +1,9 @@
 /**
- * Guest free-tier daily quota helpers for website chat.
- *
- * Server is source of truth (X-DailyLimit-* headers + 429 body).
- * localStorage is a soft cache only — never incremented on failed sends.
- */
+	* Guest free-tier daily quota helpers for website chat.
+	*
+	* Server is source of truth (X-DailyLimit-* headers + 429 body).
+	* localStorage is a soft cache only — never incremented on failed sends.
+	*/
 
 export const GUEST_DAILY_LIMIT_DEFAULT = 20;
 export const GUEST_QUOTA_STORAGE_KEY = "oma-guest-msgs";

@@ -12,9 +12,9 @@ interface DangerZoneSectionProps {
 }
 
 /**
- * Irreversible account actions. Clear history is confirmed in-place;
- * account deletion requires typing DELETE before the parent handler runs.
- */
+	* Irreversible account actions. Clear history is confirmed in-place;
+	* account deletion requires typing DELETE before the parent handler runs.
+	*/
 export function DangerZoneSection({
 	onDeleteAccount,
 	deleting,

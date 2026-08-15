@@ -6,14 +6,14 @@ import { generalLimiter } from "@/lib/rate-limiter";
 export const runtime = "nodejs";
 
 /**
- * /api/auth/csrf-token — proxies to backend /auth/csrf-token.
- * The CSRF cookie is set by the backend in the Set-Cookie response;
- * we forward it to the browser under our own origin so subsequent
- * same-origin requests (like the account login POST) include it.
- *
- * Uses generalLimiter (not authLimiter): every settings/login page
- * pre-fetches CSRF, and 5/15min was starving real SPA navigation with 429s.
- */
+	* /api/auth/csrf-token — proxies to backend /auth/csrf-token.
+	* The CSRF cookie is set by the backend in the Set-Cookie response;
+	* we forward it to the browser under our own origin so subsequent
+	* same-origin requests (like the account login POST) include it.
+	*
+	* Uses generalLimiter (not authLimiter): every settings/login page
+	* pre-fetches CSRF, and 5/15min was starving real SPA navigation with 429s.
+	*/
 export const GET = withRateLimit(
 	async (_req: NextRequest) => {
 		const backend = DEFAULT_API_URL;

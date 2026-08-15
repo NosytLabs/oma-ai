@@ -8,14 +8,14 @@ WORKDIR /app
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
 COPY app/package.json ./app/
 COPY server/package.json ./server/
-RUN pnpm install --frozen-lockfile --filter app... --prod
+RUN pnpm install --no-frozen-lockfile --prod
 
 FROM base AS builder
 WORKDIR /app
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
 COPY app/package.json ./app/
 COPY server/package.json ./server/
-RUN pnpm install --frozen-lockfile --filter app...
+RUN pnpm install --no-frozen-lockfile
 COPY . .
 # Clear Next.js cache
 RUN rm -rf app/.next

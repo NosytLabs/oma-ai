@@ -22,20 +22,20 @@ export interface UseChatPersistenceOptions {
 }
 
 /**
- * Conversation + system prompt persistence.
- *
- * On mount: hydrate `messages` from localStorage (only if a non-empty array
- * is present) and reopen the system prompt panel if a prompt was stored.
- *
- * On change: write `systemPrompt` to localStorage (delete on empty), and
- * debounce-write `messages` to localStorage on a 2s window so a long
- * conversation survives a reload without thrashing storage on every
- * streaming token. The 2s timer is cancelled on unmount and on the next
- * change so the last write still wins.
- *
- * Also mirrors `messages` to `messagesRef` so non-React readers (the SSE
- * loop inside `useStreamingChat`) see the latest list without re-binding.
- */
+	* Conversation + system prompt persistence.
+	*
+	* On mount: hydrate `messages` from localStorage (only if a non-empty array
+	* is present) and reopen the system prompt panel if a prompt was stored.
+	*
+	* On change: write `systemPrompt` to localStorage (delete on empty), and
+	* debounce-write `messages` to localStorage on a 2s window so a long
+	* conversation survives a reload without thrashing storage on every
+	* streaming token. The 2s timer is cancelled on unmount and on the next
+	* change so the last write still wins.
+	*
+	* Also mirrors `messages` to `messagesRef` so non-React readers (the SSE
+	* loop inside `useStreamingChat`) see the latest list without re-binding.
+	*/
 export function useChatPersistence({
 	messages,
 	setMessages,

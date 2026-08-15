@@ -3,10 +3,10 @@
 import { useMemo } from "react";
 
 /**
- * Lightweight syntax highlighter for docs code blocks.
- * No external dependencies — tokenizes common languages with regex
- * and applies CSS class names for theming.
- */
+	* Lightweight syntax highlighter for docs code blocks.
+	* No external dependencies — tokenizes common languages with regex
+	* and applies CSS class names for theming.
+	*/
 
 type TokenType =
 	| "keyword"

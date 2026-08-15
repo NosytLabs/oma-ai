@@ -17,10 +17,10 @@ interface CostEstimateProps {
 }
 
 /* Lives in its own file (extracted from MessageInput.tsx) so chat/page.tsx
- * can lazy-load it via next/dynamic. Otherwise the chat main bundle pulls in
- * useLiveModels → lib/api client → the entire fetch/credentials/csrf machinery
- * just to render a cost pill — even though the live catalog is only relevant
- * for the cost number itself. */
+	* can lazy-load it via next/dynamic. Otherwise the chat main bundle pulls in
+	* useLiveModels → lib/api client → the entire fetch/credentials/csrf machinery
+	* just to render a cost pill — even though the live catalog is only relevant
+	* for the cost number itself. */
 export function CostEstimate({
 	inputText,
 	model,

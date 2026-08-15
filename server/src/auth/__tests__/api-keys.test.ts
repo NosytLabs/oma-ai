@@ -57,23 +57,23 @@ vi.mock("../../lib/redis-client.js", () => ({
 }));
 
 describe("isIpAllowedByList", () => {
-    it("returns true for empty or null list", () => {
-        expect(isIpAllowedByList("1.2.3.4", null)).toBe(true);
-        expect(isIpAllowedByList("1.2.3.4", [])).toBe(true);
-    });
+				it("returns true for empty or null list", () => {
+								expect(isIpAllowedByList("1.2.3.4", null)).toBe(true);
+								expect(isIpAllowedByList("1.2.3.4", [])).toBe(true);
+				});
 
-    it("handles valid IPv4 bare matches", () => {
-        expect(isIpAllowedByList("1.2.3.4", ["1.2.3.4", "5.6.7.8"])).toBe(true);
-        expect(isIpAllowedByList("1.2.3.4", ["5.6.7.8"])).toBe(false);
-    });
+				it("handles valid IPv4 bare matches", () => {
+								expect(isIpAllowedByList("1.2.3.4", ["1.2.3.4", "5.6.7.8"])).toBe(true);
+								expect(isIpAllowedByList("1.2.3.4", ["5.6.7.8"])).toBe(false);
+				});
 
-    it("handles valid IPv4 CIDR blocks", () => {
-        // 192.168.1.0/24 covers 192.168.1.0 to 192.168.1.255
-        expect(isIpAllowedByList("192.168.1.50", ["192.168.1.0/24"])).toBe(true);
-        expect(isIpAllowedByList("192.168.2.50", ["192.168.1.0/24"])).toBe(false);
-        // /0 covers everything
-        expect(isIpAllowedByList("8.8.8.8", ["0.0.0.0/0"])).toBe(true);
-    });
+				it("handles valid IPv4 CIDR blocks", () => {
+								// 192.168.1.0/24 covers 192.168.1.0 to 192.168.1.255
+								expect(isIpAllowedByList("192.168.1.50", ["192.168.1.0/24"])).toBe(true);
+								expect(isIpAllowedByList("192.168.2.50", ["192.168.1.0/24"])).toBe(false);
+								// /0 covers everything
+								expect(isIpAllowedByList("8.8.8.8", ["0.0.0.0/0"])).toBe(true);
+				});
 });
 
 describe("validateApiKey", () => {

@@ -40,13 +40,13 @@ Built-in health checks and automatic provider failover. If one upstream goes dow
 
 ### 📊 Developer Dashboard
 Manage API keys, monitor real-time usage and spend, inspect request logs, and configure model preferences—all from a polished, real-time dashboard.
-
 ### 🤖 OpenAI & Anthropic Compatible
-Drop-in replacement for any OpenAI or Anthropic SDK. Support for chat completions, image generation, and video generation through a single, unified API surface.
+
+Drop-in replacement for any OpenAI or Anthropic SDK. Unified chat completions (`/v1/chat/completions`) and Anthropic messages (`/v1/messages`) endpoints.
 
 ### 🎯 Curated Model Registry
-26 curated chat models (18 Venice + 8 OMA-AI) across providers. We curate the best models so you don't have to sift through 100+ low-quality alternatives.
 
+26 curated chat models (18 Venice + 8 OMA-AI) across providers. We curate the best models so you don't have to sift through 100+ low-quality alternatives.
 ### 🆓 Free Guest Chat
 Budget-friendly, sign-in-free chat via OMA-AI models with a generous daily limit for anonymous visitors. Perfect for evaluating the platform before upgrading.
 
@@ -173,13 +173,13 @@ Always run `pnpm validate` locally before opening a pull request.
 |------|---------|
 | `/` | Landing page — product value, primary CTAs |
 | `/models` | Curated model catalog + pricing |
-| `/chat` | Interactive playground (text, image, video) |
+| `/chat` | Interactive chat playground (text + multimodal input) |
 | `/pricing` · `/deposit` | Plans + credit / USDC funding |
 | `/docs` · `/getting-started` | API docs + developer quickstart |
 | `/dashboard` · `/settings` | API keys, usage analytics, preferences |
-| `/capabilities` · `/compare` · `/faq` · `/glossary` | Educational guides |
+| `/faq` · `/glossary` | Educational guides |
 
-- **Agent docs:** `app/public/llms.txt`, `app/public/agent-skill.md`
+- **Agent docs:** `/llms.txt` (machine-readable site index), `/agent-skill.md` (autonomous setup instructions)
 - **OpenAPI:** `https://api.oma-ai.com/openapi.json` (also `/v1/openapi.json`)
 
 ---

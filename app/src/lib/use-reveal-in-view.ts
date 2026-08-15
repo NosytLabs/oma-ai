@@ -1,25 +1,25 @@
 "use client";
 
 /**
- * useRevealInView — robust scroll-reveal trigger.
- * -----------------------------------------------
- * framer-motion's `whileInView` with `once: true` has a known blind spot:
- * if the user jumps PAST an element (End key, Page Down, anchor navigation,
- * find-in-page, deep-link with a large scroll restoration), the
- * IntersectionObserver may never report it as intersecting — so the content
- * stays at `opacity: 0` forever and the page shows a black void.
- *
- * Three-layer safety so this never strands content invisible:
- *   1. inView (framer-motion's IntersectionObserver) — fast path
- *   2. "scrolled past" passive listener — covers Page-Down / End / anchor
- *   3. hard ceiling: after 1500ms, force revealed regardless of position
- *      — covers OG-image / link-unfurl / print / screenshot / never-scrolled
- *      deep-page content. The 1.5s delay is invisible to real users
- *      (above-fold reveals happen within ~100ms via the IO path) but
- *      guarantees full-page screenshots, search-engine crawlers, and OG
- *      previews never see a half-rendered page.
- * One passive scroll listener per instance, rAF-throttled.
- */
+	* useRevealInView — robust scroll-reveal trigger.
+	* -----------------------------------------------
+	* framer-motion's `whileInView` with `once: true` has a known blind spot:
+	* if the user jumps PAST an element (End key, Page Down, anchor navigation,
+	* find-in-page, deep-link with a large scroll restoration), the
+	* IntersectionObserver may never report it as intersecting — so the content
+	* stays at `opacity: 0` forever and the page shows a black void.
+	*
+	* Three-layer safety so this never strands content invisible:
+	*   1. inView (framer-motion's IntersectionObserver) — fast path
+	*   2. "scrolled past" passive listener — covers Page-Down / End / anchor
+	*   3. hard ceiling: after 1500ms, force revealed regardless of position
+	*      — covers OG-image / link-unfurl / print / screenshot / never-scrolled
+	*      deep-page content. The 1.5s delay is invisible to real users
+	*      (above-fold reveals happen within ~100ms via the IO path) but
+	*      guarantees full-page screenshots, search-engine crawlers, and OG
+	*      previews never see a half-rendered page.
+	* One passive scroll listener per instance, rAF-throttled.
+	*/
 
 import { useInView } from "@/lib/framer-motion-client";
 import { useEffect, useRef, useState } from "react";

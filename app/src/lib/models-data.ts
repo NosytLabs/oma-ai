@@ -25,11 +25,11 @@
 export type Tier = "budget" | "mid" | "premium" | "frontier";
 
 /**
- * Modalities the catalog knows about. Text models carry a Tier (budget /
- * mid / premium / frontier). All other modalities are priced per-unit
- * (per-image, per-second, per-generation) and live alongside the chat
- * models in the catalog but render in dedicated sections.
- */
+	* Modalities the catalog knows about. Text models carry a Tier (budget /
+	* mid / premium / frontier). All other modalities are priced per-unit
+	* (per-image, per-second, per-generation) and live alongside the chat
+	* models in the catalog but render in dedicated sections.
+	*/
 export type Modality =
 	| "chat"
 	| "image"
@@ -66,9 +66,7 @@ export const MODALITY_ORDER: Modality[] = [
 ];
 export type Provider =
 	| "Venice"
-	| "OMA-AI"
-	| "Both"
-	| "Surplus";
+	| "OMA-AI";
 
 export interface Model {
 	id: string;
@@ -127,20 +125,10 @@ export const PROVIDER_COLORS: Record<
 		text: "text-success",
 		border: "border-success/30",
 	},
-	Surplus: {
-		bg: "bg-warning/10",
-		text: "text-warning",
-		border: "border-warning/30",
-	},
-	Both: {
-		bg: "bg-surface",
-		text: "text-text-bright",
-		border: "border-border",
-	}
 };
 
 /** Map any provider string returned by the live `/v1/models` endpoint
- *  (lowercase, vendor name, or alias) onto the canonical `Provider`. */
+	*  (lowercase, vendor name, or alias) onto the canonical `Provider`. */
 export function normalizeProvider(raw: string | undefined | null): Provider {
 	const s = (raw ?? "").trim().toLowerCase();
 	if (!s) return "OMA-AI";
@@ -148,17 +136,16 @@ export function normalizeProvider(raw: string | undefined | null): Provider {
 	if (s.includes("oma-ai") || s.includes("openbroker") || s.includes("obk") || s === "oma") {
 		return "OMA-AI";
 	}
-	if (s.includes("surplus")) return "Surplus";
-	if (s.includes("venice")) return "Venice";
+		if (s.includes("venice")) return "Venice";
 	return "OMA-AI";
 }
 
 /** Distinct providers actually surfaced in a list of models — used to
- *  build the provider filter chip row on /models without hard-coding. */
+	*  build the provider filter chip row on /models without hard-coding. */
 export function distinctProviders(models: readonly Model[]): Provider[] {
 	const seen = new Set<Provider>();
 	for (const m of models) seen.add(m.provider);
-	return (["OMA-AI", "Venice", "Surplus"] as Provider[]).filter((p) =>
+	return (["OMA-AI", "Venice"] as Provider[]).filter((p) =>
 		seen.has(p),
 	);
 }
@@ -276,12 +263,12 @@ function deriveDescription(
 }
 
 /**
- * Bucket a server catalog entry into a single `Modality` for UI grouping.
- * The server emits an explicit `modality` field ("chat" | "image" | "video")
- * and a `category` ("budget" | "mid" | "premium" | "frontier"). We prefer
- * the explicit modality when present and only fall back to category-based
- * inference when the server omits it (legacy / cached responses).
- */
+	* Bucket a server catalog entry into a single `Modality` for UI grouping.
+	* The server emits an explicit `modality` field ("chat" | "image" | "video")
+	* and a `category` ("budget" | "mid" | "premium" | "frontier"). We prefer
+	* the explicit modality when present and only fall back to category-based
+	* inference when the server omits it (legacy / cached responses).
+	*/
 function deriveModality(entry: ApiModelEntry): Modality {
 	const explicit = (entry.modality ?? "").toLowerCase();
 	if (explicit === "chat" || explicit === "image" || explicit === "video") {
@@ -313,11 +300,11 @@ function derivePriceUnit(modality: Modality, _pricing: ApiModelEntry["pricing"])
 }
 
 /**
- * Display-name overrides applied on top of whatever the upstream API returns.
- * We use this to canonicalise names whose API string is wrong or low-quality
- * (e.g. "Google Gemini 3" → "Gemini 3 Flash") without forking the SSR fallback.
- * Keyed by lower-cased model id.
- */
+	* Display-name overrides applied on top of whatever the upstream API returns.
+	* We use this to canonicalise names whose API string is wrong or low-quality
+	* (e.g. "Google Gemini 3" → "Gemini 3 Flash") without forking the SSR fallback.
+	* Keyed by lower-cased model id.
+	*/
 const DISPLAY_NAME_OVERRIDES: Record<string, string> = {};
 
 function deriveNameFromId(id: string): string {
@@ -403,7 +390,7 @@ interface ApiModelEntry {
 	};
 	category: string;
 	context_length: number | null;
-	/** Upstream routing target surfaced by /v1/models ("venice" | "oma-ai" | "surplus").
+	/** Upstream routing target surfaced by /v1/models ("venice" | "oma-ai").
 	 * Backends differ: OMA + Pollinations return `provider`, OpenRouter returns
 	 * `owned_by`, etc. The loader picks whichever is present. */
 	provider?: string;
@@ -419,26 +406,26 @@ interface ApiModelsResponse {
 }
 
 /**
- * Load the full model catalog from the live API.
- *
- * Returns chat models with derived display names, descriptions,
- * capabilities, and provider assignment. Video models (category "video")
- * are excluded: they are priced per-generation/per-second (surfaced on
- * `/chat?mode=video`), not per-token, so mixing them into the per-token
- * catalog produced `$NaN` output prices and `$850000/1M` input prices.
- * Falls back to the static `MODELS` array if the network request fails.
- *
- * Results are cached in a module-level variable so repeated calls during
- * the same session do not re-fetch.
- */
+	* Load the full model catalog from the live API.
+	*
+	* Returns chat models with derived display names, descriptions,
+	* capabilities, and provider assignment. Video models (category "video")
+	* are excluded: they are priced per-generation/per-second (surfaced on
+	* `/chat?mode=video`), not per-token, so mixing them into the per-token
+	* catalog produced `$NaN` output prices and `$850000/1M` input prices.
+	* Falls back to the static `MODELS` array if the network request fails.
+	*
+	* Results are cached in a module-level variable so repeated calls during
+	* the same session do not re-fetch.
+	*/
 let _liveModels: Model[] | null = null;
 let _loadPromise: Promise<Model[]> | null = null;
 
 /**
- * Raw /api/v1/models response cache, shared by loadModels() and anything
- * that needs the unfiltered list (StatsStrip's live count, pricing's
- * image/video section). Concurrent callers collapse into one fetch.
- */
+	* Raw /api/v1/models response cache, shared by loadModels() and anything
+	* that needs the unfiltered list (StatsStrip's live count, pricing's
+	* image/video section). Concurrent callers collapse into one fetch.
+	*/
 let _rawResponse: ApiModelsResponse | null = null;
 let _rawPromise: Promise<ApiModelsResponse | null> | null = null;
 
@@ -459,9 +446,9 @@ async function fetchRawModelsResponse(): Promise<ApiModelsResponse | null> {
 }
 
 /**
- * Load the unfiltered model list (including image/video categories) from
- * the live API. Shares the cache with loadModels().
- */
+	* Load the unfiltered model list (including image/video categories) from
+	* the live API. Shares the cache with loadModels().
+	*/
 export async function loadRawModelEntries(): Promise<ApiModelEntry[]> {
 	const json = await fetchRawModelsResponse();
 	return json?.data ?? [];
@@ -535,295 +522,306 @@ const tier: Tier =
 // ---------------------------------------------------------------------------
 
 /**
- * Static fallback catalog. Used as a build-time-safe SSR fallback for
- * pages that need a synchronous `MODELS` / `MODEL_COUNT`. Mirrors the
- * curated server catalog (26 models) — keep in sync with
- * server/src/inference/models.ts. Prices are USER-FACING per-1M rates
- * (Venice wholesale × 1.25 markup; OMA-AI prices already final), exactly
- * as returned by GET /v1/models.
- */
+	* Static fallback catalog. Used as a build-time-safe SSR fallback for
+	* pages that need a synchronous `MODELS` / `MODEL_COUNT`. Mirrors the
+	* curated server catalog (26 models) — keep in sync with
+	* server/src/inference/models.ts. Prices are USER-FACING per-1M rates
+	* (Venice wholesale × 1.25 markup; OMA-AI prices already final), exactly
+	* as returned by GET /v1/models.
+	*/
 const FALLBACK_CATALOG: RawCatalog = {
 	MODEL_CATALOG: {
 		// ── Venice (wholesale × 1.25 markup = user-facing) ───────────────
+		// All prices rounded to .00 / .05 / .25 / .50 / .75 — keeps the catalog
+		// scannable while still preserving a healthy margin on every model.
 		"openai-gpt-56-sol": {
 			id: "openai-gpt-56-sol",
 			displayName: "GPT-5.6 Sol",
-			provider: "Venice",
+			provider: "venice",
 			category: "frontier",
 			maxTokens: 1000000,
-			inputPricePer1M: 7.8125,
-			outputPricePer1M: 46.875,
+			inputPricePer1M: 16.00,
+			outputPricePer1M: 95.00,
 			capabilities: ["chat", "reasoning", "coding", "tools"],
 		},
 		"claude-opus-5": {
 			id: "claude-opus-5",
 			displayName: "Claude Opus 5",
-			provider: "Venice",
+			provider: "venice",
 			category: "frontier",
 			maxTokens: 1000000,
-			inputPricePer1M: 7.5,
-			outputPricePer1M: 37.5,
+			inputPricePer1M: 15.00,
+			outputPricePer1M: 75.00,
 			capabilities: ["chat", "reasoning", "coding", "tools"],
 		},
 		"kimi-k3": {
 			id: "kimi-k3",
 			displayName: "Kimi K3",
-			provider: "Venice",
+			provider: "venice",
 			category: "premium",
 			maxTokens: 1000000,
-			inputPricePer1M: 4.6875,
-			outputPricePer1M: 23.4375,
+			inputPricePer1M: 9.50,
+			outputPricePer1M: 45.00,
 			capabilities: ["chat", "reasoning", "tools"],
 		},
 		"zai-org-glm-5-2": {
 			id: "zai-org-glm-5-2",
 			displayName: "GLM 5.2",
-			provider: "Venice",
+			provider: "venice",
 			category: "premium",
 			maxTokens: 1000000,
-			inputPricePer1M: 1.75,
-			outputPricePer1M: 5.5,
+			inputPricePer1M: 3.50,
+			outputPricePer1M: 11.00,
 			capabilities: ["chat", "reasoning", "tools"],
 		},
 		"deepseek-v4-pro": {
 			id: "deepseek-v4-pro",
 			displayName: "DeepSeek V4 Pro",
-			provider: "Venice",
+			provider: "venice",
 			category: "premium",
 			maxTokens: 1000000,
-			inputPricePer1M: 2.0625,
-			outputPricePer1M: 4.1263,
+			inputPricePer1M: 4.50,
+			outputPricePer1M: 8.00,
 			capabilities: ["chat", "reasoning", "coding", "tools"],
 		},
 		"qwen-3-8-max": {
 			id: "qwen-3-8-max",
 			displayName: "Qwen 3.8 Max",
-			provider: "Venice",
+			provider: "venice",
 			category: "premium",
 			maxTokens: 1000000,
-			inputPricePer1M: 3.125,
-			outputPricePer1M: 9.375,
+			inputPricePer1M: 6.25,
+			outputPricePer1M: 19.00,
 			capabilities: ["chat", "reasoning", "coding", "tools"],
 		},
 		"grok-4-5": {
 			id: "grok-4-5",
 			displayName: "Grok 4.5",
-			provider: "Venice",
+			provider: "venice",
 			category: "premium",
 			maxTokens: 500000,
-			inputPricePer1M: 2.8375,
-			outputPricePer1M: 8.5,
+			inputPricePer1M: 5.75,
+			outputPricePer1M: 17.00,
 			capabilities: ["chat", "reasoning", "coding", "tools"],
 		},
 		"claude-sonnet-4-6": {
 			id: "claude-sonnet-4-6",
 			displayName: "Claude Sonnet 4.6",
-			provider: "Venice",
+			provider: "venice",
 			category: "premium",
 			maxTokens: 1000000,
-			inputPricePer1M: 4.5,
-			outputPricePer1M: 22.5,
+			inputPricePer1M: 9.00,
+			outputPricePer1M: 45.00,
 			capabilities: ["chat", "reasoning", "coding", "tools"],
 		},
 		"gemini-3-6-flash": {
 			id: "gemini-3-6-flash",
 			displayName: "Gemini 3.6 Flash",
-			provider: "Venice",
+			provider: "venice",
 			category: "premium",
 			maxTokens: 1000000,
-			inputPricePer1M: 2.34375,
-			outputPricePer1M: 11.71875,
+			inputPricePer1M: 4.75,
+			outputPricePer1M: 23.00,
 			capabilities: ["chat", "reasoning", "coding", "tools", "vision"],
 		},
 		"llama-3.3-70b": {
 			id: "llama-3.3-70b",
 			displayName: "Llama 3.3 70B",
-			provider: "Venice",
+			provider: "venice",
 			category: "mid",
 			maxTokens: 128000,
-			inputPricePer1M: 0.875,
-			outputPricePer1M: 3.5,
+			inputPricePer1M: 2.00,
+			outputPricePer1M: 7.00,
 			capabilities: ["chat", "tools"],
 		},
 		"hermes-3-llama-3.1-405b": {
 			id: "hermes-3-llama-3.1-405b",
 			displayName: "Hermes 3 405B",
-			provider: "Venice",
+			provider: "venice",
 			category: "mid",
 			maxTokens: 128000,
-			inputPricePer1M: 1.375,
-			outputPricePer1M: 3.75,
+			inputPricePer1M: 2.85,
+			outputPricePer1M: 7.50,
 			capabilities: ["chat", "reasoning", "tools"],
 		},
 		"zai-org-glm-5-1": {
 			id: "zai-org-glm-5-1",
 			displayName: "GLM 5.1",
-			provider: "Venice",
+			provider: "venice",
 			category: "mid",
 			maxTokens: 200000,
-			inputPricePer1M: 1.925,
-			outputPricePer1M: 6.05,
+			inputPricePer1M: 4.00,
+			outputPricePer1M: 12.00,
 			capabilities: ["chat", "reasoning", "tools"],
 		},
 		"qwen-3-7-plus": {
 			id: "qwen-3-7-plus",
 			displayName: "Qwen 3.7 Plus",
-			provider: "Venice",
+			provider: "venice",
 			category: "mid",
 			maxTokens: 1000000,
-			inputPricePer1M: 0.625,
-			outputPricePer1M: 2.5,
+			inputPricePer1M: 1.60,
+			outputPricePer1M: 5.00,
 			capabilities: ["chat", "reasoning", "tools"],
 		},
 		"venice-uncensored-1-2": {
 			id: "venice-uncensored-1-2",
 			displayName: "Venice Uncensored 1.2",
-			provider: "Venice",
+			provider: "venice",
 			category: "mid",
 			maxTokens: 128000,
-			inputPricePer1M: 0.25,
-			outputPricePer1M: 1.125,
+			inputPricePer1M: 0.65,
+			outputPricePer1M: 2.50,
 			capabilities: ["chat", "uncensored"],
 		},
 		"xiaomi-mimo-v2-5": {
 			id: "xiaomi-mimo-v2-5",
 			displayName: "Xiaomi MiMo V2.5",
-			provider: "Venice",
+			provider: "venice",
 			category: "budget",
 			maxTokens: 1000000,
-			inputPricePer1M: 0.5,
-			outputPricePer1M: 2.5,
+			inputPricePer1M: 1.10,
+			outputPricePer1M: 5.00,
 			capabilities: ["chat", "reasoning", "fast"],
 		},
 		"deepseek-v4-flash-0731": {
 			id: "deepseek-v4-flash-0731",
 			displayName: "DeepSeek V4 Flash",
-			provider: "Venice",
+			provider: "venice",
 			category: "budget",
 			maxTokens: 1000000,
-			inputPricePer1M: 0.21875,
-			outputPricePer1M: 0.4375,
+			inputPricePer1M: 0.45,
+			outputPricePer1M: 1.00,
 			capabilities: ["chat", "reasoning", "fast"],
 		},
 		"mistral-small-2603": {
 			id: "mistral-small-2603",
 			displayName: "Mistral Small 4",
-			provider: "Venice",
+			provider: "venice",
 			category: "budget",
 			maxTokens: 256000,
-			inputPricePer1M: 0.234375,
-			outputPricePer1M: 0.9375,
+			inputPricePer1M: 0.60,
+			outputPricePer1M: 2.00,
 			capabilities: ["chat", "tools", "fast"],
 		},
 		"google-gemma-4-31b-it": {
 			id: "google-gemma-4-31b-it",
 			displayName: "Gemma 4 31B",
-			provider: "Venice",
+			provider: "venice",
 			category: "budget",
 			maxTokens: 256000,
-			inputPricePer1M: 0.15,
-			outputPricePer1M: 0.45,
+			inputPricePer1M: 0.35,
+			outputPricePer1M: 1.00,
 			capabilities: ["chat", "fast"],
 		},
 		// ── OMA-AI resale (markup built-in = user-facing) ────────────────
+		// Gonka Network openbroker upstream — FREE in playground/chat for
+		// every model whose server-side `upstream === "openbroker"`
+		// (gemini-3-flash-preview, kimi-k2-6, minimax-m2-7,
+		// deepseek-v4-flash-0731-openbroker — see `FREE_CHAT_MODEL_IDS` in
+		// model-utils.ts). Everything else requires auth + credits in
+		// /chat, /playground, and the /v1 API.
 		"gemini-3.1-pro-preview": {
 			id: "gemini-3.1-pro-preview",
 			displayName: "Gemini 3.1 Pro",
-			provider: "OMA-AI",
+			provider: "oma-ai",
 			category: "frontier",
 			maxTokens: 128000,
-			inputPricePer1M: 1.0,
-			outputPricePer1M: 5.0,
+			inputPricePer1M: 2.00,
+			outputPricePer1M: 9.50,
 			capabilities: ["chat", "reasoning", "coding", "tools"],
 		},
 		"gpt-4.1": {
 			id: "gpt-4.1",
 			displayName: "GPT-4.1",
-			provider: "OMA-AI",
+			provider: "oma-ai",
 			category: "frontier",
 			maxTokens: 128000,
-			inputPricePer1M: 2.0,
-			outputPricePer1M: 8.0,
+			inputPricePer1M: 4.00,
+			outputPricePer1M: 16.00,
 			capabilities: ["chat", "reasoning", "coding", "tools"],
 		},
 		"gpt-4o": {
 			id: "gpt-4o",
 			displayName: "GPT-4o",
-			provider: "OMA-AI",
+			provider: "oma-ai",
 			category: "premium",
 			maxTokens: 128000,
-			inputPricePer1M: 2.5,
-			outputPricePer1M: 10.0,
+			inputPricePer1M: 5.00,
+			outputPricePer1M: 19.00,
 			capabilities: ["chat", "fast", "tools"],
 		},
 		"kimi-k2-6": {
 			id: "kimi-k2-6",
 			displayName: "Kimi K2.6",
-			provider: "OMA-AI",
+			provider: "oma-ai",
 			category: "premium",
 			maxTokens: 128000,
-			inputPricePer1M: 0.6,
-			outputPricePer1M: 2.5,
+			inputPricePer1M: 2.00,
+			outputPricePer1M: 7.00,
 			capabilities: ["chat", "reasoning", "coding", "tools"],
 		},
 		"gemini-3-flash-preview": {
 			id: "gemini-3-flash-preview",
 			displayName: "Gemini 3 Flash",
-			provider: "OMA-AI",
+			provider: "oma-ai",
 			category: "mid",
 			maxTokens: 128000,
-			inputPricePer1M: 0.2,
-			outputPricePer1M: 1.5,
+			inputPricePer1M: 0.50,
+			outputPricePer1M: 3.00,
 			capabilities: ["chat", "fast", "tools"],
 		},
 		"minimax-m2-7": {
 			id: "minimax-m2-7",
 			displayName: "MiniMax M2.7",
-			provider: "OMA-AI",
+			provider: "oma-ai",
 			category: "budget",
 			maxTokens: 128000,
-			inputPricePer1M: 0.3,
-			outputPricePer1M: 1.2,
+			inputPricePer1M: 1.25,
+			outputPricePer1M: 4.00,
 			capabilities: ["chat", "reasoning", "coding", "tools"],
 		},
 		"deepseek-v4-flash-0731-openbroker": {
 			id: "deepseek-v4-flash-0731-openbroker",
 			displayName: "DeepSeek V4 Flash (Gonka)",
-			provider: "OMA-AI",
+			provider: "oma-ai",
 			category: "budget",
 			maxTokens: 1000000,
-			inputPricePer1M: 0.15,
-			outputPricePer1M: 0.3,
+			inputPricePer1M: 0.50,
+			outputPricePer1M: 0.75,
 			capabilities: ["chat", "reasoning", "fast", "tools"],
 		},
 		"qwen3-235b-a22b-openbroker": {
 			id: "qwen3-235b-a22b-openbroker",
-			displayName: "Qwen3 235B (Gonka)",
-			provider: "OMA-AI",
+			displayName: "Qwen3 235B (OMA-AI)",
+			provider: "oma-ai",
 			category: "mid",
 			maxTokens: 128000,
-			inputPricePer1M: 0.2,
-			outputPricePer1M: 0.6,
+			inputPricePer1M: 0.65,
+			outputPricePer1M: 2.00,
 			capabilities: ["chat", "reasoning", "tools"],
 		},
 	},
 };
 
 /**
- * Synchronous `MODELS` array for SSR metadata and the few places that
- * genuinely can't go async (Next.js `generateStaticParams`, page
- * metadata). This is the *fallback* catalog — the full curated catalog
- * is loaded lazily via `loadModels()` from GET /v1/models. Keep prices
- * and ids in sync with server/src/inference/models.ts (single source
- * of truth); entries here that the server can't route will 404.
- */
+	* Synchronous `MODELS` array for SSR metadata and the few places that
+	* genuinely can't go async (Next.js `generateStaticParams`, page
+	* metadata). This is the *fallback* catalog — the full curated catalog
+	* is loaded lazily via `loadModels()` from GET /v1/models. Keep prices
+	* and ids in sync with server/src/inference/models.ts (single source
+	* of truth); entries here that the server can't route will 404.
+	*/
 export const MODELS: Model[] = catalogFromRaw(FALLBACK_CATALOG);
 
 export function formatPricePerMillion(pricePer1M: number): string {
-	if (pricePer1M === 0) return "$0";
-	if (pricePer1M < 0.01) return `$${pricePer1M.toFixed(4)}`;
-	if (pricePer1M < 1) return `$${pricePer1M.toFixed(3)}`;
-	return `$${pricePer1M.toFixed(2)}`;
+	if (pricePer1M <= 0) return "$0.00";
+	// Round UP to the nearest $0.05 so every displayed price lands on a
+	// standardized billing increment (never awkward figures like $0.6125).
+	// Catalog prices are already $0.05 multiples; the ceil keeps it true
+	// even if an upstream raw rate ever slips into the list.
+	const rounded = Math.ceil(pricePer1M * 20) / 20;
+	return `$${rounded.toFixed(2)}`;
 }
 
 export function getModelsByTier(models: Model[]): Record<Tier, Model[]> {

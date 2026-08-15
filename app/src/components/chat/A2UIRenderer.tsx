@@ -1,23 +1,23 @@
 "use client";
 
 /**
- * A2UI Renderer — server-driven UI (a2ui.org, v0.9.1)
- *
- * Renders A2UI envelope messages (createSurface / updateComponents /
- * updateDataModel / deleteSurface) into OMA design tokens. Supports:
- * - Adjacency-list component trees (children + single `child` refs)
- * - Data binding via `{ "path": "/a/b" }` against the surface data model
- * - Local function calls in props/checks: formatDate, formatString,
- * required, email, regex
- * - Server actions: Button `action.event` → onAction({name, context})
- * - JSONL streams (one envelope per line) and single-object payloads
- *
- * Anything unrecognized falls back to a labeled placeholder so the chat
- * message is never empty. Non-A2UI payloads return null so callers can
- * fall back to markdown rendering.
- *
- * Spec: https://a2ui.org/specification/v0.9.1-a2ui/
- */
+	* A2UI Renderer — server-driven UI (a2ui.org, v0.9.1)
+	*
+	* Renders A2UI envelope messages (createSurface / updateComponents /
+	* updateDataModel / deleteSurface) into OMA design tokens. Supports:
+	* - Adjacency-list component trees (children + single `child` refs)
+	* - Data binding via `{ "path": "/a/b" }` against the surface data model
+	* - Local function calls in props/checks: formatDate, formatString,
+	* required, email, regex
+	* - Server actions: Button `action.event` → onAction({name, context})
+	* - JSONL streams (one envelope per line) and single-object payloads
+	*
+	* Anything unrecognized falls back to a labeled placeholder so the chat
+	* message is never empty. Non-A2UI payloads return null so callers can
+	* fall back to markdown rendering.
+	*
+	* Spec: https://a2ui.org/specification/v0.9.1-a2ui/
+	*/
 
 import { m } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";

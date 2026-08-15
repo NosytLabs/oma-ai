@@ -57,11 +57,11 @@ const tabContentVariants = {
 };
 
 /**
- * Empty state with icon, copy, and optional action. The icon defaults to
- * Inbox when none is supplied — call sites pass a Lucide icon that matches
- * the data the user expected to see (Activity for usage, KeyRound for API
- * keys, BarChart3 for charts/health).
- */
+	* Empty state with icon, copy, and optional action. The icon defaults to
+	* Inbox when none is supplied — call sites pass a Lucide icon that matches
+	* the data the user expected to see (Activity for usage, KeyRound for API
+	* keys, BarChart3 for charts/health).
+	*/
 function EmptyState({
 	title,
 	description,
@@ -93,7 +93,7 @@ function EmptyState({
 }
 
 /** Wraps a lazy component in a mini error boundary so one failing widget
- * doesn't crater the whole dashboard. */
+	* doesn't crater the whole dashboard. */
 export function WidgetErrorBoundary({
 	children,
 	title,
@@ -195,13 +195,13 @@ interface DashboardGridProps {
 }
 
 /**
- * Main dashboard layout with tabbed navigation. Renders different content
- * based on the active tab:
- * - Overview: balance, expiring credits, quick stats, usage charts, recent transactions
- * - Usage: usage charts + recent requests table
- * - API Keys: API key manager
- * - Health: provider health card
- */
+	* Main dashboard layout with tabbed navigation. Renders different content
+	* based on the active tab:
+	* - Overview: balance, expiring credits, quick stats, usage charts, recent transactions
+	* - Usage: usage charts + recent requests table
+	* - API Keys: API key manager
+	* - Health: provider health card
+	*/
 export function DashboardGrid(props: DashboardGridProps) {
 	const {
 		balance,

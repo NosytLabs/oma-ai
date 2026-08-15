@@ -5,16 +5,16 @@ import { tokenBucket } from "../middleware/rate-limit.js";
 import { logger } from "../lib/logger.js";
 
 /**
- * /v1/search (GET ?query=…) — web search for the chat playground when WEB
- * is enabled.
- *
- * Provider: DuckDuckGo only (no API key).
- *   1. HTML results page (html.duckduckgo.com) — best coverage
- *   2. Instant Answer API — abstract + related topics if HTML is empty
- *
- * Auth is OPTIONAL so anonymous free website chat can search without an
- * account, same as free chat completions.
- */
+	* /v1/search (GET ?query=…) — web search for the chat playground when WEB
+	* is enabled.
+	*
+	* Provider: DuckDuckGo only (no API key).
+	*   1. HTML results page (html.duckduckgo.com) — best coverage
+	*   2. Instant Answer API — abstract + related topics if HTML is empty
+	*
+	* Auth is OPTIONAL so anonymous free website chat can search without an
+	* account, same as free chat completions.
+	*/
 
 export type SearchResult = {
 	title: string;
@@ -107,9 +107,9 @@ export function dedupeResults(results: SearchResult[]): SearchResult[] {
 }
 
 /**
- * DuckDuckGo HTML results. No API key.
- * Parses classic result__a / result__snippet blocks.
- */
+	* DuckDuckGo HTML results. No API key.
+	* Parses classic result__a / result__snippet blocks.
+	*/
 async function searchDuckDuckGoHtml(
 	query: string,
 ): Promise<SearchResult[]> {
@@ -228,9 +228,9 @@ async function searchDuckDuckGoInstant(
 }
 
 /**
- * DuckDuckGo-only search. HTML first, Instant Answer if empty.
- * Exported for unit tests with mocked fetch.
- */
+	* DuckDuckGo-only search. HTML first, Instant Answer if empty.
+	* Exported for unit tests with mocked fetch.
+	*/
 async function runWebSearch(query: string): Promise<{
 	results: SearchResult[];
 	provider: "duckduckgo";

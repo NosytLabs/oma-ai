@@ -4,10 +4,10 @@ export function formatCents(cents: string | number): string {
 }
 
 /**
- * Convert a cents value (string from API or number) to a dollar number.
- * Centralizes the `parseFloat(String(x)) / 100` pattern that was duplicated
- * across 9+ components. Returns 0 for null/undefined/non-finite input.
- */
+	* Convert a cents value (string from API or number) to a dollar number.
+	* Centralizes the `parseFloat(String(x)) / 100` pattern that was duplicated
+	* across 9+ components. Returns 0 for null/undefined/non-finite input.
+	*/
 export function toDollars(cents: string | number | null | undefined): number {
 	if (cents == null) return 0;
 	const n = typeof cents === "string" ? parseFloat(cents) : cents;
@@ -16,12 +16,12 @@ export function toDollars(cents: string | number | null | undefined): number {
 }
 
 /**
- * Single source of truth for "X minutes ago" / "X hours ago" formatting.
- * Replaces the three inline copies that previously lived in
- * `RecentTransactions.tsx`, `ProviderHealthCard.tsx`, and the original
- * `formatTime` here. Returns the locale date string for anything older
- * than 30 days.
- */
+	* Single source of truth for "X minutes ago" / "X hours ago" formatting.
+	* Replaces the three inline copies that previously lived in
+	* `RecentTransactions.tsx`, `ProviderHealthCard.tsx`, and the original
+	* `formatTime` here. Returns the locale date string for anything older
+	* than 30 days.
+	*/
 export function formatTime(iso: string): string {
 	const d = new Date(iso);
 	if (Number.isNaN(d.getTime())) return "—";
@@ -45,17 +45,17 @@ export function maskKey(prefix: string | null | undefined): string {
 }
 
 /**
- * Format a USD amount with a `$` prefix and fixed decimals.
- */
+	* Format a USD amount with a `$` prefix and fixed decimals.
+	*/
 export function formatUsd(amount: number, decimals = 2): string {
 	return `$${amount.toFixed(decimals)}`;
 }
 
 /**
- * Format a USD amount that may be sub-cent (usage rows can bill fractions of
- * a cent, e.g. "0.03" cents → $0.0003). Fixed 4 decimals for readable amounts;
- * below that, keep 2 significant digits so tiny costs never flatten to $0.0000.
- */
+	* Format a USD amount that may be sub-cent (usage rows can bill fractions of
+	* a cent, e.g. "0.03" cents → $0.0003). Fixed 4 decimals for readable amounts;
+	* below that, keep 2 significant digits so tiny costs never flatten to $0.0000.
+	*/
 export function formatUsdPrecise(amount: number): string {
 	if (!Number.isFinite(amount) || amount === 0) return "$0.00";
 	if (Math.abs(amount) >= 0.0001) return `$${amount.toFixed(4)}`;
@@ -63,14 +63,14 @@ export function formatUsdPrecise(amount: number): string {
 }
 
 /**
- * Shorten an EVM address for table display.
- * Examples:
- *   "0x1234567890abcdef1234567890abcdef12345678" → "0x1234…5678"
- *   "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpniT33q5op" → "9xQe…5op"
- *
- * Returns the original string if it is shorter than the threshold so we
- * don't mangle short identifiers.
- */
+	* Shorten an EVM address for table display.
+	* Examples:
+	*   "0x1234567890abcdef1234567890abcdef12345678" → "0x1234…5678"
+	*   "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpniT33q5op" → "9xQe…5op"
+	*
+	* Returns the original string if it is shorter than the threshold so we
+	* don't mangle short identifiers.
+	*/
 export function formatAddress(addr: string | null | undefined): string {
 	if (!addr) return "—";
 	if (addr.length <= 14) return addr;
@@ -78,9 +78,9 @@ export function formatAddress(addr: string | null | undefined): string {
 }
 
 /**
- * Format an ISO date string with date and time.
- * "2026-01-15T10:30:00Z" → "Jan 15, 2026, 10:30 AM"
- */
+	* Format an ISO date string with date and time.
+	* "2026-01-15T10:30:00Z" → "Jan 15, 2026, 10:30 AM"
+	*/
 export function formatDateTime(iso: string): string {
 	return new Date(iso).toLocaleDateString("en-US", {
 		year: "numeric",
@@ -92,9 +92,9 @@ export function formatDateTime(iso: string): string {
 }
 
 /**
- * Format an ISO date string with date only (no time).
- * "2026-01-15T10:30:00Z" → "Jan 15, 2026"
- */
+	* Format an ISO date string with date only (no time).
+	* "2026-01-15T10:30:00Z" → "Jan 15, 2026"
+	*/
 export function formatDateShort(iso: string): string {
 	return new Date(iso).toLocaleDateString("en-US", {
 		month: "short",

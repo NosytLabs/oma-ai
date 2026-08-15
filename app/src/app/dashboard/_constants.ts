@@ -1,10 +1,10 @@
 /**
- * Single source of truth for dashboard tab + time-range identifiers.
- *
- * The arrays double as runtime iteration sources (dropdowns) AND as type
- * unions via the derived `TabId` / `TimeRangeId` aliases below. Adding a
- * new tab or range here automatically propagates through both.
- */
+	* Single source of truth for dashboard tab + time-range identifiers.
+	*
+	* The arrays double as runtime iteration sources (dropdowns) AND as type
+	* unions via the derived `TabId` / `TimeRangeId` aliases below. Adding a
+	* new tab or range here automatically propagates through both.
+	*/
 import { Clock, Zap } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 

@@ -15,9 +15,9 @@ interface BreadcrumbProps {
 }
 
 /**
- * Breadcrumb — navigation breadcrumb for deep routes.
- * Renders a chain of links; the last item is non-linked (current page).
- */
+	* Breadcrumb — navigation breadcrumb for deep routes.
+	* Renders a chain of links; the last item is non-linked (current page).
+	*/
 export function Breadcrumb({ items, className }: BreadcrumbProps) {
 	return (
 		<nav

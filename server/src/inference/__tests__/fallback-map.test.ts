@@ -3,9 +3,9 @@ import { FALLBACK_MAP, buildFallbackChain } from "../fallback.js";
 import { getModelById } from "../models.js";
 
 /**
- * Inference router FALLBACK_MAP must only reference models that exist
- * in the curated catalog, and every OMA-AI free model must have a chain.
- */
+	* Inference router FALLBACK_MAP must only reference models that exist
+	* in the curated catalog, and every OMA-AI free model must have a chain.
+	*/
 describe("FALLBACK_MAP (inference router)", () => {
 	it("every target and fallback id resolves in the catalog", () => {
 		for (const [primary, fallbacks] of Object.entries(FALLBACK_MAP)) {
@@ -56,14 +56,18 @@ describe("buildFallbackChain", () => {
 	it("freeOnly drops Venice/paid peers so guest chat stays free", () => {
 		const chain = buildFallbackChain(
 			"gemini-3-flash-preview",
-			["llama-3.3-70b", "minimax-m2-7"],
+			["llama-3.3-70b", "minimax-m2-7", "gpt-4o"],
 			true,
 		);
 		expect(chain[0]).toBe("gemini-3-flash-preview");
 		expect(chain).toContain("minimax-m2-7");
 		expect(chain).not.toContain("llama-3.3-70b");
+		expect(chain).not.toContain("gpt-4o");
 		for (const id of chain) {
-			expect(getModelById(id)?.provider).toBe("oma-ai");
+			const m = getModelById(id);
+			expect(m?.upstream, `${id} must be Gonka/openbroker for free chat`).toBe(
+				"openbroker",
+			);
 		}
 	});
 

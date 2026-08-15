@@ -24,10 +24,10 @@ export interface UseConversationShareOptions {
 }
 
 /**
- * Copy a shareable link for the current conversation: chat mode links to
- * /chat?model=…, playground mode links to a replay URL carrying the
- * conversation id + message count + model.
- */
+	* Copy a shareable link for the current conversation: chat mode links to
+	* /chat?model=…, playground mode links to a replay URL carrying the
+	* conversation id + message count + model.
+	*/
 export function useConversationShare(
 	opts: UseConversationShareOptions,
 ): () => Promise<void> {

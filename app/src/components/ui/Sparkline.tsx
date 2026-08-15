@@ -21,13 +21,13 @@ interface SparklineProps {
 }
 
 /**
- * Tiny inline trend chart. No axes, no labels — just the shape. Designed
- * to slot into a card next to a big number and add depth without competing
- * with the AreaChart / BarChart in the charts/ folder.
- *
- * Built on plain SVG (no recharts dep) so it stays a few hundred bytes
- * and renders server-side without `<svg>` hydration mismatches.
- */
+	* Tiny inline trend chart. No axes, no labels — just the shape. Designed
+	* to slot into a card next to a big number and add depth without competing
+	* with the AreaChart / BarChart in the charts/ folder.
+	*
+	* Built on plain SVG (no recharts dep) so it stays a few hundred bytes
+	* and renders server-side without `<svg>` hydration mismatches.
+	*/
 export function Sparkline({
 	values,
 	heightClass = "h-8",

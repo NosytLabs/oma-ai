@@ -29,18 +29,18 @@ const CHAT_ENDPOINT = `${DEFAULT_API_URL}/v1/chat/completions`;
 const SEARCH_ENDPOINT = `${DEFAULT_API_URL}/v1/search`;
 
 /**
- * Clean the conversation before it hits the upstream API. Two failure modes
- * produce malformed alternation that confuses providers:
- *
- * 1. Empty assistant placeholders (content === "") — persisted when a send
- *    failed mid-flight or aborted before any token arrived. Sending them as
- *    context makes the model see a "reply" that isn't there.
- * 2. Consecutive same-role messages — a send that 401/402'd (e.g. paid model
- *    without an API key) leaves its user message in history with no assistant
- *    reply, so the next send creates two user messages in a row. Providers
- *    either reject this or (as observed with old providers) answer the earlier,
- *    stale question. Keep only the last message of each run.
- */
+	* Clean the conversation before it hits the upstream API. Two failure modes
+	* produce malformed alternation that confuses providers:
+	*
+	* 1. Empty assistant placeholders (content === "") — persisted when a send
+	*    failed mid-flight or aborted before any token arrived. Sending them as
+	*    context makes the model see a "reply" that isn't there.
+	* 2. Consecutive same-role messages — a send that 401/402'd (e.g. paid model
+	*    without an API key) leaves its user message in history with no assistant
+	*    reply, so the next send creates two user messages in a row. Providers
+	*    either reject this or (as observed with old providers) answer the earlier,
+	*    stale question. Keep only the last message of each run.
+	*/
 export function sanitizeHistory(messages: Message[]): Message[] {
 	const cleaned: Message[] = [];
 	for (const msg of messages) {
@@ -56,10 +56,10 @@ export function sanitizeHistory(messages: Message[]): Message[] {
 }
 
 /**
- * Unique message IDs that don't collide under rapid concurrent sends.
- * Math.random + Date.now is not enough — two clicks in the same ms can
- * collide. Counter + crypto-random suffix eliminates that.
- */
+	* Unique message IDs that don't collide under rapid concurrent sends.
+	* Math.random + Date.now is not enough — two clicks in the same ms can
+	* collide. Counter + crypto-random suffix eliminates that.
+	*/
 function newMessageId(prefix: string): string {
 	const n =
 		typeof performance !== "undefined" && typeof performance.now === "function"
@@ -107,19 +107,19 @@ export interface UseStreamingChatResult {
 }
 
 /**
- * Owns the SSE streaming pipeline for both the primary chat and the
- * compare-mode side panel. The hook is intentionally chat-shaped — it
- * does not own the input box, the message list rendering, or the
- * settings panel. It only:
- *   1. fetches web search context (when enabled) in parallel for both
- *      primary and compare panels
- *   2. opens two parallel SSE streams (or one when compare mode is off)
- *   3. parses the SSE event stream, batches content updates at 250ms
- *      to keep renders cheap during streaming
- *   4. classifies terminal errors (auth / rate-limit / network) and
- *      either strips empty assistant placeholders (abort) or surfaces
- *      the message via setError
- */
+	* Owns the SSE streaming pipeline for both the primary chat and the
+	* compare-mode side panel. The hook is intentionally chat-shaped — it
+	* does not own the input box, the message list rendering, or the
+	* settings panel. It only:
+	*   1. fetches web search context (when enabled) in parallel for both
+	*      primary and compare panels
+	*   2. opens two parallel SSE streams (or one when compare mode is off)
+	*   3. parses the SSE event stream, batches content updates at 250ms
+	*      to keep renders cheap during streaming
+	*   4. classifies terminal errors (auth / rate-limit / network) and
+	*      either strips empty assistant placeholders (abort) or surfaces
+	*      the message via setError
+	*/
 export function useStreamingChat(
 	opts: UseStreamingChatOptions,
 ): UseStreamingChatResult {

@@ -1,21 +1,21 @@
 "use client";
 
 /**
- * OMA AI — Shared motion primitives
- * ---------------------------------
- * Used across all pages for consistent, premium animation.
- * Built on framer-motion's `m` (LazyMotion-compatible) so it stays
- * tree-shakeable with the MotionProvider in layout.tsx.
- *
- * Usage:
- *   import { staggerContainer, fadeUp } from '@/lib/animation'
- *   <m.ul variants={staggerContainer} initial="hidden" whileInView="show">
- *     <m.li variants={fadeUp}>…</m.li>
- *   </m.ul>
- *
- * Interactive primitives like Magnetic live in `@/lib/animation`.
- * Scroll helpers like InViewFade live in `@/components/motion`.
- */
+	* OMA AI — Shared motion primitives
+	* ---------------------------------
+	* Used across all pages for consistent, premium animation.
+	* Built on framer-motion's `m` (LazyMotion-compatible) so it stays
+	* tree-shakeable with the MotionProvider in layout.tsx.
+	*
+	* Usage:
+	*   import { staggerContainer, fadeUp } from '@/lib/animation'
+	*   <m.ul variants={staggerContainer} initial="hidden" whileInView="show">
+	*     <m.li variants={fadeUp}>…</m.li>
+	*   </m.ul>
+	*
+	* Interactive primitives like Magnetic live in `@/lib/animation`.
+	* Scroll helpers like InViewFade live in `@/components/motion`.
+	*/
 
 import { springs } from "./springs";
 import { m, useReducedMotion } from "@/lib/framer-motion-client";
@@ -25,9 +25,9 @@ import { useRevealInView } from "@/lib/use-reveal-in-view";
 import type { ReactNode } from "react";
 
 /* ============================================================
-   EASING & SPRING PRESETS
-   Consistent feel across the whole app.
-   ============================================================ */
+			EASING & SPRING PRESETS
+			Consistent feel across the whole app.
+			============================================================ */
 
 export const EASE_OUT = [0.16, 1, 0.3, 1] as const;
 // Canonical spring values live in components/motion/springs.ts — these are
@@ -37,8 +37,8 @@ export const EASE_SPRING = springs.tab;
 export const EASE_SPRING_SOFT = springs.soft;
 
 /* ============================================================
-   VARIANT PRESETS — plain objects, work with `m` + `variants`
-   ============================================================ */
+			VARIANT PRESETS — plain objects, work with `m` + `variants`
+			============================================================ */
 
 /** Container that staggers its children as they enter. */
 export const staggerContainer = (
@@ -71,8 +71,8 @@ export const blurIn: Variants = {
 };
 
 /* ============================================================
-   StaggerReveal — container + item helper
-   ============================================================ */
+			StaggerReveal — container + item helper
+			============================================================ */
 
 interface StaggerRevealProps {
 	children: ReactNode;

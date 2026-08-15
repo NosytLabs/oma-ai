@@ -3,19 +3,19 @@
 import { useEffect, useRef } from "react";
 
 /**
- * useDialog - Shared a11y primitive for modal dialogs.
- *
- * Handles:
- * - Escape key to close
- * - Focus trap (Tab cycles inside the panel)
- * - Initial focus on the first focusable element (or `initialFocusRef`)
- * - Focus restoration to the previously focused element on close
- * - Background scroll lock while open
- *
- * Returns a `panelRef` to attach to the panel element. The component
- * is responsible for `role="dialog"` / `aria-modal` / `aria-labelledby`
- * on its own root.
- */
+	* useDialog - Shared a11y primitive for modal dialogs.
+	*
+	* Handles:
+	* - Escape key to close
+	* - Focus trap (Tab cycles inside the panel)
+	* - Initial focus on the first focusable element (or `initialFocusRef`)
+	* - Focus restoration to the previously focused element on close
+	* - Background scroll lock while open
+	*
+	* Returns a `panelRef` to attach to the panel element. The component
+	* is responsible for `role="dialog"` / `aria-modal` / `aria-labelledby`
+	* on its own root.
+	*/
 export function useDialog({
 	open,
 	onClose,

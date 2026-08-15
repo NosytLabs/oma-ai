@@ -1,20 +1,20 @@
 "use client";
 
 /**
- * Minimal EIP-1193 wallet client — viem-backed, no wagmi.
- *
- * The app deliberately avoids wagmi to keep the dependency surface
- * small. `window.ethereum` is the standard EIP-1193 injection point;
- * most wallets (MetaMask, Rabby, Rainbow, Coinbase) expose it.
- *
- * If the user has no wallet, `getWalletClient()` returns null and the
- * login page surfaces a "no wallet detected" CTA with a link to
- * common wallets.
- *
- *   import { connectWallet, signSiweMessage } from "@/lib/wallet";
- *   const { address } = await connectWallet();
- *   const { message, signature } = await signSiweMessage(address, nonce, "oma-ai.com");
- */
+	* Minimal EIP-1193 wallet client — viem-backed, no wagmi.
+	*
+	* The app deliberately avoids wagmi to keep the dependency surface
+	* small. `window.ethereum` is the standard EIP-1193 injection point;
+	* most wallets (MetaMask, Rabby, Rainbow, Coinbase) expose it.
+	*
+	* If the user has no wallet, `getWalletClient()` returns null and the
+	* login page surfaces a "no wallet detected" CTA with a link to
+	* common wallets.
+	*
+	*   import { connectWallet, signSiweMessage } from "@/lib/wallet";
+	*   const { address } = await connectWallet();
+	*   const { message, signature } = await signSiweMessage(address, nonce, "oma-ai.com");
+	*/
 import { createWalletClient, custom, encodeFunctionData, type WalletClient } from "viem";
 import { base } from "viem/chains";
 import { SiweMessage } from "siwe";
@@ -42,10 +42,10 @@ function getEthereum(): Window["ethereum"] {
 }
 
 /**
- * Prompt the user to connect a wallet. Returns the first authorized
- * address (MetaMask's `eth_requestAccounts` returns the most-recently
- * used account first; multi-account UIs can extend this).
- */
+	* Prompt the user to connect a wallet. Returns the first authorized
+	* address (MetaMask's `eth_requestAccounts` returns the most-recently
+	* used account first; multi-account UIs can extend this).
+	*/
 export async function connectWallet(): Promise<WalletState> {
 	const eth = getEthereum();
 	if (!eth) {
@@ -74,10 +74,10 @@ function viemWalletClient(): WalletClient {
 }
 
 /**
- * Build, sign, and return an EIP-4361 SIWE message addressed to OMA.
- * The returned `message` is what the server's `verifyMessage` will
- * re-derive and verify against `signature` using viem's recoverMessage.
- */
+	* Build, sign, and return an EIP-4361 SIWE message addressed to OMA.
+	* The returned `message` is what the server's `verifyMessage` will
+	* re-derive and verify against `signature` using viem's recoverMessage.
+	*/
 export async function signSiweMessage(
 	address: `0x${string}`,
 	nonce: string,
@@ -119,9 +119,9 @@ async function _readChainId(): Promise<number | null> {
 }
 
 /**
- * Returns the currently authorized account without prompting
- * (`eth_accounts`), or null when the wallet is locked / not connected.
- */
+	* Returns the currently authorized account without prompting
+	* (`eth_accounts`), or null when the wallet is locked / not connected.
+	*/
 export async function getConnectedAccount(): Promise<`0x${string}` | null> {
 	const eth = getEthereum();
 	if (!eth) return null;
@@ -171,10 +171,10 @@ const USDC_TRANSFER_ABI = [
 ] as const;
 
 /**
- * Sends `amountUsd` USDC from the connected wallet to `to` on Base.
- * Prompts the user in their wallet (popup / extension). Returns the
- * transaction hash once the user confirms and the tx is broadcast.
- */
+	* Sends `amountUsd` USDC from the connected wallet to `to` on Base.
+	* Prompts the user in their wallet (popup / extension). Returns the
+	* transaction hash once the user confirms and the tx is broadcast.
+	*/
 export async function sendUsdcTransfer({
 	to,
 	amountUsd,

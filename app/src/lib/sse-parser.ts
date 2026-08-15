@@ -1,9 +1,9 @@
 /**
- * SSE events end with \n\n. A single event can have multiple
- * `data:` lines that must be concatenated. Per the SSE spec, ignore lines
- * starting with `:` (comment). A bare `data:` line is treated as the string
- * "data: ". The event ends at the first blank line.
- */
+	* SSE events end with \n\n. A single event can have multiple
+	* `data:` lines that must be concatenated. Per the SSE spec, ignore lines
+	* starting with `:` (comment). A bare `data:` line is treated as the string
+	* "data: ". The event ends at the first blank line.
+	*/
 export interface SSEBlock {
 	event?: string;
 	data: string[];

@@ -1,7 +1,7 @@
 /* OMA · Terms page
- * conversational legal layout · sections: hero · summary · usage · acceptable use · liability · credits · termination · contact
- * copy: plain English summary at the top, active voice, no invented metrics
- */
+	* conversational legal layout · sections: hero · summary · usage · acceptable use · liability · credits · termination · contact
+	* copy: plain English summary at the top, active voice, no invented metrics
+	*/
 
 // ISR: Revalidate every 24 hours (legal content, very rarely changes)
 export const revalidate = 86400;
@@ -181,9 +181,8 @@ export default function TermsPage() {
 										The short version
 									</p>
 									<p className="text-[14px] sm:text-[15px] text-text-bright leading-relaxed">
-										OMA gives you access to text generation, chat, image
-										generation, and video generation through an
-										OpenAI-compatible API.
+										OMA gives you access to text generation and chat
+										through an OpenAI-compatible API.
 									</p>
 									<p className="mt-3 text-[13.5px] sm:text-[14px] text-text-secondary leading-relaxed">
 										By using the service you agree to a small set of
@@ -271,9 +270,8 @@ export default function TermsPage() {
 						</h3>
 
 						<p className="text-[13px] sm:text-sm text-text-secondary max-w-2xl mb-5">
-							The OMA AI API gives you access to text generation, chat,
-							image generation, and video generation. By using the API you
-							agree to:
+							The OMA AI API gives you access to text generation and chat
+							completions. By using the API you agree to:
 						</p>
 
 						<div className="border border-border bg-surface p-5">

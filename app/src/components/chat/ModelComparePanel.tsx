@@ -22,10 +22,10 @@ interface ModelComparePanelProps {
 }
 
 /**
- * Right-hand comparison panel. Independent chat history against a
- * second model. Shares the same prompt input on submit (caller wires
- * `prompt` + `onSubmit` to fire both sendMessage paths).
- */
+	* Right-hand comparison panel. Independent chat history against a
+	* second model. Shares the same prompt input on submit (caller wires
+	* `prompt` + `onSubmit` to fire both sendMessage paths).
+	*/
 export function ModelComparePanel({
 	open,
 	onClose,

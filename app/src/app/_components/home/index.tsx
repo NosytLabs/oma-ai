@@ -1,9 +1,9 @@
 /**
- * HomeView — server-rendered homepage composition.
- *
- * Interactive sections keep their own client boundaries; the page shell no
- * longer turns the entire marketing surface into one eager client root.
- */
+	* HomeView — server-rendered homepage composition.
+	*
+	* Interactive sections keep their own client boundaries; the page shell no
+	* longer turns the entire marketing surface into one eager client root.
+	*/
 
 import { AgentDemoSection } from "@/app/_components/home/agent-demo";
 import { CapabilitiesGrid } from "@/app/_components/home/capabilities-grid";

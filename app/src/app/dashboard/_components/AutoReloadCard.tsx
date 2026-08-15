@@ -10,8 +10,8 @@ import type { AutoReloadSettings } from "@/lib/api";
 import { api } from "@/lib/api";
 
 /* ------------------------------------------------------------------ *
- *  Auto-Reload Card
- * ------------------------------------------------------------------ */
+	*  Auto-Reload Card
+	* ------------------------------------------------------------------ */
 
 function AutoReloadCardComponent() {
 	const toast = useToast();
