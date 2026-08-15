@@ -8,7 +8,7 @@ WORKDIR /app
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
 COPY app/package.json ./app/
 COPY server/package.json ./server/
-RUN pnpm install --no-frozen-lockfile --prod
+RUN pnpm install --no-frozen-lockfile
 
 FROM base AS builder
 WORKDIR /app

@@ -102,6 +102,7 @@ export const NAV_ITEMS: NavItem[] = [
 		headings: [
 			{ id: "ep-chat", label: "Chat completions" },
 			{ id: "ep-messages", label: "Anthropic messages" },
+			{ id: "ep-search", label: "Web search" },
 			{ id: "ep-models", label: "List models" },
 			{ id: "ep-model", label: "Get model" },
 			{ id: "ep-session", label: "Session lookup" },
@@ -109,8 +110,10 @@ export const NAV_ITEMS: NavItem[] = [
 			{ id: "ep-magic-link", label: "Magic link" },
 			{ id: "ep-balance", label: "Credit balance" },
 			{ id: "ep-deposit-usdc", label: "USDC deposit" },
+			{ id: "ep-checkout", label: "Polar checkout" },
 			{ id: "ep-usage-today", label: "Daily usage" },
 			{ id: "ep-usage", label: "Usage history" },
+			{ id: "ep-polar-webhook", label: "Polar webhook" },
 		],
 	},
 	{

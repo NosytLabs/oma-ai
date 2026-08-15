@@ -1,16 +1,12 @@
 import {
-	Activity,
 	BookOpen,
 	Bot,
 	Box,
 	CircleHelp,
 	Coins,
 	FileText,
-	GitCompare,
 	type LucideIcon,
 	Network,
-	Newspaper,
-	ShieldCheck,
 	Tag,
 	Terminal,
 } from "lucide-react";

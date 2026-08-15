@@ -9,55 +9,66 @@
 	* Returns plain text per the spec — first line is the H1, optional
 	* blockquote summary, then sections introduced by `## <Title>` with
 	* a markdown list of links under each.
+	*
+	* URLs are resolved from env at request time so staging / preview
+	* deployments advertise the right host instead of leaking prod URLs.
 	*/
-import type { NextResponse } from "next/server";
+import { DEFAULT_API_URL } from "@/lib/config";
 
 export const dynamic = "force-static";
 export const revalidate = 3600;
 
-const SITE_URL = "https://oma-ai.com";
-const API_URL = "https://api.oma-ai.com";
+function resolveSiteUrl(): string {
+	return (
+		process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") || "https://oma-ai.com"
+	);
+}
 
-const BODY = `# OMA AI — Open Model Access
+export function GET(): Response {
+	const siteUrl = resolveSiteUrl();
+	const apiUrl =
+		DEFAULT_API_URL?.replace(/\/+$/, "") || "https://api.oma-ai.com";
+
+	const BODY = `# OMA AI — Open Model Access
 
 > One gateway. Every model. No lock-in. OpenAI-compatible multi-provider AI inference with 26 curated chat models, x402 USDC micropayments on Base, and privacy-first routing.
 
 ## Docs
 
-- [Getting Started](${SITE_URL}/getting-started)
-- [API Reference](${SITE_URL}/docs): [Authentication](${SITE_URL}/docs#authentication), [Endpoints](${SITE_URL}/docs#endpoints), [Available Models](${SITE_URL}/docs#models), [Provider Routing](${SITE_URL}/docs#provider-routing), [Streaming](${SITE_URL}/docs#streaming), [Rate Limits](${SITE_URL}/docs#rate-limits), [Pricing](${SITE_URL}/docs#pricing), [x402 Payments](${SITE_URL}/docs#x402), [SDKs](${SITE_URL}/docs#sdks), [Error Codes](${SITE_URL}/docs#errors)
-- [FAQ](${SITE_URL}/faq)
-- [Glossary](${SITE_URL}/glossary)
+- [Getting Started](${siteUrl}/getting-started)
+- [API Reference](${siteUrl}/docs): [Authentication](${siteUrl}/docs#authentication), [Endpoints](${siteUrl}/docs#endpoints), [Available Models](${siteUrl}/docs#models), [Provider Routing](${siteUrl}/docs#provider-routing), [Streaming](${siteUrl}/docs#streaming), [Rate Limits](${siteUrl}/docs#rate-limits), [Pricing](${siteUrl}/docs#pricing), [x402 Payments](${siteUrl}/docs#x402), [SDKs](${siteUrl}/docs#sdks), [Error Codes](${siteUrl}/docs#errors)
+- [FAQ](${siteUrl}/faq)
+- [Glossary](${siteUrl}/glossary)
 
 ## Product
 
-- [Home](${SITE_URL}/)
-- [Models](${SITE_URL}/models)
-- [Pricing](${SITE_URL}/pricing)
-- [Chat Playground](${SITE_URL}/chat)
-- [Deposit](${SITE_URL}/deposit)
+- [Home](${siteUrl}/)
+- [Models](${siteUrl}/models)
+- [Pricing](${siteUrl}/pricing)
+- [Chat Playground](${siteUrl}/chat)
+- [Deposit](${siteUrl}/deposit)
 
 ## Company
 
-- [About](${SITE_URL}/about)
-- [Contact](${SITE_URL}/contact)
-- [Privacy](${SITE_URL}/privacy)
-- [Terms](${SITE_URL}/terms)
+- [About](${siteUrl}/about)
+- [Contact](${siteUrl}/contact)
+- [Privacy](${siteUrl}/privacy)
+- [Terms](${siteUrl}/terms)
 
 ## Agent resources
 
-- [Agent skill (autonomous setup instructions)](${SITE_URL}/agent-skill.md)
-- [A2A agent card](${SITE_URL}/.well-known/agent-card.json)
-- [OpenAPI spec](${API_URL}/v1/openapi)
-- [Model catalog](${API_URL}/v1/models)
+- [Agent skill (autonomous setup instructions)](${siteUrl}/agent-skill.md)
+- [A2A agent card](${siteUrl}/.well-known/agent-card.json)
+- [OpenAPI spec](${apiUrl}/v1/openapi)
+- [Model catalog](${apiUrl}/v1/models)
 - [GitHub](https://github.com/NosytLabs)
 `;
 
-export function GET(): Response {
 	return new Response(BODY, {
 		headers: {
 			"Content-Type": "text/plain; charset=utf-8",
-			"Cache-Control": "public, max-age=3600",
+			"Cache-Control": "public, max-age=3600, s-maxage=3600",
+			Link: `<${siteUrl}/llms.txt>; rel="canonical"`,
 		},
 	});
 }

@@ -3,6 +3,11 @@
   "version": "2.1.0",
   "private": true,
   "description": "Workspace root for the OMA AI Gateway monorepo (app/ frontend + server/ backend).",
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=20.18.0",
+    "pnpm": ">=9.0.0 <10.0.0"
+  },
   "scripts": {
     "validate": "pnpm --filter app run typecheck && pnpm --filter app run lint && pnpm --filter app test && pnpm --filter oma-server run typecheck && pnpm --filter oma-server run lint && pnpm --filter oma-server test",
     "validate:app": "pnpm --filter app run typecheck && pnpm --filter app run lint && pnpm --filter app test",

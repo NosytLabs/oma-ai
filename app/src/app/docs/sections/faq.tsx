@@ -18,7 +18,10 @@ export function FAQSection() {
 				subtitle="Beginner-friendly Q&A and an alphabetized glossary live on their own pages — kept in sync with the API reference."
 			/>
 
-			<div className="mt-6 grid gap-4 sm:grid-cols-2">
+			{/* Anchor target for DocsSearch (`faq-general`). The full FAQ list
+			 * lives at /faq; this just gives the search modal something to
+			 * scroll to so the URL hash is shareable. */}
+			<div id="faq-general" className="mt-6 grid gap-4 sm:grid-cols-2">
 				<Link
 					href="/faq"
 					className="group flex items-start gap-3 rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] p-5 transition-transform duration-200 ease-out hover:border-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.97]"

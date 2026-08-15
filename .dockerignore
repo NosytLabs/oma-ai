@@ -1,5 +1,7 @@
 # Dependencies
 node_modules/
+app/node_modules/
+server/node_modules/
 npm-debug.log*
 .pnpm-store/
 
@@ -31,6 +33,7 @@ deploy/
 
 # Next.js
 .next/
+app/.next/
 
 # Docusaurus (docs site, if added)
 .docusaurus/

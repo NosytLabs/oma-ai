@@ -36,8 +36,6 @@ import {
 	Tag,
 	FileText,
 	Network,
-	Activity,
-	Newspaper,
 	Gavel,
 	ShieldCheck,
 	BookOpen,
@@ -134,8 +132,14 @@ const SOCIAL_LINKS = [
 	},
 ];
 
+// Build-time constants — kept as literals (not `new Date()`) so SSR and
+// hydration never disagree on midnight-UTC rollovers. CURRENT_YEAR is
+// bumped manually once per year in source. LAST_DEPLOY is sourced from
+// NEXT_PUBLIC_BUILD_DATE (set in next.config.ts) so the build pipeline
+// owns the timestamp; the literal is the local-dev fallback.
 const CURRENT_YEAR = 2026;
-const LAST_DEPLOY = "2026-08-14";
+const LAST_DEPLOY =
+	process.env.NEXT_PUBLIC_BUILD_DATE?.slice(0, 10) ?? "dev";
 
 export function Footer() {
 	const pathname = usePathname() ?? "";

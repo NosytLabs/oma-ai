@@ -1,6 +1,12 @@
 "use client";
 
-
+/**
+ * /chat — public playground entry point.
+ *
+ * Renders a lightweight loading shell during SSR, then streams the heavy
+ * client-only ChatPlaygroundShell (framer-motion + wallet hooks + chat
+ * persistence).
+ */
 
 import { AlertTriangle } from "lucide-react";
 import nextDynamic from "next/dynamic";
