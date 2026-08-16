@@ -1,30 +1,43 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { RefreshCw, WifiOff } from "lucide-react";
+import {
+	isPaymentRequiredError,
+	isQuotaError,
+	isSuspendedAccountError,
+} from "@/lib/api/client";
 
 /**
-	* Inline error banner for the dashboard. Classifies the message into
-	* backend-unavailable / suspended / payment-required / quota / generic,
-	* and offers Retry (backend down) or Dismiss actions.
+	* Inline error banner for the dashboard. Classifies the error via the
+	* structured helpers in `@/lib/api/client` (HTTP status + error code)
+	* rather than message-string matching — the ApiError body carries
+	* `error.code` (`account_suspended`, `daily_limit_exceeded`), which is
+	* locale/rewrite-proof, while raw message text is brittle.
+	*
+	* Offers Retry (backend down) or Dismiss actions.
 	*/
 export function DashboardErrorBanner({
 	error,
 	backendUnavailable,
 	onRefresh,
 }: {
-	error: string | null;
+	error: Error | null;
 	backendUnavailable: boolean;
 	onRefresh: () => void;
 }) {
 	const [dismissed, setDismissed] = useState(false);
 
-	if (!error || dismissed) return null;
+	useEffect(() => {
+		setDismissed(false);
+	}, [error, backendUnavailable]);
 
-	const isSuspended = error.includes("suspended");
-	const isPaymentRequired = error.includes("payment required");
-	const isQuota =
-		error.includes("limit exceeded") || error.includes("quota");
+	const displayError = error ?? (backendUnavailable ? new Error("Backend unavailable") : null);
+	if (!displayError || dismissed) return null;
+
+	const isSuspended = isSuspendedAccountError(displayError);
+	const isPaymentRequired = isPaymentRequiredError(displayError);
+	const isQuota = isQuotaError(displayError);
 	const isDismissable = !(
 		isSuspended ||
 		isPaymentRequired ||
@@ -87,7 +100,7 @@ export function DashboardErrorBanner({
 							<span className="font-medium text-error">
 								Something went wrong.
 							</span>{" "}
-							<span className="text-text-muted">{error}</span>
+							<span className="text-text-muted">{displayError.message}</span>
 						</span>
 					</>
 				)}

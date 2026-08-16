@@ -6,6 +6,7 @@
 
 import { Check, Palette } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
 	THEME_ACCENTS,
 	THEME_LIST,
@@ -16,20 +17,44 @@ import {
 export function ThemeToggle() {
 	const { theme, setTheme } = useTheme();
 	const [open, setOpen] = useState(false);
+	const [mounted, setMounted] = useState(false);
+	const [menuPos, setMenuPos] = useState({ top: 0, right: 8 });
 	const containerRef = useRef<HTMLDivElement | null>(null);
 	const toggleRef = useRef<HTMLButtonElement | null>(null);
+	const menuRef = useRef<HTMLDivElement | null>(null);
 	const swatch = THEME_ACCENTS[theme];
 	const activeLabel = THEME_LIST.find((t) => t.id === theme)?.name ?? theme;
 
 	useEffect(() => {
+		setMounted(true);
+	}, []);
+
+	useEffect(() => {
+		if (!open || !toggleRef.current) return;
+		const place = () => {
+			const rect = toggleRef.current?.getBoundingClientRect();
+			if (!rect) return;
+			setMenuPos({
+				top: rect.bottom + 8,
+				right: Math.max(8, window.innerWidth - rect.right),
+			});
+		};
+		place();
+		window.addEventListener("resize", place);
+		return () => window.removeEventListener("resize", place);
+	}, [open]);
+
+	useEffect(() => {
 		if (!open) return;
 		function onDocClick(e: MouseEvent) {
+			const target = e.target as Node;
 			if (
-				containerRef.current &&
-				!containerRef.current.contains(e.target as Node)
+				containerRef.current?.contains(target) ||
+				menuRef.current?.contains(target)
 			) {
-				setOpen(false);
+				return;
 			}
+			setOpen(false);
 		}
 		function onKey(e: KeyboardEvent) {
 			if (e.key === "Escape") {
@@ -45,44 +70,14 @@ export function ThemeToggle() {
 		};
 	}, [open]);
 
-	return (
-		<div ref={containerRef} className="relative">
-			<button
-				ref={toggleRef}
-				type="button"
-				onClick={() => setOpen((o) => !o)}
-				aria-haspopup="menu"
-				aria-expanded={open}
-				aria-controls="theme-menu"
-				aria-label={`Theme: ${activeLabel}`}
-				title={`Theme · ${activeLabel}`}
-				data-theme-toggle
-				className="inline-flex items-center gap-1.5 h-11 px-2.5 rounded-[var(--radius-md)] text-text-tertiary hover:text-text-bright hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.97] transition-[color,background-color,transform] duration-200 ease-out"
-			>
-				<span
-					aria-hidden="true"
-					className="relative inline-flex h-3.5 w-3.5 items-center justify-center"
-				>
-					<span
-						className="absolute inset-0 rounded-full ring-1 ring-white/15"
-						style={{
-							background: swatch,
-							boxShadow: `0 0 10px ${swatch}88`,
-						}}
-					/>
-				</span>
-				<span className="text-xs font-mono lowercase tracking-tight text-text-secondary hidden sm:inline">
-					{theme}
-				</span>
-				<Palette className="h-3 w-3 opacity-50 sm:hidden" aria-hidden="true" />
-			</button>
-
-			{open && (
+	const menu = open ? (
 				<div
+					ref={menuRef}
 					id="theme-menu"
 					role="menu"
 					aria-label="Choose theme"
-					className="absolute right-0 top-full mt-2 w-60 rounded-[var(--radius-lg)] border border-border-hi bg-void/95 backdrop-blur-md p-2 shadow-2xl z-[60] font-mono"
+					style={{ top: menuPos.top, right: menuPos.right }}
+					className="fixed z-[80] w-60 max-w-[calc(100vw-1rem)] rounded-[var(--radius-lg)] border border-border-hi bg-void/95 backdrop-blur-md p-2 shadow-2xl font-mono"
 				>
 					<p className="px-3 pt-2 pb-1.5 text-[10px] uppercase tracking-[0.18em] text-text-tertiary">
 						Accent theme
@@ -142,7 +137,40 @@ export function ThemeToggle() {
 						Surfaces stay dark. Only the accent shifts.
 					</p>
 				</div>
-			)}
+	) : null;
+
+	return (
+		<div ref={containerRef} className="relative">
+			<button
+				ref={toggleRef}
+				type="button"
+				onClick={() => setOpen((o) => !o)}
+				aria-haspopup="menu"
+				aria-expanded={open}
+				aria-controls="theme-menu"
+				aria-label={`Theme: ${activeLabel}`}
+				title={`Theme · ${activeLabel}`}
+				data-theme-toggle
+				className="inline-flex items-center gap-1.5 h-11 px-2.5 rounded-[var(--radius-md)] text-text-tertiary hover:text-text-bright hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.97] transition-[color,background-color,transform] duration-200 ease-out"
+			>
+				<span
+					aria-hidden="true"
+					className="relative inline-flex h-3.5 w-3.5 items-center justify-center"
+				>
+					<span
+						className="absolute inset-0 rounded-full ring-1 ring-white/15"
+						style={{
+							background: swatch,
+							boxShadow: `0 0 10px ${swatch}88`,
+						}}
+					/>
+				</span>
+				<span className="text-xs font-mono lowercase tracking-tight text-text-secondary hidden sm:inline">
+					{theme}
+				</span>
+				<Palette className="h-3 w-3 opacity-50 sm:hidden" aria-hidden="true" />
+			</button>
+			{mounted && menu ? createPortal(menu, document.body) : null}
 		</div>
 	);
 }

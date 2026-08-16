@@ -234,8 +234,8 @@ export function AgentSessionDemo({ className }: { className?: string }) {
 	<ArrowRight className="h-3 w-3" aria-hidden="true" />
 	</Link>
 	<Link
-	href="/chat?demo=1"
-	className="inline-flex items-center gap-1 rounded-[var(--radius-sm)] bg-accent px-2.5 py-1 text-[11px] font-semibold text-void transition-[background-color,transform] duration-200 ease-out hover:bg-accent-bright active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+	href="/chat"
+	className="inline-flex min-h-11 items-center gap-1 rounded-[var(--radius-sm)] bg-accent px-2.5 py-1 text-[11px] font-semibold text-void transition-[background-color,transform] duration-200 ease-out hover:bg-accent-bright active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 	>
 	Try live chat
 	<ArrowRight className="h-3 w-3" aria-hidden="true" />

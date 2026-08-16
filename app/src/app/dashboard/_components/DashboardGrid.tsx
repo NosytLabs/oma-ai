@@ -142,7 +142,7 @@ interface DashboardGridProps {
 	creditBatches: CreditBatch[];
 	transactions: CreditTransaction[];
 	loading: boolean;
-	error: string | null;
+	error: Error | null;
 	backendUnavailable: boolean;
 
 	// Derived QuickStats inputs.
@@ -192,6 +192,8 @@ interface DashboardGridProps {
 	// Whether the current session is signed in with a wallet (SIWE).
 	// Drives the OnboardingChecklist "wallet connected" milestone.
 	walletConnected?: boolean;
+	/** Unfiltered lifetime usage — empty-state should not fire on a quiet 24h range. */
+	hasAnyUsage?: boolean;
 }
 
 /**
@@ -238,6 +240,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 		timeRange = "7d",
 		onNavigateToApiKeys,
 		walletConnected = false,
+		hasAnyUsage = false,
 	} = props;
 
 	// `usage` is already time-range filtered by the page (`filteredUsage`).
@@ -270,9 +273,10 @@ export function DashboardGrid(props: DashboardGridProps) {
 						{/* Onboarding checklist for new users */}
 						{!loading && (
 							<OnboardingChecklist
+								signedIn
 								walletConnected={walletConnected}
 								hasApiKey={apiKeys.length > 0}
-								hasUsage={usage.length > 0}
+								hasUsage={hasAnyUsage}
 								onNavigateToApiKeys={onNavigateToApiKeys}
 							/>
 						)}
@@ -285,7 +289,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 							</div>
 						)}
 
-						<div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 [&>*]:min-h-[12rem] p-6">
+						<div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 [&>*]:min-h-[12rem]">
 							<WidgetErrorBoundary title="Credits">
 								<CreditBalanceCard
 									balance={balance}
@@ -350,6 +354,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 									usageData={usageData}
 									modelData={modelData}
 									timeRange={timeRange}
+									loading={loading}
 								/>
 							</WidgetErrorBoundary>
 						</div>
@@ -373,7 +378,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 						animate="visible"
 						exit="exit"
 					>
-						{!loading && (!usage || usage.length === 0) ? (
+						{!loading && !hasAnyUsage ? (
 							<EmptyState
 								icon={Activity}
 								title="No usage data"
@@ -395,6 +400,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 											usageData={usageData}
 											modelData={modelData}
 											timeRange={timeRange}
+											loading={loading}
 										/>
 									</WidgetErrorBoundary>
 								</div>
@@ -433,7 +439,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 						role="tabpanel"
 						aria-labelledby="tab-api-keys"
 						aria-label="API Keys"
-						className="border border-border bg-void"
+						className="rounded-[var(--radius-xl)] border border-border bg-surface/30"
 						variants={tabContentVariants}
 						initial="hidden"
 						animate="visible"
@@ -486,7 +492,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 						role="tabpanel"
 						aria-labelledby="tab-health"
 						aria-label="Health"
-						className="border border-border bg-void"
+						className="rounded-[var(--radius-xl)] border border-border bg-surface/30"
 						variants={tabContentVariants}
 						initial="hidden"
 						animate="visible"

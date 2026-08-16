@@ -6,6 +6,25 @@
 import { getCached, STALE_TTL, setCache } from "./client.js";
 import type { BalanceResponse, ModelsResponse, UsageRecord } from "./types.js";
 
+type RawUsageRecord = UsageRecord & {
+	inputTokens?: number;
+	outputTokens?: number;
+};
+
+export function normalizeUsageRecord(raw: RawUsageRecord): UsageRecord {
+	const promptTokens = Number(raw.inputTokens ?? raw.promptTokens ?? 0);
+	const completionTokens = Number(raw.outputTokens ?? raw.completionTokens ?? 0);
+	return {
+		...raw,
+		promptTokens: Number.isFinite(promptTokens) ? promptTokens : 0,
+		completionTokens: Number.isFinite(completionTokens) ? completionTokens : 0,
+		latencyMs:
+			typeof raw.latencyMs === "number" && Number.isFinite(raw.latencyMs)
+				? raw.latencyMs
+				: null,
+	};
+}
+
 export const balance = {
 	get() {
 		const cacheKey = "/v1/balance";
@@ -21,18 +40,33 @@ export const balance = {
 };
 
 export const usage = {
-	get(options?: { limit?: number }) {
+	get(options?: { limit?: number; cursor?: string }) {
 		const limit = options?.limit ?? 50;
+		const qs = new URLSearchParams({ limit: String(limit) });
+		if (options?.cursor) qs.set("cursor", options.cursor);
 		return import("./client.js").then(({ request }) =>
 			request<{
 				object: string;
-				data: UsageRecord[];
+				data: RawUsageRecord[];
 				next_cursor: string | null;
-			}>(`/v1/usage?limit=${limit}`).then((body) => ({
-				records: body.data ?? [],
-				count: body.data?.length ?? 0,
-			})),
+			}>(`/v1/usage?${qs.toString()}`).then((body) => {
+				const records = (body.data ?? []).map(normalizeUsageRecord);
+				return {
+					records,
+					count: records.length,
+					nextCursor: body.next_cursor ?? null,
+				};
+			}),
 		);
+	},
+	async getAll(options?: { pageSize?: number; maxRecords?: number }) {
+		const { collectUsagePages } = await import("./collect-usage.js");
+		const pageSize = options?.pageSize ?? 200;
+		const records = await collectUsagePages(
+			(cursor) => usage.get({ limit: pageSize, cursor }),
+			{ maxRecords: options?.maxRecords ?? 2000 },
+		);
+		return { records, count: records.length };
 	},
 };
 

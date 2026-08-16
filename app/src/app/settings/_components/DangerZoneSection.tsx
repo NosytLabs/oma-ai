@@ -1,6 +1,8 @@
 "use client";
 
-import { AlertTriangle, History, Loader2, Trash2 } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { AlertTriangle, Download, History, Loader2, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { api } from "@/lib/api";
@@ -20,6 +22,13 @@ export function DangerZoneSection({
 	deleting,
 }: DangerZoneSectionProps) {
 	const toast = useToast();
+	const queryClient = useQueryClient();
+	const balanceQuery = useQuery({
+		queryKey: ["balance"],
+		queryFn: () => api.balance.get(),
+		staleTime: 30_000,
+	});
+	const balanceDollars = Number(balanceQuery.data?.balanceCents ?? 0) / 100;
 	const [showConfirm, setShowConfirm] = useState(false);
 	const [confirmText, setConfirmText] = useState("");
 	const [clearing, setClearing] = useState(false);
@@ -33,6 +42,10 @@ export function DangerZoneSection({
 				toast.success(
 					`Wiped ${res.deleted.usageRecords} usage records & ${res.deleted.auditLogs} logs.`,
 				);
+				void queryClient.invalidateQueries({ queryKey: ["usage"] });
+				void queryClient.invalidateQueries({ queryKey: ["balance"] });
+				void queryClient.invalidateQueries({ queryKey: ["recentTransactions"] });
+				void queryClient.invalidateQueries({ queryKey: ["creditBatches"] });
 				setShowClearConfirm(false);
 			} else {
 				toast.error("Failed to clear history");
@@ -56,12 +69,33 @@ export function DangerZoneSection({
 					Danger zone
 				</h2>
 				<p className="mt-1 text-sm text-text-muted">
-					Irreversible actions. Make sure you understand the consequences.
+					Irreversible actions. Export your data first if you might need it later.
 				</p>
 			</div>
 
+			<div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)]/30 p-5">
+				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+					<div className="min-w-0">
+						<h3 className="text-sm font-semibold text-text-bright">
+							Export before you delete
+						</h3>
+						<p className="mt-1 text-xs text-text-muted">
+							Download your account, usage, and credit history from Privacy.
+							Deletion forfeits remaining credits.
+						</p>
+					</div>
+					<Link
+						href="/settings?tab=privacy"
+						className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-xs font-semibold text-text-secondary transition-[background-color,border-color,color,transform] duration-200 ease-out hover:border-accent/40 hover:text-text-bright active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+					>
+						<Download className="h-3.5 w-3.5" aria-hidden="true" />
+						Go to data export
+					</Link>
+				</div>
+			</div>
+
 			{/* Wipe History */}
-			<div className="mt-6 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)]/30 p-5 transition-colors duration-200 ease-out hover:border-[var(--color-accent)]/30">
+			<div className="mt-6 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)]/30 p-5 transition-colors duration-200 ease-out hover:border-[var(--color-accent)]/30">
 				<div className="flex items-start gap-4">
 					<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-elevated)]">
 						<History
@@ -88,7 +122,7 @@ export function DangerZoneSection({
 									exit={{ opacity: 0 }}
 									whileTap={{ scale: 0.98 }}
 									onClick={() => setShowClearConfirm(true)}
-									className="mt-4 inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2 text-xs font-semibold text-text-secondary transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:border-[var(--color-accent)]/40 hover:bg-[var(--color-surface-elevated)] hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+									className="mt-4 inline-flex min-h-11 items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2 text-xs font-semibold text-text-secondary transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:border-[var(--color-accent)]/40 hover:bg-[var(--color-surface-elevated)] hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
 								>
 									<History className="h-3.5 w-3.5" aria-hidden="true" />
 									Clear usage history
@@ -99,7 +133,7 @@ export function DangerZoneSection({
 									initial={{ opacity: 0, scale: 0.98 }}
 									animate={{ opacity: 1, scale: 1 }}
 									exit={{ opacity: 0, scale: 0.98 }}
-									className="mt-4 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-elevated)] p-4"
+									className="mt-4 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-elevated)] p-4"
 								>
 									<div className="mb-3 flex items-center gap-2">
 										<AlertTriangle
@@ -154,7 +188,7 @@ export function DangerZoneSection({
 			</div>
 
 			{/* Delete account */}
-			<div className="mt-6 rounded-[var(--radius-lg)] border border-[var(--color-danger)]/30 bg-[color-mix(in_srgb,var(--color-danger)_5%,transparent)] p-5 transition-colors duration-200 ease-out hover:border-[var(--color-danger)]/50 hover:bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)]">
+			<div className="mt-6 rounded-[var(--radius-md)] border border-[var(--color-danger)]/30 bg-[color-mix(in_srgb,var(--color-danger)_5%,transparent)] p-5 transition-colors duration-200 ease-out hover:border-[var(--color-danger)]/50 hover:bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)]">
 				<div className="flex items-start gap-4">
 					<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-danger)]/30 bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)]">
 						<AlertTriangle
@@ -169,7 +203,11 @@ export function DangerZoneSection({
 						<p className="mt-1 text-xs text-text-muted">
 							Permanently delete your OMA account, API keys, and credits. This
 							cannot be undone. Credits are non-redeemable and will be
-							forfeited.
+							forfeited
+							{Number.isFinite(balanceDollars)
+								? ` (about $${balanceDollars.toFixed(2)} remaining)`
+								: ""}
+							.
 						</p>
 
 						<AnimatePresence mode="wait">
@@ -182,7 +220,7 @@ export function DangerZoneSection({
 									exit={{ opacity: 0 }}
 									whileTap={{ scale: 0.98 }}
 									onClick={() => setShowConfirm(true)}
-									className="mt-4 inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--color-danger)]/40 bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)] px-4 py-2 text-xs font-semibold text-[var(--color-danger)] transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-[color-mix(in_srgb,var(--color-danger)_20%,transparent)] hover:border-[var(--color-danger)]/60 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-danger)]"
+									className="mt-4 inline-flex min-h-11 items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--color-danger)]/40 bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)] px-4 py-2 text-xs font-semibold text-[var(--color-danger)] transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-[color-mix(in_srgb,var(--color-danger)_20%,transparent)] hover:border-[var(--color-danger)]/60 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-danger)]"
 								>
 									<Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
 									Delete account
@@ -193,7 +231,7 @@ export function DangerZoneSection({
 									initial={{ opacity: 0, scale: 0.98 }}
 									animate={{ opacity: 1, scale: 1 }}
 									exit={{ opacity: 0, scale: 0.98 }}
-									className="mt-4 rounded-[var(--radius-lg)] border border-[var(--color-error)]/40 bg-[color-mix(in_srgb,var(--color-error)_10%,transparent)] p-5"
+									className="mt-4 rounded-[var(--radius-md)] border border-[var(--color-error)]/40 bg-[color-mix(in_srgb,var(--color-error)_10%,transparent)] p-5"
 								>
 									<div className="mb-3 flex items-center gap-2">
 										<AlertTriangle
@@ -216,9 +254,13 @@ export function DangerZoneSection({
 										type="text"
 										value={confirmText}
 										onChange={(e) => setConfirmText(e.target.value)}
+										onKeyDown={(e) => {
+											if (e.key === "Enter") void handleConfirmDelete();
+										}}
 										placeholder="Type DELETE"
 										aria-label="Confirm by typing DELETE"
 										autoComplete="off"
+										autoFocus
 										className="mb-4 w-full rounded-[var(--radius-md)] border border-[var(--color-error)]/30 bg-[var(--color-void)] px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-[var(--color-error)] focus:outline-none focus:ring-2 focus:ring-[var(--color-error)]/50 transition-shadow"
 										disabled={deleting}
 									/>

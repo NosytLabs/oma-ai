@@ -7,7 +7,7 @@ import { getModelById } from "./models.js";
 
 export const FALLBACK_MAP: Record<string, string[]> = {
 		// Frontier
-		"openai-gpt-56-sol": ["kimi-k3", "gemini-3.1-pro-preview"],
+		"openai-gpt-56-sol": ["kimi-k3", "gemini-3.1-pro-preview", "gpt-4.1"],
 		"gemini-3.1-pro-preview": [
 				"gpt-4.1",
 				"gpt-4o",
@@ -33,9 +33,9 @@ export const FALLBACK_MAP: Record<string, string[]> = {
 		"gpt-4o": ["gpt-4.1", "gemini-3-flash-preview", "minimax-m2-7"],
 
 		// Mid
-		"llama-3.3-70b": ["qwen-3-7-plus", "zai-org-glm-5-1"],
-		"zai-org-glm-5-1": ["qwen-3-7-plus", "llama-3.3-70b"],
-		"qwen-3-7-plus": ["zai-org-glm-5-1", "llama-3.3-70b"],
+		"llama-3.3-70b": ["qwen-3-7-plus", "zai-org-glm-5-1", "gpt-4o"],
+		"zai-org-glm-5-1": ["qwen-3-7-plus", "llama-3.3-70b", "gemini-3-flash-preview"],
+		"qwen-3-7-plus": ["zai-org-glm-5-1", "llama-3.3-70b", "gpt-4o"],
 		"hermes-3-llama-3.1-405b": ["llama-3.3-70b", "qwen-3-7-plus"],
 
 		// Budget
@@ -47,8 +47,21 @@ export const FALLBACK_MAP: Record<string, string[]> = {
 				"kimi-k2-6",
 				"xiaomi-mimo-v2-5",
 		],
-		"deepseek-v4-flash-0731": ["xiaomi-mimo-v2-5", "mistral-small-2603"],
-		"mistral-small-2603": ["deepseek-v4-flash-0731", "xiaomi-mimo-v2-5"],
+		"deepseek-v4-flash-0731": [
+				"deepseek-v4-flash-0731-openbroker",
+				"minimax-m2-7",
+				"xiaomi-mimo-v2-5",
+				"mistral-small-2603",
+		],
+		// Venice budget — Gonka peers first so a dead VENICE_API_KEY still
+		// fails over on the free website path.
+		"mistral-small-2603": [
+				"gemini-3-flash-preview",
+				"minimax-m2-7",
+				"deepseek-v4-flash-0731-openbroker",
+				"deepseek-v4-flash-0731",
+				"xiaomi-mimo-v2-5",
+		],
 
 		// OMA-AI free default — prefer oma-ai peers first, then budget Venice
 		"gemini-3-flash-preview": [
@@ -79,7 +92,9 @@ export function buildFallbackChain(
 				if (!id || seen.has(id)) continue;
 				const def = getModelById(id);
 				if (!def) continue;
-				if (freeOnly && def.upstream !== "openbroker") continue;
+				// Keep the requested primary even if it is Venice — failover
+				// peers after it must still be Gonka/openbroker on the free path.
+				if (freeOnly && id !== primary && def.upstream !== "openbroker") continue;
 				seen.add(id);
 				chain.push(id);
 		}

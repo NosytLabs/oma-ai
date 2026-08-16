@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, Sparkles } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
@@ -127,8 +127,6 @@ function ShellContent({
 		setSystemPrompt,
 		systemPromptOpen,
 		setSystemPromptOpen,
-		exportStatus,
-		setExportStatus,
 		shareStatus,
 		setShareStatus,
 		compareMode,
@@ -201,7 +199,7 @@ function ShellContent({
 			storedCid = genConversationId();
 			try {
 				localStorage.setItem(conversationIdKey, storedCid);
-			} catch (e) {
+			} catch {
 				/* private mode / corrupt storage */
 			}
 		}
@@ -381,17 +379,12 @@ function ShellContent({
 	}, [loading, setMessages]);
 
 	const exportConversation = useCallback((format: "json" | "txt" | "md" = "json") => {
-		setExportStatus("loading");
 		try {
 			exportChatHistory(messages, format, conversationId);
-			setExportStatus("success");
-			setTimeout(() => setExportStatus("default"), 2000);
 		} catch (err) {
 			log.warn("Failed to export conversation", err);
-			setExportStatus("error");
-			setTimeout(() => setExportStatus("default"), 2000);
 		}
-	}, [messages, setExportStatus, conversationId]);
+	}, [messages, conversationId]);
 
 	const importConversation = useCallback((importedMessages: Message[]) => {
 		setMessages(importedMessages);
@@ -432,7 +425,7 @@ function ShellContent({
 	});
 
 		return (
-		<div className="h-[calc(100dvh-3.5rem)] w-full flex flex-col bg-void text-text font-sans overflow-hidden">
+		<div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-void font-sans text-text">
 			<h1 className="sr-only">
 				{isChat
 					? "OMA Playground — text and multimodal LLM chat"
@@ -453,7 +446,6 @@ function ShellContent({
 				setCompareMode={setCompareMode}
 				shareStatus={shareStatus}
 				shareConversation={shareConversation}
-				exportStatus={exportStatus}
 				exportConversation={exportConversation}
 				importConversation={importConversation}
 				newConversation={newConversation}
@@ -523,7 +515,7 @@ function ShellContent({
 						// against the browser edge (mobile bottom bar / iOS notch home bar)
 						// and there's breathing room above the copyright/footer.
 						<div
-							className="flex-none px-4 pt-3 pb-4 sm:px-6 sm:pt-4 sm:pb-5 lg:px-8 bg-[color-mix(in_srgb,var(--color-surface)_60%,transparent)] border-t border-border shadow-[0_-20px_40px_-20px_rgba(0,0,0,0.6)] backdrop-blur-md z-10"
+							className="flex-none px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6 sm:pt-4 sm:pb-5 lg:px-8 bg-[color-mix(in_srgb,var(--color-surface)_60%,transparent)] border-t border-border shadow-[0_-20px_40px_-20px_rgba(0,0,0,0.6)] backdrop-blur-md z-10"
 							style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
 						>
 							<div className="max-w-4xl mx-auto">

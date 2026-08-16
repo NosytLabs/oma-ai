@@ -30,9 +30,10 @@ import type { ReactNode } from "react";
 			============================================================ */
 
 export const EASE_OUT = [0.16, 1, 0.3, 1] as const;
-// Canonical spring values live in components/motion/springs.ts — these are
-// aliases so both entry points share one token set (they previously drifted
-// by a mass typo: 0.8 here vs 0.9 there).
+// Canonical spring values live in @/lib/animation/springs.ts — these are
+// aliases so any other animation entry point (`@/components/motion`,
+// `@/lib/animation`) shares one token set (they previously drifted by a
+// mass typo: 0.8 here vs 0.9 there).
 export const EASE_SPRING = springs.tab;
 export const EASE_SPRING_SOFT = springs.soft;
 

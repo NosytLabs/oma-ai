@@ -5,7 +5,13 @@
 	* vendored from https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/,
 	* MIT licensed). Falls back to a styled initials badge when no icon
 	* resolves. All OMA-AI resale models collapse to the oma-ai tile.
+	*
+	* NOTE: local static SVGs render via plain <img> (with an onError stage
+	* fallback). Next's Image optimizer cannot optimize SVGs, these tiles are
+	* tiny (≤20px) and already `loading="lazy"` + `decoding="async"`, so
+	* next/image adds no LCP/bandwidth win here — only layout ceremony.
 	*/
+/* eslint-disable @next/next/no-img-element */
 import { useState, type CSSProperties } from "react";
 
 // Map model provider → locally-vendored dashboard-icons SVG filename.

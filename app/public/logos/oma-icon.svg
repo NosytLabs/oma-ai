@@ -2,11 +2,11 @@
   <title>OMA</title>
   <desc>OMA gateway icon — open emerald ring, terminal chevron, signal.</desc>
   <rect width="64" height="64" rx="16" fill="#07090a"/>
-  <rect x="2.5" y="2.5" width="59" height="59" rx="13.5" fill="#0d1110" stroke="#1a2420" stroke-width="1.5"/>
-  <circle cx="30.5" cy="32" r="18" fill="#46d39a" opacity="0.1"/>
-  <circle cx="30.5" cy="32" r="15.2" stroke="#46d39a" stroke-width="5.2" stroke-linecap="round"
-    stroke-dasharray="72.4 23" stroke-dashoffset="-11.5"/>
-  <path d="M20.8 22.4 L36.2 32 L20.8 41.6" stroke="#46d39a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-  <circle cx="50.2" cy="32" r="5.4" fill="#46d39a"/>
-  <circle cx="50.2" cy="32" r="2.3" fill="#6ee7b7"/>
+  <rect x="2.5" y="2.5" width="59" height="59" rx="13.5" fill="#0d1110" stroke="#2f463c" stroke-width="2.5"/>
+  <circle cx="30" cy="32" r="16.4" fill="#46d39a" opacity="0.12"/>
+  <circle cx="30" cy="32" r="16.4" stroke="#46d39a" stroke-width="6.4" stroke-linecap="round"
+    stroke-dasharray="77 25.8" stroke-dashoffset="-12.9"/>
+  <path d="M20 21.2 L37.2 32 L20 42.8" stroke="#6ee7b7" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <circle cx="49.4" cy="32" r="6.4" fill="#46d39a"/>
+  <circle cx="49.4" cy="32" r="2.5" fill="#e8fff4"/>
 </svg>

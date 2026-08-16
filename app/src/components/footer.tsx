@@ -67,14 +67,15 @@ const PRODUCT: FooterSection = {
 		{ label: "Models", href: "/models", icon: Boxes },
 		{ label: "Chat", href: "/chat", icon: Terminal },
 		{ label: "Pricing", href: "/pricing", icon: Tag },
-		{ label: "Docs", href: "/docs", icon: FileText },
 	],
 };
 
-const TOOLS: FooterSection = {
-	title: "Tools",
+const DEVELOPERS: FooterSection = {
+	title: "Developers",
 	links: [
+		{ label: "Docs", href: "/docs", icon: FileText },
 		{ label: "API Reference", href: "/docs#endpoints", icon: Network },
+		{ label: "Playground", href: "/chat", icon: Terminal },
 	],
 };
 
@@ -97,8 +98,7 @@ function accountSection(isAuthenticated: boolean): FooterSection {
 					{ label: "Credits", href: "/deposit" },
 				]
 			: [
-					{ label: "Dashboard", href: "/dashboard" },
-					{ label: "Settings", href: "/settings" },
+					{ label: "Get started", href: "/getting-started" },
 					{ label: "Sign in to OMA", href: "/login" },
 				],
 	};
@@ -146,15 +146,26 @@ export function Footer() {
 	const { isAuthenticated } = useAuth();
 	const FOOTER_SECTIONS: FooterSection[] = [
 		PRODUCT,
+		DEVELOPERS,
 		LEARN,
-		TOOLS,
 		accountSection(isAuthenticated),
 		LEGAL,
 	];
 
-	// /chat is a viewport-locked app surface — a footer below it forces a
-	// scroll that pushes the composer off-screen.
-	if (pathname === "/chat" || pathname.startsWith("/chat/")) {
+	// Viewport-locked app surfaces — a footer below them creates a
+	// black strip and extra scroll (composer / dashboards fall off-screen).
+	if (
+		pathname === "/chat" ||
+		pathname.startsWith("/chat/") ||
+		pathname === "/dashboard" ||
+		pathname.startsWith("/dashboard/") ||
+		pathname === "/settings" ||
+		pathname.startsWith("/settings/") ||
+		pathname === "/admin" ||
+		pathname.startsWith("/admin/") ||
+		pathname === "/login" ||
+		pathname.startsWith("/login/")
+	) {
 		return null;
 	}
 
@@ -195,7 +206,7 @@ export function Footer() {
 
 						<p className="text-[13px] leading-relaxed text-text-secondary">
 							One gateway. Every model. No lock-in. OpenAI-compatible inference
-							paid per request in USDC on Base.
+							paid by card, USDC on Base, or x402.
 						</p>
 
 						{/* Social row */}

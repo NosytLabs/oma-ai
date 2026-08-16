@@ -15,11 +15,20 @@ export interface ModelSlice {
 const MODEL_PALETTE = ["#46d39a", "#3b82f6", "#f59e0b", "#ec4899", "#a855f7", "#ef4444"]
 const TOP_MODELS = 5
 
+function localDayKey(iso: string): string {
+	const d = new Date(iso)
+	if (Number.isNaN(d.getTime())) return iso.slice(0, 10)
+	const y = d.getFullYear()
+	const m = String(d.getMonth() + 1).padStart(2, "0")
+	const day = String(d.getDate()).padStart(2, "0")
+	return `${y}-${m}-${day}`
+}
+
 /** Aggregates usage records into per-day totals for the requests/cost chart. */
 export function buildUsageByDay(usage: UsageRecord[]): UsageByDay[] {
 	const byDay = new Map<string, UsageByDay>()
 	for (const r of usage) {
-		const day = r.createdAt.slice(0, 10)
+		const day = localDayKey(r.createdAt)
 		const prev = byDay.get(day) ?? { date: day, requests: 0, cost: 0 }
 		prev.requests += 1
 		prev.cost += Number(r.totalCents ?? "0") / 100
@@ -45,16 +54,16 @@ export function buildTopModels(usage: UsageRecord[]): ModelSlice[] {
 	const sorted = Array.from(byModel.values()).sort((a, b) => b.cost - a.cost)
 	const top = sorted.slice(0, TOP_MODELS)
 	const rest = sorted.slice(TOP_MODELS)
-	const restRequests = rest.reduce((sum, m) => sum + m.value, 0)
 	const result = top.map((m, i) => ({
 		name: m.name,
-		value: m.value,
+		value: m.cost,
 		color: MODEL_PALETTE[i % MODEL_PALETTE.length],
 	}))
 	if (rest.length > 0) {
+		const restCost = rest.reduce((sum, m) => sum + m.cost, 0)
 		result.push({
 			name: `Other (${rest.length})`,
-			value: restRequests,
+			value: restCost,
 			color: MODEL_PALETTE[TOP_MODELS % MODEL_PALETTE.length],
 		})
 	}

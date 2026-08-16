@@ -50,7 +50,6 @@ export function CostEstimate({
 	const estimatedOutputCostUsd = (outputBudget / 1_000_000) * outputPer1M;
 	const totalCostUsd = inputCostUsd + estimatedOutputCostUsd;
 
-	const totalCredits = usdToCredits(totalCostUsd).toFixed(4);
 	const inputCredits = usdToCredits(inputCostUsd).toFixed(4);
 	const estimatedOutputCredits = usdToCredits(estimatedOutputCostUsd).toFixed(4);
 	// Visible value: 2 decimals so it doesn't read as "$0.0000" for free models.

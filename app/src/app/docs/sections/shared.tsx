@@ -4,7 +4,7 @@ import { Check, Copy } from "lucide-react";
 import { type ReactNode, useId, useState } from "react";
 import { copyToClipboard } from "@/lib/clipboard";
 import { useRevealInView } from "@/lib/use-reveal-in-view";
-import { MODEL_COUNT, MODELS, type Model } from "@/lib/models-data";
+import { MODEL_COUNT, MODELS } from "@/lib/models-data";
 import { SyntaxHighlighter } from "../_components/SyntaxHighlighter";
 
 export { MODEL_COUNT, MODELS };

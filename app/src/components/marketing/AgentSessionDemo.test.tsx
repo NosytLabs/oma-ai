@@ -14,7 +14,7 @@ describe("AgentSessionDemo", () => {
 		expect(screen.getByText(/demo · not live/i)).toBeInTheDocument();
 		expect(
 			screen.getByRole("link", { name: /try live chat/i }),
-		).toHaveAttribute("href", "/chat?demo=1");
+		).toHaveAttribute("href", "/chat");
 		expect(screen.getByRole("link", { name: /api docs/i })).toHaveAttribute(
 			"href",
 			"/docs",

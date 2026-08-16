@@ -38,6 +38,9 @@ const envSchema = z.object({
 
 		ZYLOO_API_URL: z.string().url().optional().default("https://api.zyloo.io"),
 		OPENBROKER_API_KEY: z.string().min(1).optional(),
+		// Local/dev aliases — Gonka issues keys as GONKA_API_KEY or OBK_API_KEY.
+		GONKA_API_KEY: z.string().min(1).optional(),
+		OBK_API_KEY: z.string().min(1).optional(),
 		OPENBROKER_API_URL: z.string().url().optional().default("https://api.openbroker.gonka.gg"),
 		// Surplus Intelligence (https://api.surplusintelligence.ai) — marketplace
 		// resale upstream. Opt-in: leave SURPLUS_API_KEY unset to disable the Surplus
@@ -177,6 +180,16 @@ const envSchema = z.object({
 
 export type Config = z.infer<typeof envSchema>;
 
+function usableProviderKey(key: string | undefined): boolean {
+		if (!key || key.length < 16) return false;
+		if (/placeholder|changeme|your-key|example/i.test(key)) return false;
+		if (/^(plch-|your-|dev-)/i.test(key)) return false;
+		if (/^(zyloo_|openbroker_|surplus_)(placeh|changeme|your|xxx|dummy)/i.test(key)) {
+				return false;
+		}
+		return true;
+}
+
 // Parse, then fold QuickNode RPC aliases into CHAIN_RPC_URL so every consumer
 // only needs to read CHAIN_RPC_URL / CHAIN_RPC_URL_FALLBACK.
 const _parsed = envSchema.parse(process.env);
@@ -189,6 +202,11 @@ export const config: Config = {
 		// so local/prod setups with only TREASURY_BASE_ADDRESS still accept deposits.
 		USDC_DEPOSIT_ADDRESS:
 				_parsed.USDC_DEPOSIT_ADDRESS ?? _parsed.TREASURY_BASE_ADDRESS,
+		// Gonka ships keys as GONKA_API_KEY / OBK_API_KEY. Fold those into
+		// OPENBROKER_API_KEY when the dedicated var is missing or a placeholder.
+		OPENBROKER_API_KEY: usableProviderKey(_parsed.OPENBROKER_API_KEY)
+				? _parsed.OPENBROKER_API_KEY
+				: _parsed.GONKA_API_KEY ?? _parsed.OBK_API_KEY,
 };
 
 // Cached set of admin wallet addresses for O(1) lookup in requireAdmin()

@@ -26,6 +26,7 @@ interface UsageChartProps {
 	usageData: DataPoint[];
 	modelData: ModelData[];
 	timeRange?: string;
+	loading?: boolean;
 }
 
 const TIME_LABELS: Record<string, string> = {
@@ -39,9 +40,10 @@ export function UsageChart({
 	usageData,
 	modelData,
 	timeRange = "7d",
+	loading = false,
 }: UsageChartProps) {
-	const hasUsageData = usageData.length > 0;
-	const hasModelData = modelData.length > 0;
+	const hasUsageData = !loading && usageData.length > 0;
+	const hasModelData = !loading && modelData.length > 0;
 	const areaLabel = buildAreaLabel(usageData, timeRange);
 	const donutLabel = buildDonutLabel(modelData);
 
@@ -62,7 +64,7 @@ export function UsageChart({
 				</div>
 				{hasUsageData ? (
 					<div role="img" aria-label={areaLabel} className="bg-[var(--color-void)] p-4 rounded-[var(--radius-md)] border border-[var(--color-border)]/50">
-						<AreaChartComponent data={usageData} />
+						<AreaChartComponent data={usageData} tickPattern="MMM d" />
 					</div>
 				) : (
 					<div
@@ -70,9 +72,15 @@ export function UsageChart({
 						aria-label="Usage chart placeholder. No data yet."
 						className="flex flex-col items-center justify-center h-48 border border-dashed border-[var(--color-border)]/60 rounded-[var(--radius-md)] bg-[var(--color-void)] px-6 text-center"
 					>
-						<p className="text-[13.5px] font-semibold text-text-secondary">No usage data yet</p>
+						<p className="text-[13.5px] font-semibold text-text-secondary">
+							{loading
+								? "Loading usage…"
+								: `No requests in this ${TIME_LABELS[timeRange] || timeRange}`}
+						</p>
 						<p className="mt-2 text-[11px] font-mono text-text-muted">
-							Start making API calls to see your activity here.
+							{loading
+								? "Fetching your request history."
+								: "Try another range, or send a request from chat."}
 						</p>
 					</div>
 				)}
@@ -88,13 +96,13 @@ export function UsageChart({
 				<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[var(--color-tertiary)]/40 to-transparent" />
 				<div className="flex items-center justify-between mb-6">
 					<h3 className="text-[14.5px] font-bold text-text-bright tracking-tight">
-						Model Breakdown
+						Spend by model
 					</h3>
 				</div>
 				{hasModelData ? (
 					<div role="img" aria-label={donutLabel} className="flex flex-col h-[calc(100%-2rem)]">
 						<div className="bg-[var(--color-void)] p-4 rounded-[var(--radius-md)] border border-[var(--color-border)]/50 flex-1">
-							<DonutChart data={modelData} />
+							<DonutChart data={modelData} currency />
 						</div>
 						<div className="mt-5 flex flex-wrap gap-3 p-3 bg-[var(--color-surface-elevated)] rounded-[var(--radius-md)] border border-[var(--color-border)]/50 justify-center">
 							{modelData.map((model) => (
@@ -115,9 +123,13 @@ export function UsageChart({
 						aria-label="Model breakdown chart placeholder. No data yet."
 						className="flex flex-col items-center justify-center h-48 border border-dashed border-[var(--color-border)]/60 rounded-[var(--radius-md)] bg-[var(--color-void)] px-6 text-center"
 					>
-						<p className="text-[13.5px] font-semibold text-text-secondary">No model usage data yet</p>
+						<p className="text-[13.5px] font-semibold text-text-secondary">
+							{loading ? "Loading models…" : "No model usage data yet"}
+						</p>
 						<p className="mt-2 text-[11px] font-mono text-text-muted">
-							Top models by cost will appear here.
+							{loading
+								? "Fetching model breakdown."
+								: "Top models by spend will appear here."}
 						</p>
 					</div>
 				)}
@@ -148,5 +160,5 @@ function buildDonutLabel(data: ModelData[]): string {
 	const top = [...data].sort((a, b) => b.value - a.value)[0];
 	if (!top) return "Model breakdown chart.";
 	const pct = total > 0 ? Math.round((top.value / total) * 100) : 0;
-	return `Model breakdown donut chart, ${data.length} models. Top model ${top.name} at ${pct}% of ${total.toLocaleString()} requests.`;
+	return `Spend by model, ${data.length} slices. Top ${top.name} at ${pct}% of $${total.toFixed(2)}.`;
 }

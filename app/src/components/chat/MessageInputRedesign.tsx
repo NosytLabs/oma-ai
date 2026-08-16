@@ -16,9 +16,9 @@
 
 import { m } from "@/lib/framer-motion-client";
 import { BorderBeam } from "border-beam";
-import { Loader2, Search, Send, Wand2 } from "lucide-react";
+import { Search, Send, Wand2 } from "lucide-react";
 import type { Ref } from "react";
-import { forwardRef, useCallback, useEffect, useState } from "react";
+import { forwardRef, useCallback, useEffect, useRef, useState } from "react";
 import { Magnetic, EASE_SPRING } from "@/lib/animation";
 
 interface MessageInputProps {
@@ -68,6 +68,7 @@ export const MessageInputRedesigned = forwardRef<
 ) {
 	const [focused, setFocused] = useState(false);
 	const [reduceMotion, setReduceMotion] = useState(false);
+	const localTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
 	useEffect(() => {
 		const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -75,6 +76,16 @@ export const MessageInputRedesigned = forwardRef<
 		sync();
 		mq.addEventListener("change", sync);
 		return () => mq.removeEventListener("change", sync);
+	}, []);
+
+	// Focus the composer after hydrate on md+ so SSR never emits autoFocus
+	// (which can steal focus from skip-links / nav on first paint).
+	useEffect(() => {
+		if (!window.matchMedia("(min-width: 768px)").matches) return;
+		const id = requestAnimationFrame(() => {
+			localTextareaRef.current?.focus();
+		});
+		return () => cancelAnimationFrame(id);
 	}, []);
 
 	const handleKeyDown = useCallback(
@@ -90,6 +101,7 @@ export const MessageInputRedesigned = forwardRef<
 
 	const setTextareaRef = useCallback(
 		(node: HTMLTextAreaElement | null) => {
+			localTextareaRef.current = node;
 			if (typeof forwardedRef === "function") forwardedRef(node);
 			else if (forwardedRef) forwardedRef.current = node;
 			if (typeof externalTextareaRef === "function") externalTextareaRef(node);
@@ -122,7 +134,7 @@ export const MessageInputRedesigned = forwardRef<
 		activeCls: string,
 		idleCls: string,
 	) =>
-		`inline-flex h-8 min-h-8 items-center justify-center gap-1.5 rounded-full px-2.5 font-mono text-[10px] font-semibold uppercase tracking-wider transition-[background-color,border-color,color,box-shadow] duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] active:scale-[0.97] ${
+		`inline-flex h-11 min-h-11 items-center justify-center gap-1.5 rounded-full px-3 font-mono text-[10px] font-semibold uppercase tracking-wider transition-[background-color,border-color,color,box-shadow] duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] active:scale-[0.97] ${
 			active ? activeCls : idleCls
 		}`;
 
@@ -171,7 +183,6 @@ export const MessageInputRedesigned = forwardRef<
 							disabled={loading}
 							style={{ minHeight: "44px", maxHeight: "200px" }}
 							onInput={handleInput}
-							autoFocus
 						/>
 
 						<div className="shrink-0 pb-2">
@@ -191,7 +202,7 @@ export const MessageInputRedesigned = forwardRef<
 												aria-hidden="true"
 											/>
 										)}
-										<Loader2 className="relative z-10 h-5 w-5" />
+										<span className="relative z-10 h-3.5 w-3.5 rounded-[2px] bg-current" aria-hidden="true" />
 									</button>
 								</Magnetic>
 							) : (
@@ -284,7 +295,7 @@ export const MessageInputRedesigned = forwardRef<
 
 						<p
 							id="message-hint"
-							className="select-none truncate font-mono text-[10px] tracking-wide text-text-muted/70"
+							className="hidden select-none truncate font-mono text-[10px] tracking-wide text-text-muted/70 sm:inline"
 						>
 							Enter ↵ send · Shift+Enter newline
 						</p>

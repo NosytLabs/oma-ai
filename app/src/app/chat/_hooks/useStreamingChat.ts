@@ -510,7 +510,6 @@ export function useStreamingChat(
 			}
 		// "opts" is intentionally excluded: the parent rebuilds a new options
 		// object each render. List primitive fields + ensureChatKeyOnce only.
-		// eslint-disable-next-line react-hooks/exhaustive-deps -- opts object identity
 		}, [
 			opts.systemPrompt,
 			opts.temperature,
@@ -679,7 +678,6 @@ export function useStreamingChat(
 			// render, so including it would cause infinite re-renders. sendMessage reads
 			// from refs (opts.*Ref) and the latest opts via closure — the useCallback
 			// identity changes only when the listed deps change.
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 		}, [
 			opts.input,
 			opts.loading,

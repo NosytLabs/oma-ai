@@ -26,7 +26,13 @@ interface UseDashboardDataResult {
 	models: Model[];
 	transactions: CreditTransaction[];
 	loading: boolean;
-	error: string | null;
+	/**
+		* The raw error (Error instance) from the first failing query, or
+		* null when every query succeeded. Consumers classify it with the
+		* `is*Error` helpers in `@/lib/api/client` (suspended / payment /
+		* quota) instead of matching on message text.
+		*/
+	error: Error | null;
 	backendUnavailable: boolean;
 	refresh: () => Promise<void>;
 }
@@ -56,7 +62,7 @@ export function useDashboardData({
 	});
 	const usageQuery = useQuery({
 		queryKey: ["usage"],
-		queryFn: () => api.usage.get({ limit: 200 }),
+		queryFn: () => api.usage.getAll({ pageSize: 200, maxRecords: 2000 }),
 		enabled,
 		staleTime: STALE_DEFAULT,
 	});
@@ -125,12 +131,11 @@ export function useDashboardData({
 			transactionsQuery.error,
 		].some((e) => e instanceof BackendUnavailableError);
 
-	const error =
-		backendUnavailable || !anyError
-			? null
-			: anyError instanceof Error
-				? anyError.message
-				: "Failed to load dashboard data";
+	const error: Error | null = anyError instanceof Error
+		? anyError
+		: anyError
+			? new Error("Failed to load dashboard data")
+			: null;
 
 	const refresh = useCallback(async () => {
 		if (!enabled) return;

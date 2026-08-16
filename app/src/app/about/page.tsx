@@ -46,7 +46,7 @@ const PILLARS = [
 
 export default function AboutPage() {
 	return (
-		<div className="relative min-h-screen bg-void text-text overflow-hidden">
+		<div className="relative bg-void text-text overflow-x-clip">
 			<BreadcrumbListJsonLd
 				items={[
 					{ name: "Home", url: "/" },
@@ -59,16 +59,15 @@ export default function AboutPage() {
 				<FloatingIcons count={5} />
 			</div>
 
-			<div className="container-page max-w-3xl pt-6 sm:pt-8 pb-12 sm:pb-16">
+			<div className="container-page page-content max-w-3xl lg:max-w-4xl">
 				<Link
 					href="/"
-					className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-accent transition-colors duration-200 ease-out mb-10"
+					className="inline-flex min-h-11 items-center gap-1.5 text-sm text-text-secondary hover:text-accent transition-colors duration-200 ease-out mb-10"
 				>
 					<ArrowLeft className="h-4 w-4" aria-hidden="true" />
 					Home
 				</Link>
 
-				<InViewFade>
 				<p className="text-[11px] font-mono uppercase tracking-[0.18em] text-accent mb-3">
 					about
 				</p>
@@ -80,7 +79,6 @@ export default function AboutPage() {
 					API compatibility, multi-provider routing, and native crypto payments
 					for developers and autonomous agents.
 				</p>
-			</InViewFade>
 
 				<ul className="space-y-4 mb-14">
 					{PILLARS.map((p, i) => (

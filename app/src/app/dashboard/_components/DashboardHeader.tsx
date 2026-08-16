@@ -9,9 +9,8 @@ import {
 	RefreshCw,
 	Settings,
 	Zap,
-	AlertCircle,
 } from "lucide-react";
-import { m } from "framer-motion";
+import { m } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -155,6 +154,42 @@ export function DashboardHeader({
 		}
 	}, [onRefresh, markRefreshed]);
 
+	const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+	const selectedTabIndex = Math.max(
+		0,
+		TABS.findIndex((tab) => tab.id === activeTab),
+	);
+
+	const handleTabKeyDown = useCallback(
+		(e: KeyboardEvent<HTMLDivElement>) => {
+			if (!onTabChange) return;
+			let next = selectedTabIndex;
+			switch (e.key) {
+				case "ArrowRight":
+				case "ArrowDown":
+					next = selectedTabIndex + 1;
+					break;
+				case "ArrowLeft":
+				case "ArrowUp":
+					next = selectedTabIndex - 1;
+					break;
+				case "Home":
+					next = 0;
+					break;
+				case "End":
+					next = TABS.length - 1;
+					break;
+				default:
+					return;
+			}
+			e.preventDefault();
+			const safe = (next % TABS.length + TABS.length) % TABS.length;
+			onTabChange(TABS[safe].id);
+			tabRefs.current[safe]?.focus();
+		},
+		[onTabChange, selectedTabIndex],
+	);
+
 	return (
 		<div className="mb-8">
 			{/* Breadcrumb */}
@@ -234,17 +269,18 @@ export function DashboardHeader({
 						)}
 					<Link
 						href="/settings"
-						className="flex items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-border bg-surface px-3 py-2 min-h-[36px] text-[11px] font-bold uppercase tracking-widest text-text-muted transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-surface-elevated hover:border-accent/40 hover:text-text-bright active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+						className="flex items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-border bg-surface px-3 py-2 min-h-11 text-[11px] font-bold uppercase tracking-widest text-text-muted transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-surface-elevated hover:border-accent/40 hover:text-text-bright active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 						aria-label="Settings"
 					>
 						<Settings className="h-3.5 w-3.5" aria-hidden="true" />
+						<span className="hidden sm:inline">Settings</span>
 					</Link>
 					<button
 						type="button"
 						onClick={handleRefresh}
 						disabled={isRefreshing}
 						aria-label="Refresh dashboard"
-						className="flex items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-border bg-surface px-3 py-2 min-h-[36px] text-[11px] font-bold uppercase tracking-widest text-text-muted transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-surface-elevated hover:border-accent/40 hover:text-text-bright active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+						className="flex items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-border bg-surface px-3 py-2 min-h-11 text-[11px] font-bold uppercase tracking-widest text-text-muted transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-surface-elevated hover:border-accent/40 hover:text-text-bright active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 					>
 						<RefreshCw
 							className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin text-accent" : ""}`}
@@ -259,7 +295,7 @@ export function DashboardHeader({
 							type="button"
 							onClick={onExport}
 							aria-label="Export usage data"
-							className="flex items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-border bg-surface px-3 py-2 min-h-[36px] text-[11px] font-bold uppercase tracking-widest text-text-muted transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-surface-elevated hover:border-accent/40 hover:text-text-bright active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+							className="flex items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-border bg-surface px-3 py-2 min-h-11 text-[11px] font-bold uppercase tracking-widest text-text-muted transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-surface-elevated hover:border-accent/40 hover:text-text-bright active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 						>
 							<Download className="h-3.5 w-3.5" aria-hidden="true" />
 							<span className="hidden sm:inline">EXPORT</span>
@@ -274,15 +310,20 @@ export function DashboardHeader({
 					role="tablist"
 					className="-mx-1 flex gap-2 overflow-x-auto border-b border-border/50 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
 					aria-label="Dashboard sections"
+					onKeyDown={handleTabKeyDown}
 				>
-					{TABS.map((tab) => (
+					{TABS.map((tab, i) => (
 						<button
 							type="button"
 							key={tab.id}
 							id={`tab-${tab.id}`}
+							ref={(el) => {
+								tabRefs.current[i] = el;
+							}}
 							role="tab"
 							aria-selected={activeTab === tab.id}
 							aria-controls={`panel-${tab.id}`}
+							tabIndex={activeTab === tab.id ? 0 : -1}
 							onClick={() => onTabChange(tab.id)}
 							className={`relative shrink-0 px-4 py-3 text-[11.5px] font-bold uppercase tracking-widest transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset sm:px-6 ${
 								activeTab === tab.id
@@ -299,7 +340,7 @@ export function DashboardHeader({
 							{activeTab === tab.id && (
 								<m.div
 									layoutId="activeDashboardTab"
-									className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent shadow-[0_-2px_10px_rgba(var(--color-accent-rgb),0.5)]"
+									className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent shadow-[0_-2px_10px_var(--color-accent-glow)]"
 									transition={springs.tab}
 								/>
 							)}
@@ -445,7 +486,7 @@ function TimeRangeRadiogroup({
 						aria-checked={checked}
 						tabIndex={checked ? 0 : -1}
 						onClick={() => onTimeRangeChange(range.id)}
-						className={`px-2 py-1.5 text-[10px] uppercase tracking-wider font-medium transition-[background-color,border-color,box-shadow,color,transform] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:px-2.5 ${
+						className={`min-h-11 px-2.5 text-[10px] uppercase tracking-wider font-medium transition-[background-color,border-color,box-shadow,color,transform] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:px-3 ${
 							checked
 								? "bg-accent/10 text-accent"
 								: "text-text-muted hover:text-text-secondary"

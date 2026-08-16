@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
-import { MODEL_COUNT } from "@/lib/models-data";
+import { formatPricePerMillion, MODEL_COUNT, MODELS } from "@/lib/models-data";
+
+const MIN_INPUT = Math.min(
+	...MODELS.map((m) => m.inputPricePer1M).filter((p) => p > 0),
+);
 
 // pricing/ page is fully client; opt the segment out of static prerender.
 
 export const metadata: Metadata = {
 	title: "Transparent AI API pricing — pay per use",
-	description: `Transparent AI API pricing. Pay per use with card or crypto. No subscriptions, no hidden fees. Access ${MODEL_COUNT}+ models from budget tiers under $0.10/M tokens.`,
+	description: `Transparent AI API pricing. Pay per use with card or crypto. No subscriptions, no hidden fees. Access ${MODEL_COUNT}+ models from ${formatPricePerMillion(MIN_INPUT)}/M tokens.`,
 	keywords: [
 		"AI pricing",
 		"token pricing",

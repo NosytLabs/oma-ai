@@ -155,8 +155,8 @@ export const NAV_ITEMS: NavItem[] = [
 		],
 		headings: [
 			{ id: "pr-venice", label: "Venice (Primary)" },
+			{ id: "pr-oma-ai", label: "OMA-AI (Budget)" },
 			{ id: "pr-surplus", label: "Surplus (Fallback)" },
-			{ id: "pr-OMA-AI", label: "OMA-AI (Budget)" },
 			{ id: "pr-how", label: "How routing works" },
 		],
 	},

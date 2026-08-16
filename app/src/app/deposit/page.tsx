@@ -250,11 +250,13 @@ export default function DepositPage() {
 		const requested = new URLSearchParams(window.location.search).get(
 			"method",
 		);
+		const normalized =
+			requested === "usdc" ? "crypto" : requested;
 		const hasExplicitMethod =
-			requested === "card" ||
-			requested === "x402" ||
-			requested === "crypto";
-		if (hasExplicitMethod) setMethod(requested);
+			normalized === "card" ||
+			normalized === "x402" ||
+			normalized === "crypto";
+		if (hasExplicitMethod) setMethod(normalized);
 
 		fetch("/api/v1/site-settings", { credentials: "same-origin" })
 			.then((r) => (r.ok ? r.json() : null))
@@ -282,7 +284,7 @@ export default function DepositPage() {
 
 	return (
 		<m.div
-			className="relative mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-12"
+			className="relative mx-auto max-w-3xl lg:max-w-4xl px-4 py-10 sm:px-6 sm:py-12"
 			initial={{ opacity: 0 }}
 			animate={{ opacity: 1 }}
 		>

@@ -225,7 +225,7 @@ function AgentsConnector() {
 						transition={springs.soft}
 						className="mt-3 space-y-3 overflow-hidden"
 					>
-						<div className="p-3 bg-[var(--color-void)]/80 border border-[var(--color-border)]/50 backdrop-blur-sm rounded-[var(--radius-lg)]">
+						<div className="p-3 bg-[var(--color-void)]/80 border border-[var(--color-border)]/50 backdrop-blur-sm rounded-[var(--radius-md)]">
 							<div className="flex items-center gap-2 mb-2">
 								<span className="text-xs font-mono text-text-secondary">
 									OPENAI-COMPATIBLE
@@ -439,7 +439,7 @@ export function SettingsPanel({
 			{/* ─── Model Pricing Card ─── */}
 			{selectedModel && (
 				<div className="pt-3 border-t border-[var(--color-border)]/50">
-					<div className="p-3 bg-[var(--color-void)]/60 border border-[var(--color-border)]/40 rounded-[var(--radius-lg)] backdrop-blur-sm">
+					<div className="p-3 bg-[var(--color-void)]/60 border border-[var(--color-border)]/40 rounded-[var(--radius-md)] backdrop-blur-sm">
 						<div className="text-[10px] font-mono text-text-muted uppercase tracking-wider mb-2">
 							MODEL PRICING (PER 1M TOKENS)
 						</div>

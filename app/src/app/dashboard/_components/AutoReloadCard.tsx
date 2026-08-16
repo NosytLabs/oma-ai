@@ -1,11 +1,11 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
-import { ErrorBoundary } from "@/components/error-boundary";
-import { formatCents, toDollars } from "@/lib/utils";
+import { toDollars } from "@/lib/utils";
+import { cn } from "@/components/ui/utils";
 import type { AutoReloadSettings } from "@/lib/api";
 import { api } from "@/lib/api";
 
@@ -32,6 +32,15 @@ function AutoReloadCardComponent() {
 	const thresholdCents = settings?.thresholdCents ?? 500;
 	const reloadAmountCents = settings?.reloadAmountCents ?? 10_000;
 	const spendLimitCents = settings?.spendLimitCents ?? 100_000;
+	const [draftThreshold, setDraftThreshold] = useState(String(toDollars(thresholdCents)));
+	const [draftReload, setDraftReload] = useState(String(toDollars(reloadAmountCents)));
+	const [draftSpend, setDraftSpend] = useState(String(toDollars(spendLimitCents)));
+
+	useEffect(() => {
+		setDraftThreshold(String(toDollars(thresholdCents)));
+		setDraftReload(String(toDollars(reloadAmountCents)));
+		setDraftSpend(String(toDollars(spendLimitCents)));
+	}, [thresholdCents, reloadAmountCents, spendLimitCents]);
 
 	const save = async (patch: Partial<AutoReloadSettings>) => {
 		setSaving(true);
@@ -55,17 +64,17 @@ function AutoReloadCardComponent() {
 	};
 
 	const handleThresholdChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-		const cents = Math.max(0, Math.min(1_000_000, Number(e.target.value)));
+		const cents = Math.max(0, Math.min(1_000_000, Math.round(Number(e.target.value) * 100)));
 		await save({ thresholdCents: cents });
 	};
 
 	const handleReloadAmountChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-		const cents = Math.max(100, Math.min(10_000_000, Number(e.target.value)));
+		const cents = Math.max(100, Math.min(10_000_000, Math.round(Number(e.target.value) * 100)));
 		await save({ reloadAmountCents: cents });
 	};
 
 	const handleSpendLimitChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-		const cents = Math.max(0, Math.min(10_000_000, Number(e.target.value)));
+		const cents = Math.max(0, Math.min(10_000_000, Math.round(Number(e.target.value) * 100)));
 		await save({ spendLimitCents: cents });
 	};
 
@@ -140,7 +149,8 @@ function AutoReloadCardComponent() {
 							</span>
 							<input
 								type="number"
-								value={toDollars(thresholdCents)}
+								value={draftThreshold}
+								onChange={(e) => setDraftThreshold(e.target.value)}
 								onBlur={handleThresholdChange}
 								onKeyDown={(e) => e.key === "Enter" && handleThresholdChange(e as unknown as React.ChangeEvent<HTMLInputElement>)}
 								disabled={saving || isLoading}
@@ -165,7 +175,8 @@ function AutoReloadCardComponent() {
 							</span>
 							<input
 								type="number"
-								value={toDollars(reloadAmountCents)}
+								value={draftReload}
+								onChange={(e) => setDraftReload(e.target.value)}
 								onBlur={handleReloadAmountChange}
 								onKeyDown={(e) => e.key === "Enter" && handleReloadAmountChange(e as unknown as React.ChangeEvent<HTMLInputElement>)}
 								disabled={saving || isLoading}
@@ -190,7 +201,8 @@ function AutoReloadCardComponent() {
 							</span>
 							<input
 								type="number"
-								value={toDollars(spendLimitCents)}
+								value={draftSpend}
+								onChange={(e) => setDraftSpend(e.target.value)}
 								onBlur={handleSpendLimitChange}
 								onKeyDown={(e) => e.key === "Enter" && handleSpendLimitChange(e as unknown as React.ChangeEvent<HTMLInputElement>)}
 								disabled={saving || isLoading}
@@ -221,10 +233,6 @@ function AutoReloadCardComponent() {
 			)}
 		</div>
 	);
-}
-
-function cn(...classes: (string | false | null | undefined)[]) {
-	return classes.filter(Boolean).join(" ");
 }
 
 export { AutoReloadCardComponent as AutoReloadCard };

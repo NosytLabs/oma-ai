@@ -86,7 +86,7 @@ const response = await client.chat.completions.create({
 });`;
 
 	return (
-		<div className="min-h-screen bg-void">
+		<div className="bg-void">
 			<div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-12">
 				<nav aria-label="Breadcrumb" className="mb-6 text-xs text-text-muted">
 					<Link
@@ -105,7 +105,7 @@ const response = await client.chat.completions.create({
 								modality: model.modality,
 								outputModalities: model.outputModalities,
 							})}
-							className="btn-primary w-full md:w-auto px-6 py-3 flex items-center justify-center gap-2 text-base font-semibold"
+							className="btn-primary inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-semibold w-fit"
 						>
 							<Play className="h-4 w-4 fill-current" aria-hidden="true" /> Try
 							in Playground

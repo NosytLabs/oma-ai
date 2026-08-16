@@ -43,7 +43,7 @@ function Sidebar({ activeId }: { activeId: string }) {
 			<button
 				type="button"
 				onClick={() => setMobileOpen(!mobileOpen)}
-				className="fixed bottom-6 right-6 z-[60] flex h-14 w-14 items-center justify-center rounded-full bg-accent text-void shadow-lg lg:hidden active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"
+				className="fixed bottom-6 right-6 z-[100] flex h-14 w-14 items-center justify-center rounded-full bg-accent text-void shadow-[0_0_20px_var(--color-accent-glow)] lg:hidden active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"
 				aria-label={
 					mobileOpen ? "Close navigation menu" : "Open navigation menu"
 				}
@@ -67,7 +67,7 @@ function Sidebar({ activeId }: { activeId: string }) {
 				aria-label="Documentation navigation"
 				aria-hidden={drawerHidden}
 				inert={drawerHidden}
-				className={`fixed left-0 top-14 z-40 h-[calc(100vh-3.5rem)] w-56 lg:w-72 overflow-y-auto border-r border-border bg-void transition-transform duration-200 ease-out lg:translate-x-0 ${
+				className={`fixed left-0 top-14 z-[60] h-[calc(100vh-3.5rem)] w-72 overflow-y-auto border-r border-border bg-void transition-transform duration-200 ease-out lg:translate-x-0 ${
 					mobileOpen ? "translate-x-0" : "-translate-x-full"
 				}`}
 			>
@@ -136,7 +136,7 @@ export function DocsContent() {
 	}, []);
 
 	return (
-		<div className="relative min-h-screen bg-void">
+		<div className="relative bg-void">
 			<BreadcrumbListJsonLd
 				items={[
 					{ name: "Home", url: "/" },
@@ -153,10 +153,14 @@ export function DocsContent() {
 
 				<div className="min-w-0 lg:pl-72">
 					<div className="mx-auto max-w-5xl min-w-0 px-4 py-3 sm:px-6 lg:px-10">
-						<div className="page-hero mb-10 rounded-[var(--radius-xl)] border border-[color-mix(in_srgb,var(--color-border-bright)_42%,var(--color-border))] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-panel)_94%,white_6%)_0%,var(--color-panel)_100%)] p-6 shadow-[var(--shadow-xl)] sm:p-8">
+						<div className="relative mb-10 overflow-hidden rounded-3xl border border-accent/20 bg-surface/50 p-8 sm:p-10 lg:p-12 shadow-2xl">
+							<div
+								aria-hidden="true"
+								className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-accent/5 blur-[80px]"
+							/>
 							<nav
 								aria-label="Breadcrumb"
-								className="flex items-center gap-1.5 text-xs text-text-muted mb-3 font-mono"
+								className="flex items-center gap-1.5 text-xs text-text-muted mb-6 font-mono"
 							>
 								<Link href="/" className="hover:text-text transition-colors duration-200 ease-out">
 									home
@@ -185,23 +189,23 @@ export function DocsContent() {
 									</div>
 								</div>
 							</div>
-							<div className="mt-7 flex flex-wrap gap-3">
+							<div className="mt-8 flex flex-wrap items-center gap-4">
 								<Link
 									href="/login"
-									className="btn-primary inline-flex min-h-11 items-center gap-2 px-5"
+									className="inline-flex h-12 items-center gap-2 rounded-lg bg-accent px-6 font-mono text-sm font-bold text-void transition-[background-color,transform] duration-200 ease-out hover:bg-accent-bright hover:shadow-[0_0_20px_var(--color-accent-glow)] active:scale-[0.97] focus-ring"
 								>
 									Get API Key
 									<ArrowRight className="h-4 w-4" aria-hidden="true" />
 								</Link>
 								<Link
 									href="#quickstart"
-									className="btn-secondary inline-flex min-h-11 items-center px-5"
+									className="inline-flex h-12 items-center rounded-lg border border-border-hi bg-surface px-6 font-mono text-sm font-medium text-text-primary transition-[border-color,transform] duration-200 ease-out hover:border-accent/50 active:scale-[0.97] focus-ring"
 								>
 									Quick Start
 								</Link>
 								<Link
 									href="/pricing"
-									className="inline-flex min-h-11 items-center rounded-full px-5 text-sm font-medium text-text-secondary transition-colors duration-200 ease-out hover:bg-surface hover:text-text-bright"
+									className="inline-flex h-12 items-center rounded-lg px-4 text-sm font-medium text-text-secondary transition-colors duration-200 ease-out hover:text-text-bright"
 								>
 									View Pricing
 								</Link>

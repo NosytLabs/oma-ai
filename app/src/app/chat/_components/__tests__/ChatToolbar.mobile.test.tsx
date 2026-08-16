@@ -47,7 +47,6 @@ const baseProps = {
 	setCompareMode: vi.fn(),
 	shareStatus: "default" as const,
 	shareConversation: vi.fn(),
-	exportStatus: "default" as const,
 	exportConversation: vi.fn(),
 	clearChat: vi.fn(),
 	messagesLength: 0,

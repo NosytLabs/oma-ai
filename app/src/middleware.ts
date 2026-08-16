@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-/** Paths that may enter demo/preview mode via `?demo=1`. */
+/** Paths that may enter demo/preview mode via `?demo=1`.
+ *  Note: `/dashboard/api-keys` is a deep-link bookmark redirect
+ *  (see `app/src/app/dashboard/api-keys/page.tsx`); the demo gate lives
+ *  on `/dashboard` itself since that's where the API-keys tab actually
+ *  renders. Including the dead route here would let stale `?demo=1`
+ *  links set the demo cookie against a path that immediately 310s away. */
 const DEMO_PATH_PREFIXES = [
 	"/dashboard",
 	"/settings",
 	"/chat",
 	"/deposit",
-	"/api-keys",
 ];
 
 function wantsDemo(request: NextRequest): boolean {

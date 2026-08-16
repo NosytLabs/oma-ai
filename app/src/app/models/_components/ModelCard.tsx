@@ -24,6 +24,19 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 	const outModalities = model.outputModalities ?? ["text"];
 	const isNonChat = model.modality !== "chat";
 
+	// "text" input is universal — every catalog model accepts it — so it
+	// adds no information and just fills the row with identical badges.
+	// Likewise "chat" is the default capability of every chat-tier model
+	// and is already conveyed by the modality label; showing it as a badge
+	// duplicates the same signal. Only render the informative bits.
+	const nonTextInputs = inModalities.filter((m) => m !== "text");
+	const nonTextOutputs = outModalities.filter((m) => m !== "text");
+	const displayCaps = (model.capabilities ?? []).filter(
+		(cap) => cap !== "chat" || isNonChat,
+	);
+	const hasBadges =
+		nonTextInputs.length > 0 || nonTextOutputs.length > 0 || displayCaps.length > 0;
+
 	return (
 		<InViewFade key={model.id} delay={index * 0.05} spring>
 			<Link
@@ -62,76 +75,45 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 					</div>
 				</div>
 
-				<div className="mt-4 flex flex-wrap gap-2">
-					<div className="flex flex-wrap gap-2">
-						{inModalities.includes("text") && (
-							<span
-								title="Text input"
-								className="px-2.5 py-1 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-surface text-text-secondary border border-border"
-							>
-								Text
-							</span>
-						)}
-						{inModalities.includes("image") && (
-							<span
-								title="Image input"
-								className="px-2.5 py-1 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-surface text-text-secondary border border-border"
-							>
-								Image
-							</span>
-						)}
-						{inModalities.includes("audio") && (
-							<span
-								title="Audio input"
-								className="px-2.5 py-1 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-surface text-text-secondary border border-border"
-							>
-								Audio
-							</span>
-						)}
-						{inModalities.includes("video") && (
-							<span
-								title="Video input"
-								className="px-2.5 py-1 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-surface text-text-secondary border border-border"
-							>
-								Video
-							</span>
-						)}
-						{outModalities.includes("image") && (
-							<span
-								title="Image output"
-								className="px-2.5 py-1 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-blue/10 text-blue border border-blue/30"
-							>
-								Image
-							</span>
-						)}
-						{outModalities.includes("audio") && (
-							<span
-								title="Audio output"
-								className="px-2.5 py-1 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-violet/10 text-violet border border-violet/30"
-							>
-								Audio
-							</span>
-						)}
-						{outModalities.includes("video") && (
-							<span
-								title="Video output"
-								className="px-2.5 py-1 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-amber/10 text-amber border border-amber/30"
-							>
-								Video
-							</span>
-						)}
-						{outModalities.includes("embeddings") && (
-							<span
-								title="Embeddings output"
-								className="px-2.5 py-1 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-tertiary/10 text-tertiary border border-tertiary/30"
-							>
-								Embed
-							</span>
-						)}
+				{hasBadges && (
+					<div className="mt-4 flex flex-wrap gap-2">
+						<div className="flex flex-wrap gap-2">
+							{Array.from(
+								new Set([...nonTextInputs, ...nonTextOutputs]),
+							).map((m) => {
+							if (m === "text" || m === "chat") return null;
+							const isOutput = nonTextOutputs.includes(m);
+							const isInput = nonTextInputs.includes(m);
+							const badge =
+								m === "image"
+									? { label: "Image", title: isOutput ? "Outputs images" : "Accepts image input", cls: "bg-blue/10 text-blue border-blue/30" }
+									: m === "audio"
+										? { label: "Audio", title: isOutput ? "Outputs audio" : "Accepts audio input", cls: "bg-violet/10 text-violet border-violet/30" }
+										: m === "video"
+											? { label: "Video", title: isOutput ? "Outputs video" : "Accepts video input", cls: "bg-amber/10 text-amber border-amber/30" }
+											: m === "embeddings"
+												? { label: "Embed", title: "Outputs embeddings", cls: "bg-tertiary/10 text-tertiary border-tertiary/30" }
+												: null;
+							if (!badge) return null;
+							// Input-only modalities keep the neutral chip style;
+							// anything with an output leg gets the colored chip.
+							const neutral = !isOutput || isInput;
+							return (
+								<span
+									key={`${m}-${isOutput ? "out" : "in"}`}
+									title={badge.title}
+									className={`px-2.5 py-1 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider border ${
+										neutral ? "bg-surface text-text-secondary border-border" : badge.cls
+									}`}
+								>
+									{badge.label}
+								</span>
+							);
+						})}
 					</div>
 
 					<div className="flex flex-wrap gap-2">
-						{model.capabilities.slice(0, 3).map((cap) => (
+						{displayCaps.slice(0, 3).map((cap) => (
 							<span
 								key={String(cap)}
 								className="px-2.5 py-1 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-surface text-text-secondary border border-border"
@@ -139,18 +121,19 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 								{cap}
 							</span>
 						))}
-						{model.capabilities.length > 3 && (
+						{displayCaps.length > 3 && (
 							<span
 								className="px-2.5 py-1 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider text-text-muted cursor-help border border-transparent"
-								title={`Additional capabilities: ${model.capabilities
+								title={`Additional capabilities: ${displayCaps
 									.slice(3)
 									.join(", ")}`}
 							>
-								+{model.capabilities.length - 3}
+								+{displayCaps.length - 3}
 							</span>
 						)}
 					</div>
 				</div>
+				)}
 
 				<div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between text-xs">
 					<span className="text-[11px] text-text-secondary font-mono tabular-nums">

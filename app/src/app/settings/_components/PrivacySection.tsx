@@ -47,11 +47,18 @@ export function PrivacySection({ user }: PrivacySectionProps) {
 					Privacy &amp; data
 				</h2>
 				<p className="mt-1 text-sm text-text-muted">
-					Manage your account data and privacy choices.
+					Manage your account data and privacy choices. See the{" "}
+					<Link
+						href="/privacy"
+						className="text-accent underline-offset-4 hover:underline"
+					>
+						privacy policy
+					</Link>{" "}
+					for what we keep and what we never store.
 				</p>
 			</div>
 
-			<div className="mt-6 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)]/30 p-5 transition-colors duration-200 ease-out hover:border-[var(--color-accent)]/40">
+			<div className="mt-6 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)]/30 p-5 transition-colors duration-200 ease-out hover:border-[var(--color-accent)]/40">
 				<div className="text-[11px] font-mono uppercase tracking-wider text-text-muted">
 					Account ID
 				</div>
@@ -60,7 +67,7 @@ export function PrivacySection({ user }: PrivacySectionProps) {
 				</div>
 			</div>
 
-			<div className="mt-6 divide-y divide-[var(--color-border)] rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)]/30 overflow-hidden">
+			<div className="mt-6 divide-y divide-[var(--color-border)] rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)]/30 overflow-hidden">
 				<div className="group flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between transition-colors duration-200 ease-out hover:bg-[var(--color-surface)]/50">
 					<div>
 						<h3 className="text-sm font-semibold text-text-bright">

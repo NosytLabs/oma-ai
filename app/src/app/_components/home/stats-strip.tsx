@@ -42,25 +42,25 @@ function useLiveModelCount() {
 const STATS: { label: string; value: string; hint: string; live?: boolean }[] =
 	[
 	{
-	label: "Models live",
-	value: `${MODEL_COUNT}`,
-	hint: "curated · Venice + OMA-AI",
-	live: true,
+		label: "Models live",
+		value: `${MODEL_COUNT}`,
+		hint: "curated · Venice + OMA-AI",
+		live: true,
 	},
 	{
-	label: "From",
-	value: formatPricePerMillion(MIN_INPUT_PRICE),
-	hint: "per 1M tokens (budget tier)",
+		label: "From",
+		value: formatPricePerMillion(MIN_INPUT_PRICE),
+		hint: "per 1M tokens (budget tier)",
 	},
 	{
-	label: "Auth",
-	value: "2 ways",
-	hint: "magic link or SIWE wallet",
+		label: "Sign-in",
+		value: "Wallet",
+		hint: "or magic-link email",
 	},
 	{
-	label: "Settlement",
-	value: "USDC",
-	hint: "Base · x402 optional",
+		label: "Settlement",
+		value: "USDC",
+		hint: "Base · x402 optional",
 	},
 	] as const;
 
@@ -72,30 +72,22 @@ export function StatsStrip() {
 	: s,
 	);
 	return (
-	<section
-	aria-labelledby="stats-headline"
-	className="relative bg-surface py-16 sm:py-20 z-10"
-	>
-	<div
-	aria-hidden="true"
-	className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/30 to-transparent"
-	/>
-	<div className="container-page">
+	<div className="flex flex-col justify-center h-full">
 	<Reveal>
-	<div className="mb-9 flex flex-col items-center gap-2 sm:flex-row sm:justify-between">
+	<div className="mb-6 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
 	<p id="stats-headline" className="eyebrow text-text-muted">
 	Product facts
 	</p>
-	<p className="font-mono text-[10px] uppercase tracking-[0.18em] text-text-muted">
+	<p className="font-mono text-[10px] uppercase tracking-[0.18em] text-text-muted hidden sm:block">
 	ledger · no vanity metrics
 	</p>
 	</div>
 	</Reveal>
-	<ul className="grid grid-cols-2 gap-px overflow-hidden rounded-[var(--radius-xl)] border border-border bg-border lg:grid-cols-4">
+	<ul className="grid grid-cols-2 gap-px overflow-hidden rounded-[var(--radius-xl)] border border-border bg-border">
 	{stats.map((stat, i) => (
-	<li
-	key={stat.label}
-	className="relative bg-panel px-5 py-6 sm:px-6 sm:py-7 transition-colors duration-200 ease-out hover:bg-surface/50"
+<li
+		key={stat.label}
+		className="relative bg-panel px-5 py-5 sm:py-6 transition-colors duration-200 ease-out hover:bg-surface/50"
 	>
 	{/* Ledger index */}
 	<span
@@ -108,13 +100,13 @@ export function StatsStrip() {
 	<p className="text-[11px] font-mono uppercase tracking-[0.16em] text-text-muted">
 	{stat.label}
 	</p>
-	<p
-	aria-live="polite"
-	className="mt-3 font-display text-[2rem] leading-none tracking-tight text-text-bright sm:text-[2.35rem]"
-	>
-	{stat.value}
+<p
+		aria-live="polite"
+		className="mt-2 font-geometric text-[1.875rem] font-medium leading-none tracking-tight tabular-nums text-text-bright sm:text-[2.125rem]"
+		>
+		{stat.value}
 	</p>
-	<p className="mt-2.5 text-[13px] leading-snug text-text-secondary">
+	<p className="mt-2 text-[12px] leading-snug text-text-secondary">
 	{stat.hint}
 	</p>
 	</Reveal>
@@ -122,6 +114,5 @@ export function StatsStrip() {
 	))}
 	</ul>
 	</div>
-	</section>
 	);
 }

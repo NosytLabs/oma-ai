@@ -7,8 +7,8 @@ import {
 } from "@/lib/model-utils";
 
 describe("isFreeChatModel (guest website chat)", () => {
-	it("defaults free chat to a gonka catalog id", () => {
-		expect(FREE_DEFAULT_CHAT_MODEL).toBe("deepseek-v4-flash-0731-openbroker");
+	it("defaults free chat to an allowlisted catalog id", () => {
+		expect(FREE_DEFAULT_CHAT_MODEL).toBe("gemini-3-flash-preview");
 		expect(FREE_CHAT_MODEL_IDS.has(FREE_DEFAULT_CHAT_MODEL)).toBe(true);
 	});
 
@@ -19,6 +19,7 @@ describe("isFreeChatModel (guest website chat)", () => {
 		expect(isFreeChatModel("gemini-3-flash-preview")).toBe(true);
 		expect(isFreeChatModel("kimi-k2-6")).toBe(true);
 		expect(isFreeChatModel("minimax-m2-7")).toBe(true);
+		expect(isFreeChatModel("mistral-small-2603")).toBe(true);
 
 		// Paid — OMA-AI resale through Zyloo (NOT Gonka openbroker) requires auth.
 		// qwen3-235b-a22b-openbroker has "openbroker" in its id but routes via

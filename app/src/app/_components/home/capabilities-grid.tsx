@@ -220,7 +220,7 @@ function LedgerStrip({ lineClass }: { lineClass: string }) {
 	<span className="font-mono text-[9px] uppercase tracking-wider text-text-muted">
 	ledger
 	</span>
-	<span className="font-mono text-[10px] text-accent">on-chain</span>
+	<span className="font-mono text-[10px] text-accent">routed</span>
 	</div>
 	</div>
 	</div>
@@ -278,7 +278,7 @@ export function CapabilitiesGrid() {
 	return (
 	<section
 	aria-labelledby="capabilities-headline"
-	className="relative py-16 sm:py-20 lg:py-24"
+	className="relative py-16 sm:py-20"
 	>
 	<div
 	aria-hidden="true"
@@ -313,16 +313,16 @@ export function CapabilitiesGrid() {
 	whileHover={{ y: -4 }}
 	transition={springs.card}
 	>
-							<Link
-								href={pillar.href}
-								className={cn(
-									"group relative flex h-full min-h-[400px] flex-col overflow-hidden rounded-[var(--radius-lg)] border p-8 transition-[transform,box-shadow,border-color] duration-200 ease-out",
-									"active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2",
-									a.wrap,
-									a.ring,
-								)}
-								style={{ boxShadow: "var(--shadow-md)" }}
-							>
+<Link
+						href={pillar.href}
+						className={cn(
+							"group relative flex h-full min-h-0 sm:min-h-[360px] flex-col overflow-hidden rounded-[var(--radius-lg)] border p-7 transition-[transform,box-shadow,border-color] duration-200 ease-out",
+							"active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2",
+							a.wrap,
+							a.ring,
+						)}
+						style={{ boxShadow: "var(--shadow-md)" }}
+					>
 	<div
 	aria-hidden="true"
 	className="pointer-events-none absolute inset-0 -z-10 opacity-50 transition-opacity duration-500 group-hover:opacity-75"
@@ -355,35 +355,37 @@ export function CapabilitiesGrid() {
 	</div>
 	</div>
 
-	<h3 className="mt-6 font-sans text-xl sm:text-2xl font-semibold tracking-tight text-text-bright">
-	{pillar.title}
-	</h3>
-	<p className="mt-3 text-[14px] leading-relaxed text-text">
-	{pillar.description}
-	</p>
+<h3 className="mt-6 font-sans text-xl sm:text-2xl font-semibold tracking-tight text-text-bright">
+		{pillar.title}
+		</h3>
+		<p className="mt-3 text-[14px] leading-relaxed text-text">
+		{pillar.description}
+		</p>
 
-	<ul className="mt-6 space-y-2.5 text-[13.5px] text-text-secondary">
-	{pillar.highlights.map((h) => (
-	<li key={h} className="flex items-center gap-3">
-	<span
-	className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent"
-	aria-hidden="true"
-	/>
-	{h}
-	</li>
-	))}
-	</ul>
+		<ul className="mt-6 space-y-2.5 text-[13.5px] text-text-secondary">
+		{pillar.highlights.map((h) => (
+		<li key={h} className="flex items-center gap-3">
+		<span
+		className={cn("h-1.5 w-1.5 shrink-0 rounded-full", a.visualLine)}
+		aria-hidden="true"
+		/>
+		{h}
+		</li>
+		))}
+		</ul>
 
-	<span className="mt-8 mb-6 inline-flex items-center gap-1.5 font-semibold text-accent text-[14.5px]">
-	{pillar.cta}
-	<ArrowUpRight
-	className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1 group-hover:-translate-y-1"
-	aria-hidden="true"
-	/>
-	</span>
+		<span className="mt-6 mb-4 inline-flex items-center gap-1.5 font-semibold text-accent text-[14.5px]">
+		{pillar.cta}
+		<ArrowUpRight
+		className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1 group-hover:-translate-y-1"
+		aria-hidden="true"
+		/>
+		</span>
 
-	<PillarVisual kind={pillar.visual} lineClass={a.visualLine} />
-	</Link>
+		<div className="mt-auto pt-4">
+			<PillarVisual kind={pillar.visual} lineClass={a.visualLine} />
+		</div>
+		</Link>
 	</m.div>
 	);
 	})}

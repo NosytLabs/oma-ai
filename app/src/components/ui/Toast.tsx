@@ -12,7 +12,7 @@ import {
 	useState,
 } from "react";
 import { playToastCue } from "@/lib/sound";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { cn } from "@/components/ui/utils";
 import { springs } from "@/lib/animation";
 
@@ -163,7 +163,7 @@ function ToastItem({
 	};
 
 	return (
-		<motion.div
+		<m.div
 			layout
 			initial={{ opacity: 0, y: 12, scale: 0.96, x: 24 }}
 			animate={{ opacity: 1, y: 0, scale: 1, x: 0 }}
@@ -215,6 +215,6 @@ function ToastItem({
 					style={{ width: `${progress}%` }}
 				/>
 			</div>
-		</motion.div>
+		</m.div>
 	);
 }

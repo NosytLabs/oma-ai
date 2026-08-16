@@ -423,7 +423,7 @@ export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
 														}
 												>
 														{displayName(msg.model)}
-														{msg.viaFallback ? " · fb" : ""}
+														{msg.viaFallback ? " · fallback" : ""}
 												</span>
 										)}
 										{!isUser &&

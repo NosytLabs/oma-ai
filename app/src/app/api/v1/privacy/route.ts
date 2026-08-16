@@ -32,7 +32,7 @@ const PRIVACY_MANIFEST = {
 				"role (default 'user'; 'admin' for operators)",
 			],
 			retention:
-				"Until the user requests deletion via /v1/account/delete. The user row + linked creditBalances + sessions are removed in a single transaction.",
+				"Until the user requests deletion via DELETE /account. The user row + linked creditBalances + sessions are removed in a single transaction.",
 		},
 		api_keys: {
 			description:
@@ -109,12 +109,12 @@ const PRIVACY_MANIFEST = {
 		circuit_breaker_state: "5 minutes (Redis TTL)",
 	},
 	user_rights: {
-		export: "GET /v1/account/export — full account data export",
-		delete: "POST /v1/account/delete — account and all data deletion",
-		api_key_revoke: "DELETE /v1/api-keys/:id",
+		export: "GET /v1/export/account — full account data export",
+		delete: "DELETE /account — account and all data deletion",
+		api_key_revoke: "DELETE /v1/keys/:id",
 	},
 	compliance: {
-		gdpr: "Right to access, portability, and erasure honored via /v1/account/* endpoints.",
+		gdpr: "Right to access, portability, and erasure honored via /v1/export/account and DELETE /account.",
 		ccpa: "Opt-out of data sale not applicable — OMA does not sell user data.",
 	},
 };

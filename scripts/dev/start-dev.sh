@@ -29,19 +29,23 @@ check_env() {
 
 # Start server
 start_server() {
-    echo -e "${GREEN}▶ Starting API server...${NC}"
-    (cd "$ROOT/server" && npm run dev) &
-    SERVER_PID=$!
-    echo "   Server PID: $SERVER_PID"
+	echo -e "${GREEN}▶ Starting API server...${NC}"
+	(cd "$ROOT/server" && npm run dev) &
+	SERVER_PID=$!
+	echo "   Server PID: $SERVER_PID"
 }
 
 # Start frontend
 start_frontend() {
-    echo -e "${GREEN}▶ Starting Frontend...${NC}"
-    (cd "$ROOT/app" && npm run dev) &
-    FRONTEND_PID=$!
-    echo "   Frontend PID: $FRONTEND_PID"
+	echo -e "${GREEN}▶ Starting Frontend...${NC}"
+	(cd "$ROOT/app" && npm run dev) &
+	FRONTEND_PID=$!
+	echo "   Frontend PID: $FRONTEND_PID"
 }
+# Note: this dev launcher shells into per-package `npm run dev` because
+# the per-package scripts (`server/package.json#dev`, `app/package.json#dev`)
+# are pinned to the right toolchain. pnpm workspaces would also work; the
+# choice keeps the scripts portable across npm/pnpm.
 
 # Main
 echo ""

@@ -221,8 +221,9 @@ app.route("/", openapiRoutes);
 //   - everything else (magic-link, SIWE, sign-out…): still strict
 const authSessionReadLimit = rateLimit({
 		windowMs: 60_000,
-		maxRequests: 180,
+		maxRequests: 600,
 		keyPrefix: "auth-session",
+		failClosed: false,
 });
 const authMutationLimit = rateLimit({
 		windowMs: 60_000,

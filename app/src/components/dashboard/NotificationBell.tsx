@@ -90,7 +90,6 @@ export function NotificationBell({ className = "" }: NotificationBellProps) {
 	// "Unread" predicate. The backend's `notifiedAt` flag is the source of
 	// truth once a notification has been seen by the user. Fall back to a
 	// 24h "new" window only for legacy rows that don't carry the flag.
-	// eslint-disable-next-line react-hooks/purity -- one-time timestamp, safe
 	const oneDayAgo = useMemo(() => Date.now() - 24 * 60 * 60 * 1000, []);
 	const unreadCount = recent.filter((n) => {
 		if (n.notifiedAt) return false; // already acknowledged by user

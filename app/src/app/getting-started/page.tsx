@@ -60,7 +60,7 @@ const STEPS = [
 		title: "Add a little credit",
 		body: (
 			<>
-				Go to <Link href="/deposit" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">Deposit Credits</Link>. Pay with any standard credit card (Visa, Mastercard, Apple Pay) or send USDC on Base. Credits never expire, and a simple $5 deposit gives you enough tokens to handle thousands of requests.
+				Go to <Link href="/deposit" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">Deposit Credits</Link>. Pay with any standard credit card (Visa, Mastercard, Apple Pay) or send USDC on Base. Credits never expire, and a simple $10 deposit gives you enough tokens to handle thousands of requests.
 				<br /><br />
 				<strong>Autonomous Agent option:</strong> If you are writing software agents and prefer not to pre-fund an account, you can use our <Link href="/docs#x402" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">x402 pay-per-request flow</Link> to let your software pay for each request directly in USDC on-chain.
 			</>
@@ -86,7 +86,8 @@ const SAMPLE_CODE = `curl https://api.oma-ai.com/v1/chat/completions \\
 		"max_tokens": 64
 	}'`;
 
-const SAMPLE_PY = `from openai import OpenAI
+const SAMPLE_PY = `import os
+from openai import OpenAI
 
 client = OpenAI(
 	base_url="https://api.oma-ai.com/v1",
@@ -100,7 +101,7 @@ print(reply.choices[0].message.content)`;
 
 export default function GettingStartedPage() {
 	return (
-		<div className="relative min-h-screen bg-void text-text overflow-hidden">
+		<div className="relative bg-void text-text overflow-x-clip">
 			<BreadcrumbListJsonLd
 				items={[{ name: "Home", url: "/" }, { name: "Getting started", url: "/getting-started" }]}
 			/>
@@ -109,10 +110,10 @@ export default function GettingStartedPage() {
 				<FloatingIcons count={4} />
 			</div>
 
-			<div className="container-page max-w-3xl pt-6 sm:pt-8 pb-12 sm:pb-16">
+			<div className="container-page page-content max-w-3xl lg:max-w-4xl">
 				<Link
 					href="/"
-					className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-accent transition-colors duration-200 ease-out mb-8"
+					className="inline-flex min-h-11 items-center gap-1.5 text-sm text-text-secondary hover:text-accent transition-colors duration-200 ease-out mb-8"
 				>
 					<ArrowLeft className="h-4 w-4" aria-hidden="true" />
 					Home
@@ -146,7 +147,7 @@ export default function GettingStartedPage() {
 					))}
 				</ol>
 
-				<InViewFade delay={0.05}>
+				<InViewFade eager delay={0.05}>
 					<section className="mt-10 rounded-[var(--radius-lg)] border border-border bg-void p-5 sm:p-6" aria-labelledby="try-heading">
 					<h2 id="try-heading" className="flex items-center gap-2 text-base font-semibold text-text-bright">
 						<Terminal className="h-4 w-4 text-accent" aria-hidden="true" />

@@ -25,7 +25,7 @@ import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { Button } from "@/components/ui/button";
 import { springs } from "@/lib/animation";
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
-import { type Modality, TIER_COLORS } from "@/lib/models-data";
+import { type Modality, TIER_COLORS, TIER_ORDER } from "@/lib/models-data";
 import { ModelCard } from "./_components/ModelCard";
 import { ModelFiltersSidebar } from "./_components/ModelFiltersSidebar";
 import { SORT_OPTIONS, useModelFilters } from "./_hooks/useModelFilters";
@@ -48,13 +48,6 @@ const MODALITY_ICONS: Record<Modality, React.ReactNode> = {
 	upscale: <Wand2 className="h-4 w-4" />,
 	inpaint: <Pencil className="h-4 w-4" />,
 };
-
-const TIER_ORDER: ("budget" | "mid" | "premium" | "frontier")[] = [
-	"budget",
-	"mid",
-	"premium",
-	"frontier",
-];
 
 function ModelsPageInner() {
 	const {
@@ -111,7 +104,7 @@ function ModelsPageInner() {
 	}, []);
 
 	return (
-		<div className="min-h-screen bg-void">
+		<div className="bg-void">
 			<div className="container-page py-10 sm:py-12">
 				{/* Breadcrumb */}
 				<Breadcrumb items={[{ label: "Models" }]} />
@@ -326,7 +319,7 @@ export default function ModelsPage() {
 			/>
 			<Suspense
 				fallback={
-					<div className="min-h-screen bg-void">
+					<div className="bg-void">
 						<div className="container-page py-12">
 							<div className="h-8 w-32 bg-panel rounded-[var(--radius-sm)] animate-pulse mb-8" />
 							<div className="h-10 w-64 bg-panel rounded-[var(--radius-sm)] animate-pulse mb-4" />

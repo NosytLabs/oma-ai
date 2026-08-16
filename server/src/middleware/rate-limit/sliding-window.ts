@@ -42,10 +42,12 @@ export interface RateLimitOptions {
 		windowMs: number;
 		maxRequests: number;
 		keyPrefix?: string;
+		/** Session reads should fail-open so a Redis blip doesn't 503 every page. */
+		failClosed?: boolean;
 }
 
 export function rateLimit(options: RateLimitOptions) {
-		const { windowMs, maxRequests, keyPrefix = "rl" } = options;
+		const { windowMs, maxRequests, keyPrefix = "rl", failClosed = true } = options;
 		const windowSec = Math.ceil(windowMs / 1000);
 
 		return async (c: Context, next: Next) => {
@@ -62,9 +64,11 @@ export function rateLimit(options: RateLimitOptions) {
 				const redis = await getRedisClient();
 				const ready = isRedisReady();
 
-				// Fail-closed: Reject requests when Redis is unavailable (auth routes)
-				// Security-critical: protecting auth endpoints requires strict rate limiting
 				if (!redis || !ready) {
+						if (!failClosed) {
+								c.header("X-RateLimit-Policy", "fail-open");
+								return next();
+						}
 						logger.error("Redis unavailable -- failing CLOSED for auth route (rate limiting required)");
 						c.header("X-RateLimit-Limit", String(maxRequests));
 						c.header("X-RateLimit-Remaining", "0");
@@ -98,8 +102,11 @@ export function rateLimit(options: RateLimitOptions) {
 								);
 						}
 				} catch (err) {
+						if (!failClosed) {
+								c.header("X-RateLimit-Policy", "fail-open-error");
+								return next();
+						}
 						logger.error({ err }, "Redis operation failed -- failing CLOSED for auth route");
-						// Fail closed on error for auth routes
 						c.header("X-RateLimit-Limit", String(maxRequests));
 						c.header("X-RateLimit-Remaining", "0");
 						c.header("X-RateLimit-Policy", "fail-closed-error");

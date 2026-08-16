@@ -132,7 +132,7 @@ const TERMS: Term[] = [
 	},
 	{
 		term: "MCP",
-		def: "Model Context Protocol — a standard way to give AI models access to tools and data (files, browsers, databases). OMA supports MCP-style tool calls in chat completions. To use MCP with OMA, configure your MCP client (like Trae or Claude Desktop) to use an SSE transport connecting to https://api.oma-ai.com/v1/mcp.",
+		def: "Model Context Protocol — a standard way to give AI models access to tools and data (files, browsers, databases). OMA chat completions accept OpenAI-style tool calls so MCP-aware clients can route tool use through the same /v1/chat/completions endpoint.",
 	},
 	{
 		term: "A2A",
@@ -166,17 +166,17 @@ export default function GlossaryPage() {
 		byLetter.get(letter)!.push(t);
 	}
 	return (
-		<div className="relative min-h-screen bg-void text-text overflow-hidden">
+		<div className="relative bg-void text-text overflow-x-clip">
 			<BreadcrumbListJsonLd items={[{ name: "Home", url: "/" }, { name: "Glossary", url: "/glossary" }]} />
 			<div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
 				<div className="absolute inset-0 bg-grid opacity-[0.35] mask-radial" />
 				<FloatingIcons count={4} />
 			</div>
 
-			<div className="container-page max-w-3xl pt-6 sm:pt-8 pb-12 sm:pb-16">
+			<div className="container-page page-content max-w-3xl lg:max-w-4xl">
 				<Link
 					href="/"
-					className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-accent transition-colors duration-200 ease-out mb-8"
+					className="inline-flex min-h-11 items-center gap-1.5 text-sm text-text-secondary hover:text-accent transition-colors duration-200 ease-out mb-8"
 				>
 					<ArrowLeft className="h-4 w-4" aria-hidden="true" />
 					Home
@@ -196,7 +196,7 @@ export default function GlossaryPage() {
 						<a
 							key={l}
 							href={`#${l.toLowerCase()}`}
-							className={`inline-flex h-8 w-8 items-center justify-center rounded-[var(--radius-sm)] border text-xs font-mono transition-colors duration-200 ease-out ${
+							className={`inline-flex h-11 w-11 items-center justify-center rounded-[var(--radius-sm)] border text-xs font-mono transition-colors duration-200 ease-out ${
 								byLetter.has(l)
 									? "border-accent/40 text-accent hover:bg-accent/10"
 									: "border-border text-text-muted/40 pointer-events-none"

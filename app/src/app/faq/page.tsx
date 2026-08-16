@@ -213,7 +213,7 @@ export default function FAQPage() {
 		g.items.map((item) => ({ question: item.q, answer: item.a })),
 	);
 	return (
-		<div className="relative min-h-screen bg-void text-text overflow-hidden">
+		<div className="relative bg-void text-text overflow-x-clip">
 			<BreadcrumbListJsonLd items={[{ name: "Home", url: "/" }, { name: "FAQ", url: "/faq" }]} />
 			<FAQPageJsonLd questions={questions} />
 			<div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
@@ -221,10 +221,10 @@ export default function FAQPage() {
 				<FloatingIcons count={4} />
 			</div>
 
-			<div className="container-page max-w-3xl pt-6 sm:pt-8 pb-12 sm:pb-16">
+			<div className="container-page page-content max-w-3xl lg:max-w-4xl">
 				<Link
 					href="/"
-					className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-accent transition-colors duration-200 ease-out mb-8"
+					className="inline-flex min-h-11 items-center gap-1.5 text-sm text-text-secondary hover:text-accent transition-colors duration-200 ease-out mb-8"
 				>
 					<ArrowLeft className="h-4 w-4" aria-hidden="true" />
 					Home
@@ -254,7 +254,6 @@ export default function FAQPage() {
 									<details
 										key={item.q}
 										className="group border border-border bg-surface/60 hover:border-accent/30 transition-colors duration-200 ease-out rounded-[var(--radius-lg)] overflow-hidden"
-										open={false}
 									>
 										<summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 text-sm font-medium text-text-bright hover:text-accent transition-colors duration-200 ease-out [&::-webkit-details-marker]:hidden">
 											{item.q}

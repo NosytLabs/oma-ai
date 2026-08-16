@@ -11,7 +11,6 @@ import {
 	Lightbulb,
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { ThinkingOrb } from "thinking-orbs";
 
 interface Preset {
 	id: string;
@@ -105,54 +104,34 @@ export function ChatEmptyState({ onPreset, currentModel }: EmptyStateProps) {
 	}, [currentModel]);
 
 	return (
-		<div className="flex flex-col items-center justify-center text-center px-4 py-8 md:py-12">
+		<div className="flex flex-col items-center justify-start text-center px-4 py-4 md:py-6">
 			<m.div
-				initial={{ scale: 0.9, opacity: 0 }}
+				initial={{ scale: 0.95, opacity: 0 }}
 				animate={{ scale: 1, opacity: 1 }}
 				transition={springs.soft}
-				className="mb-8 mt-4 flex h-[60px] w-[60px] items-center justify-center rounded-[var(--radius-xl)] border border-[var(--color-accent)]/30 bg-[color-mix(in_srgb,var(--color-accent)_12%,var(--color-surface))] shadow-[0_0_30px_-5px_var(--color-accent-glow)]"
+				className="mb-4 flex h-11 w-11 items-center justify-center rounded-[var(--radius-lg)] border border-[var(--color-accent)]/30 bg-[color-mix(in_srgb,var(--color-accent)_12%,var(--color-surface))] shadow-[0_0_24px_-6px_var(--color-accent-glow)]"
 			>
-				<span className="text-[22px] font-mono font-bold text-[var(--color-accent)]" aria-hidden="true">
+				<span className="text-[18px] font-mono font-bold text-[var(--color-accent)]" aria-hidden="true">
 					{">"}
 				</span>
 			</m.div>
 
 			<m.h2
-				initial={{ y: 16, opacity: 0 }}
+				initial={{ y: 12, opacity: 0 }}
 				animate={{ y: 0, opacity: 1 }}
-				transition={{ delay: 0.1, ...springs.soft }}
-				className="mb-2.5 text-2xl font-mono tracking-tight text-text-bright"
+				transition={{ delay: 0.08, ...springs.soft }}
+				className="mb-1.5 text-xl font-mono tracking-tight text-text-bright sm:text-2xl"
 			>
 				Chat with any model
 			</m.h2>
 			<m.p
-				initial={{ y: 16, opacity: 0 }}
+				initial={{ y: 12, opacity: 0 }}
 				animate={{ y: 0, opacity: 1 }}
-				transition={{ delay: 0.15, ...springs.soft }}
-				className="mb-1 max-w-md font-mono text-[11px] uppercase tracking-widest text-text-muted"
+				transition={{ delay: 0.12, ...springs.soft }}
+				className="mb-5 max-w-md text-sm leading-relaxed text-text-secondary"
 			>
-				OpenAI-compatible · metered in USDC
+				Pick a starter, or type below. Guest chats are free on OMA-AI models.
 			</m.p>
-			<m.p
-				initial={{ y: 16, opacity: 0 }}
-				animate={{ y: 0, opacity: 1 }}
-				transition={{ delay: 0.2, ...springs.soft }}
-				className="mb-8 max-w-md text-[14.5px] leading-relaxed text-text-secondary"
-			>
-				Pick a starter prompt, or type below. Responses stream live.
-			</m.p>
-
-			{/* Thinking-orb hint — subtle composing-state dot above the starter grid. */}
-			<m.div
-				initial={{ opacity: 0, scale: 0.9 }}
-				animate={{ opacity: 1, scale: 1 }}
-				transition={{ delay: 0.22, ...springs.soft }}
-				className="mb-4 flex items-center gap-2.5 text-[11px] font-mono uppercase tracking-widest text-text-muted/80"
-				aria-hidden="true"
-			>
-				<ThinkingOrb state="composing" size={20} theme="auto" />
-				<span>ready to compose</span>
-			</m.div>
 
 			<m.div
 				initial={{ y: 16, opacity: 0 }}
@@ -215,7 +194,7 @@ export function ChatEmptyState({ onPreset, currentModel }: EmptyStateProps) {
 				initial={{ opacity: 0 }}
 				animate={{ opacity: 1 }}
 				transition={{ delay: 0.5, ...springs.soft }}
-				className="mt-6 flex items-center gap-2 text-[11px] font-mono text-text-muted uppercase tracking-wider"
+				className="mt-4 flex items-center gap-2 text-[11px] font-mono text-text-muted uppercase tracking-wider"
 			>
 				<Coins className="h-3.5 w-3.5 text-[var(--color-accent)] opacity-80" aria-hidden="true" />
 				Free tier: 20 requests/day · no card needed

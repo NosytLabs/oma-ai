@@ -20,8 +20,14 @@ export function HomeView() {
 	return (
 		<div className="flex flex-col">
 			<Hero />
-			<TrustStrip />
-			<StatsStrip />
+			<div className="border-y border-border-subtle bg-surface/30">
+				<div className="container-page py-10 sm:py-12">
+					<div className="grid gap-8 lg:gap-10 lg:grid-cols-[1fr_2fr] lg:items-stretch">
+						<TrustStrip />
+						<StatsStrip />
+					</div>
+				</div>
+			</div>
 			<CapabilitiesGrid />
 			<HowItWorks />
 			<CodeExample modelCount={MODEL_COUNT} />

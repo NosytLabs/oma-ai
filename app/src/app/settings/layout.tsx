@@ -4,9 +4,9 @@ export const dynamic = "force-dynamic";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-	title: "Settings — account, wallets & sessions",
+	title: "Settings — account, theme & sessions",
 	description:
-		"Manage your OMA account — wallets, API keys, theme, sessions, and danger-zone actions.",
+		"Manage your OMA account — profile, theme, sessions, privacy export, and danger-zone actions.",
 	alternates: { canonical: "/settings" },
 	robots: { index: false, follow: false },
 };

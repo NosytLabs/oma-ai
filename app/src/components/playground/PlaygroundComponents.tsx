@@ -87,44 +87,4 @@ export function StatsBar({ messages, model = "llama-3.3-70b" }: StatsBarProps) {
 	);
 }
 
-export function MobileStatsBar({
-	messages,
-	model = "llama-3.3-70b",
-}: StatsBarProps) {
-	const { inputPer1M, outputPer1M } = getModelPricing(model);
-	const totalTokens = messages.reduce((acc, m) => acc + (m.tokens || 0), 0);
-	const totalCost = messages.reduce((acc, m) => {
-		if (m.inputTokens && m.outputTokens) {
-			const inputCost = (m.inputTokens / 1_000_000) * inputPer1M;
-			const outputCost = (m.outputTokens / 1_000_000) * outputPer1M;
-			return acc + inputCost + outputCost;
-		}
-		return acc;
-	}, 0);
 
-	if (messages.length === 0) return null;
-
-	const msgCount = messages.filter((m) => m.role === "user").length;
-
-	return (
-		<div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-text-muted font-mono">
-			<span className="bg-surface px-1.5 py-0.5 rounded-[var(--radius-sm)] border border-border">
-				{msgCount}
-				{msgCount === 1 ? " msg" : " msgs"}
-			</span>
-			{totalTokens > 0 && (
-				<>
-					<span className="bg-surface px-1.5 py-0.5 rounded-[var(--radius-sm)] border border-border">
-						{totalTokens >= 1000
-							? `${(totalTokens / 1000).toFixed(1)}k`
-							: totalTokens}{" "}
-						tok
-					</span>
-					<span className="bg-success-dim text-success px-1.5 py-0.5 rounded-[var(--radius-sm)] border border-success/30">
-						{totalCost === 0 ? "FREE" : `$${totalCost.toFixed(2)}`}
-					</span>
-				</>
-			)}
-		</div>
-	);
-}

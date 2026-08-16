@@ -83,7 +83,7 @@ export function FiatCheckoutPanel() {
 				method: "POST",
 				body: JSON.stringify({
 					plan: selected.plan,
-					successUrl: `${window.location.origin}/dashboard?tab=credits`,
+					successUrl: `${window.location.origin}/dashboard?deposit=success`,
 				}),
 			});
 			if (!res?.url) {

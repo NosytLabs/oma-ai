@@ -5,10 +5,6 @@
 
 // ─── Auth ──────────────────────────────────────────────────────────────────────
 
-interface NonceResponse {
-	nonce: string;
-}
-
 export interface User {
 	id: string;
 	email: string;
@@ -27,37 +23,6 @@ export interface User {
 	backupCodesRemaining?: number;
 	/** ISO timestamp of last password change (null for wallet-only accounts). */
 	lastPasswordChange?: string | null;
-}
-
-/** Response from POST /auth/verify (SIWE login). */
-interface VerifyResponse {
-	token: string;
-	/** The signer's address (0x… for EVM). */
-	address: string;
-	/** EVM-only address (post-0030 wallet link split). */
-	evmAddress?: string | null;
-	/** Mullvad-style 16-digit account number. */
-	accountNumber: string;
-	authMethod: "siwe";
-	/** Canonical user payload so clients can skip the follow-up /user call. */
-	user?: {
-		id: string;
-		address: string | null;
-		evmAddress?: string | null;
-		accountNumber?: string | null;
-		createdAt?: string | null;
-	};
-}
-
-/** Response from POST /auth/wallet (link wallet & get API key). */
-interface WalletResponse {
-	apiKey: string | null;
-	prefix: string;
-	id: string;
-	name: string;
-	createdAt: string;
-	/** Present when a wallet key already exists. */
-	warning?: string;
 }
 
 export interface ApiKey {
@@ -113,17 +78,6 @@ export interface CreditBatch {
 	paymentMethod: string | null;
 }
 
-/** Response from POST /v1/credits/purchase — creates a *pending* deposit only. */
-interface PurchaseCreditsResponse {
-	success: boolean;
-	depositId: string;
-	status: string;
-	amountCents: number;
-	paymentMethod: string;
-	autoReloadEnabled: boolean;
-	message?: string;
-}
-
 export interface AutoReloadSettings {
 	enabled: boolean;
 	thresholdCents: number;
@@ -152,50 +106,6 @@ export interface ModelsResponse {
 
 // ─── Deposit ──────────────────────────────────────────────────────────────────
 
-interface DepositStatus {
-	id: string;
-	type?: string;
-	status:
-		| "pending"
-		| "settling"
-		| "completed"
-		| "failed"
-		| "refunded"
-		| "expired";
-	amountUsd?: string;
-	creditsIssued?: string;
-	amountCents?: string;
-	createdAt: string;
-	settledAt?: string | null;
-	txHash?: string | null;
-	fromAmount?: string;
-	toAmount?: string;
-	pollError?: string;
-}
-
-interface Token {
-	id: string;
-	symbol: string;
-	name: string;
-	decimals: number;
-	address: string;
-	blockchain: string;
-	network?: string;
-	logoUrl?: string;
-}
-
-interface Quote {
-	quoteId: string;
-	fromToken: string;
-	toToken: string;
-	fromAmount: string;
-	toAmount: string;
-	rate: string;
-	estimatedTime: number;
-	swapType: string;
-	slippage: number;
-}
-
 // ─── Inference / Chat ─────────────────────────────────────────────────────────
 
 export interface HealthResponse {
@@ -214,36 +124,7 @@ export interface HealthResponse {
 	>;
 }
 
-interface ChatCompletionsResponse {
-	id: string;
-	object: string;
-	created: number;
-	model: string;
-	choices: Array<{
-		index: number;
-		message: { role: string; content: string };
-		finish_reason: string;
-	}>;
-	usage?: {
-		prompt_tokens: number;
-		completion_tokens: number;
-		total_tokens: number;
-	};
-}
-
 // ─── x402 payment protocol ────────────────────────────────────────────────────
-
-interface X402VerifyResponse {
-	valid: boolean;
-	address?: string;
-	error?: string;
-}
-
-interface X402SettleResponse {
-	settled: boolean;
-	receipt?: string;
-	error?: string;
-}
 
 // ─── Sessions ─────────────────────────────────────────────────────────────────
 

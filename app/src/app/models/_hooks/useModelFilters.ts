@@ -9,6 +9,7 @@ import {
 	MODALITY_LABELS,
 	MODALITY_ORDER,
 	MODELS,
+	TIER_ORDER,
 	type Model,
 } from "@/lib/models-data";
 import { TIER_LABELS } from "../_lib/labels";
@@ -265,13 +266,7 @@ export function useModelFilters() {
 		if (sortBy === "tier") {
 			const sections: ModelGroup[] = [];
 
-			const TIER_ORDER_CANONICAL: (
-				| "budget"
-				| "mid"
-				| "premium"
-				| "frontier"
-			)[] = ["budget", "mid", "premium", "frontier"];
-			for (const tier of TIER_ORDER_CANONICAL) {
+			for (const tier of TIER_ORDER) {
 				const ms = modelsByTier[tier] || [];
 				if (ms.length > 0) {
 					sections.push({

@@ -32,6 +32,8 @@ export interface DataPoint {
 interface AreaChartComponentProps {
 	data: DataPoint[];
 	showCostArea?: boolean;
+	/** date-fns pattern for the X-axis. Default is calendar day. */
+	tickPattern?: string;
 }
 
 const CustomTooltip = ({
@@ -72,6 +74,7 @@ const CustomTooltip = ({
 export function AreaChartComponent({
 	data,
 	showCostArea = true,
+	tickPattern = "MMM d",
 }: AreaChartComponentProps) {
 	// useId() must run unconditionally (Rules of Hooks) — call it before the
 	// empty-state early return. Per-instance gradient ids so multiple AreaCharts
@@ -141,9 +144,10 @@ export function AreaChartComponent({
 						fontSize={11}
 						tickLine={false}
 						axisLine={false}
-						tickFormatter={(value) => formatChartDay(String(value), "EEE")}
+						tickFormatter={(value) => formatChartDay(String(value), tickPattern)}
 					/>
 					<YAxis
+						yAxisId="requests"
 						stroke="var(--color-text-tertiary)"
 						fontSize={11}
 						tickLine={false}
@@ -154,8 +158,20 @@ export function AreaChartComponent({
 								: value.toLocaleString()
 						}
 					/>
+					{showCostArea && (
+						<YAxis
+							yAxisId="cost"
+							orientation="right"
+							stroke="var(--color-text-tertiary)"
+							fontSize={11}
+							tickLine={false}
+							axisLine={false}
+							tickFormatter={(value) => `$${Number(value).toFixed(2)}`}
+						/>
+					)}
 					<Tooltip content={<CustomTooltip showCost={showCostArea} />} />
 					<Area
+						yAxisId="requests"
 						type="monotone"
 						dataKey="requests"
 						stroke="var(--color-accent)"
@@ -165,6 +181,7 @@ export function AreaChartComponent({
 					/>
 					{showCostArea && (
 						<Area
+							yAxisId="cost"
 							type="monotone"
 							dataKey="cost"
 							stroke="var(--color-secondary)"

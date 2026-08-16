@@ -28,7 +28,10 @@ Tooling for local development and operations.
 From repo root:
 
 ```bash
-npm run validate           # app + server: typecheck, lint, tests
-npm run validate:app
-npm run validate:server
+pnpm run validate           # app + server: typecheck, lint, tests
+pnpm run validate:app
+pnpm run validate:server
+pnpm run validate:typecheck
+pnpm run validate:lint
+pnpm run validate:test
 ```

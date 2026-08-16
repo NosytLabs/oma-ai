@@ -26,9 +26,10 @@ import {
 	Users as UsersIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/hooks/useAuth";
+import { useToast } from "@/components/ui/Toast";
 
 interface OpsSnapshot {
 	status: "ok" | "degraded";
@@ -147,33 +148,32 @@ export default function AdminPage() {
 		);
 	}
 
-	if (isReady && !isAdmin) {
+	if (!isAuthenticated) {
 		return (
-			<div className="flex min-h-screen items-center justify-center p-4 text-center bg-void text-text">
-				<div>
-					<h1 className="text-2xl font-bold mb-2">404</h1>
-					<p className="text-text-muted">This page could not be found.</p>
-				</div>
-			</div>
-		);
-	}
-
-	if (!isAuthenticated || !isAdmin) {
-		return (
-			<div className="mx-auto flex max-w-5xl flex-col items-center gap-4 px-6 py-24 text-center">
+			<div className="mx-auto flex min-h-full max-w-5xl flex-col items-center justify-center gap-4 px-6 py-24 text-center">
 				<ShieldCheck className="h-10 w-10 text-text-muted" />
 				<h1 className="text-lg font-semibold text-text">Admin access required</h1>
 				<p className="max-w-md text-sm text-text-secondary">
-					This dashboard is restricted to operators with an admin role on the
-					account {user?.email ? `(${user.email})` : ""}. Sign in with an admin
-					account to continue.
+					This dashboard is restricted to operators with an admin role.
+					Sign in with an admin account to continue.
 				</p>
 				<Link
-					href="/login"
+					href="/login?next=/admin"
 					className="rounded-[var(--radius-md)] border border-border bg-surface px-4 py-2 font-mono text-xs uppercase tracking-wider text-text-secondary transition-colors hover:border-accent/50 hover:text-text-bright"
 				>
 					Sign in
 				</Link>
+			</div>
+		);
+	}
+
+	if (!isAdmin) {
+		return (
+			<div className="flex min-h-[60vh] items-center justify-center p-4 text-center bg-void text-text">
+				<div>
+					<h1 className="text-2xl font-bold mb-2">404</h1>
+					<p className="text-text-muted">This page could not be found.</p>
+				</div>
 			</div>
 		);
 	}
@@ -373,8 +373,9 @@ export default function AdminPage() {
 				</section>
 
 				<SiteSettingsSection />
-				<UsersSection />
+				<RateLimitSection />
 			</div>
+			<UsersSection />
 		</div>
 	);
 }
@@ -395,15 +396,30 @@ interface AdminUser {
 	totalDepositedCents: string;
 }
 
+type AdminDialog =
+	| { kind: "credit"; user: AdminUser }
+	| { kind: "suspend"; user: AdminUser };
+
 function UsersSection() {
+	const toast = useToast();
 	const [q, setQ] = useState("");
+	const [debouncedQ, setDebouncedQ] = useState("");
+	const [cursor, setCursor] = useState<string | null>(null);
+	const [pages, setPages] = useState<AdminUser[][]>([]);
+	const [dialog, setDialog] = useState<AdminDialog | null>(null);
 	const queryClient = useQueryClient();
 
+	useEffect(() => {
+		const t = window.setTimeout(() => setDebouncedQ(q.trim()), 300);
+		return () => window.clearTimeout(t);
+	}, [q]);
+
 	const users = useQuery({
-		queryKey: ["admin-users", q],
+		queryKey: ["admin-users", debouncedQ, cursor],
 		queryFn: async () => {
 			const params = new URLSearchParams({ limit: "50" });
-			if (q) params.set("q", q);
+			if (debouncedQ) params.set("q", debouncedQ);
+			if (cursor) params.set("cursor", cursor);
 			const res = await fetch(`/api/v1/admin/users?${params.toString()}`, {
 				credentials: "include",
 				headers: { Accept: "application/json" },
@@ -413,6 +429,23 @@ function UsersSection() {
 		},
 		staleTime: 30_000,
 	});
+
+	useEffect(() => {
+		setCursor(null);
+		setPages([]);
+	}, [debouncedQ]);
+
+	useEffect(() => {
+		if (!users.data?.items) return;
+		setPages((prev) => {
+			if (!cursor) return [users.data.items];
+			if (prev.some((page) => page[0]?.id === users.data.items[0]?.id)) return prev;
+			return [...prev, users.data.items];
+		});
+	}, [users.data, cursor]);
+
+	const items = pages.flat();
+	const nextCursor = users.data?.nextCursor ?? null;
 
 	const suspend = useMutation({
 		mutationFn: async (input: { userId: string; suspended: boolean; reason: string }) => {
@@ -426,6 +459,8 @@ function UsersSection() {
 		},
 		onSuccess: () => {
 			void queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+			toast.success("User status updated");
+			setDialog(null);
 		},
 	});
 
@@ -445,6 +480,8 @@ function UsersSection() {
 		},
 		onSuccess: () => {
 			void queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+			toast.success("Credits adjusted");
+			setDialog(null);
 		},
 	});
 
@@ -466,11 +503,11 @@ function UsersSection() {
 				/>
 			</header>
 
-			{users.isLoading ? (
+			{users.isLoading && items.length === 0 ? (
 				<p className="text-xs text-text-muted">Loading users…</p>
-			) : users.isError ? (
+			) : users.isError && items.length === 0 ? (
 				<p className="text-xs text-error">Failed to load users.</p>
-			) : (users.data?.items.length ?? 0) === 0 ? (
+			) : items.length === 0 ? (
 				<p className="text-xs text-text-muted">No users found.</p>
 			) : (
 				<div className="overflow-x-auto">
@@ -486,7 +523,7 @@ function UsersSection() {
 							</tr>
 						</thead>
 						<tbody>
-							{users.data?.items.map((u) => (
+							{items.map((u) => (
 								<tr
 									key={u.id}
 									className="border-t border-border/40 hover:bg-surface/40"
@@ -520,24 +557,7 @@ function UsersSection() {
 										<div className="inline-flex items-center gap-1">
 											<button
 												type="button"
-												onClick={() => {
-													const cents = prompt(
-														`Adjust credits for ${u.email ?? u.id}\n(positive = add, negative = deduct)`,
-														"100",
-													);
-													if (!cents) return;
-													const delta = parseInt(cents, 10);
-													if (!Number.isFinite(delta) || delta === 0) return;
-													const reason = prompt(
-														"Reason (audit log):",
-														"admin adjustment",
-													) ?? "admin adjustment";
-													creditAdjust.mutate({
-														userId: u.id,
-														deltaCents: delta,
-														reason,
-													});
-												}}
+												onClick={() => setDialog({ kind: "credit", user: u })}
 												className="rounded-[var(--radius-sm)] border border-border bg-surface px-2 py-1 text-[10px] font-mono uppercase tracking-wider text-text-secondary hover:border-accent/40 hover:text-accent"
 												title="Adjust credits"
 											>
@@ -545,20 +565,7 @@ function UsersSection() {
 											</button>
 											<button
 												type="button"
-												onClick={() => {
-													const reason = prompt(
-														u.suspended
-															? "Reason to unsuspend (audit log):"
-															: "Reason to suspend (audit log):",
-														"policy violation",
-													) ?? "";
-													if (reason.length < 3) return;
-													suspend.mutate({
-														userId: u.id,
-														suspended: !u.suspended,
-														reason,
-													});
-												}}
+												onClick={() => setDialog({ kind: "suspend", user: u })}
 												className={`rounded-[var(--radius-sm)] border px-2 py-1 text-[10px] font-mono uppercase tracking-wider ${
 													u.suspended
 														? "border-success/30 bg-success/10 text-success hover:border-success/50"
@@ -581,11 +588,256 @@ function UsersSection() {
 				</div>
 			)}
 
+			{nextCursor && (
+				<button
+					type="button"
+					onClick={() => setCursor(String(nextCursor))}
+					disabled={users.isFetching}
+					className="mt-3 inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-border bg-void px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-text-secondary hover:border-accent/40 hover:text-accent disabled:opacity-50"
+				>
+					{users.isFetching ? "Loading…" : "Load more"}
+				</button>
+			)}
+
 			{(creditAdjust.isError || suspend.isError) && (
 				<p className="mt-3 text-xs text-error">
 					{(creditAdjust.error as Error)?.message ??
 						(suspend.error as Error)?.message ??
 						"Action failed."}
+				</p>
+			)}
+
+			{dialog && (
+				<AdminActionDialog
+					dialog={dialog}
+					busy={creditAdjust.isPending || suspend.isPending}
+					onClose={() => setDialog(null)}
+					onCredit={(deltaCents, reason) =>
+						creditAdjust.mutate({
+							userId: dialog.user.id,
+							deltaCents,
+							reason,
+						})
+					}
+					onSuspend={(reason) =>
+						suspend.mutate({
+							userId: dialog.user.id,
+							suspended: !dialog.user.suspended,
+							reason,
+						})
+					}
+				/>
+			)}
+		</section>
+	);
+}
+
+function AdminActionDialog({
+	dialog,
+	busy,
+	onClose,
+	onCredit,
+	onSuspend,
+}: {
+	dialog: AdminDialog;
+	busy: boolean;
+	onClose: () => void;
+	onCredit: (deltaCents: number, reason: string) => void;
+	onSuspend: (reason: string) => void;
+}) {
+	const [dollars, setDollars] = useState("1.00");
+	const [reason, setReason] = useState(
+		dialog.kind === "credit"
+			? "admin adjustment"
+			: dialog.user.suspended
+				? "unsuspend"
+				: "policy violation",
+	);
+	const who = dialog.user.email ?? dialog.user.id;
+	const deltaCents = Math.round(Number(dollars) * 100);
+	const creditValid = Number.isFinite(deltaCents) && deltaCents !== 0;
+	const reasonValid = reason.trim().length >= 3;
+
+	return (
+		<div
+			className="fixed inset-0 z-50 flex items-center justify-center bg-overlay/70 p-4"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="admin-action-title"
+		>
+			<div className="w-full max-w-md rounded-[var(--radius-lg)] border border-border bg-panel p-5 shadow-xl">
+				<h3
+					id="admin-action-title"
+					className="text-sm font-semibold text-text-bright"
+				>
+					{dialog.kind === "credit"
+						? `Adjust credits · ${who}`
+						: dialog.user.suspended
+							? `Unsuspend · ${who}`
+							: `Suspend · ${who}`}
+				</h3>
+				{dialog.kind === "credit" ? (
+					<label className="mt-4 block text-xs text-text-muted">
+						Amount in dollars (negative deducts)
+						<input
+							type="number"
+							step="0.01"
+							value={dollars}
+							onChange={(e) => setDollars(e.target.value)}
+							className="mt-1.5 min-h-11 w-full rounded-[var(--radius-md)] border border-border bg-void px-3 text-sm text-text-bright focus:border-accent/50 focus:outline-none"
+						/>
+					</label>
+				) : (
+					<p className="mt-3 text-xs text-text-secondary">
+						This is written to the audit log. Type a reason of at least 3
+						characters.
+					</p>
+				)}
+				<label className="mt-3 block text-xs text-text-muted">
+					Reason
+					<input
+						type="text"
+						value={reason}
+						onChange={(e) => setReason(e.target.value)}
+						className="mt-1.5 min-h-11 w-full rounded-[var(--radius-md)] border border-border bg-void px-3 text-sm text-text-bright focus:border-accent/50 focus:outline-none"
+					/>
+				</label>
+				<div className="mt-5 flex justify-end gap-2">
+					<button
+						type="button"
+						onClick={onClose}
+						disabled={busy}
+						className="btn-secondary h-10 px-4 text-xs"
+					>
+						Cancel
+					</button>
+					<button
+						type="button"
+						disabled={
+							busy ||
+							!reasonValid ||
+							(dialog.kind === "credit" && !creditValid)
+						}
+						onClick={() => {
+							if (dialog.kind === "credit") onCredit(deltaCents, reason.trim());
+							else onSuspend(reason.trim());
+						}}
+						className="btn-primary h-10 px-4 text-xs disabled:opacity-40"
+					>
+						{busy ? "Saving…" : "Confirm"}
+					</button>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+function RateLimitSection() {
+	const [userId, setUserId] = useState("");
+	const [rpm, setRpm] = useState("120");
+	const [reason, setReason] = useState("operator override");
+	const [status, setStatus] = useState<string | null>(null);
+	const mutate = useMutation({
+		mutationFn: async (input: {
+			userId: string;
+			maxRequestsPerMinute: number | null;
+			reason: string;
+		}) => {
+			const res = await fetch("/api/v1/admin/rate-limit-override", {
+				method: "POST",
+				credentials: "include",
+				headers: { "Content-Type": "application/json", Accept: "application/json" },
+				body: JSON.stringify(input),
+			});
+			if (!res.ok) throw new Error(`override failed: ${res.status}`);
+			return res.json() as Promise<{ ok: boolean; maxRequestsPerMinute: number | null }>;
+		},
+		onSuccess: (data) => {
+			setStatus(
+				data.maxRequestsPerMinute == null
+					? "Override cleared"
+					: `Override set to ${data.maxRequestsPerMinute}/min`,
+			);
+		},
+		onError: (err) => {
+			setStatus(err instanceof Error ? err.message : "Override failed");
+		},
+	});
+
+	const trimmed = userId.trim();
+	const rpmNum = Number.parseInt(rpm, 10);
+
+	return (
+		<section
+			className="rounded-[var(--radius-lg)] border border-border bg-surface p-4"
+			aria-label="Rate-limit overrides"
+		>
+			<h2 className="mb-3 font-mono text-[10px] uppercase tracking-widest text-text-muted">
+				Rate-limit override
+			</h2>
+			<p className="mb-3 text-[11px] text-text-muted">
+				Set a per-user requests/minute cap, or clear an existing override.
+			</p>
+			<div className="grid gap-2 sm:grid-cols-3">
+				<input
+					type="text"
+					value={userId}
+					onChange={(e) => setUserId(e.target.value)}
+					placeholder="User ID"
+					aria-label="User ID"
+					className="rounded-[var(--radius-md)] border border-border bg-void px-2.5 py-1.5 font-mono text-xs text-text-bright placeholder:text-text-muted focus:border-accent/50 focus:outline-none"
+				/>
+				<input
+					type="number"
+					min={1}
+					max={10000}
+					value={rpm}
+					onChange={(e) => setRpm(e.target.value)}
+					aria-label="Requests per minute"
+					className="rounded-[var(--radius-md)] border border-border bg-void px-2.5 py-1.5 font-mono text-xs text-text-bright focus:border-accent/50 focus:outline-none"
+				/>
+				<input
+					type="text"
+					value={reason}
+					onChange={(e) => setReason(e.target.value)}
+					placeholder="Reason"
+					aria-label="Override reason"
+					className="rounded-[var(--radius-md)] border border-border bg-void px-2.5 py-1.5 text-xs text-text-bright placeholder:text-text-muted focus:border-accent/50 focus:outline-none"
+				/>
+			</div>
+			<div className="mt-3 flex flex-wrap gap-2">
+				<button
+					type="button"
+					disabled={mutate.isPending || !trimmed || !Number.isFinite(rpmNum)}
+					onClick={() =>
+						mutate.mutate({
+							userId: trimmed,
+							maxRequestsPerMinute: rpmNum,
+							reason: reason.trim() || "operator override",
+						})
+					}
+					className="rounded-[var(--radius-md)] border border-accent/30 bg-accent/10 px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-accent hover:bg-accent/20 disabled:opacity-50"
+				>
+					Apply
+				</button>
+				<button
+					type="button"
+					disabled={mutate.isPending || !trimmed}
+					onClick={() =>
+						mutate.mutate({
+							userId: trimmed,
+							maxRequestsPerMinute: null,
+							reason: reason.trim() || "clear override",
+						})
+					}
+					className="rounded-[var(--radius-md)] border border-border bg-void px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-text-secondary hover:border-error/40 hover:text-error disabled:opacity-50"
+				>
+					Clear
+				</button>
+			</div>
+			{status && (
+				<p className="mt-2 text-[11px] text-text-muted" role="status">
+					{status}
 				</p>
 			)}
 		</section>
@@ -598,6 +850,31 @@ function SiteSettingsSection() {
 	const [cryptoEnabled, setCryptoEnabled] = useState(true);
 	const [message, setMessage] = useState("");
 	const queryClient = useQueryClient();
+	const current = useQuery({
+		queryKey: ["site-settings"],
+		queryFn: async () => {
+			const res = await fetch("/api/v1/site-settings", {
+				credentials: "include",
+				headers: { Accept: "application/json" },
+			});
+			if (!res.ok) throw new Error(`site-settings ${res.status}`);
+			return (await res.json()) as {
+				maintenanceMode?: boolean;
+				cardPaymentsEnabled?: boolean;
+				cryptoPaymentsEnabled?: boolean;
+				maintenanceMessage?: string;
+			};
+		},
+		staleTime: 15_000,
+	});
+	useEffect(() => {
+		const data = current.data;
+		if (!data) return;
+		setMaintenance(Boolean(data.maintenanceMode));
+		setCardEnabled(data.cardPaymentsEnabled !== false);
+		setCryptoEnabled(data.cryptoPaymentsEnabled !== false);
+		setMessage(data.maintenanceMessage ?? "");
+	}, [current.data]);
 
 	const setSettings = useMutation({
 		mutationFn: async (input: {
@@ -671,7 +948,7 @@ function SiteSettingsSection() {
 			<div className="mt-4 flex items-center justify-end gap-2">
 				<button
 					type="button"
-					disabled={setSettings.isPending}
+					disabled={setSettings.isPending || current.isLoading}
 					onClick={() =>
 						setSettings.mutate({
 							maintenanceMode: maintenance,

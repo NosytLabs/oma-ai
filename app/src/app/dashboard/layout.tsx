@@ -1,7 +1,6 @@
 // Auth-gated product surface — render at request time only.
 export const dynamic = "force-dynamic";
 
-import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -37,22 +36,8 @@ export default function DashboardLayout({
 	children: React.ReactNode;
 }) {
 	return (
-		<div className="min-h-[calc(100dvh-3.5rem)] md:min-h-[calc(100dvh-2.75rem)] bg-void text-text-secondary font-mono">
+		<div className="bg-void text-text-secondary">
 			{children}
-			<footer className="mx-auto mt-16 max-w-5xl border-t border-border px-4 py-6 text-[10px] font-mono text-text-muted sm:px-8">
-				<div className="flex flex-wrap items-center justify-between gap-3">
-					<span className="uppercase tracking-widest text-text-secondary/70">
-						OMA · One gateway · Every model
-					</span>
-					<Link
-						href="/settings"
-						className="text-text-muted transition-colors duration-200 ease-out hover:text-text"
-						aria-label="Open account settings"
-					>
-						Settings
-					</Link>
-				</div>
-			</footer>
 		</div>
 	);
 }

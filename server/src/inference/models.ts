@@ -598,7 +598,10 @@ export function surplusAvailable(m: ModelDef): boolean {
 
 function isConfiguredKey(key: string | undefined): boolean {
 		if (!key || key.length < 16) return false;
-		if (/^(placeholder|plch|your-|dev-|zyloo_|openbroker_|venice_|surplus_)/i.test(key)) {
+		if (/placeholder|changeme|your-key|example/i.test(key)) return false;
+		// Only reject obvious dummy prefixes — real Venice keys start with VENICE_.
+		if (/^(plch-|your-|dev-)/i.test(key)) return false;
+		if (/^(zyloo_|openbroker_|surplus_)(placeh|changeme|your|xxx|dummy)/i.test(key)) {
 				return false;
 		}
 		return true;

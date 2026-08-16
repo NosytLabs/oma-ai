@@ -17,7 +17,7 @@ export function ProviderHealthSummary() {
 
 	if (!data?.checks) {
 		return (
-			<div className="flex flex-col p-6 bg-void">
+			<div className="flex h-full flex-col justify-between rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)]/30 p-6 shadow-[var(--shadow-md)]">
 				<div className="mb-6 flex items-start justify-between">
 					<div>
 						<h2 className="text-sm font-semibold text-text-bright">

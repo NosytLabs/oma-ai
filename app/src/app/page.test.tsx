@@ -1,6 +1,6 @@
 import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { Footer } from "@/components/footer";
 import HomePage from "./page";
@@ -173,16 +173,16 @@ describe("HomePage", () => {
 		await waitFor(() => {
 			const signalEl = screen.getByText(/product facts/i);
 			expect(signalEl).toBeInTheDocument();
-			const section = signalEl.closest("section");
-			expect(section).toBeInTheDocument();
-			expect(within(section!).getByText(/1M tokens/i)).toBeInTheDocument();
+			expect(screen.getByText(/per 1M tokens/i)).toBeInTheDocument();
 		});
 	});
 
 	it("renders the x402 banner", async () => {
 		renderWithQueryClient(<HomePage />);
 		await waitFor(() => {
-			expect(screen.getByText(/HTTP 402 payments for agents/i)).toBeInTheDocument();
+			expect(
+				screen.getByRole("heading", { name: /HTTP 402 payments/i }),
+			).toBeInTheDocument();
 			expect(
 				screen.getByText(/No pre-funded account required/i),
 			).toBeInTheDocument();

@@ -27,5 +27,3 @@ export const BRAND_COLORS = {
 	/** Meta / captions. Matches `--color-text-muted`. */
 	textMuted: "#9aa394",
 } as const;
-
-type BrandColor = (typeof BRAND_COLORS)[keyof typeof BRAND_COLORS];

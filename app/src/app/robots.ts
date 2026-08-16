@@ -1,6 +1,9 @@
 import type { MetadataRoute } from "next";
 
 export default function robots(): MetadataRoute.Robots {
+	const baseUrl =
+		process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") ||
+		"https://oma-ai.com";
 	return {
 		rules: [
 			{
@@ -15,7 +18,6 @@ export default function robots(): MetadataRoute.Robots {
 					"/settings",
 					"/settings/",
 					"/login",
-					"/api-keys",
 					// Auth-gated product surfaces (session required)
 					"/deposit",
 					"/deposit/",
@@ -24,6 +26,6 @@ export default function robots(): MetadataRoute.Robots {
 				],
 			},
 		],
-		sitemap: "https://oma-ai.com/sitemap.xml",
+		sitemap: `${baseUrl}/sitemap.xml`,
 	};
 }

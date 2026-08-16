@@ -46,12 +46,31 @@ interface ErrorClassification {
 	};
 }
 
-function classifyError(error: string): ErrorClassification {
+function classifyError(
+	error: string,
+	onRetry?: () => void,
+): ErrorClassification {
 	const lower = error.toLowerCase();
 
 	// Rate limit errors must be checked BEFORE auth — the daily-limit error
 	// string contains "Sign in for 100 requests/day" which would otherwise
 	// be misclassified as an auth failure.
+	if (
+		lower.includes("temporarily unavailable") ||
+		lower.includes("503") ||
+		lower.includes("service_unavailable")
+	) {
+		return {
+			type: "network",
+			label: "GATEWAY UNAVAILABLE",
+			suggestion:
+				"The inference gateway is temporarily unavailable. Retry in a moment — this is usually a rate-limit or Redis blip, not your prompt.",
+			action: onRetry
+				? { label: "Retry", onClick: onRetry }
+				: undefined,
+		};
+	}
+
 	if (
 		lower.includes("daily") ||
 		lower.includes("rate limit") ||
@@ -229,7 +248,7 @@ export function ChatErrorBanner({
 	const [retrying, setRetrying] = useState(false);
 	const [countdown, setCountdown] = useState<number | null>(null);
 
-	const classification = error ? classifyError(error) : null;
+	const classification = error ? classifyError(error, onRetry) : null;
 	const styles = classification ? TYPE_STYLES[classification.type] : null;
 	const Icon = classification ? TYPE_ICONS[classification.type] : AlertCircle;
 

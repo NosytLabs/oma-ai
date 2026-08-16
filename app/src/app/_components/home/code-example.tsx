@@ -81,17 +81,17 @@ function TerminalExample({ code }: { code: string }) {
 	return (
 		<div className="relative max-w-full min-w-0">
 			<div
-				className="pointer-events-none absolute -inset-px rounded-[12px] opacity-50"
+				className="pointer-events-none absolute -inset-px rounded-[var(--radius-lg)] opacity-40"
 				style={{
 					background:
-						"linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 40%, transparent), transparent 50%, color-mix(in srgb, var(--color-accent) 30%, transparent))",
+						"linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 30%, transparent), transparent 50%, color-mix(in srgb, var(--color-accent) 20%, transparent))",
 					padding: 1,
 				}}
 				aria-hidden="true"
 			/>
 
-			<div className="relative w-full min-w-0 overflow-hidden border-border bg-[var(--color-surface-elevated)] rounded-[12px]">
-				<div className="flex min-w-0 items-center gap-2 border-b border-border bg-[var(--color-surface)] px-4 py-3">
+			<div className="relative w-full min-w-0 overflow-hidden border-border bg-[var(--color-surface-elevated)] rounded-[var(--radius-lg)] shadow-[0_30px_60px_-20px_rgba(0,0,0,0.6)]">
+				<div className="flex min-w-0 items-center gap-2 border-b border-border bg-[var(--color-surface)] px-4 py-2.5">
 					<span className="h-2.5 w-2.5 shrink-0 rounded-full bg-error" aria-hidden="true" />
 					<span className="h-2.5 w-2.5 shrink-0 rounded-full bg-warning" aria-hidden="true" />
 					<span className="h-2.5 w-2.5 shrink-0 rounded-full bg-success" aria-hidden="true" />

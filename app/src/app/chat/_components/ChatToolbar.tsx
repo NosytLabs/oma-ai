@@ -11,9 +11,7 @@ import {
 	FileDown,
 	FileText,
 	FileJson,
-	PlusCircle,
 	Keyboard,
-	MessageSquare,
 	Settings2,
 	Share2,
 	Trash2,
@@ -28,6 +26,7 @@ import type { Message } from "@/components/chat";
 import { formatCreditsShort } from "@/components/chat/useBalance";
 import { btnBase } from "@/components/playground/PlaygroundComponents";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { useToast } from "@/components/ui/Toast";
 import type { BalanceResponse } from "@/lib/api";
 
 const LazyModelSelector = dynamic(
@@ -61,7 +60,6 @@ export interface ChatToolbarProps {
 	setCompareMode: Dispatch<SetStateAction<boolean>>;
 	shareStatus: "default" | "success" | "error";
 	shareConversation: () => void;
-	exportStatus: "default" | "loading" | "success" | "error";
 	exportConversation: (format?: "json" | "txt" | "md") => void;
 	importConversation?: (messages: Message[]) => void;
 	newConversation?: () => void;
@@ -110,7 +108,6 @@ export function ChatToolbar({
 	setCompareMode,
 	shareStatus,
 	shareConversation,
-	exportStatus,
 	exportConversation,
 	importConversation,
 	newConversation,
@@ -122,6 +119,7 @@ export function ChatToolbar({
 }: ChatToolbarProps) {
 	const isChat = variant === "chat";
 	const messageCount = messagesLength;
+	const toast = useToast();
 	const [exportMenuOpen, setExportMenuOpen] = useState(false);
 	const exportMenuRef = useRef<HTMLDivElement>(null);
 
@@ -184,32 +182,28 @@ export function ChatToolbar({
 			    and PARAMS hide (Create studio picks its own model) but the
 			    Chat | Create tabs stay so the user can switch back. */}
 			<div className="flex min-w-0 max-w-full basis-full items-center gap-1.5 sm:gap-2 md:flex-1 md:basis-auto">
-				{true && (
-					<>
-						<div className="min-w-0 max-w-[min(12rem,calc(100%-2.75rem))] flex-1 overflow-hidden sm:max-w-[200px] md:max-w-[220px]">
-							<LazyModelSelector
-								model={model}
-								setModel={setModel}
-								isAuthenticated={isAuthenticated}
-								onAuthRequired={onAuthRequired}
-							/>
-						</div>
+				<div className="min-w-0 max-w-[min(14rem,calc(100%-3rem))] flex-1 overflow-hidden sm:max-w-[220px] md:max-w-[260px]">
+					<LazyModelSelector
+						model={model}
+						setModel={setModel}
+						isAuthenticated={isAuthenticated}
+						onAuthRequired={onAuthRequired}
+					/>
+				</div>
 
-						<button
-							type="button"
-							onClick={() => setParamsOpen(!paramsOpen)}
-							aria-label="PARAMS — toggle parameters panel (Cmd+/)"
-							aria-pressed={paramsOpen}
-							className={`${btnBase} shrink-0 min-h-9 min-w-9 sm:min-h-10 sm:min-w-10 transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${paramsOpen ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
-							title="Toggle Parameters (Cmd+/)"
-						>
-							<Settings2 className="h-4 w-4" />
-							<span className="hidden lg:inline text-[11px] font-semibold tracking-wider">
-								PARAMS
-							</span>
-						</button>
-					</>
-				)}
+				<button
+					type="button"
+					onClick={() => setParamsOpen(!paramsOpen)}
+					aria-label="PARAMS — toggle parameters panel (Cmd+/)"
+					aria-pressed={paramsOpen}
+					className={`${btnBase} shrink-0 min-h-11 min-w-11 sm:min-h-10 sm:min-w-10 transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${paramsOpen ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
+					title="Toggle Parameters (Cmd+/)"
+				>
+					<Settings2 className="h-4 w-4" />
+					<span className="hidden lg:inline text-[11px] font-semibold tracking-wider">
+						PARAMS
+					</span>
+				</button>
 
 				{/* Chat-only mode — no Create tab. The chat surface is text + multimodal LLM only. */}
 
@@ -238,7 +232,7 @@ export function ChatToolbar({
 					type="button"
 					onClick={() => setCompareMode(!compareMode)}
 					aria-label="Compare models side-by-side"
-					className={`${btnBase} hidden shrink-0 sm:flex min-h-9 min-w-9 sm:min-h-10 sm:min-w-10 transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${compareMode ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
+					className={`${btnBase} max-sm:!hidden shrink-0 sm:inline-flex min-h-9 min-w-9 sm:min-h-10 sm:min-w-10 transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${compareMode ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
 					title="Compare models side-by-side"
 					aria-pressed={compareMode}
 				>
@@ -253,7 +247,7 @@ export function ChatToolbar({
 					onClick={shareConversation}
 					disabled={shareStatus === "default" && messagesLength === 0}
 					data-state={shareStatus}
-					className={`${btnBase} hidden shrink-0 focus-ring transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] data-[state=success]:border-success/30 data-[state=success]:bg-success/10 data-[state=success]:text-success md:inline-flex min-h-9 min-w-9 sm:min-h-10 sm:min-w-10`}
+					className={`${btnBase} max-md:!hidden shrink-0 focus-ring transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] data-[state=success]:border-success/30 data-[state=success]:bg-success/10 data-[state=success]:text-success md:inline-flex min-h-9 min-w-9 sm:min-h-10 sm:min-w-10`}
 					title="Copy a link that opens this chat with the current model pre-selected"
 					aria-label="SHARE — copy a link that opens this chat with the current model pre-selected"
 				>
@@ -272,7 +266,7 @@ export function ChatToolbar({
 				<button
 					type="button"
 					onClick={() => setShortcutsOpen(true)}
-					className={`${btnBase} max-sm:hidden shrink-0 focus-ring transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] sm:inline-flex min-h-9 min-w-9 sm:min-h-10 sm:min-w-10`}
+					className={`${btnBase} max-sm:!hidden shrink-0 focus-ring transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] sm:inline-flex min-h-9 min-w-9 sm:min-h-10 sm:min-w-10`}
 					title="Keyboard shortcuts (?)"
 					aria-label="? — show keyboard shortcuts"
 				>
@@ -294,7 +288,7 @@ export function ChatToolbar({
 				<button
 					type="button"
 					onClick={() => window.open('mailto:support@oma-ai.com?subject=OMA AI App Feedback', '_blank')}
-					className={`${btnBase} shrink-0 focus-ring transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] min-h-9 min-w-9 sm:min-h-10 sm:min-w-10`}
+					className={`${btnBase} max-sm:!hidden shrink-0 focus-ring transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] min-h-9 min-w-9 sm:inline-flex sm:min-h-10 sm:min-w-10`}
 					title="Provide Feedback / Report Bug"
 					aria-label="Provide Feedback"
 				>
@@ -304,7 +298,7 @@ export function ChatToolbar({
 				<div className="flex shrink-0 items-center gap-1">
 					{importConversation && (
 						<label
-							className={`${btnBase} focus-ring cursor-pointer transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] min-h-9 min-w-9 sm:min-h-10 sm:min-w-10`}
+							className={`${btnBase} max-sm:!hidden focus-ring cursor-pointer transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] min-h-9 min-w-9 sm:inline-flex sm:min-h-10 sm:min-w-10`}
 							title="Import conversation (JSON, MD, TXT)"
 						>
 							<Upload className="h-4 w-4" />
@@ -321,7 +315,7 @@ export function ChatToolbar({
 										importConversation(msgs);
 									} catch (err: unknown) {
 										const msg = err instanceof Error ? err.message : String(err);
-										alert("Failed to import: " + msg);
+										toast.error(msg || "Failed to import conversation");
 									}
 									e.target.value = "";
 								}} 

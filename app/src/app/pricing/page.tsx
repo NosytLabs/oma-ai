@@ -212,7 +212,7 @@ export default function PricingPage() {
 	const modelCount = models.length;
 
 	return (
-		<div className="relative min-h-screen overflow-hidden bg-void">
+		<div className="relative overflow-x-clip bg-void">
 			<BreadcrumbListJsonLd
 				items={[
 					{ name: "Home", url: "/" },
@@ -238,10 +238,10 @@ export default function PricingPage() {
 				<FloatingIcons count={6} />
 			</div>
 
-			<div className="container-page page-shell">
-				<div className="page-hero animate-[fadeInUp_0.6s_ease-out_both]">
+			<div className="container-page">
+				<div className="page-hero overflow-visible">
 					<span className="page-kicker">AI API Pricing</span>
-					<h1 className="h1-page text-text-bright">Transparent usage pricing for every model.</h1>
+					<h1 className="h1-page text-text-bright max-w-4xl">Transparent usage pricing for every model.</h1>
 					<p className="page-intro">
 						See model costs first, then choose how to pay. OMA bills per token
 						or per request, with no subscriptions, no lock-in. Base provider
@@ -256,19 +256,19 @@ export default function PricingPage() {
 				</div>
 
 				<InViewFade>
-					<div className="mb-10 grid grid-cols-1 gap-4 md:grid-cols-3">
+					<div className="mb-10 grid grid-cols-1 gap-4 md:grid-cols-2">
 						<m.div
 							whileHover={{ y: -4 }}
 							transition={springs.card}
-							className="surface-card p-5 rounded-[var(--radius-xl)] border border-transparent transition-[border-color,box-shadow] duration-200 ease-out hover:border-accent/30 hover:shadow-[var(--shadow-md)]"
+							className="surface-card p-5 rounded-[var(--radius-xl)] border border-transparent transition-[border-color,box-shadow] duration-200 ease-out hover:border-[var(--color-accent)]/30 hover:shadow-[var(--shadow-md)]"
 						>
-							<p className="text-[11px] font-mono uppercase tracking-[0.18em] text-text-muted">
+							<p className="text-[11px] font-mono uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
 								Starts at
 							</p>
-							<p className="mt-3 text-3xl font-semibold text-text-bright">
+							<p className="mt-3 font-geometric text-4xl font-medium tabular-nums tracking-tight text-[var(--color-text-bright)]">
 								{lowestInputPrice}
 							</p>
-							<p className="mt-2 text-sm leading-relaxed text-text">
+							<p className="mt-2 text-sm leading-relaxed text-[var(--color-text)]">
 								Lowest displayed price tier per 1M input tokens across the current
 								catalog.
 							</p>
@@ -276,35 +276,21 @@ export default function PricingPage() {
 						<m.div
 							whileHover={{ y: -4 }}
 							transition={springs.card}
-							className="surface-card p-5 rounded-[var(--radius-xl)] border border-transparent transition-[border-color,box-shadow] duration-200 ease-out hover:border-accent/30 hover:shadow-[var(--shadow-md)]"
+							className="surface-card p-5 rounded-[var(--radius-xl)] border border-transparent transition-[border-color,box-shadow] duration-200 ease-out hover:border-[var(--color-accent)]/30 hover:shadow-[var(--shadow-md)]"
 						>
-							<p className="text-[11px] font-mono uppercase tracking-[0.18em] text-text-muted">
+							<p className="text-[11px] font-mono uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
 								Pay your way
 							</p>
-							<p className="mt-3 text-3xl font-semibold text-text-bright">Card or USDC</p>
-							<p className="mt-2 text-sm leading-relaxed text-text">
+							<p className="mt-3 text-3xl font-semibold text-[var(--color-text-bright)]">Card or USDC</p>
+							<p className="mt-2 text-sm leading-relaxed text-[var(--color-text)]">
 								Buy credits with Visa or Mastercard via Polar, or top up with USDC on
 								Base.
 							</p>
-							<p className="mt-3 text-xs leading-relaxed text-text-muted">
+							<p className="mt-3 text-xs leading-relaxed text-[var(--color-text-muted)]">
 								x402 pay-per-request also supported for agents —{" "}
-								<Link href="#x402" className="font-medium text-accent hover:text-accent-hover transition-colors duration-200 ease-out inline-flex items-center">
+								<Link href="#x402" className="font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] transition-colors duration-200 ease-out inline-flex items-center">
 									see below →
 								</Link>
-							</p>
-						</m.div>
-						<m.div
-							whileHover={{ y: -4 }}
-							transition={springs.card}
-							className="surface-card p-5 rounded-[var(--radius-xl)] border border-transparent transition-[border-color,box-shadow] duration-200 ease-out hover:border-accent/30 hover:shadow-[var(--shadow-md)]"
-						>
-							<p className="text-[11px] font-mono uppercase tracking-[0.18em] text-text-muted">
-								No contract
-							</p>
-							<p className="mt-3 text-3xl font-semibold text-text-bright">No minimums</p>
-							<p className="mt-2 text-sm leading-relaxed text-text">
-								Ship one request or one million. Credits deduct in real time with a
-								clear ledger.
 							</p>
 						</m.div>
 					</div>
@@ -380,7 +366,13 @@ export default function PricingPage() {
 											<CreditCard className="h-4 w-4" aria-hidden="true" />
 											Buy with card
 										</Link>
-										<p className="mt-4 text-center text-[10px] font-mono uppercase tracking-wider text-text-muted/70">
+										<Link
+											href="/deposit?method=usdc"
+											className="mt-2 inline-flex min-h-10 w-full items-center justify-center text-xs font-mono text-text-muted underline-offset-4 hover:text-accent hover:underline"
+										>
+											or deposit USDC
+										</Link>
+										<p className="mt-3 text-center text-[10px] font-mono uppercase tracking-wider text-text-muted/70">
 											Powered by Polar
 										</p>
 									</m.article>
@@ -510,7 +502,7 @@ export default function PricingPage() {
 						</h2>
 						<div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center sm:gap-4">
 							<Link
-								href="/dashboard"
+								href="/login?next=/dashboard"
 								className="btn-primary inline-flex h-12 min-w-[10rem] items-center justify-center gap-2 px-6 text-[14px] font-semibold"
 							>
 								<Zap className="h-4 w-4" aria-hidden="true" />

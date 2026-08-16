@@ -161,7 +161,7 @@ oma-ai/
 | `pnpm validate` | Full CI gate: typecheck + lint + test (app + server) |
 | `pnpm validate:app` | Frontend only |
 | `pnpm validate:server` | Backend only |
-| `pnpm validate:test` | All unit / integration tests (~399 vitest suites) |
+| `pnpm validate:test` | All unit / integration tests (~500 cases across 72 vitest files, app/ + server/) |
 
 Always run `pnpm validate` locally before opening a pull request.
 

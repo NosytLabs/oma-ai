@@ -25,6 +25,14 @@
 export type Tier = "budget" | "mid" | "premium" | "frontier";
 
 /**
+	* Canonical display order for the four pricing tiers. Used by the
+	* /models listing, the /models/[slug] "related models" rail, and the
+	* /docs available-models section so every surface renders tiers in the
+	* same left-to-right order (cheapest → most capable).
+	*/
+export const TIER_ORDER: readonly Tier[] = ["budget", "mid", "premium", "frontier"];
+
+/**
 	* Modalities the catalog knows about. Text models carry a Tier (budget /
 	* mid / premium / frontier). All other modalities are priced per-unit
 	* (per-image, per-second, per-generation) and live alongside the chat
@@ -841,3 +849,14 @@ export function getModelsByTier(models: Model[]): Record<Tier, Model[]> {
 // `GET /v1/models` count — 26 curated chat models (18 Venice + 8 OMA-AI).
 // Keep in sync with `server/src/inference/models.ts` defaultCatalog().
 export const MODEL_COUNT = 26;
+
+// DRIFT GUARD: if anyone adds/removes an entry in `FALLBACK_CATALOG`
+// they MUST update `MODEL_COUNT` above — these are the marketing
+// numbers that show in the SSR `<title>`, hero stats, sitemap anchor,
+// and the trust strip. Throws at module-load time so a typecheck
+// or build never silently ships a stale count.
+if (MODELS.length !== MODEL_COUNT) {
+	throw new Error(
+		`models-data drift: FALLBACK_CATALOG has ${MODELS.length} entries but MODEL_COUNT is ${MODEL_COUNT}. Update both (see comment).`,
+	);
+}

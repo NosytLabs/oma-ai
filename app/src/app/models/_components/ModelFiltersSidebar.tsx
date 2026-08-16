@@ -1,6 +1,8 @@
 "use client";
 
 import type React from "react";
+import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { PROVIDER_COLORS } from "@/lib/models-data";
 import {
 	formatContextRange,
@@ -9,7 +11,7 @@ import {
 import { TIER_LABELS } from "../_lib/labels";
 
 interface ModelFiltersSidebarProps {
-	TIER_ORDER: ("budget" | "mid" | "premium" | "frontier")[];
+	TIER_ORDER: readonly ("budget" | "mid" | "premium" | "frontier")[];
 	TIER_ICONS: Record<string, React.ReactNode>;
 	selectedTier: string | null;
 	handleTier: (tier: string | null) => void;
@@ -53,6 +55,14 @@ export const ModelFiltersSidebar: React.FC<ModelFiltersSidebarProps> = ({
 	priceRange,
 	setPriceRange,
 }) => {
+	const [moreOpen, setMoreOpen] = useState(false);
+	const advancedCount =
+		inputModalities.length +
+		outputModalities.length +
+		capabilities.length +
+		(contextRange[0] > 0 || contextRange[1] < 2_000_000 ? 1 : 0) +
+		(priceRange[0] > 0 || priceRange[1] < 1000 ? 1 : 0);
+
 	return (
 		<div className="space-y-4">
 			{/* Tier Filter Chips */}
@@ -123,7 +133,28 @@ export const ModelFiltersSidebar: React.FC<ModelFiltersSidebarProps> = ({
 				</div>
 			)}
 
+			<button
+				type="button"
+				onClick={() => setMoreOpen((open) => !open)}
+				aria-expanded={moreOpen}
+				className="flex min-h-11 w-full items-center justify-between rounded-[var(--radius-lg)] border border-border bg-panel px-3 text-xs font-medium text-text-secondary transition-[border-color,background-color,color,transform] duration-200 ease-out hover:border-accent hover:text-text-bright active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent lg:hidden"
+			>
+				<span>
+					More filters
+					{advancedCount > 0 ? (
+						<span className="ml-2 rounded-full bg-accent/15 px-1.5 py-0.5 font-mono text-[10px] text-accent">
+							{advancedCount}
+						</span>
+					) : null}
+				</span>
+				<ChevronDown
+					className={`h-3.5 w-3.5 transition-transform duration-200 ${moreOpen ? "rotate-180" : ""}`}
+					aria-hidden="true"
+				/>
+			</button>
+
 			{/* Input Modalities */}
+			<div className={`${moreOpen ? "block" : "hidden"} space-y-4 lg:block`}>
 			<div>
 				<h2 className="font-mono text-xs uppercase tracking-widest text-text mb-2">
 					Input Modalities
@@ -313,6 +344,7 @@ export const ModelFiltersSidebar: React.FC<ModelFiltersSidebarProps> = ({
 						/>
 					</div>
 				</div>
+			</div>
 			</div>
 		</div>
 	);

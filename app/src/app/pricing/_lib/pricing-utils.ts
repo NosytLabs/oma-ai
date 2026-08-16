@@ -13,17 +13,17 @@ export interface PricedModel {
 	contextTokens: number;
 }
 
-const VENDOR_DISPLAY: Record<string, string> = {
-	venice: "Venice",
-	"oma-ai": "OMA-AI",
-};
-
 export function toPricedModel(model: Model): PricedModel {
+	// Provider is already the canonical customer-facing brand label
+	// ("Venice" | "OMA-AI") — `Provider` is typed in models-data.ts and
+	// `normalizeProvider()` upstream-maps any lowercase/alias string to it.
+	// No remap needed (the previous VENDOR_DISPLAY table only ever applied
+	// an identity transform because its lowercase keys never matched).
 	return {
 		id: model.id,
 		name: model.name,
 		category: model.tier as Category,
-		provider: VENDOR_DISPLAY[model.provider] ?? model.provider,
+		provider: model.provider,
 		inputPer1M: model.inputPricePer1M,
 		outputPer1M: model.outputPricePer1M,
 		ctx: model.contextLength,

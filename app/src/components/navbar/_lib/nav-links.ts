@@ -92,6 +92,7 @@ export const accountHrefs = [
 	"/dashboard",
 	"/deposit",
 	"/settings",
+	"/admin",
 	"/login",
 ] as const;
 
@@ -103,11 +104,20 @@ export function isCurrentPath(pathname: string, href: string): boolean {
 
 export function sectionLabelFor(pathname: string): string {
 	if (pathname === "/" || pathname === "") return "home";
-	const matched = [...primaryLinks, ...toolsLinks].find((link) =>
+	const matched = primaryLinks.find((link) =>
 		isCurrentPath(pathname, link.href),
 	);
-	if (matched) return matched.label.replace(/^\//, "").split("/")[0] ?? "home";
-	// Fallback: extract the first path segment (e.g. '/faq' → 'faq')
+	if (matched) {
+		const label = matched.label.replace(/^\//, "").split("/")[0];
+		return label ?? "home";
+	}
+	const toolsMatched = toolsLinks.find((link) =>
+		isCurrentPath(pathname, link.href),
+	);
+	if (toolsMatched) {
+		const label = toolsMatched.label.replace(/^\//, "").split("/")[0];
+		return label ?? "home";
+	}
 	const segment = pathname.split("/").filter(Boolean)[0];
 	return segment ?? "home";
 }

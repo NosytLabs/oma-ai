@@ -135,7 +135,6 @@ Content-Type: application/json`;
 	window.clearTimeout(currentTimer.current);
 	}
 	};
-	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [roundIdx]);
 
 	const isTyping = phase === "typing";
@@ -150,8 +149,8 @@ Content-Type: application/json`;
 	"relative overflow-hidden rounded-[var(--radius-xl)] border border-border-hi",
 	"bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-surface-elevated)_94%,transparent),var(--color-panel))]",
 	"shadow-[0_30px_60px_-30px_rgba(0,0,0,0.85)] backdrop-blur-sm w-full max-w-[560px] text-left",
-	// Increased height slightly to prevent any layout shifts with multi-line outputs
-	"h-[420px] flex flex-col",
+	// Compact height — animation cycles between requests without layout shift
+	"min-h-[340px] md:min-h-[360px] flex flex-col",
 	className,
 	)}
 	>
@@ -288,7 +287,7 @@ Content-Type: application/json`;
 	model · {round.modelLabel}
 	</span>
 	{round.free ? (
-	<span className="rounded-full border border-emerald/30 bg-emerald/10 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-emerald">
+	<span className="rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-accent">
 	free · gonka network
 	</span>
 	) : (

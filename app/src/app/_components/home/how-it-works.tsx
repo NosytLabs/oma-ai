@@ -2,7 +2,7 @@
 
 /**
 	* HowItWorks — section 4 of the homepage.
-	* 3-step horizontal process (vertical stack on mobile).
+	* 4-step process (stack on mobile, 2-up on tablet, 4-up on desktop).
 	* Numbered indicators use mono tabular numerals.
 	*/
 
@@ -49,37 +49,37 @@ const STEPS: Step[] = [
 	},
 	{
 	n: "04",
-	title: "Add MCP Agent Tools",
+	title: "Send your first request",
 	description:
-	"Extend your agents with Model Context Protocol. Provide custom tools directly in your workspace.",
+	"Point any OpenAI-compatible SDK at OMA. One key, one endpoint, every curated model.",
 	icon: Terminal,
 	},
 ];
 
 export function HowItWorks() {
 	return (
-	<section
+<section
 	aria-labelledby="how-it-works-headline"
-	className="relative border-t border-border-subtle bg-surface py-16 sm:py-20"
+	className="relative border-t border-border-subtle py-14 sm:py-18"
 	>
 	<div className="container-page">
 	<Reveal>
 	<SectionHeader
-	id="how-it-works-headline"
-	headline={
-	<>
-	Four steps
-	<br />
-	<span className="gradient-text-accent">to first request.</span>
-	</>
-	}
-	subhead="Sign in, create a key, fund credits (or use x402), and setup MCP. Point your OpenAI SDK at OMA and call."
+		id="how-it-works-headline"
+		headline={
+		<>
+		Four steps
+		<br />
+		<span className="gradient-text-accent">to first request.</span>
+		</>
+		}
+		subhead="Sign in, create a key, fund credits (or use x402), then point your OpenAI SDK at OMA and call."
 	/>
 	</Reveal>
 
 	<RevealStagger
 	as="ol"
-	className="mt-14 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 relative"
+	className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6 relative"
 	amount={0.2}
 	>
 	{STEPS.map((step, idx) => (
@@ -99,7 +99,7 @@ function StepCard({ step, isLast }: { step: Step; isLast: boolean }) {
 		<m.div
 	whileHover={{ y: -4 }}
 	transition={springs.card}
-	className="relative h-full surface-card p-7 flex flex-col gap-5 transition-[border-color,box-shadow] duration-200 ease-out hover:shadow-[var(--shadow-md)] hover:border-border-hi"
+	className="relative h-full surface-card p-7 flex flex-col gap-5 transition-[border-color,box-shadow] duration-200 ease-out hover:shadow-[0_12px_24px_-10px_rgba(0,0,0,1)] hover:bg-panel hover:border-border-hi"
 		>
 		<div className="flex items-center justify-between">
 		<span className="font-mono tabular-nums text-4xl sm:text-5xl font-bold text-accent leading-none">
@@ -124,7 +124,7 @@ function StepCard({ step, isLast }: { step: Step; isLast: boolean }) {
 		</div>
 		{!isLast && (
 		<div
-		className="hidden md:block absolute top-1/2 -right-4 w-px h-12 -translate-y-1/2 bg-gradient-to-b from-transparent via-accent to-transparent opacity-50"
+		className="hidden lg:block absolute top-1/2 -right-4 w-px h-12 -translate-y-1/2 bg-gradient-to-b from-transparent via-accent to-transparent opacity-50"
 		aria-hidden="true"
 		/>
 		)}

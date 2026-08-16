@@ -29,13 +29,3 @@ export interface ModelOption {
 	/** false when the serving provider key is missing/placeholder (server-reported) */
 	available?: boolean;
 }
-
-type TierFilter =
-	| "all"
-	| "frontier"
-	| "premium"
-	| "mid"
-	| "budget"
-	| "reasoning"
-	| "coding"
-	| "uncensored";

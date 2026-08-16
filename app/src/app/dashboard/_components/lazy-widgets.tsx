@@ -19,7 +19,7 @@ export const LazyProviderHealthSummary = dynamic(
 	{
 		ssr: false,
 		loading: () => (
-			<div className="flex min-h-[12rem] flex-col bg-void p-6">
+			<div className="flex min-h-[12rem] flex-col rounded-[var(--radius-xl)] border border-border bg-surface/30 p-6">
 				<Skeleton className="mb-2 h-4 w-28" />
 				<Skeleton className="mb-6 h-3 w-40" />
 				<Skeleton className="mb-2 h-4 w-32" />
@@ -38,12 +38,12 @@ export const LazyUsageChart = dynamic(
 	{
 		ssr: false,
 		loading: () => (
-			<div className="grid grid-cols-1 lg:grid-cols-2 gap-px bg-border">
-				<div className="bg-void p-6">
+			<div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+				<div className="rounded-[var(--radius-xl)] border border-border bg-surface/30 p-6">
 					<Skeleton className="h-4 w-20 mb-4" />
 					<Skeleton className="h-[300px] w-full" />
 				</div>
-				<div className="bg-void p-6">
+				<div className="rounded-[var(--radius-xl)] border border-border bg-surface/30 p-6">
 					<Skeleton className="h-4 w-24 mb-4" />
 					<Skeleton className="h-[280px] w-full" />
 				</div>

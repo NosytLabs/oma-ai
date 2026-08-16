@@ -170,9 +170,8 @@ function LoginInner() {
 		<div className="page-shell relative flex flex-col items-center justify-center px-4 py-10 sm:py-12">
 			<div className="container-page grid w-full max-w-5xl grid-cols-1 items-start gap-8 lg:grid-cols-[1fr_1fr] lg:gap-12">
 				<BrandPitch />
-				<div className="mx-auto w-full max-w-md">
-					<X402Callout />
-					<div className="mt-6 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-lg)]">
+				<div className="order-first mx-auto w-full max-w-md lg:order-none">
+					<div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-lg)]">
 						<h2 className="text-lg font-bold text-text-bright">
 							Choose how to sign in
 						</h2>
@@ -266,7 +265,10 @@ function LoginInner() {
 										inputMode="email"
 										placeholder="you@example.com"
 										value={email}
-										onChange={(e) => setEmail(e.target.value.trim())}
+										onChange={(e) => {
+											setEmail(e.target.value.trim());
+											if (magicSent) setMagicSent(false);
+										}}
 										required
 										// React 19 may disagree with the browser on an empty style attr
 										// during hydration of controlled inputs — suppress the noise.
@@ -317,6 +319,9 @@ function LoginInner() {
 								</div>
 							)}
 						</div>
+					</div>
+					<div className="mt-6">
+						<X402Callout />
 					</div>
 					<p className="mt-6 text-center text-xs text-text-muted">
 						By signing in you accept the{" "}
@@ -388,7 +393,7 @@ function BrandPitch() {
 		},
 	];
 	return (
-		<div className="space-y-6">
+		<div className="order-last space-y-6 lg:order-none">
 			<div className="surface-card p-8">
 				<OmaWordmark size="md" />
 				<h1 className="mt-6 text-3xl font-bold tracking-tight text-text-bright sm:text-4xl">

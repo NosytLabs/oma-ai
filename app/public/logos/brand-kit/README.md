@@ -19,6 +19,6 @@ This folder only holds **marketing rasters** that are not used by the app UI:
 | `oma-lockup-horizontal.jpg` / `.png` | Horizontal lockup for decks / social |
 | `oma-brand-card.png` | Higher-res marketing card raster |
 
-Do **not** re-export SVG geometry via image models. Prefer `image_edit` from the
-existing icon PNG when refreshing rasters. After regenerating live SVGs/PNGs,
+Do **not** re-export SVG geometry via image models — refresh rasters by
+re-rendering the live SVG masters. After regenerating live SVGs/PNGs,
 run `cd app && npm run brand:generate` (needs `rsvg-convert`).

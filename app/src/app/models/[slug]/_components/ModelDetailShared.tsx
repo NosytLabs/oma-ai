@@ -17,14 +17,14 @@ export function Stat({
 	unit: string;
 }) {
 	return (
-		<div className="rounded-2xl border border-border/50 bg-surface p-5">
+		<div className="rounded-[var(--radius-lg)] border border-border/50 bg-surface p-5 transition-colors duration-200 hover:border-accent/30">
 			<div className="font-mono text-[10px] uppercase tracking-widest text-text-muted mb-2">
 				{label}
 			</div>
-			<div className="text-2xl font-bold font-mono tabular-nums text-text-bright">
+			<div className="font-geometric text-[1.875rem] font-medium tabular-nums tracking-tight text-text-bright leading-none">
 				{value}
 			</div>
-			<div className="text-xs text-text-muted mt-1">{unit}</div>
+			<div className="text-xs text-text-muted mt-2">{unit}</div>
 		</div>
 	);
 }

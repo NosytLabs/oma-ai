@@ -7,7 +7,6 @@ import {
 	type LucideIcon,
 	Palette,
 	Shield,
-	Sparkles,
 	User as UserIcon,
 	X,
 } from "lucide-react";
@@ -123,7 +122,11 @@ function SettingsPageContent() {
 			router.replace("/dashboard?tab=api-keys");
 			return;
 		}
-		const parsed = parseSettingsTab(raw);
+		const hash =
+			typeof window !== "undefined"
+				? window.location.hash.replace(/^#/, "")
+				: "";
+		const parsed = parseSettingsTab(raw) ?? parseSettingsTab(hash);
 		if (parsed) setActiveTab(parsed);
 	}, [searchParams, router]);
 
@@ -151,6 +154,11 @@ function SettingsPageContent() {
 		setDeleting(true);
 		try {
 			await api.auth.deleteAccount();
+			try {
+				await signOut();
+			} catch {
+				/* session may already be gone */
+			}
 			window.location.href = "/";
 		} catch (e: unknown) {
 			setError(e instanceof Error ? e.message : "Account deletion failed");
@@ -186,14 +194,14 @@ function SettingsPageContent() {
 
 	if (!hasRealSession) {
 		return (
-			<div className="flex items-center justify-center px-4 py-10">
+			<div className="flex min-h-full items-center justify-center px-4 py-10">
 				<m.div
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
 					className="w-full max-w-xl"
 				>
 					<m.div
-						className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-[var(--radius-xl)] border border-[var(--color-accent)]/20 bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)]"
+						className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-accent)]/20 bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)]"
 						whileHover={{ scale: 1.05 }}
 						transition={springs.tab}
 					>
@@ -225,14 +233,14 @@ function SettingsPageContent() {
 					</ul>
 
 					<div className="flex flex-col items-center justify-center gap-2">
-		<Link
-				href="/login?next=/settings"
-				className="inline-flex h-10 items-center justify-center rounded-[var(--radius-sm)] border border-[var(--color-accent)] bg-[var(--color-accent)] px-4 text-sm font-semibold text-[var(--color-accent-fg)] transition-[background-color,transform] duration-200 ease-out hover:bg-[var(--color-accent-hover)] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-void"
-				aria-label="Sign in to manage your account"
-		>
-				Sign in →
-		</Link>
-</div>
+						<Link
+							href="/login?next=/settings"
+							className="inline-flex h-11 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-accent)] bg-[var(--color-accent)] px-5 text-sm font-semibold text-[var(--color-accent-fg)] transition-[background-color,transform] duration-200 ease-out hover:bg-[var(--color-accent-hover)] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-void"
+							aria-label="Sign in to manage your account"
+						>
+							Sign in →
+						</Link>
+					</div>
 					{evmAddress && (
 						<p className="mt-4 text-center text-[10px] font-mono text-text-muted">
 							Connected wallet: {evmAddress}
@@ -247,7 +255,7 @@ function SettingsPageContent() {
 		<div className="container-page max-w-5xl py-6 sm:py-8">
 			<div className="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
 				<m.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-					<h1 className="text-2xl font-bold tracking-tight text-text-bright">
+					<h1 className="h1-utility text-text-bright">
 						Settings
 					</h1>
 					<p className="mt-1 text-sm text-text-muted">
@@ -262,7 +270,7 @@ function SettingsPageContent() {
 					type="button"
 					onClick={handleLogout}
 					disabled={loggingOut}
-					className="inline-flex w-fit items-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-void)] px-3 py-1.5 text-xs font-medium text-text-muted transition-[border-color,background-color,color,opacity,transform] duration-200 ease-out hover:border-[var(--color-error)]/40 hover:bg-[color-mix(in_srgb,var(--color-error)_10%,transparent)] hover:text-[var(--color-error)] active:scale-[0.97] disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-error)] focus-visible:ring-offset-2 focus-visible:ring-offset-void"
+					className="inline-flex min-h-11 w-fit items-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-void)] px-3 py-1.5 text-xs font-medium text-text-muted transition-[border-color,background-color,color,opacity,transform] duration-200 ease-out hover:border-[var(--color-error)]/40 hover:bg-[color-mix(in_srgb,var(--color-error)_10%,transparent)] hover:text-[var(--color-error)] active:scale-[0.97] disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-error)] focus-visible:ring-offset-2 focus-visible:ring-offset-void"
 				>
 					{loggingOut ? "Signing out…" : "Sign out"}
 				</button>
@@ -274,7 +282,9 @@ function SettingsPageContent() {
 						initial={{ opacity: 0, height: 0 }}
 						animate={{ opacity: 1, height: "auto" }}
 						exit={{ opacity: 0, height: 0 }}
-						className="mb-6 flex items-center gap-3 rounded-[var(--radius-xl)] border border-[var(--color-error)]/30 bg-[color-mix(in_srgb,var(--color-error)_10%,transparent)] px-4 py-3 shadow-[0_4px_24px_-10px_rgba(248,113,113,0.3)]"
+						role="alert"
+						aria-live="assertive"
+						className="mb-6 flex items-center gap-3 rounded-[var(--radius-md)] border border-[var(--color-error)]/30 bg-[color-mix(in_srgb,var(--color-error)_10%,transparent)] px-4 py-3 shadow-[0_4px_24px_-10px_rgba(248,113,113,0.3)]"
 					>
 						<AlertTriangle className="h-4 w-4 shrink-0 text-[var(--color-error)]" />
 						<span className="text-sm text-text-primary">{error}</span>
@@ -295,15 +305,34 @@ function SettingsPageContent() {
 					{/* Mobile scroll-edge fades so users know to swipe. */}
 					<div
 						aria-hidden
-						className="pointer-events-none absolute inset-y-0 left-0 z-10 w-6 bg-gradient-to-r from-bg to-transparent lg:hidden"
+						className="pointer-events-none absolute inset-y-0 left-0 z-10 w-6 bg-gradient-to-r from-void to-transparent lg:hidden"
 					/>
 					<div
 						aria-hidden
-						className="pointer-events-none absolute inset-y-0 right-0 z-10 w-6 bg-gradient-to-l from-bg to-transparent lg:hidden"
+						className="pointer-events-none absolute inset-y-0 right-0 z-10 w-6 bg-gradient-to-l from-void to-transparent lg:hidden"
 					/>
 					<div
 						role="tablist"
 						aria-label="Settings sections"
+						onKeyDown={(e) => {
+							const keys = ["ArrowDown", "ArrowRight", "ArrowUp", "ArrowLeft", "Home", "End"];
+							if (!keys.includes(e.key)) return;
+							e.preventDefault();
+							const idx = TABS.findIndex((t) => t.id === activeTab);
+							const nextIdx =
+								e.key === "Home"
+									? 0
+									: e.key === "End"
+										? TABS.length - 1
+										: e.key === "ArrowDown" || e.key === "ArrowRight"
+											? (idx + 1) % TABS.length
+											: (idx - 1 + TABS.length) % TABS.length;
+							const next = TABS[nextIdx];
+							if (!next) return;
+							setActiveTab(next.id);
+							router.replace(`/settings?tab=${next.id}`, { scroll: false });
+							document.getElementById(`tab-${next.id}`)?.focus();
+						}}
 						className="flex w-full min-w-0 flex-row gap-1 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:w-auto lg:flex-col lg:overflow-visible lg:pb-0"
 					>
 						{TABS.map((tab) => {
@@ -318,15 +347,12 @@ function SettingsPageContent() {
 									role="tab"
 									aria-selected={isActive}
 									aria-controls={`panel-${tab.id}`}
+									tabIndex={isActive ? 0 : -1}
 									onClick={() => {
 										setActiveTab(tab.id);
-										if (typeof window !== "undefined") {
-											const url = new URL(window.location.href);
-											url.searchParams.set("tab", tab.id);
-											window.history.replaceState({}, "", url.toString());
-										}
+										router.replace(`/settings?tab=${tab.id}`, { scroll: false });
 									}}
-									className={`group flex min-w-[4.5rem] flex-col items-center justify-center gap-0.5 rounded-[var(--radius-xl)] border px-2 py-2 text-center text-[11px] transition-[border-color,background-color,color,transform] duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] active:scale-[0.97] sm:min-w-0 sm:text-xs lg:w-full lg:flex-row lg:items-center lg:justify-start lg:gap-3 lg:px-3 lg:py-2.5 lg:text-left lg:text-sm ${
+									className={`group flex min-w-[4.5rem] flex-col items-center justify-center gap-0.5 rounded-[var(--radius-md)] border px-2 py-2 text-center text-[11px] transition-[border-color,background-color,color,transform] duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] active:scale-[0.97] sm:min-w-0 sm:text-xs lg:w-full lg:flex-row lg:items-center lg:justify-start lg:gap-3 lg:px-3 lg:py-2.5 lg:text-left lg:text-sm ${
 										isDanger
 											? isActive
 												? "border-[var(--color-error)]/40 bg-[color-mix(in_srgb,var(--color-error)_10%,transparent)] text-[var(--color-error)] shadow-[0_0_15px_-5px_var(--color-error-glow)]"
@@ -434,9 +460,9 @@ function SettingsFallback() {
 				<div className="h-4 w-48 bg-surface animate-pulse" />
 				<div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[220px_1fr]">
 					<div className="flex gap-2 lg:flex-col">
-						<div className="h-12 w-full bg-surface animate-pulse rounded-[var(--radius-xl)]" />
-						<div className="h-12 w-full bg-surface animate-pulse rounded-[var(--radius-xl)]" />
-						<div className="h-12 w-full bg-surface animate-pulse rounded-[var(--radius-xl)]" />
+						<div className="h-12 w-full bg-surface animate-pulse rounded-[var(--radius-md)]" />
+						<div className="h-12 w-full bg-surface animate-pulse rounded-[var(--radius-md)]" />
+						<div className="h-12 w-full bg-surface animate-pulse rounded-[var(--radius-md)]" />
 					</div>
 					<div className="space-y-3">
 						<div className="h-6 w-32 bg-surface animate-pulse" />

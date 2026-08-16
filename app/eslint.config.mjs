@@ -1,6 +1,7 @@
 import { dirname } from "path";
 import { fileURLToPath } from "url";
 import nextPlugin from "@next/eslint-plugin-next";
+import reactHooks from "eslint-plugin-react-hooks";
 import tsPlugin from "@typescript-eslint/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
 
@@ -8,26 +9,35 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const eslintConfig = [
-	{
-		ignores: [
-			".next/**",
-			"node_modules/**",
-			"dist/**",
-			"out/**",
-			"coverage/**",
-			"next-env.d.ts",
-			"**/*.js",
-			"**/*.cjs",
-			"!*.test.js",
-			"!*.config.js",
-			"scripts/**",
-		],
-	},
-	{
-		plugins: {
-			"@next/next": nextPlugin,
-			"@typescript-eslint": tsPlugin,
+		{
+			ignores: [
+				".next/**",
+				"node_modules/**",
+				"dist/**",
+				"out/**",
+				"coverage/**",
+				"next-env.d.ts",
+				"**/*.js",
+				"**/*.cjs",
+				"!*.test.js",
+				"!*.config.js",
+				"scripts/**",
+			],
 		},
+		{
+			// files must be explicit: eslint 9.39+ (new config loader) silently
+			// drops config elements without a `files` key, which previously
+			// made every source file report "no matching configuration" and
+			// `pnpm lint` pass while linting ZERO files.
+files: ["**/*.ts", "**/*.tsx"],
+			plugins: {
+				"@next/next": nextPlugin,
+				"@typescript-eslint": tsPlugin,
+				// Required for the next/core-web-vitals rules below to resolve:
+				// `react-hooks/exhaustive-deps` + `react-hooks/purity` have to be
+				// registered or eslint fails with "Definition for rule not found".
+				"react-hooks": reactHooks,
+			},
 		languageOptions: {
 			parser: tsParser,
 			parserOptions: {

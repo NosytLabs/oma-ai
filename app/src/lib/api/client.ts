@@ -77,9 +77,8 @@ export function isAuthError(err: unknown): boolean {
 
 /**
 	* True when an error represents a suspended account (HTTP 403 +
-	* code "account_suspended").
+	* code "account_suspended"). Consumed by DashboardErrorBanner.
 	*/
-// @ts-ignore - used for dashboard error classification
 export function isSuspendedAccountError(err: unknown): boolean {
 		if (err instanceof ApiError) {
 				const body = err.body as { error?: { code?: string } } | null | undefined;
@@ -95,8 +94,8 @@ export function isSuspendedAccountError(err: unknown): boolean {
 
 /**
 	* True when an error represents a payment requirement (HTTP 402).
+	* Consumed by DashboardErrorBanner.
 	*/
-// @ts-ignore - used for dashboard error classification
 export function isPaymentRequiredError(err: unknown): boolean {
 		if (err instanceof ApiError) return err.status === 402;
 		const anyErr = err as { status?: number } | null | undefined;
@@ -105,9 +104,8 @@ export function isPaymentRequiredError(err: unknown): boolean {
 
 /**
 	* True when an error represents daily quota exhaustion (HTTP 429 +
-	* code "daily_limit_exceeded").
+	* code "daily_limit_exceeded"). Consumed by DashboardErrorBanner.
 	*/
-// @ts-ignore - used for dashboard error classification
 export function isQuotaError(err: unknown): boolean {
 		if (err instanceof ApiError) {
 				const body = err.body as { error?: { code?: string } } | null | undefined;
@@ -123,9 +121,8 @@ export function isQuotaError(err: unknown): boolean {
 
 /**
 	* Extract quota info (remaining, limit, resetMs) from a daily_limit_exceeded
-	* error body.
+	* error body. Consumed by DashboardErrorBanner.
 	*/
-// @ts-ignore - used for dashboard error classification
 export function extractQuotaInfo(
 		err: unknown,
 ): { remaining: number; limit: number; resetMs?: number } | undefined {

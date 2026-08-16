@@ -25,14 +25,12 @@ import {
 	Sparkles,
 	X,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { springs } from "@/lib/animation";
-import { useToast } from "@/components/ui/Toast";
 import { MODEL_COUNT } from "@/lib/models-data";
 
 const STORAGE_KEY = "oma-chat-welcome-dismissed";
 const TIPS_KEY = "oma-chat-tips-seen";
-const AUTO_DISMISS_MS = 5000;
 
 interface WelcomeBannerProps {
 	onSelectExample: () => void;
@@ -73,7 +71,7 @@ const STEPS = [
 const PRO_TIPS = [
 	{
 	icon: Sparkles,
-	text: "Create studio: image + video in one place (Create tab or Cmd+Shift+C)",
+	text: "Start with a free OMA-AI model — no card required for guest chats",
 	},
 	{
 	icon: GitCompare,
@@ -81,7 +79,7 @@ const PRO_TIPS = [
 	},
 	{
 	icon: Keyboard,
-	text: "Press ? for shortcuts — Cmd+K models · Cmd+Shift+C Create",
+	text: "Press ? for shortcuts — Cmd+K models · Cmd+/ params",
 	},
 ];
 
@@ -158,7 +156,6 @@ export function WelcomeBanner({
 	onSelectExample,
 	onGetStarted,
 }: WelcomeBannerProps) {
-	const toast = useToast();
 	// SSR-safe: default to hidden, then read localStorage after mount
 	const [visible, setVisible] = useState(false);
 	const [dismissed, setDismissed] = useState(true);
@@ -174,11 +171,6 @@ export function WelcomeBanner({
 	}
 	}, []);
 
-	// Track whether this dismissal was user-initiated (X button / CTA) vs.
-	// auto-dismissed by the timer. We only fire the corner toast on auto-dismiss;
-	// a user who explicitly closes the banner has already seen it.
-	const userInitiatedDismissRef = useRef(false);
-
 	const handleDismiss = useCallback(() => {
 	try {
 	localStorage.setItem(STORAGE_KEY, "1");
@@ -187,36 +179,14 @@ export function WelcomeBanner({
 	}
 	setDismissed(true);
 	setVisible(false);
-	if (!userInitiatedDismissRef.current) {
-	toast.info("Press ? anytime for keyboard shortcuts");
-	}
-	userInitiatedDismissRef.current = false;
-	}, [toast]);
-
-	// Auto-dismiss after AUTO_DISMISS_MS so the banner doesn't crowd the empty
-	// chat. User can still read it during the typewriter animation; this just
-	// gets it out of the way once they've had a moment to orient.
-	// (The first-message path already hides us via the parent's
-	// `deferredMessages.length === 0` guard in MessagesList.tsx, so we only
-	// need to handle the "user never sent anything" case here.)
-	useEffect(() => {
-	if (!visible || dismissed) return;
-	const t = setTimeout(() => {
-	// Auto-dismiss: fire corner toast as a lighter-weight reminder.
-	// Don't mark this as user-initiated, so handleDismiss will toast.
-	handleDismiss();
-	}, AUTO_DISMISS_MS);
-	return () => clearTimeout(t);
-	}, [visible, dismissed, handleDismiss]);
+	}, []);
 
 	const handleGetStarted = () => {
-	userInitiatedDismissRef.current = true;
 	handleDismiss();
 	onGetStarted();
 	};
 
 		const handleViewExamples = () => {
-		userInitiatedDismissRef.current = true;
 		handleDismiss();
 		onSelectExample();
 		};
@@ -229,9 +199,6 @@ export function WelcomeBanner({
 	}
 		setShowTips(false);
 		};
-
-		
-		const showFirstTimerTip = !dismissed;
 
 		return (
 		<AnimatePresence>
@@ -290,10 +257,7 @@ export function WelcomeBanner({
 	</div>
 	<button
 	type="button"
-	onClick={() => {
-	userInitiatedDismissRef.current = true;
-	handleDismiss();
-	}}
+	onClick={handleDismiss}
 	aria-label="Dismiss welcome banner"
 	className="
 	p-2 text-text-muted hover:text-text-secondary transition-[color,background-color,transform] duration-200 ease-out rounded-full hover:bg-[var(--color-surface)] active:scale-[0.97]
@@ -352,26 +316,10 @@ export function WelcomeBanner({
 		>
 		<span className="text-accent font-bold">TIP:</span>{" "}
 		<TypewriterText
-		text="Try DeepSeek V4 Flash or Qwen3 235B — both free on the Gonka network, no sign-in required."
+		text="Guest chat is free on Gonka models like Gemini 3 Flash, Kimi K2.6, MiniMax M2.7, and DeepSeek V4 Flash."
 		delay={900}
 		/>
 		</m.div>
-
-		{/* First-time user tip block */}
-		{showFirstTimerTip && (
-		<m.div
-		initial={{ opacity: 0, scale: 0.98 }}
-		animate={{ opacity: 1, scale: 1 }}
-		transition={{ delay: 0.6, ...springs.soft }}
-		className="mt-3 p-3 rounded-[var(--radius-lg)] border border-accent/20 bg-accent/5 flex items-start gap-3"
-		>
-		<span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/20 text-[10px] text-accent font-bold">i</span>
-		<div className="flex-1 text-left">
-		<span className="block text-xs font-semibold text-text-bright">New to OMA? Here is a quick tip</span>
-		<span className="block text-[11px] text-text-secondary leading-normal mt-0.5">You can switch models anytime from the model selector in the top toolbar or press <kbd className="font-mono text-[10px] text-accent">Cmd+K</kbd>. Guest free tier covers OMA-AI models — deposit credits for Venice-routed and premium traffic.</span>
-		</div>
-		</m.div>
-		)}
 
 	{/* ─── Pro Tips (first visit only) — collapsed to a single inline row ─── */}
 	<AnimatePresence>
@@ -432,7 +380,7 @@ transition={{
 	bg-[var(--color-accent)] text-text-inverse text-[11px] font-mono font-bold
 	uppercase tracking-widest hover:bg-[var(--color-accent-hover)] rounded-[var(--radius-lg)]
 	transition-[background-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97] hover:shadow-[0_0_20px_var(--color-accent-glow)] hover:brightness-105
-	min-h-[40px]
+	min-h-11
 	focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]
 	focus-visible:ring-offset-2 focus-visible:ring-offset-surface
 	"
@@ -448,7 +396,7 @@ transition={{
 	border border-[var(--color-border)] text-text-secondary text-[11px] font-mono
 	font-bold uppercase tracking-widest rounded-[var(--radius-lg)]
 	hover:bg-[color-mix(in_srgb,var(--color-success)_10%,transparent)] hover:border-[var(--color-success)]/30 hover:text-[var(--color-success)]
-	transition-[background-color,border-color,color,transform] duration-200 ease-out active:scale-[0.97] min-h-[40px]
+	transition-[background-color,border-color,color,transform] duration-200 ease-out active:scale-[0.97] min-h-11
 	focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]
 	focus-visible:ring-offset-2 focus-visible:ring-offset-surface
 	"

@@ -10,7 +10,7 @@ import { useBalance } from '@/components/chat/useBalance';
 vi.mock('@/lib/api', () => ({
 		api: {
 				auth: { listKeys: vi.fn() },
-				usage: { get: vi.fn() },
+				usage: { get: vi.fn(), getAll: vi.fn() },
 				credits: { getBatches: vi.fn() },
 				models: { list: vi.fn() },
 				creditHistory: { list: vi.fn() }
@@ -65,6 +65,7 @@ describe('useDashboardData', () => {
 				// None of the API endpoints should be called
 				expect(api.auth.listKeys).not.toHaveBeenCalled();
 				expect(api.usage.get).not.toHaveBeenCalled();
+				expect(api.usage.getAll).not.toHaveBeenCalled();
 				expect(api.credits.getBatches).not.toHaveBeenCalled();
 				expect(api.models.list).not.toHaveBeenCalled();
 				expect(api.creditHistory.list).not.toHaveBeenCalled();
@@ -80,7 +81,7 @@ describe('useDashboardData', () => {
 
 				vi.mocked(useBalance).mockReturnValue({ balance: mockBalance as any, loading: false, refresh: async () => {} });
 				vi.mocked(api.auth.listKeys).mockResolvedValue({ keys: mockKeys } as any);
-				vi.mocked(api.usage.get).mockResolvedValue({ records: mockUsage } as any);
+				vi.mocked(api.usage.getAll).mockResolvedValue({ records: mockUsage } as any);
 				vi.mocked(api.credits.getBatches).mockResolvedValue({ activeBatches: mockBatches } as any);
 				vi.mocked(api.models.list).mockResolvedValue({ data: mockModels } as any);
 				vi.mocked(api.creditHistory.list).mockResolvedValue({ transactions: mockTransactions } as any);
@@ -110,7 +111,7 @@ describe('useDashboardData', () => {
 				vi.mocked(api.auth.listKeys).mockRejectedValue(new Error('Network error'));
 				
 				// Default resolve for others so they don't throw uncaught promises
-				vi.mocked(api.usage.get).mockResolvedValue({ records: [] } as any);
+				vi.mocked(api.usage.getAll).mockResolvedValue({ records: [] } as any);
 				vi.mocked(api.credits.getBatches).mockResolvedValue({ activeBatches: [] } as any);
 				vi.mocked(api.models.list).mockResolvedValue({ data: [] } as any);
 				vi.mocked(api.creditHistory.list).mockResolvedValue({ transactions: [] } as any);
@@ -123,8 +124,9 @@ describe('useDashboardData', () => {
 						expect(result.current.loading).toBe(false);
 				});
 
-				expect(result.current.error).toBe('Network error');
-				expect(result.current.backendUnavailable).toBe(false);
+expect(result.current.error).toBeInstanceOf(Error);
+			expect((result.current.error as Error).message).toBe('Network error');
+			expect(result.current.backendUnavailable).toBe(false);
 		});
 
 		it('detects backend unavailable errors', async () => {
@@ -132,7 +134,7 @@ describe('useDashboardData', () => {
 				vi.mocked(api.auth.listKeys).mockRejectedValue(new BackendUnavailableError());
 				
 				// Default resolve for others
-				vi.mocked(api.usage.get).mockResolvedValue({ records: [] } as any);
+				vi.mocked(api.usage.getAll).mockResolvedValue({ records: [] } as any);
 				vi.mocked(api.credits.getBatches).mockResolvedValue({ activeBatches: [] } as any);
 				vi.mocked(api.models.list).mockResolvedValue({ data: [] } as any);
 				vi.mocked(api.creditHistory.list).mockResolvedValue({ transactions: [] } as any);
@@ -145,15 +147,14 @@ describe('useDashboardData', () => {
 						expect(result.current.loading).toBe(false);
 				});
 
-				expect(result.current.backendUnavailable).toBe(true);
-				// When backend unavailable is true, error is set to null (handled via top level UI)
-				expect(result.current.error).toBeNull();
+expect(result.current.backendUnavailable).toBe(true);
+			expect(result.current.error).toBeInstanceOf(BackendUnavailableError);
 		});
 		
 		it('provides a working refresh function', async () => {
 				vi.mocked(useBalance).mockReturnValue({ balance: null, loading: false, refresh: async () => {} });
 				vi.mocked(api.auth.listKeys).mockResolvedValue({ keys: [] } as any);
-				vi.mocked(api.usage.get).mockResolvedValue({ records: [] } as any);
+				vi.mocked(api.usage.getAll).mockResolvedValue({ records: [] } as any);
 				vi.mocked(api.credits.getBatches).mockResolvedValue({ activeBatches: [] } as any);
 				vi.mocked(api.models.list).mockResolvedValue({ data: [] } as any);
 				vi.mocked(api.creditHistory.list).mockResolvedValue({ transactions: [] } as any);

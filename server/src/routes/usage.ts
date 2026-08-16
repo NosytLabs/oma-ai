@@ -29,7 +29,7 @@ const querySchema = z.object({
 		provider: z.enum(["venice", "oma-ai"]).optional(),
 		since: z.string().datetime().optional(),
 		until: z.string().datetime().optional(),
-		limit: z.coerce.number().int().min(1).max(200).default(50),
+		limit: z.coerce.number().int().min(1).max(500).default(50),
 		cursor: z.string().optional(),
 });
 
@@ -87,6 +87,7 @@ usageRoutes.get("/v1/usage", sessionOrBearerAuth, async (c) => {
 						costCents: usageRecords.costCents,
 						markupCents: usageRecords.markupCents,
 						totalCents: usageRecords.totalCents,
+						latencyMs: usageRecords.latencyMs,
 						status: usageRecords.status,
 						createdAt: usageRecords.createdAt,
 				})
@@ -124,6 +125,9 @@ usageRoutes.get("/v1/usage", sessionOrBearerAuth, async (c) => {
 				object: "list",
 				data: data.map((r) => ({
 						...r,
+						// Dashboard widgets historically read prompt/completion names.
+						promptTokens: r.inputTokens,
+						completionTokens: r.outputTokens,
 						createdAt: r.createdAt.toISOString(),
 				})),
 				next_cursor: nextCursor,

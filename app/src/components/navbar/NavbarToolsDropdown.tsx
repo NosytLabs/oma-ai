@@ -8,8 +8,11 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { EASE_SPRING, EASE_SPRING_SOFT } from "@/lib/animation";
 import { useClickOutside } from "./_hooks/useClickOutside";
-import { useAuth } from "@/lib/hooks/useAuth";
-import { isCurrentPath, toolsLinks } from "./_lib/nav-links";
+import {
+	isCurrentPath,
+	primaryLinks,
+	toolsLinks,
+} from "./_lib/nav-links";
 
 interface NavbarToolsDropdownProps {
 	open: boolean;
@@ -31,9 +34,16 @@ export function NavbarToolsDropdown({
 	const toggleRef = useRef<HTMLButtonElement | null>(null);
 	const pathname = usePathname();
 	const prefersReduced = useReducedMotion();
-	const { isAdmin } = useAuth();
 	const visibleLinks = toolsLinks;
-	const isToolsActive = visibleLinks.some((l) => isCurrentPath(pathname ?? "/", l.href));
+	// Only show "tools" as active when a primary link is NOT already
+	// representing the same path. Without this, /docs (a primary link)
+	// AND /docs#endpoints (a tool) both light up the navbar at once,
+	// which reads as two competing active states.
+	const onPrimaryLink = primaryLinks.some((l) =>
+		isCurrentPath(pathname ?? "/", l.href),
+	);
+	const isToolsActive = !onPrimaryLink &&
+		visibleLinks.some((l) => isCurrentPath(pathname ?? "/", l.href));
 
 	useClickOutside(containerRef, open, () => onOpenChange(false));
 

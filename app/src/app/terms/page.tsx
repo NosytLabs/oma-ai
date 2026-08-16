@@ -140,11 +140,11 @@ function RulePoint({
 
 export default function TermsPage() {
 	return (
-		<div className="min-h-screen bg-void text-text-secondary font-mono selection:bg-accent-dim selection:text-accent">
+		<div className="bg-void text-text-secondary font-mono selection:bg-accent-dim selection:text-accent">
 			<div className="overflow-x-clip">
 				<div className="flex flex-col">
 					{/* ===== HERO ===== */}
-					<section className="container-page pt-4 sm:pt-6 pb-10 sm:pb-14">
+					<section className="container-page page-content">
 						<Link
 							href="/"
 							className="mb-6 inline-flex items-center gap-2 text-[12.5px] text-text-muted hover:text-accent transition-colors duration-200 ease-out"
@@ -439,7 +439,7 @@ export default function TermsPage() {
 								],
 								[
 									"Card billing",
-									"One-time card purchases via  appear as 'NOSYT' on your statement.",
+									"One-time card purchases via Polar appear as 'NOSYT' on your statement.",
 								],
 							].map(([title, body], i) => (
 								<li

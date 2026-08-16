@@ -7,5 +7,3 @@ export const TIER_LABELS = {
 	premium: "Premium",
 	frontier: "Frontier",
 } as const;
-
-type TierLabel = keyof typeof TIER_LABELS;

@@ -101,7 +101,7 @@ curl https://api.oma-ai.com/v1/messages \
   -H "x-api-key: oma_sk_…" \
   -H "anthropic-version: 2023-06-01" \
   -H "Content-Type: application/json" \
-  -d '{"model":"claude-sonnet-5","max_tokens":64,"messages":[{"role":"user","content":"ping"}]}'
+  -d '{"model":"claude-sonnet-4-6","max_tokens":64,"messages":[{"role":"user","content":"ping"}]}'
 ```
 
 Playground WEB search (DuckDuckGo, optional auth): `GET /v1/search?query=…`  

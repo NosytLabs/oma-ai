@@ -44,6 +44,8 @@ export function SessionsSection({
 	const [signingOut, setSigningOut] = useState(false);
 	const [revokingId, setRevokingId] = useState<string | null>(null);
 	const [revokingOthers, setRevokingOthers] = useState(false);
+	const [confirmRevokeId, setConfirmRevokeId] = useState<string | null>(null);
+	const [confirmRevokeOthers, setConfirmRevokeOthers] = useState(false);
 
 	const otherSessions = sessions.filter((s) => !s.isCurrent);
 
@@ -62,6 +64,7 @@ export function SessionsSection({
 		setRevokingId(id);
 		try {
 			await onRevokeSession(id);
+			setConfirmRevokeId(null);
 		} finally {
 			setRevokingId(null);
 		}
@@ -72,6 +75,7 @@ export function SessionsSection({
 		setRevokingOthers(true);
 		try {
 			await onRevokeOthers();
+			setConfirmRevokeOthers(false);
 		} finally {
 			setRevokingOthers(false);
 		}
@@ -89,30 +93,50 @@ export function SessionsSection({
 					</p>
 				</div>
 				{otherSessions.length > 0 && onRevokeOthers && (
+					confirmRevokeOthers ? (
+						<div className="flex flex-wrap items-center gap-2">
+							<span className="text-[11px] text-text-muted">
+								Sign out {otherSessions.length} other device{otherSessions.length === 1 ? "" : "s"}?
+							</span>
+							<button
+								type="button"
+								onClick={handleRevokeOthers}
+								disabled={revokingOthers}
+								className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--color-danger)]/30 bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)] px-3 py-1.5 text-xs font-semibold text-[var(--color-danger)] transition-[background-color,border-color,color,transform] duration-200 hover:border-[var(--color-danger)]/50 active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-danger)]"
+							>
+								{revokingOthers ? (
+									<Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+								) : (
+									<Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+								)}
+								{revokingOthers ? "Revoking…" : "Confirm"}
+							</button>
+							<button
+								type="button"
+								onClick={() => setConfirmRevokeOthers(false)}
+								disabled={revokingOthers}
+								className="rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-1.5 text-xs font-semibold text-text-secondary"
+							>
+								Cancel
+							</button>
+						</div>
+					) : (
 					<button
 						type="button"
-						onClick={handleRevokeOthers}
+						onClick={() => setConfirmRevokeOthers(true)}
 						disabled={revokingOthers}
 						className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--color-danger)]/30 bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)] px-3 py-1.5 text-xs font-semibold text-[var(--color-danger)] transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:border-[var(--color-danger)]/50 hover:bg-[color-mix(in_srgb,var(--color-danger)_20%,transparent)] active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-danger)]"
 					>
-						{revokingOthers ? (
-							<Loader2
-								className="h-3.5 w-3.5 animate-spin"
-								aria-hidden="true"
-							/>
-						) : (
-							<Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-						)}
-						{revokingOthers
-							? "Revoking…"
-							: `Sign out ${otherSessions.length} other device${otherSessions.length === 1 ? "" : "s"}`}
+						<Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+						{`Sign out ${otherSessions.length} other device${otherSessions.length === 1 ? "" : "s"}`}
 					</button>
+					)
 				)}
 			</div>
 
 			<div className="mt-6 space-y-2">
 				{sessions.length === 0 ? (
-					<div className="rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border)] px-4 py-8 text-center bg-[var(--color-surface)]/30">
+					<div className="rounded-[var(--radius-md)] border border-dashed border-[var(--color-border)] px-4 py-8 text-center bg-[var(--color-surface)]/30">
 						<p className="text-sm font-semibold text-text-muted">
 							No active sessions.
 						</p>
@@ -124,7 +148,7 @@ export function SessionsSection({
 					sessions.map((session) => (
 						<div
 							key={session.id}
-							className="group flex flex-col gap-3 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)]/30 px-5 py-4 sm:flex-row sm:items-center transition-[border-color,background-color,transform] hover:border-[var(--color-accent)]/30 hover:bg-[var(--color-surface)]/50 hover:scale-[1.01] duration-200 ease-out"
+							className="group flex flex-col gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)]/30 px-5 py-4 sm:flex-row sm:items-center transition-[border-color,background-color,transform] hover:border-[var(--color-accent)]/30 hover:bg-[var(--color-surface)]/50 hover:scale-[1.01] duration-200 ease-out"
 						>
 							<div className="flex min-w-0 flex-1 items-center gap-4">
 								<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-accent)]/20 bg-[color-mix(in_srgb,var(--color-accent)_5%,transparent)] transition-[border-color,background-color] group-hover:border-[var(--color-accent)]/40 group-hover:bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)]">
@@ -182,22 +206,41 @@ export function SessionsSection({
 									{signingOut ? "Signing out…" : "Sign out"}
 								</button>
 							) : !session.isCurrent && onRevokeSession ? (
+								confirmRevokeId === session.id ? (
+									<div className="flex shrink-0 items-center gap-2">
+										<button
+											type="button"
+											onClick={() => handleRevoke(session.id)}
+											disabled={revokingId === session.id}
+											className="inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--color-error)]/40 bg-[color-mix(in_srgb,var(--color-error)_10%,transparent)] px-3 py-2 text-xs font-semibold text-[var(--color-error)] transition-[background-color,border-color,transform] duration-200 hover:bg-[color-mix(in_srgb,var(--color-error)_20%,transparent)] active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-error)]"
+										>
+											{revokingId === session.id ? (
+												<Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+											) : (
+												<Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+											)}
+											{revokingId === session.id ? "Revoking…" : "Confirm"}
+										</button>
+										<button
+											type="button"
+											onClick={() => setConfirmRevokeId(null)}
+											disabled={revokingId === session.id}
+											className="rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-2 text-xs font-semibold text-text-secondary"
+										>
+											Cancel
+										</button>
+									</div>
+								) : (
 								<button
 									type="button"
-									onClick={() => handleRevoke(session.id)}
+									onClick={() => setConfirmRevokeId(session.id)}
 									disabled={revokingId === session.id}
 									className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2 text-xs font-semibold text-text-secondary transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:border-[var(--color-error)]/40 hover:text-[var(--color-error)] hover:bg-[color-mix(in_srgb,var(--color-error)_10%,transparent)] active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-error)]"
 								>
-									{revokingId === session.id ? (
-										<Loader2
-											className="h-3.5 w-3.5 animate-spin"
-											aria-hidden="true"
-										/>
-									) : (
-										<Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-									)}
-									{revokingId === session.id ? "Revoking…" : "Revoke"}
+									<Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+									Revoke
 								</button>
+								)
 							) : null}
 						</div>
 					))

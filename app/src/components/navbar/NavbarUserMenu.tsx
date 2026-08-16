@@ -166,8 +166,8 @@ export function NavbarUserMenu({ evmAddress, onSignOut, isAdmin = false }: Navba
 								className="flex items-center gap-3 px-4 py-3 text-xs text-accent transition-colors duration-200 ease-out hover:bg-accent-dim focus-visible:outline-none focus-visible:bg-accent-dim"
 								onClick={() => setOpen(false)}
 							>
-								{/* <ShieldCheck className="h-3 w-3" aria-hidden="true" /> */}
-								{/* <span>admin dashboard</span> */}
+								<ShieldCheck className="h-3 w-3" aria-hidden="true" />
+								<span>admin dashboard</span>
 							</Link>
 						)}
 						<div className="my-1 h-px bg-border" aria-hidden="true" />

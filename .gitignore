@@ -100,3 +100,6 @@ package-lock.json
 audit-*.jpeg
 audit-*.png
 audit-*.jpg
+audit-lh/
+.audit-2026-08-16/
+lh-audit*/

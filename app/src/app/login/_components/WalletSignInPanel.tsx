@@ -85,12 +85,7 @@ export default function WalletSignInPanel({
 	}, [next, onError, onSuccess, onRedirect, setSubmitting]);
 
 	return (
-		<div
-			role="tabpanel"
-			id="panel-wallet"
-			aria-labelledby="tab-wallet"
-			className="space-y-3 animate-fade-in"
-		>
+		<div className="space-y-3 animate-fade-in">
 			<p className="text-sm text-text-secondary">
 				Sign in with your Base mainnet wallet via SIWE
 				(EIP-4361). No transaction — just a signature.

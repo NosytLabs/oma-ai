@@ -21,14 +21,14 @@ export const FREE_CHAT_MODEL_IDS = new Set<string>([
 	"kimi-k2-6",
 	"minimax-m2-7",
 	"deepseek-v4-flash-0731-openbroker",
+	"mistral-small-2603",
 ]);
 
 /**
- * Default free website-chat model. Must resolve to upstream=openbroker
- * (Gonka Network) on the server (`isFreeWebsiteModel` in
- * server/src/routes/chat). Anything else is paid in /chat and /playground.
+ * Default free website-chat model. Prefer the Gonka/OpenBroker Gemini Flash
+ * route; Venice `mistral-small-2603` stays on the allowlist as a fallback.
  */
-export const FREE_DEFAULT_CHAT_MODEL = "deepseek-v4-flash-0731-openbroker";
+export const FREE_DEFAULT_CHAT_MODEL = "gemini-3-flash-preview";
 
 /** Canonical model id for docs / marketing code samples (paid Venice path). */
 export const DOCS_EXAMPLE_MODEL = "llama-3.3-70b";
@@ -62,7 +62,7 @@ function liveDisplayName(
 	*/
 export function isFreeChatModel(
 	modelId: string,
-	provider?: ModelOption["provider"] | string | null,
+	_provider?: ModelOption["provider"] | string | null,
 ): boolean {
 	if (FREE_CHAT_MODEL_IDS.has(modelId)) return true;
 	return false;

@@ -35,10 +35,9 @@ const nextConfig: NextConfig = {
 			"2026-07-26",
 	},
 
-
 	serverExternalPackages: [],
 
-	webpack: (config, { isServer }) => {
+	webpack: (config) => {
 		config.resolve.extensionAlias = {
 			...(config.resolve.extensionAlias || {}),
 			".js": [".ts", ".tsx", ".js", ".jsx"],
@@ -168,10 +167,6 @@ function generateContentSecurityPolicy(): string {
 	];
 	return directives.join("; ");
 }
-
-nextConfig.experimental = {
-  serverActions: {},
-};
 
 // Note: Use `npx @next/codemod@latest next-experimental-turbo-to-turbopack .` and reference Vercel docs to migrate to turbopack advanced mode if needed.
 

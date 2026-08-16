@@ -11,6 +11,8 @@ import { Badge } from "@/components/ui/badge";
 const DISMISS_KEY = "oma-onboarding-dismissed";
 
 interface OnboardingChecklistProps {
+	/** Whether the user already has a real session (email or wallet). */
+	signedIn?: boolean;
 	/** Whether the user has connected their wallet (always true when visible). */
 	walletConnected: boolean;
 	/** Whether the user has at least one API key. */
@@ -40,6 +42,7 @@ interface Step {
 	* explicitly closes it.
 	*/
 export const OnboardingChecklist = memo(function OnboardingChecklist({
+	signedIn,
 	walletConnected,
 	hasApiKey,
 	hasUsage,
@@ -71,7 +74,7 @@ export const OnboardingChecklist = memo(function OnboardingChecklist({
 	label: "Sign in",
 	description: "Magic link or wallet — no password required.",
 	icon: Wallet,
-	done: walletConnected,
+	done: Boolean(signedIn || walletConnected),
 	},
 	{
 	id: "api-key",

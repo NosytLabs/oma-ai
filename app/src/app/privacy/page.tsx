@@ -149,11 +149,11 @@ function DataPoint({
 
 export default function PrivacyPage() {
 	return (
-		<div className="min-h-screen bg-void text-text-secondary font-mono selection:bg-accent-dim selection:text-accent">
+		<div className="bg-void text-text-secondary font-mono selection:bg-accent-dim selection:text-accent">
 			<div className="overflow-x-clip">
 				<div className="flex flex-col">
 					{/* ===== HERO ===== */}
-					<section className="container-page pt-4 sm:pt-6 pb-10 sm:pb-14">
+					<section className="container-page page-content">
 						<Link
 							href="/"
 							className="mb-6 inline-flex items-center gap-2 text-[12.5px] text-text-muted hover:text-accent transition-colors duration-200 ease-out"
@@ -463,7 +463,7 @@ export default function PrivacyPage() {
 									"until deletion",
 									"wallet address and profile",
 								],
-								["Credits", "12 months", "non-redeemable, rolling expiry"],
+								["Credits", "Until account deletion", "non-redeemable, do not expire"],
 								["API keys", "on revoke", "deletion revokes immediately"],
 							].map(([k, v, note]) => (
 								<li
@@ -565,7 +565,7 @@ export default function PrivacyPage() {
 								["Redis / Upstash", "Rate limiting", "IP + key rate-limit counters"],
 								["Base / on-chain RPC", "Settlement", "tx hashes for deposits"],
 								["Resend", "Email delivery", "transactional magic link emails"],
-								["", "Payment processing", "credit card checkout and subscription management"],
+								["Polar", "Payment processing", "card checkout; no prompt content"],
 							].map(([name, role, note]) => (
 								<li
 									key={name}

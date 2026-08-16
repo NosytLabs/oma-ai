@@ -46,7 +46,7 @@ Our browser favicon features a transparent background with a hairline void keyli
 | **Open Graph Card** | `app/public/og-image.webp` | 1280×720 branding image (includes slogan, no raw hex codes) |
 | **Marketing kit** | `app/public/logos/brand-kit/` | Promo/lockup rasters only — not a second copy of live vectors |
 
-> **Raster Editing Note:** Use Imagine `image_edit` derived from the existing icon PNG files. Do not freeform-regenerate SVG structures. Render and deploy sized PNG outputs directly to their correct public directories.
+> **Raster Editing Note:** Derive raster outputs from the existing icon SVG/PNG sources. Do not freeform-regenerate SVG structures. Render and deploy sized PNG outputs directly to their correct public directories.
 
 ### Brand Kit Checklist
 

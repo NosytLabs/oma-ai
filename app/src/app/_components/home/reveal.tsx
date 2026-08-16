@@ -118,7 +118,7 @@ export function Reveal({
 			ref={ref as never}
 			className={className}
 			variants={variants}
-			initial="hidden"
+			initial={show ? "show" : "hidden"}
 			animate={show ? "show" : "hidden"}
 			transition={delay ? { delay } : undefined}
 		>
@@ -163,7 +163,7 @@ export function RevealStagger({
 			ref={ref as never}
 			className={className}
 			variants={staggerParent}
-			initial="hidden"
+			initial={show ? "show" : "hidden"}
 			animate={show ? "show" : "hidden"}
 		>
 			{children}

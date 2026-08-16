@@ -72,10 +72,15 @@ export function useChatShortcuts({
 			}
 
 			if (e[modKey as "metaKey" | "ctrlKey"] && e.key.toLowerCase() === "n") {
+				if (inTextField) return;
+				if (!newConversation) return;
 				e.preventDefault();
-				if (newConversation) {
-					newConversation();
+				const hasThread =
+					document.querySelectorAll('[data-role="chat-message"]').length > 0;
+				if (hasThread && !window.confirm("Start a new chat? The current thread will be cleared.")) {
+					return;
 				}
+				newConversation();
 				return;
 			}
 

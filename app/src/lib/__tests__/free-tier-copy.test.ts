@@ -22,6 +22,7 @@ describe("free-tier copy accuracy", () => {
 				"gemini-3-flash-preview",
 				"kimi-k2-6",
 				"minimax-m2-7",
+				"mistral-small-2603",
 			].sort(),
 		);
 		expect(FREE_CHAT_MODEL_IDS.has(FREE_DEFAULT_CHAT_MODEL)).toBe(true);
@@ -48,12 +49,10 @@ describe("free-tier copy accuracy", () => {
 		}
 	});
 
-	it("WelcomeBanner tip names free Gonka models, not Venice", () => {
+	it("WelcomeBanner tip names free guest models, not paid Venice flags", () => {
 		const src = readApp("components/chat/WelcomeBannerRedesign.tsx");
-		expect(src).toMatch(/DeepSeek V4 Flash/);
+		expect(src).toMatch(/free OMA-AI model|no card required/i);
 		expect(src).not.toMatch(/GPT-4o.*free/i);
-		expect(src).not.toMatch(/Gemini 3 Flash.*free/i);
-		expect(src).not.toMatch(/Kimi K2\.6.*free/i);
 		expect(src).not.toMatch(/GLM 5\.1.*free/i);
 	});
 

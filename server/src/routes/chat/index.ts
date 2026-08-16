@@ -43,6 +43,7 @@ import {
 		routeRequestWithFallback,
 } from "../../inference/proxy.js";
 import { logger } from "../../lib/logger.js";
+import { config } from "../../config.js";
 
 /**
 	* Check if a model is eligible for the anonymous free website chat path.
@@ -62,6 +63,10 @@ import { logger } from "../../lib/logger.js";
 const GONKA_FREE_MODEL_IDS = new Set<string>([
 	"deepseek-v4-flash-0731-openbroker",
 	"gemini-3-flash-preview",
+	"kimi-k2-6",
+	"minimax-m2-7",
+	// Venice budget fallback so guest chat still works when OpenBroker is down.
+	"mistral-small-2603",
 ]);
 
 function isFreeWebsiteModel(modelId: string): boolean {
@@ -96,7 +101,12 @@ export const chatRoutes = new Hono<OmaEnv>();
 
 chatRoutes.post(
 		"/v1/chat/completions",
-		rateLimit({ windowMs: 60_000, maxRequests: 60 }),
+		rateLimit({
+			windowMs: 60_000,
+			maxRequests: 60,
+			// Guest playground traffic is useless if Redis blips 503 every send.
+			failClosed: process.env.NODE_ENV === "production",
+		}),
 		// Authenticate before the daily limiter so signed-in website users receive
 		// the registered-user quota instead of being treated as anonymous.
 		optionalAuth,
@@ -137,7 +147,19 @@ chatRoutes.post(
 
 				const userId = c.get("userId");
 				const source = c.req.header("X-OMA-Source");
-				const isWebsiteRequest = source === "website";
+				const origin = c.req.header("Origin") || c.req.header("Referer") || "";
+				const allowedOrigins = [
+					config.PUBLIC_APP_URL,
+					"http://localhost:3000",
+					"http://127.0.0.1:3000",
+				].filter(Boolean) as string[];
+				const originOk = allowedOrigins.some(
+					(allowed) =>
+						origin === allowed ||
+						origin.startsWith(`${allowed}/`) ||
+						origin.startsWith(allowed),
+				);
+				const isWebsiteRequest = source === "website" && originOk;
 				const isFreeModel = isFreeWebsiteModel(model);
 
 				// Website chat with free OMA-AI models: allow anonymous, skip billing

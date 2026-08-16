@@ -95,8 +95,15 @@ export function dailyUsageLimit() {
 				// a no-op against the live catalog). oma-ai-routed models are the
 				// free tier on /chat.
 				const def = model ? getModelById(model) : null;
-				const isOmaAiModel = !!def && def.provider === "oma-ai";
-				if (!isOmaAiModel) {
+				const isFreeWebsiteModel =
+					!!def &&
+					(def.provider === "oma-ai" ||
+						model === "mistral-small-2603" ||
+						model === "gemini-3-flash-preview" ||
+						model === "kimi-k2-6" ||
+						model === "minimax-m2-7" ||
+						model === "deepseek-v4-flash-0731-openbroker");
+				if (!isFreeWebsiteModel) {
 						return next();
 				}
 

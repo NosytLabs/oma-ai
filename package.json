@@ -16,7 +16,7 @@
     "validate:lint": "pnpm -r run lint",
     "validate:test": "pnpm -r test"
   },
-"pnpm": {
+  "pnpm": {
     "onlyBuiltDependencies": [
       "canvas",
       "sharp"
@@ -34,6 +34,7 @@
   },
   "devDependencies": {
     "@types/react": "19.2.18",
+    "eslint-plugin-react-hooks": "^6",
     "typescript": "7.0.2"
   }
 }

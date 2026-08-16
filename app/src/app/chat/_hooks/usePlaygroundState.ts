@@ -6,13 +6,6 @@ import { useCallback, useEffect, useState } from "react";
 import type { Message } from "@/components/chat";
 
 /**
-	* Status enum for the export-conversation button. Cycles through loading
-	* → success/error → default so the toolbar can render the right icon
-	* without spawning extra toast spam.
-	*/
-type ExportStatus = "default" | "loading" | "success" | "error";
-
-/**
 	* Status enum for the share-conversation button. No 'loading' state —
 	* the share copy is gated on the clipboard write resolving.
 	*/
@@ -26,7 +19,7 @@ type ShareStatus = "default" | "success" | "error";
 	*/
 export type MediaMode = "text";
 
-export function parseMediaMode(raw: string | null | undefined): MediaMode {
+export function parseMediaMode(_raw: string | null | undefined): MediaMode {
 	// All non-text deep links (image, video, create, media) redirect to
 	// the chat surface — image/video generation is no longer offered.
 	return "text";
@@ -88,8 +81,6 @@ export interface PlaygroundState {
 	setSystemPromptOpen: Dispatch<SetStateAction<boolean>>;
 
 	// --- Toolbar status states ---
-	exportStatus: ExportStatus;
-	setExportStatus: Dispatch<SetStateAction<ExportStatus>>;
 	shareStatus: ShareStatus;
 	setShareStatus: Dispatch<SetStateAction<ShareStatus>>;
 
@@ -132,8 +123,7 @@ export function usePlaygroundState(
 	// Lazy string keeps this hook free of a models-data import cycle; value must
 	// match FREE_DEFAULT_CHAT_MODEL in @/lib/model-utils.
 	const defaultModel =
-		options.defaultModel ?? searchParams?.get("model") ?? "deepseek-v4-flash-0731-openbroker";
-	const initialMode = parseMediaMode(searchParams?.get("mode"));
+		options.defaultModel ?? searchParams?.get("model") ?? "gemini-3-flash-preview";
 
 	// --- Core chat ---
 	const [model, setModel] = useState<string>(defaultModel);
@@ -181,14 +171,13 @@ export function usePlaygroundState(
 	const [systemPromptOpen, setSystemPromptOpen] = useState<boolean>(false);
 
 	// --- Toolbar status states ---
-	const [exportStatus, setExportStatus] = useState<ExportStatus>("default");
 	const [shareStatus, setShareStatus] = useState<ShareStatus>("default");
 
 	// --- Compare mode ---
 	// Default the compare slot to a free OMA-AI peer so guests can run
 	// side-by-side without signing in for Venice models.
 	const [compareMode, setCompareMode] = useState<boolean>(false);
-	const [compareModel, setCompareModel] = useState<string>("minimax-m2-7");
+	const [compareModel, setCompareModel] = useState<string>("gemini-3-flash-preview");
 	const [compareMessages, setCompareMessages] = useState<Message[]>([]);
 
 	// --- Misc UI ---
@@ -254,8 +243,6 @@ export function usePlaygroundState(
 		setSystemPromptOpen,
 
 		// Toolbar status states
-		exportStatus,
-		setExportStatus,
 		shareStatus,
 		setShareStatus,
 

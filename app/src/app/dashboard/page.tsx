@@ -74,6 +74,7 @@ function DashboardPageInner() {
 	const queryClient = useQueryClient();
 	const searchParams = useSearchParams();
 	const isDemoView = searchParams?.get("demo") === "1" || isDemo;
+	const depositSuccess = searchParams?.get("deposit") === "success";
 	const canLoadDashboard = isReady && isAuthenticated && !isDemoView;
 
 	const validTabIds = useMemo(() => TABS.map((t) => t.id), []);
@@ -250,7 +251,7 @@ function DashboardPageInner() {
 	const content = !isReady && !isDemoView ? (
 		<AuthGateSkeleton />
 	) : !isAuthenticated && !isDemoView ? (
-		<div className="flex flex-col items-center justify-center gap-6 px-4 py-16">
+		<div className="flex min-h-full flex-col items-center justify-center gap-6 px-4 py-16">
 			<h2 className="sr-only">Dashboard</h2>
 			<div className="surface-card w-full max-w-md p-8 text-center">
 				<p className="font-mono text-xs uppercase tracking-widest text-accent">
@@ -285,6 +286,22 @@ function DashboardPageInner() {
 				id="dashboard-content"
 				className="bg-void text-text-secondary selection:bg-surface selection:text-text"
 			>
+				{depositSuccess && (
+					<div
+						role="status"
+						className="flex flex-wrap items-center justify-between gap-3 border-b border-success/30 bg-success/10 px-4 py-2 text-[11px] font-mono text-success md:px-8"
+					>
+						<span className="uppercase tracking-wider">
+							Payment received · credits appear after Polar confirms
+						</span>
+						<Link
+							href="/dashboard"
+							className="shrink-0 rounded-[var(--radius-sm)] border border-success/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider hover:bg-success/15"
+						>
+							Dismiss
+						</Link>
+					</div>
+				)}
 				{isDemoView && (
 					<div
 						role="status"
@@ -336,6 +353,7 @@ function DashboardPageInner() {
 						balance={balance}
 						apiKeys={apiKeys}
 						usage={filteredUsage}
+						hasAnyUsage={usage.length > 0}
 						creditBatches={creditBatches}
 						transactions={transactions}
 						loading={loading}

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Instrument_Serif, Geist } from "next/font/google";
+import { Instrument_Serif, Geist, Space_Grotesk } from "next/font/google";
 import { BRAND_COLORS } from "@/lib/brand";
 import { MotionProvider } from "@/lib/animation/MotionProvider";
 import { ErrorBoundary } from "@/components/error-boundary";
@@ -22,11 +22,29 @@ const display = Instrument_Serif({
 	preload: false,
 });
 
+// Space Grotesk — geometric sans for sharper, spec-sheet type used on
+// stat numerals, KPI blocks, and "OMA gateway" small caps sections
+// where Instrument Serif would feel editorial instead of precise.
+// Brand identity keeps Instrument Serif (italic) for hero emotional
+// words; Space Grotesk is the precision counterpart.
+const geometric = Space_Grotesk({
+	subsets: ["latin"],
+	weight: ["400", "500", "600", "700"],
+	variable: "--font-geometric",
+	display: "swap",
+	preload: false,
+});
+
 const body = Geist({
 	subsets: ["latin"],
 	variable: "--font-body",
 	display: "swap",
-	preload: true,
+	// Some pages paint only display type in the first frame (e.g. /docs
+	// hero). next/font still emits a preload link when `preload: true`,
+	// producing "woff2 preloaded but not used" warnings on every route.
+	// Body type is loaded on demand via the CSS variable — no measurable
+	// paint cost, but the warning is silenced everywhere.
+	preload: false,
 });
 
 // Note: we previously loaded Geist_Mono from Google Fonts as --font-mono,
@@ -111,15 +129,15 @@ export default function RootLayout({
 		<html
 			lang="en"
 			suppressHydrationWarning
-			className={`${display.variable} ${body.variable}`}
+			className={`${display.variable} ${body.variable} ${geometric.variable}`}
 		>
 			<head>
-				<script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('oma-theme');if(t==='emerald'||t==='amber'||t==='mono'||t==='synth'){if(t==='emerald'){document.documentElement.removeAttribute('data-theme');}else{document.documentElement.setAttribute('data-theme',t);}}document.documentElement.style.colorScheme='dark';}catch(e){}})();` }} />
+				<script dangerouslySetInnerHTML={{ __html: `(function(){try{var d=document.documentElement;d.style.backgroundColor='#07090a';d.style.colorScheme='dark';var t=localStorage.getItem('oma-theme');if(t==='emerald'||t==='amber'||t==='mono'||t==='synth'){if(t==='emerald'){d.removeAttribute('data-theme');}else{d.setAttribute('data-theme',t);}}}catch(e){}})();` }} />
 				<OrganizationJsonLd />
 				<SoftwareApplicationJsonLd />
 				<link rel="preconnect" href="https://base-rpc.publicnode.com" />
 			</head>
-			<body className="min-h-screen bg-void text-text font-sans antialiased">
+			<body className="flex min-h-dvh flex-col bg-void text-text font-sans antialiased">
 				<a
 					href="#main-content"
 					className="sr-only focus:not-sr-only focus:fixed focus:top-14 focus:left-4 focus:z-[100] focus:bg-accent focus:text-void focus:px-4 focus:py-2 focus:rounded-[var(--radius-lg)] focus:font-semibold focus:shadow-[0_0_20px_var(--color-accent-glow)] focus:outline-none focus-visible:outline-accent"
@@ -130,15 +148,17 @@ export default function RootLayout({
 					<ToastProviderClient>
 						<MotionProvider>
 							<Providers>
-								<Navbar />
-								<main
-									id="main-content"
-									className="min-w-0 max-w-[100vw] overflow-x-clip page-enter"
-									tabIndex={-1}
-								>
-									<ErrorBoundary>{children}</ErrorBoundary>
-								</main>
-								<Footer />
+								<div className="flex min-h-dvh flex-col">
+									<Navbar />
+									<main
+										id="main-content"
+										className="flex min-h-0 min-w-0 max-w-[100vw] flex-1 flex-col"
+										tabIndex={-1}
+									>
+										<ErrorBoundary>{children}</ErrorBoundary>
+									</main>
+									<Footer />
+								</div>
 							</Providers>
 						</MotionProvider>
 					</ToastProviderClient>

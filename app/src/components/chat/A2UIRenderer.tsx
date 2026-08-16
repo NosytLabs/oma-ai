@@ -63,14 +63,6 @@ interface A2UICreateSurface {
 	sendDataModel?: boolean;
 }
 
-interface A2UIEnvelope {
-	version?: string;
-	createSurface?: A2UICreateSurface;
-	updateComponents?: { surfaceId: string; components: A2UIComponent[] };
-	updateDataModel?: { surfaceId: string; path?: string; value?: unknown };
-	deleteSurface?: { surfaceId: string };
-}
-
 type EnvelopeMessage =
 	| { kind: "create"; surfaceId: string; catalogId?: string }
 	| { kind: "update"; surfaceId: string; components: A2UIComponent[] }

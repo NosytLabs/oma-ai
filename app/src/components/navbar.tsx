@@ -63,7 +63,7 @@ export function Navbar() {
 
 	return (
 		<header
-			className={`sticky top-0 left-0 right-0 z-50 transition-[background-color,border-color,box-shadow,backdrop-filter] duration-300 font-mono ${
+			className={`sticky top-0 left-0 right-0 z-50 transition-[background-color,border-color,box-shadow,backdrop-filter] duration-200 font-mono ${
 				scrolled
 					? "border-b border-border-bright bg-[color-mix(in_srgb,var(--color-void)_85%,transparent)] backdrop-blur-xl shadow-sm"
 					: "border-b border-border bg-void/90 backdrop-blur-md"
@@ -79,7 +79,7 @@ export function Navbar() {
 							<div className="relative inline-flex items-center">
 								<Link
 									href="/"
-									className="group relative z-[1] inline-flex min-h-11 min-w-11 shrink-0 items-center rounded-[var(--radius-md)] px-1 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+									className="group relative z-[1] inline-flex min-h-10 min-w-11 shrink-0 items-center rounded-[var(--radius-md)] px-1 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 									aria-label="OMA home"
 								>
 									<span className="inline-flex transition-[filter,color] duration-300 group-hover:drop-shadow-[0_0_8px_var(--color-accent-glow)] [&_span]:group-hover:text-accent">
@@ -111,7 +111,7 @@ export function Navbar() {
 						)}
 
 						{/* Primary links — large screens only */}
-						<ul className="hidden items-center gap-0.5 lg:flex">
+						<ul className="hidden items-center lg:flex">
 							{primaryLinks.map((link) => {
 								const Icon = link.icon;
 								const isActive = isCurrentPath(pathname ?? "/", link.href);
@@ -123,15 +123,15 @@ export function Navbar() {
 											transition={EASE_SPRING}
 											className="inline-block"
 										>
-											<Link
-												href={link.href}
-												aria-current={isActive ? "page" : undefined}
-												className={`relative inline-flex h-9 items-center gap-1.5 rounded-sm px-2.5 text-xs transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-													isActive
-														? "text-accent"
-														: "text-text-secondary hover:text-text-bright"
-												}`}
-											>
+<Link
+											href={link.href}
+											aria-current={isActive ? "page" : undefined}
+											className={`relative inline-flex h-9 items-center gap-1.5 rounded-sm px-3 text-[13px] transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+												isActive
+													? "text-accent"
+													: "text-text-secondary hover:text-text-bright"
+											}`}
+										>
 												{isActive && (
 													<m.span
 														layoutId="nav-active"
@@ -222,9 +222,9 @@ export function Navbar() {
 								<Magnetic strength={6}>
 									<Link
 										href={loginHref}
-										className="inline-flex h-11 items-center gap-1.5 rounded-[var(--radius-md)] border border-accent/40 bg-accent px-3 text-xs font-bold text-void transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out hover:bg-accent-bright hover:shadow-[0_0_18px_var(--color-accent-glow)] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:px-4"
+										className={`${pathname === "/chat" || pathname?.startsWith("/chat/") ? "hidden sm:inline-flex" : "inline-flex"} h-11 items-center gap-1.5 rounded-[var(--radius-md)] border border-accent/40 bg-accent px-3 text-xs font-bold text-void transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out hover:bg-accent-bright hover:shadow-[0_0_18px_var(--color-accent-glow)] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:px-4`}
 									>
-										Get started
+										Get API key
 										<svg
 											className="hidden h-3 w-3 sm:block"
 											viewBox="0 0 24 24"
@@ -249,7 +249,7 @@ export function Navbar() {
 							ref={mobileToggleRef}
 							type="button"
 							onClick={() => setMobileOpen(!mobileOpen)}
-							className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border bg-surface-elevated text-text-secondary transition-all duration-200 ease-out hover:bg-surface-hi hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent lg:hidden"
+							className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border bg-surface-elevated text-text-secondary transition-[background-color,border-color,color,transform] duration-200 ease-out hover:bg-surface-hi hover:text-text-bright active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent lg:hidden"
 							aria-label={
 								mobileOpen ? "Close navigation menu" : "Open navigation menu"
 							}

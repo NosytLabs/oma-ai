@@ -14,18 +14,14 @@ import { TRUST_NAMES } from "@/app/_components/home/_icons";
 
 export function TrustStrip() {
 	return (
-	<section
-	aria-label="Routing through upstream providers"
-	className="relative border-y border-border-subtle bg-surface py-12 sm:py-14 z-10"
-	>
-	<div className="container-page">
+	<div className="flex flex-col justify-center h-full border-b border-border/40 pb-12 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-12">
 	<Reveal>
-	<p className="text-center text-xs uppercase tracking-[0.18em] font-mono text-text-muted mb-6">
+	<p className="text-left text-xs uppercase tracking-[0.18em] font-mono text-text-muted mb-6">
 	Routing through
 	</p>
 	</Reveal>
 	<Reveal>
-	<ul className="flex flex-wrap items-center justify-center gap-x-1 gap-y-2 text-text-secondary font-medium text-base sm:text-lg tracking-tight">
+	<ul className="flex flex-wrap items-center justify-start gap-x-1 gap-y-2 text-text-secondary font-medium text-base sm:text-lg tracking-tight">
 	{TRUST_NAMES.map((name, i) => (
 	<li key={name} className="inline-flex items-center">
 	{i > 0 && (
@@ -44,12 +40,11 @@ export function TrustStrip() {
 	</ul>
 	</Reveal>
 	<Reveal>
-	<p className="mt-4 text-center text-xs text-text-muted font-mono">
-	OMA routes requests through Venice, Zyloo, Gonka, and OpenBroker via one
-	OpenAI-compatible API.
+	<p className="mt-4 text-left text-xs text-text-muted font-mono leading-relaxed">
+	OMA routes requests through Venice, Zyloo, Gonka, OpenBroker, and
+	LiteLLM via one OpenAI-compatible API.
 	</p>
 	</Reveal>
 	</div>
-	</section>
 	);
 }

@@ -11,10 +11,6 @@
 import { request } from "./client.js";
 import type { ApiKey, ApiKeyWithSecret, Session, User } from "./types.js";
 
-interface AuthSessionResponse {
-		user: User;
-}
-
 /**
 	* Fetch the current user via Better Auth's session lookup.
 	* Endpoint: GET /user (server validates the Better Auth session cookie).

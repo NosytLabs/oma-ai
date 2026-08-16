@@ -11,10 +11,10 @@ export function AgentDemoSection() {
 	return (
 		<section
 			aria-labelledby="agent-demo-headline"
-			className="relative border-t border-border-subtle bg-surface py-16 sm:py-20"
+			className="relative border-t border-border-subtle bg-surface/50 py-16 sm:py-22 lg:py-28"
 		>
 			<div className="container-page">
-				<div className="grid min-w-0 grid-cols-1 items-start gap-10 lg:grid-cols-[1fr_1.15fr] lg:gap-14 w-full">
+				<div className="grid min-w-0 grid-cols-1 items-center gap-12 lg:grid-cols-[1fr_1.15fr] lg:gap-20 w-full">
 					<Reveal>
 						<SectionHeader
 							id="agent-demo-headline"
@@ -30,15 +30,15 @@ export function AgentDemoSection() {
 							}
 							subhead="Claude Code, Codex, Grok-style UIs all speak OpenAI. Point baseURL at OMA — multi-provider routing, USDC metering, no lock-in."
 						/>
-						<ul className="mt-8 space-y-3 text-sm text-text-secondary">
+						<ul className="mt-10 space-y-4 text-base text-text-secondary">
 							{[
 								"Drop-in OpenAI SDK / any agent that takes a base URL",
 								"Budget → frontier routing with circuit-breaker failover",
 								"Pay per use in USDC — or x402 for agent wallets",
 							].map((item) => (
-								<li key={item} className="flex items-start gap-2">
+								<li key={item} className="flex items-center gap-3">
 									<span
-										className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent"
+										className="h-2 w-2 shrink-0 rounded-full bg-accent"
 										aria-hidden="true"
 									/>
 									{item}
@@ -48,7 +48,9 @@ export function AgentDemoSection() {
 					</Reveal>
 
 					<Reveal>
-						<AgentSessionDemo />
+						<div className="rounded-2xl border border-border bg-panel p-2 shadow-xl ring-1 ring-white/5">
+							<AgentSessionDemo />
+						</div>
 					</Reveal>
 				</div>
 			</div>

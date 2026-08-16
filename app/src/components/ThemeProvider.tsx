@@ -99,6 +99,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 		const current = readStoredTheme();
 		setThemeState(current);
 		applyTheme(current);
+		const onStorage = (event: StorageEvent) => {
+			if (event.key !== STORAGE_KEY) return;
+			const next = isValidTheme(event.newValue) ? event.newValue : DEFAULT_THEME;
+			setThemeState(next);
+			applyTheme(next);
+		};
+		window.addEventListener("storage", onStorage);
+		return () => window.removeEventListener("storage", onStorage);
 	}, []);
 
 	const setTheme = useCallback((next: Theme) => {

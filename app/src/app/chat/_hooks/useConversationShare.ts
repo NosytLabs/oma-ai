@@ -71,7 +71,7 @@ export function useConversationShare(
 				setConversationId(cid);
 				try {
 					localStorage.setItem(conversationIdKey, cid);
-				} catch (e) {
+				} catch {
 					/* private mode / corrupt storage */
 				}
 			}

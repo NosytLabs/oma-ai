@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, Mail, MessageSquare, Shield } from "lucide-react";
+import { ContactForm } from "./ContactForm";
 import { FloatingIcons } from "@/components/floating-icons";
 import { InViewFade } from "@/components/motion/in-view-fade";
 import { BreadcrumbListJsonLd } from "@/components/json-ld";
@@ -47,7 +48,7 @@ const CHANNELS = [
 
 export default function ContactPage() {
 	return (
-		<div className="min-h-screen bg-void text-text">
+		<div className="bg-void text-text">
 			<BreadcrumbListJsonLd
 				items={[
 					{ name: "Home", url: "/" },
@@ -55,11 +56,11 @@ export default function ContactPage() {
 				]}
 			/>
 			<FloatingIcons />
-			<div className="container-page max-w-3xl pt-6 sm:pt-8 pb-12 sm:pb-16">
-				<InViewFade>
+			<div className="container-page page-content max-w-3xl lg:max-w-4xl">
+				<InViewFade eager>
 				<Link
 					href="/"
-					className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-accent transition-colors duration-200 ease-out mb-10"
+					className="inline-flex min-h-11 items-center gap-1.5 text-sm text-text-secondary hover:text-accent transition-colors duration-200 ease-out mb-10"
 				>
 					<ArrowLeft className="h-4 w-4" aria-hidden="true" />
 					Home
@@ -72,8 +73,9 @@ export default function ContactPage() {
 					How to reach OMA
 				</h1>
 				<p className="text-text-secondary max-w-xl mb-12 leading-relaxed">
-					We are a lean team. Email is the fastest channel. We typically reply
-					within five business days for privacy requests and sooner for outages.
+					We are a lean team. Email is the fastest channel. We reply within one
+					business day for outages, and typically within five for privacy
+					requests.
 					OMA AI / Open Model Access is operated by{" "}
 					<a
 						href="https://www.nosytlabs.com"
@@ -116,6 +118,8 @@ export default function ContactPage() {
 						</li>
 					))}
 				</ul>
+
+				<ContactForm />
 
 				<p className="mt-12 text-sm text-text-muted">
 					Prefer self-serve? Read the{" "}

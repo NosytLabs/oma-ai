@@ -180,7 +180,10 @@ authRoutes.delete("/sessions", sessionAuth, async (c) => {
 // ============================================================
 // /account — delete the account (Better Auth).
 // ============================================================
-authRoutes.delete("/account", async (c) => {
+authRoutes.delete(
+		"/account",
+		rateLimit({ windowMs: 60_000, maxRequests: 5 }),
+		async (c) => {
 		const session = await getSession(c);
 		if (!session?.user) {
 				return c.json(

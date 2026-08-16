@@ -1,21 +1,11 @@
-import { Play } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import { DEFAULT_API_URL } from "@/lib/config";
 
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://oma-ai.com";
 
-import {
-	formatContextLength,
-	MODELS,
-	normalizeProvider,
-	PROVIDER_COLORS,
-	TIER_COLORS,
-	type Tier,
-} from "@/lib/models-data";
-import { playgroundHrefForModel } from "@/lib/playground-href";
+import { MODELS } from "@/lib/models-data";
 import { StaticModelDetail } from "./_components/StaticModelDetail";
 import { LiveModelDetail } from "./_components/LiveModelDetail";
 

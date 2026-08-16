@@ -2,7 +2,7 @@
 
 import { AnimatePresence, m, useReducedMotion } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";
-import { CornerDownLeft, Key, LogOut, Settings, Zap } from "lucide-react";
+import { CornerDownLeft, Key, LogIn, LogOut, Settings, ShieldCheck, Zap } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -40,10 +40,15 @@ const mobileLinkVariant = {
 
 // Account card links — local to the mobile menu; not exported as they are
 // not part of the primary nav.
-const ACCOUNT_LINKS: { href: string; label: string; icon: typeof Key }[] = [
+const ACCOUNT_LINKS_AUTH: { href: string; label: string; icon: typeof Key }[] = [
 	{ href: "/dashboard", label: "dashboard", icon: Key },
 	{ href: "/deposit", label: "deposit", icon: Zap },
 	{ href: "/settings", label: "settings", icon: Settings },
+];
+
+const ACCOUNT_LINKS_GUEST: { href: string; label: string; icon: typeof Key }[] = [
+	{ href: "/getting-started", label: "get started", icon: Zap },
+	{ href: "/login", label: "sign in", icon: LogIn },
 ];
 
 /**
@@ -115,7 +120,7 @@ export function NavbarMobileMenu({
 	};
 
 	const isAccountCardActive = accountHrefs.some((href) =>
-		isCurrentPath(pathname ?? "/", href),
+		isCurrentPath(pathname ?? "/", href.replace(/#.*$/, "")),
 	);
 
 	// Portal to document.body. The sticky header uses backdrop-blur / glass,
@@ -154,7 +159,7 @@ export function NavbarMobileMenu({
 						animate={prefersReduced ? { opacity: 1 } : { x: 0, opacity: 1 }}
 						exit={prefersReduced ? { opacity: 0 } : { x: "100%", opacity: 0 }}
 						transition={springs.card}
-						className="fixed inset-y-0 right-0 z-[70] w-full max-w-sm overflow-y-auto border-l border-border bg-void font-mono shadow-2xl lg:hidden"
+						className="fixed inset-y-0 right-0 z-[70] w-full sm:max-w-sm overflow-y-auto border-l border-border bg-void font-mono shadow-2xl lg:hidden"
 					>
 						<div className="mx-auto flex max-w-6xl flex-col px-4 py-4 sm:px-6">
 							{/* Status row */}
@@ -170,7 +175,7 @@ export function NavbarMobileMenu({
 							<div className="space-y-3">
 								{visibleGroups.map((group, gi) => {
 									const isCardActive = group.links.some((link) =>
-										isCurrentPath(pathname ?? "/", link.href),
+										isCurrentPath(pathname ?? "/", link.href.replace(/#.*$/, "")),
 									);
 									return (
 										<m.div
@@ -254,7 +259,7 @@ export function NavbarMobileMenu({
 										</p>
 									</div>
 									<m.ul className="grid grid-cols-2 gap-1">
-										{ACCOUNT_LINKS.map((link) => {
+										{(isConnected ? ACCOUNT_LINKS_AUTH : ACCOUNT_LINKS_GUEST).map((link) => {
 											const Icon = link.icon;
 											return (
 												<m.li key={link.href} variants={mobileLinkVariant}>
@@ -272,6 +277,21 @@ export function NavbarMobileMenu({
 												</m.li>
 											);
 										})}
+										{isConnected && isAdmin && (
+											<m.li key="/admin" variants={mobileLinkVariant}>
+												<Link
+													href="/admin"
+													onClick={() => onOpenChange(false)}
+													className="group/m flex min-h-[44px] items-center gap-2 rounded-sm px-3 py-2 text-sm text-accent transition-colors duration-200 ease-out hover:bg-accent-dim focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+												>
+													<ShieldCheck
+														className="h-4 w-4 shrink-0 text-accent"
+														aria-hidden="true"
+													/>
+													<span className="truncate">admin</span>
+												</Link>
+											</m.li>
+										)}
 									</m.ul>
 									{isConnected && onDisconnect && !confirmDisconnect && (
 										<button
