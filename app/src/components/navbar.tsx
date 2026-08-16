@@ -123,15 +123,15 @@ export function Navbar() {
 											transition={EASE_SPRING}
 											className="inline-block"
 										>
-<Link
-											href={link.href}
-											aria-current={isActive ? "page" : undefined}
-											className={`relative inline-flex h-9 items-center gap-1.5 rounded-sm px-3 text-[13px] transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-												isActive
-													? "text-accent"
-													: "text-text-secondary hover:text-text-bright"
-											}`}
-										>
+											<Link
+												href={link.href}
+												aria-current={isActive ? "page" : undefined}
+												className={`relative inline-flex h-9 items-center gap-1.5 rounded-sm px-3 text-[13px] transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+													isActive
+														? "text-accent"
+														: "text-text-secondary hover:text-text-bright"
+												}`}
+											>
 												{isActive && (
 													<m.span
 														layoutId="nav-active"

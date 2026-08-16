@@ -44,7 +44,7 @@ const TERMS: Term[] = [
 	},
 	{
 		term: "Model",
-		def: "A trained AI 'brain' with specific strengths, speeds, and prices. OMA routes to a curated catalog of chat, image, video, and audio models from multiple upstream providers — frontier for hard problems, budget for everyday chat.",
+		def: "A trained AI 'brain' with specific strengths, speeds, and prices. OMA routes to a curated catalog of chat models from multiple upstream providers — frontier for hard problems, budget for everyday chat.",
 	},
 	{
 		term: "Prompt",
@@ -72,7 +72,7 @@ const TERMS: Term[] = [
 	},
 	{
 		term: "Embedding",
-		def: "Turning text into a list of numbers (a vector) that captures its meaning, so programs can compare, search, and cluster text by similarity. Used for search, recommendations, and memory.",
+		def: "Turning text into a list of numbers (a vector) that captures its meaning, so programs can compare, search, and cluster text by similarity. Used for search, recommendations, and memory. OMA doesn't currently expose an embeddings endpoint — this is here for context.",
 	},
 	{
 		term: "Temperature / top-p",

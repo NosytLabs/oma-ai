@@ -28,8 +28,8 @@
 	* scoring is "planned but not live". The 94–98% discounts they
 	* advertise may be offloaded or trial credits that violate upstream
 	* providers' ToS. Surplus is opt-in: leave SURPLUS_API_KEY unset and
-	* Surplus is never selected for traffic. See
-	* docs/research/surplus-intelligence.md for the full risk writeup.
+	* Surplus is never selected for traffic. See the comment block above
+	* for the full risk writeup.
 	*
 	* NOTE: `gemini-3-flash-preview` is owned by the OMA-AI provider —
 	* it is the app's default free website-chat model. Don't add a

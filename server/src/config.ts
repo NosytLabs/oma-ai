@@ -54,8 +54,8 @@ const envSchema = z.object({
 		OMMA_ALLOW_NON_PRIVATE_VENICE: envBoolean.default(false),
 		// Surplus Intelligence (api.surplusintelligence.ai) is the only opt-in
 		// non-private resale upstream. It's gated behind SURPLUS_API_KEY — when unset,
-		// Surplus catalog entries are not selected for traffic. See
-		// docs/research/surplus-intelligence.md for trust/security notes.
+		// Surplus catalog entries are not selected for traffic. Trust/security notes
+		// live in the header comment of src/inference/models.ts.
 		// Primary Base mainnet RPC. Default = QuickNode multichain endpoint (active
 		// production endpoint). Set to https://base-rpc.publicnode.com or another
 		// provider for dev/test environments.

@@ -71,7 +71,7 @@ Behavior, outages, or vulnerabilities of third-party upstream AI inference provi
 ## Security Announcements
 
 - All security patches are published via [GitHub Security Advisories](https://github.com/NosytLabs/oma-ai/security/advisories).
-- Security changes will be cataloged in the changelog at [oma-ai.com/changelog](https://oma-ai.com/changelog).
+- Security changes will be cataloged in the [API documentation](https://oma-ai.com/docs).
 - Pull requests and security commits are tagged with the `security` label on GitHub.
 
 We recommend subscribing to repository release alerts to stay up to date.
