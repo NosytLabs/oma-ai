@@ -31,22 +31,20 @@
 
 import {
 	ArrowUpRight,
-	Boxes,
 	Terminal,
-	Tag,
-	FileText,
-	Network,
 	Gavel,
 	ShieldCheck,
-	BookOpen,
-	CircleHelp,
 	BookMarked,
 } from "lucide-react";
 import { m } from "@/lib/framer-motion-client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { OmaNavLockup } from "@/components/ui/oma-logo";
-import { isCurrentPath } from "./navbar/_lib/nav-links";
+import {
+	isCurrentPath,
+	primaryLinks,
+	toolsLinks,
+} from "./navbar/_lib/nav-links";
 import { EASE_SPRING, fadeUp, StaggerReveal } from "@/lib/animation";
 import { useAuth } from "@/lib/hooks/useAuth";
 
@@ -61,20 +59,24 @@ type FooterSection = {
 	links: FooterLink[];
 };
 
+// PRODUCT / DEVELOPERS / LEARN derive from the single source of truth in
+// navbar/_lib/nav-links.ts to prevent link label drift. Only footer-only
+// entries (Playground, Glossary, legal, account) stay local here.
+const byHref = <T extends { href: string }>(
+	list: T[],
+	href: string,
+): T | undefined => list.find((l) => l.href === href);
+
 const PRODUCT: FooterSection = {
 	title: "Product",
-	links: [
-		{ label: "Models", href: "/models", icon: Boxes },
-		{ label: "Chat", href: "/chat", icon: Terminal },
-		{ label: "Pricing", href: "/pricing", icon: Tag },
-	],
+	links: primaryLinks.filter((l) => l.href !== "/docs"),
 };
 
 const DEVELOPERS: FooterSection = {
 	title: "Developers",
 	links: [
-		{ label: "Docs", href: "/docs", icon: FileText },
-		{ label: "API Reference", href: "/docs#endpoints", icon: Network },
+		byHref(primaryLinks, "/docs")!,
+		byHref(toolsLinks, "/docs#endpoints")!,
 		{ label: "Playground", href: "/chat", icon: Terminal },
 	],
 };
@@ -82,8 +84,8 @@ const DEVELOPERS: FooterSection = {
 const LEARN: FooterSection = {
 	title: "Learn",
 	links: [
-		{ label: "Getting Started", href: "/getting-started", icon: BookOpen },
-		{ label: "FAQ", href: "/faq", icon: CircleHelp },
+		byHref(toolsLinks, "/getting-started")!,
+		byHref(toolsLinks, "/faq")!,
 		{ label: "Glossary", href: "/glossary", icon: BookMarked },
 	],
 };

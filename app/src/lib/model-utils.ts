@@ -164,6 +164,8 @@ export interface LiveModelRaw {
 	provider?: string;
 	/** false when the provider's API key is missing/placeholder server-side */
 	available?: boolean;
+	/** Modality bucket — "chat", "image", "video", etc. */
+	modality?: string;
 	pricing?: { prompt?: string; completion?: string };
 }
 

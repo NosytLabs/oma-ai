@@ -134,7 +134,7 @@ function fetchLiveModels(): Promise<ModelOption[]> {
 			const mapped = (data.data as unknown[])
 				.filter(
 					(m): m is LiveModelRaw =>
-						isLiveModelRaw(m) && (m as any).modality !== "video",
+						isLiveModelRaw(m) && (m as LiveModelRaw).modality !== "video",
 				)
 				.map(mapLiveModel);
 			return mapped;

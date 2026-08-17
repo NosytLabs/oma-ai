@@ -35,7 +35,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
 		<html lang="en">
 			<body
 				style={{
-					minHeight: "100vh",
+					minHeight: "100dvh",
 					margin: 0,
 					backgroundColor: "#07090a",
 					color: "#d8dcd6",
@@ -46,7 +46,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
 					role="alert"
 					aria-live="assertive"
 					style={{
-						minHeight: "100vh",
+						minHeight: "100dvh",
 						display: "flex",
 						flexDirection: "column",
 						alignItems: "center",

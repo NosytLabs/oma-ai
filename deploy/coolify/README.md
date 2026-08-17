@@ -16,7 +16,7 @@ The critical variables to set for production are:
 - `ENCRYPTION_KEY` (generate with `openssl rand -hex 32`)
 - `RECEIPT_HMAC_SECRET` (generate with `openssl rand -hex 32`)
 - `TREASURY_BASE_ADDRESS`
-- `CHAIN_RPC_URL` (Base mainnet RPC)
+- `QUICKNODE_RPC_URL` (Base mainnet RPC — `CHAIN_RPC_URL` is an accepted alias)
 
 ## 2. Deploy with Coolify
 

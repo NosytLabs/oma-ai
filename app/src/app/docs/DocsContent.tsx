@@ -67,7 +67,7 @@ function Sidebar({ activeId }: { activeId: string }) {
 				aria-label="Documentation navigation"
 				aria-hidden={drawerHidden}
 				inert={drawerHidden}
-				className={`fixed left-0 top-14 z-[60] h-[calc(100vh-3.5rem)] w-72 overflow-y-auto border-r border-border bg-void transition-transform duration-200 ease-out lg:translate-x-0 ${
+				className={`fixed left-0 top-14 z-[60] h-[calc(100dvh-3.5rem)] w-72 overflow-y-auto border-r border-border bg-void transition-transform duration-200 ease-out lg:translate-x-0 ${
 					mobileOpen ? "translate-x-0" : "-translate-x-full"
 				}`}
 			>

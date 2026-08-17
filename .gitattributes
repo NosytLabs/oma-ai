@@ -1,17 +1,46 @@
-# Auto-detect text/set LF line endings for all text files
-* text=auto eol=lf
+# Auto-detect text files
+* text=auto
 
-# Binary file types — do not touch
-*.png binary
-*.jpg binary
-*.jpeg binary
-*.ico binary
-*.ttf binary
-*.woff binary
+# Source code
+*.ts    text eol=lf
+*.tsx   text eol=lf
+*.js    text eol=lf
+*.jsx   text eol=lf
+*.json  text eol=lf
+*.css   text eol=lf
+*.scss  text eol=lf
+*.html  text eol=lf
+*.md    text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.sh    text eol=lf
+*.toml  text eol=lf
+*.rs    text eol=lf
+
+# Scripts
+*.sh    text eol=lf
+*.mjs   text eol=lf
+
+# Lockfiles
+docker-compose.yml   linguist-generated=true
+docker-compose.prod.yml   linguist-generated=true
+pnpm-lock.yaml       linguist-generated=true
+bun.lock            linguist-generated=true
+package-lock.json    linguist-generated=true
+
+# Binary files
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.webp  binary
+*.svg   text eol=lf
+*.woff  binary
 *.woff2 binary
-*.webp binary
-*.avif binary
-*.gif binary
-
-# Generated / vendored — linguist overrides for GitHub stats
-server/src/routes/_lib/openapi-paths.ts linguist-generated=true
+*.ttf   binary
+*.otf   binary
+*.eot   binary
+*.zip   binary
+*.tar   binary
+*.gz    binary

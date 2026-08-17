@@ -152,7 +152,7 @@ export default function RootLayout({
 									<Navbar />
 									<main
 										id="main-content"
-										className="flex min-h-0 min-w-0 max-w-[100vw] flex-1 flex-col"
+										className="flex min-h-0 min-w-0 w-full flex-1 flex-col"
 										tabIndex={-1}
 									>
 										<ErrorBoundary>{children}</ErrorBoundary>
