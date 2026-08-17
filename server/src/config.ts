@@ -27,16 +27,12 @@ const envSchema = z.object({
 		REDIS_URL: z.string().min(1).optional().default("redis://localhost:6379"),
 		VENICE_API_KEY: z.string().min(1).optional(),
 		VENICE_API_URL: z.string().min(1).default("https://api.venice.ai"),
-		// OMA-AI resale upstreams (both branded "oma-ai" to users):
-		//   ZYLOO_*      → api.zyloo.io — gemini-*, gpt-* models (verified 2026-08-08)
-		//   OPENBROKER_* → api.openbroker.gonka.gg — MiniMax-M2.7, Kimi-K2.6
-		// These are two DISTINCT upstreams, not aliases.
-		
+		// OMA-AI resale upstream (branded "oma-ai" to users):
+		//   OPENBROKER_* → api.openbroker.gonka.gg — MiniMax-M2.7, Kimi-K2.6, etc.
+		// (Zyloo was previously a sister upstream; removed 2026-08-17.)
+
 		LITELLM_API_KEY: z.string().min(1).optional(),
 		LITELLM_API_URL: z.string().url().optional().default("http://localhost:4000/v1"),
-		ZYLOO_API_KEY: z.string().min(1).optional(),
-
-		ZYLOO_API_URL: z.string().url().optional().default("https://api.zyloo.io"),
 		OPENBROKER_API_KEY: z.string().min(1).optional(),
 		// Local/dev aliases — Gonka issues keys as GONKA_API_KEY or OBK_API_KEY.
 		GONKA_API_KEY: z.string().min(1).optional(),
@@ -184,8 +180,8 @@ function usableProviderKey(key: string | undefined): boolean {
 		if (!key || key.length < 16) return false;
 		if (/placeholder|changeme|your-key|example/i.test(key)) return false;
 		if (/^(plch-|your-|dev-)/i.test(key)) return false;
-		if (/^(zyloo_|openbroker_|surplus_)(placeh|changeme|your|xxx|dummy)/i.test(key)) {
-				return false;
+		if (/^(openbroker_|surplus_)(placeh|changeme|your|xxx|dummy)/i.test(key)) {
+			return false;
 		}
 		return true;
 }

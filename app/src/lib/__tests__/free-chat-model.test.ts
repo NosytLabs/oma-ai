@@ -21,14 +21,10 @@ describe("isFreeChatModel (guest website chat)", () => {
 		expect(isFreeChatModel("minimax-m2-7")).toBe(true);
 		expect(isFreeChatModel("mistral-small-2603")).toBe(true);
 
-		// Paid — OMA-AI resale through Zyloo (NOT Gonka openbroker) requires auth.
-		// qwen3-235b-a22b-openbroker has "openbroker" in its id but routes via
-		// Zyloo per server/src/inference/models.ts — paid everywhere.
-		expect(isFreeChatModel("qwen3-235b-a22b-openbroker")).toBe(false);
-		expect(isFreeChatModel("gpt-4o")).toBe(false);
-		expect(isFreeChatModel("gemini-3.1-pro-preview")).toBe(false);
-
-		// Paid — Venice-routed models always require auth
+		// Paid — Venice-routed models always require auth. (Pre-2026-08-17
+		// this block also covered OMA-AI resale through Zyloo, e.g.
+		// qwen3-235b-a22b-openbroker, gpt-4o, gemini-3.1-pro-preview.
+		// Those models were deleted along with Zyloo.)
 		expect(isFreeChatModel("kimi-k3")).toBe(false);
 		expect(isFreeChatModel("llama-3.3-70b")).toBe(false);
 		expect(isFreeChatModel("llama-3.3-70b", "Venice")).toBe(false);

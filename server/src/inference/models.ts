@@ -57,8 +57,12 @@ export interface ModelDef {
 		capabilities: string[];
 		veniceId?: string;
 		omaAiId?: string;
-		/** Which resale upstream backs an "oma-ai" model. Defaults to "zyloo". */
-		upstream?: "zyloo" | "openbroker";
+		/**
+		 * Resale upstream backing an "oma-ai" model. Only "openbroker" is supported
+		 * (Zyloo was removed 2026-08-17). Models without this field are no longer
+		 * routable — every live oma-ai entry must declare this explicitly.
+		 */
+		upstream?: "openbroker";
 		/**
 			* Surplus Intelligence marketplace id, used as a fallback procurement
 			* route. INVISIBLE to users — the catalog entry's `provider` field
@@ -371,25 +375,14 @@ const VENICE_MODELS: ModelDef[] = [
 
 ];
 
-// ── OMA-AI Resale — branded "oma-ai", backed by Zyloo + OpenBroker ──
+// ── OMA-AI Resale — branded "oma-ai", backed by OpenBroker (Gonka network) ──
+// (Zyloo was previously a sister upstream; removed 2026-08-17. Models that
+//  were implicit-zyloo — gemini-3.1-pro-preview, gpt-4.1, gpt-4o,
+//  qwen3-235b-a22b-openbroker — were deleted since OpenBroker does not
+//  carry them.)
 const OMA_AI_MODELS: ModelDef[] = [
-		// ── Zyloo upstream (api.zyloo.io) ─────────────────────────────────
-		{
-				id: "gemini-3.1-pro-preview",
-				provider: "oma-ai",
-				omaAiId: "gemini-3.1-pro-preview",
-				surplusId: "gemini-3.1-pro-preview",
-				inputPricePer1M: 2.0, // Updated for margin
-				outputPricePer1M: 9.5, // Updated for margin
-				markupPercent: 0,
-				displayName: "Gemini 3.1 Pro",
-				category: "frontier",
-				maxTokens: 16384,
-				contextWindow: 128_000,
-				maxOutputTokens: 16384,
-				supportsStreaming: true,
-				capabilities: ["chat", "reasoning", "coding", "tools"],
-		},
+		// ── OpenBroker upstream (api.openbroker.gonka.gg) ─────────────────
+
 		{
 				// Default free website-chat model. Routed via Gonka Network OpenBroker
 				// (upstream === "openbroker") so anonymous /chat and /playground users
@@ -413,40 +406,6 @@ const OMA_AI_MODELS: ModelDef[] = [
 				supportsStreaming: true,
 				capabilities: ["chat", "fast", "tools"],
 		},
-		{
-				id: "gpt-4.1",
-				provider: "oma-ai",
-				omaAiId: "gpt-4.1",
-				inputPricePer1M: 4.0, // Updated for margin
-				outputPricePer1M: 16.0, // Updated for margin
-				markupPercent: 0,
-				displayName: "GPT-4.1",
-				category: "frontier",
-				maxTokens: 16384,
-				contextWindow: 128_000,
-				maxOutputTokens: 16384,
-				supportsStreaming: true,
-				capabilities: ["chat", "reasoning", "coding", "tools"],
-		},
-		{
-				id: "gpt-4o",
-				provider: "oma-ai",
-				omaAiId: "gpt-4o",
-				surplusId: "gpt-4o",
-				inputPricePer1M: 5.0, // Updated for margin
-				outputPricePer1M: 19.0, // Updated for margin
-				markupPercent: 0,
-				displayName: "GPT-4o",
-				category: "premium",
-				maxTokens: 8192,
-				contextWindow: 128_000,
-				maxOutputTokens: 8192,
-				supportsStreaming: true,
-				capabilities: ["chat", "fast", "tools"],
-		},
-
-		// ── OpenBroker upstream (api.openbroker.gonka.gg) ─────────────────
-
 		{
 				id: "kimi-k2-6",
 				provider: "oma-ai",
@@ -495,7 +454,7 @@ const OMA_AI_MODELS: ModelDef[] = [
 				inputPricePer1M: 0.5, // Updated for margin
 				outputPricePer1M: 0.75, // Updated for margin
 				markupPercent: 0,
-				displayName: "DeepSeek V4 Flash (OMA-AI)",
+				displayName: "DeepSeek V4 Flash",
 				category: "budget",
 				maxTokens: 16384,
 				contextWindow: 1_000_000,
@@ -503,27 +462,7 @@ const OMA_AI_MODELS: ModelDef[] = [
 				supportsStreaming: true,
 				capabilities: ["chat", "reasoning", "fast", "tools"],
 		},
-		{
-				// Qwen3-235B-A22B-Instruct-2507-FP8 — routed via the OMA-AI resale
-				// path through Zyloo. Qwen is NOT on the Gonka OpenBroker upstream, so
-				// this model is PAID everywhere (chat, playground, API).
-				// Mixture-of-experts 235B with 22B active. Strong multilingual /
-				// instruction-following / agent surface.
-				id: "qwen3-235b-a22b-openbroker",
-				provider: "oma-ai",
-				omaAiId: "qwen3-235b-a22b-2507",
-				inputPricePer1M: 0.65, // Updated for margin
-				outputPricePer1M: 2.0, // Updated for margin
-				markupPercent: 0,
-				displayName: "Qwen3 235B (OMA-AI)",
-				category: "mid",
-				maxTokens: 16384,
-				contextWindow: 128_000,
-				maxOutputTokens: 16384,
-				supportsStreaming: true,
-				capabilities: ["chat", "reasoning", "tools"],
-		},
-];
+		];
 
 function defaultCatalog(): ModelDef[] {
 		return [...VENICE_MODELS, ...OMA_AI_MODELS];
@@ -573,27 +512,13 @@ export function userFacingPrices(m: ModelDef): {
 	* fallback inside the router when the primary upstream fails.
 	*/
 export function providerAvailable(m: ModelDef): boolean {
-		if (m.provider === "litellm") return isConfiguredKey(config.LITELLM_API_KEY);
-		if (m.provider === "venice") return isConfiguredKey(config.VENICE_API_KEY);
-		if (m.provider === "oma-ai") {
-				const key =
-						m.upstream === "openbroker"
-								? config.OPENBROKER_API_KEY
-								: config.ZYLOO_API_KEY;
-				return isConfiguredKey(key);
-		}
-		return false;
-}
-
-/**
-	* Whether Surplus Intelligence procurement is configured for this model.
-	* True only when (a) SURPLUS_API_KEY is set and (b) the catalog entry
-	* declares a `surplusId` (the upstream model id at Surplus). The proxy
-	* uses this to decide whether to retry a failed primary request via
-	* Surplus.
-	*/
-export function surplusAvailable(m: ModelDef): boolean {
-		return !!m.surplusId && isConfiguredKey(config.SURPLUS_API_KEY);
+	if (m.provider === "litellm") return isConfiguredKey(config.LITELLM_API_KEY);
+	if (m.provider === "venice") return isConfiguredKey(config.VENICE_API_KEY);
+	if (m.provider === "oma-ai") {
+		// Only "openbroker" upstream remains after Zyloo removal (2026-08-17).
+		return isConfiguredKey(config.OPENBROKER_API_KEY);
+	}
+	return false;
 }
 
 function isConfiguredKey(key: string | undefined): boolean {
@@ -601,7 +526,7 @@ function isConfiguredKey(key: string | undefined): boolean {
 		if (/placeholder|changeme|your-key|example/i.test(key)) return false;
 		// Only reject obvious dummy prefixes — real Venice keys start with VENICE_.
 		if (/^(plch-|your-|dev-)/i.test(key)) return false;
-		if (/^(zyloo_|openbroker_|surplus_)(placeh|changeme|your|xxx|dummy)/i.test(key)) {
+		if (/^(openbroker_|surplus_)(placeh|changeme|your|xxx|dummy)/i.test(key)) {
 				return false;
 		}
 		return true;

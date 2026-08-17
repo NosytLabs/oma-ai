@@ -3,7 +3,7 @@ import { Hono } from "hono";
 import type { OmaEnv } from "../../types";
 
 vi.mock("../../config.js", () => ({
-		config: { VENICE_API_KEY: "dev-venice-key-123456", ZYLOO_API_KEY: "dev-zyloo-key-123456", OPENBROKER_API_KEY: "dev-ob-key-123456" }
+		config: { VENICE_API_KEY: "dev-venice-key-123456", OPENBROKER_API_KEY: "dev-ob-key-123456" }
 }));
 
 vi.mock("../../lib/logger.js", () => ({

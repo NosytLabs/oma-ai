@@ -33,7 +33,7 @@ describe("ModelsPage", () => {
 		await act(async () => {
 			await waitFor(() => {
 				expect(
-					screen.getByRole("heading", { name: /Models$/i }),
+					screen.getByRole("heading", { name: /every model/i }),
 				).toBeInTheDocument();
 			});
 		});
@@ -67,7 +67,7 @@ describe("ModelsPage", () => {
 		render(<ModelsPage />);
 		await act(async () => {
 			await waitFor(() => {
-				// Real Zyloo catalog labels Gemini 3 Flash correctly now.
+				// Live catalog labels Gemini 3 Flash correctly now.
 				// Use a regex so the assertion stays valid across catalog refreshes.
 				expect(screen.getAllByText(/Gemini 3 Flash/i).length).toBeGreaterThan(0);
 			});

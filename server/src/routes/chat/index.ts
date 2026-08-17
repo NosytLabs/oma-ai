@@ -53,7 +53,7 @@ import { config } from "../../config.js";
 	* upstream runs models on decentralized compute where OMA-AI pays in
 	* protocol credits, so we can offer those at $0 to website visitors.
 	*
-	* Everything else (Venice-routed, Zyloo-routed OMA-AI resale, and even
+	* Everything else (Venice-routed, OMA-AI resale, and even
 	* other "openbroker"-tagged models that are not actually on the Gonka
 	* network) requires auth + credits in /chat, /playground, and the
 	* /v1 API surface.

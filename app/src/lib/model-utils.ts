@@ -13,7 +13,7 @@ import type { ModelOption } from "@/lib/types/model";
  * Mirrors server-side logic in `server/src/inference/fallback.ts`:
  * every model whose `upstream === "openbroker"` (api.openbroker.gonka.gg)
  * is free in /chat and /playground. All other models — Venice-routed
- * chats, OMA-AI resale through Zyloo, anything paid upstream — require
+ * chats, OMA-AI resale, anything paid upstream — require
  * auth + credits in chat, playground, and the /v1 API surface.
  */
 export const FREE_CHAT_MODEL_IDS = new Set<string>([
@@ -34,14 +34,6 @@ export const FREE_DEFAULT_CHAT_MODEL = "gemini-3-flash-preview";
 export const DOCS_EXAMPLE_MODEL = "llama-3.3-70b";
 
 /**
-	* Live-API display-name overrides. The upstream `/v1/models` endpoint returns
-	* low-quality names for some entries (e.g. "Google Gemini 3" instead of "Gemini 3 Flash").
-	* This map canonicalises them on the client without touching the server
-	* catalog.
-	*/
-const LIVE_DISPLAY_NAME_OVERRIDES: Record<string, string> = {};
-
-/**
 	* Pick the canonical display name for a model coming from the live API.
 	* Used by `mapLiveModel` so the chat dropdown shows the right name even when
 	* the upstream server is stale.
@@ -50,15 +42,16 @@ function liveDisplayName(
 	id: string,
 	rawName: string | undefined,
 ): string | undefined {
-	const override = LIVE_DISPLAY_NAME_OVERRIDES[id.toLowerCase()];
-	if (override) return override;
+	// Reserved for future client-side canonicalisation overrides — upstream
+	// returns low-quality names for some entries (e.g. "Google Gemini 3"
+	// instead of "Gemini 3 Flash") and this is the per-model patch point.
 	return rawName?.trim() || undefined;
 }
 
 /**
 	* Whether the website chat may call completions without sign-in / API key.
 	* Only Gonka Network (openbroker upstream) models are free in /chat and
-	* /playground. Everything else (Venice + Zyloo OMA-AI resale) is paid.
+	* /playground. Everything else (Venice + OMA-AI resale) is paid.
 	*/
 export function isFreeChatModel(
 	modelId: string,
@@ -75,11 +68,6 @@ export function isFreeChatModel(
 const FRIENDLY_NAME: Record<string, string> = Object.fromEntries(
 	MODELS.map((m) => [m.id, m.name]),
 );
-
-// Override map layered ON TOP of FRIENDLY_NAME so model-name fixes don't have
-// to wait for a server-side catalog redeploy. Anything in this map wins over
-// both the static fallback name and the upstream `display_name`.
-const NAME_OVERRIDES: Record<string, string> = {};
 
 // Parts that should stay uppercase (size specifiers, fine-tune tags, etc.)
 const RETAIN_UPPER = new Set([
@@ -137,13 +125,11 @@ function humanizeModelId(id: string): string {
 /**
 	* Resolve a display name for a model: prefer the static catalog name,
 	* fall back to a provided `fallback`, and ultimately humanize the raw ID.
-	* The NAME_OVERRIDES map is the highest-priority source — used to canonicalise
-	* model names whose upstream `display_name` is wrong without touching the
-	* server catalog.
+	* Per-model overrides can be layered on top here when upstream `display_name`
+	* is wrong without touching the server catalog.
 	*/
 export function displayName(id: string, fallback?: string): string {
 	return (
-		NAME_OVERRIDES[id.toLowerCase()] ??
 		FRIENDLY_NAME[id] ??
 		(fallback && fallback !== id ? fallback : humanizeModelId(id))
 	);
