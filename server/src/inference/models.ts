@@ -384,17 +384,19 @@ const OMA_AI_MODELS: ModelDef[] = [
 		// ── OpenBroker upstream (api.openbroker.gonka.gg) ─────────────────
 
 		{
-				// Default free website-chat model. Routed via Gonka Network OpenBroker
-				// (upstream === "openbroker") so anonymous /chat and /playground users
-				// can talk to Gemini 3 Flash at $0. API-key callers are billed the
-				// listed price. Don't add a Venice entry under the same id or it
-				// will shadow the free route and break anonymous website chat
-				// (401 on free model).
+				// Default free website-chat model. The user-facing id stays
+				// "gemini-3-flash-preview" (mirrored as FREE_DEFAULT_CHAT_MODEL
+				// across the app), but Gonka/OpenBroker carries NO Gemini model,
+				// so this routes to DeepSeek V4 Flash (the cheapest, fastest
+				// Gonka model fit for guest chat) at $0. API-key callers are
+				// billed the listed price. Don't add a Venice entry under the
+				// same id or it will shadow the free route and break anonymous
+				// website chat (401 on free model).
 				id: "gemini-3-flash-preview",
 				provider: "oma-ai",
 				upstream: "openbroker",
-				omaAiId: "gemini-3-flash-preview",
-				surplusId: "gemini-3-flash-preview",
+				omaAiId: "deepseek-ai/DeepSeek-V4-Flash-0731",
+				surplusId: "deepseek-v4-flash-0731",
 				inputPricePer1M: 0.5, // Updated for margin
 				outputPricePer1M: 3.0, // Updated for margin
 				markupPercent: 0,
@@ -449,7 +451,7 @@ const OMA_AI_MODELS: ModelDef[] = [
 				id: "deepseek-v4-flash-0731-openbroker",
 				provider: "oma-ai",
 				upstream: "openbroker",
-				omaAiId: "deepseek-v4-flash-0731",
+				omaAiId: "deepseek-ai/DeepSeek-V4-Flash-0731",
 				surplusId: "deepseek-v4-flash-0731",
 				inputPricePer1M: 0.5, // Updated for margin
 				outputPricePer1M: 0.75, // Updated for margin
