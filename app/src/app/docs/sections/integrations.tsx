@@ -31,7 +31,7 @@ export function IntegrationsSection() {
 					</li>
 					<li>
 						API key: create at{" "}
-						<Link href="/dashboard?tab=api-keys" className="text-accent underline-offset-2 hover:underline">
+						<Link href="/dashboard?tab=api-keys" className="text-accent underline underline-offset-2 decoration-1 decoration-border-bright/70 transition-colors hover:text-accent-bright hover:decoration-accent">
 							/dashboard → API keys
 						</Link>{" "}
 						(<code className="font-mono text-xs">oma_sk_…</code>)
@@ -39,7 +39,7 @@ export function IntegrationsSection() {
 					<li>
 						Default sample model:{" "}
 						<code className="font-mono text-xs">{model}</code> (see{" "}
-						<Link href="/models" className="text-accent underline-offset-2 hover:underline">
+						<Link href="/models" className="text-accent underline underline-offset-2 decoration-1 decoration-border-bright/70 transition-colors hover:text-accent-bright hover:decoration-accent">
 							/models
 						</Link>
 						)
@@ -49,7 +49,7 @@ export function IntegrationsSection() {
 						<code className="font-mono text-xs">POST /v1/messages</code>
 					</li>
 					<li>
-						<Link href="/agent-skill.md" className="text-accent underline-offset-2 hover:underline" target="_blank" rel="noopener noreferrer">
+						<Link href="/agent-skill.md" className="text-accent underline underline-offset-2 decoration-1 decoration-border-bright/70 transition-colors hover:text-accent-bright hover:decoration-accent" target="_blank" rel="noopener noreferrer">
 							System instructions
 						</Link>
 						: For custom agent setups, see our <code className="font-mono text-xs">agent-skill.md</code> file.
@@ -107,7 +107,7 @@ export OPENAI_MODEL="${model}"
 				/>
 				<p className="mt-2 text-xs text-text-muted">
 					Create the key at{" "}
-					<Link href="/dashboard?tab=api-keys" className="text-accent underline-offset-2 hover:underline">
+					<Link href="/dashboard?tab=api-keys" className="text-accent underline underline-offset-2 decoration-1 decoration-border-bright/70 transition-colors hover:text-accent-bright hover:decoration-accent">
 						/dashboard → API keys
 					</Link>
 					. Never commit <code className="font-mono">oma_sk_…</code> to git — use env vars.

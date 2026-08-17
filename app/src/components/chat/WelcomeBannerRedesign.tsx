@@ -160,6 +160,18 @@ export function WelcomeBanner({
 	const [visible, setVisible] = useState(false);
 	const [dismissed, setDismissed] = useState(true);
 	const [showTips, setShowTips] = useState(false);
+	const [reduceMotion, setReduceMotion] = useState(false);
+	useEffect(() => {
+		try {
+			const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+			const sync = () => setReduceMotion(mq.matches);
+			sync();
+			mq.addEventListener("change", sync);
+			return () => mq.removeEventListener("change", sync);
+		} catch {
+			/* SSR — keep default */
+		}
+	}, []);
 	useEffect(() => {
 	try {
 	const notDismissed = localStorage.getItem(STORAGE_KEY) !== "1";
@@ -223,16 +235,16 @@ export function WelcomeBanner({
 	}}
 	/>
 
-	{/* ─── Animated gradient border at top ─── */}
-	<div
-	className="absolute top-0 left-0 right-0 h-px"
-	style={{
-	background:
-	"linear-gradient(90deg, transparent, var(--color-accent), var(--color-tertiary), transparent)",
-	backgroundSize: "200% 100%",
-	animation: "gradient-shift 4s ease infinite",
-	}}
-	/>
+{/* ─── Animated gradient border at top ─── */}
+		<div
+			className="absolute top-0 left-0 right-0 h-px"
+			style={{
+			background:
+			"linear-gradient(90deg, transparent, var(--color-accent), var(--color-tertiary), transparent)",
+			backgroundSize: reduceMotion ? "100% 100%" : "200% 100%",
+			animation: reduceMotion ? "none" : "gradient-shift 4s ease infinite",
+			}}
+		/>
 
 	<div className="relative max-w-4xl mx-auto px-4 md:px-8 py-4">
 	{/* ─── Compact header — collapses the previous 4-step grid into
@@ -316,7 +328,7 @@ export function WelcomeBanner({
 		>
 		<span className="text-accent font-bold">TIP:</span>{" "}
 		<TypewriterText
-		text="Guest chat is free on Gonka models like Gemini 3 Flash, Kimi K2.6, MiniMax M2.7, and DeepSeek V4 Flash."
+		text="Guest chat is free on OMA-AI models like Gemini 3 Flash, Kimi K2.6, MiniMax M2.7, and DeepSeek V4 Flash."
 		delay={900}
 		/>
 		</m.div>

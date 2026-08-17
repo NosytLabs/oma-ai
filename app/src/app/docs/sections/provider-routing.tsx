@@ -26,7 +26,7 @@ export function ProviderRoutingSection() {
 				</div>
 			</div>
 
-			<div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+			<div className="mb-6 grid gap-4 sm:grid-cols-2">
 				<div id="pr-venice" className="rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] p-4 scroll-mt-24">
 					<div className="flex items-center gap-2 mb-2">
 						<span className="inline-flex items-center rounded-full bg-accent/20 text-accent px-2.5 py-0.5 text-xs font-medium">Primary</span>
@@ -48,31 +48,14 @@ export function ProviderRoutingSection() {
 						<span className="font-semibold text-text text-sm">OMA-AI</span>
 					</div>
 					<p className="text-sm text-text-muted">
-						Branded "oma-ai" resale layer — Zyloo (<code className="font-mono">api.zyloo.io</code>) hosts the
-						Gemini / GPT / Qwen models and OpenBroker (<code className="font-mono">api.openbroker.gonka.gg</code>) hosts the
-						Gemini Flash / Kimi / MiniMax / DeepSeek budget models. Same billing, same
-						failover rules; lower per-token rates.
+						Budget-tier models branded as OMA-AI — Gemini, GPT, Kimi, MiniMax,
+						Qwen, and DeepSeek. Same billing, same failover rules as the
+						primary catalog, at lower per-token rates.
 					</p>
 					<div className="mt-3 flex flex-wrap gap-1">
 						<span className="rounded-[var(--radius-sm)] bg-surface px-1.5 py-0.5 text-[10px] text-text-muted border border-border/50">chat</span>
 						<span className="rounded-[var(--radius-sm)] bg-surface px-1.5 py-0.5 text-[10px] text-text-muted border border-border/50">tools</span>
 						<span className="rounded-[var(--radius-sm)] bg-surface px-1.5 py-0.5 text-[10px] text-text-muted border border-border/50">free-tier</span>
-					</div>
-				</div>
-				<div id="pr-surplus" className="rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] p-4 scroll-mt-24">
-					<div className="flex items-center gap-2 mb-2">
-						<span className="inline-flex items-center rounded-full bg-warning/20 text-warning px-2.5 py-0.5 text-xs font-medium">Opt-in</span>
-						<span className="font-semibold text-text text-sm">Surplus</span>
-					</div>
-					<p className="text-sm text-text-muted">
-						Hidden procurement fallback. Only kicks in when a request to the
-						model&apos;s primary provider fails AND <code className="font-mono">SURPLUS_API_KEY</code> is configured.
-						The customer-facing <code className="font-mono">x-provider</code> header stays as Venice or OMA-AI;
-						Surplus is never surfaced to end users.
-					</p>
-					<div className="mt-3 flex flex-wrap gap-1">
-						<span className="rounded-[var(--radius-sm)] bg-surface px-1.5 py-0.5 text-[10px] text-text-muted border border-border/50">chat</span>
-						<span className="rounded-[var(--radius-sm)] bg-surface px-1.5 py-0.5 text-[10px] text-text-muted border border-border/50">internal</span>
 					</div>
 				</div>
 			</div>

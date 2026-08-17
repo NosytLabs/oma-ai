@@ -37,7 +37,7 @@ func main() {
 				id="authentication"
 				icon={<Key className="h-5 w-5" />}
 				title="Authentication"
-				subtitle="Paid models and the public API need a Bearer API key (or wallet session). Free OMA-AI/Gonka website chat does not."
+				subtitle="Paid models and the public API need a Bearer API key (or wallet session). Free OMA-AI website chat does not."
 			/>
 
 			<div
@@ -45,11 +45,11 @@ func main() {
 				className="rounded-[var(--radius-xl)] border border-accent/20 bg-accent/5 p-4 mb-6 scroll-mt-24"
 			>
 				<h3 className="font-semibold text-accent text-sm mb-2">
-					Free OMA-AI/Gonka models (website chat)
+					Free OMA-AI models (website chat)
 				</h3>
 				<p className="text-sm text-text-muted mb-2">
-					Models routed via OMA-AI (Gonka/OpenBroker /{" "}
-					<code className="text-accent font-mono text-xs">provider: oma-ai</code>
+					Budget models in the OMA-AI catalog
+					(<code className="text-accent font-mono text-xs">provider: oma-ai</code>
 					) — e.g. <code className="text-accent font-mono text-xs">gemini-3-flash-preview</code>,{" "}
 					<code className="text-accent font-mono text-xs">deepseek-v4-flash-0731-openbroker</code> — can be
 					used on <code className="text-accent font-mono text-xs">/chat</code>{" "}
@@ -59,7 +59,7 @@ func main() {
 					Programmatic API access to free models still works with a key if you
 					prefer; unauthenticated requests to{" "}
 					<code className="text-accent font-mono text-xs">/v1/chat/completions</code>{" "}
-					are accepted only for free OMA-AI/Gonka model ids.
+					are accepted only for free OMA-AI model ids.
 				</p>
 			</div>
 

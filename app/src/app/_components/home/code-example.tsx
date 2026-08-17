@@ -38,12 +38,14 @@ export function CodeExample({ modelCount }: CodeExampleProps) {
 	return (
 		<section
 			aria-labelledby="code-example-headline"
-			className="relative py-16 sm:py-20"
+			className="relative border-t border-border-subtle py-14 sm:py-18 lg:py-22"
 		>
 			<div className="container-page">
 				<Reveal>
 					<SectionHeader
 						id="code-example-headline"
+						eyebrow="Quickstart"
+						eyebrowVariant="caps"
 						headline={
 							<>
 								One import.

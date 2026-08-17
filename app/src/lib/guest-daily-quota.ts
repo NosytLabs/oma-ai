@@ -52,27 +52,6 @@ export function quotaFromServer(
 	return { remaining, limit, date: todayUtc() };
 }
 
-/** Parse X-DailyLimit-Remaining / X-DailyLimit-Limit response headers. */
-export function quotaFromHeaders(
-	headers: Headers,
-	fallbackLimit = GUEST_DAILY_LIMIT_DEFAULT,
-): GuestQuota | null {
-	const rem = headers.get("X-DailyLimit-Remaining");
-	if (rem == null || rem === "") return null;
-	const remaining = Number(rem);
-	if (!Number.isFinite(remaining)) return null;
-	const limRaw = headers.get("X-DailyLimit-Limit");
-	const limit =
-		limRaw != null && limRaw !== "" && Number.isFinite(Number(limRaw))
-			? Math.max(1, Math.floor(Number(limRaw)))
-			: fallbackLimit;
-	return {
-		remaining: Math.max(0, Math.floor(remaining)),
-		limit,
-		date: todayUtc(),
-	};
-}
-
 export function readStoredGuestQuota(): GuestQuota | null {
 	if (typeof localStorage === "undefined") return null;
 	try {

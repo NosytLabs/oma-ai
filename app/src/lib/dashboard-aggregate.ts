@@ -12,7 +12,9 @@ export interface ModelSlice {
 	color: string
 }
 
-const MODEL_PALETTE = ["#46d39a", "#3b82f6", "#f59e0b", "#ec4899", "#a855f7", "#ef4444"]
+// Brand-harmonized slice colors: emerald/teal first, warm hues only for
+// the long tail (brand rule: no orange/red as primary data colors).
+const MODEL_PALETTE = ["#46d39a", "#2dd4bf", "#3b82f6", "#a855f7", "#ec4899", "#f59e0b"]
 const TOP_MODELS = 5
 
 function localDayKey(iso: string): string {

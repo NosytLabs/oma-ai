@@ -97,17 +97,22 @@ function StatusDot({
 }
 
 function SectionHeading({
+	id,
 	index,
 	title,
 	meta,
 }: {
+	id?: string;
 	index?: string;
 	title: string;
 	meta?: string;
 }) {
 	return (
 		<header className="mb-5 sm:mb-7">
-			<h2 className="font-display text-xl sm:text-2xl font-bold tracking-tight text-text-bright">
+			<h2
+				id={id}
+				className="font-display text-xl sm:text-2xl font-bold tracking-tight text-text-bright"
+			>
 				{index && (
 					<span className="text-accent mr-2 tabular-nums">{index}</span>
 				)}
@@ -169,7 +174,7 @@ export default function PrivacyPage() {
 										className="h-1.5 w-1.5 rounded-full bg-accent"
 										aria-hidden="true"
 									/>
-									Privacy policy
+									<span className="eyebrow-caps">Privacy policy</span>
 								</span>
 
 								<h1
@@ -258,15 +263,13 @@ export default function PrivacyPage() {
 					<section
 						id="collection"
 						aria-labelledby="collection-heading"
-						className="border-t border-border container-page py-12 sm:py-16"
+						className="border-t border-border-subtle container-page py-14 sm:py-18 lg:py-22"
 					>
 						<SectionHeading
+							id="collection-heading"
 							title="What we collect"
 							meta="The data we keep and the data we never touch"
 						/>
-						<h3 id="collection-heading" className="sr-only">
-							Data we collect
-						</h3>
 
 						<div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
 							<div className="border border-border bg-surface p-5 rounded-[var(--radius-xl)]">
@@ -335,12 +338,13 @@ export default function PrivacyPage() {
 					<section
 						id="auth"
 						aria-labelledby="auth-heading"
-						className="border-t border-border container-page py-12 sm:py-16"
+						className="border-t border-border-subtle container-page py-14 sm:py-18 lg:py-22"
 					>
-						<SectionHeading title="Authentication" meta="Wallet-based authentication" />
-						<h3 id="auth-heading" className="sr-only">
-							Wallet authentication
-						</h3>
+						<SectionHeading
+							id="auth-heading"
+							title="Authentication"
+							meta="Wallet-based authentication"
+						/>
 
 						<p className="text-[13px] sm:text-sm text-text-secondary max-w-2xl mb-5">
 							Sign-In With Ethereum (SIWE) signatures establish your
@@ -374,15 +378,13 @@ export default function PrivacyPage() {
 					<section
 						id="logs"
 						aria-labelledby="logs-heading"
-						className="border-t border-border container-page py-12 sm:py-16"
+						className="border-t border-border-subtle container-page py-14 sm:py-18 lg:py-22"
 					>
 						<SectionHeading
+							id="logs-heading"
 							title="Logs and billing"
 							meta="What we meter, what we never see"
 						/>
-						<h3 id="logs-heading" className="sr-only">
-							API logs and billing
-						</h3>
 
 						<div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
 							<div className="border border-border bg-surface p-5 rounded-[var(--radius-xl)]">
@@ -448,12 +450,13 @@ export default function PrivacyPage() {
 					<section
 						id="retention"
 						aria-labelledby="retention-heading"
-						className="border-t border-border container-page py-12 sm:py-16"
+						className="border-t border-border-subtle container-page py-14 sm:py-18 lg:py-22"
 					>
-						<SectionHeading title="Retention" meta="How long we keep things" />
-						<h3 id="retention-heading" className="sr-only">
-							Data retention windows
-						</h3>
+						<SectionHeading
+							id="retention-heading"
+							title="Retention"
+							meta="How long we keep things"
+						/>
 
 						<ul className="border border-border bg-surface divide-y divide-border">
 							{[
@@ -488,12 +491,13 @@ export default function PrivacyPage() {
 					<section
 						id="third-parties"
 						aria-labelledby="third-parties-heading"
-						className="border-t border-border container-page py-12 sm:py-16"
+						className="border-t border-border-subtle container-page py-14 sm:py-18 lg:py-22"
 					>
-						<SectionHeading title="Third parties" meta="Who sees what" />
-						<h3 id="third-parties-heading" className="sr-only">
-							Third-party data sharing
-						</h3>
+						<SectionHeading
+							id="third-parties-heading"
+							title="Third parties"
+							meta="Who sees what"
+						/>
 
 						<p className="text-[13px] sm:text-sm text-text-secondary max-w-2xl mb-5">
 							OMA shares the minimum metadata needed to route inference, swap
@@ -542,12 +546,13 @@ export default function PrivacyPage() {
 					<section
 						id="subprocessors"
 						aria-labelledby="subprocessors-heading"
-						className="border-t border-border container-page py-12 sm:py-16"
+						className="border-t border-border-subtle container-page py-14 sm:py-18 lg:py-22"
 					>
-						<SectionHeading title="Sub-processors" meta="DPA list" />
-						<h3 id="subprocessors-heading" className="sr-only">
-							Sub-processors
-						</h3>
+						<SectionHeading
+							id="subprocessors-heading"
+							title="Sub-processors"
+							meta="DPA list"
+						/>
 						<p className="text-[13px] sm:text-sm text-text-secondary max-w-2xl mb-5">
 							Vendors that process limited operational data on our behalf. None
 							receive prompt or completion content. Contact{" "}
@@ -587,12 +592,13 @@ export default function PrivacyPage() {
 					<section
 						id="rights"
 						aria-labelledby="rights-heading"
-						className="border-t border-border container-page py-12 sm:py-16"
+						className="border-t border-border-subtle container-page py-14 sm:py-18 lg:py-22"
 					>
-						<SectionHeading title="Your rights" meta="What you control" />
-						<h3 id="rights-heading" className="sr-only">
-							Your rights
-						</h3>
+						<SectionHeading
+							id="rights-heading"
+							title="Your rights"
+							meta="What you control"
+						/>
 
 						<div className="grid gap-3 sm:grid-cols-2">
 							{[
@@ -641,7 +647,7 @@ export default function PrivacyPage() {
 					{/* ===== FOOTER NAV ===== */}
 					<section
 						aria-label="Related documents"
-						className="border-t border-border container-page py-10 sm:py-12"
+						className="border-t border-border-subtle container-page py-14 sm:py-18 lg:py-22"
 					>
 						<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 							<p className="text-[11px] sm:text-xs text-text-muted">

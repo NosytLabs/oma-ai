@@ -63,7 +63,7 @@ function ApiKeyManagerComponent({
 	});
 
 		return (
-		<div className="bg-surface/30 border border-border rounded-[var(--radius-lg)] shadow-[var(--shadow-md)] relative overflow-hidden h-full transition-[border-color,background-color] hover:border-accent/40 duration-200 ease-out">
+		<div className="bg-surface/30 border border-border rounded-[var(--radius-xl)] shadow-[var(--shadow-md)] relative overflow-hidden h-full transition-[border-color,background-color] hover:border-accent/40 duration-200 ease-out">
 		<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-accent/40 via-accent/20 to-transparent" />
 	<div className="flex flex-col p-6 sm:p-8">
 	<div className="mb-6 flex flex-wrap gap-4 items-center justify-between border-b border-border/50 pb-4">

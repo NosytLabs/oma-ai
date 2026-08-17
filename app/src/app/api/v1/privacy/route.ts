@@ -28,7 +28,7 @@ const PRIVACY_MANIFEST = {
 				"email (optional — required for magic-link + OTP, derived for SIWE-only)",
 				"wallet_address (lowercased EVM address; populated when SIWE is used)",
 				"user_id (Better Auth UUID, primary key)",
-				"suspended (boolean + reason, set via /v1/admin/user-suspend)",
+				"suspended (boolean + reason; set by operators for policy violations)",
 				"role (default 'user'; 'admin' for operators)",
 			],
 			retention:
@@ -94,8 +94,7 @@ const PRIVACY_MANIFEST = {
 	third_party_processors: {
 		inference: [
 			"Venice AI — primary LLM provider; processes prompts/completions",
-			"CheapTokens.ai — procurement layer for Venice credits (operator-internal)",
-			"Surplus Intelligence — fallback procurement (x402 payment on Base)",
+			"OMA-AI budget-tier upstreams — serve Gemini/GPT/Kimi/MiniMax/Qwen/DeepSeek models; prompts forwarded for completion only, not retained",
 		],
 		payments: [
 			"Circle (USDC) on Base — credit purchases and x402 settlement",

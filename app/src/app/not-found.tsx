@@ -23,7 +23,7 @@ export default function NotFound() {
 					{/* Large 404 with accent-tinted digits */}
 					<div className="relative">
 						<div
-							className="display-headline text-[7rem] sm:text-[9rem] leading-none font-bold tracking-tight text-text-bright"
+							className="font-geometric text-[7rem] sm:text-[9rem] leading-none tracking-tight text-text-bright"
 							aria-hidden="true"
 						>
 							4
@@ -44,7 +44,7 @@ export default function NotFound() {
 					</div>
 
 					<div className="flex flex-col gap-3 mt-4">
-						<p className="text-xs text-text-muted uppercase tracking-[0.18em] font-mono">
+						<p className="eyebrow text-text-muted">
 							{">"} route_not_found
 						</p>
 						<h1 className="section-headline text-text-bright">

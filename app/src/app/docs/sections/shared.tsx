@@ -195,7 +195,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 	"id": "deepseek-v4-flash-0731-openbroker",
 	"object": "model",
 	"created": 1717194000,
-	"owned_by": "gonka",
+	"owned_by": "oma-ai",
 	"pricing": { "prompt": "0.00000000", "completion": "0.00000000" },
 	"category": "budget",
 	"context_length": 262144
@@ -210,7 +210,8 @@ export const ENDPOINTS: EndpointInfo[] = [
 		title: "Get Model",
 		desc: "Returns pricing, capabilities, and provider metadata for a single model. No auth required.",
 		auth: "None",
-		response: `{			"id": "llama-3.3-70b",
+		response: `{
+	"id": "llama-3.3-70b",
 	"object": "model",
 	"created": 1717194000,
 	"owned_by": "venice",
@@ -353,6 +354,224 @@ export const ENDPOINTS: EndpointInfo[] = [
 		auth: "HMAC SHA-256 signature (Standard Webhooks)",
 		body: undefined,
 		response: `{ "ok": true, "duplicate": true } // 200 on success or duplicate`,
+	},
+	{
+		method: "POST",
+		path: "POST /v1/deposit/usdc",
+		anchor: "ep-deposit-submit",
+		title: "Record USDC Deposit",
+		desc: "Records a pending USDC deposit after you send funds to the treasury address from /v1/deposit/usdc (GET). The on-chain watcher credits your balance once the transfer confirms (typically <60s on Base).",
+		auth: "Bearer token (API key)",
+		body: {
+			amountUsd: "number (required). USD amount, up to $10,000",
+			txHash: "string (required). 0x-prefixed 64-char transaction hash",
+			network: "string (optional). \"base\" (default)",
+			fromAddress: "string (required). Sender wallet 0x address; must match the on-chain sender",
+		},
+		response: `{
+	"depositId": "dep_…",
+	"status": "pending",
+	"amountCents": 1000,
+	"txHash": "0x…",
+	"network": "base",
+	"message": "Deposit recorded. Watcher will credit your balance after on-chain confirmation."
+}`,
+	},
+	{
+		method: "GET",
+		path: "/v1/deposit/status",
+		anchor: "ep-deposit-status",
+		title: "Deposit History",
+		desc: "Lists your recent deposits with status (pending / completed). Poll after POST /v1/deposit/usdc to confirm credits were issued.",
+		auth: "Bearer token (API key)",
+		body: undefined,
+		response: `{
+	"deposits": [
+		{
+			"id": "dep_…",
+			"type": "usdc_direct",
+			"status": "completed",
+			"amountUsd": "10.00000000",
+			"creditsIssued": "1000",
+			"txHash": "0x…",
+			"depositAddress": "0x…",
+			"createdAt": "2026-08-01T00:00:00.000Z",
+			"completedAt": "2026-08-01T00:00:05.000Z"
+		}
+	]
+}`,
+	},
+	{
+		method: "GET",
+		path: "/v1/credits/balance",
+		anchor: "ep-credits-balance",
+		title: "Credit Batches",
+		desc: "Returns your aggregate balance plus each active credit batch (with expiry and payment method). Useful for budgeting around expiring credits.",
+		auth: "Bearer token (API key)",
+		body: undefined,
+		response: `{
+	"activeBatches": [
+		{
+			"id": "cb_…",
+			"amountCents": "10000",
+			"remainingCents": "7650",
+			"expiresAt": "2026-08-01T00:00:00.000Z",
+			"paymentMethod": "usdc"
+		}
+	],
+	"balanceCents": "7650"
+}`,
+	},
+	{
+		method: "GET",
+		path: "/v1/credits/transactions",
+		anchor: "ep-credits-transactions",
+		title: "Credit Transactions",
+		desc: "Combined deposit and usage history, newest first. Each row is either type \"deposit\" or \"usage\".",
+		auth: "Bearer token (API key)",
+		body: undefined,
+		params: [
+			{ name: "limit", type: "number", desc: "1–200, default 50" },
+		],
+		response: `{
+	"transactions": [
+		{
+			"id": "dep_…",
+			"type": "deposit",
+			"amountCents": 1000,
+			"creditsIssued": "1000",
+			"status": "completed",
+			"createdAt": "2026-08-01T00:00:00.000Z",
+			"txHash": "0x…"
+		}
+	]
+}`,
+	},
+	{
+		method: "GET",
+		path: "/v1/credits/auto-reload",
+		anchor: "ep-auto-reload-get",
+		title: "Auto-Reload Settings",
+		desc: "Reads your current auto-reload settings. Returns defaults when unset.",
+		auth: "Bearer token (API key)",
+		body: undefined,
+		response: `{
+	"enabled": false,
+	"thresholdCents": 500,
+	"reloadAmountCents": 10000,
+	"spendLimitCents": 100000,
+	"paymentMethod": "usdc"
+}`,
+	},
+	{
+		method: "POST",
+		path: "/v1/credits/auto-reload",
+		anchor: "ep-auto-reload-post",
+		title: "Update Auto-Reload",
+		desc: "Update auto-reload settings. When enabled, a USDC reload is initiated once the balance drops below the threshold (subject to the monthly spend limit).",
+		auth: "Bearer token (API key)",
+		body: {
+			enabled: "boolean (optional). Master auto-reload switch",
+			thresholdCents: "number (optional). Reload trigger threshold, 0–1,000,000",
+			reloadAmountCents: "number (optional). Reload size, 100–10,000,000",
+			spendLimitCents: "number (optional). Monthly cap, 0–10,000,000",
+		},
+		response: `{
+	"enabled": true,
+	"thresholdCents": 500,
+	"reloadAmountCents": 10000,
+	"spendLimitCents": 100000,
+	"paymentMethod": "usdc"
+}`,
+	},
+	{
+		method: "GET",
+		path: "/v1/keys",
+		anchor: "ep-keys-list",
+		title: "List API Keys",
+		desc: "Lists your active API keys. Raw key values are never returned — only metadata.",
+		auth: "Bearer token (API key) or session cookie",
+		body: undefined,
+		response: `{
+	"keys": [
+		{
+			"id": "key_…",
+			"name": "default",
+			"prefix": "oma_sk_…",
+			"createdAt": "2026-08-01T00:00:00.000Z",
+			"lastUsedAt": null
+		}
+	]
+}`,
+	},
+	{
+		method: "POST",
+		path: "/v1/keys",
+		anchor: "ep-keys-create",
+		title: "Create API Key",
+		desc: "Mints a new API key. The raw key is returned exactly once — store it immediately (only the hash is kept server-side).",
+		auth: "Bearer token (API key) or session cookie",
+		body: { name: "string (optional). Key label, max 64 chars, default \"default\"" },
+		response: `{
+	"id": "key_…",
+	"name": "default",
+	"prefix": "oma_sk_…",
+	"createdAt": "2026-08-01T00:00:00.000Z",
+	"key": "oma_sk_…"
+}`,
+	},
+	{
+		method: "GET",
+		path: "DELETE /v1/keys/:id",
+		anchor: "ep-keys-revoke",
+		title: "Revoke API Key",
+		desc: "Revokes an API key by id, immediately invalidating it. The key stops working on all future requests.",
+		auth: "Bearer token (API key) or session cookie",
+		body: undefined,
+		response: `{ "success": true, "id": "key_…" }`,
+	},
+	{
+		method: "GET",
+		path: "DELETE /v1/history",
+		anchor: "ep-history",
+		title: "Wipe Usage History",
+		desc: "Deletes your usage records and audit trail (GDPR right-to-forget) without deleting the account. Balance, API keys, and identity stay intact.",
+		auth: "Bearer token (API key) or session cookie",
+		body: undefined,
+		response: `{
+	"success": true,
+	"deleted": { "usageRecords": 42, "auditLogs": 42 }
+}`,
+	},
+	{
+		method: "GET",
+		path: "GET /v1/export/summary · usage · deposits · account",
+		anchor: "ep-export",
+		title: "Data Export",
+		desc: "One-click account data export for backups and GDPR portability. Each route returns CSV by default (add ?format=json for JSON).",
+		auth: "Bearer token (API key) or session cookie",
+		body: undefined,
+		response: `// /v1/export/summary
+{
+	"balance_cents": "7650",
+	"total_deposited_cents": "10000",
+	"total_used_cents": "2350",
+	"total_requests": 42,
+	"exported_at": "2026-08-01T00:00:00.000Z"
+}`,
+	},
+	{
+		method: "POST",
+		path: "/x402/verify",
+		anchor: "ep-x402-verify",
+		title: "x402 Payment Verify",
+		desc: "Verifies an x402 USDC payment signed with the PAYMENT-SIGNATURE header (EIP-3009 transfer + signature payload). Returns 200 with a receipt when valid, 422 otherwise. For agent-native pay-per-request billing.",
+		auth: "PAYMENT-SIGNATURE header (x402)",
+		body: undefined,
+		response: `{
+	"valid": true,
+	"receipt": { "txHash": "0x…", "amount": "…", "networkId": "8453" }
+}`,
 	},
 ];
 

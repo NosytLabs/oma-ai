@@ -1,7 +1,9 @@
 export default function ModelDetailLoading() {
 	return (
-		<div className="min-h-dvh bg-void px-4 py-8 sm:px-6 lg:px-8">
-			<div className="mx-auto max-w-4xl animate-pulse space-y-6">
+		// Matches the model-detail page (max-w-5xl) so route entry doesn't
+		// flash a narrower 4xl chrome before the detail arrives.
+		<div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-12">
+			<div className="animate-pulse space-y-6">
 				<div className="h-8 w-48 bg-surface rounded-[var(--radius-sm)]" />
 				<div className="h-6 w-32 bg-surface rounded-[var(--radius-sm)]" />
 				<div className="grid grid-cols-2 gap-4 sm:grid-cols-3">

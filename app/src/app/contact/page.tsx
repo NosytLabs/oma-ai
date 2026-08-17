@@ -66,7 +66,7 @@ export default function ContactPage() {
 					Home
 				</Link>
 
-				<p className="text-[11px] font-mono uppercase tracking-[0.18em] text-accent mb-3">
+				<p className="section-eyebrow-caps mb-3">
 					contact
 				</p>
 				<h1 className="display-headline text-text-bright mb-4">
@@ -89,6 +89,7 @@ export default function ContactPage() {
 				</p>
 				</InViewFade>
 
+				<InViewFade>
 				<ul className="space-y-4">
 					{CHANNELS.map((c) => (
 						<li
@@ -101,7 +102,7 @@ export default function ContactPage() {
 									aria-hidden="true"
 								/>
 								<div>
-									<h2 className="text-base font-semibold text-text-bright">
+									<h2 className="text-base font-display font-medium text-text-bright">
 										{c.title}
 									</h2>
 									<p className="mt-1 text-sm text-text-secondary leading-relaxed">
@@ -109,7 +110,7 @@ export default function ContactPage() {
 									</p>
 									<a
 										href={c.href}
-										className="mt-3 inline-block text-sm font-mono text-accent underline underline-offset-2 hover:text-accent-bright"
+										className="mt-3 inline-block text-sm font-mono text-accent underline underline-offset-2 hover:text-accent-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-sm"
 									>
 										{c.label}
 									</a>
@@ -118,6 +119,7 @@ export default function ContactPage() {
 						</li>
 					))}
 				</ul>
+				</InViewFade>
 
 				<ContactForm />
 

@@ -230,7 +230,7 @@ export default function FAQPage() {
 					Home
 				</Link>
 
-				<span className="page-kicker">Help center</span>
+				<span className="section-eyebrow-caps">Help center</span>
 				<h1 className="display-headline mt-3 text-text-bright">FAQ</h1>
 				<p className="page-intro mt-4 max-w-2xl">
 					Plain-language answers for people who have never used an AI API —
@@ -245,7 +245,7 @@ export default function FAQPage() {
 							<section aria-labelledby={group.heading.replace(/\W+/g, "-").toLowerCase()}>
 							<h2
 								id={group.heading.replace(/\W+/g, "-").toLowerCase()}
-								className="text-sm font-mono font-bold uppercase tracking-wider text-accent mb-4"
+								className="section-eyebrow-caps mb-4"
 							>
 								{group.heading}
 							</h2>

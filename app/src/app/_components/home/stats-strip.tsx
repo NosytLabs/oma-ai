@@ -72,14 +72,14 @@ export function StatsStrip() {
 	: s,
 	);
 	return (
-	<div className="flex flex-col justify-center h-full">
+	<div className="flex h-full flex-col justify-start">
 	<Reveal>
 	<div className="mb-6 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
-	<p id="stats-headline" className="eyebrow text-text-muted">
-	Product facts
+	<p id="stats-headline" className="section-eyebrow-caps">
+		Product facts
 	</p>
 	<p className="font-mono text-[10px] uppercase tracking-[0.18em] text-text-muted hidden sm:block">
-	ledger · no vanity metrics
+		ledger · no vanity metrics
 	</p>
 	</div>
 	</Reveal>

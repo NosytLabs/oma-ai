@@ -400,7 +400,7 @@ export function MessagesList({
 	inline-flex items-center gap-1.5 rounded-full
 	border border-accent/40 bg-accent/10
 	px-4 py-2 text-[11px] font-mono uppercase tracking-wider text-accent
-	shadow-lg backdrop-blur-md hover:bg-accent/20 transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97]
+	shadow-lg backdrop-blur-md hover:bg-accent/20 transition-[color,background-color,border-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97]
 	min-h-[44px]
 	focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
 	"

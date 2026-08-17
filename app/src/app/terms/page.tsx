@@ -91,10 +91,21 @@ function StatusDot({
 	);
 }
 
-function SectionHeading({ title, meta }: { title: string; meta?: string }) {
+function SectionHeading({
+	id,
+	title,
+	meta,
+}: {
+	id?: string;
+	title: string;
+	meta?: string;
+}) {
 	return (
 		<header className="mb-5 sm:mb-7">
-			<h2 className="font-display text-xl sm:text-2xl font-bold tracking-tight text-text-bright">
+			<h2
+				id={id}
+				className="font-display text-xl sm:text-2xl font-bold tracking-tight text-text-bright"
+			>
 				{title}
 			</h2>
 			{meta && (
@@ -160,7 +171,7 @@ export default function TermsPage() {
 										className="h-1.5 w-1.5 rounded-full bg-accent"
 										aria-hidden="true"
 									/>
-									Terms of service
+									<span className="eyebrow-caps">Terms of service</span>
 								</span>
 
 								<h1
@@ -262,12 +273,13 @@ export default function TermsPage() {
 					<section
 						id="usage"
 						aria-labelledby="usage-heading"
-						className="border-t border-border container-page py-12 sm:py-16"
+						className="border-t border-border-subtle container-page py-14 sm:py-18 lg:py-22"
 					>
-						<SectionHeading title="Usage" meta="The API rules" />
-						<h3 id="usage-heading" className="sr-only">
-							API usage rules
-						</h3>
+						<SectionHeading
+							id="usage-heading"
+							title="Usage"
+							meta="The API rules"
+						/>
 
 						<p className="text-[13px] sm:text-sm text-text-secondary max-w-2xl mb-5">
 							The OMA AI API gives you access to text generation and chat
@@ -300,15 +312,13 @@ export default function TermsPage() {
 					<section
 						id="acceptable-use"
 						aria-labelledby="acceptable-use-heading"
-						className="border-t border-border container-page py-12 sm:py-16"
+						className="border-t border-border-subtle container-page py-14 sm:py-18 lg:py-22"
 					>
 						<SectionHeading
+							id="acceptable-use-heading"
 							title="Acceptable use"
 							meta="What you can and cannot do"
 						/>
-						<h3 id="acceptable-use-heading" className="sr-only">
-							Acceptable use policy
-						</h3>
 
 						<p className="text-[13px] sm:text-sm text-text-secondary max-w-2xl mb-5">
 							Do not use OMA AI services for any of the following:
@@ -367,12 +377,13 @@ export default function TermsPage() {
 					<section
 						id="liability"
 						aria-labelledby="liability-heading"
-						className="border-t border-border container-page py-12 sm:py-16"
+						className="border-t border-border-subtle container-page py-14 sm:py-18 lg:py-22"
 					>
-						<SectionHeading title="Liability" meta="No uptime warranty" />
-						<h3 id="liability-heading" className="sr-only">
-							Limitations of liability
-						</h3>
+						<SectionHeading
+							id="liability-heading"
+							title="Liability"
+							meta="No uptime warranty"
+						/>
 
 						<p className="text-[13px] sm:text-sm text-text-secondary max-w-2xl mb-5">
 							OMA AI provides services &quot;AS IS&quot;. We do not guarantee:
@@ -409,15 +420,13 @@ export default function TermsPage() {
 					<section
 						id="credits"
 						aria-labelledby="credits-heading"
-						className="border-t border-border container-page py-12 sm:py-16"
+						className="border-t border-border-subtle container-page py-14 sm:py-18 lg:py-22"
 					>
 						<SectionHeading
+							id="credits-heading"
 							title="Credits"
 							meta="Non-redeemable, never expire"
 						/>
-						<h3 id="credits-heading" className="sr-only">
-							Credit system
-						</h3>
 
 						<ul className="border border-border bg-surface divide-y divide-border">
 							{[
@@ -464,15 +473,13 @@ export default function TermsPage() {
 					<section
 						id="termination"
 						aria-labelledby="termination-heading"
-						className="border-t border-border container-page py-12 sm:py-16"
+						className="border-t border-border-subtle container-page py-14 sm:py-18 lg:py-22"
 					>
 						<SectionHeading
+							id="termination-heading"
 							title="Termination"
 							meta="When accounts get suspended"
 						/>
-						<h3 id="termination-heading" className="sr-only">
-							Account termination
-						</h3>
 
 						<p className="text-[13px] sm:text-sm text-text-secondary max-w-2xl mb-5">
 							OMA may suspend or terminate accounts that violate these Terms,
@@ -525,7 +532,7 @@ export default function TermsPage() {
 					{/* ===== CONTACT ===== */}
 					<section
 						aria-label="Contact"
-						className="border-t border-border container-page py-10 sm:py-12"
+						className="border-t border-border-subtle container-page py-14 sm:py-18 lg:py-22"
 					>
 						<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 							<p className="text-[11px] sm:text-xs text-text-muted">

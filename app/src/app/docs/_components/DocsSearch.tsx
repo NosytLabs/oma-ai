@@ -160,7 +160,7 @@ export function DocsSearch() {
 					setTimeout(() => inputRef.current?.focus(), 50);
 				}}
 				className="flex items-center gap-2 rounded-[var(--radius-lg)] border border-border bg-surface/60 px-3 py-1.5 text-sm text-text-muted transition-[background-color,border-color,color] hover:border-border-bright hover:text-text hover:bg-surface"
-				aria-label="Search docs"
+				aria-label="Search docs ⌘K"
 			>
 				<Search className="h-3.5 w-3.5" aria-hidden="true" />
 				<span className="hidden sm:inline">Search docs</span>
@@ -190,7 +190,7 @@ export function DocsSearch() {
 					<div
 						ref={panelRef}
 						tabIndex={-1}
-						className="relative w-full max-w-xl mx-4 overflow-hidden rounded-2xl border border-border bg-panel shadow-2xl focus:outline-none"
+						className="relative w-full max-w-xl mx-4 overflow-hidden rounded-[var(--radius-2xl)] border border-border bg-panel shadow-2xl focus:outline-none"
 					>
 						{/* Search input */}
 						<div className="flex items-center gap-3 border-b border-border px-4 py-3">

@@ -8,6 +8,12 @@
    - Display:   Instrument Serif (italic for tension, regular for titles)
    - Body:      Geist (clean, modern sans)
    - Mono:      Geist Mono (used for code, micro-metadata, badges)
+
+   Spec-sheet precision pass (2026-08-16):
+   - Tighter type scale, larger h1 cap
+   - Section headers use uppercase mono with emerald accent on key terms
+   - Sharper button corners + taller hit targets
+   - Consistent page rhythm (page-content padding)
    ========================================================================== */
 
 @import "tailwindcss";
@@ -402,7 +408,7 @@
 	   .display-headline over time and remove this rule. */
 	.h1-page {
 		font-family: var(--font-display), var(--font-body), ui-serif, Georgia, serif;
-		font-size: clamp(2.25rem, 5.2vw, 4.25rem);
+		font-size: clamp(2.25rem, 5.2vw, 4.75rem);
 		line-height: 1.02;
 		letter-spacing: -0.035em;
 		font-weight: 500;
@@ -419,9 +425,14 @@
 
 	.h1-hero {
 		font-family: var(--font-display), var(--font-body), ui-serif, Georgia, serif;
-		/* Capped lower (5.5rem) so "paid per request" reads on one line at
-		   typical desktop widths; the floor on narrow phones is unchanged. */
-		font-size: clamp(2.25rem, 6.4vw, 5.5rem);
+		/* Pulled cap from 6.5rem → 5.75rem after live review: the prior
+		   104px cap read as a shout on wide screens and broke the
+		   "one tight editorial line" rhythm that the gonka spec-sheet
+		   aesthetic asks for. 92px keeps the editorial weight while
+		   letting "One endpoint. / Every model." breathe as two
+		   confident lines instead of one oversized banner. Floor on
+		   narrow phones stays at 2.5rem. */
+		font-size: clamp(2.5rem, 6.4vw, 5.75rem);
 		line-height: 0.98;
 		letter-spacing: -0.035em;
 		font-weight: 500;
@@ -431,9 +442,9 @@
 
 	.h2-section {
 		font-family: var(--font-display), var(--font-body), ui-serif, Georgia, serif;
-		font-size: clamp(1.875rem, 3.2vw, 2.75rem);
+		font-size: clamp(1.875rem, 3.4vw, 3rem);
 		line-height: 1.05;
-		letter-spacing: -0.025em;
+		letter-spacing: -0.03em;
 		font-weight: 500;
 	}
 
@@ -473,6 +484,31 @@
 		font-weight: 500;
 	}
 
+	/* section-eyebrow-caps — uppercase mono kicker with leading bullet,
+	   matching the "spec-sheet" feel of gonkabroker.com section openers
+	   (e.g. "● PRICING"). Use sparingly — one per section. */
+	.section-eyebrow-caps {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-family: ui-monospace, "SF Mono", monospace;
+		font-size: 0.6875rem;
+		line-height: 1;
+		letter-spacing: 0.22em;
+		text-transform: uppercase;
+		font-weight: 500;
+		color: var(--color-accent);
+	}
+	.section-eyebrow-caps::before {
+		content: "";
+		display: inline-block;
+		width: 6px;
+		height: 6px;
+		border-radius: 9999px;
+		background: var(--color-accent);
+		box-shadow: 0 0 10px var(--color-accent-glow);
+	}
+
 	.text-display {
 		font-family: var(--font-display), var(--font-body), ui-serif, Georgia, serif;
 	}
@@ -509,33 +545,43 @@
 	 * so the two button entry points render consistently across the app.
 	 * Authored to mirror: gradient fill, accent-fg text, color-mix border,
 	 * --radius-sm, and the accent glow shadow.
+	 *
+	 * 2026-08-16 polish: hit target raised to 48px (was 44px avg) and
+	 * translateY hover dropped in favor of an inner-accent glow — the
+	 * previous lift read as "soft pillow"; the new motion is "lockstep
+	 * with the spec-sheet aesthetic" while still confirming interactivity.
 	 */
 	.btn-primary {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
 		gap: 0.5rem;
-		padding: 0.6875rem 1.375rem;
+		padding: 0.875rem 1.5rem;
+		min-height: 48px;
 		font-size: 0.875rem;
 		font-weight: 600;
-		letter-spacing: -0.01em;
+		letter-spacing: -0.005em;
 		line-height: 1;
 		border-radius: var(--radius-sm);
-		border: 1px solid color-mix(in srgb, var(--color-accent) 45%, transparent);
+		border: 1px solid color-mix(in srgb, var(--color-accent) 50%, transparent);
 		background: linear-gradient(135deg, var(--color-accent), var(--color-accent-hover));
 		color: var(--color-accent-fg);
 		box-shadow:
-			0 0 0 1px rgba(70, 211, 154, 0.2),
-			0 10px 26px -16px var(--color-accent-glow);
-		transition: background-color 200ms ease-out, border-color 200ms ease-out,
-			box-shadow 200ms ease-out, color 200ms ease-out, transform 200ms ease-out;
+			inset 0 1px 0 color-mix(in srgb, white 18%, transparent),
+			0 0 0 1px color-mix(in srgb, var(--color-accent) 25%, transparent),
+			0 8px 24px -16px var(--color-accent-glow);
+		transition: background-color 180ms ease-out, border-color 180ms ease-out,
+			box-shadow 180ms ease-out, color 180ms ease-out, transform 180ms ease-out;
 		cursor: pointer;
 		text-decoration: none;
 		white-space: nowrap;
 	}
 	.btn-primary:hover {
-		transform: translateY(-0.125rem);
-		box-shadow: 0 14px 30px -12px var(--color-accent-glow);
+		box-shadow:
+			inset 0 1px 0 color-mix(in srgb, white 22%, transparent),
+			0 0 0 1px color-mix(in srgb, var(--color-accent) 40%, transparent),
+			0 0 22px -4px var(--color-accent-glow),
+			0 12px 28px -16px var(--color-accent-glow);
 	}
 	/* When btn-primary lives inside an ElectricBorder, the border animation
 	   ring is anchored to the wrapper, so translating the button leaves the
@@ -606,27 +652,28 @@
 		align-items: center;
 		justify-content: center;
 		gap: 0.5rem;
-		padding: 0.6875rem 1.375rem;
+		padding: 0.875rem 1.5rem;
+		min-height: 48px;
 		font-size: 0.875rem;
 		font-weight: 600;
-		letter-spacing: -0.01em;
+		letter-spacing: -0.005em;
 		line-height: 1;
 		border-radius: var(--radius-sm);
-		background: color-mix(in srgb, var(--color-surface-elevated) 90%, transparent);
+		background: color-mix(in srgb, var(--color-surface-elevated) 88%, transparent);
 		color: var(--color-text-primary);
-		border: 1px solid color-mix(in srgb, var(--color-border-bright) 48%, var(--color-border));
-		transition: background-color 200ms ease-out, border-color 200ms ease-out,
-			color 200ms ease-out, transform 200ms ease-out, box-shadow 200ms ease-out;
+		border: 1px solid color-mix(in srgb, var(--color-border-bright) 60%, var(--color-border));
+		transition: background-color 180ms ease-out, border-color 180ms ease-out,
+			color 180ms ease-out, box-shadow 180ms ease-out;
 		cursor: pointer;
 		text-decoration: none;
 		white-space: nowrap;
 	}
 	.btn-secondary:hover {
-		transform: translateY(-0.125rem);
 		border-color: var(--color-accent);
 		color: var(--color-accent);
-		background: color-mix(in srgb, var(--color-accent) 8%, transparent);
-		box-shadow: 0 12px 28px -18px rgba(70, 211, 154, 0.3);
+		background: color-mix(in srgb, var(--color-accent) 6%, transparent);
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 22%, transparent),
+			0 10px 24px -18px var(--color-accent-glow);
 	}
 	.btn-secondary:active {
 		transform: scale(0.97);
@@ -711,27 +758,27 @@
 		align-items: center;
 		justify-content: center;
 		gap: 0.5rem;
-		padding: 0.6875rem 1.375rem;
+		padding: 0.875rem 1.5rem;
+		min-height: 48px;
 		font-size: 0.875rem;
 		font-weight: 600;
-		letter-spacing: -0.01em;
+		letter-spacing: -0.005em;
 		line-height: 1;
 		border-radius: var(--radius-sm);
 		background: transparent;
 		color: var(--color-text-primary);
 		border: 1px solid var(--color-border-bright);
-		transition: background-color 200ms ease-out, border-color 200ms ease-out,
-			color 200ms ease-out, transform 200ms ease-out, box-shadow 200ms ease-out;
+		transition: background-color 180ms ease-out, border-color 180ms ease-out,
+			color 180ms ease-out, box-shadow 180ms ease-out;
 		cursor: pointer;
 		text-decoration: none;
 		white-space: nowrap;
 	}
 	.btn-outline:hover {
-		transform: translateY(-0.125rem);
 		border-color: var(--color-accent);
 		color: var(--color-accent);
-		background: color-mix(in srgb, var(--color-accent) 8%, transparent);
-		box-shadow: 0 8px 20px -10px rgba(70, 211, 154, 0.25);
+		background: color-mix(in srgb, var(--color-accent) 6%, transparent);
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 18%, transparent);
 	}
 	.btn-outline:active {
 		transform: scale(0.97);
@@ -741,6 +788,55 @@
 		opacity: 0.5;
 		cursor: not-allowed;
 		transform: none;
+	}
+
+	/* .btn-mono — primary CTA as a sharp-corner mono-uppercase slab.
+	   Matches the nav/top-bar CTA and the docs hero button so the brand
+	   "Get API key" reads as one shape wherever it shows up. Use this
+	   instead of hand-rolling mono padding in each component. */
+	.btn-mono {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		padding: 0.7rem 1rem;
+		min-height: 40px;
+		font-family: ui-monospace, "SF Mono", "Menlo", monospace;
+		font-size: 0.75rem;
+		line-height: 1;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		border-radius: var(--radius-sm);
+		color: var(--color-text-primary);
+		background: transparent;
+		border: 1px solid var(--color-border-bright);
+		text-decoration: none;
+		white-space: nowrap;
+		transition: background-color 180ms ease-out, border-color 180ms ease-out,
+			color 180ms ease-out, box-shadow 180ms ease-out;
+	}
+	.btn-mono:hover {
+		color: var(--color-text-bright);
+		border-color: var(--color-border-strong);
+		background: color-mix(in srgb, var(--color-surface) 70%, transparent);
+	}
+	.btn-mono.btn-primary {
+		/* mono-flavored primary — emerald slab + mono uppercase */
+		color: var(--color-accent-fg);
+		background: var(--color-accent);
+		border-color: color-mix(in srgb, var(--color-accent) 55%, transparent);
+		box-shadow:
+			inset 0 1px 0 color-mix(in srgb, white 18%, transparent),
+			0 0 0 1px color-mix(in srgb, var(--color-accent) 25%, transparent),
+			0 6px 18px -12px var(--color-accent-glow);
+	}
+	.btn-mono.btn-primary:hover {
+		background: var(--color-accent-bright);
+		box-shadow:
+			inset 0 1px 0 color-mix(in srgb, white 22%, transparent),
+			0 0 18px -2px var(--color-accent-glow),
+			0 10px 22px -14px var(--color-accent-glow);
 	}
 
 	.btn-destructive {
@@ -955,6 +1051,13 @@
 			padding-bottom: 3.5rem;
 		}
 	}
+	@media (min-width: 1024px) {
+		.page-hero {
+			padding-top: 4rem;
+			padding-bottom: 4.5rem;
+			gap: 1.5rem;
+		}
+	}
 	.page-hero::before {
 		content: "";
 		position: absolute;
@@ -988,7 +1091,7 @@
 
 	.display-headline {
 		font-family: var(--font-display), var(--font-body), ui-serif, Georgia, serif;
-		font-size: clamp(2.25rem, 5.2vw, 4.25rem);
+		font-size: clamp(2.25rem, 5.4vw, 4.5rem);
 		line-height: 1.02;
 		letter-spacing: -0.035em;
 		font-weight: 500;
@@ -998,7 +1101,7 @@
 	}
 
 	.page-intro {
-		font-size: 1.0625rem;
+		font-size: 1.125rem;
 		line-height: 1.65;
 		color: var(--color-text-secondary);
 		max-width: 60ch;

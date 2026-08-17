@@ -5,9 +5,9 @@ import { AnimatedSection, SectionHeading } from "./shared";
 
 /**
 	* Docs glossary — points to the canonical novice-friendly /glossary page
-	* and the new /capabilities matrix instead of duplicating the long
-	* definition list. Keeps /docs focused on the technical reference;
-	* /glossary carries the alphabetized plain-language definitions.
+	* and the model catalog instead of duplicating the long definition list.
+	* Keeps /docs focused on the technical reference; /glossary carries the
+	* alphabetized plain-language definitions.
 	*/
 export function GlossarySection() {
 	return (

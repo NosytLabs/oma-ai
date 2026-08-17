@@ -68,9 +68,9 @@ export default function AboutPage() {
 					Home
 				</Link>
 
-				<p className="text-[11px] font-mono uppercase tracking-[0.18em] text-accent mb-3">
+				<span className="section-eyebrow-caps mb-3">
 					about
-				</p>
+				</span>
 				<h1 className="display-headline text-text-bright mb-4">
 					Open Model Access
 				</h1>
@@ -80,18 +80,18 @@ export default function AboutPage() {
 					for developers and autonomous agents.
 				</p>
 
-				<ul className="space-y-4 mb-14">
+				<ul className="space-y-3 mb-14">
 					{PILLARS.map((p, i) => (
 						<li key={p.title}>
 							<InViewFade delay={i * 0.08} y={12}>
-								<div className="rounded-[var(--radius-xl)] border border-border bg-surface p-5 transition-colors duration-200 ease-out hover:border-accent/30">
+								<div className="rounded-[var(--radius-md)] border border-border bg-surface p-5 transition-colors duration-200 ease-out hover:border-accent/30">
 									<div className="flex items-start gap-3">
 										<p.icon
 											className="h-5 w-5 text-accent shrink-0 mt-0.5"
 											aria-hidden="true"
 										/>
 										<div>
-											<h2 className="text-base font-semibold text-text-bright">
+											<h2 className="text-base font-display font-medium text-text-bright">
 												{p.title}
 											</h2>
 											<p className="mt-1 text-sm text-text-secondary leading-relaxed">
@@ -106,22 +106,22 @@ export default function AboutPage() {
 				</ul>
 
 				<div className="flex flex-wrap gap-3">
-					<JuiceButton color="var(--color-accent)" size={160} opacity={0.15} className="rounded-[var(--radius-lg)]">
-						<ElectricBorder borderRadius="var(--radius-lg)" borderWidth={1} active={true}>
+					<JuiceButton color="var(--color-accent)" size={160} opacity={0.15} className="rounded-[var(--radius-md)]">
+						<ElectricBorder borderRadius="var(--radius-md)" borderWidth={1} active={true}>
 							<Link
 								href="/login"
-								className="btn-primary inline-flex items-center gap-2 px-6 py-3 text-sm"
+								className="btn-mono btn-primary"
 							>
-								Get an API key
-								<ArrowRight className="h-4 w-4" aria-hidden="true" />
+								<span>Get API key</span>
+								<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
 							</Link>
 						</ElectricBorder>
 					</JuiceButton>
-					<Link href="/docs" className="btn-secondary inline-flex items-center gap-2 px-6 py-3 text-sm">
-						Read the docs
+					<Link href="/docs" className="btn-mono">
+						<span>Read the docs</span>
 					</Link>
-					<Link href="/contact" className="btn-secondary inline-flex items-center gap-2 px-6 py-3 text-sm">
-						Contact
+					<Link href="/contact" className="btn-mono">
+						<span>Contact</span>
 					</Link>
 				</div>
 			</div>

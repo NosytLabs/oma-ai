@@ -1,4 +1,7 @@
 import { forwardRef, type HTMLAttributes } from "react";
+import { cloneElement, isValidElement } from "react";
+import type { ReactElement, ReactNode, Ref } from "react";
+import { cn } from "@/components/ui/utils";
 
 /**
 	* Slot — minimal Radix-Slot-equivalent for the `asChild` pattern.
@@ -6,8 +9,6 @@ import { forwardRef, type HTMLAttributes } from "react";
 	* Used by Button when asChild is true so callers can render <Link>,
 	* <a>, or any element with the button styling applied.
 	*/
-import { cloneElement, isValidElement } from "react";
-import type { ReactElement, ReactNode, Ref } from "react";
 
 export interface SlotProps extends HTMLAttributes<HTMLElement> {
 	children?: ReactNode;
@@ -46,10 +47,6 @@ export const Slot = forwardRef<HTMLElement, SlotProps>(function Slot(
 
 	return cloneElement(child, mergedProps);
 });
-
-function cn(...classes: Array<string | undefined>): string {
-	return classes.filter(Boolean).join(" ");
-}
 
 function mergeRefs<T>(...refs: Array<Ref<T> | undefined>): Ref<T> {
 	return (node: T | null) => {

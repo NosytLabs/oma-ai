@@ -396,9 +396,9 @@ function BrandPitch() {
 		<div className="order-last space-y-6 lg:order-none">
 			<div className="surface-card p-8">
 				<OmaWordmark size="md" />
-				<h1 className="mt-6 text-3xl font-bold tracking-tight text-text-bright sm:text-4xl">
+				<h1 className="mt-6 display-headline text-text-bright">
 					Sign in once.{" "}
-					<span className="text-[var(--color-accent)] ml-1">Ship without friction.</span>
+					<span className="text-accent">Ship without friction.</span>
 				</h1>
 				<p className="mt-3 text-sm text-text-secondary">
 					One OpenAI-compatible gateway. Magic link or wallet, credits by USDC on Base, x402 for agents.

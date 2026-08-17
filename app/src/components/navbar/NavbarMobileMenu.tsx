@@ -25,7 +25,6 @@ interface NavbarMobileMenuProps {
 	toggleRef: RefObject<HTMLButtonElement | null>;
 	isConnected: boolean;
 	section: string;
-	build: string;
 	/** Terminates the active session. Optional because the menu is also
 	 * rendered during the brief pre-hydration window before the wallet
 	 * provider has been mounted. */
@@ -63,7 +62,6 @@ export function NavbarMobileMenu({
 	toggleRef,
 	isConnected,
 	section,
-	build,
 	onDisconnect,
 }: NavbarMobileMenuProps) {
 	const containerRef = useRef<HTMLDivElement | null>(null);
@@ -168,7 +166,6 @@ export function NavbarMobileMenu({
 									<span className="text-text-tertiary">~/ </span>
 									<span className="text-text-secondary">{section}</span>
 								</span>
-								<span className="shrink-0">build {build}</span>
 							</div>
 
 							{/* Grouped card grid */}

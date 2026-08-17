@@ -3,6 +3,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
+import { DashboardCard, DashboardCardChip } from "@/components/dashboard/DashboardCard";
 import { useToast } from "@/components/ui/Toast";
 import { toDollars } from "@/lib/utils";
 import { cn } from "@/components/ui/utils";
@@ -11,9 +12,14 @@ import { api } from "@/lib/api";
 
 /* ------------------------------------------------------------------ *
 	*  Auto-Reload Card
-	* ------------------------------------------------------------------ */
+	*  ---------------------------------------------------------------- */
 
-function AutoReloadCardComponent() {
+interface AutoReloadCardProps {
+	/** Demo tours have no live backend; render a friendly empty state. */
+	isDemo?: boolean;
+}
+
+function AutoReloadCardComponent({ isDemo = false }: AutoReloadCardProps) {
 	const toast = useToast();
 	const queryClient = useQueryClient();
 	const [saving, setSaving] = useState(false);
@@ -26,6 +32,8 @@ function AutoReloadCardComponent() {
 		queryKey: ["autoReload"],
 		queryFn: () => api.credits.getAutoReload(),
 		staleTime: 60_000,
+		enabled: !isDemo,
+		retry: false,
 	});
 
 	const isEnabled = settings?.enabled ?? false;
@@ -78,37 +86,46 @@ function AutoReloadCardComponent() {
 		await save({ spendLimitCents: cents });
 	};
 
-	if (error) {
+	if (isDemo || error) {
 		return (
-			<div className="flex flex-col p-6 bg-surface/30 border border-border rounded-[var(--radius-xl)] shadow-[var(--shadow-md)] relative h-full">
-				<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-error/40 via-error/20 to-transparent" />
-				<p className="text-xs text-error">Failed to load auto-reload settings.</p>
-			</div>
+			<DashboardCard
+				tone="accent"
+				title="Auto-reload"
+				hint={isDemo ? "Demo" : "Unavailable"}
+				trailing={<DashboardCardChip tone="neutral">USDC</DashboardCardChip>}
+			>
+				<p className="mt-2 max-w-[26ch] text-[12px] leading-relaxed text-text-muted">
+					{isDemo
+						? "Connect your account to enable auto-reload and keep credits topped up."
+						: "Sign in to manage auto-reload rules."}
+				</p>
+				<div className="mt-auto space-y-2 border-t border-border/60 pt-4">
+					{[
+						["Trigger", "top up when balance drops"],
+						["Reload", "fixed USDC credit top-up"],
+						["Limit", "monthly spend cap"],
+					].map(([k, v]) => (
+						<div key={k} className="flex items-baseline justify-between gap-2">
+							<span className="text-[10px] font-mono uppercase tracking-wider text-text-muted">
+								{k}
+							</span>
+							<span className="text-[10.5px] text-text-muted/80">{v}</span>
+						</div>
+					))}
+				</div>
+			</DashboardCard>
 		);
 	}
 
 	return (
-		<div className="flex flex-col p-6 bg-surface/30 border border-border rounded-[var(--radius-xl)] shadow-[var(--shadow-md)] relative h-full transition-colors duration-200 ease-out hover:border-accent/40">
-			{/* Accent glow on top edge */}
-			<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-accent/40 via-accent/20 to-transparent" />
-
-			{/* Header */}
-			<div className="flex items-start justify-between gap-4 mb-5">
-				<div>
-					<h2 className="text-[14.5px] font-bold text-text-bright tracking-tight">
-						Auto-reload
-					</h2>
-					<p className="mt-1 text-[11px] font-mono text-text-muted uppercase tracking-wider">
-						{isEnabled ? "Active" : "Paused"}
-					</p>
-				</div>
-				<span className="rounded-[var(--radius-sm)] border border-accent/30 bg-accent/10 px-2.5 py-1 text-[9.5px] font-mono font-bold uppercase tracking-wider text-accent shadow-[0_0_10px_-2px_var(--color-accent-glow)] shrink-0">
-					+ USDC
-				</span>
-			</div>
-
+		<DashboardCard
+			tone="accent"
+			title="Auto-reload"
+			hint={isEnabled ? "Active" : "Paused"}
+			trailing={<DashboardCardChip>+ USDC</DashboardCardChip>}
+		>
 			{/* Toggle */}
-			<div className="flex items-center justify-between mb-6">
+			<div className="mb-5 flex items-center justify-between">
 				<span className="text-[12.5px] font-medium text-text-secondary">
 					Enable auto-reload
 				</span>
@@ -119,7 +136,7 @@ function AutoReloadCardComponent() {
 					onClick={handleToggle}
 					disabled={saving || isLoading}
 					className={cn(
-						"relative inline-flex h-[22px] w-[40px] shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void disabled:opacity-50 disabled:cursor-not-allowed",
+						"relative inline-flex h-[22px] w-[40px] shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void disabled:cursor-not-allowed disabled:opacity-50",
 						isEnabled
 							? "bg-accent"
 							: "bg-surface-elevated border-border",
@@ -136,7 +153,7 @@ function AutoReloadCardComponent() {
 			</div>
 
 			{/* Settings */}
-			{isEnabled && (
+			{isEnabled ? (
 				<div className="space-y-4">
 					{/* Threshold */}
 					<div className="flex flex-col gap-1.5">
@@ -144,7 +161,7 @@ function AutoReloadCardComponent() {
 							Trigger when below
 						</label>
 						<div className="relative">
-							<span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-text-muted font-mono pointer-events-none">
+							<span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 font-mono text-[11px] text-text-muted">
 								$
 							</span>
 							<input
@@ -156,7 +173,7 @@ function AutoReloadCardComponent() {
 								disabled={saving || isLoading}
 								min={0}
 								step={1}
-								className="w-full rounded-[var(--radius-sm)] border border-border bg-void pl-7 pr-3 py-2 text-[13px] text-text-bright font-mono transition-colors duration-200 ease-out hover:border-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50"
+								className="w-full rounded-[var(--radius-sm)] border border-border bg-void px-3 py-2 pl-7 font-mono text-[13px] text-text-bright transition-colors duration-200 ease-out hover:border-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50"
 							/>
 						</div>
 						<p className="text-[10px] text-text-muted">
@@ -170,7 +187,7 @@ function AutoReloadCardComponent() {
 							Reload amount
 						</label>
 						<div className="relative">
-							<span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-text-muted font-mono pointer-events-none">
+							<span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 font-mono text-[11px] text-text-muted">
 								$
 							</span>
 							<input
@@ -182,7 +199,7 @@ function AutoReloadCardComponent() {
 								disabled={saving || isLoading}
 								min={1}
 								step={1}
-								className="w-full rounded-[var(--radius-sm)] border border-border bg-void pl-7 pr-3 py-2 text-[13px] text-text-bright font-mono transition-colors duration-200 ease-out hover:border-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50"
+								className="w-full rounded-[var(--radius-sm)] border border-border bg-void px-3 py-2 pl-7 font-mono text-[13px] text-text-bright transition-colors duration-200 ease-out hover:border-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50"
 							/>
 						</div>
 						<p className="text-[10px] text-text-muted">
@@ -196,7 +213,7 @@ function AutoReloadCardComponent() {
 							Spend limit
 						</label>
 						<div className="relative">
-							<span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-text-muted font-mono pointer-events-none">
+							<span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 font-mono text-[11px] text-text-muted">
 								$
 							</span>
 							<input
@@ -208,7 +225,7 @@ function AutoReloadCardComponent() {
 								disabled={saving || isLoading}
 								min={0}
 								step={1}
-								className="w-full rounded-[var(--radius-sm)] border border-border bg-void pl-7 pr-3 py-2 text-[13px] text-text-bright font-mono transition-colors duration-200 ease-out hover:border-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50"
+								className="w-full rounded-[var(--radius-sm)] border border-border bg-void px-3 py-2 pl-7 font-mono text-[13px] text-text-bright transition-colors duration-200 ease-out hover:border-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50"
 							/>
 						</div>
 						<p className="text-[10px] text-text-muted">
@@ -216,14 +233,10 @@ function AutoReloadCardComponent() {
 						</p>
 					</div>
 				</div>
-			)}
-
-			{!isEnabled && !isLoading && (
-				<div className="mt-auto pt-4 border-t border-border/60">
-					<p className="text-[11px] text-text-muted">
-						Turn on auto-reload to keep your credits topped up automatically.
-					</p>
-				</div>
+			) : (
+				<p className="mt-auto border-t border-border/60 pt-4 text-[11px] text-text-muted">
+					Turn on auto-reload to keep your credits topped up automatically.
+				</p>
 			)}
 
 			{saving && (
@@ -231,7 +244,7 @@ function AutoReloadCardComponent() {
 					<RefreshCw className="h-3.5 w-3.5 animate-spin text-text-muted" aria-hidden="true" />
 				</div>
 			)}
-		</div>
+		</DashboardCard>
 	);
 }
 

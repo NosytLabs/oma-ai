@@ -3,7 +3,6 @@ import {
 	freeLeftLabel,
 	GUEST_DAILY_LIMIT_DEFAULT,
 	GUEST_QUOTA_STORAGE_KEY,
-	quotaFromHeaders,
 	quotaFromServer,
 	readStoredGuestQuota,
 	writeStoredGuestQuota,
@@ -29,23 +28,6 @@ describe("quotaFromServer", () => {
 	it("forces remaining 0 when code is daily_limit_exceeded even without remaining", () => {
 		const q = quotaFromServer({ code: "daily_limit_exceeded", limit: 20 });
 		expect(q.remaining).toBe(0);
-	});
-});
-
-describe("quotaFromHeaders", () => {
-	it("reads X-DailyLimit-Remaining / Limit", () => {
-		const h = new Headers({
-			"X-DailyLimit-Remaining": "3",
-			"X-DailyLimit-Limit": "20",
-		});
-		const q = quotaFromHeaders(h);
-		expect(q).toEqual(
-			expect.objectContaining({ remaining: 3, limit: 20 }),
-		);
-	});
-
-	it("returns null when remaining header missing", () => {
-		expect(quotaFromHeaders(new Headers())).toBeNull();
 	});
 });
 

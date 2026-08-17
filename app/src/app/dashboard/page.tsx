@@ -69,7 +69,7 @@ export default function DashboardPage() {
 }
 
 function DashboardPageInner() {
-	const { isAuthenticated, isDemo, isReady, evmAddress } = useAuth();
+	const { isAuthenticated, isDemo, isReady, evmAddress, isAdmin } = useAuth();
 	const toast = useToast();
 	const queryClient = useQueryClient();
 	const searchParams = useSearchParams();
@@ -347,6 +347,7 @@ function DashboardPageInner() {
 						timeRange={timeRange}
 						onTimeRangeChange={setTimeRange}
 						notificationsEnabled={canLoadDashboard}
+						isAdmin={isAdmin}
 					/>
 
 					<DashboardGrid
@@ -356,6 +357,7 @@ function DashboardPageInner() {
 						hasAnyUsage={usage.length > 0}
 						creditBatches={creditBatches}
 						transactions={transactions}
+						isDemo={isDemoView}
 						loading={loading}
 						error={error}
 						backendUnavailable={backendUnavailable}
@@ -385,6 +387,7 @@ function DashboardPageInner() {
 						timeRange={timeRange}
 						onNavigateToApiKeys={handleNavigateToApiKeys}
 						walletConnected={Boolean(evmAddress)}
+						isAdmin={isAdmin}
 					/>
 				</div>
 			</div>

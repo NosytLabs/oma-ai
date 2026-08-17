@@ -5,8 +5,6 @@ import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";
 import {
 	Activity,
-	CreditCard,
-	Coins,
 	Inbox,
 	KeyRound,
 	type LucideIcon,
@@ -194,6 +192,10 @@ interface DashboardGridProps {
 	walletConnected?: boolean;
 	/** Unfiltered lifetime usage — empty-state should not fire on a quiet 24h range. */
 	hasAnyUsage?: boolean;
+	/** Demo tour (`?demo=1`) renders sample data only — no live backend calls. */
+	isDemo?: boolean;
+	/** Admin flag — the provider-ops (Health) surfaces are operator-only. */
+	isAdmin?: boolean;
 }
 
 /**
@@ -241,6 +243,8 @@ export function DashboardGrid(props: DashboardGridProps) {
 		onNavigateToApiKeys,
 		walletConnected = false,
 		hasAnyUsage = false,
+		isDemo = false,
+		isAdmin = false,
 	} = props;
 
 	// `usage` is already time-range filtered by the page (`filteredUsage`).
@@ -289,7 +293,14 @@ export function DashboardGrid(props: DashboardGridProps) {
 							</div>
 						)}
 
-						<div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 [&>*]:min-h-[12rem]">
+						{/* Primary row — three user-facing panels of equal weight.
+						   The 4th cell hosts provider-ops "System health" only for
+						   operators (admin). Non-admins get a clean 3-col row. */}
+						<div
+							className={`mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 [&>*]:min-h-[12rem] ${
+								isAdmin ? "lg:grid-cols-4" : "lg:grid-cols-3"
+							}`}
+						>
 							<WidgetErrorBoundary title="Credits">
 								<CreditBalanceCard
 									balance={balance}
@@ -298,7 +309,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 								/>
 							</WidgetErrorBoundary>
 							<WidgetErrorBoundary title="Auto reload">
-								<AutoReloadCard />
+								<AutoReloadCard isDemo={isDemo} />
 							</WidgetErrorBoundary>
 							<WidgetErrorBoundary title="Today's stats">
 								<QuickStatsCard
@@ -311,41 +322,11 @@ export function DashboardGrid(props: DashboardGridProps) {
 									activeModels={activeModels}
 								/>
 							</WidgetErrorBoundary>
-							<div className="sm:col-span-2 lg:col-span-1">
+							{isAdmin && (
 								<WidgetErrorBoundary title="Provider health">
 									<LazyProviderHealthSummary />
 								</WidgetErrorBoundary>
-							</div>
-							<WidgetErrorBoundary title="Top up credits">
-								<div className="flex flex-col h-full justify-between p-6 bg-surface/30 border border-border rounded-[var(--radius-xl)] shadow-[var(--shadow-md)] relative overflow-hidden transition-colors duration-200 ease-out hover:border-accent/40">
-									<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-accent/40 via-accent/20 to-transparent" />
-									<div className="flex items-start justify-between gap-4">
-										<div>
-											<p className="text-[14.5px] font-bold text-text-bright tracking-tight">Top up credits</p>
-											<p className="mt-1 text-[11px] font-mono uppercase tracking-wider text-text-muted">Choose card or USDC.</p>
-										</div>
-										<span className="rounded-[var(--radius-sm)] border border-accent/30 bg-accent/10 px-2.5 py-1 text-[9.5px] font-mono font-bold uppercase tracking-wider text-accent shadow-[0_0_10px_-2px_var(--color-accent-glow)] shrink-0">
-											 + USDC
-										</span>
-									</div>
-									<div className="mt-8 flex flex-col gap-3">
-										<Link
-											href="/deposit?method=card"
-											className="group flex flex-1 items-center justify-center rounded-[var(--radius-sm)] border border-border bg-void px-4 py-3 text-[11.5px] font-bold uppercase tracking-wider text-text-secondary transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:border-accent/50 hover:bg-accent/5 hover:text-text-bright hover:shadow-[0_0_15px_-5px_var(--color-accent-glow)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.97] gap-2.5"
-										>
-											<CreditCard className="h-4 w-4" aria-hidden="true" />
-											Card
-										</Link>
-										<Link
-											href="/deposit?method=crypto"
-											className="group flex flex-1 items-center justify-center rounded-[var(--radius-sm)] border border-border bg-surface px-4 py-3 text-[11.5px] font-bold uppercase tracking-wider text-text-secondary transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-surface-elevated hover:text-text-bright hover:border-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border active:scale-[0.97] gap-2.5"
-										>
-											<Coins className="h-4 w-4" aria-hidden="true" />
-											USDC
-										</Link>
-									</div>
-								</div>
-							</WidgetErrorBoundary>
+							)}
 						</div>
 
 						<div className="mb-6">
@@ -484,7 +465,8 @@ export function DashboardGrid(props: DashboardGridProps) {
 					</m.div>
 				)}
 
-				{/* Health Tab — always show live readiness; does not require usage */}
+				{/* Health Tab — admin-only provider-ops surface. Non-admins hitting
+				   a deep link to this tab get a friendly empty-state instead. */}
 				{activeTab === "health" && (
 					<m.div
 						key="health"
@@ -498,9 +480,17 @@ export function DashboardGrid(props: DashboardGridProps) {
 						animate="visible"
 						exit="exit"
 					>
-						<WidgetErrorBoundary title="Provider health">
-							<LazyProviderHealthCard />
-						</WidgetErrorBoundary>
+						{isAdmin ? (
+							<WidgetErrorBoundary title="Provider health">
+								<LazyProviderHealthCard />
+							</WidgetErrorBoundary>
+						) : (
+							<EmptyState
+								icon={Activity}
+								title="Provider status is operator-only"
+								description="Live readiness checks, circuit-breaker states, and per-dependency latency are reserved for operators. If you're experiencing an issue, check the header status pill or contact support."
+							/>
+						)}
 					</m.div>
 				)}
 			</AnimatePresence>

@@ -119,27 +119,6 @@ export function isQuotaError(err: unknown): boolean {
 		return false;
 }
 
-/**
-	* Extract quota info (remaining, limit, resetMs) from a daily_limit_exceeded
-	* error body. Consumed by DashboardErrorBanner.
-	*/
-export function extractQuotaInfo(
-		err: unknown,
-): { remaining: number; limit: number; resetMs?: number } | undefined {
-		let body: { error?: { remaining?: number; limit?: number; reset_ms?: number } } | null | undefined = null;
-		if (err instanceof ApiError) {
-				body = err.body as { error?: { remaining?: number; limit?: number; reset_ms?: number } } | null | undefined;
-		} else {
-				const anyErr = err as { body?: unknown } | null | undefined;
-				if (anyErr?.body) body = anyErr.body as { error?: { remaining?: number; limit?: number; reset_ms?: number } } | null | undefined;
-		}
-		if (!body?.error) return undefined;
-		const remaining = typeof body.error.remaining === "number" ? Math.max(0, body.error.remaining) : 0;
-		const limit = typeof body.error.limit === "number" && body.error.limit > 0 ? body.error.limit : 20;
-		const resetMs = typeof body.error.reset_ms === "number" ? body.error.reset_ms : undefined;
-		return { remaining, limit, resetMs };
-}
-
 /** Get a cached entry by key. Returns null if missing or beyond STALE_TTL. */
 export function getCached<T>(key: string): T | null {
 		const entry = cache.get(key);

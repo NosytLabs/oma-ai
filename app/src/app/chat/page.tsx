@@ -60,7 +60,7 @@ export default function ChatPage() {
 					<button
 						type="button"
 						onClick={() => window.location.reload()}
-						className="px-4 py-2 text-xs font-medium rounded-[var(--radius-lg)] bg-surface-elevated border border-border hover:border-accent/50 transition-[colors,transform] duration-200 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"
+						className="px-4 py-2 text-xs font-medium rounded-[var(--radius-lg)] bg-surface-elevated border border-border hover:border-accent/50 transition-[color,background-color,border-color,transform] duration-200 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"
 					>
 						Refresh page
 					</button>

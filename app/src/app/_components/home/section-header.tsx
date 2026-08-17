@@ -5,6 +5,11 @@ import type { ReactNode } from "react";
 	* SectionHeader — shared headline / subhead block used across sections.
 	* Convention: max 1 eyebrow per 3 sections, headline + optional subhead.
 	* `align` defaults to left; use "center" for narrow banner sections.
+	*
+	* Eyebrow variant:
+	*  - "caps" (default) → mono uppercase with leading dot, accent color
+	*  - "pill" → soft rounded badge (page-kicker) — for sections that want
+	*    the looser editorial feel (e.g. docs landing hero).
 	*/
 
 export interface SectionHeaderProps {
@@ -14,6 +19,7 @@ export interface SectionHeaderProps {
 	align?: "left" | "center";
 	className?: string;
 	headlineClassName?: string;
+	eyebrowVariant?: "caps" | "pill";
 	/** Optional id on the h2 for aria-labelledby on parent sections. */
 	id?: string;
 }
@@ -25,6 +31,7 @@ export function SectionHeader({
 	align = "left",
 	className,
 	headlineClassName,
+	eyebrowVariant = "caps",
 	id,
 }: SectionHeaderProps) {
 	return (
@@ -35,7 +42,15 @@ export function SectionHeader({
 				className,
 			)}
 		>
-			{eyebrow && <span className="eyebrow">{eyebrow}</span>}
+			{eyebrow && (
+				<span
+					className={cn(
+						eyebrowVariant === "caps" ? "section-eyebrow-caps" : "page-kicker",
+					)}
+				>
+					{eyebrow}
+				</span>
+			)}
 			<h2
 				id={id}
 				className={cn(

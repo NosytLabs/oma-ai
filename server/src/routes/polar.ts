@@ -301,9 +301,8 @@ export async function polarWebhookHandler(c: Context<OmaEnv>) {
 		const plan = planFromProductId(event.data?.product?.id) ?? null;
 		const credits = plan ? PLAN_CREDITS[plan].credits : null;
 		const metadata = event.data?.metadata ?? {};
-		// userId still comes from metadata today (Polar send it through at checkout
-		// time, signed by the operator's webhook secret). We log + sanitize but
-		// REPLACED: customer.id → userId mapping verified and removed legacy TODO.
+		// userId comes from checkout metadata (Polar echoes it back on every
+		// order event; the webhook signature authenticates the payload).
 		const userId = typeof metadata.userId === "string" ? metadata.userId : null;
 		if (metadata.credits !== undefined && metadata.credits !== credits) {
 				logger.warn(

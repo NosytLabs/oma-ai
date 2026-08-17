@@ -260,7 +260,7 @@ Content-Type: application/json`;
 	{/* Divider */}
 	<div className="mx-4 my-1 flex items-center gap-3">
 	<div className="h-px flex-1 bg-border" />
-	<span className="font-mono text-[9.5px] uppercase tracking-[0.18em] text-text-muted">
+	<span className="font-mono text-[10px] uppercase tracking-[0.18em] text-text-muted">
 	{isSettled ? "200 response" : isStreaming ? "streaming" : "request"}
 	</span>
 	<div className="h-px flex-1 bg-border" />
@@ -288,7 +288,7 @@ Content-Type: application/json`;
 	</span>
 	{round.free ? (
 	<span className="rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-accent">
-	free · gonka network
+	free · oma-ai
 	</span>
 	) : (
 	<span className="rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-accent">

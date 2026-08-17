@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useId, useState } from "react";
 import { FloatingIcons } from "@/components/floating-icons";
 import { BreadcrumbListJsonLd } from "@/components/json-ld";
+import { MODEL_COUNT } from "@/lib/models-data";
 import { DocsSearch } from "./_components/DocsSearch";
 import { NAV_ITEMS } from "./_lib/nav-data";
 
@@ -153,7 +154,7 @@ export function DocsContent() {
 
 				<div className="min-w-0 lg:pl-72">
 					<div className="mx-auto max-w-5xl min-w-0 px-4 py-3 sm:px-6 lg:px-10">
-						<div className="relative mb-10 overflow-hidden rounded-3xl border border-accent/20 bg-surface/50 p-8 sm:p-10 lg:p-12 shadow-2xl">
+						<div className="relative mb-10 overflow-hidden rounded-[var(--radius-2xl)] border border-accent/20 bg-surface/50 p-8 sm:p-10 lg:p-12 shadow-2xl">
 							<div
 								aria-hidden="true"
 								className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-accent/5 blur-[80px]"
@@ -168,44 +169,43 @@ export function DocsContent() {
 								<span className="opacity-50">/</span>
 								<span className="text-text">docs</span>
 							</nav>
-							<div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
-								<div>
-									<span className="page-kicker">API reference</span>
+							<div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+								<div className="min-w-0">
+									<span className="section-eyebrow-caps">API reference</span>
 									<h1 className="display-headline mt-4 text-text-bright">
-										API Documentation
+										API Docs
 									</h1>
 									<p className="page-intro mt-4 max-w-2xl">
-										OpenAI-compatible AI inference with wallet auth, x402
-										pay-per-request flows, and a catalog of models behind one endpoint.
-										Add credits via card, or pay per call with USDC on Base.
+										OpenAI-compatible inference with wallet auth and x402
+										pay-per-request. One endpoint, one key, every curated model.
 									</p>
 								</div>
 								<div className="flex flex-col gap-3 lg:min-w-[15rem] lg:items-end">
 									<DocsSearch />
 									<div className="meta-strip justify-start lg:justify-end">
 										<span>OpenAI-compatible</span>
-										<span>26+ models</span>
+										<span>{MODEL_COUNT}+ models</span>
 										<span>x402 on Base</span>
 									</div>
 								</div>
 							</div>
-							<div className="mt-8 flex flex-wrap items-center gap-4">
+							<div className="mt-8 flex flex-wrap items-center gap-3">
 								<Link
 									href="/login"
-									className="inline-flex h-12 items-center gap-2 rounded-lg bg-accent px-6 font-mono text-sm font-bold text-void transition-[background-color,transform] duration-200 ease-out hover:bg-accent-bright hover:shadow-[0_0_20px_var(--color-accent-glow)] active:scale-[0.97] focus-ring"
+									className="btn-mono btn-primary group"
 								>
-									Get API Key
-									<ArrowRight className="h-4 w-4" aria-hidden="true" />
+									<span>Get API key</span>
+									<ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
 								</Link>
 								<Link
 									href="#quickstart"
-									className="inline-flex h-12 items-center rounded-lg border border-border-hi bg-surface px-6 font-mono text-sm font-medium text-text-primary transition-[border-color,transform] duration-200 ease-out hover:border-accent/50 active:scale-[0.97] focus-ring"
+									className="btn-mono"
 								>
 									Quick Start
 								</Link>
 								<Link
 									href="/pricing"
-									className="inline-flex h-12 items-center rounded-lg px-4 text-sm font-medium text-text-secondary transition-colors duration-200 ease-out hover:text-text-bright"
+									className="btn-mono"
 								>
 									View Pricing
 								</Link>

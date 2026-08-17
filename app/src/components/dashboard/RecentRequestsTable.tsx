@@ -26,7 +26,7 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 	const totalPages = Math.ceil(usage.length / limit);
 
 	return (
-		<div className="flex flex-col h-full border border-border bg-surface/30 rounded-[var(--radius-lg)] shadow-[var(--shadow-md)] transition-colors duration-200 ease-out hover:border-accent/40">
+		<div className="flex flex-col h-full border border-border bg-surface/30 rounded-[var(--radius-xl)] shadow-[var(--shadow-md)] transition-colors duration-200 ease-out hover:border-accent/40">
 			<div className="p-6 border-b border-border/50">
 				<div className="flex items-center justify-between">
 					<h2 className="text-[14.5px] font-bold text-text-bright tracking-tight">

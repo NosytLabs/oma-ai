@@ -33,6 +33,11 @@ export function ProviderBreakdown({ usage, loading }: ProviderBreakdownProps) {
 		const statsMap = new Map<string, ProviderStats>();
 
 		usage.forEach((record) => {
+			// Defensive filter — Surplus is internal-only procurement and must
+			// never surface to end users in the breakdown. The chat-message
+			// policy comment ("the only valid values are customer-visible
+			// brands: Venice and OMA-AI") applies here too.
+			if (record.provider === "surplus") return;
 			const provider = record.provider || "unknown";
 			const existing = statsMap.get(provider);
 			// Billed amount (cost + markup); decimal-string cents, may be sub-cent.

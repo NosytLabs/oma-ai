@@ -11,14 +11,15 @@ export function AgentDemoSection() {
 	return (
 		<section
 			aria-labelledby="agent-demo-headline"
-			className="relative border-t border-border-subtle bg-surface/50 py-16 sm:py-22 lg:py-28"
+			className="relative border-t border-border-subtle bg-surface/50 py-14 sm:py-18 lg:py-22"
 		>
 			<div className="container-page">
-				<div className="grid min-w-0 grid-cols-1 items-center gap-12 lg:grid-cols-[1fr_1.15fr] lg:gap-20 w-full">
+				<div className="grid grid-cols-[minmax(0,1fr)] items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:gap-20 w-full">
 					<Reveal>
 						<SectionHeader
 							id="agent-demo-headline"
 							eyebrow="Agents"
+							eyebrowVariant="caps"
 							headline={
 								<>
 									Looks like a coding agent.
@@ -48,7 +49,7 @@ export function AgentDemoSection() {
 					</Reveal>
 
 					<Reveal>
-						<div className="rounded-2xl border border-border bg-panel p-2 shadow-xl ring-1 ring-white/5">
+						<div className="rounded-[var(--radius-2xl)] border border-border bg-panel p-2 shadow-xl ring-1 ring-white/5">
 							<AgentSessionDemo />
 						</div>
 					</Reveal>

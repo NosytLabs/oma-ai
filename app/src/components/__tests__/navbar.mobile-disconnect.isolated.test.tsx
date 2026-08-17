@@ -93,7 +93,6 @@ function renderMenu(props: Partial<React.ComponentProps<typeof NavbarMobileMenu>
 			toggleRef={ref}
 			isConnected
 			section="home"
-			build="dev"
 			onDisconnect={onDisconnect}
 		/>,
 	);
@@ -115,7 +114,6 @@ describe("NavbarMobileMenu — disconnect flow", () => {
 				toggleRef={{ current: null } as React.RefObject<HTMLButtonElement | null>}
 				isConnected={false}
 				section="home"
-				build="dev"
 				onDisconnect={vi.fn()}
 			/>,
 		);

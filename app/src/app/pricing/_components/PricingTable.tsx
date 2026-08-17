@@ -239,7 +239,7 @@ export function PricingTable({
 									<button
 										type="button"
 										onClick={() => toggleSort("name")}
-										aria-label={`Sort by model name. Current order: ${sortField === "name" ? sortOrder : "none"}`}
+										aria-label={`Model, sort by model name. Current order: ${sortField === "name" ? sortOrder : "none"}`}
 										className="group inline-flex items-center gap-1.5 hover:text-text-bright focus:outline-none"
 									>
 										Model
@@ -253,7 +253,7 @@ export function PricingTable({
 									<button
 										type="button"
 										onClick={() => toggleSort("inputPrice")}
-										aria-label={`Sort by input price. Current order: ${sortField === "inputPrice" ? sortOrder : "none"}`}
+										aria-label={`Input / 1M, sort by input price. Current order: ${sortField === "inputPrice" ? sortOrder : "none"}`}
 										className="group inline-flex items-center gap-1.5 hover:text-text-bright focus:outline-none ml-auto"
 									>
 										Input / 1M
@@ -264,7 +264,7 @@ export function PricingTable({
 									<button
 										type="button"
 										onClick={() => toggleSort("outputPrice")}
-										aria-label={`Sort by output price. Current order: ${sortField === "outputPrice" ? sortOrder : "none"}`}
+										aria-label={`Output / 1M, sort by output price. Current order: ${sortField === "outputPrice" ? sortOrder : "none"}`}
 										className="group inline-flex items-center gap-1.5 hover:text-text-bright focus:outline-none ml-auto"
 									>
 										Output / 1M
@@ -275,7 +275,7 @@ export function PricingTable({
 									<button
 										type="button"
 										onClick={() => toggleSort("context")}
-										aria-label={`Sort by context length. Current order: ${sortField === "context" ? sortOrder : "none"}`}
+										aria-label={`Ctx, sort by context length. Current order: ${sortField === "context" ? sortOrder : "none"}`}
 										className="group inline-flex items-center gap-1.5 hover:text-text-bright focus:outline-none ml-auto"
 									>
 										Ctx

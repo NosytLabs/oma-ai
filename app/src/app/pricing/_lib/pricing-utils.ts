@@ -47,12 +47,3 @@ export function fmtPrice(value: number): string {
 	const rounded = Math.ceil(value * 20) / 20;
 	return `$${rounded.toFixed(2)}`;
 }
-
-export function prettyName(id: string): string {
-	return id
-		.split("-")
-		.map((part) =>
-			/^\d/.test(part) ? part : part.charAt(0).toUpperCase() + part.slice(1),
-		)
-		.join(" ");
-}

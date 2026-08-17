@@ -27,7 +27,7 @@ const STEPS = [
 		body: (
 			<>
 				Open the <Link href="/chat" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">chat playground</Link> and send a
-				message. Guests get a handful of free messages every day on the Gonka network — just to see how it works.
+				message. Guests get a handful of free messages every day on OMA-AI&apos;s budget models — just to see how it works.
 				Chat, write code, or analyze images with frontier multimodal models. No
 				sign-up, no credit card, nothing to install.
 			</>
@@ -99,6 +99,13 @@ reply = client.chat.completions.create(
 )
 print(reply.choices[0].message.content)`;
 
+const NEXT_STEPS = [
+	{ label: "Browse", title: `Browse ${MODEL_COUNT}+ models`, href: "/models" },
+	{ label: "Pricing", title: "See what things cost", href: "/pricing" },
+	{ label: "Learn", title: "Read the FAQ", href: "/faq" },
+	{ label: "I'm a developer", title: "Jump to the API docs", href: "/docs" },
+] as const;
+
 export default function GettingStartedPage() {
 	return (
 		<div className="relative bg-void text-text overflow-x-clip">
@@ -119,7 +126,7 @@ export default function GettingStartedPage() {
 					Home
 				</Link>
 
-				<span className="page-kicker">First time here?</span>
+				<span className="section-eyebrow-caps">First time here?</span>
 				<h1 className="display-headline mt-3 text-text-bright">How to use OMA — 5 minutes, no jargon</h1>
 				<p className="page-intro mt-4 max-w-2xl">
 					OMA is one account for {MODEL_COUNT}+ AI models from many providers, paid your way. You do{" "}
@@ -136,8 +143,8 @@ export default function GettingStartedPage() {
 										<step.icon className="h-4 w-4 text-accent" aria-hidden="true" />
 									</div>
 									<div className="min-w-0">
-										<h2 className="text-base font-semibold text-text-bright">
-											<span className="mr-2 font-mono text-accent text-sm">0{i + 1}</span>
+										<h2 className="text-base font-display font-medium text-text-bright">
+											<span className="mr-2 font-geometric tabular-nums text-accent text-sm">0{i + 1}</span>
 											{step.title}
 										</h2>
 										<div className="mt-2 text-sm leading-relaxed text-text-secondary">{step.body}</div>
@@ -149,7 +156,7 @@ export default function GettingStartedPage() {
 
 				<InViewFade eager delay={0.05}>
 					<section className="mt-10 rounded-[var(--radius-lg)] border border-border bg-void p-5 sm:p-6" aria-labelledby="try-heading">
-					<h2 id="try-heading" className="flex items-center gap-2 text-base font-semibold text-text-bright">
+					<h2 id="try-heading" className="flex items-center gap-2 text-base font-display font-medium text-text-bright">
 						<Terminal className="h-4 w-4 text-accent" aria-hidden="true" />
 						Try it right now
 					</h2>
@@ -169,54 +176,21 @@ export default function GettingStartedPage() {
 
 				<InViewFade delay={0.05}>
 					<section className="mt-10 grid gap-4 sm:grid-cols-2" aria-label="Next steps">
-					<Link
-						href="/models"
-						className="group flex items-center justify-between rounded-[var(--radius-lg)] border border-border bg-surface/60 p-5 transition-[color,border-color,background-color,transform] duration-200 ease-out hover:-translate-y-0.5 hover:border-accent/40 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-					>
-						<div>
-							<p className="text-xs font-mono uppercase tracking-wider text-text-muted">Next</p>
-							<p className="mt-1 text-sm font-semibold text-text-bright group-hover:text-accent transition-colors duration-200 ease-out">
-								Browse {MODEL_COUNT}+ models
-							</p>
-						</div>
-						<ArrowRight className="h-4 w-4 text-accent" aria-hidden="true" />
-					</Link>
-					<Link
-						href="/pricing"
-						className="group flex items-center justify-between rounded-[var(--radius-lg)] border border-border bg-surface/60 p-5 transition-[color,border-color,background-color,transform] duration-200 ease-out hover:-translate-y-0.5 hover:border-accent/40 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-					>
-						<div>
-							<p className="text-xs font-mono uppercase tracking-wider text-text-muted">Next</p>
-							<p className="mt-1 text-sm font-semibold text-text-bright group-hover:text-accent transition-colors duration-200 ease-out">
-								See what things cost
-							</p>
-						</div>
-						<ArrowRight className="h-4 w-4 text-accent" aria-hidden="true" />
-					</Link>
-					<Link
-						href="/faq"
-						className="group flex items-center justify-between rounded-[var(--radius-lg)] border border-border bg-surface/60 p-5 transition-[color,border-color,background-color,transform] duration-200 ease-out hover:-translate-y-0.5 hover:border-accent/40 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-					>
-						<div>
-							<p className="text-xs font-mono uppercase tracking-wider text-text-muted">Next</p>
-							<p className="mt-1 text-sm font-semibold text-text-bright group-hover:text-accent transition-colors duration-200 ease-out">
-								Read the FAQ
-							</p>
-						</div>
-						<ArrowRight className="h-4 w-4 text-accent" aria-hidden="true" />
-					</Link>
-					<Link
-						href="/docs"
-						className="group flex items-center justify-between rounded-[var(--radius-lg)] border border-border bg-surface/60 p-5 transition-[color,border-color,background-color,transform] duration-200 ease-out hover:-translate-y-0.5 hover:border-accent/40 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-					>
-						<div>
-							<p className="text-xs font-mono uppercase tracking-wider text-text-muted">I&apos;m a developer</p>
-							<p className="mt-1 text-sm font-semibold text-text-bright group-hover:text-accent transition-colors duration-200 ease-out">
-								Jump to the API docs
-							</p>
-						</div>
-						<ArrowRight className="h-4 w-4 text-accent" aria-hidden="true" />
-					</Link>
+					{NEXT_STEPS.map((step) => (
+						<Link
+							key={step.href}
+							href={step.href}
+							className="group flex items-center justify-between rounded-[var(--radius-lg)] border border-border bg-surface/60 p-5 transition-[color,border-color,background-color,transform] duration-200 ease-out hover:-translate-y-0.5 hover:border-accent/40 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+						>
+							<div>
+								<p className="text-xs font-mono uppercase tracking-wider text-text-muted">{step.label}</p>
+								<p className="mt-1 text-sm font-semibold text-text-bright group-hover:text-accent transition-colors duration-200 ease-out">
+									{step.title}
+								</p>
+							</div>
+							<ArrowRight className="h-4 w-4 text-accent" aria-hidden="true" />
+						</Link>
+					))}
 					</section>
 				</InViewFade>
 

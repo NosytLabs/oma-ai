@@ -57,8 +57,6 @@ audit-*.md
 server/models.json.bak
 test-results/
 tmp/lighthouse/
-tmp/lighthouse/
-server/models.json.bak
 
 # opencode + tool working dirs
 .opencode/
@@ -93,8 +91,9 @@ data/
 # Accidental Playwright path dumps (page.screenshot with undefined path)
 app/undefined/
 
-# Accidental npm lockfile (this monorepo uses pnpm)
+# Accidental npm/bun lockfiles (this monorepo uses pnpm)
 package-lock.json
+bun.lock
 
 # Audit screenshots at repo root (transient)
 audit-*.jpeg

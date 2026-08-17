@@ -89,8 +89,8 @@ export function ModelUsageTable({ usage, loading }: ModelUsageTableProps) {
 
 	if (loading && usage.length === 0) {
 		return (
-			<div className="p-6 border border-border bg-surface/30 rounded-[var(--radius-lg)] shadow-[var(--shadow-md)]">
-				<div className="flex items-center gap-3">
+<div className="p-6 border border-border bg-surface/30 rounded-[var(--radius-xl)] shadow-[var(--shadow-md)]">
+			<div className="flex items-center gap-3">
 					<span className="inline-block h-2 w-2 rounded-full bg-accent animate-pulse shadow-[0_0_8px_var(--color-accent)]" />
 					<span className="text-sm font-semibold text-text-muted">
 						Loading model breakdown...
@@ -102,7 +102,7 @@ export function ModelUsageTable({ usage, loading }: ModelUsageTableProps) {
 
 	if (modelStats.length === 0) {
 		return (
-			<div className="p-6 border border-border bg-surface/30 rounded-[var(--radius-lg)] shadow-[var(--shadow-md)] transition-colors duration-200 ease-out hover:border-accent/40">
+			<div className="p-6 border border-border bg-surface/30 rounded-[var(--radius-xl)] shadow-[var(--shadow-md)] transition-colors duration-200 ease-out hover:border-accent/40">
 				<h3 className="text-[14.5px] font-bold text-text-bright tracking-tight mb-2">
 					Model usage breakdown
 				</h3>
@@ -114,7 +114,7 @@ export function ModelUsageTable({ usage, loading }: ModelUsageTableProps) {
 	}
 
 	return (
-		<div className="border border-border bg-surface/30 rounded-[var(--radius-lg)] shadow-[var(--shadow-md)] overflow-hidden transition-colors duration-200 ease-out hover:border-accent/40">
+		<div className="border border-border bg-surface/30 rounded-[var(--radius-xl)] shadow-[var(--shadow-md)] overflow-hidden transition-colors duration-200 ease-out hover:border-accent/40">
 			<div className="p-6 border-b border-border/50 bg-void/50">
 				<h3 className="text-[14.5px] font-bold text-text-bright tracking-tight">
 					Model usage breakdown

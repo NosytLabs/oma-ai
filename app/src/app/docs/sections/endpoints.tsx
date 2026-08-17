@@ -23,7 +23,7 @@ export function EndpointsSection() {
 			<div className="space-y-4">
 				{ENDPOINTS.map((ep) => (
 					<div
-						key={ep.path}
+						key={`${ep.method}-${ep.path}-${ep.anchor}`}
 						id={ep.anchor}
 						className="rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] overflow-hidden scroll-mt-24"
 					>

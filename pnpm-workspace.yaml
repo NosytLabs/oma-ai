@@ -1,37 +1,6 @@
+# pnpm 9 workspace — only `packages` is read here. Security overrides,
+# build allowlists, and hoist patterns live in the root package.json
+# `pnpm` field (pnpm-workspace.yaml settings keys are pnpm 10+ only).
 packages:
   - app
   - server
-
-publicHoistPatterns:
-  - 'motion-dom'
-  - 'motion-utils'
-
-allowBuilds:
-  '@reown/appkit': true
-  sharp: true
-  unrs-resolver: true
-  esbuild: false
-  protobufjs: false
-
-minimumReleaseAgeExclude:
-  - '@base-org/account@2.5.7'
-  - '@csstools/color-helpers'
-  - '@csstools/css-color-parser'
-  - '@csstools/css-syntax-patches-for-csstree'
-  - 'jose'
-
-overrides:
-  ws: '>=8.21.0'
-  postcss: '>=8.5.10'
-  # CVE remediation — axios via wagmi>@base-org/account>coinbase/cdp-sdk
-  axios: '>=1.18.0'
-  esbuild: '>=0.25.0'
-  uuid: '>=11.1.1'
-  elliptic: '>=6.6.1'
-  '@opentelemetry/core': '>=2.8.0'
-  # CVE GHSA-j3f2-48v5-ccww — protobufjs via @grpc/proto-loader
-  protobufjs: '>=7.6.5'
-  # CVE GHSA-3jxr-9vmj-r5cp — brace-expansion DoS via sentry & otel transitive
-  brace-expansion: '>=5.0.7'
-  # CVE GHSA-52cp-r559-cp3m — js-yaml YAML merge-key quadratic CPU via @eslint/eslintrc
-  js-yaml: '>=4.3.0'

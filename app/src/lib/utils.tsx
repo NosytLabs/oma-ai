@@ -1,8 +1,3 @@
-export function formatCents(cents: string | number): string {
-	const n = typeof cents === "string" ? parseFloat(cents) : cents;
-	return (n / 100).toFixed(2);
-}
-
 /**
 	* Convert a cents value (string from API or number) to a dollar number.
 	* Centralizes the `parseFloat(String(x)) / 100` pattern that was duplicated
@@ -88,18 +83,6 @@ export function formatDateTime(iso: string): string {
 		day: "numeric",
 		hour: "2-digit",
 		minute: "2-digit",
-	});
-}
-
-/**
-	* Format an ISO date string with date only (no time).
-	* "2026-01-15T10:30:00Z" → "Jan 15, 2026"
-	*/
-export function formatDateShort(iso: string): string {
-	return new Date(iso).toLocaleDateString("en-US", {
-		month: "short",
-		day: "numeric",
-		year: "numeric",
 	});
 }
 

@@ -9,6 +9,12 @@ interface SparklineProps {
 	heightClass?: string;
 	/** Stroke color (CSS color or var). Defaults to accent. */
 	stroke?: string;
+	/**
+	 * "trend" colors the line success/error by direction; "neutral" always
+	 * uses the brand accent (for metrics where direction is not good/bad,
+	 * e.g. spend).
+	 */
+	tone?: "trend" | "neutral";
 	/** Optional className for the wrapping svg. */
 	className?: string;
 	/** Show a small dot at the latest value. Default true. */
@@ -32,6 +38,7 @@ export function Sparkline({
 	values,
 	heightClass = "h-8",
 	stroke = "var(--color-accent)",
+	tone = "trend",
 	className = "",
 	showLastDot = true,
 	ariaLabel = "Trend over time",
@@ -95,7 +102,12 @@ export function Sparkline({
 	}
 
 	const isUp = values[values.length - 1] >= values[0];
-	const trendStroke = isUp ? "var(--color-success)" : "var(--color-error)";
+	const trendStroke =
+		tone === "neutral"
+			? "var(--color-accent)"
+			: isUp
+				? "var(--color-success)"
+				: "var(--color-error)";
 
 	return (
 		<svg

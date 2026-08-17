@@ -71,9 +71,8 @@ export function AvailableModelsSection() {
 						<span className="font-semibold text-text">Chat Completions</span>
 					</div>
 					<p className="text-sm text-text-muted">
-						Text and reasoning models from Venice (frontier/premium/mid/budget) and
-						from the OMA-AI resale layer (Gemini, GPT-4.x, Kimi, MiniMax, Qwen,
-						DeepSeek).
+						Text and reasoning models from Venice (frontier/premium/mid/budget)
+						and OMA-AI (Gemini, GPT, Kimi, MiniMax, Qwen, DeepSeek).
 					</p>
 				</div>
 				<div className="rounded-[var(--radius-xl)] border border-border bg-panel p-4 shadow-[var(--shadow-md)] transition-transform duration-200 ease-out hover:border-accent/40 active:scale-[0.97]">

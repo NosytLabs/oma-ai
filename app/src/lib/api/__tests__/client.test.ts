@@ -7,7 +7,6 @@ import {
 	isSuspendedAccountError,
 	isPaymentRequiredError,
 	isQuotaError,
-	extractQuotaInfo,
 	getCached,
 	setCache,
 	STALE_TTL,
@@ -194,35 +193,6 @@ describe("api client", () => {
 
 			// Missing code
 			expect(isQuotaError(new ApiError(429, "rate limited"))).toBe(false);
-		});
-	});
-
-	describe("extractQuotaInfo", () => {
-		it("extracts info from ApiError body", () => {
-			const err = new ApiError(429, "limit", {
-				error: { remaining: 5, limit: 100, reset_ms: 1234567890 }
-			});
-			expect(extractQuotaInfo(err)).toEqual({
-				remaining: 5,
-				limit: 100,
-				resetMs: 1234567890,
-			});
-		});
-
-		it("applies defaults/constraints to extracted info", () => {
-			const err = new ApiError(429, "limit", {
-				error: { remaining: -5, limit: -10 } // Invalid values
-			});
-			expect(extractQuotaInfo(err)).toEqual({
-				remaining: 0, // Math.max(0, remaining)
-				limit: 20, // Defaults to 20 if <= 0
-				resetMs: undefined,
-			});
-		});
-
-		it("returns undefined if no quota error body", () => {
-			expect(extractQuotaInfo(new ApiError(429, "limit"))).toBeUndefined();
-			expect(extractQuotaInfo(new Error("standard error"))).toBeUndefined();
 		});
 	});
 

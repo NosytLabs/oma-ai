@@ -16,6 +16,7 @@ import { useEffect, useMemo, useState } from "react";
 import { FloatingIcons } from "@/components/floating-icons";
 import { InViewFade } from "@/components/motion/in-view-fade";
 import { formatPricePerMillion, loadModels, MODEL_COUNT, type Model, MODELS } from "@/lib/models-data";
+import { CREDIT_PLANS } from "@/lib/credit-utils";
 import {
 	toPricedModel,
 	type Category,
@@ -37,28 +38,28 @@ const CATEGORIES: { key: Category; label: string }[] = [
 	{ key: "budget", label: "Budget" },
 ];
 
+// Most tiers share the same active/inactive look — only "budget" needs a
+// separate accent (success) for visual differentiation. "All" uses the
+// neutral surface so the active state reads as a selected chip rather than
+// the brand slab (the rest of the page already has plenty of accent).
+const ACCENT_ACTIVE =
+	"bg-[var(--color-accent)] text-[var(--color-accent-fg)] border border-[var(--color-accent)]";
+const ACCENT_INACTIVE =
+	"bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)] text-[var(--color-accent)] border border-[var(--color-accent)]/30";
+const SUCCESS_ACTIVE =
+	"bg-[var(--color-success)] text-[var(--color-void-deep)] border border-[var(--color-success)]";
+const SUCCESS_INACTIVE =
+	"bg-[color-mix(in_srgb,var(--color-success)_10%,transparent)] text-[var(--color-success)] border border-[var(--color-success)]/30";
+const NEUTRAL_ACTIVE =
+	"bg-[var(--color-text-bright)] text-[var(--color-void)] border border-[var(--color-text-bright)]";
+
 const CATEGORY_STYLES: Record<Category, { active: string; inactive: string }> =
 	{
-		all: {
-			active: "bg-[var(--color-accent)] text-[var(--color-accent-fg)] border border-[var(--color-accent)]",
-			inactive: "bg-[var(--color-surface)] text-text-secondary border border-[var(--color-border)]",
-		},
-		frontier: {
-			active: "bg-[var(--color-accent)] text-[var(--color-accent-fg)] border border-[var(--color-accent)]",
-			inactive: "bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)] text-[var(--color-accent)] border border-[var(--color-accent)]/30",
-		},
-		premium: {
-			active: "bg-[var(--color-accent)] text-[var(--color-accent-fg)] border border-[var(--color-accent)]",
-			inactive: "bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)] text-[var(--color-accent)] border border-[var(--color-accent)]/30",
-		},
-		mid: {
-			active: "bg-[var(--color-accent)] text-[var(--color-accent-fg)] border border-[var(--color-accent)]",
-			inactive: "bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)] text-[var(--color-accent)] border border-[var(--color-accent)]/30",
-		},
-		budget: {
-			active: "bg-[var(--color-success)] text-[var(--color-void-deep)] border border-[var(--color-success)]",
-			inactive: "bg-[color-mix(in_srgb,var(--color-success)_10%,transparent)] text-[var(--color-success)] border border-[var(--color-success)]/30",
-		},
+		all: { active: NEUTRAL_ACTIVE, inactive: "bg-[var(--color-surface)] text-text-secondary border border-[var(--color-border)]" },
+		frontier: { active: ACCENT_ACTIVE, inactive: ACCENT_INACTIVE },
+		premium: { active: ACCENT_ACTIVE, inactive: ACCENT_INACTIVE },
+		mid: { active: ACCENT_ACTIVE, inactive: ACCENT_INACTIVE },
+		budget: { active: SUCCESS_ACTIVE, inactive: SUCCESS_INACTIVE },
 	};
 
 const PAYMENT_METHODS = [
@@ -85,34 +86,41 @@ const PAYMENT_METHODS = [
 	},
 ];
 
+// Tiers render from the single CREDIT_PLANS source (lib/credit-utils.ts).
+// Marketing-only copy + recommended badges are layered on top here so the
+// pricing UI can evolve without touching the deposit flow that consumes it.
 const POLAR_TIERS: Array<{
 	name: string;
 	price: string;
 	credits: string;
 	description: string;
 	badge?: string;
-}> = [
-	{
-		name: "Hobby",
-		price: "$10",
-		credits: "1,000 credits",
-		description: "A small, flexible start for side projects and exploration.",
-	},
-	{
-		name: "Builder",
-		price: "$50",
-		credits: "5,000 credits",
-		description: "A practical runway for production apps and autonomous agents.",
-		badge: "Recommended",
-	},
-	{
-		name: "Scale",
-		price: "$250",
-		credits: "25,000 credits",
-		description: "The best value per credit for high-volume workloads.",
-		badge: "Best value",
-	},
-];
+}> = CREDIT_PLANS.map((p) => {
+	const tierCopy: Record<string, { description: string; badge?: string }> = {
+		Hobby: {
+			description: "A small, flexible start for side projects and exploration.",
+		},
+		Builder: {
+			description:
+				"A practical runway for production apps and autonomous agents.",
+			badge: "Recommended",
+		},
+		Scale: {
+			description: "The best value per credit for high-volume workloads.",
+			badge: "Best value",
+		},
+	};
+	const copy = tierCopy[p.tag] ?? {
+		description: `${p.credits.toLocaleString()} credits at 1:1 USD.`,
+	};
+	return {
+		name: p.tag,
+		price: `$${p.usd}`,
+		credits: `${p.credits.toLocaleString()} credits`,
+		description: copy.description,
+		badge: copy.badge,
+	};
+});
 
 const FAQ_ITEMS = [
 	{
@@ -240,8 +248,8 @@ export default function PricingPage() {
 
 			<div className="container-page">
 				<div className="page-hero overflow-visible">
-					<span className="page-kicker">AI API Pricing</span>
-					<h1 className="h1-page text-text-bright max-w-4xl">Transparent usage pricing for every model.</h1>
+					<span className="section-eyebrow-caps">AI API pricing</span>
+					<h1 className="h1-page text-text-bright max-w-4xl">Pricing for every model.</h1>
 					<p className="page-intro">
 						See model costs first, then choose how to pay. OMA bills per token
 						or per request, with no subscriptions, no lock-in. Base provider
@@ -297,7 +305,7 @@ export default function PricingPage() {
 				</InViewFade>
 
 				<InViewFade delay={0.1}>
-					<section className="relative border-t border-border-subtle py-16 sm:py-20">
+					<section className="relative border-t border-border-subtle py-14 sm:py-18 lg:py-22">
 						<div className="mb-5 flex items-end justify-between gap-4">
 							<div>
 								<p className="page-kicker">Model Costs</p>
@@ -321,11 +329,11 @@ export default function PricingPage() {
 				</InViewFade>
 
 				<InViewFade delay={0.2}>
-					<section className="relative border-t border-border-subtle py-16 sm:py-20" aria-labelledby="polar-tiers-heading">
+					<section className="relative border-t border-border-subtle py-14 sm:py-18 lg:py-22" aria-labelledby="polar-tiers-heading">
 						<div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
 							<div>
-								<p className="page-kicker">Buy credits upfront</p>
-								<h2 id="polar-tiers-heading" className="mt-3 text-2xl font-semibold text-text-bright">
+								<span className="section-eyebrow-caps">Buy credits upfront</span>
+								<h2 id="polar-tiers-heading" className="h2-page mt-3 text-text-bright">
 									Pay your way.
 								</h2>
 							</div>
@@ -342,17 +350,17 @@ export default function PricingPage() {
 										key={tier.name}
 										whileHover={{ y: -4 }}
 										transition={springs.card}
-										className={`relative flex h-full flex-col rounded-[var(--radius-xl)] border p-6 transition-[border-color,box-shadow] duration-200 ease-out shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] ${recommended ? "border-accent bg-accent/5 ring-1 ring-accent/20" : "border-border bg-surface"}`}
+										className={`relative flex h-full flex-col rounded-[var(--radius-md)] border p-6 transition-[border-color,box-shadow] duration-200 ease-out shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] ${recommended ? "border-accent bg-accent/5 ring-1 ring-accent/20" : "border-border bg-surface"}`}
 									>
 										{tier.badge && (
-											<span className="absolute -top-3 right-6 rounded-full bg-accent px-3 py-1 text-[10px] font-mono font-semibold uppercase tracking-wider text-void shadow-sm">
+											<span className="absolute -top-3 right-6 rounded-sm bg-accent px-3 py-1 text-[10px] font-mono font-semibold uppercase tracking-wider text-void shadow-sm">
 												{tier.badge}
 											</span>
 										)}
 										<p className="text-xs font-mono uppercase tracking-[0.18em] text-text-muted">
 											{tier.name}
 										</p>
-										<p className="mt-5 font-mono text-4xl font-semibold tracking-tight text-text-bright">
+										<p className="mt-5 font-geometric text-4xl font-semibold tabular-nums tracking-tight text-text-bright">
 											{tier.price}
 										</p>
 										<p className="mt-2 font-mono text-sm font-medium text-accent">{tier.credits}</p>
@@ -361,9 +369,9 @@ export default function PricingPage() {
 										</p>
 										<Link
 											href="/deposit?method=card"
-											className={`${recommended ? "btn-primary" : "btn-secondary"} mt-8 inline-flex min-h-[44px] w-full items-center justify-center gap-2 text-sm font-medium`}
+											className={`${recommended ? "btn-mono btn-primary" : "btn-mono"} mt-8 w-full`}
 										>
-											<CreditCard className="h-4 w-4" aria-hidden="true" />
+											<CreditCard className="h-3.5 w-3.5" aria-hidden="true" />
 											Buy with card
 										</Link>
 										<Link
@@ -372,7 +380,7 @@ export default function PricingPage() {
 										>
 											or deposit USDC
 										</Link>
-										<p className="mt-3 text-center text-[10px] font-mono uppercase tracking-wider text-text-muted/70">
+										<p className="mt-3 text-center text-[10px] font-mono uppercase tracking-wider text-text-muted">
 											Powered by Polar
 										</p>
 									</m.article>
@@ -383,7 +391,7 @@ export default function PricingPage() {
 				</InViewFade>
 
 				<InViewFade delay={0.4}>
-					<section className="relative border-t border-border-subtle py-16 sm:py-20">
+					<section className="relative border-t border-border-subtle py-14 sm:py-18 lg:py-22">
 						<div className="mb-6 flex items-center gap-2">
 							<div className="h-px flex-1 bg-border" />
 							<span className="text-xs font-mono text-text-muted uppercase tracking-widest">
@@ -430,7 +438,7 @@ export default function PricingPage() {
 					</section>
 				</InViewFade>
 
-				<div id="x402" className="relative border-t border-border-subtle py-16 sm:py-20 scroll-mt-20">
+				<div id="x402" className="relative border-t border-border-subtle py-14 sm:py-18 lg:py-22 scroll-mt-20">
 					<m.div
 						whileHover={{ y: -4 }}
 						transition={springs.card}
@@ -455,7 +463,7 @@ export default function PricingPage() {
 									<Link
 										href="/docs#x402"
 										className="ml-2 font-medium text-accent hover:text-accent-hover transition-colors duration-200 ease-out inline-flex items-center"
-										aria-label="Learn more about the x402 payment protocol"
+										aria-label="Learn more about x402"
 									>
 										Learn more about x402 <ArrowRight className="ml-1 h-3 w-3" />
 									</Link>
@@ -489,7 +497,7 @@ export default function PricingPage() {
 				</InViewFade>
 
 				{/* ── CTA ── */}
-				<div className="relative mb-12 overflow-hidden rounded-2xl py-10">
+				<div className="relative mb-12 overflow-hidden rounded-[var(--radius-md)] py-10">
 					<div
 						aria-hidden="true"
 						className="pointer-events-none absolute inset-0 -z-10"
@@ -500,21 +508,21 @@ export default function PricingPage() {
 						<h2 className="h2-page text-text-bright text-center">
 							Start building today
 						</h2>
-						<div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center sm:gap-4">
+						<div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center sm:gap-3">
 							<Link
 								href="/login?next=/dashboard"
-								className="btn-primary inline-flex h-12 min-w-[10rem] items-center justify-center gap-2 px-6 text-[14px] font-semibold"
+								className="btn-mono btn-primary"
 							>
-								<Zap className="h-4 w-4" aria-hidden="true" />
-								Get API key
-								<ArrowRight className="h-4 w-4" aria-hidden="true" />
+								<Zap className="h-3.5 w-3.5" aria-hidden="true" />
+								<span>Get API key</span>
+								<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
 							</Link>
 							<Link
 								href="/deposit?method=card"
-								className="btn-secondary inline-flex h-12 items-center justify-center gap-2 px-5 text-[14px] font-semibold"
+								className="btn-mono"
 							>
-								<CreditCard className="h-4 w-4" aria-hidden="true" />
-								Buy credits
+								<CreditCard className="h-3.5 w-3.5" aria-hidden="true" />
+								<span>Buy credits</span>
 							</Link>
 						</div>
 						<Link
@@ -527,9 +535,9 @@ export default function PricingPage() {
 				</div>
 
 				{/* ── Billing Notes ── */}
-				<div className="p-5 rounded-[var(--radius-xl)] border border-amber/20 bg-amber/5 shadow-sm">
-					<h3 className="text-xs font-mono font-semibold uppercase tracking-widest text-amber mb-4">
-						Billing
+				<div className="p-5 rounded-[var(--radius-xl)] border border-border bg-surface/50 shadow-sm">
+					<h3 className="text-xs font-mono font-semibold uppercase tracking-widest text-text-muted mb-4">
+						Billing notes
 					</h3>
 					<div className="grid grid-cols-1 gap-2 md:grid-cols-2">
 						{[
@@ -540,7 +548,7 @@ export default function PricingPage() {
 						"Card purchases via Polar appear as 'NOSYT' on your statement",
 						].map((note) => (
 							<div key={note} className="flex items-start gap-2">
-								<div className="mt-1.5 h-1 w-1 rounded-full bg-amber" />
+								<div className="mt-1.5 h-1 w-1 rounded-full bg-accent" />
 								<span className="text-xs text-text-secondary">{note}</span>
 							</div>
 						))}

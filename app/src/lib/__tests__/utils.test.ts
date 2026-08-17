@@ -1,27 +1,12 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import {
-	formatCents,
 	toDollars,
 	formatTime,
 	maskKey,
 	formatUsd,
 	formatAddress,
 	formatDateTime,
-	formatDateShort,
 } from "../utils";
-
-describe("formatCents", () => {
-	it("formats integer cents to dollar string", () => {
-		expect(formatCents(100)).toBe("1.00");
-		expect(formatCents(0)).toBe("0.00");
-	});
-	it("accepts string input from API", () => {
-		expect(formatCents("250")).toBe("2.50");
-	});
-	it("handles fractional cents", () => {
-		expect(formatCents(123)).toBe("1.23");
-	});
-});
 
 describe("toDollars", () => {
 	it("converts cents to dollar number", () => {
@@ -105,14 +90,5 @@ describe("formatDateTime", () => {
 		// Time may be UTC or local depending on env, just check format contains digits and AM/PM or 24h format
 		expect(formatted).toMatch(/\d{1,2}:\d{2}/);
 		expect(formatted).toMatch(/(AM|PM|\d{2})/);
-	});
-});
-
-describe("formatDateShort", () => {
-	it("formats ISO with date only", () => {
-		const formatted = formatDateShort("2026-01-15T10:30:00Z");
-		expect(formatted).toMatch(/2026/);
-		// Date-only format should not contain time
-		expect(formatted).not.toMatch(/AM|PM/);
 	});
 });

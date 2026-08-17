@@ -6,6 +6,7 @@
 *       @NosytLabs/oma-ai-maintainers
 
 # Security-sensitive — require an explicit second reviewer
+/server/src/auth.ts        @NosytLabs/oma-ai-maintainers
 /server/src/auth/          @NosytLabs/oma-ai-maintainers
 /server/src/middleware/    @NosytLabs/oma-ai-maintainers
 /.github/workflows/        @NosytLabs/oma-ai-maintainers
@@ -19,15 +20,15 @@
 # Inference routing — provider / circuit-breaker changes touch billing math
 /server/src/inference/     @NosytLabs/oma-ai-maintainers
 
-# Payments — deposits, x402, billing logic
-/server/src/credits/       @NosytLabs/oma-ai-maintainers
+# Payments — deposits, x402, Polar, billing logic
+/server/src/routes/credits.ts   @NosytLabs/oma-ai-maintainers
+/server/src/routes/polar.ts     @NosytLabs/oma-ai-maintainers
+/server/src/routes/deposit/     @NosytLabs/oma-ai-maintainers
+/server/src/inference/billing.ts        @NosytLabs/oma-ai-maintainers
+/server/src/inference/billing-service.ts @NosytLabs/oma-ai-maintainers
 /server/src/x402/          @NosytLabs/oma-ai-maintainers
-/server/src/jobs/          @NosytLabs/oma-ai-maintainers
 
 # Frontend public surface (landing, pricing) — voice/brand review
 /app/src/app/              @NosytLabs/oma-ai-maintainers
 /BRAND.md                  @NosytLabs/oma-ai-maintainers
 /README.md                 @NosytLabs/oma-ai-maintainers
-
-# Documentation
-/CONTRIBUTING.md           @NosytLabs/oma-ai-maintainers

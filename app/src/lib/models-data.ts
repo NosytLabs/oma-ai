@@ -791,7 +791,7 @@ const FALLBACK_CATALOG: RawCatalog = {
 		},
 		"deepseek-v4-flash-0731-openbroker": {
 			id: "deepseek-v4-flash-0731-openbroker",
-			displayName: "DeepSeek V4 Flash (Gonka)",
+			displayName: "DeepSeek V4 Flash",
 			provider: "oma-ai",
 			category: "budget",
 			maxTokens: 1000000,
@@ -801,7 +801,7 @@ const FALLBACK_CATALOG: RawCatalog = {
 		},
 		"qwen3-235b-a22b-openbroker": {
 			id: "qwen3-235b-a22b-openbroker",
-			displayName: "Qwen3 235B (OMA-AI)",
+			displayName: "Qwen3 235B",
 			provider: "oma-ai",
 			category: "mid",
 			maxTokens: 128000,

@@ -10,15 +10,15 @@
 	*/
 
 import { Reveal } from "@/app/_components/home/reveal";
-import { TRUST_NAMES } from "@/app/_components/home/_icons";
+import { TRUST_NAMES } from "@/app/_components/home/trust-names";
 
 export function TrustStrip() {
 	return (
-	<div className="flex flex-col justify-center h-full border-b border-border/40 pb-12 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-12">
+	<div className="flex h-full flex-col justify-start border-b border-border/40 pb-10 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-10">
 	<Reveal>
-	<p className="text-left text-xs uppercase tracking-[0.18em] font-mono text-text-muted mb-6">
-	Routing through
-	</p>
+	<span className="section-eyebrow-caps mb-6">
+		Routing through
+	</span>
 	</Reveal>
 	<Reveal>
 	<ul className="flex flex-wrap items-center justify-start gap-x-1 gap-y-2 text-text-secondary font-medium text-base sm:text-lg tracking-tight">
@@ -41,8 +41,8 @@ export function TrustStrip() {
 	</Reveal>
 	<Reveal>
 	<p className="mt-4 text-left text-xs text-text-muted font-mono leading-relaxed">
-	OMA routes requests through Venice, Zyloo, Gonka, OpenBroker, and
-	LiteLLM via one OpenAI-compatible API.
+	OMA routes requests through Venice and OMA-AI via one
+	OpenAI-compatible API.
 	</p>
 	</Reveal>
 	</div>

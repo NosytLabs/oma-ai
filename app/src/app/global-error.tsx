@@ -18,6 +18,8 @@
  *
  * @see https://nextjs.org/docs/app/api-reference/file-conventions/global-error
  */
+import { BRAND_COLORS } from "@/lib/brand";
+
 interface GlobalErrorProps {
 	error: Error & { digest?: string };
 	reset: () => void;
@@ -37,8 +39,8 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
 				style={{
 					minHeight: "100dvh",
 					margin: 0,
-					backgroundColor: "#07090a",
-					color: "#d8dcd6",
+					backgroundColor: BRAND_COLORS.void,
+					color: BRAND_COLORS.text,
 					fontFamily: "system-ui, -apple-system, sans-serif",
 				}}
 			>
@@ -60,7 +62,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
 							fontSize: "0.75rem",
 							letterSpacing: "0.1em",
 							textTransform: "uppercase",
-							color: "#9aa394",
+							color: BRAND_COLORS.textMuted,
 							fontFamily: "monospace",
 							marginBottom: "0.5rem",
 						}}
@@ -93,9 +95,9 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
 						style={{
 							padding: "0.625rem 1.25rem",
 							borderRadius: "0.5rem",
-							border: "1px solid #46d39a",
-							background: "#46d39a",
-							color: "#07090a",
+							border: `1px solid ${BRAND_COLORS.accent}`,
+							background: BRAND_COLORS.accent,
+							color: BRAND_COLORS.void,
 							fontWeight: 600,
 							cursor: "pointer",
 						}}

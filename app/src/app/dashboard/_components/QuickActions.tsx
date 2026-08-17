@@ -60,7 +60,7 @@ interface QuickActionsProps {
 	*/
 export function QuickActions({ className = "" }: QuickActionsProps) {
 	return (
-		<div className={`mb-8 bg-surface/30 border border-border rounded-[var(--radius-lg)] shadow-[var(--shadow-md)] relative overflow-hidden transition-colors duration-200 ease-out hover:border-accent/40 ${className}`}>
+		<div className={`mb-8 bg-surface/30 border border-border rounded-[var(--radius-xl)] shadow-[var(--shadow-md)] relative overflow-hidden transition-colors duration-200 ease-out hover:border-accent/40 ${className}`}>
 			<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-accent/40 via-accent/20 to-transparent" />
 			<div className="p-6">
 				<div className="mb-6 flex items-center justify-between">

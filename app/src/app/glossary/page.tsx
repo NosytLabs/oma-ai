@@ -182,7 +182,7 @@ export default function GlossaryPage() {
 					Home
 				</Link>
 
-				<span className="page-kicker">Reference</span>
+				<span className="section-eyebrow-caps">Reference</span>
 				<h1 className="display-headline mt-3 text-text-bright">Glossary</h1>
 				<p className="page-intro mt-4 max-w-2xl">
 					Every term you&apos;ll meet on OMA, explained without jargon — from
@@ -216,7 +216,7 @@ export default function GlossaryPage() {
 								<section aria-labelledby={`letter-${l.toLowerCase()}`} id={`${l.toLowerCase()}`} className="scroll-mt-24">
 									<h2
 										id={`letter-${l.toLowerCase()}`}
-										className="text-sm font-mono font-bold uppercase tracking-wider text-accent mb-4"
+										className="section-eyebrow-caps mb-4"
 									>
 										{l}
 									</h2>

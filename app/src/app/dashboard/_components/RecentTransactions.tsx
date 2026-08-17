@@ -53,7 +53,7 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
 		[transactions],
 	);
 	return (
-		<div className="mb-8 bg-surface/30 border border-border rounded-[var(--radius-lg)] shadow-[var(--shadow-md)] p-6 relative overflow-hidden transition-colors duration-200 ease-out hover:border-accent/40">
+		<div className="mb-8 bg-surface/30 border border-border rounded-[var(--radius-xl)] shadow-[var(--shadow-md)] p-6 relative overflow-hidden transition-colors duration-200 ease-out hover:border-accent/40">
 			<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-warning/40 via-warning/20 to-transparent" />
 			<div className="flex items-center justify-between mb-4">
 				<h2 className="text-[14.5px] font-bold text-text-bright tracking-tight">

@@ -72,22 +72,31 @@ export function FloatingIcons({
 		>
 			{isClient &&
 				items.map((item, i) => {
-					const style: CSSProperties = {
-						position: "absolute",
-						left: `${item.x}%`,
-						top: `${item.y}%`,
-						fontSize: `${item.sz}px`,
-						opacity,
-						color: "var(--color-accent)",
-						["--float-wobble" as string]: `${item.wobble}px`,
-						transform: `rotate(${item.seed}deg)`,
-						...(prefersReduced
-							? {}
-							: {
-									animation: `float-icon ${item.spd}s ease-in-out ${item.delay}s infinite`,
-									willChange: "transform" as const,
-								}),
-					};
+					const style: CSSProperties = prefersReduced
+						? {
+								// Static position only — no rotation, no drift, no wobble.
+								// The global reduced-motion CSS catch-all already zeroes
+								// animation; we omit the `rotate` here so screen-readers and
+								// low-motion users see neutral glyphs.
+								position: "absolute",
+								left: `${item.x}%`,
+								top: `${item.y}%`,
+								fontSize: `${item.sz}px`,
+								opacity,
+								color: "var(--color-accent)",
+							}
+						: {
+								position: "absolute",
+								left: `${item.x}%`,
+								top: `${item.y}%`,
+								fontSize: `${item.sz}px`,
+								opacity,
+								color: "var(--color-accent)",
+								["--float-wobble" as string]: `${item.wobble}px`,
+								transform: `rotate(${item.seed}deg)`,
+								animation: `float-icon ${item.spd}s ease-in-out ${item.delay}s infinite`,
+								willChange: "transform" as const,
+							};
 					return (
 						<span key={i} style={style}>
 							{item.sym}

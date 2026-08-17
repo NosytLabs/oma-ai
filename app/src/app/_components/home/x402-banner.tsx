@@ -2,9 +2,17 @@
 
 /**
 	* x402Banner — agent-native pay-per-request path.
+	*
+	* Spec-sheet polish (2026-08-16):
+	* - Switched the rounded "x402 · agent billing" pill for the
+	*   .section-eyebrow-caps style (mono uppercase + leading dot) so it
+	*   reads as a section kicker, not a marketing badge.
+	* - Tightened the panel to --radius-md and pulled the glow blur in
+	*   so the slab feels drafted, not painted.
+	* - CTAs use .btn-mono for cross-page consistency.
 	*/
 
-import { ArrowRight, Bot, CreditCard } from "lucide-react";
+import { ArrowRight, CreditCard } from "lucide-react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { Reveal } from "@/app/_components/home/reveal";
@@ -22,18 +30,18 @@ const BorderBeam = dynamic(
 
 export function X402Banner() {
 	return (
-	<section
-	aria-labelledby="x402-headline"
-	className="relative py-14 sm:py-18"
-	>
+		<section
+		aria-labelledby="x402-headline"
+		className="relative border-t border-border-subtle py-14 sm:py-18 lg:py-22"
+		>
 	<div className="container-page">
 	<Reveal>
-	<div className="relative overflow-hidden rounded-2xl border border-accent/20 bg-[linear-gradient(135deg,color-mix(in_srgb,var(--color-accent)_6%,var(--color-panel)),var(--color-panel)_70%,var(--color-panel))] p-8 sm:p-10 lg:p-12 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.6)]">
+	<div className="relative overflow-hidden rounded-[var(--radius-md)] border border-accent/20 bg-[linear-gradient(135deg,color-mix(in_srgb,var(--color-accent)_6%,var(--color-panel)),var(--color-panel)_70%,var(--color-panel))] p-8 sm:p-10 lg:p-12 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.6)]">
 	<BorderBeam
 	size="sm"
 	duration={6}
 	theme="auto"
-	className="pointer-events-none rounded-3xl"
+	className="pointer-events-none rounded-[var(--radius-md)]"
 	>
 	<div className="h-full w-full" />
 	</BorderBeam>
@@ -41,19 +49,18 @@ export function X402Banner() {
 	aria-hidden="true"
 	className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-accent/[0.06] blur-[100px]"
 	/>
-	<div className="relative grid grid-cols-1 gap-12 lg:grid-cols-[1.4fr_1fr] lg:items-stretch">
+	<div className="relative grid grid-cols-[minmax(0,1fr)] gap-12 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:items-stretch">
 	<div>
-	<span className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-accent mb-6 shadow-[0_0_12px_var(--color-accent-shadow)]">
-	<Bot className="h-3.5 w-3.5" aria-hidden="true" />
-	x402 · agent billing
+	<span className="section-eyebrow-caps mb-6">
+		x402 · agent billing
 	</span>
 <h2
-		id="x402-headline"
-		className="font-display text-3xl sm:text-4xl lg:text-5xl font-medium tracking-tight text-text-bright leading-[1.1]"
+	id="x402-headline"
+	className="section-headline text-text-bright text-balance"
 	>
 		HTTP 402 payments
 		<br />
-		for agents.
+		<span className="text-text-secondary">for agents.</span>
 	</h2>
 		<p className="mt-5 max-w-lg text-base sm:text-lg leading-relaxed text-text-secondary">
 		No pre-funded account required. On 402, read{" "}
@@ -69,22 +76,22 @@ export function X402Banner() {
 	<div className="mt-8 flex flex-wrap gap-3 w-full">
 							<Link
 								href="/docs#x402"
-								className="group inline-flex h-12 items-center gap-2 rounded-[var(--radius-md)] bg-accent px-6 font-mono text-sm font-bold text-void transition-[transform,background-color,box-shadow] duration-200 ease-out hover:scale-[1.02] hover:bg-accent-bright hover:shadow-[0_0_20px_var(--color-accent-glow)] active:scale-[0.98] focus-ring"
+								className="btn-mono btn-primary group"
 							>
 	x402 docs
-	<ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+	<ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
 	</Link>
 							<Link
 								href="/pricing"
-								className="inline-flex h-12 items-center gap-2 rounded-[var(--radius-md)] border border-border-hi bg-surface px-6 font-mono text-sm font-medium text-text-primary transition-[transform,border-color,background-color] duration-200 ease-out hover:scale-[1.02] hover:border-accent/50 hover:bg-surface-hi active:scale-[0.98] focus-ring"
+								className="btn-mono group"
 							>
-	<CreditCard className="h-4 w-4 text-text-muted transition-colors group-hover:text-text-primary" aria-hidden="true" />
+	<CreditCard className="h-3.5 w-3.5 text-text-muted transition-colors group-hover:text-accent" aria-hidden="true" />
 	See rates
 	</Link>
 	</div>
 	</div>
 
-	<div className="rounded-2xl border border-border bg-[#050505] p-6 font-mono text-[12px] leading-relaxed text-text-secondary sm:text-[13px] shadow-[0_20px_40px_-10px_rgba(0,0,0,0.8)] h-full">
+	<div className="rounded-[var(--radius-md)] border border-border bg-void-deep p-6 font-mono text-[12px] leading-relaxed text-text-secondary sm:text-[13px] shadow-[0_20px_40px_-10px_rgba(0,0,0,0.8)] h-full">
 		<div className="flex items-center gap-2 mb-4 border-b border-white/10 pb-3">
 			<div className="flex gap-1.5">
 				<div className="h-2.5 w-2.5 rounded-full bg-error" />

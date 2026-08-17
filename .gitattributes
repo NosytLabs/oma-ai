@@ -18,14 +18,12 @@
 *.rs    text eol=lf
 
 # Scripts
-*.sh    text eol=lf
 *.mjs   text eol=lf
 
 # Lockfiles
 docker-compose.yml   linguist-generated=true
 docker-compose.prod.yml   linguist-generated=true
 pnpm-lock.yaml       linguist-generated=true
-bun.lock            linguist-generated=true
 package-lock.json    linguist-generated=true
 
 # Binary files

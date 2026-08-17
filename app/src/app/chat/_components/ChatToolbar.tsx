@@ -196,7 +196,7 @@ export function ChatToolbar({
 					onClick={() => setParamsOpen(!paramsOpen)}
 					aria-label="PARAMS — toggle parameters panel (Cmd+/)"
 					aria-pressed={paramsOpen}
-					className={`${btnBase} shrink-0 min-h-11 min-w-11 sm:min-h-10 sm:min-w-10 transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${paramsOpen ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
+					className={`${btnBase} shrink-0 min-h-11 min-w-11 sm:min-h-10 sm:min-w-10 transition-[color,background-color,border-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${paramsOpen ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
 					title="Toggle Parameters (Cmd+/)"
 				>
 					<Settings2 className="h-4 w-4" />
@@ -232,7 +232,7 @@ export function ChatToolbar({
 					type="button"
 					onClick={() => setCompareMode(!compareMode)}
 					aria-label="Compare models side-by-side"
-					className={`${btnBase} max-sm:!hidden shrink-0 sm:inline-flex min-h-9 min-w-9 sm:min-h-10 sm:min-w-10 transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${compareMode ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
+					className={`${btnBase} max-sm:!hidden shrink-0 sm:inline-flex min-h-9 min-w-9 sm:min-h-10 sm:min-w-10 transition-[color,background-color,border-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${compareMode ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
 					title="Compare models side-by-side"
 					aria-pressed={compareMode}
 				>
@@ -247,7 +247,7 @@ export function ChatToolbar({
 					onClick={shareConversation}
 					disabled={shareStatus === "default" && messagesLength === 0}
 					data-state={shareStatus}
-					className={`${btnBase} max-md:!hidden shrink-0 focus-ring transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] data-[state=success]:border-success/30 data-[state=success]:bg-success/10 data-[state=success]:text-success md:inline-flex min-h-9 min-w-9 sm:min-h-10 sm:min-w-10`}
+					className={`${btnBase} max-md:!hidden shrink-0 focus-ring transition-[color,background-color,border-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97] data-[state=success]:border-success/30 data-[state=success]:bg-success/10 data-[state=success]:text-success md:inline-flex min-h-9 min-w-9 sm:min-h-10 sm:min-w-10`}
 					title="Copy a link that opens this chat with the current model pre-selected"
 					aria-label="SHARE — copy a link that opens this chat with the current model pre-selected"
 				>
@@ -266,7 +266,7 @@ export function ChatToolbar({
 				<button
 					type="button"
 					onClick={() => setShortcutsOpen(true)}
-					className={`${btnBase} max-sm:!hidden shrink-0 focus-ring transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] sm:inline-flex min-h-9 min-w-9 sm:min-h-10 sm:min-w-10`}
+					className={`${btnBase} max-sm:!hidden shrink-0 focus-ring transition-[color,background-color,border-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97] sm:inline-flex min-h-9 min-w-9 sm:min-h-10 sm:min-w-10`}
 					title="Keyboard shortcuts (?)"
 					aria-label="? — show keyboard shortcuts"
 				>
@@ -278,7 +278,7 @@ export function ChatToolbar({
 						type="button"
 						onClick={newConversation}
 						aria-label="New Conversation (Cmd/Ctrl+N)"
-						className={`${btnBase} focus-ring transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] hover:!border-success/20 hover:!bg-success/10 hover:!text-success min-h-9 min-w-9 sm:min-h-10 sm:min-w-10`}
+						className={`${btnBase} focus-ring transition-[color,background-color,border-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97] hover:!border-success/20 hover:!bg-success/10 hover:!text-success min-h-9 min-w-9 sm:min-h-10 sm:min-w-10`}
 						title="New Conversation (Cmd/Ctrl+N)"
 					>
 						<MessageSquarePlus className="h-4 w-4" />
@@ -288,7 +288,7 @@ export function ChatToolbar({
 				<button
 					type="button"
 					onClick={() => window.open('mailto:support@oma-ai.com?subject=OMA AI App Feedback', '_blank')}
-					className={`${btnBase} max-sm:!hidden shrink-0 focus-ring transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] min-h-9 min-w-9 sm:inline-flex sm:min-h-10 sm:min-w-10`}
+					className={`${btnBase} max-sm:!hidden shrink-0 focus-ring transition-[color,background-color,border-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97] min-h-9 min-w-9 sm:inline-flex sm:min-h-10 sm:min-w-10`}
 					title="Provide Feedback / Report Bug"
 					aria-label="Provide Feedback"
 				>
@@ -298,7 +298,7 @@ export function ChatToolbar({
 				<div className="flex shrink-0 items-center gap-1">
 					{importConversation && (
 						<label
-							className={`${btnBase} max-sm:!hidden focus-ring cursor-pointer transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] min-h-9 min-w-9 sm:inline-flex sm:min-h-10 sm:min-w-10`}
+							className={`${btnBase} max-sm:!hidden focus-ring cursor-pointer transition-[color,background-color,border-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97] min-h-9 min-w-9 sm:inline-flex sm:min-h-10 sm:min-w-10`}
 							title="Import conversation (JSON, MD, TXT)"
 						>
 							<Upload className="h-4 w-4" />
@@ -329,7 +329,7 @@ export function ChatToolbar({
 									type="button"
 									onClick={() => setExportMenuOpen(!exportMenuOpen)}
 									aria-label="Export conversation"
-									className={`${btnBase} focus-ring transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] min-h-9 min-w-9 sm:min-h-10 sm:min-w-10 ${exportMenuOpen ? "bg-accent/10 text-accent border-accent/20" : ""}`}
+									className={`${btnBase} focus-ring transition-[color,background-color,border-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97] min-h-9 min-w-9 sm:min-h-10 sm:min-w-10 ${exportMenuOpen ? "bg-accent/10 text-accent border-accent/20" : ""}`}
 									title="Export conversation"
 								>
 									<Download className="h-4 w-4" />
@@ -337,20 +337,23 @@ export function ChatToolbar({
 								{exportMenuOpen && (
 									<div className="absolute right-0 top-full mt-2 w-40 rounded-lg border border-border bg-surface p-1 shadow-lg z-[100] animate-in fade-in zoom-in duration-200">
 										<button
+											type="button"
 											onClick={() => { exportConversation("json"); setExportMenuOpen(false); }}
-											className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-white/5"
+											className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-white/5 focus-visible:outline-none focus-visible:bg-white/5 focus-visible:ring-2 focus-visible:ring-accent/50"
 										>
 											<FileJson className="h-4 w-4" /> JSON
 										</button>
 										<button
+											type="button"
 											onClick={() => { exportConversation("md"); setExportMenuOpen(false); }}
-											className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-white/5"
+											className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-white/5 focus-visible:outline-none focus-visible:bg-white/5 focus-visible:ring-2 focus-visible:ring-accent/50"
 										>
 											<FileDown className="h-4 w-4" /> Markdown
 										</button>
 										<button
+											type="button"
 											onClick={() => { exportConversation("txt"); setExportMenuOpen(false); }}
-											className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-white/5"
+											className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-white/5 focus-visible:outline-none focus-visible:bg-white/5 focus-visible:ring-2 focus-visible:ring-accent/50"
 										>
 											<FileText className="h-4 w-4" /> Text
 										</button>
@@ -361,7 +364,7 @@ export function ChatToolbar({
 								type="button"
 								onClick={clearChat}
 								aria-label="Clear conversation and local history"
-								className={`${btnBase} transition-[colors,box-shadow,transform] duration-200 ease-out active:scale-[0.97] hover:!border-error/20 hover:!bg-error/10 hover:!text-error focus-ring min-h-9 min-w-9 sm:min-h-10 sm:min-w-10`}
+								className={`${btnBase} transition-[color,background-color,border-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97] hover:!border-error/20 hover:!bg-error/10 hover:!text-error focus-ring min-h-9 min-w-9 sm:min-h-10 sm:min-w-10`}
 								title="Clear chat (also clears browser local history)"
 							>
 								<Trash2 className="h-4 w-4" />

@@ -112,7 +112,7 @@ function PaymentMethodsInfo({
 			className="mt-8 rounded-[var(--radius-lg)] border border-border bg-surface/50 p-5"
 		>
 			<h3 className="mb-3 flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-text-secondary">
-				<Zap className="h-3.5 w-3.5 text-accent" aria-hidden="true" aria-label="Zap icon" />
+				<Zap className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
 				Payment methods
 			</h3>
 			<div className="grid gap-3 sm:grid-cols-3">
@@ -169,7 +169,7 @@ function RailUnavailable({
 }) {
 	return (
 		<div className="space-y-3 rounded-[var(--radius-lg)] border border-border bg-surface/50 p-6 text-center">
-			<Icon className="mx-auto h-8 w-8 text-text-muted" aria-hidden="true" aria-label="Warning icon" />
+			<Icon className="mx-auto h-8 w-8 text-text-muted" aria-hidden="true" />
 			<h3 className="text-md font-semibold text-text-bright">{title}</h3>
 			<p className="mx-auto max-w-md text-xs leading-relaxed text-text-secondary">
 				{reason}
@@ -185,7 +185,7 @@ function X402Info() {
 			<div className="rounded-[var(--radius-lg)] border border-accent/20 bg-accent/5 p-5">
 				<div className="flex items-start gap-3">
 					<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-accent/10 text-accent">
-						<Zap className="h-4 w-4" aria-hidden="true" aria-label="Zap icon" />
+						<Zap className="h-4 w-4" aria-hidden="true" />
 					</div>
 					<div className="min-w-0">
 						<h3 className="text-sm font-semibold text-text-bright">
@@ -284,7 +284,7 @@ export default function DepositPage() {
 
 	return (
 		<m.div
-			className="relative mx-auto max-w-3xl lg:max-w-4xl px-4 py-10 sm:px-6 sm:py-12"
+			className="relative mx-auto max-w-3xl lg:max-w-4xl px-4 py-14 sm:px-6 sm:py-18 lg:py-22"
 			initial={{ opacity: 0 }}
 			animate={{ opacity: 1 }}
 		>

@@ -45,18 +45,6 @@ const CHART_COLORS = {
 	border: "var(--color-border)",
 } as const;
 
-// Ordered categorical palette. Used for arbitrary data.
-export const CHART_PALETTE: readonly string[] = [
-	CHART_COLORS.accent,
-	CHART_COLORS.secondary,
-	CHART_COLORS.tertiary,
-	CHART_COLORS.pink,
-	CHART_COLORS.emerald,
-	CHART_COLORS.blue,
-	"var(--color-error)",
-	"var(--color-tertiary)",
-];
-
 /**
 	* Build a stable, unique gradient id for a given chart instance. recharts
 	* shares the DOM so two `<linearGradient id="costGradient">` defs on the

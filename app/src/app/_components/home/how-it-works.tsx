@@ -4,6 +4,14 @@
 	* HowItWorks — section 4 of the homepage.
 	* 4-step process (stack on mobile, 2-up on tablet, 4-up on desktop).
 	* Numbered indicators use mono tabular numerals.
+	*
+	* Spec-sheet polish (2026-08-16):
+	* - Card radius tightened to --radius-md (was --radius-lg) so the
+	*   four panels read as drafted panels, not pillows.
+	* - Step numbers bumped to 5xl with negative letter-spacing so they
+	*   feel like spec-sheet markers rather than display ornaments.
+	* - Title typography lifted to font-display so the editorial voice
+	*   carries through (was generic sans).
 	*/
 
 import { Key, Rocket, Wallet, Terminal } from "lucide-react";
@@ -60,12 +68,14 @@ export function HowItWorks() {
 	return (
 <section
 	aria-labelledby="how-it-works-headline"
-	className="relative border-t border-border-subtle py-14 sm:py-18"
+	className="relative border-t border-border-subtle py-14 sm:py-18 lg:py-22"
 	>
 	<div className="container-page">
 	<Reveal>
 	<SectionHeader
 		id="how-it-works-headline"
+		eyebrow="Onboarding"
+		eyebrowVariant="caps"
 		headline={
 		<>
 		Four steps
@@ -79,7 +89,7 @@ export function HowItWorks() {
 
 	<RevealStagger
 	as="ol"
-	className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6 relative"
+	className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 relative"
 	amount={0.2}
 	>
 	{STEPS.map((step, idx) => (
@@ -99,10 +109,10 @@ function StepCard({ step, isLast }: { step: Step; isLast: boolean }) {
 		<m.div
 	whileHover={{ y: -4 }}
 	transition={springs.card}
-	className="relative h-full surface-card p-7 flex flex-col gap-5 transition-[border-color,box-shadow] duration-200 ease-out hover:shadow-[0_12px_24px_-10px_rgba(0,0,0,1)] hover:bg-panel hover:border-border-hi"
+	className="relative h-full rounded-[var(--radius-md)] border border-border bg-panel/60 p-6 flex flex-col gap-5 transition-[border-color,box-shadow] duration-200 ease-out hover:shadow-[0_12px_24px_-10px_rgba(0,0,0,1)] hover:bg-panel hover:border-accent/40"
 		>
 		<div className="flex items-center justify-between">
-		<span className="font-mono tabular-nums text-4xl sm:text-5xl font-bold text-accent leading-none">
+		<span className="font-geometric tabular-nums text-5xl sm:text-6xl font-bold text-accent leading-none tracking-tight">
 		{step.n}
 		</span>
 		<div
@@ -115,7 +125,7 @@ function StepCard({ step, isLast }: { step: Step; isLast: boolean }) {
 		</div>
 		</div>
 		<div>
-	<h3 className="font-sans text-lg sm:text-xl font-semibold text-text-bright tracking-tight">
+	<h3 className="font-display text-xl sm:text-2xl font-medium tracking-tight text-text-bright">
 		{step.title}
 		</h3>
 		<p className="mt-2 text-sm text-text-secondary leading-relaxed">
@@ -124,7 +134,7 @@ function StepCard({ step, isLast }: { step: Step; isLast: boolean }) {
 		</div>
 		{!isLast && (
 		<div
-		className="hidden lg:block absolute top-1/2 -right-4 w-px h-12 -translate-y-1/2 bg-gradient-to-b from-transparent via-accent to-transparent opacity-50"
+		className="hidden lg:block absolute top-1/2 -right-3 w-px h-12 -translate-y-1/2 bg-gradient-to-b from-transparent via-accent to-transparent opacity-50"
 		aria-hidden="true"
 		/>
 		)}

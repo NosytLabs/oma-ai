@@ -13,8 +13,5 @@
 
 export const TRUST_NAMES = [
 	"Venice",
-	"Zyloo",
-	"Gonka",
-	"OpenBroker",
-	"LiteLLM",
+	"OMA-AI",
 ] as const;

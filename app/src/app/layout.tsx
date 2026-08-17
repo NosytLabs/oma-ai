@@ -140,7 +140,7 @@ export default function RootLayout({
 			<body className="flex min-h-dvh flex-col bg-void text-text font-sans antialiased">
 				<a
 					href="#main-content"
-					className="sr-only focus:not-sr-only focus:fixed focus:top-14 focus:left-4 focus:z-[100] focus:bg-accent focus:text-void focus:px-4 focus:py-2 focus:rounded-[var(--radius-lg)] focus:font-semibold focus:shadow-[0_0_20px_var(--color-accent-glow)] focus:outline-none focus-visible:outline-accent"
+					className="sr-only focus:not-sr-only focus:fixed focus:top-14 focus:left-4 focus:z-[100] focus:bg-accent focus:text-void focus:px-4 focus:py-2 focus:rounded-[var(--radius-lg)] focus:font-semibold focus:shadow-[0_0_20px_var(--color-accent-glow)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"
 				>
 					Skip to main content
 				</a>

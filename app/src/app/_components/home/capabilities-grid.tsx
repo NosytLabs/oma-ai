@@ -175,7 +175,7 @@ function CardMockup({ lineClass }: { lineClass: string }) {
 	className="pointer-events-none w-full rounded-[var(--radius-lg)] border border-border/80 bg-[linear-gradient(135deg,color-mix(in_srgb,var(--color-panel)_85%,var(--color-accent)),var(--color-panel))] p-5 shadow-lg backdrop-blur-md h-[108px] flex flex-col justify-center gap-3"
 	>
 	<div className="flex items-center justify-between">
-	<span className="font-mono text-[9px] uppercase tracking-[0.2em] text-text-muted">
+	<span className="font-mono text-[10px] uppercase tracking-[0.2em] text-text-muted">
 	OMA Credits
 	</span>
 	<span className="h-3.5 w-5 rounded-[3px] bg-gradient-to-br from-accent/70 to-accent/30" />
@@ -187,7 +187,7 @@ function CardMockup({ lineClass }: { lineClass: string }) {
 	<span className={cn("h-1.5 w-1.5 rounded-full", lineClass)} />
 	</div>
 	<div className="flex items-center justify-between border-t border-border/60 pt-2.5">
-	<span className="font-mono text-[9px] uppercase tracking-wider text-text-muted">
+	<span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
 	+ $25 · settled
 	</span>
 	<span className="font-mono text-[10px] text-accent">1:1 USD</span>
@@ -217,7 +217,7 @@ function LedgerStrip({ lineClass }: { lineClass: string }) {
 	</div>
 	))}
 	<div className="ml-2 flex flex-col justify-end gap-1 pb-0.5">
-	<span className="font-mono text-[9px] uppercase tracking-wider text-text-muted">
+	<span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
 	ledger
 	</span>
 	<span className="font-mono text-[10px] text-accent">routed</span>
@@ -235,25 +235,25 @@ function FlowVisual({ lineClass }: { lineClass: string }) {
 	className="pointer-events-none flex w-full items-center gap-2 h-[108px]"
 	>
 	<div className="flex flex-1 flex-col gap-1 justify-center">
-	<span className="rounded-[var(--radius-md)] border border-border bg-panel px-2 py-1 font-mono text-[9px] uppercase tracking-wider text-text-secondary text-center">
+	<span className="rounded-[var(--radius-md)] border border-border bg-panel px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-text-secondary text-center">
 	POST /v1/chat
 	</span>
-	<span className="rounded-[var(--radius-md)] border border-border bg-panel px-2 py-1 font-mono text-[9px] uppercase tracking-wider text-text-muted text-center">
+	<span className="rounded-[var(--radius-md)] border border-border bg-panel px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-text-muted text-center">
 	402 · payment
 	</span>
 	</div>
 	<div className="flex flex-col items-center gap-1 justify-center">
 	<span className={cn("h-5 w-px", lineClass)} />
-	<span className="font-mono text-[9px] text-accent font-bold">
+	<span className="font-mono text-[10px] text-accent font-bold">
 	x402
 	</span>
 	<span className={cn("h-5 w-px", lineClass)} />
 	</div>
 	<div className="flex flex-1 flex-col gap-1 justify-center">
-	<span className="rounded-[var(--radius-md)] border border-accent/40 bg-accent/10 px-2 py-1 font-mono text-[9px] uppercase tracking-wider text-accent text-center">
+	<span className="rounded-[var(--radius-md)] border border-accent/40 bg-accent/10 px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-accent text-center">
 	EIP-3009
 	</span>
-	<span className="rounded-[var(--radius-md)] border border-border bg-panel px-2 py-1 font-mono text-[9px] uppercase tracking-wider text-text-secondary text-center">
+	<span className="rounded-[var(--radius-md)] border border-border bg-panel px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-text-secondary text-center">
 	200 · stream
 	</span>
 	</div>
@@ -276,29 +276,26 @@ function PillarVisual({
 
 export function CapabilitiesGrid() {
 	return (
-	<section
-	aria-labelledby="capabilities-headline"
-	className="relative py-16 sm:py-20"
-	>
-	<div
-	aria-hidden="true"
-	className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/40 to-transparent"
-	/>
-	<div className="container-page">
-	<Reveal>
+		<section
+		aria-labelledby="capabilities-headline"
+		className="relative py-14 sm:py-18 lg:py-22"
+		>
+		<div className="container-page">
+<Reveal>
 	<SectionHeader
-	id="capabilities-headline"
-	eyebrow="Capabilities"
-	headline={
-	<>
-	Three stories.
-	<br />
-	<span className="text-accent italic">
-	One inference surface.
-	</span>
-	</>
-	}
-	subhead="Pay with credits, pay per request, or route privately — OMA is built for maximum developer control and zero lock-in."
+		id="capabilities-headline"
+		eyebrow="Capabilities"
+		eyebrowVariant="caps"
+		headline={
+		<>
+		Three stories.
+		<br />
+		<span className="text-accent font-bold not-italic">
+		One inference surface.
+		</span>
+		</>
+		}
+		subhead="Pay with credits, pay per request, or route privately — OMA is built for maximum developer control and zero lock-in."
 	/>
 	</Reveal>
 
@@ -355,10 +352,10 @@ export function CapabilitiesGrid() {
 	</div>
 	</div>
 
-<h3 className="mt-6 font-sans text-xl sm:text-2xl font-semibold tracking-tight text-text-bright">
+<h3 className="mt-6 font-display text-xl sm:text-2xl font-medium tracking-tight text-text-bright">
 		{pillar.title}
 		</h3>
-		<p className="mt-3 text-[14px] leading-relaxed text-text">
+		<p className="mt-3 text-[14px] leading-relaxed text-text-secondary">
 		{pillar.description}
 		</p>
 
@@ -401,13 +398,13 @@ export function CapabilitiesGrid() {
 	<m.li
 	key={s.id}
 	variants={childFadeUp}
-	whileHover={{ y: -3 }}
+	whileHover={{ y: -4 }}
 	transition={springs.card}
 	className="h-full"
 	>
 						<Link
 							href={s.href}
-							className="group surface-card tilt-card relative flex h-full min-h-[170px] flex-col gap-4 rounded-[var(--radius-lg)] p-6 transition-[shadow,transform] duration-200 ease-out hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.97]"
+							className="group surface-card relative flex h-full min-h-[170px] flex-col gap-4 rounded-[var(--radius-lg)] p-6 transition-[shadow,transform] duration-200 ease-out hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.97]"
 						>
 	<div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] bg-[color-mix(in_srgb,var(--color-accent)_15%,transparent)] text-accent border border-accent/20">
 	<Icon
@@ -417,8 +414,8 @@ export function CapabilitiesGrid() {
 	/>
 	</div>
 	<div>
-	<p className="text-[14.5px] font-semibold tracking-tight text-text-bright">
-	{s.title}
+	<p className="text-[15px] font-display font-medium tracking-tight text-text-bright">
+		{s.title}
 	</p>
 	<p className="mt-1.5 text-[13.5px] leading-relaxed text-text-secondary">
 	{s.body}

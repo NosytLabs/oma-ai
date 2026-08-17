@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-	fmtPrice,
-	prettyName,
-	toPricedModel,
-	type PricedModel,
-} from "./pricing-utils";
+import { fmtPrice, toPricedModel, type PricedModel } from "./pricing-utils";
 import type { Model } from "@/lib/models-data";
 
 const model: Model = {
@@ -50,11 +45,5 @@ describe("pricing-utils", () => {
 		expect(fmtPrice(0.18)).toBe("$0.20");
 		expect(fmtPrice(0.13)).toBe("$0.15");
 		expect(fmtPrice(0.21)).toBe("$0.25");
-	});
-
-	it("humanizes hyphenated model ids while preserving numeric tokens", () => {
-		expect(prettyName("qwen3-235b-a22b-instruct-2507")).toBe(
-			"Qwen3 235b A22b Instruct 2507",
-		);
 	});
 });

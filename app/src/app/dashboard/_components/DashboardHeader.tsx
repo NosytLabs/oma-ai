@@ -13,7 +13,7 @@ import {
 import { m } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import { useHealthQuery } from "@/app/dashboard/_hooks/useHealthQuery";
 import { NotificationBell } from "@/components/dashboard/NotificationBell";
@@ -43,6 +43,8 @@ interface DashboardHeaderProps {
 	onTimeRangeChange?: (range: TimeRangeId) => void;
 	/** Whether authenticated notification data may be fetched. */
 	notificationsEnabled?: boolean;
+	/** Admin flag — provider-ops status pill (SystemStatus) is operator-only. */
+	isAdmin?: boolean;
 }
 
 /** Auto-poll interval (ms). Picked to be low enough that "live" feels live
@@ -66,6 +68,7 @@ export function DashboardHeader({
 	timeRange = "7d",
 	onTimeRangeChange,
 	notificationsEnabled = true,
+	isAdmin = false,
 }: DashboardHeaderProps) {
 	const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 	const [isRefreshing, setIsRefreshing] = useState(false);
@@ -155,9 +158,17 @@ export function DashboardHeader({
 	}, [onRefresh, markRefreshed]);
 
 	const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+	// The "health" tab is operator-only — hide from regular users so they
+	// don't see a provider-ops nav item they can't fully use. The /admin
+	// page already exposes the same readiness data for operators.
+	const visibleTabs = useMemo(
+		() => (isAdmin ? TABS : TABS.filter((t) => t.id !== "health")),
+		[isAdmin],
+	);
 	const selectedTabIndex = Math.max(
 		0,
-		TABS.findIndex((tab) => tab.id === activeTab),
+		visibleTabs.findIndex((tab) => tab.id === activeTab),
 	);
 
 	const handleTabKeyDown = useCallback(
@@ -183,8 +194,8 @@ export function DashboardHeader({
 					return;
 			}
 			e.preventDefault();
-			const safe = (next % TABS.length + TABS.length) % TABS.length;
-			onTabChange(TABS[safe].id);
+			const safe = (next % visibleTabs.length + visibleTabs.length) % visibleTabs.length;
+			onTabChange(visibleTabs[safe].id);
 			tabRefs.current[safe]?.focus();
 		},
 		[onTabChange, selectedTabIndex],
@@ -225,7 +236,17 @@ export function DashboardHeader({
 									? `UPDATED ${formatTime(lastUpdated.toISOString())}`
 									: "AWAITING DATA"}
 						</span>
-						<SystemStatus />
+						{isAdmin && (
+							<>
+								<SystemStatus />
+								<span
+									className="hidden items-center gap-1.5 rounded-[var(--radius-sm)] border border-accent/30 bg-accent/10 px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider text-accent sm:inline-flex"
+									title="You have operator (admin) access on this account."
+								>
+									Operator
+								</span>
+							</>
+						)}
 						<span
 							className="hidden items-center gap-1.5 text-text-secondary/80 md:flex bg-surface/50 px-2 py-0.5 rounded-[var(--radius-sm)] border border-border/50"
 							title="Keyboard shortcuts: R = refresh, 1-4 = switch tabs"
@@ -312,7 +333,7 @@ export function DashboardHeader({
 					aria-label="Dashboard sections"
 					onKeyDown={handleTabKeyDown}
 				>
-					{TABS.map((tab, i) => (
+					{visibleTabs.map((tab, i) => (
 						<button
 							type="button"
 							key={tab.id}

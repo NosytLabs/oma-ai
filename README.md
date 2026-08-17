@@ -40,6 +40,7 @@ Built-in health checks and automatic provider failover. If one upstream goes dow
 
 ### 📊 Developer Dashboard
 Manage API keys, monitor real-time usage and spend, inspect request logs, and configure model preferences—all from a polished, real-time dashboard.
+
 ### 🤖 OpenAI & Anthropic Compatible
 
 Drop-in replacement for any OpenAI or Anthropic SDK. Unified chat completions (`/v1/chat/completions`) and Anthropic messages (`/v1/messages`) endpoints.
@@ -47,6 +48,7 @@ Drop-in replacement for any OpenAI or Anthropic SDK. Unified chat completions (`
 ### 🎯 Curated Model Registry
 
 26 curated chat models (18 Venice + 8 OMA-AI) across providers. We curate the best models so you don't have to sift through 100+ low-quality alternatives.
+
 ### 🆓 Free Guest Chat
 Budget-friendly, sign-in-free chat via OMA-AI models with a generous daily limit for anonymous visitors. Perfect for evaluating the platform before upgrading.
 
@@ -57,7 +59,7 @@ Budget-friendly, sign-in-free chat via OMA-AI models with a generous daily limit
 | Layer | Technology |
 |-------|-----------|
 | **Frontend** | Next.js 15, React 19, Tailwind CSS v4 |
-| **Backend** | Hono (Bun/Node), TypeScript |
+| **Backend** | Hono (Node), TypeScript |
 | **Database** | PostgreSQL (Neon-ready) + Drizzle ORM |
 | **Cache / Queue** | Redis |
 | **Auth** | Better Auth + SIWE (Ethereum wallets) |
@@ -74,10 +76,9 @@ Get OMA-AI running locally in under 2 minutes.
 ### Prerequisites
 
 - **Node.js** ≥ 20
-- **pnpm** ≥ 9
+- **pnpm** 9.x (pinned via `packageManager`)
 - **PostgreSQL** 16 (local or Docker)
 - **Redis** (local or Docker)
-- **Bun** (for hot-reload server dev)
 
 ### 1. Clone & Install
 
@@ -136,7 +137,7 @@ oma-ai/
 │   │   ├── components/    # Shared React components
 │   │   └── lib/           # Utilities, hooks, data
 │   └── public/            # Static assets, logos, agent docs
-├── server/                 # Hono API (Bun/Node)
+├── server/                 # Hono API (Node)
 │   ├── src/
 │   │   ├── routes/        # API route handlers
 │   │   ├── inference/     # Model routing, providers, failover
@@ -144,13 +145,60 @@ oma-ai/
 │   └── .env.example
 ├── scripts/
 │   ├── dev/               # Local dev helpers (DB, Chrome debug)
-│   └── ops/               # Deploy, prod launch, wallets, seed
+│   └── ops/               # Prod launch helpers
 ├── deploy/                 # Coolify / Docker Compose snippets
 ├── docker-compose*.yml     # Local / production compose
 ├── BRAND.md               # Design tokens, voice, logo rules
 ├── SECURITY.md            # Security policy
 └── README.md
 ```
+
+---
+
+## Architecture
+
+### Authentication Flow
+
+- **Web app auth:** Better Auth session cookies (magic-link email or SIWE wallet sign-in).
+- **API access:** Dashboard-issued `oma_sk_...` keys, sent as `Authorization: Bearer <token>`.
+- **SIWE:** EIP-4361 wallet sign-in maps addresses to user profiles.
+
+### Payments & Treasury
+
+```text
+                  ┌──────────────────────┐
+                  │    User Deposits     │
+                  └──────────┬───────────┘
+                             │
+           ┌─────────────────┼─────────────────┐
+           ▼                 │                 ▼
+  ┌─────────────────┐       │       ┌─────────────────┐
+  │  x402 / Gasless │       │       │  USDC on Base   │
+  │  Micropayments  │       │       │  (Direct EOA)   │
+  └────────┬────────┘       │       └────────┬────────┘
+           │                 │               │
+           └─────────────────┼───────────────┘
+                             ▼
+                ┌───────────────────────────┐
+                │ Deposit Recovery Watcher  │
+                └──────────────────────────┘
+                           ▼
+                ┌───────────────────────────┐
+                │    Credit User Account    │
+                └───────────────────────────┘
+```
+
+- **USDC direct deposits (Base):** a watcher daemon verifies Transfer logs to the treasury and credits balances.
+- **x402 micropayments:** HTTP 402 pay-per-request with EIP-3009 authorizations, gasless via the QuickNode facilitator.
+
+### Production Docker Builds
+
+```bash
+docker build -t oma-app -f app/Dockerfile .
+docker build -t oma-server -f server/Dockerfile .
+```
+
+For end-to-end self-hosting on Coolify (or any Docker Compose host), including the Caddy reverse proxy, environment checklist, and Polar webhook setup, see [`deploy/coolify/README.md`](deploy/coolify/README.md).
 
 ---
 

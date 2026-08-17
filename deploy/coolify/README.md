@@ -18,6 +18,13 @@ The critical variables to set for production are:
 - `TREASURY_BASE_ADDRESS`
 - `QUICKNODE_RPC_URL` (Base mainnet RPC — `CHAIN_RPC_URL` is an accepted alias)
 
+Optional card payments (Polar.sh merchant of record): set `POLAR_ACCESS_TOKEN`,
+`POLAR_WEBHOOK_SECRET`, `POLAR_ORGANIZATION_ID`, and the three
+`POLAR_{HOBBY,BUILDER,SCALE}_PRODUCT_ID` product UUIDs. Point the Polar
+dashboard webhook at `https://api.oma-ai.com/webhooks/polar` (events:
+`order.paid`, `order.refunded`). Leave `POLAR_ACCESS_TOKEN` unset to disable
+the card rail.
+
 ## 2. Deploy with Coolify
 
 1. Create a new **Docker Compose** project in Coolify.

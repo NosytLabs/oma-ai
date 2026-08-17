@@ -105,28 +105,36 @@ function ModelsPageInner() {
 
 	return (
 		<div className="bg-void">
-			<div className="container-page py-10 sm:py-12">
+			<div className="container-page py-14 sm:py-18 lg:py-22">
 				{/* Breadcrumb */}
 				<Breadcrumb items={[{ label: "Models" }]} />
 
 				{/* Header */}
 				<div className="mb-8 flex flex-col gap-4 sm:mb-10 sm:flex-row sm:items-start sm:justify-between">
 					<div>
-						<h1 className="h1-utility flex items-center gap-3 text-text-bright">
-							<Brain className="h-7 w-7 shrink-0 text-accent" aria-hidden="true" />
-							Models
+						<span className="section-eyebrow-caps">AI Model Catalog</span>
+						<h1 className="display-headline mt-3 text-text-bright">
+							Every model, one&nbsp;catalog.
 						</h1>
-						<p className="mt-2 font-mono text-sm text-text-secondary">
+						<p className="page-intro mt-4 max-w-2xl">
+							Curated chat models from Venice and OMA-AI, all reachable
+							through one OpenAI-compatible endpoint. Filter by tier,
+							provider, capabilities, or context window to find what you
+							need.
+						</p>
+						<p className="mt-4 font-mono text-xs uppercase tracking-[0.18em] text-text-muted">
 							{totalModels} models available
 							{isLoadingModels && (
-								<span className="text-text-muted ml-2">
-									(loading full catalog…)
+								<span className="ml-2 text-text-tertiary normal-case tracking-normal">
+									· loading full catalog…
 								</span>
 							)}
 							{visibleModels < totalModels && (
-								<span className="text-text-muted">
+								<span className="text-text-tertiary">
 									{" "}
-									· <span className="text-accent">{visibleModels}</span> shown
+									·{" "}
+									<span className="text-accent">{visibleModels}</span>{" "}
+									shown
 								</span>
 							)}
 						</p>
@@ -266,10 +274,10 @@ function ModelsPageInner() {
 															{groupIcon}
 														</span>
 													)}
-													<h3 className="text-xl font-bold text-text-bright">
+													<h2 className="font-display text-xl font-medium text-text-bright">
 														{group.label}
-													</h3>
-													<span className="text-xs text-text-muted font-mono">
+													</h2>
+													<span className="text-xs text-text-muted font-geometric tabular-nums">
 														({group.models.length})
 													</span>
 												</div>
@@ -320,7 +328,7 @@ export default function ModelsPage() {
 			<Suspense
 				fallback={
 					<div className="bg-void">
-						<div className="container-page py-12">
+						<div className="container-page py-14 sm:py-18 lg:py-22">
 							<div className="h-8 w-32 bg-panel rounded-[var(--radius-sm)] animate-pulse mb-8" />
 							<div className="h-10 w-64 bg-panel rounded-[var(--radius-sm)] animate-pulse mb-4" />
 							<div className="h-4 w-48 bg-panel rounded-[var(--radius-sm)] animate-pulse mb-6" />
