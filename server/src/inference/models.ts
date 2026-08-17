@@ -32,9 +32,11 @@
 	* for the full risk writeup.
 	*
 	* NOTE: `gemini-3-flash-preview` is owned by the OMA-AI provider —
-	* it is the app's default free website-chat model. Don't add a
-	* Venice entry under the same id or it will shadow the free route
-	* and break anonymous website chat (401 on free model).
+	* it is the app's default free website-chat model. The user-facing id
+	* and displayName stay "Gemini 3 Flash", but Gonka/OpenBroker carries
+	* no Gemini model, so it routes to DeepSeek V4 Flash via omaAiId.
+	* Don't add a Venice entry under the same id or it will shadow the
+	* free route and break anonymous website chat (401 on free model).
 	*
 	* Add a new provider by extending `resolveProvider()` in
 	* provider-route.ts and adding matching entries here.
