@@ -4,6 +4,7 @@ import type { Dispatch, RefObject, SetStateAction } from "react";
 import { useEffect, useMemo, useRef } from "react";
 import type { Message } from "@/components/chat";
 import { log } from "@/lib/logger";
+import { persistMessages } from "@/lib/chat-storage";
 
 const STORAGE_KEY = "oma_chat_conversation";
 const DEFAULT_SYSTEM_PROMPT_KEY = "oma_chat_system_prompt";
@@ -19,6 +20,8 @@ export interface UseChatPersistenceOptions {
 	storageKey?: string;
 	/** Override the system-prompt localStorage key. Defaults to `oma_chat_system_prompt`. */
 	systemPromptKey?: string;
+	/** Skip hydrate/write until auth identity is known (prevents guest→user leak). */
+	enabled?: boolean;
 }
 
 /**
@@ -45,8 +48,10 @@ export function useChatPersistence({
 	messagesRef,
 	storageKey = STORAGE_KEY,
 	systemPromptKey = DEFAULT_SYSTEM_PROMPT_KEY,
+	enabled = true,
 }: UseChatPersistenceOptions): void {
 	useEffect(() => {
+		if (!enabled) return;
 		const stored = localStorage.getItem(storageKey);
 		if (stored) {
 			try {
@@ -85,9 +90,11 @@ export function useChatPersistence({
 		storageKey,
 		setSystemPromptOpen,
 		setMessages,
+		enabled,
 	]);
 
 	useEffect(() => {
+		if (!enabled) return;
 		try {
 			if (systemPrompt) {
 				localStorage.setItem(systemPromptKey, systemPrompt);
@@ -97,10 +104,7 @@ export function useChatPersistence({
 		} catch (e) {
 			log.warn("Failed to persist system prompt", e);
 		}
-		// systemPromptKey is a module constant for chat; for playground it can vary
-		// per-mount but only on first render (when initial localStorage hydrates),
-		// so we intentionally don't re-fire on every change to avoid write loops.
-	}, [systemPrompt, systemPromptKey]);
+	}, [systemPrompt, systemPromptKey, enabled]);
 
 	useEffect(() => {
 		messagesRef.current = messages;
@@ -114,10 +118,8 @@ export function useChatPersistence({
 			lastMessagesRef.current = msgs;
 			if (timeoutRef.current) clearTimeout(timeoutRef.current);
 			timeoutRef.current = setTimeout(() => {
-				try {
-					localStorage.setItem(storageKey, JSON.stringify(msgs));
-				} catch (err) {
-					log.warn("Failed to save conversation to storage", err);
+				if (!persistMessages(storageKey, lastMessagesRef.current)) {
+					log.warn("Failed to save conversation to storage");
 				}
 			// 400ms — short enough that a quick navigate still keeps history,
 			// long enough to batch streaming token flushes.
@@ -129,10 +131,8 @@ export function useChatPersistence({
 				timeoutRef.current = null;
 			}
 			if (lastMessagesRef.current.length > 0) {
-				try {
-					localStorage.setItem(storageKey, JSON.stringify(lastMessagesRef.current));
-				} catch (err) {
-					log.warn("Failed to flush conversation to storage", err);
+				if (!persistMessages(storageKey, lastMessagesRef.current)) {
+					log.warn("Failed to flush conversation to storage");
 				}
 			}
 		};
@@ -143,6 +143,7 @@ export function useChatPersistence({
 	}, [storageKey]);
 
 	useEffect(() => {
+		if (!enabled) return;
 		if (messages.length > 0) {
 			debouncedSave(messages);
 		} else {
@@ -159,7 +160,7 @@ export function useChatPersistence({
 		return () => {
 			debouncedSave.cancel();
 		};
-	}, [messages, debouncedSave, storageKey]);
+	}, [messages, debouncedSave, storageKey, enabled]);
 
 	// Flush pending debounced save on tab close / navigation
 	useEffect(() => {

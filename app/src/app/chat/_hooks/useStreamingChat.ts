@@ -14,7 +14,6 @@ import {
 	stripPendingAssistant,
 	type DailyQuota,
 } from "@/lib/chat-stream";
-import { DEFAULT_API_URL } from "@/lib/config";
 import { log } from "@/lib/logger";
 import {
 	FREE_CHAT_MODEL_IDS,
@@ -22,11 +21,11 @@ import {
 } from "@/lib/model-utils";
 import { estimateTokens } from "@/lib/text";
 
-// Chat completions and web search both hit the backend directly — the Next
-// /api catch-all buffers the full body and breaks streams for chat, and a
-// short JSON hop doesn't gain anything from being same-origin.
-const CHAT_ENDPOINT = `${DEFAULT_API_URL}/v1/chat/completions`;
-const SEARCH_ENDPOINT = `${DEFAULT_API_URL}/v1/search`;
+// Same-origin /api proxy so the Better Auth cookie is sent. Hitting
+// :3001 directly drops the session (cross-origin) and playground
+// usage never lands in the dashboard. proxy-response keeps SSE streamed.
+const CHAT_ENDPOINT = "/api/v1/chat/completions";
+const SEARCH_ENDPOINT = "/api/v1/search";
 
 /**
 	* Clean the conversation before it hits the upstream API. Two failure modes

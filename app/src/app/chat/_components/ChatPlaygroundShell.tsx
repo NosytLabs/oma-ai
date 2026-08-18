@@ -20,6 +20,11 @@ import { genConversationId } from "@/lib/gen-id";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { log } from "@/lib/logger";
 import {
+	conversationStorageKey,
+	migrateLegacyConversation,
+	systemPromptStorageKey,
+} from "@/lib/chat-storage";
+import {
 	FREE_DEFAULT_CHAT_MODEL,
 	isFreeChatModel,
 } from "@/lib/model-utils";
@@ -140,7 +145,9 @@ function ShellContent({
 	} = usePlaygroundState();
 
 	const toast = useToast();
-	const { isAuthenticated } = useAuth();
+	const { isAuthenticated, isReady, user } = useAuth();
+	const scopedStorageKey = conversationStorageKey(user?.id ?? null);
+	const scopedPromptKey = systemPromptStorageKey(user?.id ?? null);
 	const { balance, loading: balanceLoading } = useBalance();
 	const balanceDollars = balanceToDollars(balance);
 	const LOW_BALANCE_THRESHOLD = 1;
@@ -213,9 +220,14 @@ function ShellContent({
 		setSystemPrompt,
 		setSystemPromptOpen,
 		messagesRef,
-		storageKey,
-		systemPromptKey,
+		storageKey: scopedStorageKey,
+		systemPromptKey: scopedPromptKey,
+		enabled: isReady,
 	});
+
+	useEffect(() => {
+		if (isReady && !user?.id) migrateLegacyConversation();
+	}, [isReady, user?.id]);
 
 	const {
 		scrollContainerRef,
@@ -296,7 +308,7 @@ function ShellContent({
 		setCompareMessages([]);
 		setError(null);
 		try {
-			localStorage.removeItem(storageKey);
+			localStorage.removeItem(scopedStorageKey);
 			// WEB preference intentionally kept — users expect toggle to stick.
 		} catch {
 			/* private mode */
@@ -304,7 +316,7 @@ function ShellContent({
 		toast.success("Conversation cleared");
 		setTimeout(() => inputRef.current?.focus(), 100);
 	}, [
-		storageKey,
+		scopedStorageKey,
 		setError,
 		setCompareMessages,
 		setMessages,

@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { DailyQuota } from "@/lib/chat-stream";
-import { DEFAULT_API_URL } from "@/lib/config";
 import {
 	freeLeftLabel,
 	GUEST_DAILY_LIMIT_DEFAULT,
@@ -58,7 +57,7 @@ export function useGuestQuota(opts: UseGuestQuotaOptions): UseGuestQuotaResult {
 		let cancelled = false;
 		(async () => {
 			try {
-				const res = await fetch(`${DEFAULT_API_URL}/v1/usage/today`, {
+				const res = await fetch("/api/v1/usage/today", {
 					credentials: "include",
 					headers: { Accept: "application/json" },
 				});
