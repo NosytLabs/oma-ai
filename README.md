@@ -19,11 +19,11 @@ OMA-AI stands for **Open Model Access**. It is a single API endpoint that unifie
 |------|-----------------|
 | OpenAI-compatible apps | Drop-in `/v1/chat/completions` endpoint |
 | Anthropic-compatible apps | Drop-in `/v1/messages` endpoint |
-| Multi-model routing | Automatic failover and load balancing across providers |
+| Multi-model routing | Automatic failover across providers (static peer map + hidden Surplus retry) |
 | Agent billing | x402 USDC micropayments + Polar card credits |
-| Privacy | Zero logs, zero training, zero tracking |
+| Privacy | Prompts not used for training; usage is metered for billing |
 
-By switching to OMA-AI, you get access to the best models at wholesale rates, without managing multiple API keys, subscriptions, or navigating complex provider billing. Try our generous free tier and upgrade when you are ready to scale.
+One OpenAI-compatible endpoint for a curated catalog. Venice-routed models include a 25% platform fee; OMA-AI/OpenBroker prices already include margin. Guest chat is free with a daily cap.
 
 ---
 
@@ -33,7 +33,7 @@ By switching to OMA-AI, you get access to the best models at wholesale rates, wi
 Passwordless onboarding with magic-link email sign-in or SIWE (Sign-In with Ethereum) wallet authentication. Get an API key in seconds—no credit card required for the free tier.
 
 ### 💳 x402 USDC Crypto Billing
-Agent-native, pay-per-request billing powered by EIP-3009. Autonomous agents can settle inference costs in USDC on Base with zero markup. No subscriptions, no minimums.
+Agent-native, pay-per-request billing powered by EIP-3009. Agents settle the same listed prices in USDC on Base. No subscriptions, no minimums.
 
 ### 🛡️ Fallback Routing & Circuit Breakers
 Built-in health checks and automatic provider failover. If one upstream goes down, OMA-AI seamlessly routes traffic to the next best available model—so your app stays up.
@@ -95,7 +95,7 @@ cp .env.example .env
 cp server/.env.example server/.env
 ```
 
-Edit `server/.env` and add your upstream provider keys (`ZYLOO_API_KEY`, `VENICE_API_KEY`, etc.). For local development, the defaults will work out of the box.
+Edit `server/.env` and add `VENICE_API_KEY` and `OPENBROKER_API_KEY`. For local development, placeholders log as unset.
 
 ### 3. Start Local Database
 

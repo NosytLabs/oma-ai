@@ -72,7 +72,7 @@ OMA (Open Model Access) is an OpenAI-compatible AI inference gateway:
 
 ## Costs (ballpark)
 
-- Budget chat models from ~$0.015–$0.10 per 1M tokens (1 credit = $0.01).
+- Budget chat models from about $0.44–$0.50 per 1M input tokens (1 credit = $0.01).
 - Premium and frontier models are higher per 1M; check `/v1/models` for the
   exact price before committing to a long task, and prefer budget models for
   bulk/mechanical work.
