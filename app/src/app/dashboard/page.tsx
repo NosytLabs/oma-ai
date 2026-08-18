@@ -258,22 +258,21 @@ function DashboardPageInner() {
 					Sign in required
 				</p>
 				<h1 className="mt-2 text-2xl font-bold tracking-tight text-text-bright">
-					Open the dashboard
+					Keys, usage, credits
 				</h1>
 				<p className="mt-2 text-sm text-text-secondary">
-					Manage API keys, watch live credit balance, and review recent
-					inference usage.
+					Sign in to manage API keys, see live credit balance, and review inference usage.
 				</p>
 				<div className="mt-6 flex flex-col items-center justify-center gap-2 sm:flex-row">
 					<Link
 						href="/login?next=/dashboard"
-						className="btn-primary inline-flex h-10 items-center px-4 text-sm focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.97] transition-transform duration-200"
+						className="btn-mono btn-primary"
 					>
-						Sign in →
+						Sign in
 					</Link>
 					<Link
 						href="/deposit"
-						className="btn-secondary inline-flex h-10 items-center px-4 text-sm focus-visible:ring-2 focus-visible:ring-border active:scale-[0.97] transition-transform duration-200"
+						className="btn-mono"
 					>
 						Deposit USDC
 					</Link>

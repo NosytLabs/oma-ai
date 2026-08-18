@@ -235,11 +235,11 @@ function SettingsPageContent() {
 					<div className="flex flex-col items-center justify-center gap-2">
 						<Link
 							href="/login?next=/settings"
-							className="inline-flex h-11 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-accent)] bg-[var(--color-accent)] px-5 text-sm font-semibold text-[var(--color-accent-fg)] transition-[background-color,transform] duration-200 ease-out hover:bg-[var(--color-accent-hover)] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-void"
+							className="btn-mono btn-primary"
 							aria-label="Sign in to manage your account"
-						>
-							Sign in →
-						</Link>
+							>
+							Sign in
+							</Link>
 					</div>
 					{evmAddress && (
 						<p className="mt-4 text-center text-[10px] font-mono text-text-muted">

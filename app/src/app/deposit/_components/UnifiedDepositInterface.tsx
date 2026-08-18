@@ -255,9 +255,9 @@ export function UnifiedDepositInterface({
 				</p>
 				<a
 					href="/login?next=/deposit"
-					className="mt-4 inline-flex h-10 items-center justify-center rounded-[var(--radius-md)] border border-accent bg-accent px-4 text-sm font-semibold text-void transition-colors duration-200 ease-out hover:bg-accent-bright"
+					className="btn-mono btn-primary mt-4"
 				>
-					Sign in →
+					Sign in
 				</a>
 			</div>
 		);
