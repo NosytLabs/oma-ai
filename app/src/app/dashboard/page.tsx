@@ -315,7 +315,7 @@ function DashboardPageInner() {
 							href="/login?next=/dashboard"
 							className="shrink-0 rounded-[var(--radius-sm)] bg-accent px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-void hover:bg-accent-bright"
 						>
-							Sign in for live data →
+							Sign in for live data
 						</Link>
 					</div>
 				)}
@@ -331,7 +331,7 @@ function DashboardPageInner() {
 							href="/settings"
 							className="shrink-0 rounded-[var(--radius-sm)] bg-accent px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-void hover:bg-accent-bright"
 						>
-							Manage →
+							Manage
 						</Link>
 					</div>
 				)}

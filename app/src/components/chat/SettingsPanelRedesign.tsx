@@ -263,7 +263,7 @@ function AgentsConnector() {
 									href="/docs#integrations"
 									className="text-[10px] font-mono text-[var(--color-accent)] hover:underline underline-offset-2"
 								>
-									Docs → integrations
+									Docs · integrations
 								</a>
 								<a
 									href="/agent-skill.md"

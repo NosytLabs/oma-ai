@@ -285,7 +285,7 @@ const response = await client.chat.completions.create({
 						})}
 						className="btn-primary"
 					>
-						Use in Playground →
+						Use in playground
 					</Link>
 					<Link href="/pricing" className="btn-secondary">
 						Compare pricing

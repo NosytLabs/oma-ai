@@ -286,7 +286,7 @@ function LoginInner() {
 												Sending…
 											</>
 										) : (
-											"Send magic link →"
+											"Send magic link"
 										)}
 									</button>
 									{magicSent && (

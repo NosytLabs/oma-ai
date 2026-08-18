@@ -214,9 +214,6 @@ function X402Info() {
 							Protocol walkthrough with curl examples
 						</div>
 					</div>
-					<span className="text-text-muted transition-transform duration-200 ease-out group-hover:translate-x-0.5" aria-hidden="true">
-						→
-					</span>
 				</a>
 				<a
 					href="/chat"
@@ -230,9 +227,6 @@ function X402Info() {
 							Try the playground surface
 						</div>
 					</div>
-					<span className="text-text-muted transition-transform duration-200 ease-out group-hover:translate-x-0.5" aria-hidden="true">
-						→
-					</span>
 				</a>
 			</div>
 		</div>

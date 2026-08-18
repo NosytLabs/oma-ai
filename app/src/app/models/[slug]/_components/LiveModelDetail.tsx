@@ -331,7 +331,7 @@ const response = await client.chat.completions.create({
 						href={playgroundHrefForModel({ id: slug })}
 						className="btn-primary"
 					>
-						Use in Playground →
+						Use in playground
 					</Link>
 					<Link href="/pricing" className="btn-secondary">
 						Compare pricing

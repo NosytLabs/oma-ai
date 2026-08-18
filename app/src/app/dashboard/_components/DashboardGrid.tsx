@@ -369,7 +369,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 										href="/chat"
 										className="inline-flex items-center gap-1.5 text-sm font-medium text-accent transition-colors duration-200 ease-out hover:text-accent/80"
 									>
-										Open chat playground →
+										Open playground
 									</Link>
 								}
 							/>

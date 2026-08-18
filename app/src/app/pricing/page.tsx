@@ -297,7 +297,7 @@ export default function PricingPage() {
 							<p className="mt-3 text-xs leading-relaxed text-[var(--color-text-muted)]">
 								x402 pay-per-request also supported for agents —{" "}
 								<Link href="#x402" className="font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] transition-colors duration-200 ease-out inline-flex items-center">
-									see below →
+									see below
 								</Link>
 							</p>
 						</m.div>
@@ -529,7 +529,7 @@ export default function PricingPage() {
 							href="/models"
 							className="font-mono text-xs text-text-muted transition-colors duration-200 ease-out hover:text-accent"
 						>
-							View all models →
+							View all models
 						</Link>
 					</div>
 				</div>

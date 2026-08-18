@@ -206,7 +206,7 @@ function renderMagicLinkEmail(url: string): string {
 		<h1 style="font-size:20px;font-weight:600;margin:0 0 12px">Sign in to OMA-AI</h1>
 		<p style="margin:0 0 24px;color:#555">Click the button below to sign in. The link expires in 5 minutes.</p>
 		<p style="margin:0 0 32px">
-				<a href="${url}" style="display:inline-block;background:#10b981;color:#0a0a0a;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600">Sign in →</a>
+				<a href="${url}" style="display:inline-block;background:#10b981;color:#0a0a0a;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600">Sign in</a>
 		</p>
 		<p style="margin:0 0 6px;color:#888;font-size:12px">Or paste this URL into your browser:</p>
 		<p style="margin:0 0 24px;font-family:ui-monospace,monospace;font-size:11px;background:#f0f0f0;padding:8px;border-radius:4px;word-break:break-all">${url}</p>
