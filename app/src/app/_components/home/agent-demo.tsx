@@ -22,14 +22,14 @@ export function AgentDemoSection() {
 							eyebrowVariant="caps"
 							headline={
 								<>
-									Looks like a coding agent.
+									Point any OpenAI client at OMA.
 									<br />
 									<span className="text-text-secondary">
-										Runs on your gateway.
+										Same API. Every model.
 									</span>
 								</>
 							}
-							subhead="Claude Code, Codex, Grok-style UIs all speak OpenAI. Point baseURL at OMA — multi-provider routing, USDC metering, no lock-in."
+							subhead="Claude Code, Codex, and any OpenAI SDK. Set baseURL to OMA — multi-provider routing, USDC metering, no lock-in."
 						/>
 						<ul className="mt-10 space-y-4 text-base text-text-secondary">
 							{[

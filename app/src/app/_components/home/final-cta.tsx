@@ -35,7 +35,7 @@ export function FinalCTA() {
 	<Reveal>
 	<div className="flex flex-col items-center justify-center text-center max-w-3xl mx-auto gap-8">
 	<div className="flex flex-col gap-5 items-center">
-	<span className="section-eyebrow-caps">Open the gateway</span>
+	<span className="section-eyebrow-caps">Get started</span>
 	<h2
 	id="final-cta-headline"
 	className="display-headline text-text-bright"

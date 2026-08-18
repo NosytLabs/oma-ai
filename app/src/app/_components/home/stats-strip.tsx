@@ -79,7 +79,7 @@ export function StatsStrip() {
 		Product facts
 	</p>
 	<p className="font-mono text-[10px] uppercase tracking-[0.18em] text-text-muted hidden sm:block">
-		ledger · no vanity metrics
+		live catalog
 	</p>
 	</div>
 	</Reveal>

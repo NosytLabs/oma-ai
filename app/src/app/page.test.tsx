@@ -163,7 +163,7 @@ describe("HomePage", () => {
 	it("renders the agent session demo section", async () => {
 		renderWithQueryClient(<HomePage />);
 		await waitFor(() => {
-			expect(screen.getByText(/looks like a coding agent/i)).toBeInTheDocument();
+			expect(screen.getByText(/point any openai client at oma/i)).toBeInTheDocument();
 		});
 	});
 
