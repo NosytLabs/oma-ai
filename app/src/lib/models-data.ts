@@ -16,7 +16,7 @@
 //     `generateStaticParams`) keeps working without an async fetch; the
 //     lazy loader returns the full catalog for anything that needs it.
 //   - The static fallback mirrors the curated server catalog exactly
-//     (26 chat models: 18 Venice + 8 OMA-AI). See `MODEL_COUNT`.
+//     (22 chat models: 18 Venice + 4 OMA-AI). See `MODEL_COUNT`.
 //
 // Public API is preserved: `Model`, `Capability`, `Provider`, `Tier`,
 // `formatPricePerMillion`, `getModelsByTier`,
@@ -372,7 +372,7 @@ function catalogFromRaw(catalog: RawCatalog): Model[] {
 
 	/**
 	 * Interface matching the OpenAI-style models returned by GET /v1/models.
-	 * The live API returns the curated chat catalog (26 models — see
+	 * The live API returns the curated chat catalog (22 models — see
 	 * `MODEL_COUNT`) with user-facing pricing, category, and context_length
 	 * but NOT description or capabilities — those are derived here.
 	 */
@@ -532,7 +532,7 @@ const tier: Tier =
 /**
 	* Static fallback catalog. Used as a build-time-safe SSR fallback for
 	* pages that need a synchronous `MODELS` / `MODEL_COUNT`. Mirrors the
-	* curated server catalog (26 models) — keep in sync with
+	* curated server catalog (22 models) — keep in sync with
 	* server/src/inference/models.ts. Prices are USER-FACING per-1M rates
 	* (Venice wholesale × 1.25 markup; OMA-AI prices already final), exactly
 	* as returned by GET /v1/models.

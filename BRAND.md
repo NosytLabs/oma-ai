@@ -103,7 +103,7 @@ Our positioning is centered around **sovereignty, privacy, and low-friction util
 | :--- | :--- |
 | A high-performance, private AI inference gateway | An anonymous or untraceable tool for illicit activities |
 | A secure gateway with zero prompt data retention | A tool designed to bypass regulatory protocols |
-| An active integration hub supporting **26 curated models** (18 Venice + 8 OMA-AI) | An unbounded, noisy, unvetted AI model marketplace |
+| An active integration hub supporting **22 curated models** (18 Venice + 4 OMA-AI) | An unbounded, noisy, unvetted AI model marketplace |
 | A crypto-native builder utility supporting USDC and `x402` | An underground dark-web platform |
 
 ### Preferred Terms (USE)

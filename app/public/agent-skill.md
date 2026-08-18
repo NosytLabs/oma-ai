@@ -29,7 +29,7 @@
 
 OMA (Open Model Access) is an OpenAI-compatible AI inference gateway:
 - **Base URL:** `https://api.oma-ai.com/v1`
-- **One API for 26 curated models** (18 Venice + 8 OMA-AI)
+- **One API for 22 curated models** (18 Venice + 4 OMA-AI)
   across chat completions (text + multimodal input). Image and video
   generation are not part of the current catalog — only chat LLMs.
 - **Pay your way:**
