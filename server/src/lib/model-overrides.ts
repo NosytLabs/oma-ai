@@ -9,7 +9,7 @@ export interface ModelPricingOverride {
 		updatedAt: string;
 }
 
-export interface PersistedOverridesFile {
+interface PersistedOverridesFile {
 		schemaVersion: 1;
 		updatedAt: string;
 		overrides: Record<string, ModelPricingOverride>;

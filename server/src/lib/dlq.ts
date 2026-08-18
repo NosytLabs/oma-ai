@@ -17,10 +17,6 @@ interface SettlementDlqEntry {
 		createdAt: string;
 }
 
-export interface DlqListName {
-		listName: string;
-}
-
 const DLQ_LISTS: Record<string, string> = {
 		webhook: "webhook:dlq",
 		settlement: "settlement:dlq",

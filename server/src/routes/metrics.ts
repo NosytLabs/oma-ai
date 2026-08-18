@@ -47,7 +47,7 @@ function p95(samples: number[]): number {
 		return Math.round(sorted[idx]);
 }
 
-export interface RouteMetric {
+interface RouteMetric {
 		route: string;
 		method: string;
 		requests: number;
