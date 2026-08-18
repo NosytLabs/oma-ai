@@ -58,7 +58,7 @@ describe("free-tier copy accuracy", () => {
 
 	it("pricing footer names real OMA-AI models", () => {
 		const src = readApp("app/pricing/page.tsx");
-		expect(src).toMatch(/OMA-AI models have no additional fee\./);
+		expect(src).toMatch(/OMA-AI models do not\./);
 	});
 
 	it("Mercury/Inception local logo is not the Zhipu tile", () => {
