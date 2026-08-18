@@ -43,7 +43,7 @@ const ROUNDS: DemoRound[] = [
 	model: "llama-3.3-70b",
 	modelLabel: "Llama 3.3 70B",
 	prompt: "What's the cheapest chat model?",
-	reply: "Venice budget tier — from $0.35 per 1M input tokens. x402 ready.",
+	reply: "Venice budget tier — from $0.44 per 1M input tokens. x402 ready.",
 	},
 ];
 

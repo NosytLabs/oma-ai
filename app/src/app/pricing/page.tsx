@@ -252,9 +252,9 @@ export default function PricingPage() {
 					<h1 className="h1-page text-text-bright max-w-4xl">Pricing for every model.</h1>
 					<p className="page-intro">
 						See model costs first, then choose how to pay. OMA bills per token
-						or per request, with no subscriptions, no lock-in. Base provider
-						rates are shown below — a 25% platform fee is applied at billing
-						for Venice-routed models. OMA-AI models have no additional fee.
+						or per request, with no subscriptions, no lock-in. Listed prices
+						are what you pay — Venice-routed models include a 25% platform
+						fee; OMA-AI models do not.
 					</p>
 					<div className="meta-strip">
 							<span>{modelCount} live models</span>
