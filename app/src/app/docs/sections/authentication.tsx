@@ -66,7 +66,7 @@ func main() {
 			<div id="auth-key" className="rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] p-5 mb-6 scroll-mt-24">
 				<div className="mb-3 text-sm text-text-muted">Authorization Header (paid API)</div>
 				<div className="rounded-[var(--radius-lg)] bg-surface/80 border border-border/50 p-3 font-mono text-sm">
-					<span className="text-warning">Authorization:</span>{" "}
+					<span className="text-warning">Authorization: </span>
 					<span className="text-accent">Bearer oma_sk_...</span>
 				</div>
 			</div>

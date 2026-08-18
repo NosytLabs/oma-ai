@@ -19,7 +19,7 @@ export function IntegrationsSection() {
 				id="integrations"
 				icon={<Bot className="h-5 w-5" />}
 				title="Agent & IDE integrations"
-				subtitle="Use any OpenAI-compatible client: set base URL to api.oma-ai.com/v1 and Authorization: Bearer oma_sk_…"
+				subtitle="Use any OpenAI-compatible client: set base URL to api.oma-ai.com/v1 and Authorization: Bearer $OMA_KEY"
 			/>
 
 			<div className="mb-6 rounded-[var(--radius-xl)] border border-accent/25 bg-accent/5 p-4 text-sm text-text-secondary leading-relaxed">

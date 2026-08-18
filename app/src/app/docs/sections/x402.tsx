@@ -53,7 +53,7 @@ if (payReq.ok) {
 	method: 'POST',
 	headers: {
 	'Content-Type': 'application/json',
-	Authorization: \`Bearer \${process.env.OMA_KEY}\`,
+	Authorization: ['Bearer', process.env.OMA_KEY].join(' '),
 	},
 	body: JSON.stringify({
 	model: 'llama-3.3-70b',
