@@ -165,10 +165,7 @@ export function ThemeToggle() {
 						}}
 					/>
 				</span>
-				<span className="text-xs font-mono lowercase tracking-tight text-text-secondary hidden sm:inline">
-					{theme}
-				</span>
-				<Palette className="h-3 w-3 opacity-50 sm:hidden" aria-hidden="true" />
+				<Palette className="h-3 w-3 opacity-40" aria-hidden="true" />
 			</button>
 			{mounted && menu ? createPortal(menu, document.body) : null}
 		</div>

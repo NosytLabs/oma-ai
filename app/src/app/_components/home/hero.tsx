@@ -71,10 +71,7 @@ export function Hero() {
 						className="h1-hero text-balance text-text-bright"
 					>
 						<span className="block">One endpoint.</span>
-						<span
-							className="block text-accent font-bold not-italic"
-							aria-hidden="false"
-						>
+						<span className="block text-accent italic">
 							Every model.
 						</span>
 					</m.h1>

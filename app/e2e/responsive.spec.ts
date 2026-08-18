@@ -92,7 +92,7 @@ for (const vp of VIEWPORTS) {
 test.describe("desktop-only navbar interactions", () => {
   test("tools dropdown opens with all tools", async ({ page }) => {
     await page.goto("/", { waitUntil: "networkidle" });
-    const toolsBtn = page.locator('button[aria-label="tools menu"]');
+    const toolsBtn = page.locator('button[aria-label="Tools menu"]');
     await expect(toolsBtn).toBeVisible();
     await toolsBtn.click();
     const menu = page.locator("#tools-menu");
@@ -106,7 +106,7 @@ test.describe("desktop-only navbar interactions", () => {
 
   test("tools dropdown closes on outside click", async ({ page }) => {
     await page.goto("/", { waitUntil: "networkidle" });
-    await page.locator('button[aria-label="tools menu"]').click();
+    await page.locator('button[aria-label="Tools menu"]').click();
     await expect(page.locator("#tools-menu")).toBeVisible();
     await page.mouse.click(10, 400);
     await expect(page.locator("#tools-menu")).toBeHidden();
