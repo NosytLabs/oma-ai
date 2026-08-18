@@ -35,6 +35,38 @@ describe("FALLBACK_MAP (inference router)", () => {
 			expect(fallbacks).not.toContain(primary);
 		}
 	});
+
+	it("covers every live catalog id so failover is never empty", () => {
+		const live = [
+			"claude-opus-5",
+			"claude-sonnet-4-6",
+			"deepseek-v4-flash-0731",
+			"deepseek-v4-flash-0731-openbroker",
+			"deepseek-v4-pro",
+			"gemini-3-6-flash",
+			"gemini-3-flash-preview",
+			"google-gemma-4-31b-it",
+			"grok-4-5",
+			"hermes-3-llama-3.1-405b",
+			"kimi-k2-6",
+			"kimi-k3",
+			"llama-3.3-70b",
+			"minimax-m2-7",
+			"mistral-small-2603",
+			"openai-gpt-56-sol",
+			"qwen-3-7-plus",
+			"qwen-3-8-max",
+			"venice-uncensored-1-2",
+			"xiaomi-mimo-v2-5",
+			"zai-org-glm-5-1",
+			"zai-org-glm-5-2",
+		];
+		for (const id of live) {
+			expect(getModelById(id), `catalog missing ${id}`).toBeTruthy();
+			expect(FALLBACK_MAP[id], `no FALLBACK_MAP for ${id}`).toBeTruthy();
+			expect(FALLBACK_MAP[id]!.length).toBeGreaterThan(0);
+		}
+	});
 });
 
 describe("buildFallbackChain", () => {
