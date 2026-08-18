@@ -89,7 +89,7 @@ export function buildSurplusFallbackRoute(modelDef: ModelDef): ProviderRoute {
 	};
 }
 
-export function resolveProvider(provider: string, modelDef?: ModelDef): ProviderRoute {
+export function resolveProvider(provider: string, _modelDef?: ModelDef): ProviderRoute {
 	if (provider === "litellm") {
 		if (!config.LITELLM_API_KEY) {
 			throw new ProviderError(

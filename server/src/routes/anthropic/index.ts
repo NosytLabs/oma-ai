@@ -394,5 +394,3 @@ anthropicRoutes.get("/v1/models", sessionOrBearerAuth, async (c) => {
 		}));
 		return c.json({ data, has_more: false, first_id: data[0]?.id ?? null, last_id: data[data.length - 1]?.id ?? null });
 });
-
-export { toOpenAIMessages, toAnthropicMessage };
