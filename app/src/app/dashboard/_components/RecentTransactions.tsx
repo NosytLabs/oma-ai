@@ -80,7 +80,7 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
 							href="/deposit"
 							className="text-accent hover:text-accent-hover hover:underline transition-colors duration-200 ease-out block mt-2 font-medium"
 						>
-							Make your first deposit &rarr;
+							Make your first deposit
 						</Link>
 					</p>
 				</div>

@@ -255,12 +255,12 @@ export function DashboardHeader({
 							<span>R · 1-4</span>
 						</span>
 						{modelsAvailable > 0 && (
-							<span className="flex items-center gap-1.5 text-text-muted/70">
+							<span className="flex items-center gap-1.5 whitespace-nowrap text-text-muted/70">
 								<span
 									aria-hidden="true"
 									className="inline-block h-1 w-1 bg-text-muted/50"
 								/>
-								{modelsAvailable} MODEL{modelsAvailable !== 1 ? "S" : ""} ONLINE
+								{modelsAvailable} {modelsAvailable === 1 ? "model" : "models"} online
 							</span>
 						)}
 						{hasAnyData && lastUpdated && (

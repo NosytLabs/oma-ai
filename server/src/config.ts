@@ -191,6 +191,9 @@ function usableProviderKey(key: string | undefined): boolean {
 const _parsed = envSchema.parse(process.env);
 export const config: Config = {
 		..._parsed,
+		RESEND_API_KEY: usableProviderKey(_parsed.RESEND_API_KEY)
+				? _parsed.RESEND_API_KEY
+				: undefined,
 		CHAIN_RPC_URL: _parsed.QUICKNODE_RPC_URL ?? _parsed.CHAIN_RPC_URL,
 		CHAIN_RPC_URL_FALLBACK:
 				_parsed.QUICKNODE_RPC_URL_FALLBACK ?? _parsed.CHAIN_RPC_URL_FALLBACK,
