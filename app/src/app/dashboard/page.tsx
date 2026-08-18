@@ -204,16 +204,18 @@ function DashboardPageInner() {
 				);
 				log.error("installKeyCookie failed", err);
 			});
-			queryClient.setQueryData<ApiKey[]>(["apiKeys"], (prev) => [
-				...(prev ?? []),
-				{
-					id: key.id,
-					name: key.name,
-					prefix: key.prefix,
-					createdAt: key.createdAt,
-					lastUsedAt: key.lastUsedAt,
-				},
-			]);
+			queryClient.setQueryData<{ keys: ApiKey[] }>(["apiKeys"], (prev) => ({
+				keys: [
+					...(prev?.keys ?? []),
+					{
+						id: key.id,
+						name: key.name,
+						prefix: key.prefix,
+						createdAt: key.createdAt,
+						lastUsedAt: key.lastUsedAt,
+					},
+				],
+			}));
 		} catch (e: unknown) {
 			const msg = e instanceof Error ? e.message : "Failed to create key";
 			toast.error(msg);
@@ -227,9 +229,9 @@ function DashboardPageInner() {
 			setRevokingId(keyId);
 			try {
 				await api.auth.deleteKey(keyId);
-				queryClient.setQueryData<ApiKey[]>(["apiKeys"], (prev) =>
-					(prev ?? []).filter((k) => k.id !== keyId),
-				);
+				queryClient.setQueryData<{ keys: ApiKey[] }>(["apiKeys"], (prev) => ({
+					keys: (prev?.keys ?? []).filter((k) => k.id !== keyId),
+				}));
 			} catch (e: unknown) {
 				const msg = e instanceof Error ? e.message : "Failed to revoke key";
 				toast.error(msg);
