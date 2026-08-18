@@ -68,7 +68,7 @@ export function ExpiringCreditsWarning({
 	href="/deposit"
 	className="self-end inline-flex items-center gap-1 rounded-[var(--radius-md)] border border-secondary/30 bg-secondary/10 px-3 py-1.5 text-xs font-medium text-secondary transition-colors duration-200 ease-out hover:bg-secondary/20 sm:self-auto active:scale-[0.97] "
 	>
-	Top up →
+	Top up
 	</Link>
 	</m.div>
 	);

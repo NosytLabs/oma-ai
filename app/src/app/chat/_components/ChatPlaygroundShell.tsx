@@ -478,7 +478,7 @@ function ShellContent({
 									href="/deposit"
 									className="px-2 py-0.5 bg-accent text-void text-[11px] font-semibold tracking-wide hover:bg-accent/90 transition-colors duration-200 ease-out"
 								>
-									Top up →
+									Top up
 								</Link>
 							</div>
 						)}
@@ -507,6 +507,7 @@ function ShellContent({
 						onA2UIAction={(event) => {
 							void sendMessageRef.current(formatA2UIAction(event));
 						}}
+						isAuthenticated={isAuthenticated}
 					/>
 
 					{/* Text composer — chat surface is text-only */}
@@ -559,7 +560,7 @@ function ShellContent({
 												href="/deposit"
 												className="text-warning hover:underline"
 											>
-												Low credits — top up for paid models →
+												Low credits — top up for paid models
 											</Link>
 										)}
 									</p>

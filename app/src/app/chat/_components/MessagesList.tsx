@@ -223,6 +223,8 @@ export interface MessagesListProps {
 	onRegenerate?: () => void;
 	/** Fired when the user clicks an A2UI action button (server action event). */
 	onA2UIAction?: (event: A2UIActionEvent) => void;
+	/** Signed-in users skip guest marketing (welcome + example dump). */
+	isAuthenticated?: boolean;
 }
 
 /**
@@ -261,6 +263,7 @@ export function MessagesList({
 	inputRef,
 	onRegenerate,
 	onA2UIAction,
+	isAuthenticated = false,
 }: MessagesListProps) {
 	const showFeatureHints =
 		deferredMessages.length === 0 &&
@@ -285,22 +288,29 @@ export function MessagesList({
 			<div className="max-w-4xl mx-auto relative z-0 min-h-full">
 				{deferredMessages.length === 0 ? (
 					<div className="pb-8">
-						<LazyWelcomeBanner
-							onSelectExample={() => {
-								const el = document.getElementById("example-conversations");
-								el?.scrollIntoView({ behavior: "smooth", block: "start" });
-							}}
-							onGetStarted={() => {
-								inputRef.current?.focus();
-							}}
-						/>
-						<div className="pt-4 md:pt-6">
-							<LazyEmptyState onPreset={handlePreset} />
+						{!isAuthenticated && (
+							<LazyWelcomeBanner
+								onSelectExample={() => {
+									const el = document.getElementById("example-conversations");
+									el?.scrollIntoView({ behavior: "smooth", block: "start" });
+								}}
+								onGetStarted={() => {
+									inputRef.current?.focus();
+								}}
+							/>
+						)}
+						<div className={isAuthenticated ? "pt-8 md:pt-16" : "pt-4 md:pt-6"}>
+							<LazyEmptyState
+								onPreset={handlePreset}
+								signedIn={isAuthenticated}
+							/>
 						</div>
-						<LazyExampleConversations onSelect={handleExampleSelect} />
+						{!isAuthenticated && (
+							<LazyExampleConversations onSelect={handleExampleSelect} />
+						)}
 
-						{/* Feature discovery hints */}
-						{showFeatureHints && (
+						{/* Feature discovery hints — guests only */}
+						{showFeatureHints && !isAuthenticated && (
 							<m.div
 								initial={{ opacity: 0, y: 12 }}
 								animate={{ opacity: 1, y: 0 }}

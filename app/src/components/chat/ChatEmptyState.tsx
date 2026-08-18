@@ -80,9 +80,11 @@ interface EmptyStateProps {
 	 * that match the current model. When omitted, every preset shows.
 	 */
 	currentModel?: string;
+	/** Hide guest-quota marketing when the user is signed in. */
+	signedIn?: boolean;
 }
 
-export function ChatEmptyState({ onPreset, currentModel }: EmptyStateProps) {
+export function ChatEmptyState({ onPreset, currentModel, signedIn = false }: EmptyStateProps) {
 	const [hoveredId, setHoveredId] = useState<string | null>(null);
 
 	// Filter presets by model hints; fall back to all presets when the
@@ -130,7 +132,9 @@ export function ChatEmptyState({ onPreset, currentModel }: EmptyStateProps) {
 				transition={{ delay: 0.12, ...springs.soft }}
 				className="mb-5 max-w-md text-sm leading-relaxed text-text-secondary"
 			>
-				Pick a starter, or type below. Guest chats are free on OMA-AI models.
+				{signedIn
+					? "Pick a starter, or type below."
+					: "Pick a starter, or type below. Guest chats are free on OMA-AI models."}
 			</m.p>
 
 			<m.div
@@ -190,6 +194,7 @@ export function ChatEmptyState({ onPreset, currentModel }: EmptyStateProps) {
 				})}
 			</m.div>
 
+			{!signedIn && (
 			<m.div
 				initial={{ opacity: 0 }}
 				animate={{ opacity: 1 }}
@@ -199,6 +204,7 @@ export function ChatEmptyState({ onPreset, currentModel }: EmptyStateProps) {
 				<Coins className="h-3.5 w-3.5 text-[var(--color-accent)] opacity-80" aria-hidden="true" />
 				Free tier: 20 requests/day · no card needed
 			</m.div>
+			)}
 		</div>
 	);
 }

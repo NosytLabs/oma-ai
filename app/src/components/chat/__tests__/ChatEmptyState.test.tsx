@@ -65,4 +65,11 @@ describe("ChatEmptyState", () => {
 		expect(onPreset).toHaveBeenCalledTimes(1);
 		expect(onPreset.mock.calls[0]?.[0]).toMatch(/merge_sort/);
 	});
+
+	it("hides guest quota copy when signed in", () => {
+		render(<ChatEmptyState onPreset={() => {}} signedIn />);
+		expect(screen.queryByText(/Guest chats are free/i)).toBeNull();
+		expect(screen.queryByText(/20 requests\/day/i)).toBeNull();
+		expect(screen.getByText("Pick a starter, or type below.")).toBeInTheDocument();
+	});
 });
