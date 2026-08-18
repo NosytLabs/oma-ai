@@ -729,36 +729,6 @@ const FALLBACK_CATALOG: RawCatalog = {
 		// deepseek-v4-flash-0731-openbroker — see `FREE_CHAT_MODEL_IDS` in
 		// model-utils.ts). Everything else requires auth + credits in
 		// /chat, /playground, and the /v1 API.
-		"gemini-3.1-pro-preview": {
-			id: "gemini-3.1-pro-preview",
-			displayName: "Gemini 3.1 Pro",
-			provider: "oma-ai",
-			category: "frontier",
-			maxTokens: 128000,
-			inputPricePer1M: 2.00,
-			outputPricePer1M: 9.50,
-			capabilities: ["chat", "reasoning", "coding", "tools"],
-		},
-		"gpt-4.1": {
-			id: "gpt-4.1",
-			displayName: "GPT-4.1",
-			provider: "oma-ai",
-			category: "frontier",
-			maxTokens: 128000,
-			inputPricePer1M: 4.00,
-			outputPricePer1M: 16.00,
-			capabilities: ["chat", "reasoning", "coding", "tools"],
-		},
-		"gpt-4o": {
-			id: "gpt-4o",
-			displayName: "GPT-4o",
-			provider: "oma-ai",
-			category: "premium",
-			maxTokens: 128000,
-			inputPricePer1M: 5.00,
-			outputPricePer1M: 19.00,
-			capabilities: ["chat", "fast", "tools"],
-		},
 		"kimi-k2-6": {
 			id: "kimi-k2-6",
 			displayName: "Kimi K2.6",
@@ -799,16 +769,10 @@ const FALLBACK_CATALOG: RawCatalog = {
 			outputPricePer1M: 0.75,
 			capabilities: ["chat", "reasoning", "fast", "tools"],
 		},
-		"qwen3-235b-a22b-openbroker": {
-			id: "qwen3-235b-a22b-openbroker",
-			displayName: "Qwen3 235B",
-			provider: "oma-ai",
-			category: "mid",
-			maxTokens: 128000,
-			inputPricePer1M: 0.65,
-			outputPricePer1M: 2.00,
-			capabilities: ["chat", "reasoning", "tools"],
-		},
+		// (qwen3-235b-a22b-openbroker removed 2026-08-17 — OpenBroker does
+		//  not carry it; the 4-stale-model trim aligned FALLBACK_CATALOG
+		//  with the live server's `defaultCatalog()`. See the
+		//  "implicit-zyloo" comment in server/src/inference/models.ts.)
 	},
 };
 
@@ -846,9 +810,13 @@ export function getModelsByTier(models: Model[]): Record<Tier, Model[]> {
 }
 
 // Marketing model count surfaced across the UI. Must match the live
-// `GET /v1/models` count — 26 curated chat models (18 Venice + 8 OMA-AI).
-// Keep in sync with `server/src/inference/models.ts` defaultCatalog().
-export const MODEL_COUNT = 26;
+// `GET /v1/models` count — 22 curated chat models (18 Venice + 4 OMA-AI).
+// Kept in sync with `server/src/inference/models.ts` defaultCatalog()
+// on 2026-08-17 by trimming 4 stale OMA-AI entries that OpenBroker
+// no longer carries (gemini-3.1-pro-preview, gpt-4.1, gpt-4o,
+// qwen3-235b-a22b-openbroker). See the "implicit-zyloo" comment in
+// `server/src/inference/models.ts` for the upstream rationale.
+export const MODEL_COUNT = 22;
 
 // DRIFT GUARD: if anyone adds/removes an entry in `FALLBACK_CATALOG`
 // they MUST update `MODEL_COUNT` above — these are the marketing
