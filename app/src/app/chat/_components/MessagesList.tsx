@@ -15,6 +15,8 @@ import dynamic from "next/dynamic";
 import type { RefObject } from "react";
 import type { ExampleConversation, Message } from "@/components/chat";
 import { A2UIRenderer, isA2UI, type A2UIActionEvent } from "@/components/chat/A2UIRenderer";
+import { ChatEmptyState } from "@/components/chat/ChatEmptyState";
+import { ChatMessageRedesigned } from "@/components/chat/ChatMessageRedesign";
 import { Skeleton } from "@/components/ui/Skeleton";
 
 const LazyWelcomeBanner = dynamic(
@@ -29,33 +31,6 @@ const LazyExampleConversations = dynamic(
 	() =>
 		import("@/components/chat/ExampleConversations").then(
 			(mod) => mod.ExampleConversations,
-		),
-	{ ssr: false, loading: () => <Skeleton className="h-48 w-full" /> },
-);
-
-const LazyChatMessage = dynamic(
-	() =>
-		import("@/components/chat/ChatMessageRedesign").then(
-			(mod) => mod.ChatMessageRedesigned,
-		),
-	{
-		ssr: false,
-		loading: () => (
-			<div className="flex gap-4">
-				<Skeleton className="w-10 h-10 shrink-0 rounded-[var(--radius-sm)]" />
-				<div className="flex flex-col max-w-[80%] gap-2">
-					<Skeleton className="h-20 w-full" />
-					<Skeleton className="h-4 w-20" />
-				</div>
-			</div>
-		),
-	},
-);
-
-const LazyEmptyState = dynamic(
-	() =>
-		import("@/components/chat/ChatEmptyState").then(
-			(mod) => mod.ChatEmptyState,
 		),
 	{ ssr: false, loading: () => <Skeleton className="h-48 w-full" /> },
 );
@@ -300,7 +275,7 @@ export function MessagesList({
 							/>
 						)}
 						<div className={isAuthenticated ? "pt-8 md:pt-16" : "pt-4 md:pt-6"}>
-							<LazyEmptyState
+							<ChatEmptyState
 								onPreset={handlePreset}
 								signedIn={isAuthenticated}
 							/>
@@ -376,7 +351,7 @@ export function MessagesList({
 								const isLastAssistant =
 									msg.role === "assistant" && isLast;
 								return (
-									<LazyChatMessage
+									<ChatMessageRedesigned
 										key={msg.id ?? `${msg.role}-${msg.timestamp}`}
 										msg={msg}
 										loading={loading && isLastAssistant}
