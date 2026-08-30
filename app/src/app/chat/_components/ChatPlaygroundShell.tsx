@@ -87,8 +87,8 @@ export interface ChatPlaygroundShellProps {
 
 function ShellContent({
 	variant,
-	storageKey,
-	systemPromptKey,
+	storageKey: _storageKey,
+	systemPromptKey: _systemPromptKey,
 	conversationIdKey,
 }: ChatPlaygroundShellProps) {
 	const isChat = variant === "chat";
