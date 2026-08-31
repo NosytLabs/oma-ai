@@ -207,9 +207,9 @@ function SettingsPageContent() {
 					>
 						<UserIcon className="h-7 w-7 text-[var(--color-accent)]" />
 					</m.div>
-					<h1 className="mb-2 text-center text-xl font-bold tracking-tight text-text-bright">
-						Sign in to manage your account
-					</h1>
+					<h2 className="mb-2 text-center text-xl font-bold tracking-tight text-text-bright">
+										Sign in to manage your account
+									</h2>
 					<p className="mb-6 text-center text-sm text-text-secondary">
 						Settings covers your profile, theme, sessions, and data controls.
 					</p>

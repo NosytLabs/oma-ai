@@ -152,7 +152,7 @@ export default function AdminPage() {
 		return (
 			<div className="mx-auto flex min-h-full max-w-5xl flex-col items-center justify-center gap-4 px-6 py-24 text-center">
 				<ShieldCheck className="h-10 w-10 text-text-muted" />
-				<h1 className="text-lg font-semibold text-text">Admin access required</h1>
+				<h2 className="text-lg font-semibold text-text">Admin access required</h2>
 				<p className="max-w-md text-sm text-text-secondary">
 					This dashboard is restricted to operators with an admin role.
 					Sign in with an admin account to continue.
@@ -171,7 +171,7 @@ export default function AdminPage() {
 		return (
 			<div className="flex min-h-[60vh] items-center justify-center p-4 text-center bg-void text-text">
 				<div>
-					<h1 className="text-2xl font-bold mb-2">404</h1>
+					<h2 className="text-2xl font-bold mb-2">404</h2>
 					<p className="text-text-muted">This page could not be found.</p>
 				</div>
 			</div>
