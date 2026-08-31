@@ -6,7 +6,7 @@ import { Columns2, Loader2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { Message } from "./chat-message-shared";
 import { useSharedLiveModels } from "./chat-message-shared";
-import { ModelSelector } from "./ModelSelectorRedesign";
+import { ModelSelector } from "./ModelSelector";
 
 interface ModelComparePanelProps {
 	open: boolean;

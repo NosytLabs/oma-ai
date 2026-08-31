@@ -1,6 +1,11 @@
 /**
 	* Sample dashboard data for `?demo=1` / demo-cookie tours.
 	* Shapes match live API types so charts and stats reuse production code paths.
+	*
+	* Model ids MUST be in the live catalog (server/src/inference/models.ts)
+	* — keep this list aligned with `MODELS` in app/src/lib/models-data.ts.
+	* Stale ids render as raw slugs on the "Spend by model" donut and the
+	* "Recent activity" rows, which makes the demo tour look broken.
 	*/
 import type {
 	ApiKey,
@@ -17,10 +22,13 @@ function daysAgo(n: number, hour = 12): string {
 	return d.toISOString();
 }
 
+// Curated mix: one frontier (Venice), one premium (OMA-AI), one budget
+// (Venice) — gives the donut chart three distinct slices at different
+// price points so visitors see the catalog tier spread at a glance.
 const MODELS = [
-	{ model: "gemini-3.1-pro-preview", provider: "Venice" },
-	{ model: "openai-gpt-56-sol", provider: "OMA-AI" },
 	{ model: "claude-opus-5", provider: "Venice" },
+	{ model: "gemini-3-flash-preview", provider: "OMA-AI" },
+	{ model: "deepseek-v4-flash-0731", provider: "Venice" },
 ] as const;
 
 /** Synthetic usage spread across the last 14 days so range filters still chart. */
@@ -105,6 +113,6 @@ export const DEMO_TRANSACTIONS: CreditTransaction[] = [
 		amountCents: -42,
 		status: "completed",
 		createdAt: daysAgo(0, 9),
-		model: "gemini-3.1-pro-preview",
+		model: "gemini-3-flash-preview",
 	},
 ];

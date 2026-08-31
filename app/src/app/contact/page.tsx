@@ -48,7 +48,7 @@ const CHANNELS = [
 
 export default function ContactPage() {
 	return (
-		<div className="bg-void text-text">
+		<div className="bg-void text-text overflow-x-clip">
 			<BreadcrumbListJsonLd
 				items={[
 					{ name: "Home", url: "/" },

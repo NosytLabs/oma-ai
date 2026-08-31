@@ -16,12 +16,12 @@ import type { RefObject } from "react";
 import type { ExampleConversation, Message } from "@/components/chat";
 import { A2UIRenderer, isA2UI, type A2UIActionEvent } from "@/components/chat/A2UIRenderer";
 import { ChatEmptyState } from "@/components/chat/ChatEmptyState";
-import { ChatMessageRedesigned } from "@/components/chat/ChatMessageRedesign";
+import { ChatMessageed } from "@/components/chat/ChatMessage";
 import { Skeleton } from "@/components/ui/Skeleton";
 
 const LazyWelcomeBanner = dynamic(
 	() =>
-		import("@/components/chat/WelcomeBannerRedesign").then(
+		import("@/components/chat/WelcomeBanner").then(
 			(mod) => mod.WelcomeBanner,
 		),
 	{ ssr: false, loading: () => null },
@@ -351,7 +351,7 @@ export function MessagesList({
 								const isLastAssistant =
 									msg.role === "assistant" && isLast;
 								return (
-									<ChatMessageRedesigned
+									<ChatMessageed
 										key={msg.id ?? `${msg.role}-${msg.timestamp}`}
 										msg={msg}
 										loading={loading && isLastAssistant}

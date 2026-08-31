@@ -11,6 +11,7 @@ import {
 	type Model,
 } from "@/lib/models-data";
 import { playgroundHrefForModel } from "@/lib/playground-href";
+import { CopyableCode } from "@/components/copyable-code";
 import { Stat, RelatedModels } from "./ModelDetailShared";
 
 function formatPrice(per1M: number): string {
@@ -160,32 +161,42 @@ const response = await client.chat.completions.create({
 					</ul>
 				</section>
 
-				<section aria-labelledby="architecture-heading" className="mb-10">
-					<h2
-						id="architecture-heading"
-						className="font-mono text-xs uppercase tracking-widest text-text-muted mb-3"
-					>
-						Architecture
-					</h2>
-					<div className="space-y-2">
-						<div className="flex items-center gap-3">
-							<span className="text-text-muted font-mono">Input:</span>
-							<span className="flex flex-wrap gap-1">
-								<span className="px-2 py-0.5 rounded-[var(--radius-sm)] text-[9px] font-medium bg-surface text-text-secondary border border-border/50">
-									Text
+			<section aria-labelledby="architecture-heading" className="mb-10">
+				<h2
+					id="architecture-heading"
+					className="font-mono text-xs uppercase tracking-widest text-text-muted mb-3"
+				>
+					Architecture
+				</h2>
+				<div className="space-y-2">
+					<div className="flex items-center gap-3">
+						<span className="text-text-muted font-mono">Input:</span>
+						<span className="flex flex-wrap gap-1">
+							{(model.inputModalities ?? ["text"]).map((mod, index) => (
+								<span
+									key={`input-${mod}-${index}`}
+									className="px-2 py-0.5 rounded-[var(--radius-sm)] text-[9px] font-medium bg-surface text-text-secondary border border-border/50"
+								>
+									{mod.charAt(0).toUpperCase() + mod.slice(1)}
 								</span>
-							</span>
-						</div>
-						<div className="flex items-center gap-3">
-							<span className="text-text-muted font-mono">Output:</span>
-							<span className="flex flex-wrap gap-1">
-								<span className="px-2 py-0.5 rounded-[var(--radius-sm)] text-[9px] font-medium bg-surface text-text-secondary border border-border/50">
-									Text
-								</span>
-							</span>
-						</div>
+							))}
+						</span>
 					</div>
-				</section>
+					<div className="flex items-center gap-3">
+						<span className="text-text-muted font-mono">Output:</span>
+						<span className="flex flex-wrap gap-1">
+							{(model.outputModalities ?? ["text"]).map((mod, index) => (
+								<span
+									key={`output-${mod}-${index}`}
+									className="px-2 py-0.5 rounded-[var(--radius-sm)] text-[9px] font-medium bg-surface text-text-secondary border border-border/50"
+								>
+									{mod.charAt(0).toUpperCase() + mod.slice(1)}
+								</span>
+							))}
+						</span>
+					</div>
+				</div>
+			</section>
 
 				<section aria-labelledby="parameters-heading" className="mb-10">
 					<h2
@@ -241,40 +252,34 @@ const response = await client.chat.completions.create({
 					</p>
 				</section>
 
-				<section aria-labelledby="api-example-heading" className="mb-10">
-					<h2
-						id="api-example-heading"
-						className="font-mono text-xs uppercase tracking-widest text-text-muted mb-3"
-					>
-						API Usage Example
-					</h2>
-					<div className="space-y-4">
-						<div className="bg-surface rounded-[var(--radius-xl)] border border-border/50 p-4">
-							<h3 className="font-mono text-sm uppercase tracking-widest text-text-muted mb-2">
-								cURL
-							</h3>
-							<pre className="text-xs font-mono bg-[color-mix(in_srgb,var(--color-background)_90%,transparent)] p-3 rounded-[var(--radius-sm)] overflow-auto">
-								<code>{curlExample}</code>
-							</pre>
-						</div>
-						<div className="bg-surface rounded-[var(--radius-xl)] border border-border/50 p-4">
-							<h3 className="font-mono text-sm uppercase tracking-widest text-text-muted mb-2">
-								Python
-							</h3>
-							<pre className="text-xs font-mono bg-[color-mix(in_srgb,var(--color-background)_90%,transparent)] p-3 rounded-[var(--radius-sm)] overflow-auto">
-								<code>{pythonExample}</code>
-							</pre>
-						</div>
-						<div className="bg-surface rounded-[var(--radius-xl)] border border-border/50 p-4">
-							<h3 className="font-mono text-sm uppercase tracking-widest text-text-muted mb-2">
-								JavaScript
-							</h3>
-							<pre className="text-xs font-mono bg-[color-mix(in_srgb,var(--color-background)_90%,transparent)] p-3 rounded-[var(--radius-sm)] overflow-auto">
-								<code>{jsExample}</code>
-							</pre>
-						</div>
+<section aria-labelledby="api-example-heading" className="mb-10">
+				<h2
+					id="api-example-heading"
+					className="font-mono text-xs uppercase tracking-widest text-text-muted mb-3"
+				>
+					API Usage Example
+				</h2>
+				<div className="space-y-4">
+					<div className="bg-surface rounded-[var(--radius-xl)] border border-border/50 p-4">
+						<h3 className="font-mono text-sm uppercase tracking-widest text-text-muted mb-2">
+							cURL
+						</h3>
+						<CopyableCode code={curlExample} aria-label={`${model.name} cURL example`} />
 					</div>
-				</section>
+					<div className="bg-surface rounded-[var(--radius-xl)] border border-border/50 p-4">
+						<h3 className="font-mono text-sm uppercase tracking-widest text-text-muted mb-2">
+							Python
+						</h3>
+						<CopyableCode code={pythonExample} aria-label={`${model.name} Python example`} />
+					</div>
+					<div className="bg-surface rounded-[var(--radius-xl)] border border-border/50 p-4">
+						<h3 className="font-mono text-sm uppercase tracking-widest text-text-muted mb-2">
+							JavaScript
+						</h3>
+						<CopyableCode code={jsExample} aria-label={`${model.name} JavaScript example`} />
+					</div>
+				</div>
+			</section>
 
 				<div className="flex flex-wrap gap-3 pt-6 border-t border-border">
 					<Link

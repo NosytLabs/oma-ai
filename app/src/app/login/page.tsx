@@ -185,7 +185,7 @@ function LoginInner() {
 								<div
 									role="alert"
 									aria-live="assertive"
-									className="mt-4 flex items-start gap-2 rounded-[var(--radius-lg)] border border-[var(--color-warning)]/30 bg-[color-mix(in_srgb,var(--color-warning)_10%,transparent)] px-4 py-3"
+									className="mt-4 flex items-start gap-2 rounded-[var(--radius-lg)] border border-warning/30 bg-[color-mix(in_srgb,var(--color-warning)_10%,transparent)] px-4 py-3"
 								>
 									<AlertTriangle
 										className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-warning)]"

@@ -4,18 +4,11 @@ import {
 	Brain,
 	Check,
 	ChevronDown,
-	Image as ImageIcon,
 	Link2,
-	Mic,
-	Music2,
-	Pencil,
 	Search,
 	Sparkles,
 	Star,
 	Trophy,
-	Video,
-	Volume2,
-	Wand2,
 	Zap,
 } from "lucide-react";
 import { Suspense, useMemo } from "react";
@@ -25,7 +18,7 @@ import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { Button } from "@/components/ui/button";
 import { springs } from "@/lib/animation";
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
-import { type Modality, TIER_COLORS, TIER_ORDER } from "@/lib/models-data";
+import { TIER_COLORS, TIER_ORDER } from "@/lib/models-data";
 import { ModelCard } from "./_components/ModelCard";
 import { ModelFiltersSidebar } from "./_components/ModelFiltersSidebar";
 import { SORT_OPTIONS, useModelFilters } from "./_hooks/useModelFilters";
@@ -35,18 +28,6 @@ const TIER_ICONS: Record<string, React.ReactNode> = {
 	mid: <Star className="h-4 w-4" />,
 	premium: <Sparkles className="h-4 w-4" />,
 	frontier: <Trophy className="h-4 w-4" />,
-};
-
-const MODALITY_ICONS: Record<Modality, React.ReactNode> = {
-	chat: <Brain className="h-4 w-4" />,
-	image: <ImageIcon className="h-4 w-4" />,
-	video: <Video className="h-4 w-4" />,
-	tts: <Volume2 className="h-4 w-4" />,
-	embedding: <Wand2 className="h-4 w-4" />,
-	asr: <Mic className="h-4 w-4" />,
-	music: <Music2 className="h-4 w-4" />,
-	upscale: <Wand2 className="h-4 w-4" />,
-	inpaint: <Pencil className="h-4 w-4" />,
 };
 
 function ModelsPageInner() {
@@ -92,13 +73,8 @@ function ModelsPageInner() {
 
 	const activeGroupIcons = useMemo(() => {
 		const icons: Record<string, React.ReactNode> = {};
-		// populate tier icons
 		for (const tier of TIER_ORDER) {
 			icons[tier] = TIER_ICONS[tier];
-		}
-		// populate modality icons
-		for (const key of Object.keys(MODALITY_ICONS)) {
-			icons[`__modality_${key}`] = MODALITY_ICONS[key as Modality];
 		}
 		return icons;
 	}, []);

@@ -2,8 +2,8 @@
 # start-chrome-debug.sh — Start Chrome with remote debugging for browser-harness
 #
 # Usage:
-#   ./scripts/start-chrome-debug.sh          # Start on port 9222
-#   ./scripts/start-chrome-debug.sh 9333     # Start on custom port
+#   ./scripts/dev/start-chrome-debug.sh          # Start on port 9222
+#   ./scripts/dev/start-chrome-debug.sh 9333     # Start on custom port
 #
 # Then use browser-harness:
 #   BU_CDP_URL=http://127.0.0.1:9222 browser-harness <<'PY'

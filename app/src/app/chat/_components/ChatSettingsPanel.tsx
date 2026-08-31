@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 
 const LazySettingsPanel = dynamic(
 	() =>
-		import("@/components/chat/SettingsPanelRedesign").then(
+		import("@/components/chat/SettingsPanel").then(
 			(mod) => mod.SettingsPanel,
 		),
 	{ ssr: false, loading: () => <Skeleton className="h-96 w-full" /> },

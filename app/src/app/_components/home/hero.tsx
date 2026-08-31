@@ -42,7 +42,7 @@ function reveal(index: number, enabled: boolean) {
 export function Hero() {
 	const entrance = useHasBeenInView();
 	return (
-<section className="relative overflow-hidden flex items-center">
+<section className="relative overflow-hidden flex flex-col">
 			{/* Atmosphere — calm spec sheet: faint grid + single accent wash.
 			   Pulled radial-orb intensity 50% (mix-blend-screen + opacity 0.12
 			   → mix-blend-normal + opacity 0.06) so the hero doesn't fight
@@ -55,7 +55,7 @@ export function Hero() {
 				<div className="absolute top-[18%] right-0 -mr-[35%] w-[80%] aspect-[1/1] rounded-full bg-[radial-gradient(circle_at_center,var(--color-accent)_0%,transparent_55%)] opacity-[0.05] blur-[140px]" />
 			</div>
 
-			<div className="container-page relative z-10 min-w-0 pb-12 pt-12 lg:pb-20 lg:pt-24 flex-1">
+			<div className="container-page relative z-10 min-w-0 pb-10 pt-12 lg:pb-16 lg:pt-20 flex-1">
 				<div className="flex flex-col items-center justify-center text-center max-w-5xl mx-auto">
 					<m.div
 						{...reveal(0, entrance)}

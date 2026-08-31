@@ -212,7 +212,6 @@ interface RawEntry {
 
 interface RawCatalog {
 	MODEL_CATALOG: Record<string, RawEntry>;
-	VIDEO_MODELS?: Record<string, unknown>;
 }
 
 export function formatContextLength(maxTokens: number): string {
@@ -314,6 +313,15 @@ function derivePriceUnit(modality: Modality, _pricing: ApiModelEntry["pricing"])
 	* Keyed by lower-cased model id.
 	*/
 const DISPLAY_NAME_OVERRIDES: Record<string, string> = {};
+
+/**
+ * Re-exported for server / dashboard code that needs to resolve an upstream
+ * model id to its customer-facing display name without re-implementing the
+ * lookup. Keys are lower-cased upstream ids; values are the canonical
+ * display names. Currently empty — kept here so dashboard-aggregate can
+ * reference it without coupling to internal constants.
+ */
+export const MODEL_NAME_OVERRIDES: Record<string, string> = DISPLAY_NAME_OVERRIDES;
 
 function deriveNameFromId(id: string): string {
 	// Convert model IDs like "qwen3-235b-a22b-instruct-2507" to display names

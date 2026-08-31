@@ -46,10 +46,10 @@ interface MessageInputProps {
 	setUiMode?: (v: boolean) => void;
 }
 
-export const MessageInputRedesigned = forwardRef<
+export const MessageInputed = forwardRef<
 	HTMLTextAreaElement,
 	MessageInputProps
->(function MessageInputRedesigned(
+>(function MessageInputed(
 	{
 		input,
 		setInput,
@@ -306,4 +306,4 @@ export const MessageInputRedesigned = forwardRef<
 	);
 });
 
-MessageInputRedesigned.displayName = "MessageInputRedesigned";
+MessageInputed.displayName = "MessageInputed";

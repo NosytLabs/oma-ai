@@ -110,7 +110,7 @@ export const TypingBubble = () => (
 // REDESIGNED ChatMessage COMPONENT
 // ═══════════════════════════════════════════════════════════════════
 
-export const ChatMessageRedesigned = memo(function ChatMessageRedesigned({
+export const ChatMessageed = memo(function ChatMessageed({
 		msg,
 		loading,
 		onCopy,

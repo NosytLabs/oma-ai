@@ -15,6 +15,8 @@ Tooling for local development and operations.
 ./scripts/dev/start-dev.sh          # app + server
 ./scripts/dev/local-db-up.sh        # Postgres 16 + Redis
 ./scripts/dev/start-chrome-debug.sh # Chrome CDP for browser harness
+./scripts/dev/screenshot-audit.mjs  # full-page Playwright screenshots for visual review
+./scripts/dev/screenshot-audit2.mjs # chat-only screenshot variant (streamed page)
 ```
 
 ## Ops

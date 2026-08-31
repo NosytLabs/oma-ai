@@ -169,11 +169,18 @@ export default function AdminPage() {
 
 	if (!isAdmin) {
 		return (
-			<div className="flex min-h-[60vh] items-center justify-center p-4 text-center bg-void text-text">
-				<div>
-					<h2 className="text-2xl font-bold mb-2">404</h2>
-					<p className="text-text-muted">This page could not be found.</p>
-				</div>
+			<div className="mx-auto flex min-h-[60vh] max-w-5xl flex-col items-center justify-center gap-4 px-6 py-24 text-center">
+				<ShieldCheck className="h-10 w-10 text-text-muted" />
+				<h2 className="text-lg font-semibold text-text">Access denied</h2>
+				<p className="max-w-md text-sm text-text-secondary">
+					This dashboard is restricted to operators with an admin role.
+				</p>
+				<Link
+					href="/"
+					className="rounded-[var(--radius-md)] border border-border bg-surface px-4 py-2 font-mono text-xs uppercase tracking-wider text-text-secondary transition-colors hover:border-accent/50 hover:text-text-bright"
+				>
+					Back to home
+				</Link>
 			</div>
 		);
 	}

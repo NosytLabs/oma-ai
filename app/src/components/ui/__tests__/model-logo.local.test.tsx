@@ -66,16 +66,10 @@ describe("ModelLogo — locally-vendored dashboard-icons provider marks", () => 
 		expect(img?.getAttribute("src")).toBe("/logos/providers/grok.svg");
 	});
 
-	it("uses locally-vendored OpenAI tile for GPT-4o (real upstream is OpenAI)", () => {
-		const { container } = render(<ModelLogo modelId="gpt-4o" />);
+	it("uses locally-vendored OpenAI tile for GPT-5.6 Sol (real upstream is OpenAI)", () => {
+		const { container } = render(<ModelLogo modelId="openai-gpt-56-sol" />);
 		const img = container.querySelector("img") as HTMLImageElement | null;
 		expect(img?.getAttribute("src")).toBe("/logos/providers/openai.svg");
-	});
-
-	it("uses the real upstream qwen tile for Qwen3 235B (real upstream is Qwen)", () => {
-		const { container } = render(<ModelLogo modelId="qwen3-235b-a22b-openbroker" />);
-		const img = container.querySelector("img") as HTMLImageElement | null;
-		expect(img?.getAttribute("src")).toBe("/logos/providers/qwen.svg");
 	});
 
 	it("falls back to local tile for providers not in dashboard-icons (Mercury)", () => {

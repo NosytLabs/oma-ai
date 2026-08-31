@@ -97,7 +97,7 @@ export function railStatuses(
 			reason: cardPaused
 				? "Card checkout is paused by the operator."
 				: cardMissing
-					? "Polar checkout is not configured on the server."
+					? "Card payments are not yet enabled. Contact the operator to enable Polar checkout."
 					: null,
 		},
 		{

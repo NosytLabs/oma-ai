@@ -59,12 +59,16 @@ const tabContentVariants = {
 	* Inbox when none is supplied — call sites pass a Lucide icon that matches
 	* the data the user expected to see (Activity for usage, KeyRound for API
 	* keys, BarChart3 for charts/health).
+	*
+	* When `showChartSkeleton` is true, renders a mini chart placeholder below
+	* the description to give users a visual preview of what they'll see.
 	*/
 function EmptyState({
 	title,
 	description,
 	action,
 	icon: Icon = Inbox,
+	showChartSkeleton = false,
 }: {
 	title: string;
 	description: string;
@@ -72,6 +76,7 @@ function EmptyState({
 	// Loose type so any Lucide icon (which has a different forwardRef'd
 	// signature) is assignable here.
 	icon?: LucideIcon;
+	showChartSkeleton?: boolean;
 }) {
 	return (
 		<m.div
@@ -85,6 +90,22 @@ function EmptyState({
 			</div>
 			<h2 className="text-text-bright text-lg font-medium mb-2">{title}</h2>
 			<p className="text-text-secondary text-sm max-w-md mb-6">{description}</p>
+			{showChartSkeleton && (
+				<div className="w-full max-w-md mb-6 opacity-30">
+					<div className="rounded-[var(--radius-lg)] border border-border bg-surface/50 p-4">
+						<div className="flex items-center gap-2 mb-3">
+							<div className="h-3 w-20 bg-surface animate-pulse rounded" />
+							<div className="h-3 w-12 bg-surface animate-pulse rounded ml-auto" />
+						</div>
+						<div className="h-32 bg-surface animate-pulse rounded-[var(--radius-sm)]" />
+						<div className="flex items-center justify-between mt-2">
+							<div className="h-2 w-8 bg-surface animate-pulse rounded" />
+							<div className="h-2 w-8 bg-surface animate-pulse rounded" />
+							<div className="h-2 w-8 bg-surface animate-pulse rounded" />
+						</div>
+					</div>
+				</div>
+			)}
 			{action}
 		</m.div>
 	);
@@ -364,6 +385,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 								icon={Activity}
 								title="No usage data"
 								description="Start making API or chat requests — usage charts and request history will show up here."
+								showChartSkeleton={true}
 								action={
 									<Link
 										href="/chat"

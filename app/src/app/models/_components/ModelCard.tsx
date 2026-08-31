@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type React from "react";
+import { MessageSquare } from "lucide-react";
 import { InViewFade } from "@/components/motion/in-view-fade";
 import { ModelLogo } from "@/components/ui/model-logo";
 import {
@@ -18,6 +20,7 @@ interface ModelCardProps {
 export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 	if (!model?.id) return null;
 
+	const router = useRouter();
 	const providerStyle =
 		PROVIDER_COLORS[model.provider] ?? PROVIDER_COLORS.Venice;
 	const inModalities = model.inputModalities ?? ["text"];
@@ -38,7 +41,7 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 		nonTextInputs.length > 0 || nonTextOutputs.length > 0 || displayCaps.length > 0;
 
 	return (
-		<InViewFade key={model.id} delay={index * 0.05} spring>
+		<InViewFade key={model.id} delay={index * 0.05} spring eager>
 			<Link
 				href={`/models/${model.id}`}
 				className="group relative rounded-[var(--radius-xl)] border border-border bg-panel p-5 transition-transform duration-200 ease-out hover:border-accent/40 shadow-[var(--shadow-md)] active:scale-[0.97] h-full flex flex-col"
@@ -182,6 +185,28 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 						? `Price ${model.pricePerUnit.toFixed(model.pricePerUnit < 0.1 ? 4 : 3)}${model.priceUnit ?? ""}`
 						: `Input $${typeof model.inputPricePer1M === "number" ? model.inputPricePer1M.toFixed(model.inputPricePer1M < 0.01 ? 4 : 2) : "?"} per 1M tokens, output $${typeof model.outputPricePer1M === "number" ? model.outputPricePer1M.toFixed(model.outputPricePer1M < 0.01 ? 4 : 2) : "?"} per 1M tokens`}
 				</span>
+				<div className="mt-3">
+					<span
+						role="link"
+						tabIndex={0}
+						onClick={(e) => {
+							e.preventDefault();
+							e.stopPropagation();
+							router.push(`/chat?model=${model.id}`);
+						}}
+						onKeyDown={(e) => {
+							if (e.key === "Enter" || e.key === " ") {
+								e.preventDefault();
+								e.stopPropagation();
+								router.push(`/chat?model=${model.id}`);
+							}
+						}}
+						className="inline-flex items-center gap-1.5 text-[11px] font-mono font-semibold uppercase tracking-wider text-accent/70 hover:text-accent transition-colors duration-200 ease-out cursor-pointer"
+					>
+						<MessageSquare className="h-3 w-3" aria-hidden="true" />
+						Try in chat
+					</span>
+				</div>
 			</Link>
 		</InViewFade>
 	);

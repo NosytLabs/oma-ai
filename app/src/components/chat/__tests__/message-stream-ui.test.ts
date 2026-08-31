@@ -1,6 +1,6 @@
 /**
 	* Locks the shipped stream-UI contract in message-stream-ui.ts
-	* (used by ChatMessageRedesign): no infinite THINKING… while reasoning
+	* (used by ChatMessage): no infinite THINKING… while reasoning
 	* tokens are already flowing; expand reasoning when answer body is empty.
 	*/
 import { describe, expect, it } from "vitest";
@@ -9,7 +9,7 @@ import {
 	shouldExpandReasoning,
 } from "../message-stream-ui";
 
-describe("message-stream-ui (shipped ChatMessageRedesign helpers)", () => {
+describe("message-stream-ui (shipped ChatMessage helpers)", () => {
 	it("shows Thinking… only when streaming with no content and no reasoning", () => {
 		expect(
 			isWaitingForFirstToken({ streaming: true, content: "", reasoning: "" }),

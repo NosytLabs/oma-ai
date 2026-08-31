@@ -3,8 +3,8 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { MODEL_COUNT } from "@/lib/models-data";
 import { FloatingIcons } from "@/components/floating-icons";
-import { InViewFade } from "@/components/motion/in-view-fade";
 import { BreadcrumbListJsonLd, FAQPageJsonLd } from "@/components/json-ld";
+import { FAQContent } from "./_components/FAQContent";
 
 export const metadata: Metadata = {
 	title: "FAQ — Questions answered in plain language",
@@ -152,62 +152,6 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 	},
 ];
 
-/**
-	* Renders FAQ answer prose with safe inline links.
-	*
-	* Only known internal site routes become links. Everything else that
-	* looks like a path (API endpoints like /v1/chat/completions, files
-	* like /agent-skill.md, /.well-known/agent-card.json) renders as inline
-	* code instead of a broken link.
-	*/
-const FAQ_LINK_ROUTES = new Set([
-	"/chat",
-	"/contact",
-	"/deposit",
-	"/docs",
-	"/docs#x402",
-	"/docs#quickstart",
-	"/getting-started",
-	"/glossary",
-	"/models",
-	"/pricing",
-	"/privacy",
-]);
-
-// Matches path-like tokens: /v1/chat/completions, /agent-skill.md,
-// /.well-known/agent-card.json, /docs#x402, /chat
-const PATH_TOKEN_RE =
-	/(\/[a-z0-9-]+(?:\.[a-z0-9-]+)?(?:#[a-z0-9-]+)?(?:\/[a-z0-9-]+(?:\.[a-z0-9-]+)?)*)/g;
-
-function AnswerText({ text }: { text: string }) {
-	return (
-		<>
-			{text.split(PATH_TOKEN_RE).map((part, i) => {
-				if (!part.startsWith("/")) return part;
-				if (FAQ_LINK_ROUTES.has(part)) {
-					return (
-						<Link
-							key={i}
-							href={part}
-							className="text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent"
-						>
-							{part}
-						</Link>
-					);
-				}
-				return (
-					<code
-						key={i}
-						className="rounded-[var(--radius-sm)] bg-surface px-1 py-0.5 font-mono text-[0.85em] text-text-secondary"
-					>
-						{part}
-					</code>
-				);
-			})}
-		</>
-	);
-}
-
 export default function FAQPage() {
 	const questions = FAQ_GROUPS.flatMap((g) =>
 		g.items.map((item) => ({ question: item.q, answer: item.a })),
@@ -239,37 +183,8 @@ export default function FAQPage() {
 					<Link href="/glossary" className="text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent">glossary</Link>.
 				</p>
 
-				<div className="mt-10 space-y-10">
-					{FAQ_GROUPS.map((group, gi) => (
-						<InViewFade key={group.heading} delay={Math.min(gi * 0.05, 0.25)}>
-							<section aria-labelledby={group.heading.replace(/\W+/g, "-").toLowerCase()}>
-							<h2
-								id={group.heading.replace(/\W+/g, "-").toLowerCase()}
-								className="section-eyebrow-caps mb-4"
-							>
-								{group.heading}
-							</h2>
-							<div className="space-y-3">
-								{group.items.map((item) => (
-									<details
-										key={item.q}
-										className="group border border-border bg-surface/60 hover:border-accent/30 transition-colors duration-200 ease-out rounded-[var(--radius-lg)] overflow-hidden"
-									>
-										<summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 text-sm font-medium text-text-bright hover:text-accent transition-colors duration-200 ease-out [&::-webkit-details-marker]:hidden">
-											{item.q}
-											<span className="shrink-0 text-text-muted transition-transform duration-200 group-open:rotate-45 text-lg leading-none" aria-hidden="true">
-												+
-											</span>
-										</summary>
-									<div className="px-4 pb-4 text-sm leading-relaxed text-text-secondary">
-										<AnswerText text={item.a} />
-									</div>
-									</details>
-								))}
-							</div>
-						</section>
-						</InViewFade>
-					))}
+				<div className="mt-10">
+					<FAQContent groups={FAQ_GROUPS} />
 				</div>
 
 				<div className="mt-12 rounded-[var(--radius-lg)] border border-accent/25 bg-accent/5 p-5 text-sm text-text-secondary">

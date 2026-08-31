@@ -1,3 +1,4 @@
+import { MODEL_NAME_OVERRIDES, MODELS, type Model } from "@/lib/models-data"
 import type { UsageRecord } from "@/lib/api"
 
 export interface UsageByDay {
@@ -26,6 +27,39 @@ function localDayKey(iso: string): string {
 	return `${y}-${m}-${day}`
 }
 
+// Resolve a usage record's raw model id into the customer-facing display
+// name. UsageRecord.model is the upstream API id (e.g. "openai-gpt-56-sol"),
+// which looks technical in the donut legend and Recent activity rows. We
+// look it up in the static SSR catalog first (fast, covers everything in
+// MODELS); on miss we fall back to the id slug so the chart never shows
+// "undefined" or an empty label.
+const MODEL_NAME_BY_ID: Map<string, string> = (() => {
+	const m = new Map<string, string>()
+	for (const entry of MODELS as readonly Model[]) {
+		m.set(entry.id, entry.name)
+		m.set(entry.modelId, entry.name)
+	}
+	return m
+})()
+
+export function resolveModelDisplayName(id: string | undefined | null): string {
+	if (!id) return "Unknown model"
+	const trimmed = id.trim()
+	if (!trimmed) return "Unknown model"
+	const override = MODEL_NAME_OVERRIDES[trimmed.toLowerCase()]
+	if (override) return override
+	const fromCatalog = MODEL_NAME_BY_ID.get(trimmed)
+	if (fromCatalog) return fromCatalog
+	// Last-resort prettifier: "openai-gpt-56-sol" → "Openai Gpt 56 Sol".
+	// The catalog covers the curated 22, so this only fires for stale
+	// server data (e.g. a model was retired but usage logs lag behind).
+	return trimmed
+		.split(/[-_]/)
+		.map((part) => (part ? part.charAt(0).toUpperCase() + part.slice(1) : ""))
+		.filter(Boolean)
+		.join(" ")
+}
+
 /** Aggregates usage records into per-day totals for the requests/cost chart. */
 export function buildUsageByDay(usage: UsageRecord[]): UsageByDay[] {
 	const byDay = new Map<string, UsageByDay>()
@@ -46,10 +80,11 @@ export function buildUsageByDay(usage: UsageRecord[]): UsageByDay[] {
 export function buildTopModels(usage: UsageRecord[]): ModelSlice[] {
 	const byModel = new Map<string, { name: string; value: number; cost: number }>()
 	for (const r of usage) {
-		const prev = byModel.get(r.model) ?? { name: r.model, value: 0, cost: 0 }
+		const displayName = resolveModelDisplayName(r.model)
+		const prev = byModel.get(displayName) ?? { name: displayName, value: 0, cost: 0 }
 		prev.value += 1
 		prev.cost += Number(r.totalCents ?? "0") / 100
-		byModel.set(r.model, prev)
+		byModel.set(displayName, prev)
 	}
 	// Sort by cost (not request count) so the "expensive" models surface
 	// first — matches the chart title "Top models by cost" semantics.

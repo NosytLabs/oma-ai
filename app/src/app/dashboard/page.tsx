@@ -1,13 +1,12 @@
 "use client";
 
-
-
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
 import nextDynamic from "next/dynamic";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ErrorBoundary } from "@/components/error-boundary";
+import { UnauthCallout } from "@/components/shared/UnauthCallout";
 import { useToast } from "@/components/ui/Toast";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { type ApiKey, type ApiKeyWithSecret, api } from "@/lib/api";
@@ -253,34 +252,7 @@ function DashboardPageInner() {
 	const content = !isReady && !isDemoView ? (
 		<AuthGateSkeleton />
 	) : !isAuthenticated && !isDemoView ? (
-		<div className="flex min-h-full flex-col items-center justify-center gap-6 px-4 py-16">
-			<h2 className="sr-only">Dashboard</h2>
-			<div className="surface-card w-full max-w-md p-8 text-center">
-				<p className="font-mono text-xs uppercase tracking-widest text-accent">
-					Sign in required
-				</p>
-				<h1 className="mt-2 text-2xl font-bold tracking-tight text-text-bright">
-					Keys, usage, credits
-				</h1>
-				<p className="mt-2 text-sm text-text-secondary">
-					Sign in to manage API keys, see live credit balance, and review inference usage.
-				</p>
-				<div className="mt-6 flex flex-col items-center justify-center gap-2 sm:flex-row">
-					<Link
-						href="/login?next=/dashboard"
-						className="btn-mono btn-primary"
-					>
-						Sign in
-					</Link>
-					<Link
-						href="/deposit"
-						className="btn-mono"
-					>
-						Deposit USDC
-					</Link>
-				</div>
-			</div>
-		</div>
+		<UnauthCallout variant="dashboard" />
 	) : (
 		<div>
 			<div
@@ -335,7 +307,7 @@ function DashboardPageInner() {
 						</Link>
 					</div>
 				)}
-				<div className="p-4 md:p-8 pt-4">
+				<div className="mx-auto w-full max-w-7xl p-4 md:p-8 pt-4">
 					<DashboardHeader
 						loading={loading}
 						modelsAvailable={models.length}

@@ -31,7 +31,7 @@ import type { BalanceResponse } from "@/lib/api";
 
 const LazyModelSelector = dynamic(
 	() =>
-		import("@/components/chat/ModelSelectorRedesign").then(
+		import("@/components/chat/ModelSelector").then(
 			(mod) => mod.ModelSelector,
 		),
 	{ ssr: false, loading: () => <Skeleton className="h-8 w-40" /> },

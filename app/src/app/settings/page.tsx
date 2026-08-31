@@ -10,13 +10,14 @@ import {
 	User as UserIcon,
 	X,
 } from "lucide-react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { springs } from "@/lib/animation";
 import { api } from "@/lib/api";
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { useAuth } from "@/lib/hooks/useAuth";
+import { UnauthCallout } from "@/components/shared/UnauthCallout";
 import { AppearanceSection } from "./_components/AppearanceSection";
 import { DangerZoneSection } from "./_components/DangerZoneSection";
 import { PrivacySection } from "./_components/PrivacySection";
@@ -96,6 +97,7 @@ function SettingsPageContent() {
 	const hasRealSession = isAuthenticated && !isDemo;
 	const router = useRouter();
 	const searchParams = useSearchParams();
+	const isDemoView = searchParams?.get("demo") === "1" || isDemo;
 
 	const [error, setError] = useState<string | null>(null);
 	const sessionsQuery = useQuery({
@@ -110,6 +112,20 @@ function SettingsPageContent() {
 	const [deleting, setDeleting] = useState(false);
 	const [loggingOut, setLoggingOut] = useState(false);
 	const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
+
+	// Demo tour user mock for settings preview
+	const demoUser = isDemoView
+		? {
+				id: "demo-user-001",
+				name: "Demo User",
+				email: "demo@example.com",
+				emailVerified: true,
+				isAnonymous: false,
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
+			}
+		: null;
+	const displayUser = isDemoView ? demoUser : user;
 
 	// Deep-link: /settings?tab=*
 	// API keys used to live here — they now live on the Dashboard, so the
@@ -186,91 +202,54 @@ function SettingsPageContent() {
 		}
 	};
 
-	if (!isReady) {
+	if (!isReady && !isDemoView) {
 		// Match SettingsFallback so the layout does not flash an empty shell
 		// while Better Auth resolves the session (or times out).
 		return <SettingsFallback />;
 	}
 
-	if (!hasRealSession) {
-		return (
-			<div className="flex min-h-full items-center justify-center px-4 py-10">
-				<m.div
-					initial={{ opacity: 0, y: 20 }}
-					animate={{ opacity: 1, y: 0 }}
-					className="w-full max-w-xl"
-				>
-					<m.div
-						className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-accent)]/20 bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)]"
-						whileHover={{ scale: 1.05 }}
-						transition={springs.tab}
-					>
-						<UserIcon className="h-7 w-7 text-[var(--color-accent)]" />
-					</m.div>
-					<h2 className="mb-2 text-center text-xl font-bold tracking-tight text-text-bright">
-										Sign in to manage your account
-									</h2>
-					<p className="mb-6 text-center text-sm text-text-secondary">
-						Settings covers your profile, theme, sessions, and data controls.
-					</p>
-
-					<ul className="mb-6 grid grid-cols-1 gap-2 text-left sm:grid-cols-2">
-						{TABS.slice(0, 4).map(({ icon: Icon, label, description }) => (
-							<li
-								key={label}
-								className="flex items-start gap-2 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)]/50 px-3 py-2 text-xs transition-[border-color,background-color] hover:bg-[var(--color-surface)]"
-							>
-								<Icon
-									className="mt-0.5 h-3.5 w-3.5 shrink-0 text-text-muted"
-									aria-hidden="true"
-								/>
-								<div>
-									<div className="font-medium text-text">{label}</div>
-									<div className="text-text-muted">{description}</div>
-								</div>
-							</li>
-						))}
-					</ul>
-
-					<div className="flex flex-col items-center justify-center gap-2">
-						<Link
-							href="/login?next=/settings"
-							className="btn-mono btn-primary"
-							aria-label="Sign in to manage your account"
-							>
-							Sign in
-							</Link>
-					</div>
-					{evmAddress && (
-						<p className="mt-4 text-center text-[10px] font-mono text-text-muted">
-							Connected wallet: {evmAddress}
-						</p>
-					)}
-				</m.div>
-			</div>
-		);
+	if (!hasRealSession && !isDemoView) {
+		return <UnauthCallout variant="settings" evmAddress={evmAddress ?? undefined} />;
 	}
 
 	return (
 		<div className="container-page max-w-5xl py-6 sm:py-8">
+			{isDemoView && (
+				<div
+					role="status"
+					className="flex flex-wrap items-center justify-between gap-3 border-b border-accent/25 bg-accent/10 px-4 py-2 text-[11px] font-mono text-accent mb-6 rounded-[var(--radius-md)]"
+				>
+					<span className="uppercase tracking-wider">
+						Demo tour · preview settings (read-only)
+					</span>
+					<Link
+						href="/login?next=/settings"
+						className="shrink-0 rounded-[var(--radius-sm)] bg-accent px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-void hover:bg-accent-bright"
+					>
+						Sign in for real settings
+					</Link>
+				</div>
+			)}
 			<div className="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
 				<m.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
 					<h1 className="h1-utility text-text-bright">
 						Settings
 					</h1>
 					<p className="mt-1 text-sm text-text-muted">
-						{loading
-							? "Syncing…"
-							: error
-								? "Some sections may be stale"
-								: "Up to date"}
+						{isDemoView
+							? "Demo mode · preview only"
+							: loading
+								? "Syncing…"
+								: error
+									? "Some sections may be stale"
+									: "Up to date"}
 					</p>
 				</m.div>
 				<button
 					type="button"
 					onClick={handleLogout}
 					disabled={loggingOut}
-					className="inline-flex min-h-11 w-fit items-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-void)] px-3 py-1.5 text-xs font-medium text-text-muted transition-[border-color,background-color,color,opacity,transform] duration-200 ease-out hover:border-[var(--color-error)]/40 hover:bg-[color-mix(in_srgb,var(--color-error)_10%,transparent)] hover:text-[var(--color-error)] active:scale-[0.97] disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-error)] focus-visible:ring-offset-2 focus-visible:ring-offset-void"
+					className="inline-flex min-h-11 w-fit items-center gap-1.5 rounded-[var(--radius-sm)] border border-border bg-void px-3 py-1.5 text-xs font-medium text-text-muted transition-[border-color,background-color,color,opacity,transform] duration-200 ease-out hover:border-error/40 hover:bg-error/10 hover:text-error active:scale-[0.97] disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error focus-visible:ring-offset-2 focus-visible:ring-offset-void"
 				>
 					{loggingOut ? "Signing out…" : "Sign out"}
 				</button>
@@ -284,15 +263,15 @@ function SettingsPageContent() {
 						exit={{ opacity: 0, height: 0 }}
 						role="alert"
 						aria-live="assertive"
-						className="mb-6 flex items-center gap-3 rounded-[var(--radius-md)] border border-[var(--color-error)]/30 bg-[color-mix(in_srgb,var(--color-error)_10%,transparent)] px-4 py-3 shadow-[0_4px_24px_-10px_rgba(248,113,113,0.3)]"
+						className="mb-6 flex items-center gap-3 rounded-[var(--radius-md)] border border-error/30 bg-error/10 px-4 py-3 shadow-[0_4px_24px_-10px_rgba(248,113,113,0.3)]"
 					>
-						<AlertTriangle className="h-4 w-4 shrink-0 text-[var(--color-error)]" />
+						<AlertTriangle className="h-4 w-4 shrink-0 text-error" />
 						<span className="text-sm text-text-primary">{error}</span>
 						<button
 							type="button"
 							onClick={() => setError(null)}
 							aria-label="Dismiss error"
-							className="ml-auto rounded-full p-1.5 text-text-secondary hover:bg-[var(--color-error)]/20 hover:text-[var(--color-error)] transition-[color,background-color,transform] duration-200 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-error)] focus-visible:ring-offset-2 focus-visible:ring-offset-void"
+							className="ml-auto rounded-full p-1.5 text-text-secondary hover:bg-error/20 hover:text-error transition-[color,background-color,transform] duration-200 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error focus-visible:ring-offset-2 focus-visible:ring-offset-void"
 						>
 							<X className="h-3.5 w-3.5" />
 						</button>
@@ -352,22 +331,22 @@ function SettingsPageContent() {
 										setActiveTab(tab.id);
 										router.replace(`/settings?tab=${tab.id}`, { scroll: false });
 									}}
-									className={`group flex min-w-[4.5rem] flex-col items-center justify-center gap-0.5 rounded-[var(--radius-md)] border px-2 py-2 text-center text-[11px] transition-[border-color,background-color,color,transform] duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] active:scale-[0.97] sm:min-w-0 sm:text-xs lg:w-full lg:flex-row lg:items-center lg:justify-start lg:gap-3 lg:px-3 lg:py-2.5 lg:text-left lg:text-sm ${
-										isDanger
-											? isActive
-												? "border-[var(--color-error)]/40 bg-[color-mix(in_srgb,var(--color-error)_10%,transparent)] text-[var(--color-error)] shadow-[0_0_15px_-5px_var(--color-error-glow)]"
-												: "border-transparent text-text-secondary hover:border-[var(--color-error)]/30 hover:bg-[color-mix(in_srgb,var(--color-error)_10%,transparent)] hover:text-[var(--color-error)]"
-											: isActive
-												? "border-[var(--color-accent)]/30 bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)] text-text-bright shadow-[0_0_15px_-5px_var(--color-accent-glow)]"
-												: "border-transparent text-text-secondary hover:border-[var(--color-border)] hover:bg-[var(--color-surface)]/50 hover:text-text-bright"
-									}`}
+								className={`group flex min-w-[4.5rem] flex-col items-center justify-center gap-0.5 rounded-[var(--radius-md)] border px-2 py-2 text-center text-[11px] transition-[border-color,background-color,color,transform] duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.97] sm:min-w-0 sm:text-xs lg:w-full lg:flex-row lg:items-center lg:justify-start lg:gap-3 lg:px-3 lg:py-2.5 lg:text-left lg:text-sm ${
+									isDanger
+										? isActive
+											? "border-error/40 bg-error/10 text-error shadow-[0_0_15px_-5px_var(--color-error-glow)]"
+											: "border-transparent text-text-secondary hover:border-error/30 hover:bg-error/10 hover:text-error"
+										: isActive
+											? "border-accent/30 bg-accent/10 text-text-bright shadow-[0_0_15px_-5px_var(--color-accent-glow)]"
+											: "border-transparent text-text-secondary hover:border-border hover:bg-surface/50 hover:text-text-bright"
+								}`}
 								>
 									<Icon
 										className={`h-4 w-4 shrink-0 ${
 											isDanger
-												? "text-[var(--color-error)]"
+												? "text-error"
 												: isActive
-													? "text-[var(--color-accent)]"
+													? "text-accent"
 													: "text-text-muted"
 										}`}
 										aria-hidden="true"
@@ -402,7 +381,7 @@ function SettingsPageContent() {
 				</div>
 
 				<div className="min-w-0">
-					{loading && !user ? (
+					{loading && !user && !isDemoView ? (
 						<div className="space-y-3" aria-busy="true">
 							<div className="h-6 w-32 bg-surface animate-pulse" />
 							<div className="h-4 w-64 bg-surface animate-pulse" />
@@ -425,18 +404,18 @@ function SettingsPageContent() {
 								transition={springs.tab}
 							>
 								{activeTab === "profile" && (
-									<ProfileSection user={user} evmAddress={evmAddress} />
+									<ProfileSection user={displayUser} evmAddress={isDemoView ? "0x1234...5678" : evmAddress} />
 								)}
 								{activeTab === "appearance" && <AppearanceSection />}
 								{activeTab === "sessions" && (
 									<SessionsSection
-										sessions={sessions}
+										sessions={isDemoView ? [{ id: "demo-session", userAgent: "Chrome on macOS", createdAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 86400000).toISOString(), ipAddress: "127.0.0.1", isCurrent: true }] : sessions}
 										onSignOutCurrent={handleLogout}
 										onRevokeSession={handleRevokeSession}
 										onRevokeOthers={handleRevokeOtherSessions}
 									/>
 								)}
-								{activeTab === "privacy" && <PrivacySection user={user} />}
+								{activeTab === "privacy" && <PrivacySection user={displayUser} />}
 								{activeTab === "danger" && (
 									<DangerZoneSection
 										onDeleteAccount={handleDeleteAccount}

@@ -13,6 +13,8 @@ async function assertNoHorizontalOverflow(page: Page) {
   expect(overflow, "page must not overflow horizontally").toBeLessThanOrEqual(0);
 }
 
+const AUTH_GATED = new Set(["/dashboard", "/settings", "/deposit", "/admin"]);
+
 const PAGES = [
   "/",
   "/models",
@@ -39,8 +41,9 @@ for (const vp of VIEWPORTS) {
 
     for (const path of PAGES) {
       test(`${vp.name} · ${path} has no horizontal overflow`, async ({ page }) => {
-        await page.goto(path, { waitUntil: "networkidle" });
-        await page.waitForTimeout(800);
+        const waitUntil = (path === "/chat" || AUTH_GATED.has(path)) ? "load" : "networkidle";
+        await page.goto(path, { waitUntil });
+        await page.waitForTimeout(1200);
         await assertNoHorizontalOverflow(page);
       });
     }

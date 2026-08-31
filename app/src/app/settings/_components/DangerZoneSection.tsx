@@ -65,7 +65,7 @@ export function DangerZoneSection({
 	return (
 		<div>
 			<div className="mb-4">
-				<h2 className="text-lg font-semibold text-[var(--color-error)]">
+				<h2 className="text-lg font-semibold text-error">
 					Danger zone
 				</h2>
 				<p className="mt-1 text-sm text-text-muted">
@@ -73,7 +73,7 @@ export function DangerZoneSection({
 				</p>
 			</div>
 
-			<div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)]/30 p-5">
+			<div className="rounded-[var(--radius-md)] border border-border bg-surface/30 p-5">
 				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 					<div className="min-w-0">
 						<h3 className="text-sm font-semibold text-text-bright">
@@ -86,7 +86,7 @@ export function DangerZoneSection({
 					</div>
 					<Link
 						href="/settings?tab=privacy"
-						className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-xs font-semibold text-text-secondary transition-[background-color,border-color,color,transform] duration-200 ease-out hover:border-accent/40 hover:text-text-bright active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+						className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-[var(--radius-md)] border border-border bg-surface px-4 text-xs font-semibold text-text-secondary transition-[background-color,border-color,color,transform] duration-200 ease-out hover:border-accent/40 hover:text-text-bright active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 					>
 						<Download className="h-3.5 w-3.5" aria-hidden="true" />
 						Go to data export
@@ -95,9 +95,9 @@ export function DangerZoneSection({
 			</div>
 
 			{/* Wipe History */}
-			<div className="mt-6 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)]/30 p-5 transition-colors duration-200 ease-out hover:border-[var(--color-accent)]/30">
+			<div className="mt-6 rounded-[var(--radius-md)] border border-border bg-surface/30 p-5 transition-colors duration-200 ease-out hover:border-accent/30">
 				<div className="flex items-start gap-4">
-					<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-elevated)]">
+					<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)] border border-border bg-surface-elevated">
 						<History
 							className="h-5 w-5 text-text-secondary"
 							aria-hidden="true"
@@ -122,7 +122,7 @@ export function DangerZoneSection({
 									exit={{ opacity: 0 }}
 									whileTap={{ scale: 0.98 }}
 									onClick={() => setShowClearConfirm(true)}
-									className="mt-4 inline-flex min-h-11 items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2 text-xs font-semibold text-text-secondary transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:border-[var(--color-accent)]/40 hover:bg-[var(--color-surface-elevated)] hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+									className="mt-4 inline-flex min-h-11 items-center gap-1.5 rounded-[var(--radius-md)] border border-border bg-surface px-4 py-2 text-xs font-semibold text-text-secondary transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:border-accent/40 hover:bg-surface-elevated hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 								>
 									<History className="h-3.5 w-3.5" aria-hidden="true" />
 									Clear usage history
@@ -133,11 +133,11 @@ export function DangerZoneSection({
 									initial={{ opacity: 0, scale: 0.98 }}
 									animate={{ opacity: 1, scale: 1 }}
 									exit={{ opacity: 0, scale: 0.98 }}
-									className="mt-4 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-elevated)] p-4"
+									className="mt-4 rounded-[var(--radius-md)] border border-border bg-surface-elevated p-4"
 								>
 									<div className="mb-3 flex items-center gap-2">
 										<AlertTriangle
-											className="h-4 w-4 text-[var(--color-accent)]"
+											className="h-4 w-4 text-accent"
 											aria-hidden="true"
 										/>
 										<span className="text-sm font-semibold text-text-bright">
@@ -154,7 +154,7 @@ export function DangerZoneSection({
 											type="button"
 											onClick={handleClearHistory}
 											disabled={clearing}
-											className="inline-flex items-center justify-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-accent)] bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)] px-4 py-2 text-xs font-semibold text-[var(--color-accent)] transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-[color-mix(in_srgb,var(--color-accent)_20%,transparent)] active:scale-[0.97] disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+											className="inline-flex items-center justify-center gap-2 rounded-[var(--radius-md)] border border-accent bg-accent/10 px-4 py-2 text-xs font-semibold text-accent transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-accent/20 active:scale-[0.97] disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 										>
 											{clearing ? (
 												<>
@@ -175,7 +175,7 @@ export function DangerZoneSection({
 											type="button"
 											onClick={() => setShowClearConfirm(false)}
 											disabled={clearing}
-											className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2 text-xs font-semibold text-text-primary transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-[var(--color-surface-elevated)] active:scale-[0.97] disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+											className="rounded-[var(--radius-md)] border border-border bg-surface px-4 py-2 text-xs font-semibold text-text-primary transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-surface-elevated active:scale-[0.97] disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 										>
 											Cancel
 										</button>
@@ -188,16 +188,16 @@ export function DangerZoneSection({
 			</div>
 
 			{/* Delete account */}
-			<div className="mt-6 rounded-[var(--radius-md)] border border-[var(--color-danger)]/30 bg-[color-mix(in_srgb,var(--color-danger)_5%,transparent)] p-5 transition-colors duration-200 ease-out hover:border-[var(--color-danger)]/50 hover:bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)]">
+			<div className="mt-6 rounded-[var(--radius-md)] border border-danger/30 bg-danger/5 p-5 transition-colors duration-200 ease-out hover:border-danger/50 hover:bg-danger/10">
 				<div className="flex items-start gap-4">
-					<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-danger)]/30 bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)]">
+					<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)] border border-danger/30 bg-danger/10">
 						<AlertTriangle
-							className="h-5 w-5 text-[var(--color-danger)]"
+							className="h-5 w-5 text-danger"
 							aria-hidden="true"
 						/>
 					</div>
 					<div className="min-w-0 flex-1">
-						<h3 className="text-sm font-semibold text-[var(--color-error)]">
+						<h3 className="text-sm font-semibold text-error">
 							Delete account
 						</h3>
 						<p className="mt-1 text-xs text-text-muted">
@@ -220,7 +220,7 @@ export function DangerZoneSection({
 									exit={{ opacity: 0 }}
 									whileTap={{ scale: 0.98 }}
 									onClick={() => setShowConfirm(true)}
-									className="mt-4 inline-flex min-h-11 items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--color-danger)]/40 bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)] px-4 py-2 text-xs font-semibold text-[var(--color-danger)] transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-[color-mix(in_srgb,var(--color-danger)_20%,transparent)] hover:border-[var(--color-danger)]/60 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-danger)]"
+									className="mt-4 inline-flex min-h-11 items-center gap-1.5 rounded-[var(--radius-md)] border border-danger/40 bg-danger/10 px-4 py-2 text-xs font-semibold text-danger transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-danger/20 hover:border-danger/60 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger"
 								>
 									<Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
 									Delete account
@@ -231,20 +231,20 @@ export function DangerZoneSection({
 									initial={{ opacity: 0, scale: 0.98 }}
 									animate={{ opacity: 1, scale: 1 }}
 									exit={{ opacity: 0, scale: 0.98 }}
-									className="mt-4 rounded-[var(--radius-md)] border border-[var(--color-error)]/40 bg-[color-mix(in_srgb,var(--color-error)_10%,transparent)] p-5"
+									className="mt-4 rounded-[var(--radius-md)] border border-error/40 bg-error/10 p-5"
 								>
 									<div className="mb-3 flex items-center gap-2">
 										<AlertTriangle
-											className="h-4 w-4 text-[var(--color-error)]"
+											className="h-4 w-4 text-error"
 											aria-hidden="true"
 										/>
-										<span className="text-sm font-semibold text-[var(--color-error)]">
+										<span className="text-sm font-semibold text-error">
 											Final confirmation
 										</span>
 									</div>
 									<p className="mb-3 text-xs text-text-secondary">
 										Type{" "}
-										<code className="rounded-[var(--radius-sm)] bg-[var(--color-void)] px-1.5 py-0.5 font-mono text-[var(--color-error)] border border-[var(--color-error)]/30">
+										<code className="rounded-[var(--radius-sm)] bg-void px-1.5 py-0.5 font-mono text-error border border-error/30">
 											DELETE
 										</code>
 										{" "}
@@ -261,7 +261,7 @@ export function DangerZoneSection({
 										aria-label="Confirm by typing DELETE"
 										autoComplete="off"
 										autoFocus
-										className="mb-4 w-full rounded-[var(--radius-md)] border border-[var(--color-error)]/30 bg-[var(--color-void)] px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-[var(--color-error)] focus:outline-none focus:ring-2 focus:ring-[var(--color-error)]/50 transition-shadow"
+										className="mb-4 w-full rounded-[var(--radius-md)] border border-error/30 bg-void px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-error focus:outline-none focus:ring-2 focus:ring-error/50 transition-shadow"
 										disabled={deleting}
 									/>
 									<div className="flex flex-wrap gap-3">
@@ -269,7 +269,7 @@ export function DangerZoneSection({
 											type="button"
 											onClick={handleConfirmDelete}
 											disabled={deleting || confirmText !== "DELETE"}
-											className="inline-flex items-center justify-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-error)] bg-[var(--color-error)] px-4 py-2 text-xs font-semibold text-text-inverse disabled:cursor-not-allowed disabled:opacity-40 transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-[color-mix(in_srgb,var(--color-error)_90%,transparent)] active:scale-[0.97]"
+											className="inline-flex items-center justify-center gap-2 rounded-[var(--radius-md)] border border-error bg-error px-4 py-2 text-xs font-semibold text-text-inverse disabled:cursor-not-allowed disabled:opacity-40 transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-error/90 active:scale-[0.97]"
 										>
 											{deleting ? (
 												<>
@@ -293,7 +293,7 @@ export function DangerZoneSection({
 												setConfirmText("");
 											}}
 											disabled={deleting}
-											className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2 text-xs font-semibold text-text-primary transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-[var(--color-surface-elevated)] active:scale-[0.97] disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border)]"
+											className="rounded-[var(--radius-md)] border border-border bg-surface px-4 py-2 text-xs font-semibold text-text-primary transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-surface-elevated active:scale-[0.97] disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border)]"
 										>
 											Cancel
 										</button>

@@ -50,7 +50,7 @@ describe("free-tier copy accuracy", () => {
 	});
 
 	it("WelcomeBanner tip names free guest models, not paid Venice flags", () => {
-		const src = readApp("components/chat/WelcomeBannerRedesign.tsx");
+		const src = readApp("components/chat/WelcomeBanner.tsx");
 		expect(src).toMatch(/free OMA-AI model|no card required/i);
 		expect(src).not.toMatch(/GPT-4o.*free/i);
 		expect(src).not.toMatch(/GLM 5\.1.*free/i);

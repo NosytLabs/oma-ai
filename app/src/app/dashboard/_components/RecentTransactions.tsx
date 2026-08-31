@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import type { CreditTransaction } from "@/lib/api";
+import { resolveModelDisplayName } from "@/lib/dashboard-aggregate";
 import { formatTime, toDollars } from "@/lib/utils";
 
 interface RecentTransactionsProps {
@@ -22,10 +23,10 @@ const TX_ICONS: Record<string, typeof ArrowDownLeft> = {
 	refund: RotateCcw,
 };
 
-const TX_ICONS_BY_TYPE_COLOR: Record<string, string> = {
-	deposit: "text-success",
-	usage: "text-warning",
-	refund: "text-accent",
+const TX_ICON_STYLES: Record<string, { text: string; hoverBorder: string }> = {
+	deposit: { text: "text-success", hoverBorder: "group-hover:border-success/30" },
+	usage: { text: "text-warning", hoverBorder: "group-hover:border-warning/30" },
+	refund: { text: "text-accent", hoverBorder: "group-hover:border-accent/30" },
 };
 
 const TX_LABELS: Record<string, string> = {
@@ -87,10 +88,10 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
 			) : (
 				<div className="mt-5 border border-border/50 rounded-[var(--radius-md)] overflow-hidden bg-void shadow-sm">
 					{sorted.slice(0, 5).map((tx) => {
-						const Icon = TX_ICONS[tx.type] ?? ArrowDownLeft;
-						const iconClass =
-							TX_ICONS_BY_TYPE_COLOR[tx.type] ?? "text-text-muted";
-						const label = TX_LABELS[tx.type] ?? tx.type;
+					const Icon = TX_ICONS[tx.type] ?? ArrowDownLeft;
+					const iconStyle =
+						TX_ICON_STYLES[tx.type] ?? { text: "text-text-muted", hoverBorder: "" };
+					const label = TX_LABELS[tx.type] ?? tx.type;
 						// Sign comes from the actual amount, not the type — a refund shows
 						// as +$X (money back in), a negative usage as -$X.
 						const isCredit = tx.amountCents > 0;
@@ -104,9 +105,9 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
 								className="group flex flex-col sm:flex-row sm:items-center justify-between p-3.5 border-b border-border/40 last:border-0 hover:bg-surface/50 transition-colors duration-200 ease-out"
 							>
 								<div className="flex items-center gap-4 mb-2 sm:mb-0">
-									<div
-										className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-sm)] border border-border bg-surface shadow-sm transition-colors duration-200 ease-out group-hover:border-${iconClass.split('-')[1]}/30 ${iconClass}`}
-									>
+								<div
+									className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-sm)] border border-border bg-surface shadow-sm transition-colors duration-200 ease-out ${iconStyle.hoverBorder} ${iconStyle.text}`}
+								>
 										<Icon className="h-4 w-4" />
 									</div>
 									<div className="min-w-0">
@@ -115,7 +116,7 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
 										</span>
 										{tx.model && (
 											<span className="text-[10.5px] font-mono text-text-muted inline-block mt-0.5 px-1.5 py-px bg-surface/50 border border-border/50 rounded-[var(--radius-sm)]">
-												{tx.model}
+												{resolveModelDisplayName(tx.model)}
 											</span>
 										)}
 									</div>

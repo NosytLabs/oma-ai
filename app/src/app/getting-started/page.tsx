@@ -5,6 +5,7 @@ import { MODEL_COUNT } from "@/lib/models-data";
 import { FloatingIcons } from "@/components/floating-icons";
 import { InViewFade } from "@/components/motion/in-view-fade";
 import { BreadcrumbListJsonLd } from "@/components/json-ld";
+import { CopyableCode } from "@/components/copyable-code";
 
 export const metadata: Metadata = {
 	title: "Getting started — how to use OMA in 5 minutes",
@@ -71,7 +72,7 @@ const STEPS = [
 		title: "Make your first API call",
 		body: (
 			<>
-				You&apos;re done! OMA acts as a drop-in replacement for OpenAI&apos;s API. In any app, library, or script where you currently use OpenAI, just swap the base URL to <code className="font-mono text-accent">https://api.oma-ai.com/v1</code>, drop in your new API key, and specify any model from our <Link href="/models" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">catalog</Link> (like <code className="font-mono text-text-bright">gemini-3.1-pro-preview</code> or <code className="font-mono text-text-bright">gpt-4o</code>). Try the one-line examples below, or jump to the <Link href="/docs#quickstart" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">developer quickstart</Link>.
+				You&apos;re done! OMA acts as a drop-in replacement for OpenAI&apos;s API. In any app, library, or script where you currently use OpenAI, just swap the base URL to <code className="font-mono text-accent">https://api.oma-ai.com/v1</code>, drop in your new API key, and specify any model from our <Link href="/models" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">catalog</Link> (like <code className="font-mono text-text-bright">gpt-5.6-sol</code> or <code className="font-mono text-text-bright">claude-opus-5</code>). Try the one-line examples below, or jump to the <Link href="/docs#quickstart" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">developer quickstart</Link>.
 			</>
 		),
 	},
@@ -164,13 +165,13 @@ export default function GettingStartedPage() {
 						One request, copy-paste. Set <code className="font-mono text-accent">OMA_KEY</code> to your
 						key first.
 					</p>
-					<pre tabIndex={0} aria-label="Quick start curl example" className="mt-4 overflow-x-auto rounded-[var(--radius-md)] border border-border bg-void p-4 text-xs font-mono text-text-secondary leading-relaxed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
-						{SAMPLE_CODE}
-					</pre>
+					<div className="mt-4">
+						<CopyableCode code={SAMPLE_CODE} aria-label="Quick start curl example" />
+					</div>
 					<p className="mt-4 text-sm text-text-secondary">Or with the OpenAI Python SDK (works as-is):</p>
-					<pre tabIndex={0} aria-label="OpenAI Python SDK example" className="mt-2 overflow-x-auto rounded-[var(--radius-md)] border border-border bg-void p-4 text-xs font-mono text-text-secondary leading-relaxed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
-						{SAMPLE_PY}
-					</pre>
+					<div className="mt-2">
+						<CopyableCode code={SAMPLE_PY} aria-label="OpenAI Python SDK example" />
+					</div>
 					</section>
 				</InViewFade>
 

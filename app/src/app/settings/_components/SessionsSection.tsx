@@ -102,7 +102,7 @@ export function SessionsSection({
 								type="button"
 								onClick={handleRevokeOthers}
 								disabled={revokingOthers}
-								className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--color-danger)]/30 bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)] px-3 py-1.5 text-xs font-semibold text-[var(--color-danger)] transition-[background-color,border-color,color,transform] duration-200 hover:border-[var(--color-danger)]/50 active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-danger)]"
+								className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-danger/30 bg-danger/10 px-3 py-1.5 text-xs font-semibold text-danger transition-[background-color,border-color,color,transform] duration-200 hover:border-danger/50 active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger"
 							>
 								{revokingOthers ? (
 									<Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
@@ -115,7 +115,7 @@ export function SessionsSection({
 								type="button"
 								onClick={() => setConfirmRevokeOthers(false)}
 								disabled={revokingOthers}
-								className="rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-1.5 text-xs font-semibold text-text-secondary"
+								className="rounded-[var(--radius-md)] border border-border px-3 py-1.5 text-xs font-semibold text-text-secondary"
 							>
 								Cancel
 							</button>
@@ -125,7 +125,7 @@ export function SessionsSection({
 						type="button"
 						onClick={() => setConfirmRevokeOthers(true)}
 						disabled={revokingOthers}
-						className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--color-danger)]/30 bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)] px-3 py-1.5 text-xs font-semibold text-[var(--color-danger)] transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:border-[var(--color-danger)]/50 hover:bg-[color-mix(in_srgb,var(--color-danger)_20%,transparent)] active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-danger)]"
+						className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-danger/30 bg-danger/10 px-3 py-1.5 text-xs font-semibold text-danger transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:border-danger/50 hover:bg-danger/20 active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger"
 					>
 						<Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
 						{`Sign out ${otherSessions.length} other device${otherSessions.length === 1 ? "" : "s"}`}
@@ -136,7 +136,7 @@ export function SessionsSection({
 
 			<div className="mt-6 space-y-2">
 				{sessions.length === 0 ? (
-					<div className="rounded-[var(--radius-md)] border border-dashed border-[var(--color-border)] px-4 py-8 text-center bg-[var(--color-surface)]/30">
+					<div className="rounded-[var(--radius-md)] border border-dashed border-border px-4 py-8 text-center bg-surface/30">
 						<p className="text-sm font-semibold text-text-muted">
 							No active sessions.
 						</p>
@@ -148,13 +148,13 @@ export function SessionsSection({
 					sessions.map((session) => (
 						<div
 							key={session.id}
-							className="group flex flex-col gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)]/30 px-5 py-4 sm:flex-row sm:items-center transition-[border-color,background-color,transform] hover:border-[var(--color-accent)]/30 hover:bg-[var(--color-surface)]/50 hover:scale-[1.01] duration-200 ease-out"
+							className="group flex flex-col gap-3 rounded-[var(--radius-md)] border border-border bg-surface/30 px-5 py-4 sm:flex-row sm:items-center transition-[border-color,background-color,transform] hover:border-accent/30 hover:bg-surface/50 hover:scale-[1.01] duration-200 ease-out"
 						>
 							<div className="flex min-w-0 flex-1 items-center gap-4">
-								<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-accent)]/20 bg-[color-mix(in_srgb,var(--color-accent)_5%,transparent)] transition-[border-color,background-color] group-hover:border-[var(--color-accent)]/40 group-hover:bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)]">
+								<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)] border border-accent/20 bg-accent/5 transition-[border-color,background-color] group-hover:border-accent/40 group-hover:bg-accent/10">
 									{session.isCurrent ? (
 										<Monitor
-											className="h-5 w-5 text-[var(--color-accent)] drop-shadow-[0_0_8px_var(--color-accent)]"
+											className="h-5 w-5 text-accent drop-shadow-[0_0_8px_var(--color-accent)]"
 											aria-hidden="true"
 										/>
 									) : (
@@ -170,7 +170,7 @@ export function SessionsSection({
 											{getDeviceName(session.userAgent)}
 										</span>
 										{session.isCurrent && (
-											<span className="inline-flex items-center gap-1 rounded-[var(--radius-sm)] border border-[var(--color-success)]/30 bg-[color-mix(in_srgb,var(--color-success)_10%,transparent)] px-2 py-0.5 text-[10px] font-mono font-medium uppercase tracking-wider text-[var(--color-success)]">
+											<span className="inline-flex items-center gap-1 rounded-[var(--radius-sm)] border border-success/30 bg-success/10 px-2 py-0.5 text-[10px] font-mono font-medium uppercase tracking-wider text-success">
 												This device
 											</span>
 										)}
@@ -193,7 +193,7 @@ export function SessionsSection({
 									type="button"
 									onClick={handleSignOut}
 									disabled={signingOut}
-									className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2 text-xs font-semibold text-text-secondary transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:border-[var(--color-error)]/40 hover:text-[var(--color-error)] hover:bg-[color-mix(in_srgb,var(--color-error)_10%,transparent)] active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-error)]"
+									className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-[var(--radius-md)] border border-border bg-surface px-4 py-2 text-xs font-semibold text-text-secondary transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:border-error/40 hover:text-error hover:bg-error/10 active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error"
 								>
 									{signingOut ? (
 										<Loader2
@@ -212,7 +212,7 @@ export function SessionsSection({
 											type="button"
 											onClick={() => handleRevoke(session.id)}
 											disabled={revokingId === session.id}
-											className="inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--color-error)]/40 bg-[color-mix(in_srgb,var(--color-error)_10%,transparent)] px-3 py-2 text-xs font-semibold text-[var(--color-error)] transition-[background-color,border-color,transform] duration-200 hover:bg-[color-mix(in_srgb,var(--color-error)_20%,transparent)] active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-error)]"
+											className="inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-md)] border border-error/40 bg-error/10 px-3 py-2 text-xs font-semibold text-error transition-[background-color,border-color,transform] duration-200 hover:bg-error/20 active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error"
 										>
 											{revokingId === session.id ? (
 												<Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
@@ -225,7 +225,7 @@ export function SessionsSection({
 											type="button"
 											onClick={() => setConfirmRevokeId(null)}
 											disabled={revokingId === session.id}
-											className="rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-2 text-xs font-semibold text-text-secondary"
+											className="rounded-[var(--radius-md)] border border-border px-3 py-2 text-xs font-semibold text-text-secondary"
 										>
 											Cancel
 										</button>
@@ -235,7 +235,7 @@ export function SessionsSection({
 									type="button"
 									onClick={() => setConfirmRevokeId(session.id)}
 									disabled={revokingId === session.id}
-									className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2 text-xs font-semibold text-text-secondary transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:border-[var(--color-error)]/40 hover:text-[var(--color-error)] hover:bg-[color-mix(in_srgb,var(--color-error)_10%,transparent)] active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-error)]"
+									className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-[var(--radius-md)] border border-border bg-surface px-4 py-2 text-xs font-semibold text-text-secondary transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:border-error/40 hover:text-error hover:bg-error/10 active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error"
 								>
 									<Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
 									Revoke

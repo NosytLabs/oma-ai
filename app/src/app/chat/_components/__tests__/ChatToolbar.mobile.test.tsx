@@ -1,6 +1,6 @@
 /**
 	* Ensures the playground toolbar renders exactly one COMPARE control.
-	* The web-search toggle moved into the composer (MessageInputRedesign),
+	* The web-search toggle moved into the composer (MessageInput),
 	* so it no longer lives in the toolbar.
 	*
 	* The Create / image-video tab was removed in R8 — chat surface is

@@ -126,10 +126,7 @@ const SOCIAL_LINKS = [
 	},
 ];
 
-// Build-time constant — kept as a literal (not `new Date()`) so SSR and
-// hydration never disagree on midnight-UTC rollovers. Bumped manually once
-// per year in source.
-const CURRENT_YEAR = 2026;
+const CURRENT_YEAR = new Date().getFullYear();
 
 export function Footer() {
 	const pathname = usePathname() ?? "";

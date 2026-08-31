@@ -50,8 +50,8 @@ import { MessagesList } from "./MessagesList";
 
 const LazyMessageInput = dynamic(
 	() =>
-		import("@/components/chat/MessageInputRedesign").then(
-			(mod) => mod.MessageInputRedesigned,
+		import("@/components/chat/MessageInput").then(
+			(mod) => mod.MessageInputed,
 		),
 	{ ssr: false, loading: () => <Skeleton className="h-16 w-full" /> },
 );
@@ -528,7 +528,7 @@ function ShellContent({
 						// against the browser edge (mobile bottom bar / iOS notch home bar)
 						// and there's breathing room above the copyright/footer.
 						<div
-							className="flex-none px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6 sm:pt-4 sm:pb-5 lg:px-8 bg-[color-mix(in_srgb,var(--color-surface)_60%,transparent)] border-t border-border shadow-[0_-20px_40px_-20px_rgba(0,0,0,0.6)] backdrop-blur-md z-10"
+							className="flex-none px-4 pt-3 pb-4 sm:px-6 sm:pt-4 sm:pb-5 lg:px-8 bg-[color-mix(in_srgb,var(--color-surface)_60%,transparent)] border-t border-border shadow-[0_-20px_40px_-20px_rgba(0,0,0,0.6)] backdrop-blur-md z-10"
 							style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
 						>
 							<div className="max-w-4xl mx-auto">

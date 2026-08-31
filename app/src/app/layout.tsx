@@ -9,6 +9,7 @@ import { Providers } from "@/components/providers";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ToastProviderClient } from "@/components/ui/ToastProviderClient";
 import { OrganizationJsonLd, SoftwareApplicationJsonLd } from "@/components/json-ld";
+import { MaintenanceBanner } from "@/components/shared/MaintenanceBanner";
 import "./globals.css";
 
 const display = Instrument_Serif({
@@ -137,7 +138,7 @@ export default function RootLayout({
 				<SoftwareApplicationJsonLd />
 				<link rel="preconnect" href="https://base-rpc.publicnode.com" />
 			</head>
-			<body className="flex min-h-dvh flex-col bg-void text-text font-sans antialiased">
+			<body className="flex min-h-dvh flex-col bg-void text-text font-sans antialiased overflow-x-hidden">
 				<a
 					href="#main-content"
 					className="sr-only focus:not-sr-only focus:fixed focus:top-14 focus:left-4 focus:z-[100] focus:bg-accent focus:text-void focus:px-4 focus:py-2 focus:rounded-[var(--radius-lg)] focus:font-semibold focus:shadow-[0_0_20px_var(--color-accent-glow)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"
@@ -149,6 +150,7 @@ export default function RootLayout({
 						<MotionProvider>
 							<Providers>
 								<div className="flex min-h-dvh flex-col">
+									<MaintenanceBanner />
 									<Navbar />
 									<main
 										id="main-content"
