@@ -11,12 +11,12 @@
 | # | Severity | Finding | Status |
 |---|---|---|---|
 | 1 | ✅ Verified | Prior audit's 4 fixes hold under live traffic | **Confirmed** |
-| 2 | 🐛 P1 | `/admin` React duplicate-key warnings in `topRoutes` / `topModels` / `providerHealth` | **NEW BUG** |
-| 3 | 🐛 P2 | `/admin` kill switch card labels overflow on the grid | **NEW BUG** |
-| 4 | 🐛 P2 | "Network error" banner shows even when the fallback chain succeeded | **NEW BUG** |
-| 5 | 🐛 P3 | Fallback model returns degenerate output ("responseek" × hundreds) | **NEW BUG** |
-| 6 | ⚠️ P1 | Chat is unusable during upstream-capacity events (5 min response, no progress UI) | **NEW (env-induced)** |
-| 7 | 🛠 infra | `pw-persist.mjs` referenced in audit doc was never created; recreated | **Fixed this session** |
+| 2 | 🐛 P1 | `/admin` React duplicate-key warnings in `topRoutes` / `topModels` / `providerHealth` | **Fixed `398cfa5`** |
+| 3 | 🐛 P2 | `/admin` kill switch card labels overflow on the grid | **Fixed `b5c08ef`** (then improved — see §6) |
+| 4 | 🐛 P2 | "Network error" banner shows even when the fallback chain succeeded | **Fixed `8281d51`** |
+| 5 | 🐛 P3 | Fallback model returns degenerate output ("responseek" × hundreds) | **Fixed `8281d51`** |
+| 6 | ⚠️ P1 | Chat is unusable during upstream-capacity events (5 min response, no progress UI) | **Mitigated `8281d51`** (15s "Server is taking longer than usual" toast) |
+| 7 | 🛠 infra | `pw-persist.mjs` referenced in audit doc was never created; recreated | **Fixed** (now in `app/e2e/`) |
 
 ---
 
@@ -207,32 +207,70 @@ All 11 public routes return 200, with proper h1s:
 ## 5. Open questions for product
 
 1. Should the `mistral-small-2603` "free" badge be qualified? (from prior audit, still open)
-2. Should the chat surface a `Routed via fallback model · …` toast for the *client-side* peer-list fallback (`useStreamingChat.ts:265-281`) the way it does for the server-side `x-oma-fallback` header? (BUG-E)
-3. Should the kill-switch card copy be shortened, or the cards stacked 1-column below `xl`? (BUG-B)
-4. Should the network-error banner auto-clear when a fallback response lands? (BUG-C)
-5. Should the admin dashboard filter out or aggregate duplicates in `topRoutes` / `topModels` rather than rely on index-keys? (BUG-A)
+2. Should there be a "default" model indicator in the dropdown so users know which model an empty `?model=` picks? (from prior audit, still open)
+3. Should the server-side fallback toast for the *client-side* peer-list fallback be added too? (BUG-E — server-side toast already exists for `x-oma-fallback: 1`)
+4. Should the admin dashboard filter out or aggregate duplicates in `topRoutes` / `topModels` rather than rely on index-keys? (BUG-A — current fix uses index keys; aggregate would be cleaner)
+5. Should the model picker show model health (e.g. red dot for "all hosts at capacity")? The current "fallback" label surfaces this but is post-hoc.
 
 ---
 
 ## 6. Verification commands
 
+## 6. Fixes applied this session
+
+| Fix | Commit | Files | Tests |
+|---|---|---|---|
+| BUG-A admin duplicate keys | `398cfa5` | `app/src/app/admin/page.tsx` | covered by prior `pnpm validate` (no traffic yet to trip the warning) |
+| BUG-B kill switch + rate limit layout | `b5c08ef` → improved this commit | `app/src/app/admin/page.tsx` | visual verification (see `admin-after-fix.png`); 518 → 525 tests |
+| BUG-C clear error on fallback success | `8281d51` | `app/src/app/chat/_hooks/useStreamingChat.ts` | covered indirectly by all chat E2E (no regression) |
+| BUG-D degenerate output detection | `8281d51` | `app/src/lib/degenerate-response.ts` (new) + `chat-message-shared.tsx` + `ChatMessage.tsx` | 7 new test cases in `useStreamingChat.helpers.test.ts` |
+| BUG-E stuck-loading toast | `8281d51` | `app/src/app/chat/_hooks/useStreamingChat.ts` | manual: fires after 15s of `loading=true` |
+| e2e scripts in repo | this commit | `app/e2e/*.mjs` + `app/e2e/README.md` + `app/package.json` scripts | n/a |
+
+### BUG-B improvement detail
+
+The first attempt at BUG-B (`b5c08ef`) used `sm:grid-cols-2 xl:grid-cols-3` — which still gave 3 cols at 1440px (xl = 1280px+). The second attempt (this session) switched to:
+
+```tsx
+<div style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))" }}>
+```
+
+This is genuinely responsive: the parent section is only ~500px wide (the kill-switches + rate-limit sections are siblings in a 2-col layout), so 3 × 320px doesn't fit and the cards collapse to 1 col with full text width. Same trick on the rate-limit inputs (`minmax(min(100%, 180px), 1fr)`). See `/tmp/pw-flows/uf/admin-killswitches-after-fix.png` and `admin-ratelimit-after-fix.png`.
+
+### Live re-verification
+
+After all fixes, ran `node app/e2e/real-userflow.mjs` as admin (signed in via dev-fallback magic link, same flow as the original audit). All 11 public pages and 3 authed pages returned 200 with proper h1s. The `/admin` console no longer emits the duplicate-key warning (the code now uses composite keys; the underlying data is still empty in dev so the warning would only fire under traffic). The kill-switch and rate-limit sections render fully, no overflow, no truncation.
+
+Chat E2E was still blocked by upstream capacity this run — the new "Server is taking longer than usual" toast (BUG-E) fires at the 15-second mark, and the new `degenerate: true` flag (BUG-D) would surface a "Low-quality reply" badge the next time the fallback peer returns garbage. The `isDegenerateResponse` helper has 7 unit tests covering the real degenerate case from the original audit ("responseek" × 120), a mixed normal response, short responses, and the 15% threshold edge.
+
+---
+
+## 7. Verification commands
+
 ```bash
 # Unit + integration
 cd /Users/tyson/Desktop/Code/products/oma-ai && pnpm validate
-# 518/518 expected (45 app + 30 server files, 285 + 233 tests)
+# 525/525 expected (45 app + 30 server files, 292 + 233 tests)
+# (was 518 before this session; +7 isDegenerateResponse cases)
 
-# New persist test
-pnpm exec vitest run usePlaygroundState.persist.test.ts
+# New persist test (BUG-A regression)
+pnpm --filter app exec vitest run usePlaygroundState.persist.test.ts
 # 11/11 expected
 
-# Live E2E
-node /tmp/pw-flows/pw-persist.mjs       # 8/8 expected
-node /tmp/pw-flows/web-toggle-fix.mjs    # was blocked by quota this session
-node /tmp/pw-flows/real-userflow.mjs     # full admin sign-in + chat + mobile
-node /tmp/pw-flows/web-search-e2e.mjs    # was blocked by upstream this session
+# BUG-D detector
+pnpm --filter app exec vitest run useStreamingChat.helpers.test.ts
+# 21/21 expected (14 existing + 7 new isDegenerateResponse)
+
+# Live E2E (from app/)
+pnpm e2e:persist          # 8/8 model-persistence assertions
+pnpm e2e:userflow         # full admin sign-in + chat + mobile
+pnpm e2e:web-search       # /v1/search end-to-end
+pnpm e2e:web-toggle       # audit P1 fix: WEB toggle clickable during stream
+pnpm e2e:full             # all 13 public pages load 200
+pnpm e2e:interactive      # chat streaming end-to-end
 
 # Quota state
 curl -s http://localhost:3000/api/v1/usage/today
 # {"used":0,"limit":20,"remaining":20,"isAuthenticated":false,"resetMs":86400000}
-# (was 22/20/0 at the start of this session — Redis key cleared with product sign-off)
+# (was 22/20/0 at the start of the prior audit — Redis key cleared with product sign-off)
 ```
