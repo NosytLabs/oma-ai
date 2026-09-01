@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-	title: "Admin · OMA",
+	// Root layout's title template is "%s · OMA", so just supply the
+	// page name — the suffix is added automatically. Hardcoding "· OMA"
+	// here doubled the brand suffix ("Admin · OMA · OMA").
+	title: "Admin",
 	robots: { index: false, follow: false },
 };
 

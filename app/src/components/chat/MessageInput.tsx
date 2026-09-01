@@ -192,7 +192,7 @@ export const MessageInputed = forwardRef<
 										type="button"
 										onClick={onStop}
 										aria-label="Stop generation"
-										className="flex h-11 w-11 items-center justify-center rounded-[var(--radius-lg)] border border-[var(--color-danger)]/40 bg-[color-mix(in_srgb,var(--color-danger)_15%,transparent)] text-[var(--color-danger)] transition-[background-color,border-color,transform,box-shadow] duration-200 ease-out hover:bg-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] active:scale-[0.97] focus-ring"
+										className="relative flex h-11 w-11 items-center justify-center rounded-[var(--radius-lg)] border border-[var(--color-danger)]/40 bg-[color-mix(in_srgb,var(--color-danger)_15%,transparent)] text-[var(--color-danger)] transition-[background-color,border-color,transform,box-shadow] duration-200 ease-out hover:bg-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] active:scale-[0.97] focus-ring"
 									>
 										{!reduceMotion && (
 											<m.span

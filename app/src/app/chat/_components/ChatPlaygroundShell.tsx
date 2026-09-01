@@ -95,6 +95,10 @@ function ShellContent({
 
 	const [uiMode, setUiMode] = useState(false);
 
+	const toast = useToast();
+	const { isAuthenticated, isReady, user } = useAuth();
+	const scopedStorageKey = conversationStorageKey(user?.id ?? null);
+
 	const {
 		model,
 		setModel,
@@ -142,11 +146,13 @@ function ShellContent({
 		setCompareMessages,
 		shortcutsOpen,
 		setShortcutsOpen,
-	} = usePlaygroundState();
-
-	const toast = useToast();
-	const { isAuthenticated, isReady, user } = useAuth();
-	const scopedStorageKey = conversationStorageKey(user?.id ?? null);
+	} = usePlaygroundState({
+		// Pass the user id so the saved model lives in the correct
+		// per-user localStorage bucket. `user?.id` is `undefined` until
+		// auth resolves; the hook treats that as a guest read.
+		userId: user?.id ?? null,
+		authReady: isReady,
+	});
 	const scopedPromptKey = systemPromptStorageKey(user?.id ?? null);
 	const { balance, loading: balanceLoading } = useBalance();
 	const balanceDollars = balanceToDollars(balance);

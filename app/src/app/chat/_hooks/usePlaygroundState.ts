@@ -2,14 +2,42 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Dispatch, SetStateAction } from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Message } from "@/components/chat";
+import { MODELS } from "@/lib/models-data";
 
 /**
 	* Status enum for the share-conversation button. No 'loading' state —
 	* the share copy is gated on the clipboard write resolving.
 	*/
 type ShareStatus = "default" | "success" | "error";
+
+/** localStorage key for the user-scoped model preference. Mirrors the
+	*  `conversationStorageKey` pattern: guests get their own bucket so a
+	*  signed-in / signed-out pair of users on the same browser don't fight
+	*  over the saved model. The value is unknown until auth resolves, so the
+	*  hook re-reads it inside an effect when `userId` changes. */
+function modelStorageKey(userId: string | null | undefined): string {
+	return userId ? `oma_chat_model:u:${userId}` : "oma_chat_model:guest";
+}
+
+/** Validates a value looks like a catalog id we still serve. Drops stale
+	*  saves (e.g. catalog trimmed an entry since last visit) so we never
+	*  boot the playground with a model that 404s. */
+function isKnownModelId(id: string | null | undefined): id is string {
+	if (!id || typeof id !== "string") return false;
+	return MODELS.some((m) => m.id === id);
+}
+
+function readStoredModel(userId: string | null | undefined): string | null {
+	if (typeof window === "undefined") return null;
+	try {
+		const v = localStorage.getItem(modelStorageKey(userId));
+		return isKnownModelId(v) ? v : null;
+	} catch {
+		return null;
+	}
+}
 
 /**
 	* Media mode is now text-only — OMA sells text + multimodal LLM
@@ -33,6 +61,18 @@ export interface UsePlaygroundStateOptions {
 	 * `gemini-3-flash-preview` (free OMA-AI).
 	 */
 	defaultModel?: string;
+	/**
+	 * Authenticated user id, or `null`/`undefined` for an anonymous guest.
+	 * Drives which localStorage bucket the saved model lives in so a guest's
+	 * picking doesn't leak into a signed-in session on the same browser.
+	 * Pass `null` until `useAuth().isReady === true` — the hook will treat
+	 * unknown auth as guest and re-read once the id resolves.
+	 */
+	userId?: string | null;
+	/** When `true`, auth state has resolved — safe to read the userId-scoped
+	 *  bucket. Before this flips on, the hook always reads the guest bucket
+	 *  to avoid an `undefined`/`null` key smashing both. */
+	authReady?: boolean;
 }
 
 export interface PlaygroundState {
@@ -119,14 +159,48 @@ export function usePlaygroundState(
 	const searchParams = useSearchParams();
 	const router = useRouter();
 	const pathname = usePathname();
-	// Default to free Gonka (OpenBroker) model so guests can chat without sign-in.
-	// Lazy string keeps this hook free of a models-data import cycle; value must
-	// match FREE_DEFAULT_CHAT_MODEL in @/lib/model-utils.
-	const defaultModel =
-		options.defaultModel ?? searchParams?.get("model") ?? "gemini-3-flash-preview";
+	// Resolution priority on first mount:
+	//   1. `options.defaultModel` (test overrides / SSR)
+	//   2. `?model=` URL param — wins so shared deep links survive reload
+	//   3. localStorage preference (user-scoped, see `modelStorageKey`)
+	//   4. FREE_DEFAULT_CHAT_MODEL — always render *something* on cold start
+	// The lazy initializer avoids a localStorage hit on every render and
+	// keeps SSR + first paint consistent (no flicker to a stale default).
+	const urlModel = searchParams?.get("model");
+	const initialModel = (() => {
+		if (options.defaultModel && isKnownModelId(options.defaultModel))
+			return options.defaultModel;
+		if (urlModel && isKnownModelId(urlModel)) return urlModel;
+		// localStorage read is deferred to the post-mount effect below so
+		// the SSR pass and the first client render agree — useState's
+		// initializer runs on both, and a localStorage hit on the server
+		// would throw (or return null, making the two passes diverge).
+		return "gemini-3-flash-preview";
+	})();
 
 	// --- Core chat ---
-	const [model, setModel] = useState<string>(defaultModel);
+	const [model, setModelRaw] = useState<string>(initialModel);
+	// Track the last userId we persisted under. The effect below moves the
+	// stored value into a new bucket on sign-in / sign-out so a guest's
+	// saved model doesn't leak into a signed-in session (and vice versa).
+	const lastScopedUserIdRef = useRef<string | null>(null);
+
+	/** Track whether the user has explicitly changed the model since mount.
+		*  Used to gate the URL mirror effect so a cold load on /chat doesn't
+		*  rewrite a clean URL to ?model=gemini-3-flash-preview, while a deep
+		*  link ?model=foo (which sets the initial state via the lazy
+		*  initializer) still wins on first render. Flips to `true` only on
+		*  the wrapper call, not on internal `setModelRaw` writes (rehydrate
+		*  / option override) so an auth-driven bucket swap doesn't pollute
+		*  the URL either. */
+	const userChangedModelRef = useRef(false);
+	const setModel = useCallback<Dispatch<SetStateAction<string>>>((next) => {
+		userChangedModelRef.current = true;
+		setModelRaw((prev) => {
+			const value = typeof next === "function" ? next(prev) : next;
+			return value;
+		});
+	}, []);
 	const [messages, setMessages] = useState<Message[]>([]);
 	const [input, setInput] = useState<string>("");
 	const [loading, setLoading] = useState<boolean>(false);
@@ -196,6 +270,68 @@ export function usePlaygroundState(
 		const href = qs ? `${pathname}?${qs}` : pathname;
 		router.replace(href, { scroll: false });
 	}, [pathname, router, searchParams]);
+
+	// Model persistence — rehydrate from localStorage on mount (after auth
+	// resolves, so the user-scoped bucket is correct) and re-write whenever
+	// the user picks a new model. URL `?model=` always wins on the first
+	// rehydration so deep links keep working.
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+		const userId = options.authReady ? options.userId ?? null : null;
+		lastScopedUserIdRef.current = userId;
+		const urlParam = searchParams?.get("model");
+		if (!urlParam || !isKnownModelId(urlParam)) {
+			const stored = readStoredModel(userId);
+			if (stored && stored !== model) {
+				setModelRaw(stored);
+			}
+		}
+		// Intentionally one-shot on mount — re-running when `model` changes
+		// would clobber the user's in-flight selection with the stored one.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [options.authReady]);
+
+	// Persist whenever the user explicitly picks a model. Gated by
+	// `userChangedModelRef` (NOT by a one-shot `isFirstWrite` ref) so
+	// React StrictMode's double-invoked effects don't write the initial
+	// URL/default value back to localStorage — that would clobber a
+	// previously-saved choice the moment the user lands on /chat or on
+	// a fresh deep link.
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+		if (!userChangedModelRef.current) return;
+		if (!isKnownModelId(model)) return;
+		try {
+			localStorage.setItem(
+				modelStorageKey(lastScopedUserIdRef.current),
+				model,
+			);
+		} catch {
+			/* private mode */
+		}
+	}, [model]);
+
+	// Mirror the selection into `?model=` so a refresh / share URL keeps
+	// it. Gated by `userChangedModelRef` so cold loads on /chat don't
+	// rewrite a clean URL to ?model=gemini-3-flash-preview; only an
+	// explicit user pick triggers a router.replace. Deep links via
+	// ?model=… still win on first mount via the `initialModel` initializer.
+	useEffect(() => {
+		if (typeof window === "undefined" || !pathname) return;
+		if (!userChangedModelRef.current) return;
+		const current = searchParams?.get("model");
+		if (current === model) return;
+		const params = new URLSearchParams(searchParams?.toString() ?? "");
+		if (model && isKnownModelId(model)) {
+			params.set("model", model);
+		} else {
+			params.delete("model");
+		}
+		const qs = params.toString();
+		const href = qs ? `${pathname}?${qs}` : pathname;
+		router.replace(href, { scroll: false });
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [model, pathname, router]);
 
 	return {
 		// Core chat
