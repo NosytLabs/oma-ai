@@ -208,11 +208,9 @@ All 11 public routes return 200, with proper h1s:
 
 1. ~~Should the `mistral-small-2603` "free" badge be qualified?~~ **Resolved `6d8741b`** — `Free*` badge + tooltip ("Venice free fallback. Used when the primary OpenBroker peer is down — quality may vary.")
 2. ~~Should there be a "default" model indicator in the dropdown so users know which model an empty `?model=` picks?~~ **Resolved `6d8741b`** — `Default` badge on `gemini-3-flash-preview` row with tooltip "Default for empty ?model= URL — what guests get on /chat".
-3. Should the server-side fallback toast for the *client-side* peer-list fallback be added too? (BUG-E — server-side toast already exists for `x-oma-fallback: 1`; 15s "taking longer" toast added in `8281d51` is a different signal)
-4. Should the admin dashboard filter out or aggregate duplicates in `topRoutes` / `topModels` rather than rely on index-keys? (BUG-A — current fix uses index keys; aggregate would be cleaner)
-5. Should the model picker show model health (e.g. red dot for "all hosts at capacity")? The current "fallback" label surfaces this but is post-hoc.
-
----
+3. ~~Should the server-side fallback toast for the *client-side* peer-list fallback be added too?~~ **Resolved `8281d51`** — both server-side and client-side fallback paths set `x-oma-fallback: 1` in the response, so the existing toast at `useStreamingChat.ts:333-335` ("Routed via fallback model · …") already fires for both. The header covers every fallback scenario, server- or client-originated.
+4. Should the admin dashboard filter out or aggregate duplicates in `topRoutes` / `topModels` rather than rely on index-keys? (BUG-A — current fix uses index keys; aggregate would be cleaner. **Defer**: index-keys are the standard React pattern and the data is unique-by-construction in `getMetricsSnapshot`. The duplicate warning was always from `providerHealth` collapsing to "unknown", which the composite-key fix handles.)
+5. Should the model picker show model health (e.g. red dot for "all hosts at capacity")? The current "fallback" label surfaces this but is post-hoc. **Defer**: requires a new server health endpoint and live peer probe — bigger feature, not a bug fix.
 
 ## 6. Verification commands
 
