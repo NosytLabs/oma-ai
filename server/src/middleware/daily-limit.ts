@@ -1,14 +1,24 @@
 /**
 	* Daily usage limits for website chat (free tier).
-	* 
+	*
 	* - Anonymous users (by IP): 20 requests/day on OMA-AI models
-	* - Registered users: 100 requests/day on OMA-AI models
+	* - Registered users with no paid balance: 100 requests/day on OMA-AI models
+	* - Registered users with a positive credit balance: bypassed (pay-as-you-go)
 	* - API calls (without X-OMA-Source: website header): always require credits
-	* 
+	*
 	* This is ONLY for the website chat page. API usage always costs credits.
+	*
+	* The bypass for paying users is deliberate: the daily limit exists to
+	* prevent abuse of the free tier, not to cap paid usage. Users who have
+	* deposited credits pay per request via the standard billing path; layering
+	* a daily cap on top would force paying customers to wait until midnight
+	* for no economic reason.
 	*/
 import type { Context, Next } from "hono";
 import type { OmaEnv } from "../types.js";
+import { db } from "../db/client.js";
+import { creditBalances } from "../db/schema.js";
+import { sql } from "drizzle-orm";
 import { getRedisClient, isRedisReady } from "../lib/redis-client.js";
 import { logger } from "../lib/logger.js";
 import { extractClientIp } from "./rate-limit/utils.js";
@@ -22,6 +32,27 @@ interface DailyUsageResult {
 		remaining: number;
 		limit: number;
 		resetMs: number;
+}
+
+/**
+	* Check whether an authenticated user has a positive paid credit balance.
+	* Read-only; returns `false` on DB error so a transient failure doesn't
+	* accidentally bypass the free-tier cap (fail-closed is the safer default
+	* here — a paying user hitting a daily limit is a small nuisance; an
+	* abuser free-riding on a broken DB query is a cost).
+	*/
+async function hasPaidBalance(userId: string): Promise<boolean> {
+	try {
+		const [row] = await db
+			.select({ balanceCents: creditBalances.balanceCents })
+			.from(creditBalances)
+			.where(sql`${creditBalances.userId} = ${userId}`)
+			.limit(1);
+		return Number(row?.balanceCents ?? 0) > 0;
+	} catch (err) {
+		logger.error({ err, userId }, "paid-balance check failed — applying daily limit");
+		return false;
+	}
 }
 
 /**
@@ -109,6 +140,15 @@ export function dailyUsageLimit() {
 
 				// Determine identifier and limit
 				const userId = c.get("userId");
+
+				// Paying users bypass the free-tier daily cap. The cap exists to
+				// prevent abuse of the free tier, not to throttle paid usage —
+				// users with a positive balance already pay per request via the
+				// standard billing path in recordUsage().
+				if (userId && (await hasPaidBalance(userId))) {
+						return next();
+				}
+
 				let identifier: string;
 				let limit: number;
 
