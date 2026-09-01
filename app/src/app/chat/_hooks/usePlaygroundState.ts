@@ -288,7 +288,6 @@ export function usePlaygroundState(
 		}
 		// Intentionally one-shot on mount — re-running when `model` changes
 		// would clobber the user's in-flight selection with the stored one.
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [options.authReady]);
 
 	// Persist whenever the user explicitly picks a model. Gated by
@@ -330,7 +329,6 @@ export function usePlaygroundState(
 		const qs = params.toString();
 		const href = qs ? `${pathname}?${qs}` : pathname;
 		router.replace(href, { scroll: false });
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [model, pathname, router]);
 
 	return {

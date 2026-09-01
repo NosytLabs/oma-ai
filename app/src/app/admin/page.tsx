@@ -291,9 +291,9 @@ export default function AdminPage() {
 							<p className="text-xs text-text-muted">No route traffic recorded yet.</p>
 						) : (
 							<ul className="flex flex-col gap-1.5">
-								{snap.http.topRoutes.map((r) => (
+								{snap.http.topRoutes.map((r, i) => (
 									<li
-										key={r.route}
+										key={`${r.route}:${i}`}
 										className="flex items-center justify-between gap-3 text-xs"
 									>
 										<span className="min-w-0 truncate font-mono text-text-secondary" title={r.route}>
@@ -318,9 +318,9 @@ export default function AdminPage() {
 							<p className="text-xs text-text-muted">No traffic recorded yet.</p>
 						) : (
 							<ul className="flex flex-col gap-1.5">
-								{snap.chat24h.topModels.map((m) => (
+								{snap.chat24h.topModels.map((m, i) => (
 									<li
-										key={m.model}
+										key={`${m.model}:${i}`}
 										className="flex items-center justify-between gap-3 text-xs"
 									>
 										<span className="min-w-0 truncate font-mono text-text-secondary">
@@ -346,11 +346,11 @@ export default function AdminPage() {
 						<p className="text-xs text-text-muted">No models reported.</p>
 					) : (
 						<ul className="flex flex-col gap-1.5">
-							{providerHealth.map(([provider, { total, available }]) => {
+							{providerHealth.map(([provider, { total, available }], i) => {
 								const allUp = available === total;
 								return (
 									<li
-										key={provider}
+										key={`${provider}:${i}`}
 										className="flex items-center justify-between gap-3 text-xs"
 									>
 										<span className="font-mono text-text-secondary uppercase">
