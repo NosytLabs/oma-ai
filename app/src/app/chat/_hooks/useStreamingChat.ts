@@ -3,6 +3,7 @@
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import { useCallback, useEffect, useRef } from "react";
 import type { Message, SearchResult } from "@/components/chat";
+import { isDegenerateResponse } from "@/lib/degenerate-response";
 import { useToast } from "@/components/ui/Toast";
 import { api } from "@/lib/api";
 import {
@@ -26,6 +27,9 @@ import { estimateTokens } from "@/lib/text";
 // usage never lands in the dashboard. proxy-response keeps SSE streamed.
 const CHAT_ENDPOINT = "/api/v1/chat/completions";
 const SEARCH_ENDPOINT = "/api/v1/search";
+// re-export the degenerate-response detector so existing imports of
+// `useStreamingChat` still get it (kept for backwards compat)
+export { isDegenerateResponse } from "@/lib/degenerate-response";
 
 /**
 	* Clean the conversation before it hits the upstream API. Two failure modes
@@ -124,6 +128,18 @@ export function useStreamingChat(
 ): UseStreamingChatResult {
 	const toast = useToast();
 	const abortRef = useRef<AbortController | null>(null);
+	// BUG-E (audit 2026-09-01-userflow.md): when the request has been
+	// pending for >15s, show a soft hint so the user knows the spinner
+	// is doing something — without it, a 5-minute wait during upstream
+	// capacity events looks like a hang. Reset on every new send.
+	const stuckTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const clearStuckTimer = useCallback(() => {
+		if (stuckTimerRef.current) {
+			clearTimeout(stuckTimerRef.current);
+			stuckTimerRef.current = null;
+		}
+	}, []);
+	useEffect(() => () => clearStuckTimer(), [clearStuckTimer]);
 
 	// Single in-flight "ensure chat key" attempt. The cookie-install endpoint
 	// takes a raw `oma_sk_*` key the server already validated and rewrites
@@ -332,6 +348,12 @@ export function useStreamingChat(
 				useModel;
 			if (usedFallback && actualModel && actualModel !== useModel) {
 				toast.info(`Routed via fallback model · ${actualModel}`);
+				// The response *did* succeed (200), so any network error
+				// the user might still see in the chat banner is stale —
+				// likely a mid-stream read that recovered. Clear it so
+				// the user doesn't see "NETWORK ERROR" alongside their
+				// actual answer. (BUG-C, audit 2026-09-01-userflow.md)
+				opts.setError(null);
 			}
 
 			const startTime = Date.now();
@@ -373,17 +395,22 @@ export function useStreamingChat(
 							const updated = [...prev];
 							const lastIdx = updated.length - 1;
 							if (lastIdx >= 0) {
-								updated[lastIdx] = {
-									...updated[lastIdx],
-									content: accumulated,
-									reasoning: accumulatedReasoning || undefined,
-									tokens: tokenCount,
-									outputTokens: realTokenCount || estimateTokens(accumulated),
-									latency: now - startTime,
-									truncated: finishReason === "length",
-									finishReason,
-									model: actualModel,
-									viaFallback: usedFallback && actualModel !== useModel,
+							updated[lastIdx] = {
+								...updated[lastIdx],
+								content: accumulated,
+								reasoning: accumulatedReasoning || undefined,
+								tokens: tokenCount,
+								outputTokens: realTokenCount || estimateTokens(accumulated),
+								latency: now - startTime,
+								truncated: finishReason === "length",
+								// BUG-D: flag degenerate fallback output so the UI
+								// can surface a "low-quality response" hint instead
+								// of rendering a wall of repeated tokens as a normal
+								// reply. See isDegenerateResponse for the heuristic.
+								degenerate: isDegenerateResponse(accumulated),
+								finishReason,
+								model: actualModel,
+								viaFallback: usedFallback && actualModel !== useModel,
 									searchResults:
 										searchResults.length > 0
 											? searchResults
@@ -496,6 +523,8 @@ export function useStreamingChat(
 							inputTokens: usage?.prompt_tokens || updated[lastIdx].inputTokens,
 							outputTokens: usage?.completion_tokens || estimateTokens(content),
 							latency: Date.now() - startTime,
+							// BUG-D: same degenerate-output flag for the non-streaming path
+							degenerate: isDegenerateResponse(content),
 							model: bodyModel,
 							viaFallback: usedFallback && bodyModel !== useModel,
 							searchResults:
@@ -543,6 +572,13 @@ export function useStreamingChat(
 			opts.setInput("");
 			opts.setLoading(true);
 			opts.setError(null);
+			// BUG-E: start the stuck-loading hint timer. If the request is
+			// still in flight after 15s, surface a soft toast so the user
+			// doesn't think the page is hung. Cleared on response/finally.
+			clearStuckTimer();
+			stuckTimerRef.current = setTimeout(() => {
+				toast.info("Server is taking longer than usual — retrying if needed");
+			}, 15_000);
 
 			const assistantMessage: Message = {
 				id: newMessageId("assistant"),
@@ -671,6 +707,7 @@ export function useStreamingChat(
 				}
 			} finally {
 				opts.setLoading(false);
+				clearStuckTimer();
 				setTimeout(() => opts.inputRef.current?.focus(), 100);
 			}
 			// "opts" is intentionally excluded from deps: it's a fresh object on every

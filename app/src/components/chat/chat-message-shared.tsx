@@ -55,6 +55,14 @@ export interface Message {
 	model?: string;
 	/** True when the server routed via a fallback peer (`x-oma-fallback: 1`). */
 	viaFallback?: boolean;
+	/**
+	 * BUG-D (audit 2026-09-01-userflow.md): true when the streamed
+	 * content is degenerate (high repetition, e.g. a fallback peer
+	 * returning "responseek" × hundreds). The UI surfaces a
+	 * "low-quality response" hint so the user doesn't mistake the
+	 * wall of repeated tokens for a real answer.
+	 */
+	degenerate?: boolean;
 }
 
 export interface ModelOption {

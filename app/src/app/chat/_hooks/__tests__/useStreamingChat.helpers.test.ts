@@ -13,6 +13,7 @@
 	*/
 import { describe, it, expect } from "vitest";
 import type { Message } from "@/components/chat";
+import { isDegenerateResponse } from "@/lib/degenerate-response";
 import { sanitizeHistory } from "../useStreamingChat";
 
 describe("sanitizeHistory", () => {
@@ -170,5 +171,62 @@ describe("parseSSEBlock", () => {
 		// After \r\n -> \n split happens outside, but each line might
 		// contain \r. Verify our parser drops the trailing \r.
 		expect(r?.data[0]?.endsWith("\r")).toBeFalsy();
+	});
+});
+
+/**
+ * BUG-D regression test (audit 2026-09-01-userflow.md).
+ * When the upstream is at capacity the fallback peer sometimes returns
+ * degenerate output (the same token repeated hundreds of times).
+ * isDegenerateResponse must flag it so the UI can show a
+ * "low-quality response" hint instead of rendering a wall of garbage
+ * as a normal reply.
+ */
+describe("isDegenerateResponse", () => {
+	it("flags the exact degenerate case from the live audit", () => {
+		const content = "responseek, ".repeat(120).trim();
+		expect(isDegenerateResponse(content)).toBe(true);
+	});
+
+	it("flags short bursts of the same token", () => {
+		const content = "yes ".repeat(25);
+		expect(isDegenerateResponse(content)).toBe(true);
+	});
+
+	it("does NOT flag a normal long response with recurring words", () => {
+		const content = [
+			"The quick brown fox jumps over the lazy dog.",
+			"The dog barks at the fox and the fox runs away.",
+			"There are many types of foxes in the world.",
+			"They live in forests, in deserts, and even in cities.",
+			"Each fox has its own personality and habits.",
+		].join(" ");
+		expect(content.length).toBeGreaterThan(80);
+		expect(isDegenerateResponse(content)).toBe(false);
+	});
+
+	it("does NOT flag short responses (< 80 chars)", () => {
+		expect(isDegenerateResponse("ok")).toBe(false);
+		expect(isDegenerateResponse("yes yes yes yes yes yes yes yes yes yes")).toBe(false);
+	});
+
+	it("does NOT flag responses with < 20 tokens even if repetitive", () => {
+		// Below the minTokens threshold — short repetitive content is
+		// usually a real answer (e.g. a list of "yes" / "no" answers).
+		const content = "yes ".repeat(18).trim();
+		expect(content.split(/\s+/).length).toBeLessThan(20);
+		expect(isDegenerateResponse(content)).toBe(false);
+	});
+
+	it("does NOT flag a mixed response with high unique-token ratio", () => {
+		const content = Array.from({ length: 50 }, (_, i) => `word${i}`).join(" ");
+		expect(isDegenerateResponse(content)).toBe(false);
+	});
+
+	it("flags when unique/total ratio is just under the 15% threshold", () => {
+		// 50 tokens, 7 unique = 14% ratio — below the 15% threshold.
+		const content = Array.from({ length: 7 }, (_, i) => `t${i}`).join(" ") + " " +
+			Array.from({ length: 43 }, () => "t0").join(" ");
+		expect(isDegenerateResponse(content)).toBe(true);
 	});
 });

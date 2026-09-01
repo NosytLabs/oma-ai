@@ -448,6 +448,15 @@ export const ChatMessageed = memo(function ChatMessageed({
 														Truncated
 												</span>
 										)}
+										{!isUser && msg.degenerate && (
+												<span
+														className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-[color-mix(in_srgb,var(--color-warning)_10%,transparent)] border border-[var(--color-warning)]/30 rounded-[var(--radius-sm)] text-[var(--color-warning)] text-[9px] font-mono uppercase tracking-wider"
+														title="The fallback model returned a high-repetition response (likely a transient model quality issue). Try again or pick a different model."
+												>
+														<AlertTriangle className="w-2.5 h-2.5" aria-hidden="true" />
+														Low-quality reply
+												</span>
+										)}
 										{!isUser && msg.content && !loading && (
 												<>
 														<button
