@@ -791,14 +791,14 @@ function RateLimitSection() {
 			<p className="mb-3 text-[11px] text-text-muted">
 				Set a per-user requests/minute cap, or clear an existing override.
 			</p>
-			<div className="grid gap-2 sm:grid-cols-3">
+			<div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
 				<input
 					type="text"
 					value={userId}
 					onChange={(e) => setUserId(e.target.value)}
 					placeholder="User ID"
 					aria-label="User ID"
-					className="rounded-[var(--radius-md)] border border-border bg-void px-2.5 py-1.5 font-mono text-xs text-text-bright placeholder:text-text-muted focus:border-accent/50 focus:outline-none"
+					className="min-w-0 rounded-[var(--radius-md)] border border-border bg-void px-2.5 py-1.5 font-mono text-xs text-text-bright placeholder:text-text-muted focus:border-accent/50 focus:outline-none"
 				/>
 				<input
 					type="number"
@@ -807,7 +807,7 @@ function RateLimitSection() {
 					value={rpm}
 					onChange={(e) => setRpm(e.target.value)}
 					aria-label="Requests per minute"
-					className="rounded-[var(--radius-md)] border border-border bg-void px-2.5 py-1.5 font-mono text-xs text-text-bright focus:border-accent/50 focus:outline-none"
+					className="min-w-0 rounded-[var(--radius-md)] border border-border bg-void px-2.5 py-1.5 font-mono text-xs text-text-bright focus:border-accent/50 focus:outline-none"
 				/>
 				<input
 					type="text"
@@ -815,7 +815,7 @@ function RateLimitSection() {
 					onChange={(e) => setReason(e.target.value)}
 					placeholder="Reason"
 					aria-label="Override reason"
-					className="rounded-[var(--radius-md)] border border-border bg-void px-2.5 py-1.5 text-xs text-text-bright placeholder:text-text-muted focus:border-accent/50 focus:outline-none"
+					className="min-w-0 rounded-[var(--radius-md)] border border-border bg-void px-2.5 py-1.5 text-xs text-text-bright placeholder:text-text-muted focus:border-accent/50 focus:outline-none"
 				/>
 			</div>
 			<div className="mt-3 flex flex-wrap gap-2">
@@ -924,7 +924,7 @@ function SiteSettingsSection() {
 				)}
 			</header>
 
-			<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+			<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
 				<ToggleRow
 					label="Maintenance mode"
 					hint="Returns 503 to all routes except /health."
