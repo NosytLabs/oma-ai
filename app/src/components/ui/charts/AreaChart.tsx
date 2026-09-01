@@ -101,7 +101,7 @@ export function AreaChartComponent({
 		<ChartContainer heightClass="h-[300px]">
 			<AreaChart
 				data={data}
-				margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+				margin={{ top: 10, right: 10, left: 4, bottom: 0 }}
 				role="img"
 				aria-label={chartDescription}
 			>

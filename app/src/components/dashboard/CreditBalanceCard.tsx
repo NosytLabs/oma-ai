@@ -97,7 +97,7 @@ function CreditBalanceCardComponent({
 				{/* 7-day spend sparkline — visual depth without competing with the
 				  main AreaChart in the Usage tab. Hidden if no data yet. */}
 				{sparkPoints.length > 0 && (
-					<div className="mb-4 -mx-2 rounded-[var(--radius-md)] border border-border/50 bg-void/80 px-3 py-2 shadow-inner">
+					<div className="mb-4 rounded-[var(--radius-md)] border border-border/50 bg-void/80 px-3 py-2 shadow-inner">
 						<Sparkline
 							values={sparkPoints}
 							heightClass="h-10"
