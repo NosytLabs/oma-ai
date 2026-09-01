@@ -791,7 +791,7 @@ function RateLimitSection() {
 			<p className="mb-3 text-[11px] text-text-muted">
 				Set a per-user requests/minute cap, or clear an existing override.
 			</p>
-			<div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+			<div className="grid gap-2" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 180px), 1fr))" }}>
 				<input
 					type="text"
 					value={userId}
@@ -924,7 +924,7 @@ function SiteSettingsSection() {
 				)}
 			</header>
 
-			<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+			<div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))" }}>
 				<ToggleRow
 					label="Maintenance mode"
 					hint="Returns 503 to all routes except /health."

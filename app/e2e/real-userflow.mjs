@@ -74,7 +74,7 @@ async function checkPage(page, route, opts = {}) {
 
 // ────────── Phase 1: Sign in as admin ──────────
 console.log('\n══════ PHASE 1: Sign in as admin ══════');
-const magicURL = 'http://localhost:3000/api/auth/magic-link/verify?token=veenSxcmQprppLJUGfYesGpqGgAGzajO&callbackURL=%2Fdashboard';
+const magicURL = 'http://localhost:3000/api/auth/magic-link/verify?token=zmzvPuaBFKumjPXEHPQvauntHesYlMru&callbackURL=%2Fdashboard';
 note(`✓ Using fresh magic link: ${magicURL.slice(0, 90)}...`);
 
 const browser = await chromium.launch({ headless: true });
