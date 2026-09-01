@@ -311,8 +311,18 @@ function derivePriceUnit(modality: Modality, _pricing: ApiModelEntry["pricing"])
 	* We use this to canonicalise names whose API string is wrong or low-quality
 	* (e.g. "Google Gemini 3" → "Gemini 3 Flash") without forking the SSR fallback.
 	* Keyed by lower-cased model id.
+	*
+	* DeepSeek V4 Flash exists twice in the catalog — once via Venice
+	* (`deepseek-v4-flash-0731`, 25% markup) and once via OMA-AI/OpenBroker
+	* (`deepseek-v4-flash-0731-openbroker`, 0% markup). Both share the same
+	* upstream displayName ("DeepSeek V4 Flash"), which renders as an
+	* indistinguishable duplicate on /pricing and /models. Disambiguate by
+	* provider suffix.
 	*/
-const DISPLAY_NAME_OVERRIDES: Record<string, string> = {};
+const DISPLAY_NAME_OVERRIDES: Record<string, string> = {
+	"deepseek-v4-flash-0731-openbroker": "DeepSeek V4 Flash (OMA-AI)",
+	"deepseek-v4-flash-0731": "DeepSeek V4 Flash (Venice)",
+};
 
 /**
  * Re-exported for server / dashboard code that needs to resolve an upstream

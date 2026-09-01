@@ -171,12 +171,14 @@ function classifyError(
 		lower.includes("fetch") ||
 		lower.includes("econnrefused") ||
 		lower.includes("timeout") ||
+		lower.includes("timed out") ||
 		lower.includes("connection")
 	) {
 		return {
 			type: "network",
 			label: "NETWORK ERROR",
 			suggestion: "Could not reach the server — check your connection",
+			action: onRetry ? { label: "Retry", onClick: onRetry } : undefined,
 		};
 	}
 

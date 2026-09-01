@@ -294,8 +294,16 @@ app.onError((err, c) => {
 		logger.error({ correlationId, error: err.message }, "[OMA] Unhandled error");
 		const errWithStatus = err as Error & { status?: ContentfulStatusCode };
 		const status = errWithStatus.status ?? 500;
+		// 5xx with an explicit ProviderError message — surface it. These are
+		// upstream-failure messages we crafted for users (e.g. "Backend
+		// request timed out", "All model providers failed: ..."). Hiding them
+		// as "Internal server error" leaves chat users staring at a silent
+		// failure with no way to recover.
+		if (status >= 500 && errWithStatus.message && errWithStatus.message !== "Internal server error") {
+				return c.json({ error: { message: errWithStatus.message, type: "server_error", correlationId } }, status as ContentfulStatusCode);
+		}
 		if (status >= 500) {
-				return c.json({ error: { message: "Internal server error", type: "server_error" } }, 500);
+				return c.json({ error: { message: "Internal server error", type: "server_error", correlationId } }, 500);
 		}
 		const safeClientStatuses: ContentfulStatusCode[] = [400, 401, 403, 404, 409, 422, 429];
 		if (safeClientStatuses.includes(status)) {
