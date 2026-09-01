@@ -206,9 +206,9 @@ All 11 public routes return 200, with proper h1s:
 
 ## 5. Open questions for product
 
-1. Should the `mistral-small-2603` "free" badge be qualified? (from prior audit, still open)
-2. Should there be a "default" model indicator in the dropdown so users know which model an empty `?model=` picks? (from prior audit, still open)
-3. Should the server-side fallback toast for the *client-side* peer-list fallback be added too? (BUG-E — server-side toast already exists for `x-oma-fallback: 1`)
+1. ~~Should the `mistral-small-2603` "free" badge be qualified?~~ **Resolved `6d8741b`** — `Free*` badge + tooltip ("Venice free fallback. Used when the primary OpenBroker peer is down — quality may vary.")
+2. ~~Should there be a "default" model indicator in the dropdown so users know which model an empty `?model=` picks?~~ **Resolved `6d8741b`** — `Default` badge on `gemini-3-flash-preview` row with tooltip "Default for empty ?model= URL — what guests get on /chat".
+3. Should the server-side fallback toast for the *client-side* peer-list fallback be added too? (BUG-E — server-side toast already exists for `x-oma-fallback: 1`; 15s "taking longer" toast added in `8281d51` is a different signal)
 4. Should the admin dashboard filter out or aggregate duplicates in `topRoutes` / `topModels` rather than rely on index-keys? (BUG-A — current fix uses index keys; aggregate would be cleaner)
 5. Should the model picker show model health (e.g. red dot for "all hosts at capacity")? The current "fallback" label surfaces this but is post-hoc.
 
@@ -221,11 +221,15 @@ All 11 public routes return 200, with proper h1s:
 | Fix | Commit | Files | Tests |
 |---|---|---|---|
 | BUG-A admin duplicate keys | `398cfa5` | `app/src/app/admin/page.tsx` | covered by prior `pnpm validate` (no traffic yet to trip the warning) |
-| BUG-B kill switch + rate limit layout | `b5c08ef` → improved this commit | `app/src/app/admin/page.tsx` | visual verification (see `admin-after-fix.png`); 518 → 525 tests |
+| BUG-B kill switch + rate limit layout | `b5c08ef` → improved `76e7bcd` | `app/src/app/admin/page.tsx` | visual verification (see `admin-after-fix.png`); 518 → 525 tests |
 | BUG-C clear error on fallback success | `8281d51` | `app/src/app/chat/_hooks/useStreamingChat.ts` | covered indirectly by all chat E2E (no regression) |
 | BUG-D degenerate output detection | `8281d51` | `app/src/lib/degenerate-response.ts` (new) + `chat-message-shared.tsx` + `ChatMessage.tsx` | 7 new test cases in `useStreamingChat.helpers.test.ts` |
-| BUG-E stuck-loading toast | `8281d51` | `app/src/app/chat/_hooks/useStreamingChat.ts` | manual: fires after 15s of `loading=true` |
-| e2e scripts in repo | this commit | `app/e2e/*.mjs` + `app/e2e/README.md` + `app/package.json` scripts | n/a |
+| BUG-E stuck-loading toast | `8281d51` | `app/src/app/chat/_hooks/useStreamingChat.ts` | **live-verified `91d9074`** via `pnpm e2e:chat-smoke` |
+| Q1 "Default" model indicator in picker | `6d8741b` | `app/src/lib/model-utils.ts` + `ModelSelector.tsx` | 3 new test cases in `free-chat-model.test.ts`; **live-verified `91d9074`** |
+| Q2 Mistral "Free*" badge disambiguation | `6d8741b` | same as Q1 | same; **live-verified `91d9074`** |
+| audit P1 WEB/UI toggle clickable during stream | (prior audit, this session re-verified) | `app/src/components/chat/MessageInput.tsx` | **live-verified `91d9074`** |
+| e2e scripts in repo | `8096e8e` | `app/e2e/*.mjs` + `app/e2e/README.md` + `app/package.json` scripts | n/a |
+| Chat UI smoke test (no upstream dependency) | `91d9074` | `app/e2e/chat-ui-smoke.mjs` | **9/9 live-verified** (signed in as admin to bypass IP quota) |
 
 ### BUG-B improvement detail
 
@@ -250,8 +254,8 @@ Chat E2E was still blocked by upstream capacity this run — the new "Server is 
 ```bash
 # Unit + integration
 cd /Users/tyson/Desktop/Code/products/oma-ai && pnpm validate
-# 525/525 expected (45 app + 30 server files, 292 + 233 tests)
-# (was 518 before this session; +7 isDegenerateResponse cases)
+# 528/528 expected (45 app + 30 server files, 295 + 233 tests)
+# (was 518 at start of the prior audit; +7 isDegenerateResponse +3 FREE_TIER_LABELS)
 
 # New persist test (BUG-A regression)
 pnpm --filter app exec vitest run usePlaygroundState.persist.test.ts
@@ -261,6 +265,10 @@ pnpm --filter app exec vitest run usePlaygroundState.persist.test.ts
 pnpm --filter app exec vitest run useStreamingChat.helpers.test.ts
 # 21/21 expected (14 existing + 7 new isDegenerateResponse)
 
+# Free tier label invariants (Q1 + Q2)
+pnpm --filter app exec vitest run free-chat-model.test.ts
+# 7/7 expected (4 existing + 3 new FREE_TIER_LABELS)
+
 # Live E2E (from app/)
 pnpm e2e:persist          # 8/8 model-persistence assertions
 pnpm e2e:userflow         # full admin sign-in + chat + mobile
@@ -268,6 +276,7 @@ pnpm e2e:web-search       # /v1/search end-to-end
 pnpm e2e:web-toggle       # audit P1 fix: WEB toggle clickable during stream
 pnpm e2e:full             # all 13 public pages load 200
 pnpm e2e:interactive      # chat streaming end-to-end
+pnpm e2e:chat-smoke       # 9/9 chat UI smoke (no upstream dep; verifies BUG-E + audit P1 + Q1/Q2 badges)
 
 # Quota state
 curl -s http://localhost:3000/api/v1/usage/today
