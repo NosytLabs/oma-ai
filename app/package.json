@@ -11,7 +11,13 @@
     "start": "next start",
     "test": "vitest run",
     "typecheck": "next typegen && tsc --noEmit",
-    "brand:generate": "node scripts/brand-generate.mjs"
+    "brand:generate": "node scripts/brand-generate.mjs",
+    "e2e:persist": "node e2e/pw-persist.mjs",
+    "e2e:userflow": "node e2e/real-userflow.mjs",
+    "e2e:web-search": "node e2e/web-search-e2e.mjs",
+    "e2e:web-toggle": "node e2e/web-toggle-fix.mjs",
+    "e2e:full": "node e2e/full-audit.mjs",
+    "e2e:interactive": "node e2e/interactive-audit.mjs"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.101.4",
