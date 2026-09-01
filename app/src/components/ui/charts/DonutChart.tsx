@@ -19,6 +19,7 @@ interface DonutChartProps {
 }
 
 function formatValue(value: number, currency: boolean): string {
+	if (!Number.isFinite(value)) return "—";
 	if (currency) return formatUsd(value);
 	return value.toLocaleString(undefined, { maximumFractionDigits: 2 });
 }

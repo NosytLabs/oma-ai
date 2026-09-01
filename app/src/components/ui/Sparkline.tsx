@@ -101,13 +101,16 @@ export function Sparkline({
 		);
 	}
 
-	const isUp = values[values.length - 1] >= values[0];
+	const isUp = values[values.length - 1] > values[0];
+	const isFlat = values[values.length - 1] === values[0];
 	const trendStroke =
 		tone === "neutral"
 			? "var(--color-accent)"
-			: isUp
-				? "var(--color-success)"
-				: "var(--color-error)";
+			: isFlat
+				? "var(--color-accent)"
+				: isUp
+					? "var(--color-success)"
+					: "var(--color-error)";
 
 	return (
 		<svg

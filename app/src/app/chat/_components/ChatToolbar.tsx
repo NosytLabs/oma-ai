@@ -249,7 +249,7 @@ export function ChatToolbar({
 					data-state={shareStatus}
 					className={`${btnBase} max-md:!hidden shrink-0 focus-ring transition-[color,background-color,border-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97] data-[state=success]:border-success/30 data-[state=success]:bg-success/10 data-[state=success]:text-success md:inline-flex min-h-9 min-w-9 sm:min-h-10 sm:min-w-10`}
 					title="Copy a link that opens this chat with the current model pre-selected"
-					aria-label="SHARE — copy a link that opens this chat with the current model pre-selected"
+					aria-label="Share chat with current model pre-selected"
 				>
 					{shareStatus === "success" ? (
 						<CheckCircle2 className="h-4 w-4" />

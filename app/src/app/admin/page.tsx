@@ -241,7 +241,7 @@ export default function AdminPage() {
 					<StatCard
 						label="DB latency"
 						value={fmtMs(snap.runtime.dbLatencyMs)}
-						tone={snap.runtime.dbLatencyMs != null && snap.runtime.dbLatencyMs < 200 ? "ok" : "warn"}
+						tone={snap.runtime.dbLatencyMs === null ? "default" : snap.runtime.dbLatencyMs < 200 ? "ok" : "warn"}
 						icon={<Gauge className="h-3.5 w-3.5 text-text-muted" />}
 					/>
 					<StatCard
@@ -469,6 +469,9 @@ function UsersSection() {
 			toast.success("User status updated");
 			setDialog(null);
 		},
+		onError: (err) => {
+			toast.error(err instanceof Error ? err.message : "Failed to update user status");
+		},
 	});
 
 	const creditAdjust = useMutation({
@@ -489,6 +492,9 @@ function UsersSection() {
 			void queryClient.invalidateQueries({ queryKey: ["admin-users"] });
 			toast.success("Credits adjusted");
 			setDialog(null);
+		},
+		onError: (err) => {
+			toast.error(err instanceof Error ? err.message : "Failed to adjust credits");
 		},
 	});
 

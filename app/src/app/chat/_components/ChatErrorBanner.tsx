@@ -294,7 +294,7 @@ export function ChatErrorBanner({
 
 	return (
 		<div
-			className={`mb-3 flex items-start justify-between gap-3 px-3 py-2.5 rounded-[var(--radius-md)] ${styles.bg} border ${styles.border} text-[11px] ${styles.text} uppercase tracking-wider`}
+			className={`mb-3 flex items-start justify-between gap-3 px-3 py-2.5 rounded-[var(--radius-md)] ${styles.bg} border ${styles.border} text-xs ${styles.text} uppercase tracking-wider`}
 			role="alert"
 		>
 			<div className="flex items-start gap-2 flex-1 min-w-0">
@@ -309,7 +309,7 @@ export function ChatErrorBanner({
 							{classification.label}
 						</span>
 						{countdown !== null && countdown > 0 && (
-							<span className="text-[9px] font-mono opacity-70">
+							<span className="text-[10px] font-mono opacity-90">
 								RETRY IN {countdown}s
 							</span>
 						)}

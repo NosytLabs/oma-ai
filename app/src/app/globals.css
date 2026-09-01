@@ -1306,7 +1306,7 @@
 	.text-red { color: var(--color-error); }
 	.text-pink { color: var(--color-pink); }
 	.text-amber { color: var(--color-warning); }
-	.text-amber-400 { color: var(--color-warning-bright, var(--color-warning)); }
+	/* text-amber-400 removed — unused */
 	.text-blue { color: var(--color-info); }
 	.text-success { color: var(--color-success); }
 	.text-void { color: var(--color-void); }

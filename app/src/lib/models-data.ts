@@ -144,7 +144,7 @@ export function normalizeProvider(raw: string | undefined | null): Provider {
 	if (s.includes("oma-ai") || s.includes("openbroker") || s.includes("obk") || s === "oma") {
 		return "OMA-AI";
 	}
-		if (s.includes("venice")) return "Venice";
+	if (s.includes("venice")) return "Venice";
 	return "OMA-AI";
 }
 

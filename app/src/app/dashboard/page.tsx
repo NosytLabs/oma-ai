@@ -307,7 +307,7 @@ function DashboardPageInner() {
 						</Link>
 					</div>
 				)}
-				<div className="mx-auto w-full max-w-7xl p-4 md:p-8 pt-4">
+				<div className="mx-auto w-full max-w-7xl px-4 py-4 md:px-8 md:py-8">
 					<DashboardHeader
 						loading={loading}
 						modelsAvailable={models.length}
