@@ -16,7 +16,12 @@ import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";
 import { ChevronDown, Lock, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { displayName, isFreeChatModel } from "@/lib/model-utils";
+import {
+	displayName,
+	FREE_DEFAULT_CHAT_MODEL,
+	FREE_TIER_LABELS,
+	isFreeChatModel,
+} from "@/lib/model-utils";
 import { type TierFilter, useSharedLiveModels } from "./chat-message-shared";
 import { ModelLogo } from "@/components/ui/model-logo";
 
@@ -322,6 +327,8 @@ const locked = !isAuthenticated && !free;
 									const tierStyle =
 										tierStyles[modelItem.category as TierFilter] ||
 										tierStyles.all;
+									const isDefault = modelItem.id === FREE_DEFAULT_CHAT_MODEL;
+									const freeTierLabel = FREE_TIER_LABELS[modelItem.id];
 									return (
 										<m.button
 											key={modelItem.id}
@@ -342,7 +349,7 @@ const locked = !isAuthenticated && !free;
 											}}
 											role="option"
 											aria-selected={isSelected}
-											aria-label={`${name}, ${modelItem.category} tier, ${modelItem.ctx} context${locked ? ", requires sign-in" : ", free"}`}
+											aria-label={`${name}, ${modelItem.category} tier, ${modelItem.ctx} context${locked ? ", requires sign-in" : freeTierLabel ? `, ${freeTierLabel.tooltip.toLowerCase()}` : ", free"}${isDefault ? ", default" : ""}`}
 											className={`
 	w-full flex items-center justify-between text-left
 	${compact ? "px-2 py-1.5" : "px-3 py-2.5"}
@@ -366,9 +373,20 @@ const locked = !isAuthenticated && !free;
 												<div className="text-sm font-mono truncate flex items-center gap-1.5">
 													<ModelLogo modelId={modelItem.id} size={16} />
 													{name}
-													{free && (
-														<span className="text-[9px] px-1 py-0.5 bg-[color-mix(in_srgb,var(--color-accent)_15%,transparent)] text-[var(--color-accent)] font-mono uppercase tracking-wide shrink-0 rounded-[var(--radius-sm)]">
-															Free
+													{free && freeTierLabel && (
+														<span
+															className="text-[9px] px-1 py-0.5 bg-[color-mix(in_srgb,var(--color-accent)_15%,transparent)] text-[var(--color-accent)] font-mono uppercase tracking-wide shrink-0 rounded-[var(--radius-sm)] cursor-help"
+															title={freeTierLabel.tooltip}
+														>
+															{freeTierLabel.label}
+														</span>
+													)}
+													{isDefault && (
+														<span
+															className="text-[9px] px-1 py-0.5 bg-[color-mix(in_srgb,var(--color-info)_18%,transparent)] text-[var(--color-info)] font-mono uppercase tracking-wide shrink-0 rounded-[var(--radius-sm)] cursor-help"
+															title="Default for empty ?model= URL — what guests get on /chat"
+														>
+															Default
 														</span>
 													)}
 												</div>

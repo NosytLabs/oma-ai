@@ -30,6 +30,41 @@ export const FREE_CHAT_MODEL_IDS = new Set<string>([
  */
 export const FREE_DEFAULT_CHAT_MODEL = "gemini-3-flash-preview";
 
+/**
+ * Open question 1 (audit 2026-09-01-userflow.md §5): should the
+ * model picker show which model an empty `?model=` resolves to? YES
+ * — show a `DEFAULT` badge on the FREE_DEFAULT_CHAT_MODEL row so
+ * users know what they'll get if they don't pick.
+ *
+ * Open question 2 (audit 2026-09-01 §5): the `mistral-small-2603`
+ * "free" badge could be misread as "OpenBroker-grade free" when
+ * it's actually a Venice fallback. The badge's `title` tooltip
+ * (rendered by ModelSelector) disambiguates the two free tiers.
+ */
+export const FREE_TIER_LABELS: Record<string, { label: string; tooltip: string }> = {
+	"gemini-3-flash-preview": {
+		label: "Free",
+		tooltip: "OpenBroker/Gonka free tier — primary free model for guests",
+	},
+	"kimi-k2-6": {
+		label: "Free",
+		tooltip: "OpenBroker/Gonka free tier",
+	},
+	"minimax-m2-7": {
+		label: "Free",
+		tooltip: "OpenBroker/Gonka free tier",
+	},
+	"deepseek-v4-flash-0731-openbroker": {
+		label: "Free",
+		tooltip: "OpenBroker/Gonka free tier",
+	},
+	"mistral-small-2603": {
+		label: "Free*",
+		tooltip:
+			"Venice free fallback. Used when the primary OpenBroker peer is down — quality may vary.",
+	},
+};
+
 /** Canonical model id for docs / marketing code samples (paid Venice path). */
 export const DOCS_EXAMPLE_MODEL = "llama-3.3-70b";
 
