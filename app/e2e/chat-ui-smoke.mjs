@@ -28,11 +28,32 @@ const errs = [];
 page.on('pageerror', (e) => errs.push(`PE: ${e.message}`));
 page.on('console', (m) => { if (m.type() === 'error') errs.push(`CE: ${m.text().slice(0, 200)}`); });
 
-// Sign in as admin (the only auth that bypasses the IP daily quota
-// so the test is reliable even after the audit-day quota churn).
+// Read the latest magic link from the dev log. If none, trigger one
+// via the dev fallback (requires Resend=placeholder + the dev server
+// writing its log to /tmp/oma-dev.log).
 const stripped = fs.readFileSync(LOG, 'utf8').replace(/\x1b\[[0-9;]*m/g, '');
-const matches = [...stripped.matchAll(/magicLink:\s+"([^"]+)"/g)];
-const url = matches.length ? matches[matches.length - 1][1].replace(/\\u0026/g, '&') : null;
+let matches = [...stripped.matchAll(/magicLink:\s+"([^"]+)"/g)];
+let url = matches.length ? matches[matches.length - 1][1].replace(/\\u0026/g, '&') : null;
+
+if (!url || url.includes('kkLDcpSYPVOAHlmrOQEdcfzEgRPAdiHb')) {
+  // No link yet, or only the very first (long-expired) one — trigger a new one.
+  console.log('Triggering magic link via dev fallback...');
+  try {
+    const r = await fetch('http://localhost:3000/api/auth/sign-in/magic-link', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Origin': 'http://localhost:3000' },
+      body: JSON.stringify({ email: 'tyson@nosytlabs.com', callbackURL: '/dashboard' }),
+    });
+    if (!r.ok) {
+      console.log(`Magic-link request returned ${r.status} (likely the 30s better-auth rate limit)`);
+    }
+    await new Promise((res) => setTimeout(res, 3000));
+    matches = [...fs.readFileSync(LOG, 'utf8').replace(/\x1b\[[0-9;]*m/g, '').matchAll(/magicLink:\s+"([^"]+)"/g)];
+    url = matches.length ? matches[matches.length - 1][1].replace(/\\u0026/g, '&') : null;
+  } catch (e) {
+    console.log(`Magic-link trigger failed: ${e.message}`);
+  }
+}
 
 const findings = [];
 function pass(s) { console.log(`✅ ${s}`); findings.push(`PASS: ${s}`); }
