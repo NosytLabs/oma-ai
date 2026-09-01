@@ -1,7 +1,5 @@
 "use client";
 
-
-
 /**
 	* /login — Better Auth sign-in entry point.
 	*

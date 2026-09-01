@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-	title: "Sign in — OMA AI",
+	title: "Sign in",
 	description:
 		"Sign in to OMA with a passwordless email magic link or SIWE on Base. No password required.",
 	alternates: { canonical: "/login" },

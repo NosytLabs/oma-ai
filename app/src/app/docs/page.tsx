@@ -5,7 +5,7 @@ import { DocsContent } from "./DocsContent";
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://oma-ai.com";
 
 export const metadata: Metadata = {
-	title: "API Documentation — OMA AI Gateway",
+	title: "API Documentation",
 	description: `OpenAI-compatible AI inference reference. ${MODEL_COUNT}+ models, wallet auth, x402 pay-per-request flows, and provider routing — all behind one endpoint.`,
 	alternates: { canonical: `${SITE_URL}/docs` },
 	openGraph: {

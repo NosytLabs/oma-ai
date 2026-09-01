@@ -4,6 +4,7 @@ import type { Dispatch, RefObject, SetStateAction } from "react";
 import { useCallback, useEffect, useRef } from "react";
 import type { Message, SearchResult } from "@/components/chat";
 import { isDegenerateResponse } from "@/lib/degenerate-response";
+import { splitInlineThink } from "@/lib/split-inline-think";
 import { useToast } from "@/components/ui/Toast";
 import { api } from "@/lib/api";
 import {
@@ -495,15 +496,13 @@ export function useStreamingChat(
 				const data = await response.json();
 				let content = data.choices?.[0]?.message?.content || "";
 				let reasoning = data.choices?.[0]?.message?.reasoning_content || "";
-				// Non-streaming fallback: some models (DeepSeek V4 / R1-style)
-				// emit ` thinking... response` inline inside `content` rather than as a
-				// separate `reasoning_content` field. Strip those tags so the user
-				// sees a clean collapsible "Reasoning" block instead of raw markup.
-				if (!content.trim() && !reasoning.trim()) {
-					const thinkMatch = content.match(/ thinking([\s\S]*?)<\/think>/i);
-					if (thinkMatch) {
-						reasoning = thinkMatch[1].trim();
-						content = content.replace(/ thinking[\s\S]*?<\/think>/gi, "").trim();
+				// Non-streaming fallback: some models emit an inline thinking
+				// block inside `content` rather than as a separate field.
+				if (!reasoning.trim()) {
+					const split = splitInlineThink(content);
+					if (split.reasoning) {
+						reasoning = split.reasoning;
+						content = split.content;
 					}
 				}
 				const usage = data.usage;

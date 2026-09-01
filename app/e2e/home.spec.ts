@@ -5,7 +5,7 @@ test.describe('Home Page', () => {
     await page.goto('/');
     
     // Check for title or H1 (adjust as needed based on actual implementation)
-    await expect(page).toHaveTitle(/.*|OMA-AI/);
+    await expect(page).toHaveTitle(/OMA/);
     
     // Attempt to find a common main heading if present
     const h1 = page.locator('h1').first();
