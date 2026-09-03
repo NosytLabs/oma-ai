@@ -100,9 +100,9 @@ export function QuickStartSection() {
 				<div className="mb-4 flex items-center justify-between">
 					<div className="flex items-center gap-2">
 						<Terminal className="h-4 w-4 text-accent" />
-						<span className="text-sm font-medium text-text">
+						<h3 className="text-sm font-medium text-text">
 							Your First Request
-						</span>
+						</h3>
 					</div>
 					<span className="rounded-[var(--radius-md)] bg-accent/10 px-2 py-0.5 text-xs font-mono text-accent border border-accent/20">
 						cURL
@@ -113,11 +113,11 @@ export function QuickStartSection() {
 
 			<div className="mt-4 grid gap-3 sm:grid-cols-2">
 				<div className="rounded-[var(--radius-lg)] border border-border bg-panel shadow-[var(--shadow-md)] p-3">
-					<div className="text-xs text-text-muted mb-1">Base URL</div>
+					<h3 className="text-xs text-text-muted mb-1">Base URL</h3>
 					<code className="text-sm text-accent">https://api.oma-ai.com/v1</code>
 				</div>
 				<div className="rounded-[var(--radius-lg)] border border-border bg-panel shadow-[var(--shadow-md)] p-3">
-					<div className="text-xs text-text-muted mb-1">SDK Install</div>
+					<h3 className="text-xs text-text-muted mb-1">SDK Install</h3>
 					<code className="text-sm text-accent">npm install openai</code>
 				</div>
 			</div>

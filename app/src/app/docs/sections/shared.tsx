@@ -699,7 +699,7 @@ export function CodeBlock({
 				tabIndex={0}
 				className="max-w-full min-w-0 overflow-x-auto p-4 text-sm leading-relaxed"
 			>
-				<pre id={id} tabIndex={0} className="m-0 max-w-full leading-relaxed">
+				<pre id={id} className="m-0 max-w-full leading-relaxed">
 					<SyntaxHighlighter code={code} lang={lang ?? "text"} />
 				</pre>
 			</div>
@@ -736,7 +736,7 @@ export function TabbedCode({ tabs }: { tabs: Tab[] }) {
 					tabIndex={0}
 					className="max-w-full min-w-0 overflow-x-auto p-4 text-sm leading-relaxed"
 				>
-					<pre id={id} tabIndex={0} className="m-0 max-w-full leading-relaxed">
+					<pre id={id} className="m-0 max-w-full leading-relaxed">
 						<SyntaxHighlighter
 							code={tabs[active].code}
 							lang={tabs[active].lang}

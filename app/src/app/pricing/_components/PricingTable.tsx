@@ -221,7 +221,7 @@ export function PricingTable({
 				{/* Right gradient hint for scrollable content */}
 				<div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[var(--color-surface)] to-transparent pointer-events-none z-10 hidden sm:block" />
 
-				<div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent [-webkit-overflow-scrolling:touch]" tabIndex={0} role="region" aria-label="Pricing comparison">
+				<div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent [-webkit-overflow-scrolling:touch]" tabIndex={0} role="region" aria-label="Pricing comparison table. Use horizontal scrolling to view all columns.">
 					<table
 						className="w-full min-w-[36rem] text-left table-fixed"
 						aria-label="Model pricing by tier"

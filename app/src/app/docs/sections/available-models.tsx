@@ -104,7 +104,7 @@ export function AvailableModelsSection() {
 						</div>
 						<div className="p-4">
 							<p className="mb-4 text-sm text-text-muted">{tier.desc}</p>
-							<div className="overflow-x-auto">
+							<div className="overflow-x-auto" tabIndex={0} role="region" aria-label={`${tier.name} models table. Use horizontal scrolling to view all columns.`}>
 								<table
 									className="w-full text-left text-sm"
 									aria-label={`${tier.name} tier models`}

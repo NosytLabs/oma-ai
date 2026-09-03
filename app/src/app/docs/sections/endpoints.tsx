@@ -31,6 +31,8 @@ export function EndpointsSection() {
 							type="button"
 							onClick={() => setExpanded(expanded === ep.path ? null : ep.path)}
 							className="flex w-full items-center justify-between gap-3 p-4 text-left transition-colors duration-200 ease-out hover:bg-surface/80"
+							aria-expanded={expanded === ep.path}
+							aria-controls={expanded === ep.path ? `${ep.anchor}-details` : undefined}
 						>
 							<div className="flex min-w-0 flex-1 items-center gap-3">
 								<span
@@ -68,7 +70,7 @@ export function EndpointsSection() {
 						</button>
 
 						{expanded === ep.path && (
-							<div className="border-t border-border p-4 space-y-4">
+							<div id={`${ep.anchor}-details`} className="border-t border-border p-4 space-y-4">
 								<p className="text-sm text-text-muted">{ep.desc}</p>
 
 								{ep.body && (

@@ -477,9 +477,9 @@ export default function PricingPage() {
 					<div id="faq" className="mb-12 scroll-mt-20">
 					<div className="flex items-center gap-2 mb-6">
 						<HelpCircle className="h-4 w-4 text-accent" />
-						<h3 className="text-sm font-mono font-semibold uppercase tracking-widest text-text-secondary">
+						<h2 className="text-sm font-mono font-semibold uppercase tracking-widest text-text-secondary">
 							FAQ
-						</h3>
+						</h2>
 					</div>
 					<div className="rounded-[var(--radius-xl)] border border-border bg-surface p-6 shadow-[var(--shadow-sm)]">
 						{FAQ_ITEMS.map((item, i) => (
