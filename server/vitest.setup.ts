@@ -21,11 +21,6 @@ delete process.env.VENICE_API_KEY;
 delete process.env.OPENAI_API_KEY;
 delete process.env.ANTHROPIC_API_KEY;
 
-// Surplus wallet key - required for SURPLUS_ENABLED to be true in tests
-if (!process.env.SURPLUS_WALLET_PRIVATE_KEY) {
-  process.env.SURPLUS_WALLET_PRIVATE_KEY = '0x' + 'a1'.repeat(31) + 'b1'; // valid hex format for test
-}
-
 // Required by config.ts validation. Tests that need different values
 // override these per-file via vi.stubEnv().
 if (!process.env.DATABASE_URL) {

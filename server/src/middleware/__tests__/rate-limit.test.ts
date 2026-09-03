@@ -20,6 +20,16 @@ vi.mock('../../lib/redis-client.js', () => ({
 		isRedisReady: vi.fn().mockReturnValue(true),
 }))
 
+vi.mock('../../lib/logger.js', () => ({
+		logger: {
+				error: vi.fn(),
+				warn: vi.fn(),
+				info: vi.fn(),
+				debug: vi.fn(),
+				fatal: vi.fn(),
+		},
+}))
+
 import { checkTokenBucket, checkRpmLimit, tokenBucket, modelRateLimit, rateLimit, MODEL_LIMITS } from '../rate-limit.js'
 
 describe('rate-limit middleware', () => {
@@ -114,15 +124,12 @@ describe('rate-limit middleware', () => {
 						)
 				})
 
-				it('should fail open on Redis error', async () => {
-						// Silence the expected console.error logs for this test
-						const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-						mockRedisClient.eval.mockRejectedValueOnce(new Error('Redis connection failed'))
+		it('should fail open on Redis error', async () => {
+					mockRedisClient.eval.mockRejectedValueOnce(new Error('Redis connection failed'))
 
-						const res = await checkTokenBucket(mockRedisClient as any, 'test-key', { bucketSize: 60, refillRate: 20 })
-						expect(res.allowed).toBe(true)
-						consoleSpy.mockRestore();
-				})
+					const res = await checkTokenBucket(mockRedisClient as any, 'test-key', { bucketSize: 60, refillRate: 20 })
+					expect(res.allowed).toBe(true)
+			})
 		})
 
 		describe('checkRpmLimit', () => {

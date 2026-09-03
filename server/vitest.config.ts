@@ -5,7 +5,6 @@ import { defineConfig } from 'vitest/config'
 // process.env before the first config import runs.
 process.env.NODE_ENV = process.env.NODE_ENV ?? 'development';
 process.env.DATABASE_URL = process.env.DATABASE_URL ?? 'postgresql://test:test@localhost:5432/test';
-process.env.SURPLUS_WALLET_PRIVATE_KEY = process.env.SURPLUS_WALLET_PRIVATE_KEY ?? ('0x' + 'a1'.repeat(31) + 'b1');
 
 export default defineConfig({
   test: {

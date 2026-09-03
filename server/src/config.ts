@@ -126,6 +126,11 @@ const envSchema = z.object({
 		// Optional path whose directory holds models-overrides.json (runtime catalog is code-loaded).
 		MODELS_CONFIG_PATH: z.string().optional(),
 
+		// Optional path to a per-model overrides sidecar (input/output price,
+		// free-chat status). Read on every request so operators can hot-patch
+		// pricing without redeploying. Consumed by src/lib/model-overrides.ts.
+		MODEL_OVERRIDES_PATH: z.string().optional(),
+
 		// Trusted proxy IPs for X-Forwarded-For validation (comma-separated)
 		// Only trust X-Forwarded-For headers from these known proxy IPs
 		TRUSTED_PROXY_IPS: z.string().optional().default(""),

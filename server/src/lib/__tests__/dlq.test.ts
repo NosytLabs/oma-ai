@@ -32,6 +32,10 @@ vi.mock('../redis-client.js', () => ({
 		}),
 }))
 
+vi.mock('../logger.js', () => ({
+		logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn(), fatal: vi.fn() },
+}))
+
 describe('DLQ', () => {
 		beforeEach(() => {
 				vi.clearAllMocks()
