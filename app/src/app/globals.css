@@ -127,6 +127,7 @@
 	--color-red: #f87171;
 	--color-blue: #58a6ff;
 	--color-amber: #f0b429;
+	--color-amber-dim: rgba(240, 180, 41, 0.12);
 	--color-danger: #f87171;
 
 	/* Modal scrim — bg-overlay/60 etc. Previously undefined: every backdrop
@@ -1038,7 +1039,7 @@
 
 	.page-hero {
 		position: relative;
-		overflow: visible;
+		overflow: hidden;
 		padding-top: 2.5rem;
 		padding-bottom: 2.75rem;
 		display: flex;

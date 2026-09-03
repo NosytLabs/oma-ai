@@ -6,6 +6,7 @@ import { useEffect, useId, useState } from "react";
 import { FloatingIcons } from "@/components/floating-icons";
 import { BreadcrumbListJsonLd } from "@/components/json-ld";
 import { MODEL_COUNT } from "@/lib/models-data";
+import { useDialog } from "@/lib/use-dialog";
 import { DocsSearch } from "./_components/DocsSearch";
 import { NAV_ITEMS } from "./_lib/nav-data";
 
@@ -30,6 +31,10 @@ function Sidebar({ activeId }: { activeId: string }) {
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const mobileNavId = useId();
 	const [isMobile, setIsMobile] = useState(false);
+	const { panelRef } = useDialog({
+		open: mobileOpen && isMobile,
+		onClose: () => setMobileOpen(false),
+	});
 	useEffect(() => {
 		const m = window.matchMedia("(max-width: 1023px)");
 		const u = () => setIsMobile(m.matches);
@@ -64,6 +69,7 @@ function Sidebar({ activeId }: { activeId: string }) {
 			)}
 
 			<aside
+				ref={panelRef}
 				id={mobileNavId}
 				aria-label="Documentation navigation"
 				aria-hidden={drawerHidden}
@@ -137,7 +143,7 @@ export function DocsContent() {
 	}, []);
 
 	return (
-		<div className="relative bg-void">
+		<div className="relative overflow-x-clip bg-void">
 			<BreadcrumbListJsonLd
 				items={[
 					{ name: "Home", url: "/" },
@@ -192,20 +198,20 @@ export function DocsContent() {
 							<div className="mt-8 flex flex-wrap items-center gap-3">
 								<Link
 									href="/login"
-									className="btn-mono btn-primary group"
+									className="btn-mono btn-primary group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"
 								>
 									<span>Get API key</span>
 									<ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
 								</Link>
 								<Link
 									href="#quickstart"
-									className="btn-mono"
+									className="btn-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"
 								>
 									Quick Start
 								</Link>
 								<Link
 									href="/pricing"
-									className="btn-mono"
+									className="btn-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"
 								>
 									View Pricing
 								</Link>

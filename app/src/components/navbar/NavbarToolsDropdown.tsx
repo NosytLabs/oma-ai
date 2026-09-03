@@ -76,7 +76,7 @@ export function NavbarToolsDropdown({
 					aria-expanded={open}
 					aria-controls="tools-menu"
 					aria-label="Tools menu"
-					className={`relative inline-flex h-9 items-center gap-2 rounded-sm px-3 text-sm transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+					className={`relative inline-flex h-11 items-center gap-2 rounded-sm px-3 text-sm transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
 						isToolsActive
 							? "text-accent"
 							: "text-text-secondary hover:text-text-bright"
@@ -142,7 +142,7 @@ export function NavbarToolsDropdown({
 											aria-label={`${link.label} — ${link.desc}`}
 											onClick={() => onOpenChange(false)}
 											aria-current={isActive ? "page" : undefined}
-											className={`group/item flex items-start gap-3 rounded-sm px-3 py-2 transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+											className={`group/item flex min-h-11 items-start gap-3 rounded-sm px-3 py-2 transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
 												isActive
 													? "bg-accent-dim text-accent"
 													: "text-text-secondary hover:bg-surface hover:text-text-bright"

@@ -188,7 +188,7 @@ export function DashboardHeader({
 					next = 0;
 					break;
 				case "End":
-					next = TABS.length - 1;
+					next = visibleTabs.length - 1;
 					break;
 				default:
 					return;
@@ -198,7 +198,7 @@ export function DashboardHeader({
 			onTabChange(visibleTabs[safe].id);
 			tabRefs.current[safe]?.focus();
 		},
-		[onTabChange, selectedTabIndex],
+		[onTabChange, selectedTabIndex, visibleTabs],
 	);
 
 	return (

@@ -268,7 +268,9 @@ export function UnifiedDepositInterface({
 		{ key: "processing" as const, label: "Verify" },
 		{ key: "complete" as const, label: "Done" },
 	];
-	const currentStepIdx = STEPS.findIndex((s) => s.key === step);
+	const currentStepIdx = step === "error"
+		? Math.max(0, STEPS.findIndex((s) => s.key === "processing"))
+		: STEPS.findIndex((s) => s.key === step);
 
 	return (
 		<div className="space-y-6">
@@ -283,8 +285,10 @@ export function UnifiedDepositInterface({
 							aria-current={i === currentStepIdx ? "step" : undefined}
 						>
 							<div
-								className={`flex h-8 w-8 items-center justify-center rounded-full border text-xs font-mono font-semibold transition-colors duration-300 ${
-									i === currentStepIdx
+									className={`flex h-8 w-8 items-center justify-center rounded-full border text-xs font-mono font-semibold transition-colors duration-300 ${
+									step === "error" && i === currentStepIdx
+										? "border-error bg-error/10 text-error"
+										: i === currentStepIdx
 										? "border-accent bg-accent/10 text-accent"
 										: i < currentStepIdx
 											? "border-success/40 bg-success/10 text-success"
@@ -294,8 +298,10 @@ export function UnifiedDepositInterface({
 								{i + 1}
 							</div>
 							<span
-								className={`text-center text-[10px] font-mono uppercase tracking-wider leading-tight ${
-									i === currentStepIdx
+									className={`text-center text-[10px] font-mono uppercase tracking-wider leading-tight ${
+									step === "error" && i === currentStepIdx
+										? "text-error"
+										: i === currentStepIdx
 										? "text-accent"
 										: i < currentStepIdx
 											? "text-success"

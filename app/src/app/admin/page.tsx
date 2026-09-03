@@ -29,6 +29,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/hooks/useAuth";
+import { useDialog } from "@/lib/use-dialog";
 import { useToast } from "@/components/ui/Toast";
 
 interface OpsSnapshot {
@@ -159,7 +160,7 @@ export default function AdminPage() {
 				</p>
 				<Link
 					href="/login?next=/admin"
-					className="rounded-[var(--radius-md)] border border-border bg-surface px-4 py-2 font-mono text-xs uppercase tracking-wider text-text-secondary transition-colors hover:border-accent/50 hover:text-text-bright"
+					className="rounded-[var(--radius-md)] border border-border bg-surface px-4 py-2 font-mono text-xs uppercase tracking-wider text-text-secondary transition-colors hover:border-accent/50 hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 				>
 					Sign in
 				</Link>
@@ -177,7 +178,7 @@ export default function AdminPage() {
 				</p>
 				<Link
 					href="/"
-					className="rounded-[var(--radius-md)] border border-border bg-surface px-4 py-2 font-mono text-xs uppercase tracking-wider text-text-secondary transition-colors hover:border-accent/50 hover:text-text-bright"
+					className="rounded-[var(--radius-md)] border border-border bg-surface px-4 py-2 font-mono text-xs uppercase tracking-wider text-text-secondary transition-colors hover:border-accent/50 hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 				>
 					Back to home
 				</Link>
@@ -503,7 +504,7 @@ function UsersSection() {
 			className="rounded-[var(--radius-lg)] border border-border bg-surface p-4"
 			aria-label="User management"
 		>
-			<header className="mb-3 flex items-center justify-between gap-3">
+			<header className="mb-3 flex flex-wrap items-center justify-between gap-3">
 				<h2 className="font-mono text-[10px] uppercase tracking-widest text-text-muted">
 					Users
 				</h2>
@@ -512,7 +513,7 @@ function UsersSection() {
 					value={q}
 					onChange={(e) => setQ(e.target.value)}
 					placeholder="Search email or name…"
-					className="w-56 rounded-[var(--radius-md)] border border-border bg-void px-2.5 py-1.5 text-xs text-text-bright placeholder:text-text-muted focus:border-accent/50 focus:outline-none"
+					className="min-w-0 w-full rounded-[var(--radius-md)] border border-border bg-void px-2.5 py-1.5 text-xs text-text-bright placeholder:text-text-muted focus:border-accent/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:w-56"
 				/>
 			</header>
 
@@ -571,20 +572,22 @@ function UsersSection() {
 											<button
 												type="button"
 												onClick={() => setDialog({ kind: "credit", user: u })}
-												className="rounded-[var(--radius-sm)] border border-border bg-surface px-2 py-1 text-[10px] font-mono uppercase tracking-wider text-text-secondary hover:border-accent/40 hover:text-accent"
-												title="Adjust credits"
+													className="rounded-[var(--radius-sm)] border border-border bg-surface px-2 py-1 text-[10px] font-mono uppercase tracking-wider text-text-secondary hover:border-accent/40 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+													aria-label={`Adjust credits for ${u.email ?? u.id}`}
+													title="Adjust credits"
 											>
 												<UsersIcon className="h-3 w-3" />
 											</button>
 											<button
 												type="button"
 												onClick={() => setDialog({ kind: "suspend", user: u })}
-												className={`rounded-[var(--radius-sm)] border px-2 py-1 text-[10px] font-mono uppercase tracking-wider ${
+													className={`rounded-[var(--radius-sm)] border px-2 py-1 text-[10px] font-mono uppercase tracking-wider ${
 													u.suspended
 														? "border-success/30 bg-success/10 text-success hover:border-success/50"
 														: "border-error/30 bg-error/10 text-error hover:border-error/50"
-												}`}
-												title={u.suspended ? "Unsuspend" : "Suspend"}
+													}`}
+													aria-label={`${u.suspended ? "Unsuspend" : "Suspend"} ${u.email ?? u.id}`}
+													title={u.suspended ? "Unsuspend" : "Suspend"}
 											>
 												{u.suspended ? (
 													<UserPlus className="h-3 w-3" />
@@ -658,6 +661,7 @@ function AdminActionDialog({
 	onCredit: (deltaCents: number, reason: string) => void;
 	onSuspend: (reason: string) => void;
 }) {
+	const { panelRef } = useDialog({ open: true, onClose });
 	const [dollars, setDollars] = useState("1.00");
 	const [reason, setReason] = useState(
 		dialog.kind === "credit"
@@ -678,7 +682,7 @@ function AdminActionDialog({
 			aria-modal="true"
 			aria-labelledby="admin-action-title"
 		>
-			<div className="w-full max-w-md rounded-[var(--radius-lg)] border border-border bg-panel p-5 shadow-xl">
+			<div ref={panelRef} tabIndex={-1} className="w-full max-w-md rounded-[var(--radius-lg)] border border-border bg-panel p-5 shadow-xl">
 				<h3
 					id="admin-action-title"
 					className="text-sm font-semibold text-text-bright"
@@ -697,7 +701,7 @@ function AdminActionDialog({
 							step="0.01"
 							value={dollars}
 							onChange={(e) => setDollars(e.target.value)}
-							className="mt-1.5 min-h-11 w-full rounded-[var(--radius-md)] border border-border bg-void px-3 text-sm text-text-bright focus:border-accent/50 focus:outline-none"
+							className="mt-1.5 min-h-11 w-full rounded-[var(--radius-md)] border border-border bg-void px-3 text-sm text-text-bright focus:border-accent/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 						/>
 					</label>
 				) : (
@@ -712,7 +716,7 @@ function AdminActionDialog({
 						type="text"
 						value={reason}
 						onChange={(e) => setReason(e.target.value)}
-						className="mt-1.5 min-h-11 w-full rounded-[var(--radius-md)] border border-border bg-void px-3 text-sm text-text-bright focus:border-accent/50 focus:outline-none"
+						className="mt-1.5 min-h-11 w-full rounded-[var(--radius-md)] border border-border bg-void px-3 text-sm text-text-bright focus:border-accent/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 					/>
 				</label>
 				<div className="mt-5 flex justify-end gap-2">
@@ -798,7 +802,7 @@ function RateLimitSection() {
 					onChange={(e) => setUserId(e.target.value)}
 					placeholder="User ID"
 					aria-label="User ID"
-					className="min-w-0 rounded-[var(--radius-md)] border border-border bg-void px-2.5 py-1.5 font-mono text-xs text-text-bright placeholder:text-text-muted focus:border-accent/50 focus:outline-none"
+					className="min-w-0 rounded-[var(--radius-md)] border border-border bg-void px-2.5 py-1.5 font-mono text-xs text-text-bright placeholder:text-text-muted focus:border-accent/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 				/>
 				<input
 					type="number"
@@ -807,7 +811,7 @@ function RateLimitSection() {
 					value={rpm}
 					onChange={(e) => setRpm(e.target.value)}
 					aria-label="Requests per minute"
-					className="min-w-0 rounded-[var(--radius-md)] border border-border bg-void px-2.5 py-1.5 font-mono text-xs text-text-bright focus:border-accent/50 focus:outline-none"
+					className="min-w-0 rounded-[var(--radius-md)] border border-border bg-void px-2.5 py-1.5 font-mono text-xs text-text-bright focus:border-accent/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 				/>
 				<input
 					type="text"
@@ -815,7 +819,7 @@ function RateLimitSection() {
 					onChange={(e) => setReason(e.target.value)}
 					placeholder="Reason"
 					aria-label="Override reason"
-					className="min-w-0 rounded-[var(--radius-md)] border border-border bg-void px-2.5 py-1.5 text-xs text-text-bright placeholder:text-text-muted focus:border-accent/50 focus:outline-none"
+					className="min-w-0 rounded-[var(--radius-md)] border border-border bg-void px-2.5 py-1.5 text-xs text-text-bright placeholder:text-text-muted focus:border-accent/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 				/>
 			</div>
 			<div className="mt-3 flex flex-wrap gap-2">
@@ -829,7 +833,7 @@ function RateLimitSection() {
 							reason: reason.trim() || "operator override",
 						})
 					}
-					className="rounded-[var(--radius-md)] border border-accent/30 bg-accent/10 px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-accent hover:bg-accent/20 disabled:opacity-50"
+					className="rounded-[var(--radius-md)] border border-accent/30 bg-accent/10 px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-accent hover:bg-accent/20 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 				>
 					Apply
 				</button>
@@ -843,7 +847,7 @@ function RateLimitSection() {
 							reason: reason.trim() || "clear override",
 						})
 					}
-					className="rounded-[var(--radius-md)] border border-border bg-void px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-text-secondary hover:border-error/40 hover:text-error disabled:opacity-50"
+					className="rounded-[var(--radius-md)] border border-border bg-void px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-text-secondary hover:border-error/40 hover:text-error disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 				>
 					Clear
 				</button>
@@ -954,7 +958,7 @@ function SiteSettingsSection() {
 					onChange={(e) => setMessage(e.target.value)}
 					placeholder="Be back in 30 minutes."
 					maxLength={500}
-					className="mt-1 w-full rounded-[var(--radius-md)] border border-border bg-void px-2.5 py-1.5 text-xs text-text-bright placeholder:text-text-muted focus:border-accent/50 focus:outline-none"
+					className="mt-1 w-full rounded-[var(--radius-md)] border border-border bg-void px-2.5 py-1.5 text-xs text-text-bright placeholder:text-text-muted focus:border-accent/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 				/>
 			</label>
 

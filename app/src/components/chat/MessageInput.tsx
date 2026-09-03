@@ -127,6 +127,13 @@ export const MessageInputed = forwardRef<
 		}
 	}, []);
 
+	useEffect(() => {
+		const target = localTextareaRef.current;
+		if (!target || !input) return;
+		target.style.height = "auto";
+		target.style.height = `${Math.min(target.scrollHeight, 200)}px`;
+	}, [input]);
+
 	const beamActive = !reduceMotion && (loading || (focused && hasInput));
 
 	const toolPill = (

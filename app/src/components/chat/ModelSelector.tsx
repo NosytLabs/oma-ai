@@ -129,6 +129,8 @@ export function ModelSelector({
 	const [search, setSearch] = useState("");
 	const [tierFilter, setTierFilter] = useState<TierFilter>("all");
 	const dropdownRef = useRef<HTMLDivElement>(null);
+	const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
+	const [highlightedIndex, setHighlightedIndex] = useState(0);
 	const MODELS = useSharedLiveModels();
 
 	useEffect(() => {
@@ -182,6 +184,10 @@ export function ModelSelector({
 		});
 	}, [search, tierFilter, MODELS]);
 
+	useEffect(() => {
+		setHighlightedIndex(Math.max(0, filtered.findIndex((item) => item.id === model)));
+	}, [filtered, model]);
+
 	const selectedModel = useMemo(
 		() => MODELS.find((m) => m.id === model),
 		[model, MODELS],
@@ -196,8 +202,22 @@ export function ModelSelector({
 			<button
 				type="button"
 				onClick={() => setOpen(!open)}
+				onKeyDown={(e) => {
+					if (!open && (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ")) {
+						e.preventDefault();
+						setOpen(true);
+						return;
+					}
+					if (!open || filtered.length === 0) return;
+					if (["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) {
+						e.preventDefault();
+						const next = e.key === "Home" ? 0 : e.key === "End" ? filtered.length - 1 : (highlightedIndex + (e.key === "ArrowDown" ? 1 : -1) + filtered.length) % filtered.length;
+						setHighlightedIndex(next);
+						optionRefs.current[next]?.focus();
+					}
+				}}
 				aria-expanded={open}
-				aria-haspopup="listbox"
+				aria-haspopup="menu"
 				aria-label={`Select AI model — ${selectedName || "Choose model"}`}
 				className={`
 	flex w-full min-w-0 items-center gap-2 bg-[var(--color-surface)]/70 border border-[var(--color-border)]
@@ -237,7 +257,7 @@ export function ModelSelector({
 							boxShadow: "var(--shadow-dropdown)",
 							transformOrigin: "top left",
 						}}
-						role="listbox"
+						role="menu"
 						aria-label="Available AI models"
 					>
 						{/* ─── Search + Tier Filters ─── */}
@@ -332,6 +352,7 @@ const locked = !isAuthenticated && !free;
 									return (
 										<m.button
 											key={modelItem.id}
+											ref={(node) => { optionRefs.current[i] = node; }}
 											custom={i}
 											variants={itemVariants}
 											initial="hidden"
@@ -347,8 +368,15 @@ const locked = !isAuthenticated && !free;
 												setSearch("");
 												setTierFilter("all");
 											}}
-											role="option"
-											aria-selected={isSelected}
+											onKeyDown={(e) => {
+												if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) return;
+												e.preventDefault();
+												const next = e.key === "Home" ? 0 : e.key === "End" ? filtered.length - 1 : (i + (e.key === "ArrowDown" ? 1 : -1) + filtered.length) % filtered.length;
+												setHighlightedIndex(next);
+												optionRefs.current[next]?.focus();
+											}}
+											role="menuitemradio"
+											aria-checked={isSelected}
 											aria-label={`${name}, ${modelItem.category} tier, ${modelItem.ctx} context${locked ? ", requires sign-in" : freeTierLabel ? `, ${freeTierLabel.tooltip.toLowerCase()}` : ", free"}${isDefault ? ", default" : ""}`}
 											className={`
 	w-full flex items-center justify-between text-left

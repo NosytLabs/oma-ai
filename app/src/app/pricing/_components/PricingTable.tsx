@@ -142,7 +142,7 @@ export function PricingTable({
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
 							placeholder="Search models..."
-							className="w-full h-11 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] pl-10 pr-4 text-sm text-text-bright placeholder-text-muted focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
+							className="h-11 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] pl-10 pr-4 text-sm text-text-bright placeholder-text-muted focus:border-[var(--color-accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
 						/>
 					</div>
 
@@ -156,7 +156,7 @@ export function PricingTable({
 							aria-label="Filter models by provider"
 							value={selectedProvider}
 							onChange={(e) => setSelectedProvider(e.target.value)}
-							className="w-full h-11 appearance-none rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 pr-10 text-sm text-text-bright focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
+							className="h-11 w-full appearance-none rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 pr-10 text-sm text-text-bright focus:border-[var(--color-accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
 						>
 							<option value="all">All Providers</option>
 							{providers.map((p) => (
@@ -180,7 +180,7 @@ export function PricingTable({
 							aria-label="Filter models by minimum context window size"
 							value={minContext}
 							onChange={(e) => setMinContext(Number(e.target.value))}
-							className="w-full h-11 appearance-none rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 pr-10 text-sm text-text-bright focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
+							className="h-11 w-full appearance-none rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 pr-10 text-sm text-text-bright focus:border-[var(--color-accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
 						>
 							<option value={0}>Any Context Window</option>
 							<option value={8000}>&ge; 8K tokens</option>
@@ -208,7 +208,7 @@ export function PricingTable({
 								setMinContext(0);
 							}}
 							aria-label="Clear all search and filter criteria"
-							className="text-[var(--color-accent)] hover:underline focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] rounded px-1"
+							className="rounded px-1 text-[var(--color-accent)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
 						>
 							Clear filters
 						</button>
@@ -240,7 +240,7 @@ export function PricingTable({
 										type="button"
 										onClick={() => toggleSort("name")}
 										aria-label={`Model, sort by model name. Current order: ${sortField === "name" ? sortOrder : "none"}`}
-										className="group inline-flex items-center gap-1.5 hover:text-text-bright focus:outline-none"
+										className="group inline-flex items-center gap-1.5 rounded px-1 hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
 									>
 										Model
 										<ArrowUpDown className="h-3 w-3 text-text-muted group-hover:text-text-bright transition-colors" />
@@ -254,7 +254,7 @@ export function PricingTable({
 										type="button"
 										onClick={() => toggleSort("inputPrice")}
 										aria-label={`Input / 1M, sort by input price. Current order: ${sortField === "inputPrice" ? sortOrder : "none"}`}
-										className="group inline-flex items-center gap-1.5 hover:text-text-bright focus:outline-none ml-auto"
+										className="group ml-auto inline-flex items-center gap-1.5 rounded px-1 hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
 									>
 										Input / 1M
 										<ArrowUpDown className="h-3 w-3 text-text-muted group-hover:text-text-bright transition-colors" />
@@ -265,7 +265,7 @@ export function PricingTable({
 										type="button"
 										onClick={() => toggleSort("outputPrice")}
 										aria-label={`Output / 1M, sort by output price. Current order: ${sortField === "outputPrice" ? sortOrder : "none"}`}
-										className="group inline-flex items-center gap-1.5 hover:text-text-bright focus:outline-none ml-auto"
+										className="group ml-auto inline-flex items-center gap-1.5 rounded px-1 hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
 									>
 										Output / 1M
 										<ArrowUpDown className="h-3 w-3 text-text-muted group-hover:text-text-bright transition-colors" />
@@ -276,7 +276,7 @@ export function PricingTable({
 										type="button"
 										onClick={() => toggleSort("context")}
 										aria-label={`Ctx, sort by context length. Current order: ${sortField === "context" ? sortOrder : "none"}`}
-										className="group inline-flex items-center gap-1.5 hover:text-text-bright focus:outline-none ml-auto"
+										className="group ml-auto inline-flex items-center gap-1.5 rounded px-1 hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
 									>
 										Ctx
 										<ArrowUpDown className="h-3 w-3 text-text-muted group-hover:text-text-bright transition-colors" />

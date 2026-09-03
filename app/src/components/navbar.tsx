@@ -125,7 +125,7 @@ export function Navbar() {
 											<Link
 												href={link.href}
 												aria-current={isActive ? "page" : undefined}
-												className={`relative inline-flex h-9 items-center gap-1.5 rounded-sm px-3 text-[13px] transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+														className={`relative inline-flex h-11 items-center gap-1.5 rounded-sm px-3 text-[13px] transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
 													isActive
 														? "text-accent"
 														: "text-text-secondary hover:text-text-bright"
@@ -156,7 +156,7 @@ export function Navbar() {
 
 					{/* RIGHT — single cluster so justify-between never interleaves items */}
 					<div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
-						<div className="hidden xl:flex items-center px-1">
+						<div className="hidden 2xl:flex items-center px-1">
 							<ApiStatus />
 						</div>
 
@@ -168,7 +168,7 @@ export function Navbar() {
 							whileHover={prefersReduced ? undefined : { y: -1 }}
 							whileTap={prefersReduced ? undefined : { scale: 0.94 }}
 							transition={EASE_SPRING}
-							className="hidden h-11 w-11 items-center justify-center rounded-sm text-text-tertiary transition-colors duration-200 ease-out hover:bg-surface hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent lg:inline-flex"
+							className="hidden h-11 w-11 items-center justify-center rounded-sm text-text-tertiary transition-colors duration-200 ease-out hover:bg-surface hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent 2xl:inline-flex"
 						>
 							<GithubIcon className="h-4 w-4" />
 						</m.a>

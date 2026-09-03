@@ -246,7 +246,7 @@ export default function PricingPage() {
 			</div>
 
 			<div className="container-page">
-				<div className="page-hero overflow-visible">
+				<div className="page-hero">
 					<span className="section-eyebrow-caps">AI API pricing</span>
 					<h1 className="h1-page text-text-bright max-w-4xl">Pricing for every model.</h1>
 					<p className="page-intro">

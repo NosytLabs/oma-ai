@@ -159,7 +159,7 @@ export function DocsSearch() {
 					setOpen(true);
 					setTimeout(() => inputRef.current?.focus(), 50);
 				}}
-				className="flex items-center gap-2 rounded-[var(--radius-lg)] border border-border bg-surface/60 px-3 py-1.5 text-sm text-text-muted transition-[background-color,border-color,color] hover:border-border-bright hover:text-text hover:bg-surface"
+				className="flex min-h-10 items-center gap-2 rounded-[var(--radius-lg)] border border-border bg-surface/60 px-3 py-1.5 text-sm text-text-muted transition-[background-color,border-color,color] hover:border-border-bright hover:bg-surface hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"
 				aria-label="Search docs ⌘K"
 			>
 				<Search className="h-3.5 w-3.5" aria-hidden="true" />

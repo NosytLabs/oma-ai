@@ -35,6 +35,14 @@ export const THEME_ACCENTS: Readonly<Record<Theme, string>> = {
 	synth: "#a78bfa",
 };
 
+/** Browser chrome color for each accent, kept dark enough for readable icons. */
+const THEME_CHROME: Readonly<Record<Theme, string>> = {
+	emerald: "#07090a",
+	amber: "#0b0a07",
+	mono: "#0a0a0a",
+	synth: "#09070d",
+};
+
 export const THEME_LIST: ReadonlyArray<{
 	id: Theme;
 	name: string;
@@ -86,10 +94,10 @@ function applyTheme(theme: Theme): void {
 		document.documentElement.setAttribute("data-theme", theme);
 	}
 	// Keep browser chrome (mobile address bar) in sync
-	const meta = document.querySelector('meta[name="theme-color"]');
-	if (meta) {
-		meta.setAttribute("content", BRAND_COLORS.void);
-	}
+	const chromeColor = THEME_CHROME[theme] ?? BRAND_COLORS.void;
+	document
+		.querySelectorAll('meta[name="theme-color"]')
+		.forEach((meta) => meta.setAttribute("content", chromeColor));
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
