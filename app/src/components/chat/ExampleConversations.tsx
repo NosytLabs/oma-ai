@@ -322,14 +322,14 @@ export function ExampleConversations({ onSelect }: ExampleConversationsProps) {
 										<Icon className="w-5 h-5" style={{ color: catColor }} />
 									</div>
 									<div className="flex-1 min-w-0">
-										<div className="flex items-center gap-2 mb-1">
-											<h3 className="text-[13px] font-mono font-bold text-text-bright uppercase tracking-wide truncate">
-												{example.title}
-											</h3>
-											<ChevronRight
-												className={`w-3.5 h-3.5 text-text-muted transition-transform duration-200 ease-out ${isExpanded ? "rotate-90 text-accent" : ""}`}
-											/>
-										</div>
+									<div className="flex items-start gap-2 mb-1">
+										<h3 className="flex-1 min-w-0 text-[13px] font-mono font-bold text-text-bright uppercase tracking-wide leading-snug line-clamp-2">
+											{example.title}
+										</h3>
+										<ChevronRight
+											className={`w-3.5 h-3.5 shrink-0 mt-0.5 text-text-muted transition-transform duration-200 ease-out ${isExpanded ? "rotate-90 text-accent" : ""}`}
+										/>
+									</div>
 										<p className="text-[11px] font-mono text-text-muted truncate mb-3">
 											{example.subtitle}
 										</p>

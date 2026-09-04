@@ -147,6 +147,17 @@ export function displayName(id: string, fallback?: string): string {
 	);
 }
 
+/**
+ * Compact display name for width-capped surfaces (toolbar pill, badges).
+ * Strips the trailing provider disambiguator the catalog appends to
+ * same-family models — e.g. "DeepSeek V4 Flash (OMA-AI)" → "DeepSeek V4
+ * Flash". The full name stays in dropdown rows and `title` tooltips so
+ * no information is lost where space allows.
+ */
+export function shortDisplayName(id: string, fallback?: string): string {
+	return displayName(id, fallback).replace(/\s*\([^()]*\)\s*$/, "");
+}
+
 // ---------------------------------------------------------------------------
 // Live-model mapping — converts raw API response objects into the
 // ModelOption shape consumed by the UI.  Lives here (not in ChatMessage)

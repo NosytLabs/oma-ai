@@ -18,6 +18,7 @@ import { ChevronDown, Lock, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	displayName,
+	shortDisplayName,
 	FREE_DEFAULT_CHAT_MODEL,
 	FREE_TIER_LABELS,
 	isFreeChatModel,
@@ -195,6 +196,11 @@ export function ModelSelector({
 	const selectedName = selectedModel
 		? displayName(selectedModel.id, selectedModel.name)
 		: null;
+	// Toolbar pill is width-capped: show the compact name, keep the full
+	// disambiguated name in the tooltip + dropdown rows.
+	const selectedShortName = selectedModel
+		? shortDisplayName(selectedModel.id, selectedModel.name)
+		: null;
 
 	return (
 		<div ref={dropdownRef} className="relative">
@@ -231,8 +237,11 @@ export function ModelSelector({
 				<span className="relative flex h-2 w-2 shrink-0">
 					<span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--color-accent)] shadow-[0_0_8px_var(--color-accent-glow)]" />
 				</span>
-				<span className="min-w-0 flex-1 truncate text-left font-mono text-[11px] font-bold uppercase tracking-wider text-text-bright sm:text-[12px]">
-					{selectedName || "SELECT MODEL"}
+				<span
+					title={selectedName ?? undefined}
+					className="min-w-0 flex-1 truncate text-left font-mono text-[11px] font-bold uppercase tracking-wider text-text-bright sm:text-[12px]"
+				>
+					{selectedShortName || "SELECT MODEL"}
 				</span>
 				<ChevronDown
 					className={`
