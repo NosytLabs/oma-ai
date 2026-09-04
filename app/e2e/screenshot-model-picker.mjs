@@ -50,7 +50,7 @@ if (await freeBtn.count() > 0) {
 }
 
 // Hover mistral to surface the tooltip
-const mistralOpt = page.locator('[role="option"]:has-text("Mistral")');
+const mistralOpt = page.locator('[role="menuitemradio"]:has-text("Mistral")');
 if (await mistralOpt.count() > 0) {
   await mistralOpt.first().hover();
   await page.waitForTimeout(500);

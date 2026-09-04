@@ -30,7 +30,7 @@ export function EndpointsSection() {
 						<button
 							type="button"
 							onClick={() => setExpanded(expanded === ep.path ? null : ep.path)}
-							className="flex w-full items-center justify-between gap-3 p-4 text-left transition-colors duration-200 ease-out hover:bg-surface/80"
+							className="flex w-full items-center justify-between gap-3 p-4 text-left transition-colors duration-200 ease-out hover:bg-surface/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
 							aria-expanded={expanded === ep.path}
 							aria-controls={expanded === ep.path ? `${ep.anchor}-details` : undefined}
 						>

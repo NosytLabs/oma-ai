@@ -1,6 +1,18 @@
 import { describe, expect, it } from "vitest";
+import manifest from "../manifest";
 import robots from "../robots";
 import sitemap from "../sitemap";
+
+describe("manifest.ts - Next.js MetadataRoute.Manifest", () => {
+	it("defines an installable OMA manifest without duplicate route sources", () => {
+		const result = manifest();
+		expect(result.name).toContain("OMA AI");
+		expect(result.start_url).toBe("/");
+		expect(result.display).toBe("standalone");
+		expect(result.icons?.some((icon) => icon.sizes === "192x192")).toBe(true);
+		expect(result.icons?.some((icon) => icon.sizes === "512x512")).toBe(true);
+	});
+});
 
 describe("sitemap.ts - Next.js MetadataRoute.Sitemap", () => {
 	it("returns a non-empty array", () => {

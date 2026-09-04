@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import type React from "react";
 import { MessageSquare } from "lucide-react";
 import { InViewFade } from "@/components/motion/in-view-fade";
@@ -20,7 +19,6 @@ interface ModelCardProps {
 export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 	if (!model?.id) return null;
 
-	const router = useRouter();
 	const providerStyle =
 		PROVIDER_COLORS[model.provider] ?? PROVIDER_COLORS.Venice;
 	const inModalities = model.inputModalities ?? ["text"];
@@ -42,10 +40,7 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 
 	return (
 		<InViewFade key={model.id} delay={index * 0.05} spring eager>
-			<Link
-				href={`/models/${model.id}`}
-				className="group relative rounded-[var(--radius-xl)] border border-border bg-panel p-5 transition-transform duration-200 ease-out hover:border-accent/40 shadow-[var(--shadow-md)] active:scale-[0.97] h-full flex flex-col"
-			>
+			<article className="group relative rounded-[var(--radius-xl)] border border-border bg-panel p-5 transition-[border-color,transform] duration-200 ease-out hover:border-accent/40 shadow-[var(--shadow-md)] active:scale-[0.97] h-full flex flex-col">
 				<div className="flex items-start justify-between gap-3">
 					<div className="min-w-0 flex-1 flex items-start gap-3">
 						<ModelLogo
@@ -54,9 +49,11 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 							className="mt-0.5 shadow-sm rounded-[var(--radius-lg)]"
 						/>
 						<div className="min-w-0 flex-1">
-							<p className="text-[15px] font-semibold tracking-tight text-text-bright line-clamp-2 leading-tight">
-								{model.name ?? "Unknown"}
-							</p>
+							<Link href={`/models/${model.id}`} className="block rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel">
+								<p className="text-[15px] font-semibold tracking-tight text-text-bright line-clamp-2 leading-tight transition-colors group-hover:text-accent">
+									{model.name ?? "Unknown"}
+								</p>
+							</Link>
 							<p className="text-[11px] text-text-muted mt-1.5 font-mono truncate">
 								{model.id}
 							</p>
@@ -186,28 +183,12 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 						: `Input $${typeof model.inputPricePer1M === "number" ? model.inputPricePer1M.toFixed(model.inputPricePer1M < 0.01 ? 4 : 2) : "?"} per 1M tokens, output $${typeof model.outputPricePer1M === "number" ? model.outputPricePer1M.toFixed(model.outputPricePer1M < 0.01 ? 4 : 2) : "?"} per 1M tokens`}
 				</span>
 				<div className="mt-3">
-					<span
-						role="link"
-						tabIndex={0}
-						onClick={(e) => {
-							e.preventDefault();
-							e.stopPropagation();
-							router.push(`/chat?model=${model.id}`);
-						}}
-						onKeyDown={(e) => {
-							if (e.key === "Enter" || e.key === " ") {
-								e.preventDefault();
-								e.stopPropagation();
-								router.push(`/chat?model=${model.id}`);
-							}
-						}}
-						className="inline-flex items-center gap-1.5 text-[11px] font-mono font-semibold uppercase tracking-wider text-accent/70 hover:text-accent transition-colors duration-200 ease-out cursor-pointer"
-					>
+					<Link href={`/chat?model=${model.id}`} className="inline-flex items-center gap-1.5 rounded-sm text-[11px] font-mono font-semibold uppercase tracking-wider text-accent/70 hover:text-accent transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel">
 						<MessageSquare className="h-3 w-3" aria-hidden="true" />
 						Try in chat
-					</span>
+					</Link>
 				</div>
-			</Link>
+			</article>
 		</InViewFade>
 	);
 };

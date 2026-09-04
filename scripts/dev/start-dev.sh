@@ -17,11 +17,11 @@ NC='\033[0m' # No Color
 
 # Check for required environment variables
 check_env() {
-    if [ -z "${DATABASE_URL:-}" ]; then
+    if [ -z "${DATABASE_URL:-}" ] && ! grep -q '^DATABASE_URL=' "$ROOT/server/.env" 2>/dev/null; then
         echo -e "${YELLOW}⚠️  Warning: DATABASE_URL not set${NC}"
         echo "   Please set it in server/.env"
     fi
-    if [ -z "${VENICE_API_KEY:-}" ]; then
+    if [ -z "${VENICE_API_KEY:-}" ] && ! grep -q '^VENICE_API_KEY=' "$ROOT/server/.env" 2>/dev/null; then
         echo -e "${YELLOW}⚠️  Warning: VENICE_API_KEY not set${NC}"
         echo "   Please set it in server/.env"
     fi
@@ -29,6 +29,16 @@ check_env() {
 
 # Start server
 start_server() {
+	if curl -fsS --max-time 2 http://localhost:3001/health >/dev/null 2>&1; then
+		echo -e "${GREEN}▶ API server already healthy on port 3001; reusing it${NC}"
+		SERVER_PID=""
+		return
+	fi
+	if lsof -nP -iTCP:3001 -sTCP:LISTEN >/dev/null 2>&1; then
+		echo -e "${YELLOW}⚠️  Port 3001 is occupied but /health is unavailable${NC}"
+		echo "   Stop the existing process or configure a different API port before retrying."
+		exit 1
+	fi
 	echo -e "${GREEN}▶ Starting API server...${NC}"
 	(cd "$ROOT/server" && npm run dev) &
 	SERVER_PID=$!
@@ -37,6 +47,16 @@ start_server() {
 
 # Start frontend
 start_frontend() {
+	if curl -fsS --max-time 2 http://localhost:3000/ >/dev/null 2>&1; then
+		echo -e "${GREEN}▶ Frontend already responding on port 3000; reusing it${NC}"
+		FRONTEND_PID=""
+		return
+	fi
+	if lsof -nP -iTCP:3000 -sTCP:LISTEN >/dev/null 2>&1; then
+		echo -e "${YELLOW}⚠️  Port 3000 is occupied but the frontend is not responding${NC}"
+		echo "   Stop the existing process or configure a different frontend port before retrying."
+		exit 1
+	fi
 	echo -e "${GREEN}▶ Starting Frontend...${NC}"
 	(cd "$ROOT/app" && npm run dev) &
 	FRONTEND_PID=$!
@@ -81,5 +101,5 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 
 # Wait for interrupt
-trap "echo 'Stopping...' ; kill $SERVER_PID $FRONTEND_PID 2>/dev/null ; exit" INT TERM
+trap "echo 'Stopping...' ; [ -n \"${SERVER_PID:-}\" ] && kill $SERVER_PID 2>/dev/null || true; [ -n \"${FRONTEND_PID:-}\" ] && kill $FRONTEND_PID 2>/dev/null || true; exit" INT TERM
 wait

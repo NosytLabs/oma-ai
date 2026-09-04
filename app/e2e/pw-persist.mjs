@@ -27,8 +27,8 @@ async function getModelFromDropdown() {
   // Open it and read the selected value via the trigger's text.
   await page.locator('button[aria-label*="Select AI model"]').click();
   await page.waitForTimeout(300);
-  // The currently-active model has aria-checked="true" in the listbox.
-  const checked = page.locator('[role="option"][aria-checked="true"]').first();
+  // The picker uses the ARIA menu/menuitemradio pattern.
+  const checked = page.locator('[role="menuitemradio"][aria-checked="true"]').first();
   let id = null;
   if (await checked.count() > 0) {
     id = await checked.getAttribute('data-model-id') || await checked.getAttribute('value');
@@ -46,7 +46,7 @@ async function pickModelFromDropdown(modelId) {
   await page.locator('button[aria-label*="Select AI model"]').click();
   await page.waitForTimeout(300);
   // Try by data-model-id first
-  let opt = page.locator(`[role="option"][data-model-id="${modelId}"]`);
+  let opt = page.locator(`[role="menuitemradio"][data-model-id="${modelId}"]`);
   if (await opt.count() === 0) {
     // Fallback: search-by-text. Use the search input if present.
     const search = page.locator('input[placeholder*="earch" i], input[type="search"]').first();
@@ -54,15 +54,20 @@ async function pickModelFromDropdown(modelId) {
       await search.fill(modelId);
       await page.waitForTimeout(200);
     }
-    opt = page.locator(`[role="option"]:has-text("${modelId}")`).first();
+    opt = page.locator(`[role="menuitemradio"]:has-text("${modelId}")`).first();
   }
   await opt.click();
   await page.waitForTimeout(500);
+  await page.waitForURL((url) => url.searchParams.get('model') === modelId, { timeout: 5000 });
 }
 
 async function readUrl() {
   return page.url();
 }
+
+// Clear the prior preference so this is a genuine cold-load assertion.
+await page.goto(`${BASE}/chat`, { waitUntil: 'domcontentloaded' });
+await page.evaluate(() => localStorage.removeItem('oma_chat_model:guest'));
 
 // --- TEST 1: cold load → default model, URL stays clean
 await page.goto(`${BASE}/chat`, { waitUntil: 'domcontentloaded' });

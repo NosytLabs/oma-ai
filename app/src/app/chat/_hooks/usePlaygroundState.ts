@@ -318,9 +318,11 @@ export function usePlaygroundState(
 	useEffect(() => {
 		if (typeof window === "undefined" || !pathname) return;
 		if (!userChangedModelRef.current) return;
-		const current = searchParams?.get("model");
+		// Read the live URL instead of the App Router snapshot. The snapshot can
+		// lag one render behind immediately after a client-side selection.
+		const params = new URLSearchParams(window.location.search);
+		const current = params.get("model");
 		if (current === model) return;
-		const params = new URLSearchParams(searchParams?.toString() ?? "");
 		if (model && isKnownModelId(model)) {
 			params.set("model", model);
 		} else {
@@ -329,7 +331,7 @@ export function usePlaygroundState(
 		const qs = params.toString();
 		const href = qs ? `${pathname}?${qs}` : pathname;
 		router.replace(href, { scroll: false });
-	}, [model, pathname, router]);
+	}, [model, pathname, router, searchParams]);
 
 	return {
 		// Core chat

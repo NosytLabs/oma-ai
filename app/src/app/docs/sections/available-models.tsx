@@ -31,7 +31,7 @@ export function AvailableModelsSection() {
 		},
 		{
 			id: "mid",
-			name: "Mid-Tier",
+			name: "Mid-Range",
 			color: "text-accent",
 			badge: "bg-accent/20 text-accent",
 			desc: "Balanced performance and cost for everyday workloads.",
@@ -111,11 +111,11 @@ export function AvailableModelsSection() {
 								>
 									<thead>
 										<tr className="border-b border-border/50">
-											<th className="pb-2 font-medium text-text-muted">Model</th>
-											<th className="pb-2 font-medium text-text-muted text-right">Input / 1M</th>
-											<th className="pb-2 font-medium text-text-muted text-right">Output / 1M</th>
-											<th className="pb-2 font-medium text-text-muted text-right">Context</th>
-											<th className="pb-2 font-medium text-text-muted">Capabilities</th>
+											<th scope="col" className="pb-2 font-medium text-text-muted">Model</th>
+											<th scope="col" className="pb-2 font-medium text-text-muted text-right">Input / 1M</th>
+											<th scope="col" className="pb-2 font-medium text-text-muted text-right">Output / 1M</th>
+											<th scope="col" className="pb-2 font-medium text-text-muted text-right">Context</th>
+											<th scope="col" className="pb-2 font-medium text-text-muted">Capabilities</th>
 										</tr>
 									</thead>
 									<tbody>

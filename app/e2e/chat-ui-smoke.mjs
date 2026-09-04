@@ -16,7 +16,8 @@
 import { chromium } from 'playwright';
 import fs from 'node:fs';
 
-const LOG = '/tmp/oma-dev.log';
+const LOG = process.env.OMA_DEV_LOG || '/tmp/oma-dev.log';
+const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 const SHOTS = '/tmp/pw-flows/uf';
 fs.mkdirSync(SHOTS, { recursive: true });
 
@@ -31,7 +32,20 @@ page.on('console', (m) => { if (m.type() === 'error') errs.push(`CE: ${m.text().
 // Read the latest magic link from the dev log. If none, trigger one
 // via the dev fallback (requires Resend=placeholder + the dev server
 // writing its log to /tmp/oma-dev.log).
-const stripped = fs.readFileSync(LOG, 'utf8').replace(/\x1b\[[0-9;]*m/g, '');
+function readDevLog() {
+  try {
+    return fs.readFileSync(LOG, 'utf8').replace(/\x1b\[[0-9;]*m/g, '');
+  } catch {
+    return '';
+  }
+}
+
+function latestMagicLink() {
+  const matches = [...readDevLog().matchAll(/magicLink:\s+"([^"]+)"/g)];
+  return matches.length ? matches[matches.length - 1][1].replace(/\\u0026/g, '&') : null;
+}
+
+const stripped = readDevLog();
 let matches = [...stripped.matchAll(/magicLink:\s+"([^"]+)"/g)];
 let url = matches.length ? matches[matches.length - 1][1].replace(/\\u0026/g, '&') : null;
 
@@ -39,7 +53,7 @@ if (!url || url.includes('kkLDcpSYPVOAHlmrOQEdcfzEgRPAdiHb')) {
   // No link yet, or only the very first (long-expired) one — trigger a new one.
   console.log('Triggering magic link via dev fallback...');
   try {
-    const r = await fetch('http://localhost:3000/api/auth/sign-in/magic-link', {
+    const r = await fetch(`${BASE_URL}/api/auth/sign-in/magic-link`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Origin': 'http://localhost:3000' },
       body: JSON.stringify({ email: 'tyson@nosytlabs.com', callbackURL: '/dashboard' }),
@@ -48,8 +62,7 @@ if (!url || url.includes('kkLDcpSYPVOAHlmrOQEdcfzEgRPAdiHb')) {
       console.log(`Magic-link request returned ${r.status} (likely the 30s better-auth rate limit)`);
     }
     await new Promise((res) => setTimeout(res, 3000));
-    matches = [...fs.readFileSync(LOG, 'utf8').replace(/\x1b\[[0-9;]*m/g, '').matchAll(/magicLink:\s+"([^"]+)"/g)];
-    url = matches.length ? matches[matches.length - 1][1].replace(/\\u0026/g, '&') : null;
+    url = latestMagicLink();
   } catch (e) {
     console.log(`Magic-link trigger failed: ${e.message}`);
   }
@@ -68,13 +81,31 @@ await page.waitForTimeout(1500);
 
 const session = await page.evaluate(() => fetch('/api/auth/get-session').then((r) => r.json()));
 if (!session?.user) {
-  fail('sign-in', 'no session after magic link');
+  // A logged token can expire between runs. Request one fresh link and retry
+  // once rather than silently failing the entire UI smoke audit.
+  const r = await fetch(`${BASE_URL}/api/auth/sign-in/magic-link`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Origin': 'http://localhost:3000' },
+    body: JSON.stringify({ email: 'tyson@nosytlabs.com', callbackURL: '/dashboard' }),
+  });
+  await new Promise((res) => setTimeout(res, 3000));
+  const freshUrl = latestMagicLink();
+  if (!r.ok || !freshUrl) {
+    fail('sign-in', `no valid session after magic-link retry (request ${r.status})`);
+    process.exit(1);
+  }
+  await page.goto(freshUrl);
+  await page.waitForTimeout(1500);
+}
+const verifiedSession = await page.evaluate(() => fetch('/api/auth/get-session').then((r) => r.json()));
+if (!verifiedSession?.user) {
+  fail('sign-in', 'no session after fresh magic link');
   process.exit(1);
 }
-pass(`signed in as ${session.user.email} (${session.user.role})`);
+pass(`signed in as ${verifiedSession.user.email} (${verifiedSession.user.role})`);
 
 // Go to /chat and pick a free model so the test doesn't depend on credits
-await page.goto('http://localhost:3000/chat');
+await page.goto(`${BASE_URL}/chat`);
 await page.waitForSelector('button[aria-label*="Select AI model"]', { timeout: 15000 });
 await page.waitForTimeout(1000);
 
@@ -100,7 +131,7 @@ if (freeStarBadge > 0) {
 await page.screenshot({ path: `${SHOTS}/chat-smoke-picker.png` });
 
 // Click mistral
-const mistral = page.locator('[role="option"]:has-text("Mistral")').first();
+const mistral = page.locator('[role="menuitemradio"]:has-text("Mistral")').first();
 if (await mistral.count() > 0) {
   await mistral.click();
   await page.waitForTimeout(500);

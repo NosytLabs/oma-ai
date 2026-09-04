@@ -209,7 +209,7 @@ For end-to-end self-hosting on Coolify (or any Docker Compose host), including t
 | `pnpm validate` | Full CI gate: typecheck + lint + test (app + server) |
 | `pnpm validate:app` | Frontend only |
 | `pnpm validate:server` | Backend only |
-| `pnpm validate:test` | All unit / integration tests (~500 cases across 72 vitest files, app/ + server/) |
+| `pnpm validate:test` | All unit / integration tests across the app and server Vitest suites |
 
 Always run `pnpm validate` locally before opening a pull request.
 

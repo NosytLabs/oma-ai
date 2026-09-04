@@ -19,7 +19,6 @@ export function PlaygroundLoaderDots() {
 	return (
 		<div
 			className="flex items-center justify-center gap-2"
-			role="status"
 			aria-label="Loading playground"
 		>
 			<div

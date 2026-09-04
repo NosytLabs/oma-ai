@@ -17,10 +17,10 @@ await page.waitForTimeout(800);
 // Open dropdown, pick free model
 await page.click('button[aria-label*="Select AI model"]');
 await page.waitForTimeout(300);
-const labels = await page.locator('[role="option"]').all().then(els => Promise.all(els.map(e => e.getAttribute('aria-label'))));
+const labels = await page.locator('[role="menuitemradio"]').all().then(els => Promise.all(els.map(e => e.getAttribute('aria-label'))));
 const freeIdx = labels.findIndex(l => l?.includes('free'));
 console.log(`Free model selected: ${labels[freeIdx]}`);
-await page.locator('[role="option"]').nth(freeIdx).click();
+await page.locator('[role="menuitemradio"]').nth(freeIdx).click();
 await page.waitForTimeout(300);
 
 // Type message

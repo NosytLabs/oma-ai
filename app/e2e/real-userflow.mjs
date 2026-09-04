@@ -39,7 +39,15 @@ async function requestMagicLink(email, callbackURL = '/dashboard') {
   await new Promise(r => setTimeout(r, 2500));
   const tail = logTailSince(before);
   const m = tail.match(/magicLink:\s+"([^"]+)"/);
-  if (!m) throw new Error(`Magic link not found in log. Tail:\n${tail.slice(-500)}`);
+  if (!m) {
+    const direct = await fetch(`${BASE.replace(':3000', ':3001')}/api/auth/sign-in/magic-link`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Origin': BASE },
+      body: JSON.stringify({ email, callbackURL }),
+    });
+    if (!direct.ok) throw new Error(`Magic link unavailable: frontend=${res.status} backend=${direct.status}`);
+    throw new Error(`Magic link was accepted but the dev URL was not captured from ${LOG}`);
+  }
   return m[1].replace(/\\u0026/g, '&').replace(/&amp;/g, '&');
 }
 
@@ -74,8 +82,8 @@ async function checkPage(page, route, opts = {}) {
 
 // ────────── Phase 1: Sign in as admin ──────────
 console.log('\n══════ PHASE 1: Sign in as admin ══════');
-const magicURL = 'http://localhost:3000/api/auth/magic-link/verify?token=zmzvPuaBFKumjPXEHPQvauntHesYlMru&callbackURL=%2Fdashboard';
-note(`✓ Using fresh magic link: ${magicURL.slice(0, 90)}...`);
+const magicURL = await requestMagicLink(ADMIN_EMAIL);
+note(`✓ Requested fresh magic link: ${magicURL.slice(0, 90)}...`);
 
 const browser = await chromium.launch({ headless: true });
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
@@ -131,7 +139,7 @@ await shot(page, 'chat-initial');
 console.log('  Picking a paid model...');
 await page.click('button[aria-label*="Select AI model"]');
 await page.waitForTimeout(400);
-const opts = page.locator('[role="option"]');
+const opts = page.locator('[role="menuitemradio"]');
 const optCount = await opts.count();
 note(`  Model options: ${optCount}`);
 // Dump all option labels to pick a paid one programmatically
