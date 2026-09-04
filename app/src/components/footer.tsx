@@ -96,8 +96,8 @@ function accountSection(isAuthenticated: boolean): FooterSection {
 					{ label: "Credits", href: "/deposit" },
 				]
 			: [
-					{ label: "Get started", href: "/getting-started" },
 					{ label: "Sign in to OMA", href: "/login" },
+					{ label: "Buy credits", href: "/deposit" },
 				],
 	};
 }

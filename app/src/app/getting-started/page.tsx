@@ -40,7 +40,7 @@ const STEPS = [
 			<>
 				Head to <Link href="/login" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">login</Link>. Choose{" "}
 				<strong className="text-text-bright"> email magic link</strong> (simplest — we email you a secure sign-in link, no password to remember)
-				or <strong className="text-text-bright">connect wallet</strong> if you already use web3 apps. Signing in unlocks {MODEL_COUNT}+ curated models across the full Venice and OMA-AI catalog, saved conversations, and higher rate limits.
+				or <strong className="text-text-bright">connect wallet</strong> if you already use web3 apps. Signing in unlocks {MODEL_COUNT} curated models across the full Venice and OMA-AI catalog, saved conversations, and higher rate limits.
 			</>
 		),
 	},
@@ -100,7 +100,7 @@ reply = client.chat.completions.create(
 print(reply.choices[0].message.content)`;
 
 const NEXT_STEPS = [
-	{ label: "Browse", title: `Browse ${MODEL_COUNT}+ models`, href: "/models" },
+	{ label: "Browse", title: `Browse ${MODEL_COUNT} models`, href: "/models" },
 	{ label: "Pricing", title: "See what things cost", href: "/pricing" },
 	{ label: "Learn", title: "Read the FAQ", href: "/faq" },
 	{ label: "I'm a developer", title: "Jump to the API docs", href: "/docs" },
@@ -119,7 +119,7 @@ export default function GettingStartedPage() {
 			<div className="container-page page-content max-w-3xl lg:max-w-4xl">
 				<Link
 					href="/"
-					className="inline-flex min-h-11 items-center gap-1.5 text-sm text-text-secondary hover:text-accent transition-colors duration-200 ease-out mb-8"
+					className="flex w-fit min-h-11 items-center gap-1.5 text-sm text-text-secondary hover:text-accent transition-colors duration-200 ease-out mb-8"
 				>
 					<ArrowLeft className="h-4 w-4" aria-hidden="true" />
 					Home
@@ -128,7 +128,7 @@ export default function GettingStartedPage() {
 				<span className="section-eyebrow-caps">First time here?</span>
 				<h1 className="display-headline mt-3 text-text-bright">How to use OMA — 5 minutes, no jargon</h1>
 				<p className="page-intro mt-4 max-w-2xl">
-					OMA is one account for {MODEL_COUNT}+ AI models from many providers, paid your way. You do{" "}
+					OMA is one account for {MODEL_COUNT} AI models from many providers, paid your way. You do{" "}
 					<em className="text-text-bright">not</em> need to be a developer or a crypto person to start.
 					This is the whole site, in order. Developers: the{" "}
 					<Link href="/docs" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">API docs</Link> are your fast lane.

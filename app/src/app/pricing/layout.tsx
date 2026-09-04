@@ -9,7 +9,7 @@ const MIN_INPUT = Math.min(
 
 export const metadata: Metadata = {
 	title: "Transparent AI API pricing — pay per use",
-	description: `Transparent AI API pricing. Pay per use with card or crypto. No subscriptions, no hidden fees. Access ${MODEL_COUNT}+ models from ${formatPricePerMillion(MIN_INPUT)}/M tokens.`,
+	description: `Transparent AI API pricing. Pay per use with card or crypto. No subscriptions, no hidden fees. Access ${MODEL_COUNT} models from ${formatPricePerMillion(MIN_INPUT)}/M tokens.`,
 	keywords: [
 		"AI pricing",
 		"token pricing",
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 	alternates: { canonical: "/pricing" },
 	openGraph: {
 		title: "Transparent AI API pricing — OMA",
-		description: `Pay per use with card or USDC. ${MODEL_COUNT}+ models, no subscriptions, no hidden fees.`,
+		description: `Pay per use with card or USDC. ${MODEL_COUNT} models, no subscriptions, no hidden fees.`,
 		images: [{ url: "/og-image.webp", width: 1280, height: 720, alt: "OMA Pricing" }],
 	},
 };

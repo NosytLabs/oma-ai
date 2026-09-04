@@ -15,7 +15,7 @@ export const revalidate = 3600;
 	*/
 const USDC_BASE_MAINNET = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 const FALLBACK_TREASURY = "0x8581784D3E598cCa3482375CFF2409Ac9DD8c402";
-const MODEL_COUNT_LABEL = `${MODEL_COUNT}+`;
+const MODEL_COUNT_LABEL = `${MODEL_COUNT}`;
 
 export async function GET() {
 	const payee = process.env.TREASURY_BASE_ADDRESS || FALLBACK_TREASURY;
@@ -43,7 +43,7 @@ export async function GET() {
 			a2ui: true,
 		},
 		authentication: {
-			schemes: ["siwe", "account-number", "api-key", "magic-link"],
+			schemes: ["siwe", "api-key", "magic-link"],
 			description:
 				"Sign in with Ethereum (EIP-4361) for wallet-bound sessions, magic-link email for human sign-in, or use a server-issued API key (`oma_sk_...`) for machine-to-machine calls.",
 		},

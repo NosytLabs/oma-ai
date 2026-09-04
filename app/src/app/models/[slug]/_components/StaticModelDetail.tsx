@@ -23,13 +23,16 @@ function formatContextWithVisual(tokens: number | undefined | null): string {
 	if (typeof tokens !== "number" || !Number.isFinite(tokens) || tokens <= 0) {
 		return "—";
 	}
-	const wordsPerPage = 250;
-	const tokensPerWord = 1.5;
-	const tokensPerPage = wordsPerPage * tokensPerWord;
+	// Industry convention (≈500 words/page, ≈1.3 tokens/word → ~650
+	// tokens/page, cf. "1M tokens ≈ 1,500 pages"). Keeps the human
+	// comparison honest next to providers quoting the same scale.
+	const tokensPerPage = 650;
 	const pages = Math.round(tokens / tokensPerPage);
 
 	if (pages >= 1000) {
-		return `${Math.round(pages / 1000)}k pages (${tokens.toLocaleString()} tokens)`;
+		const k = pages / 1000;
+		const kLabel = Number.isInteger(k) ? `${k}` : k.toFixed(1);
+		return `${kLabel}k pages (${tokens.toLocaleString()} tokens)`;
 	}
 	return `${pages} pages (${tokens.toLocaleString()} tokens)`;
 }

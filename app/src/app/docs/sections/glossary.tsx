@@ -52,7 +52,7 @@ export function GlossarySection() {
 							Capabilities
 						</p>
 						<p className="text-[12.5px] leading-relaxed text-text-secondary">
-							Catalog of {MODEL_COUNT}+ curated chat models with live pricing,
+							Catalog of {MODEL_COUNT} curated chat models with live pricing,
 							context windows, and provider routing. Compare models before
 							you call the API.
 						</p>

@@ -37,7 +37,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "What can I do with it?",
-				a: `Chat, write code, summarize documents, analyze data, work with image inputs, and more — across ${MODEL_COUNT}+ models from many providers through one API.`,
+				a: `Chat, write code, summarize documents, analyze data, work with image inputs, and more — across ${MODEL_COUNT} models from many providers through one API.`,
 			},
 		],
 	},
@@ -166,7 +166,7 @@ export default function FAQPage() {
 			<div className="container-page page-content max-w-3xl lg:max-w-4xl">
 				<Link
 					href="/"
-					className="inline-flex min-h-11 items-center gap-1.5 text-sm text-text-secondary hover:text-accent transition-colors duration-200 ease-out mb-8"
+					className="flex w-fit min-h-11 items-center gap-1.5 text-sm text-text-secondary hover:text-accent transition-colors duration-200 ease-out mb-8"
 				>
 					<ArrowLeft className="h-4 w-4" aria-hidden="true" />
 					Home

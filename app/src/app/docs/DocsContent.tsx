@@ -189,7 +189,7 @@ export function DocsContent() {
 								<DocsSearch />
 								<div className="meta-strip justify-start lg:justify-end lg:flex-nowrap lg:whitespace-nowrap">
 										<span>OpenAI-compatible</span>
-										<span>{MODEL_COUNT}+ models</span>
+										<span>{MODEL_COUNT} models</span>
 										<span>x402 on Base</span>
 									</div>
 								</div>

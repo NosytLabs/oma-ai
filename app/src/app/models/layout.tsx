@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 	alternates: { canonical: "/models" },
 	openGraph: {
 		title: "AI Models Catalog — OMA",
-		description: `Browse ${MODEL_COUNT}+ models with transparent per-token pricing. One API key, multi-provider routing.`,
+		description: `Browse ${MODEL_COUNT} models with transparent per-token pricing. One API key, multi-provider routing.`,
 		images: [
 			{ url: "/og-image.webp", width: 1280, height: 720, alt: "OMA Models" },
 		],

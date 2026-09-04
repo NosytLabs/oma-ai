@@ -56,7 +56,7 @@ export default function ContactPage() {
 				<InViewFade eager>
 				<Link
 					href="/"
-					className="inline-flex min-h-11 items-center gap-1.5 text-sm text-text-secondary hover:text-accent transition-colors duration-200 ease-out mb-10"
+					className="flex w-fit min-h-11 items-center gap-1.5 text-sm text-text-secondary hover:text-accent transition-colors duration-200 ease-out mb-10"
 				>
 					<ArrowLeft className="h-4 w-4" aria-hidden="true" />
 					Home

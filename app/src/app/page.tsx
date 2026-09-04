@@ -8,11 +8,11 @@ export const metadata: Metadata = {
 	title: {
 		absolute: "OMA · Open Model Access — AI inference, paid by card or USDC",
 	},
-	description: `One gateway. Every model. No lock-in. OpenAI-compatible API with ${MODEL_COUNT}+ models, wallet-based auth, card credits, USDC on Base, and x402 pay-per-request.`,
+	description: `One gateway. Every model. No lock-in. OpenAI-compatible API with ${MODEL_COUNT} models, wallet-based auth, card credits, USDC on Base, and x402 pay-per-request.`,
 	alternates: { canonical: "/" },
 	openGraph: {
 		title: "OMA · Open Model Access — AI inference, paid by card or USDC",
-		description: `One gateway. Every model. No lock-in. OpenAI-compatible API with ${MODEL_COUNT}+ models, wallet-based auth, card credits, USDC on Base, and x402 pay-per-request.`,
+		description: `One gateway. Every model. No lock-in. OpenAI-compatible API with ${MODEL_COUNT} models, wallet-based auth, card credits, USDC on Base, and x402 pay-per-request.`,
 		images: [{ url: "/og-image.webp", width: 1280, height: 720, alt: "OMA" }],
 	},
 	robots: { index: true, follow: true },

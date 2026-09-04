@@ -1,6 +1,18 @@
 "use client";
 
-import { AlertTriangle, type LucideIcon, LogIn, Wallet } from "lucide-react";
+import {
+	AlertTriangle,
+	type LucideIcon,
+	ChartColumn,
+	Coins,
+	CreditCard,
+	Database,
+	KeyRound,
+	Laptop,
+	LogIn,
+	Palette,
+	User,
+} from "lucide-react";
 import Link from "next/link";
 import { m } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";
@@ -114,12 +126,17 @@ const copy: Record<
 			"Sign in to manage API keys, see live credit balance, and review inference usage.",
 		features: [
 			{
-				icon: Wallet,
+				icon: KeyRound,
+				label: "API keys",
+				description: "Mint, scope, and revoke oma_sk_* keys",
+			},
+			{
+				icon: Coins,
 				label: "Credit balance",
 				description: "Live USDC and card-funded balances",
 			},
 			{
-				icon: AlertTriangle,
+				icon: ChartColumn,
 				label: "Usage charts",
 				description: "Per-day, per-model, per-provider breakdown",
 			},
@@ -132,22 +149,22 @@ const copy: Record<
 			"Settings covers your profile, theme, sessions, and data controls.",
 		features: [
 			{
-				icon: AlertTriangle,
+				icon: User,
 				label: "Profile",
 				description: "Account details",
 			},
 			{
-				icon: AlertTriangle,
+				icon: Palette,
 				label: "Appearance",
 				description: "Theme & sounds",
 			},
 			{
-				icon: AlertTriangle,
+				icon: Laptop,
 				label: "Sessions",
 				description: "Active devices",
 			},
 			{
-				icon: AlertTriangle,
+				icon: Database,
 				label: "Data & deletion",
 				description: "Export or wipe data",
 			},
@@ -159,12 +176,12 @@ const copy: Record<
 			"Sign in to fund your account with card or USDC on Base. x402 micropayments work without an account.",
 		features: [
 			{
-				icon: Wallet,
+				icon: CreditCard,
 				label: "Card or USDC",
 				description: "Polar checkout or Base deposit",
 			},
 			{
-				icon: AlertTriangle,
+				icon: Coins,
 				label: "Credits never expire",
 				description: "Use across every curated model",
 			},
