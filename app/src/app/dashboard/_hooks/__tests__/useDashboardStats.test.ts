@@ -9,6 +9,7 @@ function rec(model: string, daysAgo: number): UsageRecord {
 	return {
 		id: `u-${model}-${daysAgo}`,
 		requestId: `r-${model}-${daysAgo}`,
+		apiKeyId: null,
 		model,
 		provider: "test",
 		promptTokens: 10,

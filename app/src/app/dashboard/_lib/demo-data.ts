@@ -47,6 +47,7 @@ export function buildDemoUsage(): UsageRecord[] {
 			rows.push({
 				id: `demo-usage-${day}-${i}`,
 				requestId: `req_demo_${day}_${i}`,
+				apiKeyId: i % 3 === 0 ? null : "demo-key-1",
 				model: m.model,
 				provider: m.provider,
 				promptTokens: prompt,

@@ -16,6 +16,7 @@ export function normalizeUsageRecord(raw: RawUsageRecord): UsageRecord {
 	const completionTokens = Number(raw.outputTokens ?? raw.completionTokens ?? 0);
 	return {
 		...raw,
+		apiKeyId: raw.apiKeyId ?? null,
 		promptTokens: Number.isFinite(promptTokens) ? promptTokens : 0,
 		completionTokens: Number.isFinite(completionTokens) ? completionTokens : 0,
 		latencyMs:
@@ -40,10 +41,11 @@ export const balance = {
 };
 
 export const usage = {
-	get(options?: { limit?: number; cursor?: string }) {
+	get(options?: { limit?: number; cursor?: string; apiKeyId?: string }) {
 		const limit = options?.limit ?? 50;
 		const qs = new URLSearchParams({ limit: String(limit) });
 		if (options?.cursor) qs.set("cursor", options.cursor);
+		if (options?.apiKeyId) qs.set("api_key_id", options.apiKeyId);
 		return import("./client.js").then(({ request }) =>
 			request<{
 				object: string;

@@ -40,7 +40,7 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 				</div>
 			</div>
 			<div className="overflow-x-auto flex-1">
-				<table className="w-full min-w-[600px] text-left">
+				<table className="w-full min-w-[680px] text-left">
 					<thead>
 						<tr className="border-b border-border/50 bg-surface/20">
 							<th
@@ -73,26 +73,32 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 							>
 								Latency
 							</th>
-							<th
-								scope="col"
-								className="px-6 sm:px-7 py-4 text-[10.5px] font-bold text-text-muted uppercase tracking-wider"
-							>
-								Time
-							</th>
+						<th
+							scope="col"
+							className="px-6 py-4 text-[10.5px] font-bold text-text-muted uppercase tracking-wider"
+						>
+							Source
+						</th>
+						<th
+							scope="col"
+							className="px-6 sm:px-7 py-4 text-[10.5px] font-bold text-text-muted uppercase tracking-wider"
+						>
+							Time
+						</th>
 						</tr>
 					</thead>
 					<tbody className="bg-void/30">
 						{loading && usage.length === 0 ? (
-							<tr>
-								<td colSpan={6} className="px-6 py-12 text-center">
+						<tr>
+							<td colSpan={7} className="px-6 py-12 text-center">
 									<span className="inline-block h-5 w-5 border-2 border-border border-t-accent rounded-full animate-spin shadow-[0_0_8px_var(--color-accent)]" />
 								</td>
 							</tr>
 						) : usage.length === 0 ? (
-							<tr>
-								<td
-									colSpan={6}
-									className="px-6 py-16 text-center transition-colors duration-200 ease-out hover:bg-surface/30"
+						<tr>
+							<td
+								colSpan={7}
+								className="px-6 py-16 text-center transition-colors duration-200 ease-out hover:bg-surface/30"
 								>
 									<p className="text-[13px] text-text-secondary font-semibold">No inference calls yet.</p>
 									<Link
@@ -137,9 +143,23 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 											? `${Math.round(row.latencyMs)}ms`
 											: "—"}
 									</td>
-									<td className="px-6 sm:px-7 py-4 text-[11.5px] font-mono text-text-muted/80 transition-colors duration-200 ease-out group-hover:text-text-secondary">
-										{formatTime(row.createdAt)}
-									</td>
+								<td className="px-6 py-4 text-[11.5px] font-mono text-text-muted/80 transition-colors duration-200 ease-out group-hover:text-text-secondary">
+									{row.apiKeyId ? (
+										<span
+											title={`API key ${row.apiKeyId}`}
+											className="inline-flex items-center rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-accent"
+										>
+											Key
+										</span>
+									) : (
+										<span className="inline-flex items-center rounded-full border border-border bg-surface px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-text-muted">
+											Web
+										</span>
+									)}
+								</td>
+								<td className="px-6 sm:px-7 py-4 text-[11.5px] font-mono text-text-muted/80 transition-colors duration-200 ease-out group-hover:text-text-secondary">
+									{formatTime(row.createdAt)}
+								</td>
 								</m.tr>
 							))
 						)}

@@ -300,17 +300,17 @@ export function CapabilitiesGrid() {
 	</Reveal>
 
 	<RevealStagger className="mt-12 grid grid-cols-1 gap-4 md:grid-cols-3">
-	{PILLARS.map((pillar) => {
-	const Icon = pillar.icon;
-	const a = ACCENT[pillar.accent];
-	return (
-	<m.div
-	key={pillar.id}
-	variants={childFadeUp}
-	whileHover={{ y: -4 }}
-	transition={springs.card}
-	>
-<Link
+		{PILLARS.map((pillar) => {
+			const Icon = pillar.icon;
+			const a = ACCENT[pillar.accent];
+			return (
+				<m.div
+					key={pillar.id}
+					variants={childFadeUp}
+					whileHover={{ y: -4 }}
+					transition={springs.card}
+				>
+					<Link
 						href={pillar.href}
 						className={cn(
 							"group relative flex h-full min-h-0 sm:min-h-[360px] flex-col overflow-hidden rounded-[var(--radius-lg)] border p-7 transition-[transform,box-shadow,border-color] duration-200 ease-out",
@@ -320,72 +320,72 @@ export function CapabilitiesGrid() {
 						)}
 						style={{ boxShadow: "var(--shadow-md)" }}
 					>
-	<div
-	aria-hidden="true"
-	className="pointer-events-none absolute inset-0 -z-10 opacity-50 transition-opacity duration-500 group-hover:opacity-75"
-	style={{
-	background:
-	"radial-gradient(ellipse at 90% 100%, color-mix(in srgb, var(--color-accent) 20%, transparent), transparent 60%)",
-	}}
-	/>
+						<div
+							aria-hidden="true"
+							className="pointer-events-none absolute inset-0 -z-10 opacity-50 transition-opacity duration-500 group-hover:opacity-75"
+							style={{
+								background:
+									"radial-gradient(ellipse at 90% 100%, color-mix(in srgb, var(--color-accent) 20%, transparent), transparent 60%)",
+							}}
+						/>
 
-	<div className="flex items-center justify-between">
-	<span
-	className={cn(
-	"inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-mono font-semibold uppercase tracking-[0.16em]",
-	a.chip,
-	)}
-	>
-	{pillar.eyebrow}
-	</span>
-	<div
-	className={cn(
-	"flex h-11 w-11 items-center justify-center rounded-[var(--radius-md)]",
-	a.iconBg,
-	)}
-	>
-	<Icon
-	className="h-5 w-5"
-	strokeWidth={1.5}
-	aria-hidden="true"
-	/>
-	</div>
-	</div>
+						<div className="flex items-center justify-between">
+							<span
+								className={cn(
+									"inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-mono font-semibold uppercase tracking-[0.16em]",
+									a.chip,
+								)}
+							>
+								{pillar.eyebrow}
+							</span>
+							<div
+								className={cn(
+									"flex h-11 w-11 items-center justify-center rounded-[var(--radius-md)]",
+									a.iconBg,
+								)}
+							>
+								<Icon
+									className="h-5 w-5"
+									strokeWidth={1.5}
+									aria-hidden="true"
+								/>
+							</div>
+						</div>
 
-<h3 className="mt-6 font-display text-xl sm:text-2xl font-medium tracking-tight text-text-bright">
-		{pillar.title}
-		</h3>
-		<p className="mt-3 text-[14px] leading-relaxed text-text-secondary">
-		{pillar.description}
-		</p>
+						<h3 className="mt-6 font-display text-xl sm:text-2xl font-medium tracking-tight text-text-bright">
+							{pillar.title}
+						</h3>
+						<p className="mt-3 text-[14px] leading-relaxed text-text-secondary">
+							{pillar.description}
+						</p>
 
-		<ul className="mt-6 space-y-2.5 text-[13.5px] text-text-secondary">
-		{pillar.highlights.map((h) => (
-		<li key={h} className="flex items-center gap-3">
-		<span
-		className={cn("h-1.5 w-1.5 shrink-0 rounded-full", a.visualLine)}
-		aria-hidden="true"
-		/>
-		{h}
-		</li>
-		))}
-		</ul>
+						<ul className="mt-6 space-y-2.5 text-[13.5px] text-text-secondary">
+							{pillar.highlights.map((h) => (
+								<li key={h} className="flex items-center gap-3">
+									<span
+										className={cn("h-1.5 w-1.5 shrink-0 rounded-full", a.visualLine)}
+										aria-hidden="true"
+									/>
+									{h}
+								</li>
+							))}
+						</ul>
 
-		<span className="mt-6 mb-4 inline-flex items-center gap-1.5 font-semibold text-accent text-[14.5px]">
-		{pillar.cta}
-		<ArrowUpRight
-		className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1 group-hover:-translate-y-1"
-		aria-hidden="true"
-		/>
-		</span>
+						<span className="mt-6 mb-4 inline-flex items-center gap-1.5 font-semibold text-accent text-[14.5px]">
+							{pillar.cta}
+							<ArrowUpRight
+								className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1 group-hover:-translate-y-1"
+								aria-hidden="true"
+							/>
+						</span>
 
-		<div className="mt-auto pt-4">
-			<PillarVisual kind={pillar.visual} lineClass={a.visualLine} />
-		</div>
-		</Link>
-	</m.div>
-	);
-	})}
+						<div className="mt-auto pt-4">
+							<PillarVisual kind={pillar.visual} lineClass={a.visualLine} />
+						</div>
+					</Link>
+				</m.div>
+			);
+		})}
 	</RevealStagger>
 
 	<RevealStagger

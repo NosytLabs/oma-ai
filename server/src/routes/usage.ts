@@ -3,13 +3,15 @@
 	* authenticated user. Sourced from the `usage_records` table. Backed by
 	* an index on (user_id, created_at DESC) for fast listing.
 	*
-	* Query params:
-	*   - model     (optional) filter by model id
-	*   - provider  (optional) filter by provider ("venice" | "oma-ai")
-	*   - since     (optional) ISO timestamp; records created at or after
-	*   - until     (optional) ISO timestamp; records created at or before
-	*   - limit     (optional) 1..200, default 50
-	*   - cursor    (optional) opaque pagination cursor (created_at,id)
+ * Query params:
+ *   - model     (optional) filter by model id
+ *   - provider  (optional) filter by provider ("venice" | "oma-ai")
+ *   - api_key_id (optional) filter by API key row id (usage from Bearer
+ *     oma_sk_* calls; null api_key_id rows are web/session traffic)
+ *   - since     (optional) ISO timestamp; records created at or after
+ *   - until     (optional) ISO timestamp; records created at or before
+ *   - limit     (optional) 1..500, default 50
+ *   - cursor    (optional) opaque pagination cursor (created_at,id)
 	*
 	* Returns 200 with `{ data: UsageRecord[], next_cursor: string|null,
 	* totals: { requests, input_tokens, output_tokens, cost_cents } }`.
@@ -27,6 +29,7 @@ export const usageRoutes = new Hono<OmaEnv>();
 const querySchema = z.object({
 		model: z.string().optional(),
 		provider: z.enum(["venice", "oma-ai"]).optional(),
+		api_key_id: z.string().uuid().optional(),
 		since: z.string().datetime().optional(),
 		until: z.string().datetime().optional(),
 		limit: z.coerce.number().int().min(1).max(500).default(50),
@@ -48,11 +51,12 @@ usageRoutes.get("/v1/usage", sessionOrBearerAuth, async (c) => {
 						400,
 				);
 		}
-		const { model, provider, since, until, limit, cursor } = parsed.data;
+		const { model, provider, api_key_id, since, until, limit, cursor } = parsed.data;
 
 		const conds = [eq(usageRecords.userId, userId)];
 		if (model) conds.push(eq(usageRecords.model, model));
 		if (provider) conds.push(eq(usageRecords.provider, provider));
+		if (api_key_id) conds.push(eq(usageRecords.apiKeyId, api_key_id));
 		if (since) conds.push(gte(usageRecords.createdAt, new Date(since)));
 		if (until) conds.push(lte(usageRecords.createdAt, new Date(until)));
 		if (cursor) {
@@ -80,6 +84,7 @@ usageRoutes.get("/v1/usage", sessionOrBearerAuth, async (c) => {
 				.select({
 						id: usageRecords.id,
 						requestId: usageRecords.requestId,
+						apiKeyId: usageRecords.apiKeyId,
 						model: usageRecords.model,
 						provider: usageRecords.provider,
 						inputTokens: usageRecords.inputTokens,
@@ -116,6 +121,7 @@ usageRoutes.get("/v1/usage", sessionOrBearerAuth, async (c) => {
 								eq(usageRecords.userId, userId),
 								model ? eq(usageRecords.model, model) : undefined,
 								provider ? eq(usageRecords.provider, provider) : undefined,
+								api_key_id ? eq(usageRecords.apiKeyId, api_key_id) : undefined,
 								since ? gte(usageRecords.createdAt, new Date(since)) : undefined,
 								until ? lte(usageRecords.createdAt, new Date(until)) : undefined,
 						),

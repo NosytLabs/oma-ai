@@ -54,6 +54,8 @@ export interface BalanceResponse {
 export interface UsageRecord {
 	id: string;
 	requestId: string;
+	/** API key row id for Bearer oma_sk_* calls; null for web/session traffic. */
+	apiKeyId: string | null;
 	model: string;
 	provider: string;
 	promptTokens: number;

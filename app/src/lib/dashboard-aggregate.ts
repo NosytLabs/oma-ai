@@ -74,9 +74,36 @@ export function buildUsageByDay(usage: UsageRecord[]): UsageByDay[] {
 }
 
 /**
-	* Aggregates usage records into the top models by cost, bucketing the tail
-	* into an "Other (N)" slice so the donut legend stays readable.
-	*/
+ * Aggregates usage records into per-API-key request counts so the dashboard
+ * can tell paid API traffic (Bearer oma_sk_*) apart from web/session
+ * traffic. Null apiKeyId rows are bucketed as "Web / session".
+ */
+export interface KeySlice {
+	key: string;
+	requests: number;
+	cost: number;
+}
+
+export function buildUsageByKey(usage: UsageRecord[]): KeySlice[] {
+	const byKey = new Map<string, KeySlice>();
+	for (const r of usage) {
+		const key = r.apiKeyId ?? "web";
+		const prev = byKey.get(key) ?? {
+			key: key === "web" ? "Web / session" : `Key ${key.slice(0, 8)}…`,
+			requests: 0,
+			cost: 0,
+		};
+		prev.requests += 1;
+		prev.cost += Number(r.totalCents ?? "0") / 100;
+		byKey.set(key, prev);
+	}
+	return Array.from(byKey.values()).sort((a, b) => b.cost - a.cost);
+}
+
+/**
+ * Aggregates usage records into the top models by cost, bucketing the tail
+ * into an "Other (N)" slice so the donut legend stays readable.
+ */
 export function buildTopModels(usage: UsageRecord[]): ModelSlice[] {
 	const byModel = new Map<string, { name: string; value: number; cost: number }>()
 	for (const r of usage) {

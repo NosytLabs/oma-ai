@@ -8,6 +8,7 @@ describe("normalizeUsageRecord", () => {
 		const rec = normalizeUsageRecord({
 			id: "1",
 			requestId: "r1",
+			apiKeyId: null,
 			model: "mistral-small-2603",
 			provider: "venice",
 			promptTokens: 0,
@@ -30,6 +31,7 @@ describe("normalizeUsageRecord", () => {
 		const rec = normalizeUsageRecord({
 			id: "2",
 			requestId: "r2",
+			apiKeyId: "11111111-2222-3333-4444-555555555555",
 			model: "llama-3.3-70b",
 			provider: "venice",
 			promptTokens: 8,
@@ -44,6 +46,25 @@ describe("normalizeUsageRecord", () => {
 		expect(rec.promptTokens).toBe(8);
 		expect(rec.completionTokens).toBe(16);
 		expect(rec.latencyMs).toBeNull();
+		expect(rec.apiKeyId).toBe("11111111-2222-3333-4444-555555555555");
+	});
+
+	it("defaults a missing apiKeyId to null (web/session traffic)", () => {
+		const rec = normalizeUsageRecord({
+			id: "3",
+			requestId: "r3",
+			model: "kimi-k3",
+			provider: "venice",
+			promptTokens: 1,
+			completionTokens: 1,
+			costCents: "0",
+			markupCents: "0",
+			totalCents: "0",
+			latencyMs: null,
+			status: "completed",
+			createdAt: "2026-08-15T00:00:00.000Z",
+		} as Parameters<typeof normalizeUsageRecord>[0]);
+		expect(rec.apiKeyId).toBeNull();
 	});
 });
 
@@ -51,6 +72,7 @@ function fakeRecord(id: string): UsageRecord {
 	return {
 		id,
 		requestId: id,
+		apiKeyId: null,
 		model: "deepseek-v4-flash-0731-openbroker",
 		provider: "oma-ai",
 		promptTokens: 1,

@@ -221,13 +221,14 @@ const spec = {
 		},
 		"/v1/usage": {
 			get: {
-				summary: "Paginated per-request usage history (model, provider, token counts, cents)",
+				summary: "Paginated per-request usage history (model, provider, API key, token counts, cents)",
 				parameters: [
 					{ in: "query", name: "model", schema: { type: "string" } },
-					{ in: "query", name: "provider", schema: { type: "string", enum: ["venice", "oma-ai", "litellm"] } },
+					{ in: "query", name: "provider", schema: { type: "string", enum: ["venice", "oma-ai"] } },
+					{ in: "query", name: "api_key_id", schema: { type: "string", format: "uuid" } },
 					{ in: "query", name: "since", schema: { type: "string", format: "date-time" } },
 					{ in: "query", name: "until", schema: { type: "string", format: "date-time" } },
-					{ in: "query", name: "limit", schema: { type: "integer", minimum: 1, maximum: 200, default: 50 } },
+					{ in: "query", name: "limit", schema: { type: "integer", minimum: 1, maximum: 500, default: 50 } },
 					{ in: "query", name: "cursor", schema: { type: "string" } },
 				],
 				responses: {

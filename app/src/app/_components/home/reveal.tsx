@@ -17,7 +17,6 @@
 
 import { m, useReducedMotion } from "@/lib/framer-motion-client";
 import type { Variants } from "@/lib/framer-motion-client";
-import { useRevealInView } from "@/lib/use-reveal-in-view";
 // Kinetics-style springs: stiffness + damping instead of fixed duration so
 // interrupted reveals (Page Down, fast scroll) integrate from the current
 // position instead of snapping. Honors prefers-reduced-motion via framer's
@@ -54,11 +53,17 @@ export const childFadeUp: Variants = {
 };
 
 /**
-	* useHasBeenInView — flips `true` once the page has been scrolled or
-	* after the first paint, whichever the IntersectionObserver confirms. Until
-	* then, the consumer renders plain HTML so SSR + crawlers + screenshots
-	* always show real content.
-	*/
+ * useHasBeenInView — flips `true` once the page has been scrolled or
+ * after the first paint, whichever the IntersectionObserver confirms. Until
+ * then, the consumer renders plain HTML so SSR + crawlers + screenshots
+ * always show real content.
+ *
+ * NOTE: the swap from plain HTML to a motion node must never hide content
+ * (initial="hidden" after paint = visible text flashes out and back — the
+ * "weird load" on first visit). Consumers below use initial={false} with
+ * whileInView so mounted content stays painted and only below-the-fold
+ * entries animate on scroll.
+ */
 export function useHasBeenInView(): boolean {
 	const [seen, setSeen] = useState(false);
 	useEffect(() => {
@@ -93,7 +98,6 @@ export function Reveal({
 }: RevealProps) {
 	const prefersReduced = useReducedMotion();
 	const mountAnim = useHasBeenInView();
-	const { ref, show } = useRevealInView({ amount, once });
 
 	if (prefersReduced) {
 		const Tag = as;
@@ -111,15 +115,16 @@ export function Reveal({
 
 	// className goes on the MotionTag itself — wrapping in an inner div would
 	// break grid placement (e.g. `bento-span-2` must sit on the grid item).
-	// `animate` is controlled via useRevealInView so content can never get
-	// stuck hidden when the user jumps past it (End key / Page Down).
+	// initial={false} keeps SSR-painted content visible: the node animates
+	// from its current state when it enters the viewport instead of
+	// flashing hidden → visible on mount.
 	return (
 		<MotionTag
-			ref={ref as never}
 			className={className}
 			variants={variants}
-			initial={show ? "show" : "hidden"}
-			animate={show ? "show" : "hidden"}
+			initial={false}
+			whileInView="show"
+			viewport={{ amount, once }}
 			transition={delay ? { delay } : undefined}
 		>
 			{children}
@@ -144,7 +149,6 @@ export function RevealStagger({
 }: RevealStaggerProps) {
 	const prefersReduced = useReducedMotion();
 	const mountAnim = useHasBeenInView();
-	const { ref, show } = useRevealInView({ amount, once });
 
 	if (prefersReduced) {
 		const Tag = as;
@@ -160,11 +164,11 @@ export function RevealStagger({
 
 	return (
 		<MotionTag
-			ref={ref as never}
 			className={className}
 			variants={staggerParent}
-			initial={show ? "show" : "hidden"}
-			animate={show ? "show" : "hidden"}
+			initial={false}
+			whileInView="show"
+			viewport={{ amount, once }}
 		>
 			{children}
 		</MotionTag>
