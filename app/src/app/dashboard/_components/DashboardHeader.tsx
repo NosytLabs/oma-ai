@@ -225,16 +225,6 @@ export function DashboardHeader({
 									? `UPDATED ${formatTime(lastUpdated.toISOString())}`
 									: "AWAITING DATA"}
 						</span>
-						{(false) && (
-							<>
-								<span
-									className="hidden items-center gap-1.5 rounded-[var(--radius-sm)] border border-accent/30 bg-accent/10 px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider text-accent sm:inline-flex"
-									title="You have operator (admin) access on this account."
-								>
-									Operator
-								</span>
-							</>
-						)}
 						<span
 							className="hidden items-center gap-1.5 text-text-secondary/80 md:flex bg-surface/50 px-2 py-0.5 rounded-[var(--radius-sm)] border border-border/50"
 							title="Keyboard shortcuts: R = refresh, 1-4 = switch tabs"
@@ -354,15 +344,6 @@ export function DashboardHeader({
 		</div>
 	);
 }
-
-/**
-	* Compact "all providers up?" pill in the dashboard status row. Pulls from
-	* the same /health endpoint the ProviderHealthSummary uses, with its own
-	* 30s refetch so it never goes stale while the user is on the overview.
-	* Renders nothing while loading to avoid a layout shift.
-	*/
-// SystemStatus pill intentionally removed for the user-facing dashboard.
-// Provider-ops surfaces live on /admin (operator-only).
 
 /**
 	* Time-range radio group with roving-tabindex keyboard navigation.

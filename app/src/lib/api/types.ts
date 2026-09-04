@@ -108,21 +108,8 @@ export interface ModelsResponse {
 
 // ─── Inference / Chat ─────────────────────────────────────────────────────────
 
-export interface HealthResponse {
-	status: "ok" | "degraded" | string;
-	version: string;
-	service: string;
-	uptime: number;
-	correlationId: string;
-	checks: Record<
-		string,
-		{
-			status: "ok" | "degraded" | "rate_limited" | "circuit_open" | string;
-			latency?: number;
-			cooldownMs?: number;
-		}
-	>;
-}
+// (HealthResponse removed — only used by the deleted `/ready` deep widget.
+// The navbar / login status chip reads a boolean from `health.ping()`.)
 
 // ─── x402 payment protocol ────────────────────────────────────────────────────
 

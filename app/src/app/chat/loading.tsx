@@ -1,4 +1,4 @@
-import { PlaygroundLoaderLottie } from "./_components/PlaygroundLoaderLottie";
+import { PlaygroundLoaderDots } from "./_components/PlaygroundLoaderLottie";
 
 export default function Loading() {
 	return (
@@ -15,7 +15,7 @@ export default function Loading() {
 				/>
 			</div>
 			<div className="flex-1 flex flex-col items-center justify-center p-8">
-				<PlaygroundLoaderLottie />
+				<PlaygroundLoaderDots />
 				<div className="text-text-muted font-mono text-xs uppercase tracking-widest animate-pulse">
 					<span
 						className="inline-block h-2 w-2 bg-accent mr-2 animate-pulse"

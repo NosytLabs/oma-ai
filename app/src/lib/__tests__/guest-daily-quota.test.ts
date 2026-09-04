@@ -69,18 +69,16 @@ describe("localStorage guest quota cache", () => {
 		const raw = JSON.parse(
 			localStorage.getItem(GUEST_QUOTA_STORAGE_KEY) as string,
 		);
-		// Legacy count = used messages, not remaining
-		expect(raw.count).toBe(20);
+		expect(raw.remaining).toBe(0);
+		expect(raw.limit).toBe(20);
 	});
 
-	it("reads legacy { date, count } shape as used messages", () => {
+	it("ignores unknown legacy shapes instead of guessing", () => {
 		const date = new Date().toISOString().slice(0, 10);
 		localStorage.setItem(
 			GUEST_QUOTA_STORAGE_KEY,
 			JSON.stringify({ date, count: 19 }),
 		);
-		const q = readStoredGuestQuota();
-		// Old client stored count as "messages sent" — free left = 20 - 19 = 1
-		expect(q?.remaining).toBe(1);
+		expect(readStoredGuestQuota()).toBeNull();
 	});
 });

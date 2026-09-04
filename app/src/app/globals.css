@@ -541,16 +541,21 @@
 	/* ---------- Buttons ---------- */
 
 	/*
-	 * Buttons — utility-class system.
-	 * Kept visually identical to the <Button> component (ui/button.tsx)
-	 * so the two button entry points render consistently across the app.
-	 * Authored to mirror: gradient fill, accent-fg text, color-mix border,
-	 * --radius-sm, and the accent glow shadow.
+	 * Buttons — utility-class system. Single source of truth.
 	 *
-	 * 2026-08-16 polish: hit target raised to 48px (was 44px avg) and
-	 * translateY hover dropped in favor of an inner-accent glow — the
-	 * previous lift read as "soft pillow"; the new motion is "lockstep
-	 * with the spec-sheet aesthetic" while still confirming interactivity.
+	 * The React <Button> component was removed (consolidated here)
+	 * so every CTA renders through one of these classes. Variants:
+	 *   .btn-primary      — emerald slab (the marquee CTA)
+	 *   .btn-secondary    — bordered neutral
+	 *   .btn-ghost        — text-only
+	 *   .btn-outline      — bordered with accent-on-hover
+	 *   .btn-destructive  — error-red destructive action
+	 *   .btn-mono         — sharp-corner mono-uppercase slab (brand CTAs)
+	 *   .btn-mono + .btn-primary | .btn-outline | .btn-ghost | .btn-danger
+	 *                       — mono variants of each above
+	 *
+	 * 2026-08-16 polish: hit target raised to 48px and the previous
+	 * translateY hover dropped in favor of an inner-accent glow.
 	 */
 	.btn-primary {
 		display: inline-flex;
@@ -824,6 +829,34 @@
 			0 0 18px -2px var(--color-accent-glow),
 			0 10px 22px -14px var(--color-accent-glow);
 	}
+	.btn-mono.btn-outline {
+		background: transparent;
+		color: var(--color-text-primary);
+		border-color: var(--color-border-bright);
+	}
+	.btn-mono.btn-outline:hover {
+		border-color: var(--color-accent);
+		color: var(--color-accent);
+		background: color-mix(in srgb, var(--color-accent) 6%, transparent);
+	}
+	.btn-mono.btn-ghost {
+		background: transparent;
+		border-color: transparent;
+		color: var(--color-text-secondary);
+	}
+	.btn-mono.btn-ghost:hover {
+		background: var(--color-surface);
+		color: var(--color-text-primary);
+	}
+	.btn-mono.btn-danger {
+		background: color-mix(in srgb, var(--color-error) 15%, transparent);
+		color: var(--color-error);
+		border-color: color-mix(in srgb, var(--color-error) 30%, transparent);
+	}
+	.btn-mono.btn-danger:hover {
+		background: color-mix(in srgb, var(--color-error) 22%, transparent);
+		border-color: var(--color-error);
+	}
 
 	.btn-destructive {
 		display: inline-flex;
@@ -865,7 +898,8 @@
 	.btn-secondary:focus-visible,
 	.btn-ghost:focus-visible,
 	.btn-outline:focus-visible,
-	.btn-destructive:focus-visible {
+	.btn-destructive:focus-visible,
+	.btn-mono:focus-visible {
 		outline: 2px solid var(--color-accent);
 		outline-offset: 2px;
 	}

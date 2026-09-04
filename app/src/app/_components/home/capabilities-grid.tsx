@@ -74,12 +74,12 @@ const PILLARS: Pillar[] = [
 	eyebrow: "Agents pay per request",
 	title: "x402 on Base",
 	description:
-	"HTTP 402 settlement for agent traffic. Sign USDC (EIP-3009) when the gateway challenges; no API key or prepaid balance required.",
+	"USDC settlement for agent traffic. Sign EIP-3009, verify at /x402/verify, spend with an API key — no card required.",
 	icon: Bot,
 	href: "/docs#x402",
 	cta: "Read x402 docs",
 	accent: "violet",
-	highlights: ["HTTP 402", "EIP-3009 on Base", "No pre-fund for agents"],
+	highlights: ["EIP-3009 on Base", "No card for agents", "402 on empty balance"],
 	visual: "flow",
 	},
 	{

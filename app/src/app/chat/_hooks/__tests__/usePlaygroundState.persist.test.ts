@@ -33,7 +33,7 @@ vi.mock("next/navigation", () => ({
 
 // Re-import the module under test *after* the mock is in place so the
 // lazy initializer sees the mocked hooks.
-const { usePlaygroundState, parseMediaMode } = await import("../usePlaygroundState");
+const { usePlaygroundState } = await import("../usePlaygroundState");
 
 beforeEach(() => {
 	localStorage.clear();
@@ -142,12 +142,5 @@ describe("usePlaygroundState — model persistence", () => {
 		await act(async () => {});
 		// Falls back to the static default rather than boot a 404 model.
 		expect(result.current.model).toBe("deepseek-v4-flash-0731-openbroker");
-	});
-});
-
-describe("parseMediaMode (sanity)", () => {
-	it("defaults to text", () => {
-		expect(parseMediaMode(undefined)).toBe("text");
-		expect(parseMediaMode("anything")).toBe("text");
 	});
 });

@@ -377,7 +377,7 @@ export default function AdminPage() {
 											) : (
 												<AlertTriangle className="h-3 w-3" />
 											)}
-											{available}/{total} keys ok
+											{available}/{total} models ok
 										</span>
 									</li>
 								);

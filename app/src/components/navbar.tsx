@@ -114,10 +114,10 @@ export function Navbar() {
 							</div>
 						</Magnetic>
 
-						{/* Section label — desktop-wide only, not on primary links */}
+						{/* Section label — wide screens only, not on primary links */}
 						{!onPrimaryLink && (
 							<span
-								className="hidden 2xl:inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-[11px] text-text-muted tabular-nums sm:text-xs"
+								className="hidden xl:inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-[11px] text-text-muted tabular-nums sm:text-xs"
 								aria-label={`Current section: ${section}`}
 							>
 								<span className="text-text-tertiary">~/</span>
@@ -172,7 +172,7 @@ export function Navbar() {
 
 					{/* RIGHT — single cluster so justify-between never interleaves items */}
 					<div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
-						<div className="hidden 2xl:flex items-center px-1">
+						<div className="hidden xl:flex items-center px-1">
 							<ApiStatus />
 						</div>
 
@@ -184,7 +184,7 @@ export function Navbar() {
 							whileHover={prefersReduced ? undefined : { y: -1 }}
 							whileTap={prefersReduced ? undefined : { scale: 0.94 }}
 							transition={EASE_SPRING}
-							className="hidden h-11 w-11 items-center justify-center rounded-sm text-text-tertiary transition-colors duration-200 ease-out hover:bg-surface hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent 2xl:inline-flex"
+							className="hidden h-11 w-11 items-center justify-center rounded-sm text-text-tertiary transition-colors duration-200 ease-out hover:bg-surface hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent xl:inline-flex"
 						>
 							<GithubIcon className="h-4 w-4" />
 						</m.a>
@@ -213,49 +213,45 @@ export function Navbar() {
 							className="mx-0.5 hidden h-4 w-px bg-border/60 lg:inline-block"
 						/>
 
-						{isPending ? (
-							<div
-								className="h-9 w-24 animate-pulse rounded-sm border border-border bg-surface"
-								aria-label="Loading account"
-								role="status"
-							/>
-						) : isAuthenticated && !isDemo ? (
+					{isPending ? (
+						// Skeleton sized to the signed-out "Get API key" CTA
+						// (btn-mono: min-h-10) so the swap to real content
+						// doesn't shift the navbar.
+						<div
+							className="h-10 w-36 animate-pulse rounded-sm border border-border bg-surface"
+							aria-label="Loading account"
+							role="status"
+						/>
+					) : isAuthenticated && !isDemo ? (
 							<NavbarUserMenu
 								evmAddress={evmAddress}
 								email={user?.email ?? null}
 								onSignOut={signOut}
 							/>
 						) : (
-							<div className="flex items-center gap-1.5 sm:gap-2">
+							<Magnetic strength={6}>
 								<Link
 									href={loginHref}
-									className="hidden h-11 items-center gap-1 px-3 text-xs font-medium text-text-secondary transition-colors duration-200 hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:inline-flex"
+									aria-label="Sign in or create an account"
+									className={`${pathname === "/chat" || pathname?.startsWith("/chat/") ? "hidden sm:inline-flex" : "inline-flex"} btn-mono btn-primary`}
 								>
-									Sign in
-								</Link>
-								<Magnetic strength={6}>
-									<Link
-										href={loginHref}
-										className={`${pathname === "/chat" || pathname?.startsWith("/chat/") ? "hidden sm:inline-flex" : "inline-flex"} btn-mono btn-primary`}
+									<span>Get API key</span>
+									<svg
+										className="hidden h-3 w-3 sm:block"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										strokeWidth="2.5"
+										aria-hidden="true"
 									>
-										<span>Get API key</span>
-										<svg
-											className="hidden h-3 w-3 sm:block"
-											viewBox="0 0 24 24"
-											fill="none"
-											stroke="currentColor"
-											strokeWidth="2.5"
-											aria-hidden="true"
-										>
-											<path
-												d="M5 12h14M13 6l6 6-6 6"
-												strokeLinecap="round"
-												strokeLinejoin="round"
-											/>
-										</svg>
-									</Link>
-								</Magnetic>
-							</div>
+										<path
+											d="M5 12h14M13 6l6 6-6 6"
+											strokeLinecap="round"
+											strokeLinejoin="round"
+										/>
+									</svg>
+								</Link>
+							</Magnetic>
 						)}
 
 						{/* Hamburger below lg — full desktop nav starts at lg */}

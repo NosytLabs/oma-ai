@@ -15,7 +15,6 @@ import { Suspense, useMemo } from "react";
 import { BreadcrumbListJsonLd } from "@/components/json-ld";
 import { InViewFade } from "@/components/motion/in-view-fade";
 import { Breadcrumb } from "@/components/shared/Breadcrumb";
-import { Button } from "@/components/ui/button";
 import { springs } from "@/lib/animation";
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { TIER_COLORS, TIER_ORDER } from "@/lib/models-data";
@@ -118,20 +117,18 @@ function ModelsPageInner() {
 
 					{/* Copy Filter URL */}
 					{hasFilters && (
-						<Button
-							variant="outline"
-							size="sm"
+						<button
+							type="button"
 							onClick={handleCopy}
-							leftIcon={
-								copied ? (
-									<Check className="h-3.5 w-3.5" />
-								) : (
-									<Link2 className="h-3.5 w-3.5" />
-								)
-							}
+							className="btn-mono btn-outline flex items-center gap-1.5"
 						>
+							{copied ? (
+								<Check className="h-3.5 w-3.5" />
+							) : (
+								<Link2 className="h-3.5 w-3.5" />
+							)}
 							{copied ? "Copied!" : "Share Filters"}
-						</Button>
+						</button>
 					)}
 				</div>
 

@@ -24,6 +24,7 @@ const shortAddress = (addr: string) => (addr ? formatAddress(addr) : "");
 	*/
 export function NavbarUserMenu({ evmAddress, email, onSignOut }: NavbarUserMenuProps) {
 	const containerRef = useRef<HTMLDivElement | null>(null);
+	const toggleRef = useRef<HTMLButtonElement | null>(null);
 	const [open, setOpen] = useState(false);
 	const [confirming, setConfirming] = useState(false);
 	const [disconnecting, setDisconnecting] = useState(false);
@@ -44,8 +45,10 @@ export function NavbarUserMenu({ evmAddress, email, onSignOut }: NavbarUserMenuP
 		if (!open) return;
 		function onKey(e: KeyboardEvent) {
 			if (e.key === "Escape") {
+				e.preventDefault();
 				setOpen(false);
 				setConfirming(false);
+				toggleRef.current?.focus();
 			}
 		}
 		document.addEventListener("keydown", onKey);
@@ -81,6 +84,7 @@ export function NavbarUserMenu({ evmAddress, email, onSignOut }: NavbarUserMenuP
 	return (
 		<div className="relative" ref={containerRef}>
 			<button
+				ref={toggleRef}
 				type="button"
 				onClick={() => setOpen(!open)}
 				title={triggerTitle}

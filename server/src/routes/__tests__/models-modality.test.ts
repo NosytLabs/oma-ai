@@ -10,7 +10,9 @@ vi.mock("../../lib/logger.js", () => ({
 		logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() }
 }));
 
-// Mock the models file completely to avoid initialization issues
+// Mock the models file completely to avoid initialization issues.
+// Prices resolve through billing-service.userFacingFor (the same lookup
+// billing deducts with), so that is the mock that matters here.
 vi.mock("../../inference/models.js", () => ({
 		ensureCatalogLoaded: vi.fn().mockResolvedValue(undefined),
 		listAllModels: vi.fn().mockReturnValue([
@@ -24,8 +26,11 @@ vi.mock("../../inference/models.js", () => ({
 						capabilities: ["chat", "reasoning", "coding", "tools"]
 				}
 		]),
-		userFacingPrices: vi.fn().mockReturnValue({ inputPer1M: 7.5, outputPer1M: 37.5 }),
 		providerAvailable: vi.fn().mockReturnValue(true)
+}));
+
+vi.mock("../../inference/billing-service.js", () => ({
+		userFacingFor: vi.fn().mockReturnValue({ inputPer1M: 7.5, outputPer1M: 37.5 }),
 }));
 
 import { modelRoutes } from "../models";

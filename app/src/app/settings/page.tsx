@@ -6,7 +6,6 @@ import {
 	AlertTriangle,
 	type LucideIcon,
 	Palette,
-	Shield,
 	User as UserIcon,
 	X,
 } from "lucide-react";
@@ -24,7 +23,7 @@ import { PrivacySection } from "./_components/PrivacySection";
 import { ProfileSection } from "./_components/ProfileSection";
 import { SessionsSection } from "./_components/SessionsSection";
 
-type SettingsTab = "profile" | "appearance" | "sessions" | "privacy" | "danger";
+type SettingsTab = "profile" | "appearance" | "sessions" | "danger";
 
 interface TabDef {
 	id: SettingsTab;
@@ -46,7 +45,7 @@ const TABS: TabDef[] = [
 		id: "appearance",
 		label: "Appearance",
 		icon: Palette,
-		description: "Accent theme",
+		description: "Theme & sounds",
 	},
 	{
 		id: "sessions",
@@ -55,16 +54,10 @@ const TABS: TabDef[] = [
 		description: "Active devices",
 	},
 	{
-		id: "privacy",
-		label: "Privacy",
-		icon: Shield,
-		description: "Your data",
-	},
-	{
 		id: "danger",
 		label: "Danger zone",
 		icon: AlertTriangle,
-		description: "Irreversible actions",
+		description: "Data & deletion",
 		badge: "Caution",
 	},
 ];
@@ -74,7 +67,6 @@ const MOBILE_TAB_LABEL: Record<SettingsTab, string> = {
 	profile: "Profile",
 	appearance: "Theme",
 	sessions: "Sessions",
-	privacy: "Privacy",
 	danger: "Danger",
 };
 
@@ -83,10 +75,12 @@ const MOBILE_TAB_LABEL: Record<SettingsTab, string> = {
 	* NOTE: `api-keys` and `keys` are deliberately NOT handled here —
 	* API keys live on the Dashboard. The deep-link useEffect below
 	* redirects those URLs to /dashboard?tab=api-keys instead.
+	* `privacy` is a legacy alias: data export now lives in the danger tab.
 	*/
 function parseSettingsTab(raw: string | null | undefined): SettingsTab | null {
 	if (!raw) return null;
 	if (raw === "appearance" || raw === "theme") return "appearance";
+	if (raw === "privacy") return "danger";
 	if (TABS.some((tab) => tab.id === raw)) return raw as SettingsTab;
 	return null;
 }
@@ -110,7 +104,6 @@ function SettingsPageContent() {
 	const loading = !isReady || sessionsQuery.isLoading;
 
 	const [deleting, setDeleting] = useState(false);
-	const [loggingOut, setLoggingOut] = useState(false);
 	const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
 
 	// Demo tour user mock for settings preview
@@ -130,13 +123,17 @@ function SettingsPageContent() {
 	// Deep-link: /settings?tab=*
 	// API keys used to live here — they now live on the Dashboard, so the
 	// `api-keys` and `keys` aliases are intercepted and redirected to
-	// /dashboard?tab=api-keys. Everything else falls through to
+	// /dashboard?tab=api-keys. `privacy` is a legacy alias for the merged
+	// data & deletion tab. Everything else falls through to
 	// `parseSettingsTab` and updates the active tab.
 	useEffect(() => {
 		const raw = searchParams?.get("tab") ?? null;
 		if (raw === "api-keys" || raw === "keys") {
 			router.replace("/dashboard?tab=api-keys");
 			return;
+		}
+		if (raw === "privacy") {
+			router.replace("/settings?tab=danger", { scroll: false });
 		}
 		const hash =
 			typeof window !== "undefined"
@@ -156,13 +153,12 @@ function SettingsPageContent() {
 	}, [sessionsQuery.error]);
 
 	const handleLogout = async () => {
-		setLoggingOut(true);
+		setDeleting(false);
 		try {
 			await signOut();
 			window.location.href = "/";
 		} catch (e: unknown) {
 			setError(e instanceof Error ? e.message : "Logout failed");
-			setLoggingOut(false);
 		}
 	};
 
@@ -253,14 +249,6 @@ function SettingsPageContent() {
 									: "Up to date"}
 					</p>
 				</m.div>
-				{!isDemoView && <button
-					type="button"
-					onClick={handleLogout}
-					disabled={loggingOut}
-					className="inline-flex min-h-11 w-fit items-center gap-1.5 rounded-[var(--radius-sm)] border border-border bg-void px-3 py-1.5 text-xs font-medium text-text-muted transition-[border-color,background-color,color,opacity,transform] duration-200 ease-out hover:border-error/40 hover:bg-error/10 hover:text-error active:scale-[0.97] disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error focus-visible:ring-offset-2 focus-visible:ring-offset-void"
-				>
-					{loggingOut ? "Signing out…" : "Sign out"}
-				</button>}
 			</div>
 
 			<AnimatePresence>
@@ -423,12 +411,14 @@ function SettingsPageContent() {
 						onRevokeOthers={isDemoView ? undefined : handleRevokeOtherSessions}
 									/>
 								)}
-								{activeTab === "privacy" && <PrivacySection user={displayUser} />}
 								{activeTab === "danger" && (
-									<DangerZoneSection
-										onDeleteAccount={handleDeleteAccount}
-										deleting={deleting}
-									/>
+									<div className="space-y-6">
+										<PrivacySection user={displayUser} />
+										<DangerZoneSection
+											onDeleteAccount={handleDeleteAccount}
+											deleting={deleting}
+										/>
+									</div>
 								)}
 							</m.div>
 						</AnimatePresence>

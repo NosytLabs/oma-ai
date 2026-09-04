@@ -2,11 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, Mail, MessageSquare, Shield } from "lucide-react";
 import { ContactForm } from "./ContactForm";
-// (FloatingIcons removed — replaced by static backdrop)
 import { InViewFade } from "@/components/motion/in-view-fade";
 import { BreadcrumbListJsonLd } from "@/components/json-ld";
-
-// Opt out of static prerender — uses client-only FloatingIcons background.
 
 export const metadata: Metadata = {
 	title: "Contact OMA — support & privacy",

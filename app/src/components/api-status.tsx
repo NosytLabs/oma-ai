@@ -4,20 +4,8 @@
 	* Shared `/api/health` poll for both the navbar status chip and the login
 	* page's "API is offline" banner.
 	*
-	* The previous implementation used a private React Query key
-	* (`["health"]`) and a 2.5 s fetch timeout. That poll returned `offline`
-	* even when the Next.js `/api/health` route answered 200, which made the
-	* login page show a persistent "API is offline" banner and disabled the
-	* wallet-connect button on a healthy backend.
-	*
-	* Root cause: the query was racing with the route's first compile, with
-	* network setup, and with TanStack Query's own retry handling. The
-	* duplicate `useHealthQuery` hook used elsewhere on the dashboard
-	* (`queryKey: ["health", "ready-v2"]`) was the actual source of truth.
-	*
-	* This file is now the single source of truth:
-	* - One shared query key: `["health", "ready-v2"]`.
-	* - One 3 s timeout on the GET to /api/health.
+	* Single source of truth:
+	* - One query key: `["health", "ready-v2"]`.
 	* - Treats any 2xx response as "online", any non-2xx or thrown error as
 	* "offline".
 	* - Exposes a stable `refresh()` callback so consumers can re-poll after
@@ -32,10 +20,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { RefreshCw, Wifi, WifiOff } from "lucide-react";
 import { useCallback } from "react";
 import { api } from "@/lib/api";
-import {
-	nextHealthPollMs,
-	recordHealthCheckResult,
-} from "@/lib/health-backoff";
+import { nextHealthPollMs } from "@/lib/health-backoff";
 
 type HealthStatus = "checking" | "online" | "offline";
 
@@ -45,10 +30,8 @@ const HEALTH_QUERY_KEY = ["health", "ready-v2"] as const;
 async function fetchHealth(): Promise<HealthStatus> {
 	try {
 	const ok = await api.healthPing();
-	recordHealthCheckResult(ok);
 	return ok ? "online" : "offline";
 	} catch {
-	recordHealthCheckResult(false);
 	return "offline";
 	}
 }
@@ -138,7 +121,7 @@ export function ApiStatus({ onRetry, showRetryButton = true }: ApiStatusProps) {
 	className={`relative inline-flex rounded-full h-2 w-2 ${info.dotClass}`}
 	/>
 	</span>
-	<span className={`text-[11px] ${info.className}`}>
+	<span className={`text-[11px] tabular-nums min-w-[4.75rem] text-center ${info.className}`}>
 	{info.text}
 	</span>
 	</div>

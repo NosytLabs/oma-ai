@@ -20,6 +20,8 @@ export interface StreamingProxyArgs {
 		outputTokens?: number;
 		/** Skip credit deduction for free website chat */
 		skipBilling?: boolean;
+		/** API key row id for Bearer-auth callers (null for website sessions). */
+		apiKeyId?: string | null;
 }
 
 /**

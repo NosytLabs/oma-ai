@@ -2,28 +2,26 @@ import { CheckCircle2, Zap } from "lucide-react";
 import { AnimatedSection, CodeBlock, SectionHeading } from "./shared";
 
 export function X402Section() {
-	const flowCode = `# 1. Request without credentials — API returns 402 with the price
-curl -i https://api.oma-ai.com/v1/chat/completions \\
+	const flowCode = `# 1. Sign a USDC transferWithAuthorization (EIP-3009) on Base for
+# the treasury amount using viem, ethers, or any EIP-3009 signer.
+# Gasless — the facilitator pays gas.
+
+# 2. POST the envelope to /x402/verify — verified, settled, credited
+curl https://api.oma-ai.com/x402/verify \\
 	-H "Content-Type: application/json" \\
-	-d '{"model":"llama-3.3-70b","messages":[{"role":"user","content":"Hello"}]}'
+	-H 'PAYMENT-SIGNATURE: {"signature":"0x...","payload":{...}}'
 
-# Response: 402 Payment Required
-# Header: PAYMENT-REQUIRED: {"x402Version":"2","scheme":"evm","networkId":"base",
-# "asset":"0x8335...","amount":"0.10","payee":"0x...","validBefore":...,...}
-# Flat rate per request; max_tokens is capped at 4096 on this path.
+# Response: 200 with a settlement receipt. Credits land as soon as
+# settlement confirms — no card, no account signup dance.
 
-# 2. Sign a USDC transferWithAuthorization (EIP-3009) on Base for
-# payee/amount using viem, ethers, or any EIP-3009 signer. Gasless —
-# the facilitator pays gas.
-
-# 3. Retry with the PAYMENT-SIGNATURE envelope — verified, settled, served
+# 3. Call chat completions with your API key as usual
 curl https://api.oma-ai.com/v1/chat/completions \\
 	-H "Content-Type: application/json" \\
-	-H 'PAYMENT-SIGNATURE: {"signature":"0x...","payload":{...}}' \\
+	-H "Authorization: Bearer $OMA_KEY" \\
 	-d '{"model":"llama-3.3-70b","messages":[{"role":"user","content":"Hello"}]}'
 
-# Sustained usage? Deposit once via the same envelope at /x402/verify
-# (or the /deposit page) and spend credits with an API key instead.`;
+# Run dry mid-task? The API answers 402 Insufficient Credits — top up
+# via the same /x402/verify envelope (or the /deposit page) and retry.`;
 
 	const agentCode = `import { privateKeyToAccount } from 'viem/accounts';
 import { base } from 'viem/chains';
@@ -79,16 +77,12 @@ if (payReq.ok) {
 							x402 — Crypto-Native Settlement
 						</h3>
 						<p className="mt-1 text-sm text-text-muted">
-							Agents can call chat completions with no account and no
-							pre-funded credits. An unauthenticated request returns HTTP 402
-							with a{" "}
-							<code className="text-accent font-mono">PAYMENT-REQUIRED</code>{" "}
-							header carrying the flat per-request price. Sign a USDC{" "}
+							Agents fund with USDC on Base and no card. Sign a USDC{" "}
 							<code className="text-accent font-mono">
 								transferWithAuthorization
 							</code>{" "}
-							(EIP-3009) on Base — gasless, the facilitator pays gas — and
-							retry with the{" "}
+							(EIP-3009) — gasless, the facilitator pays gas — and POST
+							the{" "}
 							<code className="text-accent font-mono">PAYMENT-SIGNATURE</code>{" "}
 							envelope per the{" "}
 							<a
@@ -98,17 +92,17 @@ if (payReq.ok) {
 								className="text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent"
 							>
 								x402 protocol
-							</a>
-							. The server verifies, settles on-chain, and serves the
-							completion — no human in the loop. The 402 body carries an{" "}
-							<code className="text-accent font-mono">accepts</code> array
-							(CAIP-2 <code className="text-accent font-mono">eip155:8453</code>
-							, atomic units) and payments can be sent as a base64{" "}
+							</a>{" "}
+							to{" "}
+							<code className="text-accent font-mono">POST /x402/verify</code>.
+							The server verifies, settles on-chain, and credits the
+							account — no human in the loop. Then call chat completions
+							with an API key as usual. Run dry mid-task and the API
+							answers 402 Insufficient Credits — top up the same way and
+							retry. Payments can also be sent as a base64{" "}
 							<code className="text-accent font-mono">X-PAYMENT</code> header;
 							settled requests return{" "}
 							<code className="text-accent font-mono">X-PAYMENT-RESPONSE</code>.
-							The same envelope also powers instant credit top-ups via{" "}
-							<code className="text-accent font-mono">POST /x402/verify</code>.
 						</p>
 					</div>
 				</div>

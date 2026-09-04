@@ -141,15 +141,18 @@ Our positioning is centered around **sovereignty, privacy, and low-friction util
 
 ### Interactive Buttons
 
-Always leverage standard design-system `<Button>` components in dashboard interfaces. Static marketing elements may use pure CSS primitive helper classes:
+A single CSS-only button system is the source of truth (no React
+component — see `app/src/app/globals.css` "Buttons"). Compose by stacking
+the base `.btn-mono` slab with a modifier class:
 
-| Class / Variant | Application Role | Visual Style |
+| Modifier | Application Role | Visual Style |
 | :--- | :--- | :--- |
-| `btn-primary` / `primary` | Primary action CTAs | Emerald background, void text |
-| `btn-secondary` / `secondary` | Secondary page actions | Bordered surface container |
-| `btn-ghost` / `ghost` | Tertiary text links | Text-only action, subtle hover background |
-| `outline` | Quiet interactive borders | Bordered outline with no container fill |
-| `destructive` | Irreversible actions | Warning red colors |
+| `.btn-primary` | Primary action CTAs | Emerald background, void text |
+| `.btn-secondary` | Secondary page actions | Bordered surface container |
+| `.btn-ghost` | Tertiary text links | Text-only action, subtle hover background |
+| `.btn-outline` | Quiet interactive borders | Bordered outline with no container fill |
+| `.btn-destructive` | Irreversible actions | Warning red colors |
+| `.btn-mono` + `.btn-primary` | Brand mono slab CTA (the "Get API key" shape) | Sharp-corner mono uppercase + emerald |
 
 - **Layout Constraint:** Standard touch surfaces on primary CTAs must maintain a height of **44–48px**.
 - **The Color Rule:** Never use orange (`#f97316`) for active system branding.
@@ -164,8 +167,12 @@ Always leverage standard design-system `<Button>` components in dashboard interf
 
 - **Global Navigation:** Stick header fixed at `h-14` featuring standard backdrop-blur glass filters upon scroll.
 - **Primary Pages:** Models · Chat · Pricing · Docs.
-- **System Diagnostics Dropdown:** Network · Observability.
-- **Account Panel:** Dashboard · Settings · Sign In.
+- **Tools Dropdown** (secondary, off the primary path): Buy credits · API Reference · Agents & IDEs · Get started · FAQ.
+- **Account Panel** (signed-in): Dashboard · Settings · Buy credits · Sign out.
+- **Account Panel** (signed-out): single "Get API key" CTA → `/login`.
+- **Mobile Menu:** Hamburger at `<lg` opens a full-screen menu grouping Primary + Tools + Account.
+- **Theme Dropdown:** emerald (default) · amber · mono · synth.
+- **Admin:** `/admin` route is operator-gated (server check on `user.role === 'admin'`). Not surfaced anywhere in `primaryLinks`, `toolsLinks`, or footer columns. Admins only land there by typing the URL.
 - **Legacy Redirects:** All `/swap` actions permanently route to `/deposit`.
 - **Agent Session Demos:** Interactive terminal structures inspired by the `AgentSessionDemo` layout should only be used inside marketing or documentation surfaces. Live chat flows must remain native.
 

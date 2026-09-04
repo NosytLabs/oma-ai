@@ -2,7 +2,7 @@
 
 import { AnimatePresence, m, useReducedMotion } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";
-import { CornerDownLeft, Key, LogIn, LogOut, Settings, X, Zap } from "lucide-react";
+import { CornerDownLeft, Key, LayoutDashboard, LogIn, LogOut, Settings, X, Zap } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -39,8 +39,8 @@ const mobileLinkVariant = {
 // Account card links — local to the mobile menu; not exported as they are
 // not part of the primary nav.
 const ACCOUNT_LINKS_AUTH: { href: string; label: string; icon: typeof Key }[] = [
-	{ href: "/dashboard", label: "dashboard", icon: Key },
-	{ href: "/deposit", label: "deposit", icon: Zap },
+	{ href: "/dashboard", label: "dashboard", icon: LayoutDashboard },
+	{ href: "/deposit", label: "add credits", icon: Zap },
 	{ href: "/settings", label: "settings", icon: Settings },
 ];
 

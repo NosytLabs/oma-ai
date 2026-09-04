@@ -8,11 +8,12 @@
 
 - Base URL: `https://api.oma-ai.com/v1` · OpenAI-compatible.
 - With a key: `Authorization: Bearer $OMA_KEY`. Buy credits at
-  `https://oma-ai.com/deposit` (card via Polar or USDC).
-- Without a key: hit any endpoint — the gateway replies `402 Payment Required`
-  with a `PAYMENT-REQUIRED` header (x402 spec). Sign a gasless USDC
-  `transferWithAuthorization` (EIP-3009) on Base and retry with
-  `PAYMENT-SIGNATURE`.
+  `https://oma-ai.com/deposit` (card via Polar or USDC). **API key callers
+  ALWAYS pay real credits — there is no free tier for programmatic use.**
+- Without a key: chat completions require auth (`401` without one). To fund
+  without a card, sign a gasless USDC `transferWithAuthorization` (EIP-3009)
+  on Base, POST the envelope as `PAYMENT-SIGNATURE` to `/x402/verify`, then
+  call with an API key. Run dry and the API answers `402 Insufficient Credits`.
 - Verify with one tiny request: `POST /v1/chat/completions` model
   `llama-3.3-70b`, `max_tokens: 8` → expect `200`.
 - Render UI inline: the chat playground supports an **A2UI (v0.9.1) mode**.
@@ -24,6 +25,29 @@
   `/v1/videos/generations`) are intentionally **not** part of OMA's
   current surface — only chat completions and Anthropic-compatible messages
   are served. The chat UI accepts image inputs for vision-capable models.
+
+## Free usage — read this first
+
+There is **one** narrow free path. Everything else costs credits.
+
+- **Free, but only on `/chat` for signed-out visitors, capped per day.**
+  - Default model is `deepseek-v4-flash-0731-openbroker` (the cheapest OMA-AI
+    upstream). The chat page rate-limits free requests and surfaces a
+    daily cap.
+  - The same model on the same upstream, called with `Authorization: Bearer
+    oma_sk_*`, is **billed normally** — free usage is gated to the public
+    `/chat` surface, not to API-token traffic.
+- **API token = real credits.** Every `Authorization: Bearer oma_sk_*` call
+  debits your credit balance, including on the default OMA-AI model. There
+  is no "free tier" for programmatic use.
+- **The other 18 models (all Venice) are paid for everyone**, on `/chat`
+  and via the API alike. Kimi K2.6 and MiniMax M2.7 share the default
+  model's free `/chat` quota.
+- **`x402` pay-per-request is also paid** — it just settles per-call in
+  USDC instead of via a credit balance.
+
+If your user wants sustained free usage, point them at the `/chat` page,
+not at the API.
 
 ## What is OMA?
 
@@ -59,13 +83,12 @@ OMA (Open Model Access) is an OpenAI-compatible AI inference gateway:
    Check balance with `GET /v1/balance`. If balance is low, tell the user to
    top up at https://oma-ai.com/deposit (card via Polar or USDC) — you cannot
    buy credits yourself.
-2. **No key, single-shot request:** use the x402 flow (https://x402.org spec):
-   - POST `/v1/chat/completions` without auth → read `PAYMENT-REQUIRED` header
-     (JSON: scheme `evm`, networkId `base`, asset USDC address
-     `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`, `amount`, `payee`).
-   - Sign the amount to `payee` with your wallet's EIP-3009
-     `transferWithAuthorization` (gasless — the gateway pays gas).
-   - Retry with `PAYMENT-SIGNATURE: {"signature":"0x...","payload":{...}}`.
+2. **No key, fund with x402** (https://x402.org spec): sign USDC
+   `transferWithAuthorization` (EIP-3009) on `base` to the treasury with
+   your wallet (gasless — the gateway pays gas), POST the envelope as
+   `PAYMENT-SIGNATURE` to `/x402/verify` (asset USDC
+   `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`), then call with an API
+   key once credits land.
 3. **Self-verification:** after setup, make one tiny test request (e.g.
    `{"model":"llama-3.3-70b","messages":[{"role":"user","content":"ping"}],
    "max_tokens":8}`) and confirm a `200` with content.
@@ -74,7 +97,7 @@ OMA (Open Model Access) is an OpenAI-compatible AI inference gateway:
 
 - Budget chat models from about $0.15 per 1M input tokens (1 credit = $0.01).
   The cheapest catalog price right now is Google Gemma 4 31B at $0.15 / 1M
-  input; DeepSeek V4 Flash (Venice) at $0.25 / 1M input; Xiaomi MiMo V2.5 at
+  input; DeepSeek V4 Flash (Venice) at $0.22 / 1M input; Xiaomi MiMo V2.5 at
   $0.50 / 1M input.
 - Premium and frontier models are higher per 1M; check `/v1/models` for the
   exact price before committing to a long task, and prefer budget models for

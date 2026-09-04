@@ -21,7 +21,6 @@
 
 import { m } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";
-import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -313,18 +312,17 @@ function TextFieldInput({ node, ctx }: { node: A2UIComponent; ctx: RenderCtx }) 
 	const [value, setValue] = useState(initial);
 	const [errors, setErrors] = useState<string[]>([]);
 
-	const validate = (_next: string): string[] => {
+	const validate = (next: string): string[] => {
 		const out: string[] = [];
 		for (const check of Array.isArray(node.checks) ? (node.checks as Array<Record<string, unknown>>) : []) {
 			const call = String(check.call ?? "");
 			const message = String(check.message ?? "Invalid value.");
 			const args = (check.args && typeof check.args === "object" ? check.args : {}) as Record<string, unknown>;
-			const resolved = resolveBinding(args.value, data, runLocalCall);
-			if (call === "required" && !String(resolved ?? "").trim()) out.push(message);
-			else if (call === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(resolved ?? ""))) out.push(message);
+			if (call === "required" && !next.trim()) out.push(message);
+			else if (call === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(next)) out.push(message);
 			else if (call === "regex") {
 				const pattern = String(args.pattern ?? "");
-				if (pattern && !new RegExp(pattern).test(String(resolved ?? ""))) out.push(message);
+				if (pattern && !new RegExp(pattern).test(next)) out.push(message);
 			}
 		}
 		return out;
@@ -337,19 +335,48 @@ function TextFieldInput({ node, ctx }: { node: A2UIComponent; ctx: RenderCtx }) 
 					{label}
 				</label>
 			)}
-			<input
-				id={fieldId}
-				type="text"
-				value={value}
-				onChange={(e) => {
-					setValue(e.target.value);
-					setErrors(validate(e.target.value));
-				}}
-				className={`w-full bg-void border px-2.5 py-1.5 text-xs font-mono text-text placeholder:text-text-muted/50 focus:outline-none ${
+			{(() => {
+				// A2UI v0.9.1 enum: `"shortText" | "longText" | "number" |
+				// "obscured"`. Previous renderer always emitted `<input
+				// type="text">`, which silently downgraded `longText` to a
+				// single line and exposed `obscured` as plaintext.
+				const variant = String(node.variant ?? "shortText");
+				const baseCls = `w-full bg-void border px-2.5 py-1.5 text-xs font-mono text-text placeholder:text-text-muted/50 focus:outline-none ${
 					errors.length ? "border-error" : "border-border focus:border-accent"
-				}`}
-				placeholder={String(node.placeholder ?? "")}
-			/>
+				}`;
+				const onChange = (next: string) => {
+					setValue(next);
+					setErrors(validate(next));
+				};
+				if (variant === "longText") {
+					return (
+						<textarea
+							id={fieldId}
+							value={value}
+							onChange={(e) => onChange(e.target.value)}
+							rows={3}
+							className={baseCls}
+							placeholder={String(node.placeholder ?? "")}
+						/>
+					);
+				}
+				const type =
+					variant === "number"
+						? "number"
+						: variant === "obscured"
+							? "password"
+							: "text";
+				return (
+					<input
+						id={fieldId}
+						type={type}
+						value={value}
+						onChange={(e) => onChange(e.target.value)}
+						className={baseCls}
+						placeholder={String(node.placeholder ?? "")}
+					/>
+				);
+			})()}
 			{errors.map((err, i) => (
 				<p key={i} className="mt-1 flex items-start gap-1 text-[10px] font-mono text-error">
 					<TriangleAlert className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
@@ -395,7 +422,12 @@ function ChoicePickerField({ node, ctx }: { node: A2UIComponent; ctx: RenderCtx 
 			? [bound]
 			: [];
 	const [selected, setSelected] = useState<string[]>(initial);
-	const exclusive = String(node.variant ?? "mutuallyExclusive") !== "multiSelect";
+	// A2UI v0.9.1 enum: `"mutuallyExclusive" | "multipleSelection"`. The
+	// legacy draft we used to accept (`"multiSelect"`) is not a spec value —
+	// any agent emitting per-spec `"multipleSelection"` would otherwise be
+	// silently treated as exclusive.
+	const exclusive =
+		String(node.variant ?? "mutuallyExclusive") !== "multipleSelection";
 	return (
 		<div key={node.id} className="flex flex-wrap gap-2 mb-2">
 			{options.map((opt) => {
@@ -488,21 +520,35 @@ function renderComponent(
 			const url = node.url ? String(node.url) : undefined;
 			const action = node.action && typeof node.action === "object" ? (node.action as Record<string, unknown>) : undefined;
 			const event = action?.event && typeof action.event === "object" ? (action.event as Record<string, unknown>) : undefined;
-			const variant = String(node.variant ?? "primary");
-			const variantMap: Record<string, "primary" | "secondary" | "destructive"> = {
-				primary: "primary",
-				secondary: "secondary",
-				ghost: "secondary",
-				outline: "secondary",
-				danger: "destructive",
-			};
+		// Map A2UI v0.9.1 button variants to our .btn-mono CSS classes.
+		// Spec enum: `default` | `primary` | `borderless`. Legacy/loose
+		// values (ghost/outline/danger) collapse to the closest match.
+		// NOTE: these must stay two-class combos (e.g. "btn-mono btn-ghost") —
+		// the single-dash aliases ("btn-mono-ghost") don't exist in globals.css
+		// and render unstyled.
+		const variant = String(node.variant ?? "primary");
+		const classFor: Record<string, string> = {
+			default: "btn-mono",
+			primary: "btn-mono btn-primary",
+			secondary: "btn-mono",
+			ghost: "btn-mono btn-ghost",
+			outline: "btn-mono btn-outline",
+			borderless: "btn-mono btn-ghost",
+			danger: "btn-mono btn-danger",
+		};
+			const btnClass = classFor[variant] ?? "btn-mono btn-primary";
 			if (url) {
 				return (
-					<Button key={node.id} asChild variant="primary" leftIcon={<ExternalLink className="w-3 h-3" />}>
-						<a href={url} target="_blank" rel="noopener noreferrer">
-							{label}
-						</a>
-					</Button>
+					<a
+						key={node.id}
+						href={url}
+						target="_blank"
+						rel="noopener noreferrer"
+						className={`${btnClass} flex items-center gap-1.5`}
+					>
+						<ExternalLink className="w-3 h-3" aria-hidden="true" />
+						{label}
+					</a>
 				);
 			}
 			if (event) {
@@ -511,20 +557,26 @@ function renderComponent(
 					ctxData[k] = resolveBinding(v, data, runLocalCall);
 				}
 				return (
-					<Button
+					<button
 						key={node.id}
-						variant={variantMap[variant] ?? "primary"}
-						rightIcon={<ChevronRight className="w-3 h-3" />}
+						type="button"
 						onClick={() => ctx.onAction?.({ name: String(event.name), context: ctxData })}
+						className={`${btnClass} flex items-center gap-1.5`}
 					>
 						{label}
-					</Button>
+						<ChevronRight className="w-3 h-3" aria-hidden="true" />
+					</button>
 				);
 			}
 			return (
-				<Button key={node.id} variant={variantMap[variant] ?? "primary"} rightIcon={<ChevronRight className="w-3 h-3" />}>
+				<button
+					key={node.id}
+					type="button"
+					className={`${btnClass} flex items-center gap-1.5`}
+				>
 					{label}
-				</Button>
+					<ChevronRight className="w-3 h-3" aria-hidden="true" />
+				</button>
 			);
 		}
 		case "row":

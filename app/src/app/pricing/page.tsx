@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-// (FloatingIcons removed — replaced by static radial gradient backdrop)
 import { InViewFade } from "@/components/motion/in-view-fade";
 import { formatPricePerMillion, loadModels, MODEL_COUNT, type Model, MODELS } from "@/lib/models-data";
 import { CREDIT_PLANS } from "@/lib/credit-utils";
@@ -141,7 +140,7 @@ const FAQ_ITEMS = [
 	},
 	{
 		q: "What is x402 pay-per-request?",
-		a: "x402 enables per-request AI inference payments on Base. Pay for each API request without pre-funding credits. Fees are deducted automatically per request — ideal for agents and automated workflows.",
+		a: "x402 lets agents fund with USDC on Base without a card: sign the payment envelope, verify at /x402/verify, and spend with an API key. Ideal for agents and automated workflows — no human in the loop.",
 	},
 ];
 
@@ -460,8 +459,8 @@ export default function PricingPage() {
 									</span>
 								</div>
 								<p className="mt-2 text-sm text-text-secondary leading-relaxed">
-									Native x402 support lets applications pay for inference call by
-									call, without maintaining prepaid credits.
+									Native x402 support lets applications fund with USDC on Base —
+									no card, no signup dance. Verify once, spend with an API key.
 									<Link
 										href="/docs#x402"
 										className="ml-2 font-medium text-accent hover:text-accent-hover transition-colors duration-200 ease-out inline-flex items-center"

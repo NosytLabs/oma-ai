@@ -28,9 +28,6 @@ import { estimateTokens } from "@/lib/text";
 // usage never lands in the dashboard. proxy-response keeps SSE streamed.
 const CHAT_ENDPOINT = "/api/v1/chat/completions";
 const SEARCH_ENDPOINT = "/api/v1/search";
-// re-export the degenerate-response detector so existing imports of
-// `useStreamingChat` still get it (kept for backwards compat)
-export { isDegenerateResponse } from "@/lib/degenerate-response";
 
 /**
 	* Clean the conversation before it hits the upstream API. Two failure modes

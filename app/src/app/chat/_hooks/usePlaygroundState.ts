@@ -39,20 +39,6 @@ function readStoredModel(userId: string | null | undefined): string | null {
 	}
 }
 
-/**
-	* Media mode is now text-only — OMA sells text + multimodal LLM
-	* inference. Legacy `?mode=image|video|create` deep links still resolve
-	* to the chat surface so old share URLs don't break. The previous image
-	* and video generation routes have been removed from the server.
-	*/
-export type MediaMode = "text";
-
-export function parseMediaMode(_raw: string | null | undefined): MediaMode {
-	// All non-text deep links (image, video, create, media) redirect to
-	// the chat surface — image/video generation is no longer offered.
-	return "text";
-}
-
 export interface UsePlaygroundStateOptions {
 	/**
 	 * Override the default model. Useful for tests and for callers that
@@ -135,8 +121,6 @@ export interface PlaygroundState {
 	// --- Misc UI ---
 	shortcutsOpen: boolean;
 	setShortcutsOpen: Dispatch<SetStateAction<boolean>>;
-	mediaMode: MediaMode;
-	setMediaMode: Dispatch<SetStateAction<MediaMode>>;
 }
 
 /**
@@ -256,20 +240,6 @@ export function usePlaygroundState(
 
 	// --- Misc UI ---
 	const [shortcutsOpen, setShortcutsOpen] = useState<boolean>(false);
-	const [mediaMode, setMediaMode] = useState<MediaMode>("text");
-
-	// Strip legacy `?mode=` query params on mount so old share URLs
-	// land cleanly on the chat surface instead of carrying dead state.
-	useEffect(() => {
-		if (typeof window === "undefined" || !pathname) return;
-		const raw = searchParams?.get("mode");
-		if (!raw) return;
-		const params = new URLSearchParams(searchParams?.toString() ?? "");
-		params.delete("mode");
-		const qs = params.toString();
-		const href = qs ? `${pathname}?${qs}` : pathname;
-		router.replace(href, { scroll: false });
-	}, [pathname, router, searchParams]);
 
 	// Model persistence — rehydrate from localStorage on mount (after auth
 	// resolves, so the user-scoped bucket is correct) and re-write whenever
@@ -393,7 +363,5 @@ export function usePlaygroundState(
 		// Misc UI
 		shortcutsOpen,
 		setShortcutsOpen,
-		mediaMode,
-		setMediaMode,
 	};
 }

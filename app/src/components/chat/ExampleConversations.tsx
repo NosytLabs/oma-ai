@@ -365,8 +365,14 @@ export function ExampleConversations({ onSelect }: ExampleConversationsProps) {
 													backgroundColor: `color-mix(in srgb, ${catColor} 10%, transparent)`,
 												}}
 											>
-												{example.category}
-											</span>
+										{example.category}
+										</span>
+										{/* Difficulty duplicates the category for
+											Quick-category prompts (both read
+											"QUICK") — render it only when it
+											adds information. */}
+										{example.category.toLowerCase() !==
+											diff.label.toLowerCase() && (
 											<span
 												className="px-2 py-0.5 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider border"
 												style={{
@@ -377,6 +383,7 @@ export function ExampleConversations({ onSelect }: ExampleConversationsProps) {
 											>
 												{diff.label}
 											</span>
+										)}
 											<span className="px-2 py-0.5 rounded-sm bg-accent/10 text-accent border border-accent/20 text-[9.5px] font-mono font-bold uppercase tracking-wider">
 												{example.modelName}
 											</span>

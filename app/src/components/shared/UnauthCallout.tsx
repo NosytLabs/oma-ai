@@ -139,7 +139,7 @@ const copy: Record<
 			{
 				icon: AlertTriangle,
 				label: "Appearance",
-				description: "Accent theme",
+				description: "Theme & sounds",
 			},
 			{
 				icon: AlertTriangle,
@@ -148,8 +148,8 @@ const copy: Record<
 			},
 			{
 				icon: AlertTriangle,
-				label: "Privacy",
-				description: "Your data",
+				label: "Data & deletion",
+				description: "Export or wipe data",
 			},
 		],
 	},

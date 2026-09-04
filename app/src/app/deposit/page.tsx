@@ -192,10 +192,10 @@ function X402Info() {
 							x402 — pay per request
 						</h3>
 						<p className="mt-1 text-[12px] leading-relaxed text-text-secondary">
-							Agents call the API with no account, no API key, and no upfront
-							deposit. On 402 Payment Required, the client signs a USDC payment
-							on Base and retries with a PAYMENT-SIGNATURE header. Gas is paid
-							by the facilitator.
+							Agents fund with no card and no signup dance. The client signs
+							a USDC payment on Base and POSTs it as a PAYMENT-SIGNATURE
+							header to /x402/verify; credits land on settlement and the
+							agent calls with an API key. Gas is paid by the facilitator.
 						</p>
 					</div>
 				</div>

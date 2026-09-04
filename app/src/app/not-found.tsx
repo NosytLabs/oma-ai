@@ -1,7 +1,6 @@
 import { ArrowLeft, Home, Search } from "lucide-react";
 import Link from "next/link";
 import { NotFoundLogger } from "./_components/NotFoundLogger";
-import { Button } from "@/components/ui/button";
 import { OmaLogo } from "@/components/ui/oma-logo";
 
 // Next 15 still tries to statically prerender `/_not-found` even though
@@ -57,16 +56,14 @@ export default function NotFound() {
 					</div>
 
 					<div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-2">
-						<Button asChild leftIcon={<Home className="h-4 w-4" />}>
-							<Link href="/">Return home</Link>
-						</Button>
-						<Button
-							asChild
-							variant="secondary"
-							leftIcon={<Search className="h-4 w-4" />}
-						>
-							<Link href="/docs">Browse docs</Link>
-						</Button>
+						<Link href="/" className="btn-mono flex items-center gap-2">
+							<Home className="h-4 w-4" aria-hidden="true" />
+							Return home
+						</Link>
+						<Link href="/docs" className="btn-mono flex items-center gap-2">
+							<Search className="h-4 w-4" aria-hidden="true" />
+							Browse docs
+						</Link>
 					</div>
 
 					<div className="mt-6 pt-6 border-t border-border-subtle w-full">

@@ -1,8 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Download, History, Loader2, Trash2 } from "lucide-react";
-import Link from "next/link";
+import { AlertTriangle, History, Loader2, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { api } from "@/lib/api";
@@ -73,26 +72,9 @@ export function DangerZoneSection({
 				</p>
 			</div>
 
-			<div className="rounded-[var(--radius-md)] border border-border bg-surface/30 p-5">
-				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-					<div className="min-w-0">
-						<h3 className="text-sm font-semibold text-text-bright">
-							Export before you delete
-						</h3>
-						<p className="mt-1 text-xs text-text-muted">
-							Download your account, usage, and credit history from Privacy.
-							Deletion forfeits remaining credits.
-						</p>
-					</div>
-					<Link
-						href="/settings?tab=privacy"
-						className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-[var(--radius-md)] border border-border bg-surface px-4 text-xs font-semibold text-text-secondary transition-[background-color,border-color,color,transform] duration-200 ease-out hover:border-accent/40 hover:text-text-bright active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-					>
-						<Download className="h-3.5 w-3.5" aria-hidden="true" />
-						Go to data export
-					</Link>
-				</div>
-			</div>
+			<p className="rounded-[var(--radius-md)] border border-border bg-surface/30 px-5 py-3 text-xs text-text-muted">
+				Export your data above first if you might need it later. Deletion forfeits remaining credits.
+			</p>
 
 			{/* Wipe History */}
 			<div className="mt-6 rounded-[var(--radius-md)] border border-border bg-surface/30 p-5 transition-colors duration-200 ease-out hover:border-accent/30">

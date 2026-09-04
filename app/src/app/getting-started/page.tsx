@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, CreditCard, KeyRound, MessageSquare, Rocket, Terminal, Wallet } from "lucide-react";
 import { MODEL_COUNT } from "@/lib/models-data";
-// (FloatingIcons removed — replaced by static grid backdrop)
 import { InViewFade } from "@/components/motion/in-view-fade";
 import { BreadcrumbListJsonLd } from "@/components/json-ld";
 import { CopyableCode } from "@/components/copyable-code";

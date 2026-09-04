@@ -156,7 +156,9 @@ chatRoutes.post(
 
 			// Website chat with free OMA-AI models: allow anonymous, skip billing
 			// API requests or non-free models: require auth and bill credits
-			const isFreeWebsiteChat = isWebsiteRequest && isFreeModel && !c.get("apiKey");
+			const apiKey = c.get("apiKey") as { id?: string } | undefined;
+			const apiKeyId = apiKey?.id ?? null;
+			const isFreeWebsiteChat = isWebsiteRequest && isFreeModel && !apiKey;
 				
 				if (!isFreeWebsiteChat && !userId) {
 						return c.json(
@@ -280,6 +282,7 @@ chatRoutes.post(
 										pricing: actualPricing,
 										requestId,
 										skipBilling: isFreeWebsiteChat,
+										apiKeyId,
 								});
 								return c.body(proxyStream, 200);
 						}
@@ -292,6 +295,7 @@ chatRoutes.post(
 								pricing: actualPricing,
 								requestId,
 								skipBilling: isFreeWebsiteChat,
+								apiKeyId,
 						});
 
 						return c.json(data);

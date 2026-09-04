@@ -54,12 +54,8 @@ import {
 		shouldExpandReasoning,
 } from "./message-stream-ui";
 import {
-		FALLBACK_MODELS,
-		type Message,
-		type ModelOption,
-		type SearchResult,
-		type TierFilter,
-		useLiveModels,
+	type Message,
+	type SearchResult,
 } from "./chat-message-shared";
 
 // ═══════════════════════════════════════════════════════════════════
@@ -791,8 +787,6 @@ function formatTime(ms: number): string {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// RE-EXPORT TYPES (kept identical for drop-in replacement)
+// TYPES are re-exported from chat-message-shared.tsx — keep this file's
+// public surface limited to the React components above.
 // ═══════════════════════════════════════════════════════════════════
-
-export type { Message, ModelOption, SearchResult, TierFilter };
-export { FALLBACK_MODELS, useLiveModels };

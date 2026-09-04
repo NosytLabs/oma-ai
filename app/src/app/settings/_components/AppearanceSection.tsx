@@ -1,8 +1,10 @@
 "use client";
 
 import { Check } from "lucide-react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { THEME_ACCENTS, THEME_LIST, type Theme, useTheme } from "@/components/ThemeProvider";
+import { isSoundEnabled, setSoundEnabled } from "@/lib/sound";
+import { SettingsCard } from "./SettingsCard";
 
 /**
 	* Appearance settings — theme switcher surfaced inside /settings.
@@ -12,9 +14,17 @@ import { THEME_ACCENTS, THEME_LIST, type Theme, useTheme } from "@/components/Th
 export function AppearanceSection() {
 	const { theme, setTheme, accent } = useTheme();
 	const themeRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+	const [soundOn, setSoundOn] = useState(() => {
+		if (typeof window === "undefined") return true;
+		return isSoundEnabled();
+	});
 	const selectTheme = (next: Theme) => {
 		setTheme(next);
 		requestAnimationFrame(() => themeRefs.current[next]?.focus());
+	};
+	const handleSoundToggle = (checked: boolean) => {
+		setSoundEnabled(checked);
+		setSoundOn(checked);
 	};
 
 	return (
@@ -113,6 +123,24 @@ export function AppearanceSection() {
 					);
 				})}
 			</div>
+
+			<SettingsCard
+				className="mt-6"
+				title="Sound cues"
+				description="Subtle chime when a task succeeds or fails."
+			>
+				<label className="relative inline-flex cursor-pointer items-center">
+					<input
+						type="checkbox"
+						className="peer sr-only"
+						checked={soundOn}
+						onChange={(e) => handleSoundToggle(e.target.checked)}
+						aria-label="Toggle subtle success and failure sound cues"
+					/>
+					<div className="h-6 w-11 rounded-full border border-border bg-surface transition-[border-color,background-color] peer-checked:border-accent peer-checked:bg-accent/20 peer-focus-visible:ring-2 peer-focus-visible:ring-accent focus-within:ring-2 focus-within:ring-accent" />
+					<div className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-text-muted transition-transform duration-200 ease-out peer-checked:translate-x-5 peer-checked:bg-accent" />
+				</label>
+			</SettingsCard>
 
 			<div className="mt-6 rounded-[var(--radius-md)] border border-border bg-void p-4">
 				<p className="mb-3 text-[11px] font-mono uppercase tracking-wider text-text-muted">

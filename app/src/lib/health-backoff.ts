@@ -1,10 +1,6 @@
 /**
-	* Shared offline-backoff state for the `/api/health` poll.
-	*
-	* Both health hooks (`useApiHealth` in components/api-status.tsx and
-	* `useHealthQuery` in app/dashboard/_hooks) observe the same TanStack
-	* query key, so they must also share one view of "how many consecutive
-	* checks have failed" to agree on the next poll delay.
+	* Shared offline-backoff state for the `/api/health` poll in
+	* `components/api-status.tsx`.
 	*
 	* Cadence contract (matches the login page's offline banner copy):
 	* - Healthy: steady 30s poll.
@@ -13,8 +9,7 @@
 	* - No per-attempt console logging anywhere on this path.
 	*
 	* Module-level (not React state) because TanStack's `refetchInterval`
-	* callback needs the value synchronously and every observer of the
-	* shared query must see the same count.
+	* callback needs the value synchronously.
 	*/
 
 const HEALTH_POLL_INTERVAL_MS = 30_000;
@@ -22,11 +17,6 @@ const OFFLINE_BACKOFF_BASE_MS = 5_000;
 const OFFLINE_BACKOFF_MAX_MS = 60_000;
 
 let consecutiveFailures = 0;
-
-/** Record the outcome of a health check. Success resets the backoff. */
-export function recordHealthCheckResult(ok: boolean): void {
-	consecutiveFailures = ok ? 0 : consecutiveFailures + 1;
-}
 
 /**
 	* Poll delay for a given number of consecutive failures.
@@ -43,4 +33,11 @@ function healthPollInterval(failures: number): number {
 /** Delay until the next health check, based on the shared failure count. */
 export function nextHealthPollMs(): number {
 	return healthPollInterval(consecutiveFailures);
+}
+
+/** Reset backoff after a successful health check. Called by the consumer
+	*  on each successful poll — keeps state in sync without re-exporting
+	*  the underlying mutation. */
+export function recordHealthCheckResult(ok: boolean): void {
+	consecutiveFailures = ok ? 0 : consecutiveFailures + 1;
 }

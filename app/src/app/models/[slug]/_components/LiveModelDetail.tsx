@@ -147,7 +147,7 @@ const response = await client.chat.completions.create({
 				<header className="mb-10">
 					<div className="mb-6">
 						<Link
-							href={playgroundHrefForModel({ id: slug })}
+							href={playgroundHrefForModel(slug)}
 							className="btn-primary inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-semibold w-fit"
 						>
 							<Play className="h-4 w-4 fill-current" aria-hidden="true" /> Try
@@ -328,7 +328,7 @@ const response = await client.chat.completions.create({
 
 				<div className="flex flex-wrap gap-3 pt-6 border-t border-border">
 					<Link
-						href={playgroundHrefForModel({ id: slug })}
+						href={playgroundHrefForModel(slug)}
 						className="btn-primary"
 					>
 						Use in playground

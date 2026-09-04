@@ -317,6 +317,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 									balance={balance}
 									loading={loading}
 									recentUsage={usage}
+									creditBatches={creditBatches}
 								/>
 							</WidgetErrorBoundary>
 							<WidgetErrorBoundary title="Auto reload">
@@ -471,8 +472,6 @@ export function DashboardGrid(props: DashboardGridProps) {
 						)}
 					</m.div>
 				)}
-
-				{/* Provider-ops "Health" tab is admin-only and lives at /admin. */}
 			</AnimatePresence>
 
 			<Suspense fallback={null}>

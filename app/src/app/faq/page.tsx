@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { MODEL_COUNT } from "@/lib/models-data";
-// (FloatingIcons removed — replaced by static grid backdrop)
 import { BreadcrumbListJsonLd, FAQPageJsonLd } from "@/components/json-ld";
 import { FAQContent } from "./_components/FAQContent";
 

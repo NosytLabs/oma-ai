@@ -39,6 +39,7 @@ import { useToast } from "@/components/ui/Toast";
 import { useApiHealth } from "@/components/api-status";
 import { OmaWordmark } from "@/components/ui/oma-logo";
 import { signIn } from "@/lib/auth-client";
+import { useAuth } from "@/lib/hooks/useAuth";
 import { Skeleton } from "@/components/ui/Skeleton";
 
 const LazyWalletSignInPanel = dynamic(
@@ -106,8 +107,16 @@ function LoginInner() {
 	const router = useRouter();
 	const toast = useToast();
 	const { status: apiStatus } = useApiHealth();
+	const { isAuthenticated, isDemo, isReady } = useAuth();
 	const [mounted, setMounted] = useState(false);
 	const offline = mounted && apiStatus === "offline";
+
+	// Already signed in — don't show the form, go where they were headed.
+	useEffect(() => {
+		if (isReady && isAuthenticated && !isDemo) {
+			router.replace(defaultNext());
+		}
+	}, [isReady, isAuthenticated, isDemo, router]);
 
 	const [method, setMethod] = useState<Method>("magic");
 	const [email, setEmail] = useState("");

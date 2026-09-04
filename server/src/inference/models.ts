@@ -84,10 +84,13 @@ let _catalog: ModelDef[] | null = null;
 //
 // Venice pricing source: live GET api.venice.ai/api/v1/models (2026-09-04)
 // Base prices track Venice wholesale; user-facing = base x 1.25 markup.
-// OMA-AI/OpenBroker: base = live gonkabroker.com rates (verified 2026-09-04:
-// MiniMax M2 200K $0.30/M, DeepSeek V4 Flash 400K $0.25/M, Kimi K2 256K
-// $0.35/M — input == output upstream); user-facing = base x (1 + markup).
-// OMA-AI markup is 100% (2x wholesale) — still cents per 1M, healthy margin.
+// OMA-AI/OpenBroker: base = live gonkabroker.com rates (verified 2026-09-04):
+//   Kimi K2.6 256K (262,144 tok)  $0.35 / M tokens  (in == out)
+//   MiniMax M2.7 200K            $0.30 / M tokens  (in == out)
+//   DeepSeek V4 Flash 400K       $0.25 / M tokens  (in == out)
+// user-facing = base x (1 + markupPercent/100). OMA-AI markupPercent = 100
+// (2x Gonka wholesale). OpenBroker /v1/models returns the same 3 ids as
+// below — adding any other `omaAiId` here would 404 upstream.
 //
 // Prices stored here are *upstream base* (what OMA pays Venice/OMA-AI).
 // billing-service.ts applies markupPercent at checkout:
@@ -172,7 +175,7 @@ const VENICE_MODELS: ModelDef[] = [
 				provider: "venice",
 				surplusId: "deepseek-v4-pro",
 			inputPricePer1M: 1.65,
-			outputPricePer1M: 3.3,
+			outputPricePer1M: 3.301,
 				markupPercent: 25,
 				displayName: "DeepSeek V4 Pro",
 				category: "premium",
@@ -472,23 +475,6 @@ export function listAllModels(): ModelDef[] {
 
 export function getModelById(id: string): ModelDef | undefined {
 		return listAllModels().find((m) => m.id === id);
-}
-
-/**
-	* User-facing per-1M prices — what the customer is actually billed.
-	* catalog base * (1 + markupPercent/100). Use these in any surface that
-	* shows prices to users (/v1/models, docs, cost estimates) so displayed
-	* prices always match billing.
-	*/
-export function userFacingPrices(m: ModelDef): {
-		inputPer1M: number;
-		outputPer1M: number;
-} {
-		const factor = 1 + m.markupPercent / 100;
-		return {
-				inputPer1M: m.inputPricePer1M * factor,
-				outputPer1M: m.outputPricePer1M * factor,
-		};
 }
 
 /**

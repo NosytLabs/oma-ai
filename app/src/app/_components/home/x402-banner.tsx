@@ -63,15 +63,16 @@ export function X402Banner() {
 		<span className="text-text-secondary">for agents.</span>
 	</h2>
 		<p className="mt-5 max-w-lg text-base sm:text-lg leading-relaxed text-text-secondary">
-		No pre-funded account required. On 402, read{" "}
-		<code className="rounded-md bg-surface-hi px-1.5 py-0.5 font-mono text-[13px] text-accent">
-		PAYMENT-REQUIRED
-		</code>
-		, sign USDC on Base (EIP-3009), retry with{" "}
+		No card required. Sign USDC on Base (EIP-3009), POST the{" "}
 		<code className="rounded-md bg-surface-hi px-1.5 py-0.5 font-mono text-[13px] text-accent">
 		PAYMENT-SIGNATURE
+		</code>{" "}
+		envelope to{" "}
+		<code className="rounded-md bg-surface-hi px-1.5 py-0.5 font-mono text-[13px] text-accent">
+		/x402/verify
 		</code>
-		. The gateway verifies, settles, and returns the completion.
+		, then call with an API key. The gateway verifies, settles, and
+		credits the account.
 		</p>
 	<div className="mt-8 flex flex-wrap gap-3 w-full">
 							<Link

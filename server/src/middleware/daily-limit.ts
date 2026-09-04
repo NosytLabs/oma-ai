@@ -1,60 +1,37 @@
 /**
 	* Daily usage limits for website chat (free tier).
 	*
-	* - Anonymous users (by IP): 20 requests/day on OMA-AI models
-* - Registered users with no paid balance: 100 requests/day on OMA-AI models
+ * - Anonymous users (by IP): 20 requests/day on OMA-AI models
+* - Registered users (by userId): 100 requests/day on OMA-AI models
 * - Session users on the website free models ride free (no per-request
-*   charge); API-key callers always pay via the standard billing path.
+*   charge) UP TO the daily cap; API-key callers always pay via the
+*   standard billing path, even on the same models.
 * - API calls (without X-OMA-Source: website header): always require credits
 	*
 	* This is ONLY for the website chat page. API usage always costs credits.
 	*
-	* The bypass for paying users is deliberate: the daily limit exists to
-	* prevent abuse of the free tier, not to cap paid usage. Users who have
-	* deposited credits pay per request via the standard billing path; layering
-	* a daily cap on top would force paying customers to wait until midnight
-	* for no economic reason.
+	* No balance bypass: everyone shares the same small daily free quota.
+	* Funded users who exhaust it switch to paid API usage (unlimited).
+	* A bypass would let a $1 deposit unlock unlimited free inference.
 	*/
 import type { Context, Next } from "hono";
 import type { OmaEnv } from "../types.js";
-import { db } from "../db/client.js";
-import { creditBalances } from "../db/schema.js";
-import { sql } from "drizzle-orm";
 import { getRedisClient, isRedisReady } from "../lib/redis-client.js";
 import { logger } from "../lib/logger.js";
 import { extractClientIp } from "./rate-limit/utils.js";
 import { getModelById } from "../inference/models.js";
 import { isFreeWebsiteModel } from "../inference/free-website-model.js";
 
-const DAILY_LIMIT_ANONYMOUS = 20;
-const DAILY_LIMIT_REGISTERED = 100;
+/** Shared with routes/daily-usage.ts so the enforced cap and the
+	displayed quota can never drift apart. */
+export const DAILY_LIMIT_ANONYMOUS = 20;
+export const DAILY_LIMIT_REGISTERED = 100;
 
 interface DailyUsageResult {
 		allowed: boolean;
 		remaining: number;
 		limit: number;
 		resetMs: number;
-}
-
-/**
-	* Check whether an authenticated user has a positive paid credit balance.
-	* Read-only; returns `false` on DB error so a transient failure doesn't
-	* accidentally bypass the free-tier cap (fail-closed is the safer default
-	* here — a paying user hitting a daily limit is a small nuisance; an
-	* abuser free-riding on a broken DB query is a cost).
-	*/
-async function hasPaidBalance(userId: string): Promise<boolean> {
-	try {
-		const [row] = await db
-			.select({ balanceCents: creditBalances.balanceCents })
-			.from(creditBalances)
-			.where(sql`${creditBalances.userId} = ${userId}`)
-			.limit(1);
-		return Number(row?.balanceCents ?? 0) > 0;
-	} catch (err) {
-		logger.error({ err, userId }, "paid-balance check failed — applying daily limit");
-		return false;
-	}
 }
 
 /**
@@ -133,16 +110,10 @@ export function dailyUsageLimit() {
 						return next();
 				}
 
-				// Determine identifier and limit
+				// Determine identifier and limit. No balance bypass — funded
+				// accounts share the same free quota; beyond it they use the
+				// paid API (which always bills, even on free-tier models).
 				const userId = c.get("userId");
-
-			// Paying users bypass the free-tier daily cap. The cap exists to
-			// prevent abuse of the free tier, not to throttle paid usage.
-			// (Session website chat on free models is $0; API-key callers
-			// always pay per request via the standard billing path.)
-				if (userId && (await hasPaidBalance(userId))) {
-						return next();
-				}
 
 				let identifier: string;
 				let limit: number;

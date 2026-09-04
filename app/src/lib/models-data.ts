@@ -606,7 +606,7 @@ const FALLBACK_CATALOG: RawCatalog = {
 			category: "premium",
 			maxTokens: 1000000,
 			inputPricePer1M: 2.0625,
-			outputPricePer1M: 4.125,
+			outputPricePer1M: 4.12625,
 			capabilities: ["chat", "reasoning", "coding", "tools"],
 		},
 		"qwen-3-8-max": {
@@ -740,14 +740,21 @@ const FALLBACK_CATALOG: RawCatalog = {
 			capabilities: ["chat", "fast"],
 		},
 	// ── OMA-AI resale (user-facing = 2x Gonka wholesale) ────────────────
-	// Gonka Network openbroker upstream — FREE in /chat for signed-out
-	// visitors ONLY. API-token callers always pay the listed price.
-	// Base upstream (gonkabroker.com, verified 2026-09-04): Kimi K2 256K
-	// $0.35/M, MiniMax M2 200K $0.30/M, DeepSeek V4 Flash 400K $0.25/M
-	// (input == output). User-facing = base x 2 (100% platform margin).
-	// Mirrors the 3-model live OpenBroker catalog (kimi-k2-6,
-	// minimax-m2-7, deepseek-v4-flash-0731-openbroker — see
-	// FREE_CHAT_MODEL_IDS in model-utils.ts).
+	// OpenBroker / Gonka Network upstream (api.openbroker.gonka.gg).
+	// Verified live 2026-09-04 against /v1/models — exactly 3 chat
+	// models: moonshotai/Kimi-K2.6, MiniMaxAI/MiniMax-M2.7, and
+	// deepseek-ai/DeepSeek-V4-Flash-0731. Adding any other id here
+	// would 404 against the upstream.
+	//
+	// Free usage is restricted to /chat for signed-out visitors only.
+	// API-token callers (Authorization: Bearer oma_sk_*) ALWAYS pay
+	// real credits for these models, even at the same displayed price.
+	//
+	// Base wholesale (gonkabroker.com, verified 2026-09-04):
+	//   Kimi K2.6 256K (262,144 tok)  $0.35 / M tokens  (in == out)
+	//   MiniMax M2.7 200K            $0.30 / M tokens  (in == out)
+	//   DeepSeek V4 Flash 400K       $0.25 / M tokens  (in == out)
+	// User-facing = base x 2 (100% platform margin) → 0.70 / 0.60 / 0.50.
 	"kimi-k2-6": {
 		id: "kimi-k2-6",
 		displayName: "Kimi K2.6",
@@ -770,7 +777,7 @@ const FALLBACK_CATALOG: RawCatalog = {
 	},
 	"deepseek-v4-flash-0731-openbroker": {
 		id: "deepseek-v4-flash-0731-openbroker",
-		displayName: "DeepSeek V4 Flash",
+		displayName: "DeepSeek V4 Flash (OMA-AI)",
 		provider: "oma-ai",
 		category: "budget",
 		maxTokens: 400000,

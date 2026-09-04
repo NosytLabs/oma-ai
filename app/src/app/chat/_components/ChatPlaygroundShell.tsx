@@ -50,7 +50,7 @@ import { MessagesList } from "./MessagesList";
 const LazyMessageInput = dynamic(
 	() =>
 		import("@/components/chat/MessageInput").then(
-			(mod) => mod.MessageInputed,
+			(mod) => mod.MessageInput,
 		),
 	{ ssr: false, loading: () => <Skeleton className="h-16 w-full" /> },
 );

@@ -21,8 +21,10 @@ export default function robots(): MetadataRoute.Robots {
 					// Auth-gated product surfaces (session required)
 					"/deposit",
 					"/deposit/",
-					// /chat is public free playground — indexable; image/video
-					// legacy paths redirect into /chat?mode=
+					// /chat is the public free playground — indexable. Legacy
+					// `/image-generation`, `/video-generation`, `/create`,
+					// `/studio` paths are caught by the permanent-redirect map
+					// in `lib/site-redirects.ts` and route into /chat.
 				],
 			},
 		],

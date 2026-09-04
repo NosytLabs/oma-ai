@@ -183,8 +183,8 @@ describe("HomePage", () => {
 				screen.getByRole("heading", { name: /HTTP 402 payments/i }),
 			).toBeInTheDocument();
 			expect(
-				screen.getByText(/No pre-funded account required/i),
-			).toBeInTheDocument();
+				screen.getAllByText(/No card required/i).length,
+			).toBeGreaterThan(0);
 		});
 	});
 

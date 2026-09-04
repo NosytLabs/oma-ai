@@ -19,28 +19,27 @@
 import { ArrowRight, KeyRound, Sparkles } from "lucide-react";
 import { m } from "@/lib/framer-motion-client";
 import Link from "next/link";
-import { useHasBeenInView } from "./reveal";
 import { LiveRequestCard } from "./LiveRequestCard";
 import { springs } from "@/lib/animation";
 
 
-// Entrance animation props. Until the page has been live a moment
-// (`enabled`), render plain HTML so the hero copy paints immediately —
-// LCP-safe SSR, crawlers and screenshots see real content.
-function reveal(index: number, enabled: boolean) {
-	if (!enabled) return {};
+// Entrance props. The hero copy is already painted by SSR — replaying a
+// hidden→visible animation after hydration (the old `enabled` gate did exactly
+// that ~350ms in) flashes the headline out and back on every visit. So the
+// mount state is always final (`initial: false`): no flash, no layout shift,
+// and headless captures see the real content. Scroll-triggered sections below
+// the fold keep their reveals (see ./reveal.tsx).
+function reveal() {
 	return {
-		initial: { opacity: 0, y: 16, filter: "blur(4px)" },
+		initial: false as const,
 		animate: { opacity: 1, y: 0, filter: "blur(0px)" },
 		transition: {
 			...springs.card, // stiffness 320 / damping 24 — Kinetics-style overshoot
-			delay: 0.05 + index * 0.08,
 		},
 	};
 }
 
 export function Hero() {
-	const entrance = useHasBeenInView();
 	return (
 <section className="relative overflow-hidden flex flex-col">
 			{/* Atmosphere — calm spec sheet: faint grid + single accent wash.
@@ -58,7 +57,7 @@ export function Hero() {
 			<div className="container-page relative z-10 min-w-0 pb-10 pt-12 lg:pb-16 lg:pt-20 flex-1">
 				<div className="flex flex-col items-center justify-center text-center max-w-5xl mx-auto">
 					<m.div
-						{...reveal(0, entrance)}
+						{...reveal()}
 						className="mb-5 flex items-center justify-center"
 					>
 						<span className="section-eyebrow-caps">
@@ -67,7 +66,7 @@ export function Hero() {
 					</m.div>
 
 					<m.h1
-						{...reveal(1, entrance)}
+						{...reveal()}
 						className="h1-hero text-balance text-text-bright"
 					>
 						<span className="block">One endpoint.</span>
@@ -77,7 +76,7 @@ export function Hero() {
 					</m.h1>
 
 					<m.p
-						{...reveal(2, entrance)}
+						{...reveal()}
 						className="mt-7 text-balance text-base sm:text-lg md:text-xl max-w-2xl mx-auto leading-relaxed text-text-secondary"
 					>
 						One OpenAI&#8209;compatible endpoint for every model. Fund with
@@ -86,7 +85,7 @@ export function Hero() {
 					</m.p>
 
 					<m.div
-						{...reveal(3, entrance)}
+						{...reveal()}
 						className="mt-9 flex flex-col sm:flex-row items-center justify-center gap-3 w-full sm:w-auto"
 					>
 						<Link
@@ -116,7 +115,7 @@ export function Hero() {
 					</m.div>
 
 					<m.div
-						{...reveal(4, entrance)}
+						{...reveal()}
 						className="mt-12 w-full max-w-4xl mx-auto flex justify-center perspective-[1200px]"
 					>
 						<div className="transform-gpu transition-transform duration-200 ease-out hover:rotate-x-[2deg] hover:rotate-y-[-1deg] hover:scale-[1.01] w-full flex justify-center">

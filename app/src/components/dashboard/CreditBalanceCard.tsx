@@ -4,7 +4,7 @@ import Link from "next/link";
 import { memo } from "react";
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
 import { Sparkline } from "@/components/ui/Sparkline";
-import type { BalanceResponse, UsageRecord } from "@/lib/api";
+import type { BalanceResponse, CreditBatch, UsageRecord } from "@/lib/api";
 import { toDollars } from "@/lib/utils";
 import { DashboardCard } from "./DashboardCard";
 
@@ -13,13 +13,22 @@ interface CreditBalanceCardProps {
 	loading: boolean;
 	/** Last 7 days of usage, oldest → newest. Drives the inline sparkline. */
 	recentUsage?: UsageRecord[];
+	/** Active USDC credit batches. Their issued amounts count toward lifetime
+		deposits alongside card-funded `totalDepositedCents` — otherwise the
+		"Total deposited" line under-reports for USDC-funded accounts. */
+	creditBatches?: CreditBatch[];
 }
 
 function CreditBalanceCardComponent({
 	balance,
 	loading,
 	recentUsage = [],
+	creditBatches = [],
 }: CreditBalanceCardProps) {
+	// Lifetime deposits = card ledger total + issued USDC batch amounts.
+	const totalDepositedCents =
+		(balance ? parseFloat(balance.totalDepositedCents) || 0 : 0) +
+		creditBatches.reduce((sum, b) => sum + (parseFloat(b.amountCents) || 0), 0);
 	// Sparkline: 7-day spend totals, oldest → newest. Group by ISO date so a
 	// sparse day still produces a zero point on the line.
 	const sparkPoints = (() => {
@@ -88,7 +97,7 @@ function CreditBalanceCardComponent({
 						aria-hidden="true"
 					/>
 					{balance
-						? `Total deposited: ${Math.round(parseFloat(balance.totalDepositedCents))} credits (${(parseFloat(balance.totalDepositedCents) / 100).toLocaleString(undefined, { style: "currency", currency: "USD" })})`
+						? `Total deposited: ${Math.round(totalDepositedCents)} credits (${(totalDepositedCents / 100).toLocaleString(undefined, { style: "currency", currency: "USD" })})`
 						: loading
 							? "Loading credits…"
 							: "Total deposited: 0 credits"}
@@ -138,7 +147,8 @@ export const CreditBalanceCard = memo(
 		return (
 			prev.balance === next.balance &&
 			prev.loading === next.loading &&
-			prev.recentUsage === next.recentUsage
+			prev.recentUsage === next.recentUsage &&
+			prev.creditBatches === next.creditBatches
 		);
 	},
 );

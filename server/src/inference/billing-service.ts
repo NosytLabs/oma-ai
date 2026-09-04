@@ -54,3 +54,20 @@ export function getModelPricing(modelId: string): ModelPricing {
 		markup: m.markupPercent,
 	};
 }
+
+/**
+	* Final per-1M prices the customer is billed — admin overrides are final
+	* as-is, otherwise catalog base × (1 + markup/100). Display surfaces
+	* (/v1/models, docs, estimates) must use this, never reimplement it.
+	*/
+export function userFacingFor(modelId: string): {
+	inputPer1M: number;
+	outputPer1M: number;
+} {
+	const p = getModelPricing(modelId);
+	const factor = 1 + p.markup / 100;
+	return {
+		inputPer1M: p.inputPer1M * factor,
+		outputPer1M: p.outputPer1M * factor,
+	};
+}

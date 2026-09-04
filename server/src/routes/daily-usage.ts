@@ -10,13 +10,13 @@ import { getRedisClient, isRedisReady } from "../lib/redis-client.js";
 import { extractClientIp } from "../middleware/rate-limit/utils.js";
 import { db } from "../db/client.js";
 import { usageRecords } from "../db/schema.js";
-import { sql, eq, and, gte } from "drizzle-orm";
+import { sql, eq, and, gte, isNull, inArray } from "drizzle-orm";
 import { logger } from "../lib/logger.js";
+import { FREE_WEBSITE_MODEL_IDS } from "../inference/free-website-model.js";
+// Caps shared with the enforcing middleware — one source of truth.
+import { DAILY_LIMIT_ANONYMOUS, DAILY_LIMIT_REGISTERED } from "../middleware/daily-limit.js";
 
 export const dailyUsageRoutes = new Hono<OmaEnv>();
-
-const DAILY_LIMIT_ANONYMOUS = 20;
-const DAILY_LIMIT_REGISTERED = 100;
 
 /**
 	* GET /v1/usage/today
@@ -27,7 +27,11 @@ dailyUsageRoutes.get("/v1/usage/today", optionalAuth, async (c) => {
 		const userId = c.get("userId");
 		const isAuthenticated = !!userId;
 
-		// For authenticated users, query the DB for today's usage
+		// For authenticated users, query the DB for today's free-model website chat.
+		// Only session-auth free-tier requests count toward the quota:
+		// free website chat is recorded with status "free_tier" and $0 cost,
+		// while API-key requests always bill credits (status "completed")
+		// regardless of model, so they must not consume the free counter.
 		if (isAuthenticated && userId) {
 				const today = new Date();
 				today.setHours(0, 0, 0, 0);
@@ -39,7 +43,10 @@ dailyUsageRoutes.get("/v1/usage/today", optionalAuth, async (c) => {
 								.where(
 										and(
 												eq(usageRecords.userId, userId),
-												gte(usageRecords.createdAt, today)
+												gte(usageRecords.createdAt, today),
+												eq(usageRecords.status, "free_tier"),
+												isNull(usageRecords.apiKeyId),
+												inArray(usageRecords.model, [...FREE_WEBSITE_MODEL_IDS]),
 										)
 								);
 

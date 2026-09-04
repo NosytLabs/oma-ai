@@ -23,6 +23,10 @@ export interface RecordUsageArgs {
 		status: "completed" | "error";
 		/** Skip credit deduction for free website chat */
 		skipBilling?: boolean;
+		/** API key row id when the caller authenticated with Bearer oma_sk_*.
+		 * Null for session/guest website chat. Lets analytics tell paid API
+		 * traffic apart from free website traffic on the same model. */
+		apiKeyId?: string | null;
 }
 
 /**
@@ -80,10 +84,11 @@ export async function recordUsage(args: RecordUsageArgs): Promise<void> {
 				promptTokens,
 				outputTokens,
 				pricing,
-				requestId,
-				status,
-				skipBilling = false,
-		} = args;
+		requestId,
+			status,
+			skipBilling = false,
+			apiKeyId = null,
+	} = args;
 		const totalTokens = promptTokens + outputTokens;
 		// Pricing fields are in DOLLARS per 1M tokens; multiply by 100 for cents.
 		const upstreamCostCents =
@@ -132,6 +137,7 @@ export async function recordUsage(args: RecordUsageArgs): Promise<void> {
 								await tx.insert(usageRecords).values({
 										requestId,
 										userId,
+										apiKeyId,
 										model,
 										provider,
 										inputTokens: promptTokens,

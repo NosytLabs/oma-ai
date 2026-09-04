@@ -3,7 +3,6 @@
 import { ArrowRight, Menu, Terminal, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useId, useState } from "react";
-// (FloatingIcons removed — replaced by static backdrop)
 import { BreadcrumbListJsonLd } from "@/components/json-ld";
 import { MODEL_COUNT } from "@/lib/models-data";
 import { useDialog } from "@/lib/use-dialog";
@@ -186,9 +185,9 @@ export function DocsContent() {
 										pay-per-request. One endpoint, one key, every curated model.
 									</p>
 								</div>
-								<div className="flex flex-col gap-3 lg:min-w-[15rem] lg:items-end">
-									<DocsSearch />
-									<div className="meta-strip justify-start lg:justify-end">
+							<div className="flex flex-col gap-3 lg:min-w-[21rem] lg:items-end">
+								<DocsSearch />
+								<div className="meta-strip justify-start lg:justify-end lg:flex-nowrap lg:whitespace-nowrap">
 										<span>OpenAI-compatible</span>
 										<span>{MODEL_COUNT}+ models</span>
 										<span>x402 on Base</span>

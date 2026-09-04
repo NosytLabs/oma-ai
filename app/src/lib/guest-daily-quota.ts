@@ -59,7 +59,6 @@ export function readStoredGuestQuota(): GuestQuota | null {
 		if (!raw) return null;
 		const parsed = JSON.parse(raw) as {
 			date?: string;
-			count?: number;
 			remaining?: number;
 			limit?: number;
 		};
@@ -72,14 +71,6 @@ export function readStoredGuestQuota(): GuestQuota | null {
 		if (typeof parsed.remaining === "number" && Number.isFinite(parsed.remaining)) {
 			return {
 				remaining: Math.max(0, Math.floor(parsed.remaining)),
-				limit,
-				date,
-			};
-		}
-		// Legacy shape: { date, count } where count = messages used
-		if (typeof parsed.count === "number" && Number.isFinite(parsed.count)) {
-			return {
-				remaining: Math.max(0, limit - Math.floor(parsed.count)),
 				limit,
 				date,
 			};
@@ -99,8 +90,6 @@ export function writeStoredGuestQuota(quota: GuestQuota): void {
 				date: quota.date,
 				remaining: quota.remaining,
 				limit: quota.limit,
-				// Keep legacy `count` for older readers
-				count: Math.max(0, quota.limit - quota.remaining),
 			}),
 		);
 	} catch {

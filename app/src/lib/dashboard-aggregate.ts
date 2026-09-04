@@ -51,7 +51,7 @@ export function resolveModelDisplayName(id: string | undefined | null): string {
 	const fromCatalog = MODEL_NAME_BY_ID.get(trimmed)
 	if (fromCatalog) return fromCatalog
 	// Last-resort prettifier: "openai-gpt-56-sol" → "Openai Gpt 56 Sol".
-	// The catalog covers the curated 22, so this only fires for stale
+	// The catalog covers the curated 21, so this only fires for stale
 	// server data (e.g. a model was retired but usage logs lag behind).
 	return trimmed
 		.split(/[-_]/)

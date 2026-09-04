@@ -153,9 +153,11 @@ export const ModelFiltersSidebar: React.FC<ModelFiltersSidebarProps> = ({
 				/>
 			</button>
 
-			{/* Input Modalities */}
-			<div className={`${moreOpen ? "block" : "hidden"} space-y-4 lg:block`}>
-			<div>
+		{/* Input Modalities — hidden while the catalog exposes a single
+			option (today: text-only). Reappears automatically if a new
+			modality lands in the catalog. */}
+		<div className={`${moreOpen ? "block" : "hidden"} space-y-4 lg:block`}>
+		<div className={allInputModalities.length > 1 ? undefined : "hidden"}>
 				<h2 className="font-mono text-xs uppercase tracking-widest text-text mb-2">
 					Input Modalities
 				</h2>
@@ -182,8 +184,8 @@ export const ModelFiltersSidebar: React.FC<ModelFiltersSidebarProps> = ({
 				</div>
 			</div>
 
-			{/* Output Modalities */}
-			<div>
+		{/* Output Modalities — same single-option rule as inputs. */}
+		<div className={allOutputModalities.length > 1 ? undefined : "hidden"}>
 				<h2 className="font-mono text-xs uppercase tracking-widest text-text mb-2">
 					Output Modalities
 				</h2>
@@ -241,11 +243,11 @@ export const ModelFiltersSidebar: React.FC<ModelFiltersSidebarProps> = ({
 			{/* Context Range Slider */}
 			<div>
 				<h2 className="font-mono text-xs uppercase tracking-widest text-text mb-2">
-					Context Window
-				</h2>
-				<div className="space-y-2">
-					<div className="flex justify-between text-xs text-text-muted">
-						<span>{formatContextRange(contextRange[0])}</span>
+				Context Window
+			</h2>
+			<div className="space-y-2">
+				<div className="flex justify-between text-xs text-text-muted">
+					<span>{contextRange[0] <= 0 ? "Any" : formatContextRange(contextRange[0])}</span>
 						<span>{formatContextRange(contextRange[1])}</span>
 					</div>
 					<div className="relative h-8">

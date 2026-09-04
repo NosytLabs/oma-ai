@@ -4,44 +4,30 @@ import {
 		ensureCatalogLoaded,
 		listAllModels,
 		providerAvailable,
-		userFacingPrices,
-		type ModelDef,
 } from "../inference/models.js";
-import { readModelPricingOverrides } from "../lib/model-overrides.js";
+import { userFacingFor } from "../inference/billing-service.js";
 
 export const modelRoutes = new Hono<OmaEnv>();
 
 /**
-	* User-facing per-1M prices for a model: admin overrides are final
-	* user-facing prices; otherwise catalog base * (1 + markup/100).
-	* Displayed prices must always match what billing deducts.
+	* User-facing per-1M prices for a model, via the same override-aware
+	* lookup billing deducts with — displayed prices always match charges.
 	*/
-function facingPrices(
-		m: ModelDef,
-		overrides: ReturnType<typeof readModelPricingOverrides>,
-): { prompt: number; completion: number } {
-		const override = overrides[m.id];
-		if (override) {
-				return {
-						prompt: override.inputPricePer1M,
-						completion: override.outputPricePer1M,
-				};
-		}
-		const facing = userFacingPrices(m);
-		return { prompt: facing.inputPer1M, completion: facing.outputPer1M };
+function facingPrices(m: { id: string }): { prompt: number; completion: number } {
+		const pricing = userFacingFor(m.id);
+		return { prompt: pricing.inputPer1M, completion: pricing.outputPer1M };
 }
 
 // OpenAI-compatible /v1/models
 modelRoutes.get("/v1/models", async (c) => {
 		await ensureCatalogLoaded();
 		const models = listAllModels();
-		const allOverrides = readModelPricingOverrides();
 		return c.json({
 				object: "list",
 				data: models.map((m) => {
 						// Prices are user-facing (markup applied) so dashboards, chat cost
 						// pills, and billing all show the same number the customer is charged.
-						const prices = facingPrices(m, allOverrides);
+						const prices = facingPrices(m);
 						return {
 								id: m.id,
 								object: "model",
@@ -75,8 +61,7 @@ modelRoutes.get("/v1/models/:id", async (c) => {
 						404,
 				);
 		}
-		const allOverrides = readModelPricingOverrides();
-		const prices = facingPrices(m, allOverrides);
+		const prices = facingPrices(m);
 		return c.json({
 				id: m.id,
 				object: "model",

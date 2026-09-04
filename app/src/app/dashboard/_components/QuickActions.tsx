@@ -43,7 +43,7 @@ const ACTIONS: QuickAction[] = [
 		external: true,
 	},
 	{
-		href: "/settings?tab=privacy",
+		href: "/settings?tab=danger",
 		label: "Privacy & data",
 		description: "Export, clear history",
 		icon: Shield,

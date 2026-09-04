@@ -34,8 +34,8 @@ export const creditHistory = {
 
 /**
 	* Credits namespace — credit batches (active/expired) and balance helpers.
-	* The legacy `oma.getCreditBatches()` alias still works through the
-	* composite `api` object in `./index.ts`.
+	* Re-exported as `api.credits.*` via the composite `api` object in
+	* `./index.ts` (e.g. `api.credits.getBatches()`).
 	*/
 export const credits = {
 	getBatches() {

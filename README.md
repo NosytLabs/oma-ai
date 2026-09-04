@@ -33,7 +33,7 @@ One OpenAI-compatible endpoint for a curated catalog. Venice-routed models inclu
 Passwordless onboarding with magic-link email sign-in or SIWE (Sign-In with Ethereum) wallet authentication. Get an API key in seconds—no credit card required for the free tier.
 
 ### 💳 x402 USDC Crypto Billing
-Agent-native, pay-per-request billing powered by EIP-3009. Agents settle the same listed prices in USDC on Base. No subscriptions, no minimums.
+Agent-native USDC funding powered by EIP-3009. Agents sign the payment envelope, verify at `/x402/verify`, and spend with an API key — same listed prices in USDC on Base. No subscriptions, no minimums.
 
 ### 🛡️ Fallback Routing & Circuit Breakers
 Built-in health checks and automatic provider failover. If one upstream goes down, OMA-AI seamlessly routes traffic to the next best available model—so your app stays up.
@@ -189,7 +189,7 @@ oma-ai/
 ```
 
 - **USDC direct deposits (Base):** a watcher daemon verifies Transfer logs to the treasury and credits balances.
-- **x402 micropayments:** HTTP 402 pay-per-request with EIP-3009 authorizations, gasless via the QuickNode facilitator.
+- **x402 funding:** EIP-3009 USDC envelopes verified at `/x402/verify`, gasless via the QuickNode facilitator; spend with an API key.
 
 ### Production Docker Builds
 

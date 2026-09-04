@@ -66,14 +66,13 @@ const exportData = {
 	* `api.balance.get()`, `api.usage.list()`, `api.models.list()`, etc.
 	*/
 export const api = {
-		auth,
-		balance,
-		usage,
-		models,
-		deposit,
-		health: health.get,
-		healthPing: health.ping,
-		creditHistory,
-		credits,
-		exportData,
+	auth,
+	balance,
+	usage,
+	models,
+	deposit,
+	healthPing: health.ping,
+	creditHistory,
+	credits,
+	exportData,
 };

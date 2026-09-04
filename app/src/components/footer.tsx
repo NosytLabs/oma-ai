@@ -1,23 +1,17 @@
 "use client";
 
 /**
-	* Footer
-	* =====
-	* Single source of truth for site map links and the deployment
-	* signature shown in the bottom bar.
-	*
-	* Build-time constants (`CURRENT_YEAR`, `LAST_DEPLOY`) are hard-coded
-	* because any `new Date()` call at render time will produce
-	* server/client hydration mismatches when midnight UTC rolls over
-	* between SSR and hydration. Bump in source on each deploy.
-	*
-	* `suppressHydrationWarning` must sit on the exact element whose text
-	* can differ (the build-date `<span>`), not an ancestor — React only
-	* suppresses mismatches for the element's own direct text. A stale
-	* server bundle (constant bumped while `next dev` is running) otherwise
-	* throws a hydration error on every page.
-	*
-	* Layout (desktop, lg+):
+ * Footer
+ * =====
+ * Single source of truth for site map links and the copyright
+ * signature shown in the bottom bar.
+ *
+ * The copyright year renders from `new Date().getFullYear()` with
+ * `suppressHydrationWarning` on that exact `<span>` (React only
+ * suppresses mismatches for the element's own direct text) so a
+ * midnight-UTC rollover between SSR and hydration can't throw.
+ *
+ * Layout (desktop, lg+):
 	* ┌────────────────────────────────────────────────────────────────┐
 	* │ Logo · tagline · socials (3 cols of nav) │
 	* ├────────────────────────────────────────────────────────────────┤

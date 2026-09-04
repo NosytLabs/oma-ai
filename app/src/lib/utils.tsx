@@ -12,10 +12,7 @@ export function toDollars(cents: string | number | null | undefined): number {
 
 /**
 	* Single source of truth for "X minutes ago" / "X hours ago" formatting.
-	* Replaces the three inline copies that previously lived in
-	* `RecentTransactions.tsx`, `ProviderHealthCard.tsx`, and the original
-	* `formatTime` here. Returns the locale date string for anything older
-	* than 30 days.
+	* Returns the locale date string for anything older than 30 days.
 	*/
 export function formatTime(iso: string): string {
 	const d = new Date(iso);
