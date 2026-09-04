@@ -40,10 +40,6 @@ export function toPricedModel(model: Model): PricedModel {
 export function fmtPrice(value: number): string {
 	if (value <= 0) return "Free";
 	if (value < 0.05) return "$0.05";
-	if (value < 1) {
-		const rounded = Math.ceil(value * 20) / 20;
-		return `$${rounded.toFixed(2)}`;
-	}
 	const rounded = Math.ceil(value * 20) / 20;
 	return `$${rounded.toFixed(2)}`;
 }

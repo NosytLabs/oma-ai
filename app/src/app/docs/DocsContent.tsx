@@ -3,7 +3,7 @@
 import { ArrowRight, Menu, Terminal, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useId, useState } from "react";
-import { FloatingIcons } from "@/components/floating-icons";
+// (FloatingIcons removed — replaced by static backdrop)
 import { BreadcrumbListJsonLd } from "@/components/json-ld";
 import { MODEL_COUNT } from "@/lib/models-data";
 import { useDialog } from "@/lib/use-dialog";
@@ -152,7 +152,7 @@ export function DocsContent() {
 			/>
 			{/* ── Ambient background ── */}
 			<div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
-				<FloatingIcons count={4} />
+				<div className="absolute inset-0 bg-grid opacity-[0.25] mask-radial" />
 			</div>
 
 			<div className="relative min-w-0">

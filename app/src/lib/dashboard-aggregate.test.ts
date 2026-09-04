@@ -36,7 +36,7 @@ describe("dashboard usage aggregation", () => {
 		const records = [
 			usage({ model: "llama-3.3-70b", totalCents: "100" }),
 			usage({ model: "kimi-k3", totalCents: "300" }),
-			usage({ model: "deepseek-v4-flash-openbroker", totalCents: "200" }),
+			usage({ model: "deepseek-v4-flash-0731-openbroker", totalCents: "200" }),
 			usage({ model: "mistral-small-2603", totalCents: "50" }),
 			usage({ model: "deepseek-v4-pro", totalCents: "25" }),
 			usage({ model: "qwen-3-8-max", totalCents: "10" }),

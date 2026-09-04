@@ -11,8 +11,6 @@
  * if threads grow past that — not needed for a single playground thread.
  */
 
-export const LEGACY_CONVERSATION_KEY = "oma_chat_conversation";
-export const LEGACY_SYSTEM_PROMPT_KEY = "oma_chat_system_prompt";
 export const MAX_PERSISTED_MESSAGES = 80;
 
 export function conversationStorageKey(userId: string | null | undefined): string {
@@ -21,31 +19,6 @@ export function conversationStorageKey(userId: string | null | undefined): strin
 
 export function systemPromptStorageKey(userId: string | null | undefined): string {
 	return userId ? `oma_chat_system_prompt:u:${userId}` : "oma_chat_system_prompt:guest";
-}
-
-/** One-time copy of the pre-scoping key into the guest bucket only. */
-export function migrateLegacyConversation(): void {
-	if (typeof localStorage === "undefined") return;
-	try {
-		const guestKey = conversationStorageKey(null);
-		if (localStorage.getItem(guestKey)) {
-			localStorage.removeItem(LEGACY_CONVERSATION_KEY);
-			return;
-		}
-		const legacy = localStorage.getItem(LEGACY_CONVERSATION_KEY);
-		if (legacy) {
-			localStorage.setItem(guestKey, legacy);
-			localStorage.removeItem(LEGACY_CONVERSATION_KEY);
-		}
-		const guestPrompt = systemPromptStorageKey(null);
-		if (!localStorage.getItem(guestPrompt)) {
-			const lp = localStorage.getItem(LEGACY_SYSTEM_PROMPT_KEY);
-			if (lp) localStorage.setItem(guestPrompt, lp);
-		}
-		localStorage.removeItem(LEGACY_SYSTEM_PROMPT_KEY);
-	} catch {
-		/* private mode */
-	}
 }
 
 export function persistMessages(key: string, messages: unknown[]): boolean {

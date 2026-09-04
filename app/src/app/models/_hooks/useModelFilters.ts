@@ -298,21 +298,17 @@ export function useModelFilters() {
 
 		// Flat list when sorting by name/price/context/etc
 		if (filtered.length === 0) return [];
+		const labelBySort: Record<SortKey, string> = {
+			name: "All Models (A-Z)",
+			"price-in": "All Models (Input Price)",
+			"price-out": "All Models (Output Price)",
+			context: "All Models (Context Window)",
+			tier: "All Models",
+		};
 		return [
 			{
 				tier: "__all",
-				label:
-					sortBy === "name"
-						? "All Models (A-Z)"
-						: sortBy === "price-in"
-							? "All Models (Input Price)"
-							: sortBy === "price-out"
-								? "All Models (Output Price)"
-								: sortBy === "context"
-									? "All Models (Context Window)"
-									: sortBy === "newest"
-										? "All Models (Newest)"
-										: "All Models",
+				label: labelBySort[sortBy] ?? "All Models",
 				models: filtered,
 			},
 		];

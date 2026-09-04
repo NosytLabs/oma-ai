@@ -3,7 +3,6 @@
 	* copy: plain English summary at the top, active voice
 	*/
 
-// Imports client visuals (FloatingIcons etc); opt out of static prerender.
 export const revalidate = 86400;
 
 import {

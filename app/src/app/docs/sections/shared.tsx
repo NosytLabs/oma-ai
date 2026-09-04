@@ -79,7 +79,7 @@ export const RATE_LIMIT_ROWS: RateLimitRow[] = [
 // server/src/middleware/rate-limit/utils.ts exactly.
 export const MODEL_RATE_OVERRIDES: ModelRateOverride[] = [
 			{ model: "llama-3.3-70b", rpm: 60, tpm: 120000 },
-	{ model: "deepseek-v4-flash-openbroker", rpm: 60, tpm: 120000 },
+	{ model: "deepseek-v4-flash-0731-openbroker", rpm: 60, tpm: 120000 },
 	{ model: "kimi-k3", rpm: 60, tpm: 120000 },
 	// Still defined on the server; not always in the curated public catalog.
 	{ model: "llama-3.2-3b", rpm: 120, tpm: 240000 },
@@ -191,15 +191,15 @@ export const ENDPOINTS: EndpointInfo[] = [
 	"category": "chat",
 	"context_length": 8192
 	},
-	{
-	"id": "deepseek-v4-flash-0731-openbroker",
-	"object": "model",
-	"created": 1717194000,
-	"owned_by": "oma-ai",
-	"pricing": { "prompt": "0.00000000", "completion": "0.00000000" },
-	"category": "budget",
-	"context_length": 262144
-	}
+{
+"id": "deepseek-v4-flash-0731-openbroker",
+"object": "model",
+"created": 1717194000,
+"owned_by": "oma-ai",
+"pricing": { "prompt": "0.50000000", "completion": "0.50000000" },
+"category": "budget",
+"context_length": 400000
+}
 	]
 }`,
 	},

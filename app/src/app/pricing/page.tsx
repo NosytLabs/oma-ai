@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { FloatingIcons } from "@/components/floating-icons";
+// (FloatingIcons removed — replaced by static radial gradient backdrop)
 import { InViewFade } from "@/components/motion/in-view-fade";
 import { formatPricePerMillion, loadModels, MODEL_COUNT, type Model, MODELS } from "@/lib/models-data";
 import { CREDIT_PLANS } from "@/lib/credit-utils";
@@ -136,6 +136,10 @@ const FAQ_ITEMS = [
 		a: "Cards via Polar (Visa, Mastercard, Apple Pay — charges appear as 'NOSYT'), USDC direct on Base at 1:1 USD, or x402 pay-per-request on Base for agents.",
 	},
 	{
+		q: "Is there a free tier?",
+		a: "Yes — the 3 OMA-AI models are free in browser website chat only: 20 messages/day anonymous, 100/day signed in. API-key calls always spend credits, even on those models. New sign-ups also get $1.00 in trial credit.",
+	},
+	{
 		q: "What is x402 pay-per-request?",
 		a: "x402 enables per-request AI inference payments on Base. Pay for each API request without pre-funding credits. Fees are deducted automatically per request — ideal for agents and automated workflows.",
 	},
@@ -242,7 +246,6 @@ export default function PricingPage() {
 			<div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
 				<div className="absolute inset-x-0 top-0 h-[480px] bg-[radial-gradient(ellipse_at_top,color-mix(in_srgb,var(--color-accent)_18%,transparent)_0%,transparent_70%)]" />
 				<div className="absolute inset-0 bg-grid opacity-[0.35] mask-radial" />
-				<FloatingIcons count={6} />
 			</div>
 
 			<div className="container-page">
@@ -253,7 +256,7 @@ export default function PricingPage() {
 						See model costs first, then choose how to pay. OMA bills per token
 						or per request, with no subscriptions, no lock-in. Listed prices
 						are what you pay — Venice-routed models include a 25% platform
-						fee; OMA-AI models do not.
+						fee; OMA-AI models are priced at 2x Gonka wholesale.
 					</p>
 					<div className="meta-strip">
 							<span>{modelCount} live models</span>

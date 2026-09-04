@@ -14,7 +14,7 @@
  *     a `userChangedModelRef` gate the persisted value gets clobbered
  *     before the user has interacted with the UI.
  *  5. URL `?model=` is mirrored after the *user* picks a model, not on
- *     cold load (no `?model=deepseek-v4-flash-openbroker` clutter on /chat).
+ *     cold load (no `?model=deepseek-v4-flash-0731-openbroker` clutter on /chat).
  */
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -49,7 +49,7 @@ afterEach(() => {
 describe("usePlaygroundState — model persistence", () => {
 	it("starts from the static default when no URL or storage entry exists", () => {
 		const { result } = renderHook(() => usePlaygroundState({ authReady: true }));
-		expect(result.current.model).toBe("deepseek-v4-flash-openbroker");
+		expect(result.current.model).toBe("deepseek-v4-flash-0731-openbroker");
 	});
 
 	it("restores the saved model after a reload (localStorage read)", async () => {
@@ -141,7 +141,7 @@ describe("usePlaygroundState — model persistence", () => {
 		const { result } = renderHook(() => usePlaygroundState({ authReady: true }));
 		await act(async () => {});
 		// Falls back to the static default rather than boot a 404 model.
-		expect(result.current.model).toBe("deepseek-v4-flash-openbroker");
+		expect(result.current.model).toBe("deepseek-v4-flash-0731-openbroker");
 	});
 });
 

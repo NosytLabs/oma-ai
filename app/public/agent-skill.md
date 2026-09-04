@@ -29,7 +29,7 @@
 
 OMA (Open Model Access) is an OpenAI-compatible AI inference gateway:
 - **Base URL:** `https://api.oma-ai.com/v1`
-- **One API for 22 curated models** (18 Venice + 4 OMA-AI)
+- **One API for 21 curated models** (18 Venice + 3 OMA-AI, sourced from the live OpenBroker / Gonka.AI upstream)
   across chat completions (text + multimodal input). Image and video
   generation are not part of the current catalog — only chat LLMs.
 - **Pay your way:**
@@ -72,7 +72,10 @@ OMA (Open Model Access) is an OpenAI-compatible AI inference gateway:
 
 ## Costs (ballpark)
 
-- Budget chat models from about $0.44–$0.50 per 1M input tokens (1 credit = $0.01).
+- Budget chat models from about $0.15 per 1M input tokens (1 credit = $0.01).
+  The cheapest catalog price right now is Google Gemma 4 31B at $0.15 / 1M
+  input; DeepSeek V4 Flash (Venice) at $0.25 / 1M input; Xiaomi MiMo V2.5 at
+  $0.50 / 1M input.
 - Premium and frontier models are higher per 1M; check `/v1/models` for the
   exact price before committing to a long task, and prefer budget models for
   bulk/mechanical work.

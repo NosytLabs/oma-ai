@@ -16,7 +16,6 @@ import type { ModelOption } from "@/lib/types/model";
  * silently bill the operator for every guest message.
  */
 export const FREE_CHAT_MODEL_IDS = new Set<string>([
-	"deepseek-v4-flash-openbroker",
 	"kimi-k2-6",
 	"minimax-m2-7",
 	"deepseek-v4-flash-0731-openbroker",
@@ -24,29 +23,22 @@ export const FREE_CHAT_MODEL_IDS = new Set<string>([
 
 /**
  * Default free website-chat model. Backed by OMA-AI's Gonka.AI upstream
- * (DeepSeek V4 Flash) — see catalog entry in models.ts. The catalog
- * id `deepseek-v4-flash-openbroker` is preserved for backward-compat with stored
- * localStorage and URLs; the user-facing display name is now the truthful
- * "DeepSeek V4 Flash (OMA-AI / Gonka.AI)".
+ * (DeepSeek V4 Flash) — see catalog entry in models.ts.
  */
-export const FREE_DEFAULT_CHAT_MODEL = "deepseek-v4-flash-openbroker";
+export const FREE_DEFAULT_CHAT_MODEL = "deepseek-v4-flash-0731-openbroker";
 
 export const FREE_TIER_LABELS: Record<string, { label: string; tooltip: string }> = {
-	"deepseek-v4-flash-openbroker": {
-		label: "Free",
-		tooltip: "DeepSeek V4 Flash — OMA-AI via Gonka.AI",
-	},
 	"kimi-k2-6": {
 		label: "Free",
-		tooltip: "Kimi K2.6 — OMA-AI via Gonka.AI",
+		tooltip: "Kimi K2.6 — OMA-AI. Free in website chat; API calls billed.",
 	},
 	"minimax-m2-7": {
 		label: "Free",
-		tooltip: "MiniMax M2.7 — OMA-AI via Gonka.AI",
+		tooltip: "MiniMax M2.7 — OMA-AI. Free in website chat; API calls billed.",
 	},
 	"deepseek-v4-flash-0731-openbroker": {
 		label: "Free",
-		tooltip: "DeepSeek V4 Flash — OMA-AI via Gonka.AI",
+		tooltip: "DeepSeek V4 Flash — OMA-AI. Free in website chat; API calls billed.",
 	},
 };
 

@@ -17,7 +17,7 @@ interface UseDashboardKeyboardOptions {
 	* Dashboard-wide keyboard shortcuts.
 	*
 	*   R         — refresh dashboard
-	*   1 / 2 / 3 / 4 — switch to Overview / Usage / API keys / Health
+	*   1 / 2 / 3 — switch to Overview / Usage / API keys
 	*   ArrowLeft / ArrowRight (Usage tab only) — paginate recent-requests
 	*
 	* Ignored while focus is in an input/textarea/select/contenteditable, and
@@ -73,11 +73,6 @@ export function useDashboardKeyboard({
 			if (e.key === "3") {
 				e.preventDefault();
 				setActiveTab("api-keys");
-				return;
-			}
-			if (e.key === "4") {
-				e.preventDefault();
-				setActiveTab("health");
 				return;
 			}
 			if (activeTab === "usage") {

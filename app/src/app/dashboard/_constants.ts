@@ -12,7 +12,6 @@ export const TABS = [
 	{ id: "overview", label: "Overview", icon: Zap },
 	{ id: "usage", label: "Usage", icon: Clock },
 	{ id: "api-keys", label: "API Keys", icon: null },
-	{ id: "health", label: "Health", icon: null },
 ] as const satisfies ReadonlyArray<{
 	id: string;
 	label: string;

@@ -435,9 +435,9 @@ const locked = !isAuthenticated && !free;
 													>
 														{modelItem.category}
 													</div>
-													<div className="text-[10px] text-text-muted font-mono mt-1">
-														{free ? "$0.00" : `$${modelItem.inputPer1M.toFixed(2)}`}/1M IN
-													</div>
+												<div className="text-[10px] text-text-muted font-mono mt-1">
+													{`$${modelItem.inputPer1M.toFixed(2)}`}/1M IN{free ? " · $0 CHAT" : ""}
+												</div>
 												</div>
 											</div>
 										</m.button>

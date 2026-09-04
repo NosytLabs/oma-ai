@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { FloatingIcons } from "@/components/floating-icons";
+// (FloatingIcons removed — replaced by static grid backdrop)
 import { InViewFade } from "@/components/motion/in-view-fade";
 import { BreadcrumbListJsonLd } from "@/components/json-ld";
 
@@ -170,7 +170,6 @@ export default function GlossaryPage() {
 			<BreadcrumbListJsonLd items={[{ name: "Home", url: "/" }, { name: "Glossary", url: "/glossary" }]} />
 			<div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
 				<div className="absolute inset-0 bg-grid opacity-[0.35] mask-radial" />
-				<FloatingIcons count={4} />
 			</div>
 
 			<div className="container-page page-content max-w-3xl lg:max-w-4xl">

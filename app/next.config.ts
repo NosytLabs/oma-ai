@@ -32,7 +32,7 @@ const nextConfig: NextConfig = {
 		// hydration mismatch). Bump in source on each deploy.
 		NEXT_PUBLIC_BUILD_DATE:
 			process.env.NEXT_PUBLIC_BUILD_DATE ??
-			"2026-07-26",
+			"2026-09-04",
 	},
 
 	serverExternalPackages: [],

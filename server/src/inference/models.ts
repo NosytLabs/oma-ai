@@ -31,16 +31,20 @@
 	* Surplus is never selected for traffic. See the comment block above
 	* for the full risk writeup.
 	*
-	* NOTE: `deepseek-v4-flash-openbroker` is owned by the OMA-AI provider —
-	* it is the app's default free website-chat model. The user-facing id
-	* and displayName stay "Gemini 3 Flash", but Gonka/OpenBroker carries
-	* no Gemini model, so it routes to DeepSeek V4 Flash via omaAiId.
-	* Don't add a Venice entry under the same id or it will shadow the
-	* free route and break anonymous website chat (401 on free model).
-	*
-	* Add a new provider by extending `resolveProvider()` in
-	* provider-route.ts and adding matching entries here.
-	*/
+* NOTE: `deepseek-v4-flash-0731-openbroker` is the default free
+ * website-chat model. It is backed by `deepseek-ai/DeepSeek-V4-Flash-0731`
+ * on the OpenBroker / Gonka.AI upstream — verified live against
+ * api.openbroker.gonka.gg/v1/models. Don't add a Venice entry under
+ * the same id or it will shadow the free route and break anonymous
+ * website chat (401 on free model).
+ *
+ * API-token callers (Authorization: Bearer oma_sk_*) ALWAYS pay real
+ * credits for these models; free usage is restricted to the public
+ * /chat page for signed-out visitors only.
+ *
+ * Add a new provider by extending `resolveProvider()` in
+ * provider-route.ts and adding matching entries here.
+ */
 import { config } from "../config.js";
 import { logger } from "../lib/logger.js";
 
@@ -78,16 +82,20 @@ let _catalog: ModelDef[] | null = null;
 // ---------------------------------------------------------------------------
 // Curated catalog — best models per tier.
 //
-// Venice pricing source: live GET api.venice.ai/api/v1/models (2026-08-04)
-// OMA-AI/OpenBroker: free-tier user prices; context 128k product cap
-// (upstream does not publish per-model limits on the broker API).
+// Venice pricing source: live GET api.venice.ai/api/v1/models (2026-09-04)
+// Base prices track Venice wholesale; user-facing = base x 1.25 markup.
+// OMA-AI/OpenBroker: base = live gonkabroker.com rates (verified 2026-09-04:
+// MiniMax M2 200K $0.30/M, DeepSeek V4 Flash 400K $0.25/M, Kimi K2 256K
+// $0.35/M — input == output upstream); user-facing = base x (1 + markup).
+// OMA-AI markup is 100% (2x wholesale) — still cents per 1M, healthy margin.
 //
 // Prices stored here are *upstream base* (what OMA pays Venice/OMA-AI).
 // billing-service.ts applies markupPercent at checkout:
 //   user_cost = base * (1 + markupPercent/100)
 //
 // For Venice models markupPercent = 25 (OMA's platform margin).
-// For OMA-AI models markupPercent = 0 (margin already in the low price).
+// For OMA-AI models markupPercent = 100 (2x Gonka wholesale — base prices
+// below are the live upstream rates, so displayed prices stay honest).
 // ---------------------------------------------------------------------------
 
 const VENICE_MODELS: ModelDef[] = [
@@ -97,8 +105,8 @@ const VENICE_MODELS: ModelDef[] = [
 				id: "openai-gpt-56-sol",
 				provider: "venice",
 				surplusId: "gpt-5.6-sol",
-				inputPricePer1M: 16.0,
-				outputPricePer1M: 95.0,
+			inputPricePer1M: 6.25,
+			outputPricePer1M: 37.5,
 				markupPercent: 25,
 				displayName: "GPT-5.6 Sol",
 				category: "frontier",
@@ -112,8 +120,8 @@ const VENICE_MODELS: ModelDef[] = [
 				id: "claude-opus-5",
 				provider: "venice",
 				surplusId: "claude-opus-5",
-				inputPricePer1M: 15.0,
-				outputPricePer1M: 75.0,
+			inputPricePer1M: 6.0,
+			outputPricePer1M: 30.0,
 				markupPercent: 25,
 				displayName: "Claude Opus 5",
 				category: "frontier",
@@ -131,8 +139,8 @@ const VENICE_MODELS: ModelDef[] = [
 				id: "kimi-k3",
 				provider: "venice",
 				surplusId: "kimi-k3",
-				inputPricePer1M: 9.5,
-				outputPricePer1M: 45.0,
+			inputPricePer1M: 3.75,
+			outputPricePer1M: 18.75,
 				markupPercent: 25,
 				displayName: "Kimi K3",
 				category: "premium",
@@ -148,8 +156,8 @@ const VENICE_MODELS: ModelDef[] = [
 				id: "zai-org-glm-5-2",
 				provider: "venice",
 				surplusId: "glm-5.2",
-				inputPricePer1M: 3.5,
-				outputPricePer1M: 11.0,
+			inputPricePer1M: 1.4,
+			outputPricePer1M: 4.4,
 				markupPercent: 25,
 				displayName: "GLM 5.2",
 				category: "premium",
@@ -163,8 +171,8 @@ const VENICE_MODELS: ModelDef[] = [
 				id: "deepseek-v4-pro",
 				provider: "venice",
 				surplusId: "deepseek-v4-pro",
-				inputPricePer1M: 4.5,
-				outputPricePer1M: 8.0,
+			inputPricePer1M: 1.65,
+			outputPricePer1M: 3.3,
 				markupPercent: 25,
 				displayName: "DeepSeek V4 Pro",
 				category: "premium",
@@ -178,8 +186,8 @@ const VENICE_MODELS: ModelDef[] = [
 				id: "qwen-3-8-max",
 				provider: "venice",
 				surplusId: "qwen-3-8-max",
-				inputPricePer1M: 6.25,
-				outputPricePer1M: 19.0,
+			inputPricePer1M: 2.5,
+			outputPricePer1M: 7.5,
 				markupPercent: 25,
 				displayName: "Qwen 3.8 Max",
 				category: "premium",
@@ -193,8 +201,8 @@ const VENICE_MODELS: ModelDef[] = [
 				id: "grok-4-5",
 				provider: "venice",
 				surplusId: "grok-4.5",
-				inputPricePer1M: 5.75,
-				outputPricePer1M: 17.0,
+			inputPricePer1M: 2.27,
+			outputPricePer1M: 6.8,
 				markupPercent: 25,
 				displayName: "Grok 4.5",
 				category: "premium",
@@ -208,8 +216,8 @@ const VENICE_MODELS: ModelDef[] = [
 				id: "claude-sonnet-4-6",
 				provider: "venice",
 				surplusId: "claude-sonnet-4.6",
-				inputPricePer1M: 9.0,
-				outputPricePer1M: 45.0,
+			inputPricePer1M: 3.6,
+			outputPricePer1M: 18.0,
 				markupPercent: 25,
 				displayName: "Claude Sonnet 4.6",
 				category: "premium",
@@ -223,8 +231,8 @@ const VENICE_MODELS: ModelDef[] = [
 				id: "gemini-3-6-flash",
 				provider: "venice",
 				surplusId: "gemini-3.7-flash",
-				inputPricePer1M: 4.75,
-				outputPricePer1M: 23.0,
+			inputPricePer1M: 0.9375,
+			outputPricePer1M: 4.6875,
 				markupPercent: 25,
 				displayName: "Gemini 3.6 Flash",
 				category: "premium",
@@ -238,11 +246,11 @@ const VENICE_MODELS: ModelDef[] = [
 		// ── Mid ───────────────────────────────────────────────────────────────
 
 		{
-				id: "llama-3.3-70b",
-				provider: "venice",
-				surplusId: "llama-3.3-70b-instruct",
-				inputPricePer1M: 2.0,
-				outputPricePer1M: 7.0,
+			id: "llama-3.3-70b",
+			provider: "venice",
+			surplusId: "llama-3.3-70b-instruct",
+			inputPricePer1M: 0.7,
+			outputPricePer1M: 2.8,
 				markupPercent: 25,
 				displayName: "Llama 3.3 70B",
 				category: "mid",
@@ -256,8 +264,8 @@ const VENICE_MODELS: ModelDef[] = [
 				id: "hermes-3-llama-3.1-405b",
 				provider: "venice",
 				surplusId: "hermes-3-llama-3.1-405b",
-				inputPricePer1M: 2.85,
-				outputPricePer1M: 7.5,
+			inputPricePer1M: 1.1,
+			outputPricePer1M: 3.0,
 				markupPercent: 25,
 				displayName: "Hermes 3 405B",
 				category: "mid",
@@ -271,8 +279,8 @@ const VENICE_MODELS: ModelDef[] = [
 				id: "zai-org-glm-5-1",
 				provider: "venice",
 				surplusId: "glm-5.1",
-				inputPricePer1M: 4.0,
-				outputPricePer1M: 12.0,
+			inputPricePer1M: 1.54,
+			outputPricePer1M: 4.84,
 				markupPercent: 25,
 				displayName: "GLM 5.1",
 				category: "mid",
@@ -286,8 +294,8 @@ const VENICE_MODELS: ModelDef[] = [
 				id: "qwen-3-7-plus",
 				provider: "venice",
 				surplusId: "qwen-3-7-plus",
-				inputPricePer1M: 1.6,
-				outputPricePer1M: 5.0,
+			inputPricePer1M: 0.5,
+			outputPricePer1M: 2.0,
 				markupPercent: 25,
 				displayName: "Qwen 3.7 Plus",
 				category: "mid",
@@ -301,8 +309,8 @@ const VENICE_MODELS: ModelDef[] = [
 				id: "venice-uncensored-1-2",
 				provider: "venice",
 				surplusId: "venice-uncensored",
-				inputPricePer1M: 0.65,
-				outputPricePer1M: 2.5,
+			inputPricePer1M: 0.2,
+			outputPricePer1M: 0.9,
 				markupPercent: 25,
 				displayName: "Venice Uncensored 1.2",
 				category: "mid",
@@ -319,8 +327,8 @@ const VENICE_MODELS: ModelDef[] = [
 		{
 				id: "xiaomi-mimo-v2-5",
 				provider: "venice",
-				inputPricePer1M: 1.1,
-				outputPricePer1M: 5.0,
+			inputPricePer1M: 0.4,
+			outputPricePer1M: 2.0,
 				markupPercent: 25,
 				displayName: "Xiaomi MiMo V2.5",
 				category: "budget",
@@ -334,8 +342,8 @@ const VENICE_MODELS: ModelDef[] = [
 				id: "deepseek-v4-flash-0731",
 				provider: "venice",
 				surplusId: "deepseek-v4-flash",
-				inputPricePer1M: 0.45,
-				outputPricePer1M: 1.0,
+			inputPricePer1M: 0.175,
+			outputPricePer1M: 0.35,
 				markupPercent: 25,
 				displayName: "DeepSeek V4 Flash",
 				category: "budget",
@@ -349,8 +357,8 @@ const VENICE_MODELS: ModelDef[] = [
 				id: "mistral-small-2603",
 				provider: "venice",
 				surplusId: "mistral-small-4",
-				inputPricePer1M: 0.6,
-				outputPricePer1M: 2.0,
+			inputPricePer1M: 0.1875,
+			outputPricePer1M: 0.75,
 				markupPercent: 25,
 				displayName: "Mistral Small 4",
 				category: "budget",
@@ -363,8 +371,8 @@ const VENICE_MODELS: ModelDef[] = [
 		{
 				id: "google-gemma-4-31b-it",
 				provider: "venice",
-				inputPricePer1M: 0.35,
-				outputPricePer1M: 1.0,
+			inputPricePer1M: 0.12,
+			outputPricePer1M: 0.36,
 				markupPercent: 25,
 				displayName: "Gemma 4 31B",
 				category: "budget",
@@ -378,93 +386,68 @@ const VENICE_MODELS: ModelDef[] = [
 ];
 
 // ── OMA-AI Resale — branded "oma-ai", backed by OpenBroker (Gonka network) ──
-// (Zyloo was previously a sister upstream; removed 2026-08-17. Models that
-//  were implicit-zyloo — gemini-3.1-pro-preview, gpt-4.1, gpt-4o,
-//  qwen3-235b-a22b-openbroker — were deleted since OpenBroker does not
-//  carry them.)
+// Verified live against api.openbroker.gonka.gg/v1/models — exactly 3 upstream
+// models: moonshotai/Kimi-K2.6, MiniMaxAI/MiniMax-M2.7, and
+// deepseek-ai/DeepSeek-V4-Flash-0731. Adding any other id here would 404.
 const OMA_AI_MODELS: ModelDef[] = [
-		// ── OpenBroker upstream (api.openbroker.gonka.gg) ─────────────────
-
+	{
+			id: "kimi-k2-6",
+			provider: "oma-ai",
+			upstream: "openbroker",
+			omaAiId: "moonshotai/Kimi-K2.6",
+			surplusId: "kimi-k2.6",
+			inputPricePer1M: 0.35,
+			outputPricePer1M: 0.35,
+			markupPercent: 100,
+			displayName: "Kimi K2.6",
+			category: "premium",
+			maxTokens: 16384,
+			contextWindow: 262_144,
+			maxOutputTokens: 16384,
+			supportsStreaming: true,
+			capabilities: ["chat", "reasoning", "coding", "tools"],
+	},
+	{
+			id: "minimax-m2-7",
+			provider: "oma-ai",
+			upstream: "openbroker",
+			omaAiId: "MiniMaxAI/MiniMax-M2.7",
+			surplusId: "minimax-m2.7",
+			inputPricePer1M: 0.30,
+			outputPricePer1M: 0.30,
+			markupPercent: 100,
+			displayName: "MiniMax M2.7",
+			category: "budget",
+			maxTokens: 16384,
+			contextWindow: 200_000,
+			maxOutputTokens: 16384,
+			supportsStreaming: true,
+			capabilities: ["chat", "reasoning", "coding", "tools"],
+	},
 		{
 				// Default free website-chat model. Backed by DeepSeek V4 Flash
-				// on the OMA-AI / Gonka.AI network — that upstream is verified
-				// live on api.openbroker.gonka.gg/v1/models. The id and display
-				// name are truthful to the actual upstream.
+				// on the OMA-AI / Gonka.AI network — verified live on
+				// api.openbroker.gonka.gg/v1/models.
 				//
-				// API-key callers are billed the listed price; only the public
-				// /chat path uses this for free (see free-website-model.ts).
+				// API-token callers (Authorization: Bearer oma_sk_*) ALWAYS pay
+				// real credits for this; only the public /chat path is free
+				// (see free-website-model.ts).
+				//
 				// Don't add a Venice entry under the same id or it will shadow
 				// the free route and break anonymous website chat (401 on free).
-				id: "deepseek-v4-flash-openbroker",
-				provider: "oma-ai",
-				upstream: "openbroker",
-				omaAiId: "deepseek-ai/DeepSeek-V4-Flash-0731",
-				surplusId: "deepseek-v4-flash-0731",
-				inputPricePer1M: 0.5,
-				outputPricePer1M: 3.0,
-				markupPercent: 0,
-				displayName: "DeepSeek V4 Flash",
-				category: "mid",
-				maxTokens: 8192,
-				contextWindow: 1_000_000,
-				maxOutputTokens: 8192,
-				supportsStreaming: true,
-				capabilities: ["chat", "fast", "tools"],
-		},
-		{
-				id: "kimi-k2-6",
-				provider: "oma-ai",
-				upstream: "openbroker",
-				omaAiId: "moonshotai/Kimi-K2.6",
-				surplusId: "kimi-k2.6",
-				inputPricePer1M: 2.0, // Updated for margin
-				outputPricePer1M: 7.0, // Updated for margin
-				markupPercent: 0,
-				displayName: "Kimi K2.6",
-				category: "premium",
-				maxTokens: 16384,
-				contextWindow: 128_000,
-				maxOutputTokens: 16384,
-				supportsStreaming: true,
-				capabilities: ["chat", "reasoning", "coding", "tools"],
-		},
-		{
-				id: "minimax-m2-7",
-				provider: "oma-ai",
-				upstream: "openbroker",
-				omaAiId: "MiniMaxAI/MiniMax-M2.7",
-				surplusId: "minimax-m2.7",
-				inputPricePer1M: 1.25, // Updated for margin
-				outputPricePer1M: 4.0, // Updated for margin
-				markupPercent: 0,
-				displayName: "MiniMax M2.7",
-				category: "budget",
-				maxTokens: 16384,
-				contextWindow: 128_000,
-				maxOutputTokens: 16384,
-				supportsStreaming: true,
-				capabilities: ["chat", "reasoning", "coding", "tools"],
-		},
-		{
-				// DeepSeek V4 Flash via Gonka OpenBroker — verified live on
-				// api.openbroker.gonka.gg (upstream id deepseek-ai/DeepSeek-V4-Flash-0731).
-				// Kept as a separate catalog entry from the primary
-				// `deepseek-v4-flash-openbroker` (same upstream) for
-				// OpenRouter-style client fallback chains; both routes bill
-				// the same price.
-				id: "deepseek-v4-flash-0731-openbroker",
-				provider: "oma-ai",
-				upstream: "openbroker",
-				omaAiId: "deepseek-ai/DeepSeek-V4-Flash-0731",
-				surplusId: "deepseek-v4-flash-0731",
-				inputPricePer1M: 0.5,
-				outputPricePer1M: 3.0,
-				markupPercent: 0,
-				displayName: "DeepSeek V4 Flash (direct)",
-				category: "budget",
-				maxTokens: 16384,
-				contextWindow: 1_000_000,
-				maxOutputTokens: 16384,
+			id: "deepseek-v4-flash-0731-openbroker",
+			provider: "oma-ai",
+			upstream: "openbroker",
+			omaAiId: "deepseek-ai/DeepSeek-V4-Flash-0731",
+			surplusId: "deepseek-v4-flash-0731",
+			inputPricePer1M: 0.25,
+			outputPricePer1M: 0.25,
+			markupPercent: 100,
+			displayName: "DeepSeek V4 Flash (OMA-AI)",
+			category: "budget",
+			maxTokens: 16384,
+			contextWindow: 400_000,
+			maxOutputTokens: 16384,
 				supportsStreaming: true,
 				capabilities: ["chat", "reasoning", "fast", "tools"],
 		},

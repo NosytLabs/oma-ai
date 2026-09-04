@@ -3,7 +3,7 @@
 import { formatAddress } from "@/lib/utils";
 import { AnimatePresence, m, useReducedMotion } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";
-import { ChevronDown, Key, LogOut, Settings, ShieldCheck, Zap } from "lucide-react";
+import { ChevronDown, Key, LayoutDashboard, LogOut, Settings, Zap } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -11,8 +11,8 @@ import { useClickOutside } from "./_hooks/useClickOutside";
 
 interface NavbarUserMenuProps {
 	evmAddress: string | null;
+	email?: string | null;
 	onSignOut: () => Promise<void>;
-	isAdmin?: boolean;
 }
 
 const shortAddress = (addr: string) => (addr ? formatAddress(addr) : "");
@@ -22,7 +22,7 @@ const shortAddress = (addr: string) => (addr ? formatAddress(addr) : "");
 	* Shows the linked EVM address (if any), API keys / settings / credits
 	* links, and a confirmation-gated sign-out.
 	*/
-export function NavbarUserMenu({ evmAddress, onSignOut, isAdmin = false }: NavbarUserMenuProps) {
+export function NavbarUserMenu({ evmAddress, email, onSignOut }: NavbarUserMenuProps) {
 	const containerRef = useRef<HTMLDivElement | null>(null);
 	const [open, setOpen] = useState(false);
 	const [confirming, setConfirming] = useState(false);
@@ -59,10 +59,12 @@ export function NavbarUserMenu({ evmAddress, onSignOut, isAdmin = false }: Navba
 		}
 	}, [open]);
 
-	const triggerLabel = evmAddress ? shortAddress(evmAddress) : "Account";
+	const triggerLabel = evmAddress ? shortAddress(evmAddress) : (email ?? "Account");
 	const triggerTitle = evmAddress
 		? `Logged in · ${evmAddress}`
-		: "Logged in";
+		: email
+			? `Logged in · ${email}`
+			: "Logged in";
 
 	const handleConfirmDisconnect = async () => {
 		if (disconnecting) return;
@@ -129,9 +131,18 @@ export function NavbarUserMenu({ evmAddress, onSignOut, isAdmin = false }: Navba
 								Logged in
 							</p>
 							<p className="mt-1 truncate text-xs text-accent">
-								{evmAddress ?? "Email account"}
+								{evmAddress ?? email ?? "Email account"}
 							</p>
 						</div>
+						<Link
+							href="/dashboard"
+							role="menuitem"
+							className="flex items-center gap-3 px-4 py-3 text-xs text-text-secondary transition-colors duration-200 ease-out hover:bg-surface hover:text-text-bright focus-visible:outline-none focus-visible:bg-surface focus-visible:text-text-bright"
+							onClick={() => setOpen(false)}
+						>
+							<LayoutDashboard className="h-3 w-3" aria-hidden="true" />
+							<span>dashboard</span>
+						</Link>
 						<Link
 							href="/dashboard?tab=api-keys"
 							role="menuitem"
@@ -159,17 +170,6 @@ export function NavbarUserMenu({ evmAddress, onSignOut, isAdmin = false }: Navba
 							<Settings className="h-3 w-3" aria-hidden="true" />
 							<span>settings</span>
 						</Link>
-						{isAdmin && (
-							<Link
-								href="/admin"
-								role="menuitem"
-								className="flex items-center gap-3 px-4 py-3 text-xs text-accent transition-colors duration-200 ease-out hover:bg-accent-dim focus-visible:outline-none focus-visible:bg-accent-dim"
-								onClick={() => setOpen(false)}
-							>
-								<ShieldCheck className="h-3 w-3" aria-hidden="true" />
-								<span>admin dashboard</span>
-							</Link>
-						)}
 						<div className="my-1 h-px bg-border" aria-hidden="true" />
 						{!confirming ? (
 							<button

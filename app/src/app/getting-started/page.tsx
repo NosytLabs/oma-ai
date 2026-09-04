@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, CreditCard, KeyRound, MessageSquare, Rocket, Terminal, Wallet } from "lucide-react";
 import { MODEL_COUNT } from "@/lib/models-data";
-import { FloatingIcons } from "@/components/floating-icons";
+// (FloatingIcons removed — replaced by static grid backdrop)
 import { InViewFade } from "@/components/motion/in-view-fade";
 import { BreadcrumbListJsonLd } from "@/components/json-ld";
 import { CopyableCode } from "@/components/copyable-code";
@@ -82,7 +82,7 @@ const SAMPLE_CODE = `curl https://api.oma-ai.com/v1/chat/completions \\
 	-H "Authorization: Bearer $OMA_KEY" \\
 	-H "Content-Type: application/json" \\
 	-d '{
-		"model": "deepseek-v4-flash-openbroker",
+		"model": "deepseek-v4-flash-0731-openbroker",
 		"messages": [{"role": "user", "content": "Say hello in one short sentence"}],
 		"max_tokens": 64
 	}'`;
@@ -115,7 +115,6 @@ export default function GettingStartedPage() {
 			/>
 			<div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
 				<div className="absolute inset-0 bg-grid opacity-[0.35] mask-radial" />
-				<FloatingIcons count={4} />
 			</div>
 
 			<div className="container-page page-content max-w-3xl lg:max-w-4xl">

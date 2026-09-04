@@ -68,7 +68,7 @@ export default function DashboardPage() {
 }
 
 function DashboardPageInner() {
-	const { isAuthenticated, isDemo, isReady, evmAddress, isAdmin } = useAuth();
+	const { isAuthenticated, isDemo, isReady, evmAddress } = useAuth();
 	const toast = useToast();
 	const queryClient = useQueryClient();
 	const searchParams = useSearchParams();
@@ -320,7 +320,6 @@ function DashboardPageInner() {
 						timeRange={timeRange}
 						onTimeRangeChange={setTimeRange}
 						notificationsEnabled={canLoadDashboard}
-						isAdmin={isAdmin}
 					/>
 
 					<DashboardGrid
@@ -360,7 +359,6 @@ function DashboardPageInner() {
 						timeRange={timeRange}
 						onNavigateToApiKeys={handleNavigateToApiKeys}
 						walletConnected={Boolean(evmAddress)}
-						isAdmin={isAdmin}
 					/>
 				</div>
 			</div>

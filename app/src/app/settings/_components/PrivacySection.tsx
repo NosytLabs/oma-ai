@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, Eraser, Loader2, Trash2 } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useToast } from "@/components/ui/Toast";
@@ -14,16 +14,10 @@ interface PrivacySectionProps {
 export function PrivacySection({ user }: PrivacySectionProps) {
 	const toast = useToast();
 	const [downloading, setDownloading] = useState(false);
-	const [clearing, setClearing] = useState(false);
 
 	const handleDownload = async () => {
 		setDownloading(true);
 		try {
-			// One round-trip: server streams the full GDPR bundle
-			// (profile, API keys w/o secrets, usage, deposits,
-			// credit balance, audit logs, sessions) as a JSON
-			// attachment. The server records a DATA_EXPORT_REQUESTED
-			// audit row regardless of where the call came from.
 			const blob = await api.exportData.accountBundle();
 			const url = window.URL.createObjectURL(blob);
 			const anchor = document.createElement("a");
@@ -38,30 +32,6 @@ export function PrivacySection({ user }: PrivacySectionProps) {
 			toast.error(error instanceof Error ? error.message : "Download failed");
 		} finally {
 			setDownloading(false);
-		}
-	};
-
-	const handleClearHistory = async () => {
-		if (
-			typeof window !== "undefined" &&
-			!window.confirm(
-				"Permanently delete all usage history and audit logs? Your account, API keys, and credit balance will be preserved. This cannot be undone.",
-			)
-		) {
-			return;
-		}
-		setClearing(true);
-		try {
-			const result = await api.auth.clearHistory();
-			toast.success(
-				`Cleared ${result.deleted.usageRecords} usage records and ${result.deleted.auditLogs} audit log entries.`,
-			);
-		} catch (error) {
-			toast.error(
-				error instanceof Error ? error.message : "Failed to clear history",
-			);
-		} finally {
-			setClearing(false);
 		}
 	};
 
@@ -92,7 +62,7 @@ export function PrivacySection({ user }: PrivacySectionProps) {
 				</div>
 			</div>
 
-			<div className="mt-6 divide-y divide-border rounded-[var(--radius-md)] border border-border bg-surface/30 overflow-hidden">
+			<div className="mt-6 rounded-[var(--radius-md)] border border-border bg-surface/30 overflow-hidden">
 				<div className="group flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between transition-colors duration-200 ease-out hover:bg-surface/50">
 					<div>
 						<h3 className="text-sm font-semibold text-text-bright">
@@ -118,52 +88,6 @@ export function PrivacySection({ user }: PrivacySectionProps) {
 						)}
 						{downloading ? "Preparing…" : "Download JSON"}
 					</button>
-				</div>
-
-				<div className="group flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between transition-colors duration-200 ease-out hover:bg-warning/5">
-					<div>
-						<h3 className="text-sm font-semibold text-text-bright">
-							Clear usage history
-						</h3>
-						<p className="mt-1 text-xs text-text-muted">
-							Permanently delete your usage records and audit logs. Account,
-							API keys, and credit balance are preserved.
-						</p>
-					</div>
-					<button
-						type="button"
-						onClick={handleClearHistory}
-						disabled={clearing}
-						className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-[var(--radius-md)] border border-warning/40 px-4 py-2 text-xs font-semibold text-warning transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-warning/10 hover:border-warning/60 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-warning"
-					>
-						{clearing ? (
-							<Loader2
-								className="h-3.5 w-3.5 animate-spin"
-								aria-hidden="true"
-							/>
-						) : (
-							<Eraser className="h-3.5 w-3.5" aria-hidden="true" />
-						)}
-						{clearing ? "Clearing…" : "Clear history"}
-					</button>
-				</div>
-
-				<div className="group flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between transition-colors duration-200 ease-out hover:bg-danger/5">
-					<div>
-						<h3 className="text-sm font-semibold text-text-bright">
-							Danger zone
-						</h3>
-						<p className="mt-1 text-xs text-text-muted">
-							Permanently remove your account or clear usage history.
-						</p>
-					</div>
-					<Link
-						href="/settings?tab=danger"
-						className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-[var(--radius-md)] border border-danger/40 px-4 py-2 text-xs font-semibold text-danger transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-danger/10 hover:border-danger/60 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger"
-					>
-						<Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-						Danger zone
-					</Link>
 				</div>
 			</div>
 		</div>

@@ -230,6 +230,28 @@ describe("POST /v1/chat/completions", () => {
 			});
 			expect(res.status).toBe(401);
 		});
+
+		it("bills API-key callers for free models even with website headers", async () => {
+			mockRouteRequest.mockResolvedValueOnce({
+				response: new Response("{}", { status: 200 }),
+				actualModelId: "deepseek-v4-flash-0731-openbroker",
+			});
+			mockParseNonStreaming.mockResolvedValueOnce({ data: { ok: true } });
+
+			const res = await chatRequest(baseBody, {
+				Authorization: "Bearer oma_sk_test",
+				"X-OMA-Source": "website",
+				Origin: "http://localhost:3000",
+			});
+			expect(res.status).toBe(200);
+			expect(mockRouteRequest).toHaveBeenCalledWith(
+				expect.objectContaining({ skipBilling: false }),
+			);
+			expect(mockParseNonStreaming).toHaveBeenCalledWith(
+				expect.anything(),
+				expect.objectContaining({ skipBilling: false }),
+			);
+		});
 	});
 
 	describe("idempotency replay", () => {

@@ -34,8 +34,6 @@ import {
 	LazyExpiringCreditsWarning,
 	LazyModelUsageTable,
 	LazyProviderBreakdown,
-	LazyProviderHealthCard,
-	LazyProviderHealthSummary,
 	LazyRecentRequestsTable,
 	LazyUsageChart,
 } from "./lazy-widgets";
@@ -215,8 +213,6 @@ interface DashboardGridProps {
 	hasAnyUsage?: boolean;
 	/** Demo tour (`?demo=1`) renders sample data only — no live backend calls. */
 	isDemo?: boolean;
-	/** Admin flag — the provider-ops (Health) surfaces are operator-only. */
-	isAdmin?: boolean;
 }
 
 /**
@@ -225,7 +221,6 @@ interface DashboardGridProps {
 	* - Overview: balance, expiring credits, quick stats, usage charts, recent transactions
 	* - Usage: usage charts + recent requests table
 	* - API Keys: API key manager
-	* - Health: provider health card
 	*/
 export function DashboardGrid(props: DashboardGridProps) {
 	const {
@@ -265,7 +260,6 @@ export function DashboardGrid(props: DashboardGridProps) {
 		walletConnected = false,
 		hasAnyUsage = false,
 		isDemo = false,
-		isAdmin = false,
 	} = props;
 
 	// `usage` is already time-range filtered by the page (`filteredUsage`).
@@ -314,13 +308,9 @@ export function DashboardGrid(props: DashboardGridProps) {
 							</div>
 						)}
 
-						{/* Primary row — three user-facing panels of equal weight.
-						   The 4th cell hosts provider-ops "System health" only for
-						   operators (admin). Non-admins get a clean 3-col row. */}
+						{/* Primary row — three user-facing panels of equal weight. */}
 						<div
-							className={`mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 [&>*]:min-h-[12rem] ${
-								isAdmin ? "lg:grid-cols-4" : "lg:grid-cols-3"
-							}`}
+							className={`mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 [&>*]:min-h-[12rem] lg:grid-cols-3`}
 						>
 							<WidgetErrorBoundary title="Credits">
 								<CreditBalanceCard
@@ -343,11 +333,6 @@ export function DashboardGrid(props: DashboardGridProps) {
 									activeModels={activeModels}
 								/>
 							</WidgetErrorBoundary>
-							{isAdmin && (
-								<WidgetErrorBoundary title="Provider health">
-									<LazyProviderHealthSummary />
-								</WidgetErrorBoundary>
-							)}
 						</div>
 
 						<div className="mb-6">
@@ -487,34 +472,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 					</m.div>
 				)}
 
-				{/* Health Tab — admin-only provider-ops surface. Non-admins hitting
-				   a deep link to this tab get a friendly empty-state instead. */}
-				{activeTab === "health" && (
-					<m.div
-						key="health"
-						id="panel-health"
-						role="tabpanel"
-						aria-labelledby="tab-health"
-						aria-label="Health"
-						className="rounded-[var(--radius-xl)] border border-border bg-surface/30"
-						variants={tabContentVariants}
-						initial="hidden"
-						animate="visible"
-						exit="exit"
-					>
-						{isAdmin ? (
-							<WidgetErrorBoundary title="Provider health">
-								<LazyProviderHealthCard />
-							</WidgetErrorBoundary>
-						) : (
-							<EmptyState
-								icon={Activity}
-								title="Provider status is operator-only"
-								description="Live readiness checks, circuit-breaker states, and per-dependency latency are reserved for operators. If you're experiencing an issue, check the header status pill or contact support."
-							/>
-						)}
-					</m.div>
-				)}
+				{/* Provider-ops "Health" tab is admin-only and lives at /admin. */}
 			</AnimatePresence>
 
 			<Suspense fallback={null}>

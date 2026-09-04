@@ -4,8 +4,8 @@ import { playgroundHrefForModel } from "../playground-href";
 describe("playgroundHrefForModel", () => {
 	it("routes chat models with model= id", () => {
 		expect(
-			playgroundHrefForModel({ id: "deepseek-v4-flash-openbroker", modality: "chat" }),
-		).toBe("/chat?model=deepseek-v4-flash-openbroker");
+			playgroundHrefForModel({ id: "deepseek-v4-flash-0731-openbroker", modality: "chat" }),
+		).toBe("/chat?model=deepseek-v4-flash-0731-openbroker");
 	});
 
 	it("routes multimodal models into text chat with model= id", () => {

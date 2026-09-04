@@ -208,6 +208,14 @@ function SettingsPageContent() {
 		return <SettingsFallback />;
 	}
 
+	// API keys moved to the Dashboard — render the fallback (not the settings
+	// shell) while the redirect below fires, so users never see a flash of
+	// settings content on /settings?tab=api-keys.
+	const rawTab = searchParams?.get("tab") ?? null;
+	if (rawTab === "api-keys" || rawTab === "keys") {
+		return <SettingsFallback />;
+	}
+
 	if (!hasRealSession && !isDemoView) {
 		return <UnauthCallout variant="settings" evmAddress={evmAddress ?? undefined} />;
 	}

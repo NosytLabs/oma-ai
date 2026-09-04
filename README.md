@@ -47,7 +47,7 @@ Drop-in replacement for any OpenAI or Anthropic SDK. Unified chat completions (`
 
 ### 🎯 Curated Model Registry
 
-22 curated chat models (18 Venice + 4 OMA-AI) across providers. We curate the best models so you don't have to sift through 100+ low-quality alternatives.
+21 curated chat models (18 Venice + 3 OMA-AI) across providers. We curate the best models so you don't have to sift through 100+ low-quality alternatives. The 3 OMA-AI models are sourced exclusively from the live OpenBroker / Gonka.AI upstream.
 
 ### 🆓 Free Guest Chat
 Budget-friendly, sign-in-free chat via OMA-AI models with a generous daily limit for anonymous visitors. Perfect for evaluating the platform before upgrading.

@@ -31,7 +31,7 @@ describe("ModelLogo — locally-vendored dashboard-icons provider marks", () => 
 	});
 
 	it("uses the real upstream deepseek tile for the Gonka OMA-AI DeepSeek V4 Flash", () => {
-		const { container } = render(<ModelLogo modelId="deepseek-v4-flash-openbroker" />);
+		const { container } = render(<ModelLogo modelId="deepseek-v4-flash-0731-openbroker" />);
 		const img = container.querySelector("img") as HTMLImageElement | null;
 		expect(img?.getAttribute("src")).toBe("/logos/providers/deepseek.svg");
 	});

@@ -19,7 +19,7 @@ import { cn } from "@/components/ui/utils";
 import { MODELS } from "@/lib/models-data";
 
 // Honest usage math for the demo transcript — derived from the synced
-// fallback catalog (llama-3.3-70b: $2.00 / $7.00 per 1M) so the figure
+// fallback catalog (llama-3.3-70b user-facing rates) so the figure
 // matches real billing.
 const DEMO_LLAMA = MODELS.find((m) => m.id === "llama-3.3-70b");
 const DEMO_IN_TOKENS = 412;

@@ -19,7 +19,6 @@ describe("free-tier copy accuracy", () => {
 		expect([...FREE_CHAT_MODEL_IDS].sort()).toEqual(
 			[
 				"deepseek-v4-flash-0731-openbroker",
-				"deepseek-v4-flash-openbroker",
 				"kimi-k2-6",
 				"minimax-m2-7",
 			].sort(),
@@ -55,9 +54,10 @@ describe("free-tier copy accuracy", () => {
 		expect(src).not.toMatch(/GLM 5\.1.*free/i);
 	});
 
-	it("pricing footer names real OMA-AI models", () => {
+	it("pricing page states honest OMA-AI margin", () => {
 		const src = readApp("app/pricing/page.tsx");
-		expect(src).toMatch(/OMA-AI models do not\./);
+		expect(src).toMatch(/OMA-AI models are priced at 2x Gonka wholesale\./);
+		expect(src).not.toMatch(/OMA-AI models do not\./);
 	});
 
 	it("Mercury/Inception local logo is not the Zhipu tile", () => {

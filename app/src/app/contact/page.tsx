@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, Mail, MessageSquare, Shield } from "lucide-react";
 import { ContactForm } from "./ContactForm";
-import { FloatingIcons } from "@/components/floating-icons";
+// (FloatingIcons removed — replaced by static backdrop)
 import { InViewFade } from "@/components/motion/in-view-fade";
 import { BreadcrumbListJsonLd } from "@/components/json-ld";
 
@@ -55,7 +55,6 @@ export default function ContactPage() {
 					{ name: "Contact", url: "/contact" },
 				]}
 			/>
-			<FloatingIcons />
 			<div className="container-page page-content max-w-3xl lg:max-w-4xl">
 				<InViewFade eager>
 				<Link

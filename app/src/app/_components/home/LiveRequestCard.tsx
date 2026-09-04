@@ -43,7 +43,7 @@ const ROUNDS: DemoRound[] = [
 	model: "llama-3.3-70b",
 	modelLabel: "Llama 3.3 70B",
 	prompt: "What's the cheapest chat model?",
-	reply: "Venice budget tier — from $0.44 per 1M input tokens. x402 ready.",
+	reply: "OMA budget tier — from $0.15 per 1M input tokens. x402 ready.",
 	},
 ];
 
@@ -59,9 +59,7 @@ export function LiveRequestCard({ className }: { className?: string }) {
 	const [phase, setPhase] = useState<Phase>("typing");
 	const [typed, setTyped] = useState("");
 	const [streamed, setStreamed] = useState("");
-	const [ms, setMs] = useState<number>(0);
 	const timerRef = useRef<number | null>(null);
-	const startedAt = useRef<number>(0);
 
 	const round = ROUNDS[roundIdx];
 
@@ -84,11 +82,8 @@ Content-Type: application/json`;
 	setTyped(requestHeader + "\n\n" + requestBody);
 	setStreamed(round.reply);
 	setPhase("settled");
-	setMs(142);
 	return;
 	}
-
-	startedAt.current = performance.now();
 
 	const fullRequest = requestHeader + "\n\n" + requestBody;
 	let i = 0;
@@ -99,7 +94,6 @@ Content-Type: application/json`;
 	timerRef.current = window.setTimeout(typeNext, TYPE_SPEED_MS);
 	} else {
 	setPhase("streaming");
-	startedAt.current = performance.now();
 	let j = 0;
 	const streamNext = () => {
 	j += 1;
@@ -107,15 +101,12 @@ Content-Type: application/json`;
 	if (j < round.reply.length) {
 	timerRef.current = window.setTimeout(streamNext, TOKEN_SPEED_MS);
 	} else {
-	const took = Math.round(performance.now() - startedAt.current);
-	setMs(took);
 	setPhase("settled");
 	const t1 = window.setTimeout(() => {
 	setPhase("pause");
 	const t2 = window.setTimeout(() => {
 	setTyped("");
 	setStreamed("");
-	setMs(0);
 	setRoundIdx((p) => (p + 1) % ROUNDS.length);
 	setPhase("typing");
 	}, PAUSE_MS);
@@ -200,7 +191,7 @@ Content-Type: application/json`;
 			)}
 	>
 			{isSettled
-	 ? `200 OK · ${ms || 142}ms`
+	 ? `demo replay · ${round.modelLabel}`
 	 : isStreaming
 	   ? "streaming…"
 	   : "sending…"}
@@ -261,7 +252,7 @@ Content-Type: application/json`;
 	<div className="mx-4 my-1 flex items-center gap-3">
 	<div className="h-px flex-1 bg-border" />
 	<span className="font-mono text-[10px] uppercase tracking-[0.18em] text-text-muted">
-	{isSettled ? "200 response" : isStreaming ? "streaming" : "request"}
+	{isSettled ? "demo reply" : isStreaming ? "streaming" : "request"}
 	</span>
 	<div className="h-px flex-1 bg-border" />
 	</div>

@@ -2,7 +2,7 @@
 
 import { AnimatePresence, m, useReducedMotion } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";
-import { CornerDownLeft, Key, LogIn, LogOut, Settings, ShieldCheck, X, Zap } from "lucide-react";
+import { CornerDownLeft, Key, LogIn, LogOut, Settings, X, Zap } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -15,7 +15,6 @@ import { createPortal } from "react-dom";
 import { EASE_OUT, staggerContainer } from "@/lib/animation";
 import { ApiStatus } from "../api-status";
 import { useFocusTrap } from "@/lib/hooks/useFocusTrap";
-import { useAuth } from "@/lib/hooks/useAuth";
 import { accountHrefs, isCurrentPath, mobileGroups } from "./_lib/nav-links";
 
 interface NavbarMobileMenuProps {
@@ -67,7 +66,6 @@ export function NavbarMobileMenu({
 	const containerRef = useRef<HTMLDivElement | null>(null);
 	const pathname = usePathname();
 	const prefersReduced = useReducedMotion();
-	const { isAdmin } = useAuth();
 	const [confirmDisconnect, setConfirmDisconnect] = useState(false);
 	const [disconnecting, setDisconnecting] = useState(false);
 	const [mounted, setMounted] = useState(false);
@@ -282,21 +280,6 @@ export function NavbarMobileMenu({
 												</m.li>
 											);
 										})}
-										{isConnected && isAdmin && (
-											<m.li key="/admin" variants={mobileLinkVariant}>
-												<Link
-													href="/admin"
-													onClick={() => onOpenChange(false)}
-													className="group/m flex min-h-[44px] items-center gap-2 rounded-sm px-3 py-2 text-sm text-accent transition-colors duration-200 ease-out hover:bg-accent-dim focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-												>
-													<ShieldCheck
-														className="h-4 w-4 shrink-0 text-accent"
-														aria-hidden="true"
-													/>
-													<span className="truncate">admin</span>
-												</Link>
-											</m.li>
-										)}
 									</m.ul>
 									{isConnected && onDisconnect && !confirmDisconnect && (
 										<button

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { MODEL_COUNT } from "@/lib/models-data";
-import { FloatingIcons } from "@/components/floating-icons";
+// (FloatingIcons removed — replaced by static grid backdrop)
 import { BreadcrumbListJsonLd, FAQPageJsonLd } from "@/components/json-ld";
 import { FAQContent } from "./_components/FAQContent";
 
@@ -80,7 +80,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "How much does it cost?",
-				a: `A typical chat answer costs a fraction of a cent. Budget models start around a few cents per million tokens of input. OMA-AI currently focuses on curating chat models. There is no subscription and no monthly fee — you only pay for what you use. See /pricing for the full breakdown.`,
+				a: `A typical chat answer costs a fraction of a cent. Budget models start at $0.50 per million tokens of input. OMA-AI currently focuses on curating chat models. There is no subscription and no monthly fee — you only pay for what you use. See /pricing for the full breakdown.`,
 			},
 			{
 				q: "What happens when I run out of credits?",
@@ -101,7 +101,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "What is a context window?",
-				a: "The context window is how much text a model can see at once — your whole conversation plus the answer. Bigger windows (some OMA models handle 1M+ tokens) mean the model can read entire books or large codebases in one go.",
+				a: "The context window is how much text a model can see at once — your whole conversation plus the answer. Bigger windows mean the model can read entire books or large codebases in one go. OMA-AI models offer 200K–400K tokens; some Venice-routed models go up to 1M. Each model page shows its exact window.",
 			},
 			{
 				q: "What does 'OpenAI-compatible' mean?",
@@ -162,7 +162,6 @@ export default function FAQPage() {
 			<FAQPageJsonLd questions={questions} />
 			<div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
 				<div className="absolute inset-0 bg-grid opacity-[0.35] mask-radial" />
-				<FloatingIcons count={4} />
 			</div>
 
 			<div className="container-page page-content max-w-3xl lg:max-w-4xl">

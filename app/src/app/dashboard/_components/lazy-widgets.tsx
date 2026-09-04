@@ -11,27 +11,6 @@ export const LazyExpiringCreditsWarning = dynamic(
 	{ ssr: false, loading: () => <Skeleton className="h-20 w-full" /> },
 );
 
-export const LazyProviderHealthSummary = dynamic(
-	() =>
-		import("@/components/dashboard/ProviderHealthSummary").then(
-			(mod) => mod.ProviderHealthSummary,
-		),
-	{
-		ssr: false,
-		loading: () => (
-			<div className="flex min-h-[12rem] flex-col rounded-[var(--radius-xl)] border border-border bg-surface/30 p-6">
-				<Skeleton className="mb-2 h-4 w-28" />
-				<Skeleton className="mb-6 h-3 w-40" />
-				<Skeleton className="mb-2 h-4 w-32" />
-				<div className="space-y-2 border border-border p-2">
-					<Skeleton className="h-8 w-full" />
-					<Skeleton className="h-8 w-full" />
-				</div>
-			</div>
-		),
-	},
-);
-
 export const LazyUsageChart = dynamic(
 	() =>
 		import("@/components/dashboard/UsageChart").then((mod) => mod.UsageChart),
@@ -50,14 +29,6 @@ export const LazyUsageChart = dynamic(
 			</div>
 		),
 	},
-);
-
-export const LazyProviderHealthCard = dynamic(
-	() =>
-		import("@/components/dashboard/ProviderHealthCard").then(
-			(mod) => mod.ProviderHealthCard,
-		),
-	{ ssr: false, loading: () => <Skeleton className="h-48 w-full" /> },
 );
 
 export const LazyApiKeyManager = dynamic(

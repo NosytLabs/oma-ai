@@ -509,7 +509,7 @@ user: {
 										input: {
 												type: "object",
 												properties: {
-														modelId: { type: "string", description: "The model id, e.g. 'deepseek-v4-flash-openbroker'." },
+														modelId: { type: "string", description: "The model id, e.g. 'deepseek-v4-flash-0731-openbroker'." },
 												},
 												required: ["modelId"],
 										},

@@ -2,15 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Cpu, Shield, Wallet } from "lucide-react";
 import { MODEL_COUNT } from "@/lib/models-data";
-import { ElectricBorder } from "@/components/electric-border";
-import { FloatingIcons } from "@/components/floating-icons";
-import { JuiceButton } from "@/components/juice-button";
 import { InViewFade } from "@/components/motion/in-view-fade";
 import { BreadcrumbListJsonLd } from "@/components/json-ld";
-
-// Opt out of static prerender — uses client components with effects/random
-// positions (FloatingIcons, ElectricBorder, JuiceButton) that depend on the
-// browser environment.
 
 export const metadata: Metadata = {
 	title: "About OMA — Open Model Access",
@@ -53,11 +46,6 @@ export default function AboutPage() {
 					{ name: "About", url: "/about" },
 				]}
 			/>
-			{/* ── Ambient background ── */}
-			<div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
-				<div className="absolute inset-0 bg-grid opacity-[0.35] mask-radial" />
-				<FloatingIcons count={5} />
-			</div>
 
 			<div className="container-page page-content max-w-3xl lg:max-w-4xl">
 				<Link
@@ -106,17 +94,10 @@ export default function AboutPage() {
 				</ul>
 
 				<div className="flex flex-wrap gap-3">
-					<JuiceButton color="var(--color-accent)" size={160} opacity={0.15} className="rounded-[var(--radius-md)]">
-						<ElectricBorder borderRadius="var(--radius-md)" borderWidth={1} active={true}>
-							<Link
-								href="/login"
-								className="btn-mono btn-primary"
-							>
-								<span>Get API key</span>
-								<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-							</Link>
-						</ElectricBorder>
-					</JuiceButton>
+					<Link href="/login" className="btn-mono btn-primary">
+						<span>Get API key</span>
+						<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+					</Link>
 					<Link href="/docs" className="btn-mono">
 						<span>Read the docs</span>
 					</Link>

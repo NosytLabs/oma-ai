@@ -1,7 +1,6 @@
 "use client";
 
 import {
-	Activity,
 	ChevronRight,
 	Clock,
 	Download,
@@ -13,9 +12,8 @@ import {
 import { m } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
-import { useHealthQuery } from "@/app/dashboard/_hooks/useHealthQuery";
 import { NotificationBell } from "@/components/dashboard/NotificationBell";
 import { log } from "@/lib/logger";
 import { formatTime } from "@/lib/utils";
@@ -43,8 +41,6 @@ interface DashboardHeaderProps {
 	onTimeRangeChange?: (range: TimeRangeId) => void;
 	/** Whether authenticated notification data may be fetched. */
 	notificationsEnabled?: boolean;
-	/** Admin flag — provider-ops status pill (SystemStatus) is operator-only. */
-	isAdmin?: boolean;
 }
 
 /** Auto-poll interval (ms). Picked to be low enough that "live" feels live
@@ -68,7 +64,6 @@ export function DashboardHeader({
 	timeRange = "7d",
 	onTimeRangeChange,
 	notificationsEnabled = true,
-	isAdmin = false,
 }: DashboardHeaderProps) {
 	const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 	const [isRefreshing, setIsRefreshing] = useState(false);
@@ -159,13 +154,7 @@ export function DashboardHeader({
 
 	const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
-	// The "health" tab is operator-only — hide from regular users so they
-	// don't see a provider-ops nav item they can't fully use. The /admin
-	// page already exposes the same readiness data for operators.
-	const visibleTabs = useMemo(
-		() => (isAdmin ? TABS : TABS.filter((t) => t.id !== "health")),
-		[isAdmin],
-	);
+	const visibleTabs = TABS;
 	const selectedTabIndex = Math.max(
 		0,
 		visibleTabs.findIndex((tab) => tab.id === activeTab),
@@ -236,9 +225,8 @@ export function DashboardHeader({
 									? `UPDATED ${formatTime(lastUpdated.toISOString())}`
 									: "AWAITING DATA"}
 						</span>
-						{isAdmin && (
+						{(false) && (
 							<>
-								<SystemStatus />
 								<span
 									className="hidden items-center gap-1.5 rounded-[var(--radius-sm)] border border-accent/30 bg-accent/10 px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider text-accent sm:inline-flex"
 									title="You have operator (admin) access on this account."
@@ -373,51 +361,8 @@ export function DashboardHeader({
 	* 30s refetch so it never goes stale while the user is on the overview.
 	* Renders nothing while loading to avoid a layout shift.
 	*/
-function SystemStatus() {
-	const { data } = useHealthQuery();
-	if (!data) return null;
-
-	const checks = Object.values(data.checks ?? {}) as Array<{ status?: string }>;
-	const hasOutage =
-		data.status === "outage" ||
-		checks.some((c) => c.status === "circuit_open" || c.status === "outage");
-	const hasDegraded =
-		data.status === "degraded" ||
-		checks.some(
-			(c) => c.status === "degraded" || c.status === "rate_limited",
-		);
-	const label = hasOutage
-		? "Outage"
-		: hasDegraded
-			? "Degraded"
-			: "All systems normal";
-	const dotClass = hasOutage
-		? "bg-pink"
-		: hasDegraded
-			? "bg-warning"
-			: "bg-success";
-	const textClass = hasOutage
-		? "text-pink"
-		: hasDegraded
-			? "text-warning"
-			: "text-success";
-
-	return (
-		<span className="flex items-center gap-1.5">
-			<span
-				aria-hidden="true"
-				className={`inline-block h-1.5 w-1.5 rounded-full ${dotClass}`}
-			/>
-			<Activity className={`h-3 w-3 ${textClass}`} aria-hidden="true" />
-			<Link
-				href="/dashboard?tab=health"
-				className={`hover:underline ${textClass}`}
-			>
-				{label}
-			</Link>
-		</span>
-	);
-}
+// SystemStatus pill intentionally removed for the user-facing dashboard.
+// Provider-ops surfaces live on /admin (operator-only).
 
 /**
 	* Time-range radio group with roving-tabindex keyboard navigation.

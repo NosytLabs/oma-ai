@@ -31,7 +31,7 @@ export function GET(): Response {
 
 	const BODY = `# OMA AI — Open Model Access
 
-> One gateway. Every model. No lock-in. OpenAI-compatible multi-provider AI inference with 22 curated chat models, x402 USDC micropayments on Base, and privacy-first routing.
+> One gateway. Every model. No lock-in. OpenAI-compatible multi-provider AI inference with 21 curated chat models, x402 USDC micropayments on Base, and privacy-first routing.
 
 ## Docs
 

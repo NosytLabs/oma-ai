@@ -6,8 +6,13 @@ const DIR = '/tmp/oma-audit';
 const PAGES = [
   { name: 'home', path: '/' },
   { name: 'models', path: '/models' },
+  { name: 'models-detail-claude', path: '/models/claude-opus-5' },
+  { name: 'models-detail-kimi', path: '/models/kimi-k2-6' },
   { name: 'pricing', path: '/pricing' },
   { name: 'chat', path: '/chat' },
+  { name: 'dashboard', path: '/dashboard' },
+  { name: 'settings', path: '/settings' },
+  { name: 'admin', path: '/admin' },
   { name: 'docs', path: '/docs' },
   { name: 'deposit', path: '/deposit' },
   { name: 'about', path: '/about' },
@@ -29,8 +34,9 @@ async function main() {
   for (const page of PAGES) {
     try {
       const p = await desktopCtx.newPage();
-      await p.goto(`${BASE}${page.path}`, { waitUntil: 'networkidle', timeout: 15000 });
-      await p.waitForTimeout(1000);
+      // domcontentloaded: /chat holds a stream open so networkidle never fires.
+      await p.goto(`${BASE}${page.path}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+      await p.waitForTimeout(2500);
       const path = `${DIR}/${page.name}-desktop.png`;
       await p.screenshot({ path, fullPage: true });
       console.log(`  ✓ ${page.name}: ${path}`);
@@ -47,8 +53,8 @@ async function main() {
   for (const page of PAGES) {
     try {
       const p = await mobileCtx.newPage();
-      await p.goto(`${BASE}${page.path}`, { waitUntil: 'networkidle', timeout: 15000 });
-      await p.waitForTimeout(1000);
+      await p.goto(`${BASE}${page.path}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+      await p.waitForTimeout(2500);
       const path = `${DIR}/${page.name}-mobile.png`;
       await p.screenshot({ path, fullPage: true });
       console.log(`  ✓ ${page.name}: ${path}`);

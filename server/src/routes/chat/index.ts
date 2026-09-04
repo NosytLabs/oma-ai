@@ -147,12 +147,16 @@ chatRoutes.post(
 						origin.startsWith(`${allowed}/`) ||
 						origin.startsWith(allowed),
 				);
-				const isWebsiteRequest = source === "website" && originOk;
-				const isFreeModel = isFreeWebsiteModel(model);
+			const isWebsiteRequest = source === "website" && originOk;
+			const isFreeModel = isFreeWebsiteModel(model);
+			// API-key callers always pay, even on free-tier models: the free
+			// path is session/guest website chat only. The auth middleware
+			// sets `apiKey` for Bearer oma_sk_* (or oma_api_key cookie) auth,
+			// so a spoofed X-OMA-Source header can't get API traffic for free.
 
-				// Website chat with free OMA-AI models: allow anonymous, skip billing
-				// API requests or non-free models: require auth and bill credits
-				const isFreeWebsiteChat = isWebsiteRequest && isFreeModel;
+			// Website chat with free OMA-AI models: allow anonymous, skip billing
+			// API requests or non-free models: require auth and bill credits
+			const isFreeWebsiteChat = isWebsiteRequest && isFreeModel && !c.get("apiKey");
 				
 				if (!isFreeWebsiteChat && !userId) {
 						return c.json(

@@ -35,6 +35,7 @@ import {
 	Gavel,
 	ShieldCheck,
 	BookMarked,
+	BookOpen,
 } from "lucide-react";
 import { m } from "@/lib/framer-motion-client";
 import Link from "next/link";
@@ -76,8 +77,8 @@ const PRODUCT: FooterSection = {
 const DEVELOPERS: FooterSection = {
 	title: "Developers",
 	links: [
-		byHref(primaryLinks, "/docs")!,
-		byHref(toolsLinks, "/docs#endpoints")!,
+		byHref(primaryLinks, "/docs") ?? { label: "Docs", href: "/docs", icon: BookOpen },
+		byHref(toolsLinks, "/docs#endpoints") ?? { label: "API Reference", href: "/docs#endpoints" },
 		{ label: "Playground", href: "/chat", icon: Terminal },
 	],
 };
@@ -85,8 +86,8 @@ const DEVELOPERS: FooterSection = {
 const LEARN: FooterSection = {
 	title: "Learn",
 	links: [
-		byHref(toolsLinks, "/getting-started")!,
-		byHref(toolsLinks, "/faq")!,
+		byHref(toolsLinks, "/getting-started") ?? { label: "Get started", href: "/getting-started" },
+		byHref(toolsLinks, "/faq") ?? { label: "FAQ", href: "/faq" },
 		{ label: "Glossary", href: "/glossary", icon: BookMarked },
 	],
 };

@@ -9,7 +9,7 @@ import {
 
 describe("isFreeChatModel (guest website chat)", () => {
 	it("defaults free chat to an allowlisted catalog id", () => {
-		expect(FREE_DEFAULT_CHAT_MODEL).toBe("deepseek-v4-flash-openbroker");
+		expect(FREE_DEFAULT_CHAT_MODEL).toBe("deepseek-v4-flash-0731-openbroker");
 		expect(FREE_CHAT_MODEL_IDS.has(FREE_DEFAULT_CHAT_MODEL)).toBe(true);
 	});
 
@@ -18,7 +18,6 @@ describe("isFreeChatModel (guest website chat)", () => {
 		// on api.openbroker.gonka.gg. Verified live against the upstream
 		// catalog (3 models). See server/src/inference/models.ts.
 		expect(isFreeChatModel("deepseek-v4-flash-0731-openbroker")).toBe(true);
-		expect(isFreeChatModel("deepseek-v4-flash-openbroker")).toBe(true);
 		expect(isFreeChatModel("kimi-k2-6")).toBe(true);
 		expect(isFreeChatModel("minimax-m2-7")).toBe(true);
 
@@ -63,7 +62,7 @@ describe("FREE_TIER_LABELS", () => {
 		}
 	});
 
-	it("the default model (deepseek-v4-flash-openbroker) is in the labels map", () => {
+	it("the default model (deepseek-v4-flash-0731-openbroker) is in the labels map", () => {
 		expect(FREE_TIER_LABELS[FREE_DEFAULT_CHAT_MODEL]).toBeDefined();
 		// Its label is the plain "Free" — primary OMA-AI / Gonka.AI tier.
 		expect(FREE_TIER_LABELS[FREE_DEFAULT_CHAT_MODEL].label).toBe("Free");

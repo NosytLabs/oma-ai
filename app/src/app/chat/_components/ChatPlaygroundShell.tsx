@@ -21,7 +21,6 @@ import { useAuth } from "@/lib/hooks/useAuth";
 import { log } from "@/lib/logger";
 import {
 	conversationStorageKey,
-	migrateLegacyConversation,
 	systemPromptStorageKey,
 } from "@/lib/chat-storage";
 import {
@@ -230,10 +229,6 @@ function ShellContent({
 		systemPromptKey: scopedPromptKey,
 		enabled: isReady,
 	});
-
-	useEffect(() => {
-		if (isReady && !user?.id) migrateLegacyConversation();
-	}, [isReady, user?.id]);
 
 	const {
 		scrollContainerRef,

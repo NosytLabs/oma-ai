@@ -584,21 +584,6 @@
 			0 0 22px -4px var(--color-accent-glow),
 			0 12px 28px -16px var(--color-accent-glow);
 	}
-	/* When btn-primary lives inside an ElectricBorder, the border animation
-	   ring is anchored to the wrapper, so translating the button leaves the
-	   ring behind. Disable the translate — the ElectricBorder wrapper now
-	   handles the hover lift in lockstep with the border animation. */
-	.electric-border-host .btn-primary:hover,
-	.btn-primary.electric-border-host:hover {
-		transform: none;
-	}
-    
-    .electric-border-host:hover {
-        transform: translateY(-0.125rem);
-    }
-    .electric-border-host {
-        transition: transform 0.2s ease;
-    }
 	.btn-primary:active {
 		transform: scale(0.97);
 	}
@@ -1468,39 +1453,12 @@
 }
 
 /* ============================================================================
-   Originkit-inspired effects
+   Ambient effects
    ----------------------------------------------------------------------------
-   Shared keyframes for FloatingIcons, ElectricBorder, and similar components.
+   (Originkit-inspired FloatingIcons / ElectricBorder keyframes removed
+   2026-09-04 along with their components; replaced with static grid +
+   radial-gradient backdrops for a calmer look.)
    ========================================================================== */
-
-/* FloatingIcons — slow vertical drift with horizontal wobble */
-@keyframes float-icon {
-	0%,
-	100% {
-		translate: 0 0;
-	}
-	25% {
-		translate: var(--float-wobble, 6px) -8px;
-	}
-	50% {
-		translate: calc(var(--float-wobble, 6px) * -1) -16px;
-	}
-	75% {
-		translate: var(--float-wobble, 6px) -8px;
-	}
-}
-
-/* ElectricBorder — conic-gradient rotation for the running-light pseudo */
-@keyframes electric-spin {
-	to {
-		--eb-angle: 360deg;
-	}
-}
-@property --eb-angle {
-	syntax: "<angle>";
-	initial-value: 0deg;
-	inherits: false;
-}
 
 /* ============================================================================
    Focus ring — shared keyboard-focus indicator for non-.btn interactive

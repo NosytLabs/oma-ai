@@ -16,7 +16,7 @@
 //     `generateStaticParams`) keeps working without an async fetch; the
 //     lazy loader returns the full catalog for anything that needs it.
 //   - The static fallback mirrors the curated server catalog exactly
-//     (22 chat models: 18 Venice + 4 OMA-AI). See `MODEL_COUNT`.
+//     (21 chat models: 18 Venice + 3 OMA-AI). See `MODEL_COUNT`.
 //
 // Public API is preserved: `Model`, `Capability`, `Provider`, `Tier`,
 // `formatPricePerMillion`, `getModelsByTier`,
@@ -311,15 +311,15 @@ function derivePriceUnit(modality: Modality, _pricing: ApiModelEntry["pricing"])
 	* We use this to canonicalise names whose API string is wrong or low-quality
 	* without forking the SSR fallback. Keyed by lower-cased model id.
 	*
-	* DeepSeek V4 Flash exists twice in the catalog — once via Venice
-	* (`deepseek-v4-flash-0731`, 25% markup) and once via OMA-AI/OpenBroker
-	* (`deepseek-v4-flash-0731-openbroker`, 0% markup). Both share the same
+ * DeepSeek V4 Flash exists twice in the catalog — once via Venice
+ * (`deepseek-v4-flash-0731`, 25% markup) and once via OMA-AI/OpenBroker
+ * (`deepseek-v4-flash-0731-openbroker`, 100% over Gonka wholesale). Both share the same
 	* upstream displayName ("DeepSeek V4 Flash"), which renders as an
 	* indistinguishable duplicate on /pricing and /models. Disambiguate by
 	* provider suffix.
 	*/
 const DISPLAY_NAME_OVERRIDES: Record<string, string> = {
-	"deepseek-v4-flash-0731-openbroker": "DeepSeek V4 Flash (OMA-AI / Gonka.AI)",
+	"deepseek-v4-flash-0731-openbroker": "DeepSeek V4 Flash (OMA-AI)",
 	"deepseek-v4-flash-0731": "DeepSeek V4 Flash (Venice)",
 };
 
@@ -389,7 +389,7 @@ function catalogFromRaw(catalog: RawCatalog): Model[] {
 
 	/**
 	 * Interface matching the OpenAI-style models returned by GET /v1/models.
-	 * The live API returns the curated chat catalog (22 models — see
+	 * The live API returns the curated chat catalog (21 models — see
 	 * `MODEL_COUNT`) with user-facing pricing, category, and context_length
 	 * but NOT description or capabilities — those are derived here.
 	 */
@@ -549,7 +549,7 @@ const tier: Tier =
 /**
 	* Static fallback catalog. Used as a build-time-safe SSR fallback for
 	* pages that need a synchronous `MODELS` / `MODEL_COUNT`. Mirrors the
-	* curated server catalog (22 models) — keep in sync with
+	* curated server catalog (21 models) — keep in sync with
 	* server/src/inference/models.ts. Prices are USER-FACING per-1M rates
 	* (Venice wholesale × 1.25 markup; OMA-AI prices already final), exactly
 	* as returned by GET /v1/models.
@@ -565,8 +565,8 @@ const FALLBACK_CATALOG: RawCatalog = {
 			provider: "venice",
 			category: "frontier",
 			maxTokens: 1000000,
-			inputPricePer1M: 20.00,
-			outputPricePer1M: 118.75,
+			inputPricePer1M: 7.8125,
+			outputPricePer1M: 46.875,
 			capabilities: ["chat", "reasoning", "coding", "tools"],
 		},
 		"claude-opus-5": {
@@ -575,8 +575,8 @@ const FALLBACK_CATALOG: RawCatalog = {
 			provider: "venice",
 			category: "frontier",
 			maxTokens: 1000000,
-			inputPricePer1M: 18.75,
-			outputPricePer1M: 93.75,
+			inputPricePer1M: 7.50,
+			outputPricePer1M: 37.50,
 			capabilities: ["chat", "reasoning", "coding", "tools"],
 		},
 		"kimi-k3": {
@@ -585,8 +585,8 @@ const FALLBACK_CATALOG: RawCatalog = {
 			provider: "venice",
 			category: "premium",
 			maxTokens: 1000000,
-			inputPricePer1M: 11.875,
-			outputPricePer1M: 56.25,
+			inputPricePer1M: 4.6875,
+			outputPricePer1M: 23.4375,
 			capabilities: ["chat", "reasoning", "tools"],
 		},
 		"zai-org-glm-5-2": {
@@ -595,8 +595,8 @@ const FALLBACK_CATALOG: RawCatalog = {
 			provider: "venice",
 			category: "premium",
 			maxTokens: 1000000,
-			inputPricePer1M: 4.375,
-			outputPricePer1M: 13.75,
+			inputPricePer1M: 1.75,
+			outputPricePer1M: 5.50,
 			capabilities: ["chat", "reasoning", "tools"],
 		},
 		"deepseek-v4-pro": {
@@ -605,8 +605,8 @@ const FALLBACK_CATALOG: RawCatalog = {
 			provider: "venice",
 			category: "premium",
 			maxTokens: 1000000,
-			inputPricePer1M: 5.625,
-			outputPricePer1M: 10.00,
+			inputPricePer1M: 2.0625,
+			outputPricePer1M: 4.125,
 			capabilities: ["chat", "reasoning", "coding", "tools"],
 		},
 		"qwen-3-8-max": {
@@ -615,8 +615,8 @@ const FALLBACK_CATALOG: RawCatalog = {
 			provider: "venice",
 			category: "premium",
 			maxTokens: 1000000,
-			inputPricePer1M: 7.8125,
-			outputPricePer1M: 23.75,
+			inputPricePer1M: 3.125,
+			outputPricePer1M: 9.375,
 			capabilities: ["chat", "reasoning", "coding", "tools"],
 		},
 		"grok-4-5": {
@@ -625,8 +625,8 @@ const FALLBACK_CATALOG: RawCatalog = {
 			provider: "venice",
 			category: "premium",
 			maxTokens: 500000,
-			inputPricePer1M: 7.1875,
-			outputPricePer1M: 21.25,
+			inputPricePer1M: 2.8375,
+			outputPricePer1M: 8.50,
 			capabilities: ["chat", "reasoning", "coding", "tools"],
 		},
 		"claude-sonnet-4-6": {
@@ -635,8 +635,8 @@ const FALLBACK_CATALOG: RawCatalog = {
 			provider: "venice",
 			category: "premium",
 			maxTokens: 1000000,
-			inputPricePer1M: 11.25,
-			outputPricePer1M: 56.25,
+			inputPricePer1M: 4.50,
+			outputPricePer1M: 22.50,
 			capabilities: ["chat", "reasoning", "coding", "tools"],
 		},
 		"gemini-3-6-flash": {
@@ -645,8 +645,8 @@ const FALLBACK_CATALOG: RawCatalog = {
 			provider: "venice",
 			category: "premium",
 			maxTokens: 1000000,
-			inputPricePer1M: 5.9375,
-			outputPricePer1M: 28.75,
+			inputPricePer1M: 1.171875,
+			outputPricePer1M: 5.859375,
 			capabilities: ["chat", "reasoning", "coding", "tools", "vision"],
 		},
 		"llama-3.3-70b": {
@@ -655,8 +655,8 @@ const FALLBACK_CATALOG: RawCatalog = {
 			provider: "venice",
 			category: "mid",
 			maxTokens: 128000,
-			inputPricePer1M: 2.50,
-			outputPricePer1M: 8.75,
+			inputPricePer1M: 0.875,
+			outputPricePer1M: 3.50,
 			capabilities: ["chat", "tools"],
 		},
 		"hermes-3-llama-3.1-405b": {
@@ -665,8 +665,8 @@ const FALLBACK_CATALOG: RawCatalog = {
 			provider: "venice",
 			category: "mid",
 			maxTokens: 128000,
-			inputPricePer1M: 3.5625,
-			outputPricePer1M: 9.375,
+			inputPricePer1M: 1.375,
+			outputPricePer1M: 3.75,
 			capabilities: ["chat", "reasoning", "tools"],
 		},
 		"zai-org-glm-5-1": {
@@ -675,8 +675,8 @@ const FALLBACK_CATALOG: RawCatalog = {
 			provider: "venice",
 			category: "mid",
 			maxTokens: 200000,
-			inputPricePer1M: 5.00,
-			outputPricePer1M: 15.00,
+			inputPricePer1M: 1.925,
+			outputPricePer1M: 6.05,
 			capabilities: ["chat", "reasoning", "tools"],
 		},
 		"qwen-3-7-plus": {
@@ -685,8 +685,8 @@ const FALLBACK_CATALOG: RawCatalog = {
 			provider: "venice",
 			category: "mid",
 			maxTokens: 1000000,
-			inputPricePer1M: 2.00,
-			outputPricePer1M: 6.25,
+			inputPricePer1M: 0.625,
+			outputPricePer1M: 2.50,
 			capabilities: ["chat", "reasoning", "tools"],
 		},
 		"venice-uncensored-1-2": {
@@ -695,8 +695,8 @@ const FALLBACK_CATALOG: RawCatalog = {
 			provider: "venice",
 			category: "mid",
 			maxTokens: 128000,
-			inputPricePer1M: 0.8125,
-			outputPricePer1M: 3.125,
+			inputPricePer1M: 0.25,
+			outputPricePer1M: 1.125,
 			capabilities: ["chat", "uncensored"],
 		},
 		"xiaomi-mimo-v2-5": {
@@ -705,8 +705,8 @@ const FALLBACK_CATALOG: RawCatalog = {
 			provider: "venice",
 			category: "budget",
 			maxTokens: 1000000,
-			inputPricePer1M: 1.375,
-			outputPricePer1M: 6.25,
+			inputPricePer1M: 0.50,
+			outputPricePer1M: 2.50,
 			capabilities: ["chat", "reasoning", "fast"],
 		},
 		"deepseek-v4-flash-0731": {
@@ -715,8 +715,8 @@ const FALLBACK_CATALOG: RawCatalog = {
 			provider: "venice",
 			category: "budget",
 			maxTokens: 1000000,
-			inputPricePer1M: 0.5625,
-			outputPricePer1M: 1.25,
+			inputPricePer1M: 0.21875,
+			outputPricePer1M: 0.4375,
 			capabilities: ["chat", "reasoning", "fast"],
 		},
 		"mistral-small-2603": {
@@ -725,8 +725,8 @@ const FALLBACK_CATALOG: RawCatalog = {
 			provider: "venice",
 			category: "budget",
 			maxTokens: 256000,
-			inputPricePer1M: 0.75,
-			outputPricePer1M: 2.50,
+			inputPricePer1M: 0.234375,
+			outputPricePer1M: 0.9375,
 			capabilities: ["chat", "tools", "fast"],
 		},
 		"google-gemma-4-31b-it": {
@@ -735,61 +735,49 @@ const FALLBACK_CATALOG: RawCatalog = {
 			provider: "venice",
 			category: "budget",
 			maxTokens: 256000,
-			inputPricePer1M: 0.4375,
-			outputPricePer1M: 1.25,
+			inputPricePer1M: 0.15,
+			outputPricePer1M: 0.45,
 			capabilities: ["chat", "fast"],
 		},
-		// ── OMA-AI resale (markup built-in = user-facing) ────────────────
-		// Gonka Network openbroker upstream — FREE in playground/chat for
-		// every model whose server-side `upstream === "openbroker"`
-		// (deepseek-v4-flash-openbroker, kimi-k2-6, minimax-m2-7,
-		// deepseek-v4-flash-0731-openbroker — see `FREE_CHAT_MODEL_IDS` in
-		// model-utils.ts). Everything else requires auth + credits in
-		// /chat, /playground, and the /v1 API.
-		"kimi-k2-6": {
-			id: "kimi-k2-6",
-			displayName: "Kimi K2.6",
-			provider: "oma-ai",
-			category: "premium",
-			maxTokens: 128000,
-			inputPricePer1M: 2.00,
-			outputPricePer1M: 7.00,
-			capabilities: ["chat", "reasoning", "coding", "tools"],
-		},
-		"deepseek-v4-flash-openbroker": {
-			id: "deepseek-v4-flash-openbroker",
-			displayName: "DeepSeek V4 Flash (OMA-AI / Gonka.AI)",
-			provider: "oma-ai",
-			category: "mid",
-			maxTokens: 128000,
-			inputPricePer1M: 0.50,
-			outputPricePer1M: 3.00,
-			capabilities: ["chat", "fast", "tools"],
-		},
-		"minimax-m2-7": {
-			id: "minimax-m2-7",
-			displayName: "MiniMax M2.7",
-			provider: "oma-ai",
-			category: "budget",
-			maxTokens: 128000,
-			inputPricePer1M: 1.25,
-			outputPricePer1M: 4.00,
-			capabilities: ["chat", "reasoning", "coding", "tools"],
-		},
-		"deepseek-v4-flash-0731-openbroker": {
-			id: "deepseek-v4-flash-0731-openbroker",
-			displayName: "DeepSeek V4 Flash",
-			provider: "oma-ai",
-			category: "budget",
-			maxTokens: 1000000,
-			inputPricePer1M: 0.50,
-			outputPricePer1M: 0.75,
-			capabilities: ["chat", "reasoning", "fast", "tools"],
-		},
-		// (qwen3-235b-a22b-openbroker removed 2026-08-17 — OpenBroker does
-		//  not carry it; the 4-stale-model trim aligned FALLBACK_CATALOG
-		//  with the live server's `defaultCatalog()`. See the
-		//  "implicit-zyloo" comment in server/src/inference/models.ts.)
+	// ── OMA-AI resale (user-facing = 2x Gonka wholesale) ────────────────
+	// Gonka Network openbroker upstream — FREE in /chat for signed-out
+	// visitors ONLY. API-token callers always pay the listed price.
+	// Base upstream (gonkabroker.com, verified 2026-09-04): Kimi K2 256K
+	// $0.35/M, MiniMax M2 200K $0.30/M, DeepSeek V4 Flash 400K $0.25/M
+	// (input == output). User-facing = base x 2 (100% platform margin).
+	// Mirrors the 3-model live OpenBroker catalog (kimi-k2-6,
+	// minimax-m2-7, deepseek-v4-flash-0731-openbroker — see
+	// FREE_CHAT_MODEL_IDS in model-utils.ts).
+	"kimi-k2-6": {
+		id: "kimi-k2-6",
+		displayName: "Kimi K2.6",
+		provider: "oma-ai",
+		category: "premium",
+		maxTokens: 262144,
+		inputPricePer1M: 0.70,
+		outputPricePer1M: 0.70,
+		capabilities: ["chat", "reasoning", "coding", "tools"],
+	},
+	"minimax-m2-7": {
+		id: "minimax-m2-7",
+		displayName: "MiniMax M2.7",
+		provider: "oma-ai",
+		category: "budget",
+		maxTokens: 200000,
+		inputPricePer1M: 0.60,
+		outputPricePer1M: 0.60,
+		capabilities: ["chat", "reasoning", "coding", "tools"],
+	},
+	"deepseek-v4-flash-0731-openbroker": {
+		id: "deepseek-v4-flash-0731-openbroker",
+		displayName: "DeepSeek V4 Flash",
+		provider: "oma-ai",
+		category: "budget",
+		maxTokens: 400000,
+		inputPricePer1M: 0.50,
+		outputPricePer1M: 0.50,
+		capabilities: ["chat", "reasoning", "fast", "tools"],
+	},
 	},
 };
 
@@ -827,13 +815,10 @@ export function getModelsByTier(models: Model[]): Record<Tier, Model[]> {
 }
 
 // Marketing model count surfaced across the UI. Must match the live
-// `GET /v1/models` count — 22 curated chat models (18 Venice + 4 OMA-AI).
-// Kept in sync with `server/src/inference/models.ts` defaultCatalog()
-// on 2026-08-17 by trimming 4 stale OMA-AI entries that OpenBroker
-// no longer carries (gemini-3.1-pro-preview, gpt-4.1, gpt-4o,
-// qwen3-235b-a22b-openbroker). See the "implicit-zyloo" comment in
-// `server/src/inference/models.ts` for the upstream rationale.
-export const MODEL_COUNT = 22;
+// `GET /v1/models` count — 21 curated chat models (18 Venice + 3 OMA-AI).
+// Kept in sync with `server/src/inference/models.ts` defaultCatalog().
+// The 3 OMA-AI models are the exact set served by api.openbroker.gonka.gg.
+export const MODEL_COUNT = 21;
 
 // DRIFT GUARD: if anyone adds/removes an entry in `FALLBACK_CATALOG`
 // they MUST update `MODEL_COUNT` above — these are the marketing

@@ -27,8 +27,8 @@ export function Navbar() {
 		isDemo,
 		evmAddress,
 		signOut,
-		isAdmin,
 		isPending,
+		user,
 	} = useAuth();
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [toolsOpen, setToolsOpen] = useState(false);
@@ -222,8 +222,8 @@ export function Navbar() {
 						) : isAuthenticated && !isDemo ? (
 							<NavbarUserMenu
 								evmAddress={evmAddress}
+								email={user?.email ?? null}
 								onSignOut={signOut}
-								isAdmin={isAdmin}
 							/>
 						) : (
 							<div className="flex items-center gap-1.5 sm:gap-2">

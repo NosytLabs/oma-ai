@@ -27,7 +27,24 @@ function useLiveModelCount() {
 	loadRawModelEntries()
 	.then((entries) => {
 	if (!alive || !entries.length) return;
-	setCount(entries.length);
+	// Filter to chat-only so the "Models live" stat matches the
+	// "curated chat models" label even when the upstream catalog also
+	// exposes image / video / tts / embedding / asr / music / upscale
+	// / inpaint rows. Without this the live number is inflated by
+	// every modality bucket and the hero drifts from the static
+	// `MODEL_COUNT` claim.
+	const chatCount = entries.filter((e) => {
+		const m = (e.modality ?? "").toLowerCase();
+		if (m) return m === "chat";
+		const c = (e.category ?? "").toLowerCase();
+		return (
+			c === "budget" ||
+			c === "mid" ||
+			c === "premium" ||
+			c === "frontier"
+		);
+	}).length;
+	setCount(chatCount > 0 ? chatCount : entries.length);
 	})
 	.catch(() => {
 	/* backend down — keep null → fall back to MODEL_COUNT */

@@ -47,20 +47,18 @@ func main() {
 				<h3 className="font-semibold text-accent text-sm mb-2">
 					Free OMA-AI models (website chat)
 				</h3>
-				<p className="text-sm text-text-muted mb-2">
-					Budget models in the OMA-AI catalog
-					(<code className="text-accent font-mono text-xs">provider: oma-ai</code>
-					) — e.g. <code className="text-accent font-mono text-xs">deepseek-v4-flash-openbroker</code>,{" "}
-					<code className="text-accent font-mono text-xs">deepseek-v4-flash-0731-openbroker</code> — can be
-					used on <code className="text-accent font-mono text-xs">/chat</code>{" "}
-					without sign-in, API key, or wallet. Rate limits still apply. Upgrade to a paid plan to unlock the entire Venice catalog, unlimited concurrency, and dedicated throughput.
-				</p>
-				<p className="text-sm text-text-muted">
-					Programmatic API access to free models still works with a key if you
-					prefer; unauthenticated requests to{" "}
-					<code className="text-accent font-mono text-xs">/v1/chat/completions</code>{" "}
-					are accepted only for free OMA-AI model ids.
-				</p>
+			<p className="text-sm text-text-muted mb-2">
+				The 3 OMA-AI models
+				(<code className="text-accent font-mono text-xs">provider: oma-ai</code>
+				) — <code className="text-accent font-mono text-xs">deepseek-v4-flash-0731-openbroker</code>,{" "}
+				<code className="text-accent font-mono text-xs">kimi-k2-6</code>,{" "}
+				<code className="text-accent font-mono text-xs">minimax-m2-7</code> — can be
+				used on <code className="text-accent font-mono text-xs">/chat</code>{" "}
+				without sign-in, API key, or wallet (20 msgs/day anonymous, 100/day signed-in). Top up credits to unlock the entire Venice catalog, unlimited concurrency, and dedicated throughput.
+			</p>
+			<p className="text-sm text-text-muted">
+				API-key calls (<code className="text-accent font-mono text-xs">Authorization: Bearer oma_sk_…</code>) always spend credits — even on the 3 free website-chat models. Free usage applies to browser website chat only, never to programmatic API traffic.
+			</p>
 			</div>
 
 			<div id="auth-key" className="rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] p-5 mb-6 scroll-mt-24">

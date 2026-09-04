@@ -2,9 +2,10 @@
 	* Daily usage limits for website chat (free tier).
 	*
 	* - Anonymous users (by IP): 20 requests/day on OMA-AI models
-	* - Registered users with no paid balance: 100 requests/day on OMA-AI models
-	* - Registered users with a positive credit balance: bypassed (pay-as-you-go)
-	* - API calls (without X-OMA-Source: website header): always require credits
+* - Registered users with no paid balance: 100 requests/day on OMA-AI models
+* - Session users on the website free models ride free (no per-request
+*   charge); API-key callers always pay via the standard billing path.
+* - API calls (without X-OMA-Source: website header): always require credits
 	*
 	* This is ONLY for the website chat page. API usage always costs credits.
 	*
@@ -122,10 +123,11 @@ export function dailyUsageLimit() {
 						.catch(() => null);
 				const model = body?.model as string | undefined;
 
-				// Provider-based check (was hardcoded to two non-existent model ids
-				// `deepseek-v4-flash-openbroker` and `kimi-k3`, which made the daily-limit gate
-				// a no-op against the live catalog). oma-ai-routed models are the
-				// free tier on /chat.
+				// Provider-based check: only OMA-AI-routed models that map to the
+				// live OpenBroker catalog (see FREE_WEBSITE_MODEL_IDS) qualify as
+				// free on /chat. Other free tier labels in the catalog (Venice
+				// "Free*" chips) are marketing-only — they do NOT pass the
+				// anonymous-website-chat gate here.
 				const isCatalogModel = model ? !!getModelById(model) : false;
 				if (!isCatalogModel || !model || !isFreeWebsiteModel(model)) {
 						return next();
@@ -134,10 +136,10 @@ export function dailyUsageLimit() {
 				// Determine identifier and limit
 				const userId = c.get("userId");
 
-				// Paying users bypass the free-tier daily cap. The cap exists to
-				// prevent abuse of the free tier, not to throttle paid usage —
-				// users with a positive balance already pay per request via the
-				// standard billing path in recordUsage().
+			// Paying users bypass the free-tier daily cap. The cap exists to
+			// prevent abuse of the free tier, not to throttle paid usage.
+			// (Session website chat on free models is $0; API-key callers
+			// always pay per request via the standard billing path.)
 				if (userId && (await hasPaidBalance(userId))) {
 						return next();
 				}
