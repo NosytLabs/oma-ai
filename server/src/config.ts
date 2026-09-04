@@ -272,15 +272,24 @@ if (config.FACILITATOR_MODE === "live" && isProductionEnv) {
 		}
 }
 
-if (isProductionEnv) {
+	if (isProductionEnv) {
 		const treasuryAddress = config.TREASURY_BASE_ADDRESS;
 		if (!treasuryAddress) {
 				throw new Error("FATAL: TREASURY_BASE_ADDRESS must be set in production.");
 		}
-		if (PLACEHOLDER_ADDRESSES.includes(treasuryAddress)) {
-				throw new Error("FATAL: TREASURY_BASE_ADDRESS is a placeholder address. Set a real address in production.");
+		if (
+			PLACEHOLDER_ADDRESSES.includes(treasuryAddress) ||
+			/^0x0{39}[0-9a-f]$/i.test(treasuryAddress)
+		) {
+			throw new Error("FATAL: TREASURY_BASE_ADDRESS is a placeholder address. Set a real address in production.");
 		}
-}
+		if (config.USDC_DEPOSIT_ADDRESS && (
+			PLACEHOLDER_ADDRESSES.includes(config.USDC_DEPOSIT_ADDRESS) ||
+			/^0x0{39}[0-9a-f]$/i.test(config.USDC_DEPOSIT_ADDRESS)
+		)) {
+			throw new Error("FATAL: USDC_DEPOSIT_ADDRESS is a placeholder address. Set a real address in production.");
+		}
+	}
 
 // SECURITY (audit 7.5): Reject Polar sandbox mode in production. Operators
 // who accidentally point POLAR_SERVER=sandbox at the production build will

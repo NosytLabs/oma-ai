@@ -44,6 +44,7 @@ import {
 } from "../../inference/proxy.js";
 import { logger } from "../../lib/logger.js";
 import { config } from "../../config.js";
+import { isFreeWebsiteModel } from "../../inference/free-website-model.js";
 
 /**
 	* Check if a model is eligible for the anonymous free website chat path.
@@ -60,19 +61,6 @@ import { config } from "../../config.js";
 	*
 	* Mirrors `FREE_CHAT_MODEL_IDS` in app/src/lib/model-utils.ts — keep in sync.
 	*/
-const GONKA_FREE_MODEL_IDS = new Set<string>([
-	"deepseek-v4-flash-0731-openbroker",
-	"gemini-3-flash-preview",
-	"kimi-k2-6",
-	"minimax-m2-7",
-	// Venice budget fallback so guest chat still works when OpenBroker is down.
-	"mistral-small-2603",
-]);
-
-function isFreeWebsiteModel(modelId: string): boolean {
-	return GONKA_FREE_MODEL_IDS.has(modelId);
-}
-
 const chatSchema = z.object({
 		model: z.string(),
 		/**

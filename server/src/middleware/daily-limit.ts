@@ -23,6 +23,7 @@ import { getRedisClient, isRedisReady } from "../lib/redis-client.js";
 import { logger } from "../lib/logger.js";
 import { extractClientIp } from "./rate-limit/utils.js";
 import { getModelById } from "../inference/models.js";
+import { isFreeWebsiteModel } from "../inference/free-website-model.js";
 
 const DAILY_LIMIT_ANONYMOUS = 20;
 const DAILY_LIMIT_REGISTERED = 100;
@@ -125,16 +126,8 @@ export function dailyUsageLimit() {
 				// `gemini-3-flash-preview` and `kimi-k3`, which made the daily-limit gate
 				// a no-op against the live catalog). oma-ai-routed models are the
 				// free tier on /chat.
-				const def = model ? getModelById(model) : null;
-				const isFreeWebsiteModel =
-					!!def &&
-					(def.provider === "oma-ai" ||
-						model === "mistral-small-2603" ||
-						model === "gemini-3-flash-preview" ||
-						model === "kimi-k2-6" ||
-						model === "minimax-m2-7" ||
-						model === "deepseek-v4-flash-0731-openbroker");
-				if (!isFreeWebsiteModel) {
+				const isCatalogModel = model ? !!getModelById(model) : false;
+				if (!isCatalogModel || !model || !isFreeWebsiteModel(model)) {
 						return next();
 				}
 
