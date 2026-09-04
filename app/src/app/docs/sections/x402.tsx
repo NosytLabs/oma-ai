@@ -56,7 +56,7 @@ if (payReq.ok) {
 	Authorization: ['Bearer', process.env.OMA_KEY].join(' '),
 	},
 	body: JSON.stringify({
-	model: 'llama-3.3-70b',
+	model: 'gemini-3-flash-preview',
 	messages: [{ role: 'user', content: 'Write a smart contract' }],
 	}),
 	});

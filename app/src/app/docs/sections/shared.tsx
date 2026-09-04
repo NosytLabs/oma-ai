@@ -78,7 +78,7 @@ export const RATE_LIMIT_ROWS: RateLimitRow[] = [
 // Per-model overrides — mirrors MODEL_LIMITS in
 // server/src/middleware/rate-limit/utils.ts exactly.
 export const MODEL_RATE_OVERRIDES: ModelRateOverride[] = [
-	{ model: "llama-3.3-70b", rpm: 60, tpm: 120000 },
+			{ model: "llama-3.3-70b", rpm: 60, tpm: 120000 },
 	{ model: "gemini-3-flash-preview", rpm: 60, tpm: 120000 },
 	{ model: "kimi-k3", rpm: 60, tpm: 120000 },
 	// Still defined on the server; not always in the curated public catalog.

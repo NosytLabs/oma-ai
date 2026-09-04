@@ -3,9 +3,8 @@
 These are standalone Node scripts that drive a real Chromium browser
 against the running dev stack (`http://localhost:3000` + `:3001`).
 They're not Playwright Test Suite specs (those live alongside as
-`*.spec.ts`); they're one-off audit / verification scripts that the
-Sep 1, 2026 audit and the real-userflow re-verification used to lock
-in fixes and surface new bugs.
+`*.spec.ts`); they're one-off audit / verification scripts used to
+lock in fixes and surface new bugs.
 
 ## Why both `.spec.ts` and `.mjs`?
 
@@ -20,9 +19,8 @@ in fixes and surface new bugs.
   - Capture screenshots to `/tmp/pw-flows/uf/` for visual review
 
 The `.mjs` files used to live in `/tmp/pw-flows/` and disappeared
-on every `/tmp` cleanup. The Sep 1 audit doc referenced
-`/tmp/pw-flows/pw-persist.mjs` but the file was already gone —
-moved here so this doesn't happen again.
+on every `/tmp` cleanup. They were moved here so this doesn't
+happen again.
 
 ## Running
 
