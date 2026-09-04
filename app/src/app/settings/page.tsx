@@ -245,14 +245,14 @@ function SettingsPageContent() {
 									: "Up to date"}
 					</p>
 				</m.div>
-				<button
+				{!isDemoView && <button
 					type="button"
 					onClick={handleLogout}
 					disabled={loggingOut}
 					className="inline-flex min-h-11 w-fit items-center gap-1.5 rounded-[var(--radius-sm)] border border-border bg-void px-3 py-1.5 text-xs font-medium text-text-muted transition-[border-color,background-color,color,opacity,transform] duration-200 ease-out hover:border-error/40 hover:bg-error/10 hover:text-error active:scale-[0.97] disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error focus-visible:ring-offset-2 focus-visible:ring-offset-void"
 				>
 					{loggingOut ? "Signing out…" : "Sign out"}
-				</button>
+				</button>}
 			</div>
 
 			<AnimatePresence>
@@ -410,9 +410,9 @@ function SettingsPageContent() {
 								{activeTab === "sessions" && (
 									<SessionsSection
 										sessions={isDemoView ? [{ id: "demo-session", userAgent: "Chrome on macOS", createdAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 86400000).toISOString(), ipAddress: "127.0.0.1", isCurrent: true }] : sessions}
-										onSignOutCurrent={handleLogout}
-										onRevokeSession={handleRevokeSession}
-										onRevokeOthers={handleRevokeOtherSessions}
+						onSignOutCurrent={isDemoView ? undefined : handleLogout}
+						onRevokeSession={isDemoView ? undefined : handleRevokeSession}
+						onRevokeOthers={isDemoView ? undefined : handleRevokeOtherSessions}
 									/>
 								)}
 								{activeTab === "privacy" && <PrivacySection user={displayUser} />}

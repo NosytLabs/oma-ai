@@ -284,10 +284,14 @@ function ShellContent({
 	// Successful quota updates come from response headers / 429 body.
 	const gatedSend = useCallback(
 		async (prompt?: string) => {
+			if (isLowBalance) {
+				setError("Your credit balance is too low for this model. Top up to continue.");
+				return;
+			}
 			if (!allowGuestSend()) return;
 			await sendMessage(prompt);
 		},
-		[allowGuestSend, sendMessage],
+		[allowGuestSend, isLowBalance, sendMessage, setError],
 	);
 	const gatedSendRef = useRef(gatedSend);
 	useEffect(() => {
@@ -384,7 +388,11 @@ function ShellContent({
 		if (loading) return;
 		const current = messagesRef.current;
 		const lastAss = current.findLast((m) => m.role === "assistant");
-		if (!lastAss) return;
+		if (!lastAss) {
+			const lastUser = current.findLast((m) => m.role === "user");
+			if (lastUser) void gatedSendRef.current(lastUser.content);
+			return;
+		}
 		const assIdx = current.lastIndexOf(lastAss);
 		const pairUser = current[assIdx - 1];
 		if (!pairUser || pairUser.role !== "user") return;
@@ -558,7 +566,7 @@ function ShellContent({
 									onStop={stopGeneration}
 									loading={loading}
 									textareaRef={inputRef}
-									disabled={false}
+									disabled={isLowBalance}
 									webSearchEnabled={webSearchEnabled}
 									setWebSearchEnabled={setWebSearchEnabled}
 									uiMode={uiMode}

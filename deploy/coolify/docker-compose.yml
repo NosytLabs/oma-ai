@@ -20,6 +20,8 @@ services:
     environment:
       - NEXT_PUBLIC_API_URL=https://api.oma-ai.com
       - NEXT_PUBLIC_APP_URL=https://oma-ai.com
+      # Public URL used by the agent card and generated discovery metadata.
+      - PUBLIC_API_URL=https://api.oma-ai.com
       - NEXT_PUBLIC_TREASURY_BASE_ADDRESS=${NEXT_PUBLIC_TREASURY_BASE_ADDRESS:-${USDC_DEPOSIT_ADDRESS}}
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]

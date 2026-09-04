@@ -2,7 +2,7 @@
 
 import { AnimatePresence, m, useReducedMotion } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";
-import { CornerDownLeft, Key, LogIn, LogOut, Settings, ShieldCheck, Zap } from "lucide-react";
+import { CornerDownLeft, Key, LogIn, LogOut, Settings, ShieldCheck, X, Zap } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -70,6 +70,7 @@ export function NavbarMobileMenu({
 	const { isAdmin } = useAuth();
 	const [confirmDisconnect, setConfirmDisconnect] = useState(false);
 	const [disconnecting, setDisconnecting] = useState(false);
+	const [mounted, setMounted] = useState(false);
 	const visibleGroups = mobileGroups
 		.map((group) => ({
 			...group,
@@ -78,7 +79,7 @@ export function NavbarMobileMenu({
 		.filter((group) => group.links.length > 0);
 
 	useFocusTrap({
-		active: open,
+		active: open && mounted,
 		containerRef,
 		restoreFocusRef: toggleRef,
 		onClose: () => onOpenChange(false),
@@ -125,7 +126,6 @@ export function NavbarMobileMenu({
 	// which creates a fixed-position containing block — so a drawer rendered
 	// inside the header collapses to height 0 (top-14 + bottom-0 inside a
 	// ~56px header). Portaling escapes that trap.
-	const [mounted, setMounted] = useState(false);
 	useEffect(() => {
 		setMounted(true);
 	}, []);
@@ -159,14 +159,22 @@ export function NavbarMobileMenu({
 						transition={springs.card}
 						className="fixed inset-y-0 right-0 z-[70] w-full sm:max-w-sm overflow-y-auto border-l border-border bg-void font-mono shadow-2xl lg:hidden"
 					>
-						<div className="mx-auto flex max-w-6xl flex-col px-4 py-4 sm:px-6">
-							{/* Status row */}
-							<div className="mb-4 flex items-center justify-between gap-3 text-[11px] text-text-muted">
+		<div className="mx-auto flex max-w-6xl flex-col px-4 py-4 sm:px-6">
+			{/* Status row */}
+			<div className="mb-4 flex items-center justify-between gap-3 text-[11px] text-text-muted">
 								<span className="truncate">
 									<span className="text-text-tertiary">~/ </span>
 									<span className="text-text-secondary">{section}</span>
-								</span>
-							</div>
+				</span>
+				<button
+					type="button"
+					onClick={() => onOpenChange(false)}
+					aria-label="Close navigation menu"
+					className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-sm border border-border bg-surface text-text-secondary transition-colors hover:bg-surface-hi hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+				>
+					<X className="h-4 w-4" aria-hidden="true" />
+				</button>
+			</div>
 
 							{/* Grouped card grid */}
 							<div className="space-y-3">

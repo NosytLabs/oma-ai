@@ -70,7 +70,9 @@ export function generateStaticParams() {
 	return MODELS.map((m) => ({ slug: m.id }));
 }
 
-export const dynamicParams = true;
+// The public catalog is generated from the curated registry. Unknown slugs
+// must be real 404s instead of soft-404 pages that pollute search indexing.
+export const dynamicParams = false;
 
 export async function generateMetadata({
 	params,

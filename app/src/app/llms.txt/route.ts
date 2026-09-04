@@ -46,7 +46,10 @@ export function GET(): Response {
 - [Models](${siteUrl}/models)
 - [Pricing](${siteUrl}/pricing)
 - [Chat Playground](${siteUrl}/chat)
-- [Deposit](${siteUrl}/deposit)
+
+## Authenticated product surfaces
+
+- [Deposit](${siteUrl}/deposit): sign-in required to fund account credits.
 
 ## Company
 

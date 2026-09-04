@@ -19,13 +19,19 @@ const MODEL_COUNT_LABEL = `${MODEL_COUNT}+`;
 
 export async function GET() {
 	const payee = process.env.TREASURY_BASE_ADDRESS || FALLBACK_TREASURY;
+	const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://oma-ai.com").replace(/\/+$/, "");
+	const apiUrl = (
+		process.env.PUBLIC_API_URL ||
+		process.env.NEXT_PUBLIC_PUBLIC_API_URL ||
+		"https://api.oma-ai.com"
+	).replace(/\/+$/, "");
 
 	const agentCard = {
 		name: "OMA AI Gateway",
 		description: `Permissionless AI inference across ${MODEL_COUNT_LABEL} models. Buy credits with card, deposit USDC on Base, or let agents pay per request in USDC via x402. OpenAI-compatible endpoint, privacy-first routing, A2UI-ready responses.`,
-		url: "https://oma-ai.com/.well-known/agent-card.json",
+		url: `${appUrl}/.well-known/agent-card.json`,
 		version: "2.1.0",
-		documentation: "https://oma-ai.com/docs",
+		documentation: `${appUrl}/docs`,
 		provider: {
 			organization: "NosytLabs",
 			url: "https://nosytlabs.com",
@@ -61,7 +67,7 @@ export async function GET() {
 				],
 				inputModes: ["text", "image"],
 				outputModes: ["text", "application/a2ui+json"],
-				endpoint: "https://api.oma-ai.com/v1/chat/completions",
+				endpoint: `${apiUrl}/v1/chat/completions`,
 				examples: [
 					{
 						input: { model: "llama-3.3-70b", messages: [{ role: "user", content: "Say hi in one short sentence." }], max_tokens: 32 },
@@ -76,7 +82,7 @@ export async function GET() {
 				tags: ["anthropic-compatible", "chat", "multimodal"],
 				inputModes: ["text", "image"],
 				outputModes: ["text"],
-				endpoint: "https://api.oma-ai.com/v1/messages",
+				endpoint: `${apiUrl}/v1/messages`,
 			},
 			{
 				id: "x402-pay-per-request",
@@ -93,7 +99,7 @@ export async function GET() {
 				],
 				inputModes: ["text"],
 				outputModes: ["text", "application/a2ui+json"],
-				endpoint: "https://api.oma-ai.com/x402/verify",
+				endpoint: `${apiUrl}/x402/verify`,
 				payment: {
 					protocol: "x402",
 					version: 2,
@@ -114,7 +120,7 @@ export async function GET() {
 				tags: ["search", "real-time", "grounding"],
 				inputModes: ["text"],
 				outputModes: ["text"],
-				endpoint: "https://api.oma-ai.com/v1/search",
+				endpoint: `${apiUrl}/v1/search`,
 			},
 		],
 		payment: {
@@ -135,10 +141,10 @@ export async function GET() {
 			apiKey: "Token bucket per key; see /docs#rate-limits",
 		},
 		discovery: {
-			llmsTxt: "https://oma-ai.com/llms.txt",
-			agentSkill: "https://oma-ai.com/agent-skill.md",
-			openapi: "https://api.oma-ai.com/v1/openapi",
-			models: "https://api.oma-ai.com/v1/models",
+			llmsTxt: `${appUrl}/llms.txt`,
+			agentSkill: `${appUrl}/agent-skill.md`,
+			openapi: `${apiUrl}/v1/openapi`,
+			models: `${apiUrl}/v1/models`,
 		},
 		contact: "support@nosytlabs.com",
 		license: "MIT",

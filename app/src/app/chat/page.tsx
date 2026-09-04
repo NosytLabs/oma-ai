@@ -46,7 +46,7 @@ const ChatPlaygroundShell = nextDynamic(
 
 export default function ChatPage() {
 	return (
-		<div className="flex h-[calc(100dvh-3.5rem)] max-h-[calc(100dvh-3.5rem)] min-h-0 flex-1 flex-col overflow-hidden">
+		<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
 		<ErrorBoundary
 			fallback={
 				<div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center">

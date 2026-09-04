@@ -36,7 +36,8 @@ const DASHBOARD_ICON_SLUGS: Record<string, string> = {
 	grok: "grok",
 	moonshotai: "kimi-ai",
 	kimi: "kimi-ai",
-	alibabacloud: "aliyun",
+	// Alibaba assets are not vendored; use the model initials fallback rather
+	// than requesting a missing SVG from the browser.
 	qwen: "qwen",
 	minimax: "minimax",
 	xiaomi: "xiaomi-global",

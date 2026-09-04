@@ -44,6 +44,15 @@ export function Navbar() {
 		setToolsOpen(false);
 	}, [pathname]);
 
+	useEffect(() => {
+		const media = window.matchMedia("(min-width: 1024px)");
+		const closeOnDesktop = (event: MediaQueryListEvent) => {
+			if (event.matches) setMobileOpen(false);
+		};
+		media.addEventListener("change", closeOnDesktop);
+		return () => media.removeEventListener("change", closeOnDesktop);
+	}, []);
+
 	// Scroll-driven glass + border glow. Passive + rAF-throttled.
 	useEffect(() => {
 		setMounted(true);

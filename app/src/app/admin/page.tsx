@@ -189,7 +189,10 @@ export default function AdminPage() {
 	const snap = snapshot.data;
 
 	return (
-		<div className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6">
+		<div
+			className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6"
+			aria-busy={snapshot.isLoading || models.isLoading}
+		>
 			<header className="flex flex-wrap items-center justify-between gap-3">
 				<div>
 					<h1 className="flex items-center gap-2 font-mono text-sm font-bold uppercase tracking-widest text-text-bright">
@@ -223,6 +226,13 @@ export default function AdminPage() {
 				<div className="flex items-center gap-2 rounded-[var(--radius-lg)] border border-error/30 bg-error/10 px-4 py-3 text-xs text-error">
 					<AlertTriangle className="h-4 w-4 shrink-0" />
 					Failed to load ops snapshot — is the API server running?
+				</div>
+			)}
+			{snapshot.isLoading && !snap && (
+				<div className="grid grid-cols-2 gap-3 md:grid-cols-4" role="status">
+					{["runtime-a", "runtime-b", "runtime-c", "runtime-d"].map((id) => (
+						<div key={id} className="h-24 animate-shimmer rounded-[var(--radius-lg)] border border-border bg-surface" />
+					))}
 				</div>
 			)}
 

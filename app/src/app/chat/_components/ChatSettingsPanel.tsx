@@ -88,7 +88,7 @@ export function ChatSettingsPanel({
 									type="button"
 									onClick={() => setParamsOpen(false)}
 									aria-label="Close parameters panel"
-									className="text-text-muted hover:text-text-secondary focus-ring active:scale-[0.97]"
+									className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-sm text-text-muted hover:text-text-secondary focus-ring active:scale-[0.97]"
 								>
 									<X className="w-4 h-4" />
 								</button>
@@ -150,7 +150,7 @@ export function ChatSettingsPanel({
 								type="button"
 								onClick={() => setParamsOpen(false)}
 								aria-label="Close parameters panel"
-								className="text-text-muted hover:text-text-secondary focus-ring active:scale-[0.97]"
+									className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-sm text-text-muted hover:text-text-secondary focus-ring active:scale-[0.97]"
 							>
 								<X className="w-4 h-4" />
 							</button>

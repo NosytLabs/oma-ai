@@ -26,7 +26,7 @@ export const SITE_REDIRECTS: readonly SiteRedirect[] = [
 	{ source: "/disclosures", destination: "/privacy#subprocessors" },
 	{ source: "/provenance", destination: "/docs" },
 	{ source: "/playground", destination: "/chat" },
-	{ source: "/playground/:path*", destination: "/chat/:path*" },
+	{ source: "/playground/:path*", destination: "/chat" },
 	// Standalone API-reference catalog merged into the docs endpoint reference.
 	{ source: "/network", destination: "/docs#endpoints" },
 	{ source: "/network/:path*", destination: "/docs#endpoints" },

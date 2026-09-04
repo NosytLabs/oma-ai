@@ -283,6 +283,7 @@ export const ChatMessageed = memo(function ChatMessageed({
 								{/* Reasoning Section */}
 								{hasReasoning && (
 										<ReasoningBlock
+											contentId={`reasoning-content-${msg.id || msg.timestamp}`}
 												// biome-ignore lint/style/noNonNullAssertion: value is guaranteed by preceding check
 												reasoning={msg.reasoning!}
 												expanded={showReasoningExpanded}
@@ -505,13 +506,15 @@ export const ChatMessageed = memo(function ChatMessageed({
 // ═══════════════════════════════════════════════════════════════════
 
 function ReasoningBlock({
+		contentId,
 		reasoning,
 		expanded,
 		onToggle,
 		isStreaming,
 		prefersReducedMotion,
 }: {
-		reasoning: string;
+	contentId: string;
+	reasoning: string;
 		expanded: boolean;
 		onToggle: () => void;
 		isStreaming: boolean;
@@ -523,7 +526,7 @@ function ReasoningBlock({
 								type="button"
 								onClick={onToggle}
 								aria-expanded={expanded}
-								aria-controls="reasoning-content"
+								aria-controls={contentId}
 								className="
 	group/reason w-full flex items-center justify-between px-4 py-2.5
 	hover:bg-[var(--color-surface-elevated)]/40 transition-colors duration-200 ease-out active:bg-[var(--color-surface-elevated)]/60
@@ -587,7 +590,7 @@ function ReasoningBlock({
 						<AnimatePresence>
 								{expanded && (
 										<m.div
-												id="reasoning-content"
+												id={contentId}
 												initial={
 														prefersReducedMotion
 																? { height: "auto", opacity: 1 }
