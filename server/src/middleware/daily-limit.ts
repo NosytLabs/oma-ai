@@ -123,7 +123,7 @@ export function dailyUsageLimit() {
 				const model = body?.model as string | undefined;
 
 				// Provider-based check (was hardcoded to two non-existent model ids
-				// `gemini-3-flash-preview` and `kimi-k3`, which made the daily-limit gate
+				// `deepseek-v4-flash-openbroker` and `kimi-k3`, which made the daily-limit gate
 				// a no-op against the live catalog). oma-ai-routed models are the
 				// free tier on /chat.
 				const isCatalogModel = model ? !!getModelById(model) : false;

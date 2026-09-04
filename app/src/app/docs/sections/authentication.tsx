@@ -50,7 +50,7 @@ func main() {
 				<p className="text-sm text-text-muted mb-2">
 					Budget models in the OMA-AI catalog
 					(<code className="text-accent font-mono text-xs">provider: oma-ai</code>
-					) — e.g. <code className="text-accent font-mono text-xs">gemini-3-flash-preview</code>,{" "}
+					) — e.g. <code className="text-accent font-mono text-xs">deepseek-v4-flash-openbroker</code>,{" "}
 					<code className="text-accent font-mono text-xs">deepseek-v4-flash-0731-openbroker</code> — can be
 					used on <code className="text-accent font-mono text-xs">/chat</code>{" "}
 					without sign-in, API key, or wallet. Rate limits still apply. Upgrade to a paid plan to unlock the entire Venice catalog, unlimited concurrency, and dedicated throughput.

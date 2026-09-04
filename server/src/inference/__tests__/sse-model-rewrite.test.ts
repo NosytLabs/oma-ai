@@ -5,8 +5,8 @@ describe("rewriteSseModelField", () => {
 	it("rewrites model id in SSE data lines", () => {
 		const chunk =
 			'data: {"id":"1","model":"upstream-raw","choices":[{"delta":{"content":"hi"}}]}\n\n';
-		const out = rewriteSseModelField(chunk, "gemini-3-flash-preview");
-		expect(out).toContain('"model":"gemini-3-flash-preview"');
+		const out = rewriteSseModelField(chunk, "deepseek-v4-flash-openbroker");
+		expect(out).toContain('"model":"deepseek-v4-flash-openbroker"');
 		expect(out).not.toContain("upstream-raw");
 	});
 

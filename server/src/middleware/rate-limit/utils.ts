@@ -24,7 +24,7 @@ if (TRUSTED_PROXIES.size === 0 && config.NODE_ENV === "production") {
 export const MODEL_LIMITS: Record<string, { rpm: number; tpm: number }> = {
 		// Curated catalog (standard tier)
 		"llama-3.3-70b": { rpm: 60, tpm: 120000 },
-		"gemini-3-flash-preview": { rpm: 60, tpm: 120000 },
+		"deepseek-v4-flash-openbroker": { rpm: 60, tpm: 120000 },
 		"kimi-k3": { rpm: 60, tpm: 120000 },
 		// Legacy/fast row (not always public; keep for override tests)
 		"llama-3.2-3b": { rpm: 120, tpm: 240000 },

@@ -31,7 +31,7 @@
 	* Surplus is never selected for traffic. See the comment block above
 	* for the full risk writeup.
 	*
-	* NOTE: `gemini-3-flash-preview` is owned by the OMA-AI provider —
+	* NOTE: `deepseek-v4-flash-openbroker` is owned by the OMA-AI provider —
 	* it is the app's default free website-chat model. The user-facing id
 	* and displayName stay "Gemini 3 Flash", but Gonka/OpenBroker carries
 	* no Gemini model, so it routes to DeepSeek V4 Flash via omaAiId.
@@ -387,20 +387,15 @@ const OMA_AI_MODELS: ModelDef[] = [
 
 		{
 				// Default free website-chat model. Backed by DeepSeek V4 Flash
-				// on the OpenBroker/Gonka network — that upstream is verified
-				// live on api.openbroker.gonka.gg/v1/models. We don't pretend to
-				// host Gemini; the upstream id is DeepSeek V4 Flash 0731.
-				//
-				// The user-facing id is `gemini-3-flash-preview` for backward
-				// compatibility with stored localStorage, URLs, and tests — but
-				// the display name and all marketing copy below name the actual
-				// upstream so we're not lying about model origin.
+				// on the OMA-AI / Gonka.AI network — that upstream is verified
+				// live on api.openbroker.gonka.gg/v1/models. The id and display
+				// name are truthful to the actual upstream.
 				//
 				// API-key callers are billed the listed price; only the public
 				// /chat path uses this for free (see free-website-model.ts).
 				// Don't add a Venice entry under the same id or it will shadow
 				// the free route and break anonymous website chat (401 on free).
-				id: "gemini-3-flash-preview",
+				id: "deepseek-v4-flash-openbroker",
 				provider: "oma-ai",
 				upstream: "openbroker",
 				omaAiId: "deepseek-ai/DeepSeek-V4-Flash-0731",
@@ -408,7 +403,7 @@ const OMA_AI_MODELS: ModelDef[] = [
 				inputPricePer1M: 0.5,
 				outputPricePer1M: 3.0,
 				markupPercent: 0,
-				displayName: "DeepSeek V4 Flash (OMA-AI / Gonka.AI)",
+				displayName: "DeepSeek V4 Flash",
 				category: "mid",
 				maxTokens: 8192,
 				contextWindow: 1_000_000,
@@ -451,20 +446,21 @@ const OMA_AI_MODELS: ModelDef[] = [
 				capabilities: ["chat", "reasoning", "coding", "tools"],
 		},
 		{
-				// DeepSeek V4 Flash 0731 via Gonka OpenBroker — verified live on the
-				// Gonka network 2026-08 (top-4 model by token volume). Adds a non-Venice
-				// code/reasoning path so OMA can route around a Venice outage.
-				// OpenAI-compatible; supports tools + 1M context. Pricing is the
-				// upstream base; user-facing = base × (1 + 0%) = base.
+				// DeepSeek V4 Flash via Gonka OpenBroker — verified live on
+				// api.openbroker.gonka.gg (upstream id deepseek-ai/DeepSeek-V4-Flash-0731).
+				// Kept as a separate catalog entry from the primary
+				// `deepseek-v4-flash-openbroker` (same upstream) for
+				// OpenRouter-style client fallback chains; both routes bill
+				// the same price.
 				id: "deepseek-v4-flash-0731-openbroker",
 				provider: "oma-ai",
 				upstream: "openbroker",
 				omaAiId: "deepseek-ai/DeepSeek-V4-Flash-0731",
 				surplusId: "deepseek-v4-flash-0731",
-				inputPricePer1M: 0.5, // Updated for margin
-				outputPricePer1M: 0.75, // Updated for margin
+				inputPricePer1M: 0.5,
+				outputPricePer1M: 3.0,
 				markupPercent: 0,
-				displayName: "DeepSeek V4 Flash",
+				displayName: "DeepSeek V4 Flash (direct)",
 				category: "budget",
 				maxTokens: 16384,
 				contextWindow: 1_000_000,

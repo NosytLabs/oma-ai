@@ -56,7 +56,7 @@ if (payReq.ok) {
 	Authorization: ['Bearer', process.env.OMA_KEY].join(' '),
 	},
 	body: JSON.stringify({
-	model: 'gemini-3-flash-preview',
+	model: 'deepseek-v4-flash-openbroker',
 	messages: [{ role: 'user', content: 'Write a smart contract' }],
 	}),
 	});

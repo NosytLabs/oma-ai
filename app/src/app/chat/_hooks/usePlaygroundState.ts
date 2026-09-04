@@ -58,7 +58,7 @@ export interface UsePlaygroundStateOptions {
 	 * Override the default model. Useful for tests and for callers that
 	 * already resolved the search-param-derived value elsewhere. Defaults
 	 * to `?model=<value>` from the current URL, falling back to
-	 * `gemini-3-flash-preview` (free OMA-AI).
+	 * `deepseek-v4-flash-openbroker` (free OMA-AI).
 	 */
 	defaultModel?: string;
 	/**
@@ -175,7 +175,7 @@ export function usePlaygroundState(
 		// the SSR pass and the first client render agree — useState's
 		// initializer runs on both, and a localStorage hit on the server
 		// would throw (or return null, making the two passes diverge).
-		return "gemini-3-flash-preview";
+		return "deepseek-v4-flash-openbroker";
 	})();
 
 	// --- Core chat ---
@@ -187,7 +187,7 @@ export function usePlaygroundState(
 
 	/** Track whether the user has explicitly changed the model since mount.
 		*  Used to gate the URL mirror effect so a cold load on /chat doesn't
-		*  rewrite a clean URL to ?model=gemini-3-flash-preview, while a deep
+		*  rewrite a clean URL to ?model=deepseek-v4-flash-openbroker, while a deep
 		*  link ?model=foo (which sets the initial state via the lazy
 		*  initializer) still wins on first render. Flips to `true` only on
 		*  the wrapper call, not on internal `setModelRaw` writes (rehydrate
@@ -251,7 +251,7 @@ export function usePlaygroundState(
 	// Default the compare slot to a free OMA-AI peer so guests can run
 	// side-by-side without signing in for Venice models.
 	const [compareMode, setCompareMode] = useState<boolean>(false);
-	const [compareModel, setCompareModel] = useState<string>("gemini-3-flash-preview");
+	const [compareModel, setCompareModel] = useState<string>("deepseek-v4-flash-openbroker");
 	const [compareMessages, setCompareMessages] = useState<Message[]>([]);
 
 	// --- Misc UI ---
@@ -312,7 +312,7 @@ export function usePlaygroundState(
 
 	// Mirror the selection into `?model=` so a refresh / share URL keeps
 	// it. Gated by `userChangedModelRef` so cold loads on /chat don't
-	// rewrite a clean URL to ?model=gemini-3-flash-preview; only an
+	// rewrite a clean URL to ?model=deepseek-v4-flash-openbroker; only an
 	// explicit user pick triggers a router.replace. Deep links via
 	// ?model=… still win on first mount via the `initialModel` initializer.
 	useEffect(() => {

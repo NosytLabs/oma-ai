@@ -27,7 +27,7 @@ function daysAgo(n: number, hour = 12): string {
 // price points so visitors see the catalog tier spread at a glance.
 const MODELS = [
 	{ model: "claude-opus-5", provider: "Venice" },
-	{ model: "gemini-3-flash-preview", provider: "OMA-AI" },
+	{ model: "deepseek-v4-flash-openbroker", provider: "OMA-AI" },
 	{ model: "deepseek-v4-flash-0731", provider: "Venice" },
 ] as const;
 
@@ -113,6 +113,6 @@ export const DEMO_TRANSACTIONS: CreditTransaction[] = [
 		amountCents: -42,
 		status: "completed",
 		createdAt: daysAgo(0, 9),
-		model: "gemini-3-flash-preview",
+		model: "deepseek-v4-flash-openbroker",
 	},
 ];

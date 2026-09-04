@@ -34,7 +34,7 @@ vi.mock("next/link", () => ({
 
 const baseProps = {
 	variant: "chat" as const,
-	model: "gemini-3-flash-preview",
+	model: "deepseek-v4-flash-openbroker",
 	setModel: vi.fn(),
 	paramsOpen: false,
 	setParamsOpen: vi.fn(),

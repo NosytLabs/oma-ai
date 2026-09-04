@@ -51,7 +51,7 @@ function fakeRecord(id: string): UsageRecord {
 	return {
 		id,
 		requestId: id,
-		model: "gemini-3-flash-preview",
+		model: "deepseek-v4-flash-openbroker",
 		provider: "oma-ai",
 		promptTokens: 1,
 		completionTokens: 1,

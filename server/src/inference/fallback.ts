@@ -7,10 +7,10 @@ import { getModelById } from "./models.js";
 
 export const FALLBACK_MAP: Record<string, string[]> = {
 	// Frontier
-	"openai-gpt-56-sol": ["kimi-k3", "gemini-3-flash-preview", "minimax-m2-7"],
+	"openai-gpt-56-sol": ["kimi-k3", "deepseek-v4-flash-openbroker", "minimax-m2-7"],
 	"claude-opus-5": ["claude-sonnet-4-6", "kimi-k3", "grok-4-5"],
 	"claude-sonnet-4-6": ["kimi-k3", "grok-4-5", "zai-org-glm-5-2"],
-	"grok-4-5": ["kimi-k3", "claude-sonnet-4-6", "gemini-3-flash-preview"],
+	"grok-4-5": ["kimi-k3", "claude-sonnet-4-6", "deepseek-v4-flash-openbroker"],
 
 	// Premium
 	"kimi-k3": ["zai-org-glm-5-2", "kimi-k2-6"],
@@ -19,7 +19,7 @@ export const FALLBACK_MAP: Record<string, string[]> = {
 	// leave a dead OpenBroker key without falling into paid Venice.
 	"kimi-k2-6": [
 		"minimax-m2-7",
-		"gemini-3-flash-preview",
+		"deepseek-v4-flash-openbroker",
 		"kimi-k3",
 		"zai-org-glm-5-2",
 	],
@@ -33,15 +33,15 @@ export const FALLBACK_MAP: Record<string, string[]> = {
 	"hermes-3-llama-3.1-405b": ["llama-3.3-70b", "qwen-3-7-plus"],
 
 	// Mid / Venice-only that previously had no chain
-	"gemini-3-6-flash": ["gemini-3-flash-preview", "minimax-m2-7", "xiaomi-mimo-v2-5"],
-	"google-gemma-4-31b-it": ["mistral-small-2603", "gemini-3-flash-preview", "xiaomi-mimo-v2-5"],
+	"gemini-3-6-flash": ["deepseek-v4-flash-openbroker", "minimax-m2-7", "xiaomi-mimo-v2-5"],
+	"google-gemma-4-31b-it": ["mistral-small-2603", "deepseek-v4-flash-openbroker", "xiaomi-mimo-v2-5"],
 	"venice-uncensored-1-2": ["mistral-small-2603", "llama-3.3-70b", "xiaomi-mimo-v2-5"],
 
 	// Budget
-	"xiaomi-mimo-v2-5": ["gemini-3-flash-preview", "minimax-m2-7"],
+	"xiaomi-mimo-v2-5": ["deepseek-v4-flash-openbroker", "minimax-m2-7"],
 	// OpenBroker MiniMax — free peers first (same freeOnly constraint as Kimi)
 	"minimax-m2-7": [
-		"gemini-3-flash-preview",
+		"deepseek-v4-flash-openbroker",
 		"kimi-k2-6",
 		"xiaomi-mimo-v2-5",
 	],
@@ -53,7 +53,7 @@ export const FALLBACK_MAP: Record<string, string[]> = {
 	],
 	// OpenBroker twin — free peers first (same freeOnly constraint)
 	"deepseek-v4-flash-0731-openbroker": [
-		"gemini-3-flash-preview",
+		"deepseek-v4-flash-openbroker",
 		"minimax-m2-7",
 		"kimi-k2-6",
 		"deepseek-v4-flash-0731",
@@ -61,7 +61,7 @@ export const FALLBACK_MAP: Record<string, string[]> = {
 	// Venice budget — Gonka peers first so a dead VENICE_API_KEY still
 	// fails over on the free website path.
 	"mistral-small-2603": [
-		"gemini-3-flash-preview",
+		"deepseek-v4-flash-openbroker",
 		"minimax-m2-7",
 		"deepseek-v4-flash-0731-openbroker",
 		"deepseek-v4-flash-0731",
@@ -69,7 +69,7 @@ export const FALLBACK_MAP: Record<string, string[]> = {
 	],
 
 	// OMA-AI free default — prefer oma-ai peers first, then budget Venice
-	"gemini-3-flash-preview": [
+	"deepseek-v4-flash-openbroker": [
 		"minimax-m2-7",
 		"kimi-k2-6",
 		"xiaomi-mimo-v2-5",

@@ -17,7 +17,7 @@ describe("FALLBACK_MAP (inference router)", () => {
 	});
 
 	it("covers OMA-AI resale models with oma-ai-first peers", () => {
-		for (const id of ["gemini-3-flash-preview", "minimax-m2-7"] as const) {
+		for (const id of ["deepseek-v4-flash-openbroker", "minimax-m2-7"] as const) {
 			const chain = FALLBACK_MAP[id];
 			expect(chain, `no FALLBACK_MAP entry for ${id}`).toBeTruthy();
 			expect(chain!.length).toBeGreaterThan(0);
@@ -44,7 +44,7 @@ describe("FALLBACK_MAP (inference router)", () => {
 			"deepseek-v4-flash-0731-openbroker",
 			"deepseek-v4-pro",
 			"gemini-3-6-flash",
-			"gemini-3-flash-preview",
+			"deepseek-v4-flash-openbroker",
 			"google-gemma-4-31b-it",
 			"grok-4-5",
 			"hermes-3-llama-3.1-405b",
@@ -72,26 +72,26 @@ describe("FALLBACK_MAP (inference router)", () => {
 describe("buildFallbackChain", () => {
 	it("orders primary → client models[] → server map and dedupes", () => {
 		const chain = buildFallbackChain(
-			"gemini-3-flash-preview",
-			["minimax-m2-7", "gemini-3-flash-preview", "not-a-real-model"],
+			"deepseek-v4-flash-openbroker",
+			["minimax-m2-7", "deepseek-v4-flash-openbroker", "not-a-real-model"],
 			false,
 		);
-		expect(chain[0]).toBe("gemini-3-flash-preview");
+		expect(chain[0]).toBe("deepseek-v4-flash-openbroker");
 		expect(chain[1]).toBe("minimax-m2-7");
 		expect(chain).not.toContain("not-a-real-model");
 		// primary appears only once
-		expect(chain.filter((id) => id === "gemini-3-flash-preview")).toHaveLength(1);
+		expect(chain.filter((id) => id === "deepseek-v4-flash-openbroker")).toHaveLength(1);
 		// server peers still present after client list
 		expect(chain.length).toBeGreaterThan(2);
 	});
 
 	it("freeOnly drops Venice/paid peers so guest chat stays free", () => {
 		const chain = buildFallbackChain(
-			"gemini-3-flash-preview",
+			"deepseek-v4-flash-openbroker",
 			["llama-3.3-70b", "minimax-m2-7", "gpt-4o"],
 			true,
 		);
-		expect(chain[0]).toBe("gemini-3-flash-preview");
+		expect(chain[0]).toBe("deepseek-v4-flash-openbroker");
 		expect(chain).toContain("minimax-m2-7");
 		expect(chain).not.toContain("llama-3.3-70b");
 		expect(chain).not.toContain("gpt-4o");

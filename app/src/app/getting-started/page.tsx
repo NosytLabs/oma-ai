@@ -82,7 +82,7 @@ const SAMPLE_CODE = `curl https://api.oma-ai.com/v1/chat/completions \\
 	-H "Authorization: Bearer $OMA_KEY" \\
 	-H "Content-Type: application/json" \\
 	-d '{
-		"model": "gemini-3-flash-preview",
+		"model": "deepseek-v4-flash-openbroker",
 		"messages": [{"role": "user", "content": "Say hello in one short sentence"}],
 		"max_tokens": 64
 	}'`;

@@ -30,10 +30,10 @@ describe("ModelLogo — locally-vendored dashboard-icons provider marks", () => 
 		expect(img?.getAttribute("src")).toBe("/logos/providers/minimax.svg");
 	});
 
-	it("uses the real upstream google-gemini tile for Gemini", () => {
-		const { container } = render(<ModelLogo modelId="gemini-3-flash-preview" />);
+	it("uses the real upstream deepseek tile for the Gonka OMA-AI DeepSeek V4 Flash", () => {
+		const { container } = render(<ModelLogo modelId="deepseek-v4-flash-openbroker" />);
 		const img = container.querySelector("img") as HTMLImageElement | null;
-		expect(img?.getAttribute("src")).toBe("/logos/providers/google-gemini.svg");
+		expect(img?.getAttribute("src")).toBe("/logos/providers/deepseek.svg");
 	});
 
 	it("uses the real upstream kimi-ai tile for Kimi / Moonshot", () => {

@@ -742,7 +742,7 @@ const FALLBACK_CATALOG: RawCatalog = {
 		// ── OMA-AI resale (markup built-in = user-facing) ────────────────
 		// Gonka Network openbroker upstream — FREE in playground/chat for
 		// every model whose server-side `upstream === "openbroker"`
-		// (gemini-3-flash-preview, kimi-k2-6, minimax-m2-7,
+		// (deepseek-v4-flash-openbroker, kimi-k2-6, minimax-m2-7,
 		// deepseek-v4-flash-0731-openbroker — see `FREE_CHAT_MODEL_IDS` in
 		// model-utils.ts). Everything else requires auth + credits in
 		// /chat, /playground, and the /v1 API.
@@ -756,8 +756,8 @@ const FALLBACK_CATALOG: RawCatalog = {
 			outputPricePer1M: 7.00,
 			capabilities: ["chat", "reasoning", "coding", "tools"],
 		},
-		"gemini-3-flash-preview": {
-			id: "gemini-3-flash-preview",
+		"deepseek-v4-flash-openbroker": {
+			id: "deepseek-v4-flash-openbroker",
 			displayName: "DeepSeek V4 Flash (OMA-AI / Gonka.AI)",
 			provider: "oma-ai",
 			category: "mid",
