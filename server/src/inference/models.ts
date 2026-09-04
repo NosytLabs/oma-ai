@@ -386,26 +386,32 @@ const OMA_AI_MODELS: ModelDef[] = [
 		// ── OpenBroker upstream (api.openbroker.gonka.gg) ─────────────────
 
 		{
-				// Default free website-chat model. The user-facing id stays
-				// "gemini-3-flash-preview" (mirrored as FREE_DEFAULT_CHAT_MODEL
-				// across the app), but Gonka/OpenBroker carries NO Gemini model,
-				// so this routes to DeepSeek V4 Flash (the cheapest, fastest
-				// Gonka model fit for guest chat) at $0. API-key callers are
-				// billed the listed price. Don't add a Venice entry under the
-				// same id or it will shadow the free route and break anonymous
-				// website chat (401 on free model).
+				// Default free website-chat model. Backed by DeepSeek V4 Flash
+				// on the OpenBroker/Gonka network — that upstream is verified
+				// live on api.openbroker.gonka.gg/v1/models. We don't pretend to
+				// host Gemini; the upstream id is DeepSeek V4 Flash 0731.
+				//
+				// The user-facing id is `gemini-3-flash-preview` for backward
+				// compatibility with stored localStorage, URLs, and tests — but
+				// the display name and all marketing copy below name the actual
+				// upstream so we're not lying about model origin.
+				//
+				// API-key callers are billed the listed price; only the public
+				// /chat path uses this for free (see free-website-model.ts).
+				// Don't add a Venice entry under the same id or it will shadow
+				// the free route and break anonymous website chat (401 on free).
 				id: "gemini-3-flash-preview",
 				provider: "oma-ai",
 				upstream: "openbroker",
 				omaAiId: "deepseek-ai/DeepSeek-V4-Flash-0731",
 				surplusId: "deepseek-v4-flash-0731",
-				inputPricePer1M: 0.5, // Updated for margin
-				outputPricePer1M: 3.0, // Updated for margin
+				inputPricePer1M: 0.5,
+				outputPricePer1M: 3.0,
 				markupPercent: 0,
-				displayName: "Gemini 3 Flash",
+				displayName: "DeepSeek V4 Flash (OMA-AI / Gonka.AI)",
 				category: "mid",
 				maxTokens: 8192,
-				contextWindow: 128_000,
+				contextWindow: 1_000_000,
 				maxOutputTokens: 8192,
 				supportsStreaming: true,
 				capabilities: ["chat", "fast", "tools"],

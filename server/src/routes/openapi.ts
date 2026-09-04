@@ -18,7 +18,7 @@ const spec = {
 		title: "OMA-AI Inference Gateway",
 		version: "2.1.0",
 		description:
-			"OpenAI-compatible inference gateway. Routes to Venice (premium) and OMA-AI/OpenBroker (decentralized). x402 pay-per-request for agents; USDC on Base for credit top-ups.",
+			"OpenAI-compatible inference gateway. Routes to Venice (premium) and OMA-AI / Gonka.AI (decentralized). x402 pay-per-request for agents; USDC on Base for credit top-ups.",
 	},
 	servers: [
 		{ url: config.PUBLIC_API_URL, description: "Production" },

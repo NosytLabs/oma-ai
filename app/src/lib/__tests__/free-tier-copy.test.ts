@@ -15,14 +15,13 @@ function readApp(rel: string): string {
 }
 
 describe("free-tier copy accuracy", () => {
-	it("FREE_CHAT_MODEL_IDS contains all Gonka openbroker models", () => {
+	it("FREE_CHAT_MODEL_IDS contains all OMA-AI / Gonka.AI models", () => {
 		expect([...FREE_CHAT_MODEL_IDS].sort()).toEqual(
 			[
 				"deepseek-v4-flash-0731-openbroker",
 				"gemini-3-flash-preview",
 				"kimi-k2-6",
 				"minimax-m2-7",
-				"mistral-small-2603",
 			].sort(),
 		);
 		expect(FREE_CHAT_MODEL_IDS.has(FREE_DEFAULT_CHAT_MODEL)).toBe(true);

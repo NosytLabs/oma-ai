@@ -9,59 +9,44 @@ import { MODELS, normalizeProvider } from "@/lib/models-data";
 import type { ModelOption } from "@/lib/types/model";
 
 /**
- * Free catalog ids (upstream=openbroker — Gonka Network only).
- * Mirrors server-side logic in `server/src/inference/fallback.ts`:
- * every model whose `upstream === "openbroker"` (api.openbroker.gonka.gg)
- * is free in /chat and /playground. All other models — Venice-routed
- * chats, OMA-AI resale, anything paid upstream — require
- * auth + credits in chat, playground, and the /v1 API surface.
+ * Free catalog ids (upstream=openbroker — OMA-AI on Gonka.AI only).
+ * Mirrors server-side logic in `server/src/inference/free-website-model.ts`.
+ * Verified live against api.openbroker.gonka.gg/v1/models, which currently
+ * exposes exactly 3 upstream models. Adding any Venice-routed id here would
+ * silently bill the operator for every guest message.
  */
 export const FREE_CHAT_MODEL_IDS = new Set<string>([
 	"gemini-3-flash-preview",
 	"kimi-k2-6",
 	"minimax-m2-7",
 	"deepseek-v4-flash-0731-openbroker",
-	"mistral-small-2603",
 ]);
 
 /**
- * Default free website-chat model. Prefer the Gonka/OpenBroker Gemini Flash
- * route; Venice `mistral-small-2603` stays on the allowlist as a fallback.
+ * Default free website-chat model. Backed by OMA-AI's Gonka.AI upstream
+ * (DeepSeek V4 Flash) — see catalog entry in models.ts. The catalog
+ * id `gemini-3-flash-preview` is preserved for backward-compat with stored
+ * localStorage and URLs; the user-facing display name is now the truthful
+ * "DeepSeek V4 Flash (OMA-AI / Gonka.AI)".
  */
 export const FREE_DEFAULT_CHAT_MODEL = "gemini-3-flash-preview";
 
-/**
- * Open question 1 (audit 2026-09-01-userflow.md §5): should the
- * model picker show which model an empty `?model=` resolves to? YES
- * — show a `DEFAULT` badge on the FREE_DEFAULT_CHAT_MODEL row so
- * users know what they'll get if they don't pick.
- *
- * Open question 2 (audit 2026-09-01 §5): the `mistral-small-2603`
- * "free" badge could be misread as "OpenBroker-grade free" when
- * it's actually a Venice fallback. The badge's `title` tooltip
- * (rendered by ModelSelector) disambiguates the two free tiers.
- */
 export const FREE_TIER_LABELS: Record<string, { label: string; tooltip: string }> = {
 	"gemini-3-flash-preview": {
 		label: "Free",
-		tooltip: "OpenBroker/Gonka free tier — primary free model for guests",
+		tooltip: "DeepSeek V4 Flash — OMA-AI via Gonka.AI",
 	},
 	"kimi-k2-6": {
 		label: "Free",
-		tooltip: "OpenBroker/Gonka free tier",
+		tooltip: "Kimi K2.6 — OMA-AI via Gonka.AI",
 	},
 	"minimax-m2-7": {
 		label: "Free",
-		tooltip: "OpenBroker/Gonka free tier",
+		tooltip: "MiniMax M2.7 — OMA-AI via Gonka.AI",
 	},
 	"deepseek-v4-flash-0731-openbroker": {
 		label: "Free",
-		tooltip: "OpenBroker/Gonka free tier",
-	},
-	"mistral-small-2603": {
-		label: "Free*",
-		tooltip:
-			"Venice free fallback. Used when the primary OpenBroker peer is down — quality may vary.",
+		tooltip: "DeepSeek V4 Flash — OMA-AI via Gonka.AI",
 	},
 };
 
@@ -77,16 +62,16 @@ function liveDisplayName(
 	id: string,
 	rawName: string | undefined,
 ): string | undefined {
-	// Reserved for future client-side canonicalisation overrides — upstream
-	// returns low-quality names for some entries (e.g. "Google Gemini 3"
-	// instead of "Gemini 3 Flash") and this is the per-model patch point.
+	// Reserved for future client-side canonicalisation overrides when the
+	// upstream `display_name` is wrong (e.g. "Google Gemini 3" instead of
+	// the truthful upstream label). The per-model patch point lives here.
 	return rawName?.trim() || undefined;
 }
 
 /**
 	* Whether the website chat may call completions without sign-in / API key.
-	* Only Gonka Network (openbroker upstream) models are free in /chat and
-	* /playground. Everything else (Venice + OMA-AI resale) is paid.
+	* Only OMA-AI / Gonka.AI (openbroker upstream) models are free in /chat
+	* and /playground. Everything else (Venice + paid OMA-AI resale) is paid.
 	*/
 export function isFreeChatModel(
 	modelId: string,

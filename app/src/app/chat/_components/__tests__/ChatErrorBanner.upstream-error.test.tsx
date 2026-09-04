@@ -2,8 +2,9 @@
  * Upstream timeout / network errors must render the banner with a Retry CTA,
  * not silently fail. Regression test for the real-world case where the chat
  * server returns 504 with `{"error":{"message":"Backend request timed out"}}`
- * (caught during the 2026-08-31 audit when Gemini 3 Flash was at capacity
- * upstream and the user saw their message + nothing else).
+ * (caught during the 2026-08-31 audit when the OMA-AI / Gonka.AI DeepSeek
+ * V4 Flash upstream was at capacity and the user saw their message + nothing
+ * else).
  */
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";

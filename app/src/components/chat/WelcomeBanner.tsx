@@ -328,7 +328,7 @@ export function WelcomeBanner({
 		>
 		<span className="text-accent font-bold">TIP:</span>{" "}
 		<TypewriterText
-		text="Guest chat is free on OMA-AI models like Gemini 3 Flash, Kimi K2.6, MiniMax M2.7, and DeepSeek V4 Flash."
+		text="Guest chat is free on OpenBroker-hosted models like DeepSeek V4 Flash, Kimi K2.6, and MiniMax M2.7."
 		delay={900}
 		/>
 		</m.div>

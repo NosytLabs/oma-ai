@@ -1,14 +1,20 @@
 /**
  * Models that may be used without credits on the public website chat.
- * Keep this allowlist as the single source of truth for access and quotas.
+ *
+ * ONLY OpenBroker/Gonka-hosted models can be free — they have no upstream
+ * cost. Verified live against api.openbroker.gonka.gg/v1/models, which
+ * currently returns exactly 3 models: minimax-m2-7, kimi-k2-6, and
+ * deepseek-ai/DeepSeek-V4-Flash-0731 (the latter exposed to users under
+ * the curated id `gemini-3-flash-preview` and `deepseek-v4-flash-0731-openbroker`).
+ *
+ * Keep this list in sync with the OpenBroker catalog — adding a Venice-routed
+ * model here would silently cost the operator money on every guest message.
  */
 export const FREE_WEBSITE_MODEL_IDS = new Set([
-	"deepseek-v4-flash-0731-openbroker",
-	"gemini-3-flash-preview",
-	"kimi-k2-6",
-	"minimax-m2-7",
-	// Venice fallback keeps the public playground available during upstream issues.
-	"mistral-small-2603",
+	"gemini-3-flash-preview",          // OpenBroker DeepSeek V4 Flash, 0 markup
+	"deepseek-v4-flash-0731-openbroker", // OpenBroker DeepSeek V4 Flash (direct)
+	"kimi-k2-6",                       // OpenBroker Kimi K2.6
+	"minimax-m2-7",                    // OpenBroker MiniMax M2.7
 ]);
 
 export function isFreeWebsiteModel(modelId: string): boolean {

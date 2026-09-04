@@ -13,14 +13,14 @@ describe("isFreeChatModel (guest website chat)", () => {
 		expect(FREE_CHAT_MODEL_IDS.has(FREE_DEFAULT_CHAT_MODEL)).toBe(true);
 	});
 
-	it("only gonka-network openbroker models are free; everything else requires auth", () => {
+	it("only OMA-AI / Gonka.AI upstream models are free; everything else requires auth", () => {
 		// Free — every model with server-side upstream === "openbroker"
-		// (api.openbroker.gonka.gg). See server/src/inference/models.ts.
+		// on api.openbroker.gonka.gg. Verified live against the upstream
+		// catalog (3 models). See server/src/inference/models.ts.
 		expect(isFreeChatModel("deepseek-v4-flash-0731-openbroker")).toBe(true);
 		expect(isFreeChatModel("gemini-3-flash-preview")).toBe(true);
 		expect(isFreeChatModel("kimi-k2-6")).toBe(true);
 		expect(isFreeChatModel("minimax-m2-7")).toBe(true);
-		expect(isFreeChatModel("mistral-small-2603")).toBe(true);
 
 		// Paid — Venice-routed models always require auth. (Pre-2026-08-17
 		// this block also covered OMA-AI resale through Zyloo, e.g.
@@ -29,6 +29,7 @@ describe("isFreeChatModel (guest website chat)", () => {
 		expect(isFreeChatModel("kimi-k3")).toBe(false);
 		expect(isFreeChatModel("llama-3.3-70b")).toBe(false);
 		expect(isFreeChatModel("llama-3.3-70b", "Venice")).toBe(false);
+		expect(isFreeChatModel("mistral-small-2603")).toBe(false);
 	});
 
 	it("only allowlisted openbroker ids are free; unknown ids require auth", () => {
@@ -53,7 +54,7 @@ describe("isFreeChatModel (guest website chat)", () => {
  * fallback. FREE_TIER_LABELS disambiguates the two tiers with
  * explicit copy + tooltip.
  */
-describe("FREE_TIER_LABELS (audit 2026-09-01-userflow.md §5)", () => {
+describe("FREE_TIER_LABELS", () => {
 	it("covers every entry in FREE_CHAT_MODEL_IDS", () => {
 		for (const id of FREE_CHAT_MODEL_IDS) {
 			expect(FREE_TIER_LABELS[id], `missing label for ${id}`).toBeDefined();
@@ -62,18 +63,9 @@ describe("FREE_TIER_LABELS (audit 2026-09-01-userflow.md §5)", () => {
 		}
 	});
 
-	it("the Venice fallback (mistral-small-2603) gets an asterisk to flag its nature", () => {
-		expect(FREE_TIER_LABELS["mistral-small-2603"].label).toBe("Free*");
-		// The tooltip must explicitly call out that this is a Venice fallback
-		// so a hovering user knows it's not the same as the OpenBroker tier.
-		expect(FREE_TIER_LABELS["mistral-small-2603"].tooltip.toLowerCase()).toContain(
-			"venice",
-		);
-	});
-
 	it("the default model (gemini-3-flash-preview) is in the labels map", () => {
 		expect(FREE_TIER_LABELS[FREE_DEFAULT_CHAT_MODEL]).toBeDefined();
-		// Its label is the plain "Free" (no asterisk) — primary free tier.
+		// Its label is the plain "Free" — primary OMA-AI / Gonka.AI tier.
 		expect(FREE_TIER_LABELS[FREE_DEFAULT_CHAT_MODEL].label).toBe("Free");
 	});
 });

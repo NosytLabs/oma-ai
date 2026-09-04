@@ -67,9 +67,10 @@ describe("ModelsPage", () => {
 		render(<ModelsPage />);
 		await act(async () => {
 			await waitFor(() => {
-				// Live catalog labels Gemini 3 Flash correctly now.
-				// Use a regex so the assertion stays valid across catalog refreshes.
-				expect(screen.getAllByText(/Gemini 3 Flash/i).length).toBeGreaterThan(0);
+				// Catalog now names the upstream truthfully: DeepSeek V4 Flash
+				// on OMA-AI / Gonka.AI. Use a regex so the assertion stays
+				// valid across catalog refreshes.
+				expect(screen.getAllByText(/DeepSeek V4 Flash/i).length).toBeGreaterThan(0);
 			});
 		});
 	});
