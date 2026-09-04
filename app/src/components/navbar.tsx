@@ -22,7 +22,14 @@ import { NavbarUserMenu } from "./navbar/NavbarUserMenu";
 import { ThemeToggle } from "./ThemeToggle";
 
 export function Navbar() {
-	const { isAuthenticated, isDemo, evmAddress, signOut, isAdmin } = useAuth();
+	const {
+		isAuthenticated,
+		isDemo,
+		evmAddress,
+		signOut,
+		isAdmin,
+		isPending,
+	} = useAuth();
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [toolsOpen, setToolsOpen] = useState(false);
 	const [scrolled, setScrolled] = useState(false);
@@ -197,7 +204,13 @@ export function Navbar() {
 							className="mx-0.5 hidden h-4 w-px bg-border/60 lg:inline-block"
 						/>
 
-						{isAuthenticated && !isDemo ? (
+						{isPending ? (
+							<div
+								className="h-9 w-24 animate-pulse rounded-sm border border-border bg-surface"
+								aria-label="Loading account"
+								role="status"
+							/>
+						) : isAuthenticated && !isDemo ? (
 							<NavbarUserMenu
 								evmAddress={evmAddress}
 								onSignOut={signOut}
