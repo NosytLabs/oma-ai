@@ -6,6 +6,7 @@ export const metadata: Metadata = {
 	// here doubled the brand suffix ("Admin · OMA · OMA").
 	title: "Admin",
 	robots: { index: false, follow: false },
+	alternates: { canonical: "/admin" },
 };
 
 export default function AdminLayout({
