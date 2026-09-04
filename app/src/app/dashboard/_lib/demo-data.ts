@@ -67,7 +67,8 @@ export function buildDemoUsage(): UsageRecord[] {
 export const DEMO_BALANCE: BalanceResponse = {
 	balanceCents: "1284.50",
 	totalDepositedCents: "5000",
-	totalUsedCents: "3715.50",
+	// Closes the ledger: card $50.00 + USDC batch $25.00 − used = balance.
+	totalUsedCents: "6215.50",
 	lastActivityAt: daysAgo(0, 10),
 };
 
