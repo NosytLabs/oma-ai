@@ -1,6 +1,7 @@
 "use client";
 
 import { Check } from "lucide-react";
+import { useRef } from "react";
 import { THEME_ACCENTS, THEME_LIST, type Theme, useTheme } from "@/components/ThemeProvider";
 
 /**
@@ -10,6 +11,11 @@ import { THEME_ACCENTS, THEME_LIST, type Theme, useTheme } from "@/components/Th
 	*/
 export function AppearanceSection() {
 	const { theme, setTheme, accent } = useTheme();
+	const themeRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+	const selectTheme = (next: Theme) => {
+		setTheme(next);
+		requestAnimationFrame(() => themeRefs.current[next]?.focus());
+	};
 
 	return (
 		<section
@@ -52,7 +58,7 @@ export function AppearanceSection() {
 					const idx = THEME_LIST.findIndex((t) => t.id === theme);
 					const dir = e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : -1;
 					const next = THEME_LIST[(idx + dir + THEME_LIST.length) % THEME_LIST.length];
-					if (next) setTheme(next.id as Theme);
+					if (next) selectTheme(next.id as Theme);
 				}}
 				className="grid grid-cols-1 gap-3 sm:grid-cols-2"
 			>
@@ -64,9 +70,10 @@ export function AppearanceSection() {
 							<button
 								type="button"
 								role="radio"
+								ref={(element) => { themeRefs.current[t.id] = element; }}
 								aria-checked={isActive}
 								tabIndex={isActive ? 0 : -1}
-								onClick={() => setTheme(t.id as Theme)}
+								onClick={() => selectTheme(t.id as Theme)}
 								className={`group flex w-full min-w-0 items-center gap-4 rounded-[var(--radius-lg)] border px-4 py-3.5 text-left transition-[border-color,background-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
 									isActive
 										? "border-accent/50 bg-accent/10 shadow-[0_0_20px_-5px_var(--color-accent-glow)]"
@@ -135,5 +142,4 @@ export function AppearanceSection() {
 		</section>
 	);
 }
-
 
