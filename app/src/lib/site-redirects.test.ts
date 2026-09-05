@@ -34,14 +34,12 @@ describe("SITE_REDIRECTS (shipped next.config source)", () => {
 		const bySource = Object.fromEntries(
 			SITE_REDIRECTS.map((r) => [r.source, r.destination]),
 		);
-		// /about and /faq are live E-E-A-T pages (not redirected)
+		// /changelog and /status are live pages (not redirected) — same as /about, /faq
 		expect(bySource["/about"]).toBeUndefined();
 		expect(bySource["/faq"]).toBeUndefined();
+		expect(bySource["/changelog"]).toBeUndefined();
+		expect(bySource["/status"]).toBeUndefined();
 		expect(bySource["/blog"]).toBe("/docs");
-		expect(bySource["/capabilities"]).toBe("/models");
-		expect(bySource["/compare"]).toBe("/models");
-		expect(bySource["/changelog"]).toBe("/docs");
-		expect(bySource["/status"]).toBe("/docs#endpoints");
 		expect(bySource["/network"]).toBe("/docs#endpoints");
 		expect(bySource["/support"]).toBe("/contact");
 		expect(bySource["/signup"]).toBe("/login");

@@ -14,8 +14,6 @@ export const SITE_REDIRECTS: readonly SiteRedirect[] = [
 	{ source: "/blog/:path*", destination: "/docs" },
 	{ source: "/capabilities", destination: "/models" },
 	{ source: "/compare", destination: "/models" },
-	{ source: "/changelog", destination: "/docs" },
-	{ source: "/status", destination: "/docs#endpoints" },
 	{ source: "/support", destination: "/contact" },
 	{ source: "/signup", destination: "/login" },
 	// Common auth URL aliases — product is passwordless magic-link/SIWE only.
@@ -56,8 +54,6 @@ export const REMOVED_PUBLIC_PATHS = [
 	"/blog",
 	"/capabilities",
 	"/compare",
-	"/changelog",
-	"/status",
 	"/support",
 	"/signup",
 	"/sign-in",
