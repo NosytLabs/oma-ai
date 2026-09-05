@@ -278,7 +278,7 @@ export default function DepositPage() {
 
 	return (
 		<m.div
-			className="relative mx-auto max-w-3xl lg:max-w-4xl px-4 py-14 sm:px-6 sm:py-18 lg:py-22"
+			className="relative mx-auto max-w-3xl lg:max-w-4xl px-4 py-14 sm:px-6 sm:py-18 lg:px-8 lg:py-22"
 			initial={{ opacity: 0 }}
 			animate={{ opacity: 1 }}
 		>

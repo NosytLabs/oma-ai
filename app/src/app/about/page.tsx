@@ -56,13 +56,13 @@ export default function AboutPage() {
 					Home
 				</Link>
 
-				<span className="section-eyebrow-caps mb-3">
-					about
-				</span>
-				<h1 className="display-headline text-text-bright mb-4">
-					Open Model Access
-				</h1>
-				<p className="text-text-secondary max-w-xl mb-12 leading-relaxed text-lg">
+			<span className="section-eyebrow-caps">
+				about
+			</span>
+			<h1 className="display-headline mt-3 text-text-bright">
+				Open Model Access
+			</h1>
+			<p className="page-intro mt-4 mb-10 max-w-2xl">
 					OMA is a self-hosted-friendly AI inference gateway: drop-in OpenAI
 					API compatibility, multi-provider routing, and native crypto payments
 					for developers and autonomous agents.

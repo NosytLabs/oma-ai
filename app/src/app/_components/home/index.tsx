@@ -21,7 +21,7 @@ export function HomeView() {
 		<div className="flex flex-col">
 			<Hero />
 			<div className="border-y border-border-subtle bg-surface/30">
-				<div className="container-page py-12 sm:py-16">
+				<div className="container-page py-14 sm:py-18 lg:py-22">
 					<div className="grid gap-8 lg:gap-10 lg:grid-cols-[1fr_2fr] lg:items-stretch">
 						<TrustStrip />
 						<StatsStrip />

@@ -262,7 +262,7 @@ function DashboardPageInner() {
 				{depositSuccess && (
 					<div
 						role="status"
-						className="flex flex-wrap items-center justify-between gap-3 border-b border-success/30 bg-success/10 px-4 py-2 text-[11px] font-mono text-success md:px-8"
+						className="flex flex-wrap items-center justify-between gap-3 border-b border-success/30 bg-success/10 px-4 py-2 sm:px-6 lg:px-8 text-[11px] font-mono text-success"
 					>
 						<span className="uppercase tracking-wider">
 							Payment received · credits appear after Polar confirms
@@ -278,7 +278,7 @@ function DashboardPageInner() {
 				{isDemoView && (
 					<div
 						role="status"
-						className="flex flex-wrap items-center justify-between gap-3 border-b border-accent/25 bg-accent/10 px-4 py-2 text-[11px] font-mono text-accent md:px-8"
+						className="flex flex-wrap items-center justify-between gap-3 border-b border-accent/25 bg-accent/10 px-4 py-2 sm:px-6 lg:px-8 text-[11px] font-mono text-accent"
 					>
 						<span className="uppercase tracking-wider">
 							Demo tour · sample charts &amp; balances (read-only)
@@ -294,7 +294,7 @@ function DashboardPageInner() {
 				{evmAddress && !isDemoView && (
 					<div
 						role="status"
-						className="flex flex-wrap items-center justify-between gap-3 border-b border-accent/25 bg-accent/10 px-4 py-2 text-[11px] font-mono text-accent md:px-8"
+						className="flex flex-wrap items-center justify-between gap-3 border-b border-accent/25 bg-accent/10 px-4 py-2 sm:px-6 lg:px-8 text-[11px] font-mono text-accent"
 					>
 						<span className="uppercase tracking-wider">
 							Wallet connected · {evmAddress.slice(0, 6)}…{evmAddress.slice(-4)}
@@ -307,7 +307,7 @@ function DashboardPageInner() {
 						</Link>
 					</div>
 				)}
-				<div className="mx-auto w-full max-w-7xl px-4 py-4 md:px-8 md:py-8">
+				<div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
 					<DashboardHeader
 						loading={loading}
 						modelsAvailable={models.length}

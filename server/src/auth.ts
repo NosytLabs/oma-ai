@@ -262,6 +262,23 @@ const ensClient = createPublicClient({
 const isSecureCookieEnv =
 	config.NODE_ENV === "production" || config.NODE_ENV === "preview";
 
+// The SIWE `domain` must equal the host the browser signs in from —
+// better-auth rejects the message when they differ ("...does not match
+// the expected nonce, domain, address, or chain ID"). In production that
+// is PRIMARY_DOMAIN (oma-ai.com); in dev the browser is on localhost, so
+// derive the host from PUBLIC_APP_URL (http://localhost:3000) instead of
+// demanding the production domain on a local origin.
+function resolveSiweDomain(): string {
+	if (isSecureCookieEnv) return config.PRIMARY_DOMAIN ?? "oma-ai.com";
+	try {
+		const host = new URL(config.PUBLIC_APP_URL ?? "http://localhost:3000").host;
+		if (host) return host;
+	} catch {
+		// fall through to localhost default below
+	}
+	return "localhost:3000";
+}
+
 export const auth = betterAuth({
 	baseURL: config.BETTER_AUTH_URL ?? config.PUBLIC_APP_URL ?? "http://localhost:3000",
 	secret: config.BETTER_AUTH_SECRET,
@@ -386,9 +403,9 @@ user: {
 						disableSignUp: false,
 				}),
 
-				siwe({
-						domain: config.PRIMARY_DOMAIN ?? "oma-ai.com",
-						emailDomainName: "oma-ai.com",
+			siwe({
+					domain: resolveSiweDomain(),
+					emailDomainName: "oma-ai.com",
 						// Wallet-only signups don't need an email. The wallet address is
 						// already a strong identity signal; we attach it to the user row
 						// via the additionalField on `user.evmAddress`.

@@ -180,13 +180,11 @@ function AccordionItem({
 				id={panelId}
 				role="region"
 				aria-labelledby={buttonId}
-				className="overflow-hidden transition-[height,opacity] duration-200 ease-spring-soft"
-				style={{
-					maxHeight: isOpen ? "500px" : "0px",
-					opacity: isOpen ? 1 : 0,
-				}}
+				className={`grid transition-all duration-200 ease-spring-soft ${isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
 			>
-				<p className="pb-5 text-sm text-text-secondary leading-relaxed">{item.a}</p>
+				<div className="min-h-0 overflow-hidden">
+					<p className="pb-5 text-sm text-text-secondary leading-relaxed">{item.a}</p>
+				</div>
 			</div>
 		</div>
 	);
@@ -439,7 +437,8 @@ export default function PricingPage() {
 					</section>
 				</InViewFade>
 
-				<div id="x402" className="relative border-t border-border-subtle py-14 sm:py-18 lg:py-22 scroll-mt-20">
+				<InViewFade>
+				<section id="x402" className="relative border-t border-border-subtle py-14 sm:py-18 lg:py-22 scroll-mt-20">
 					<m.div
 						whileHover={{ y: -4 }}
 						transition={springs.card}
@@ -472,9 +471,10 @@ export default function PricingPage() {
 							</div>
 						</div>
 					</m.div>
-				</div>
+				</section>
+			</InViewFade>
 
-				{/* ── FAQ ── */}
+			{/* ── FAQ ── */}
 				<InViewFade delay={0.5}>
 					<div id="faq" className="mb-12 scroll-mt-20">
 					<div className="flex items-center gap-2 mb-6">
@@ -535,8 +535,8 @@ export default function PricingPage() {
 					</div>
 				</div>
 
-				{/* ── Billing Notes ── */}
-				<div className="p-5 rounded-[var(--radius-xl)] border border-border bg-surface/50 shadow-sm">
+			{/* ── Billing Notes ── */}
+			<div className="mb-12 sm:mb-16 p-5 rounded-[var(--radius-xl)] border border-border bg-surface/50 shadow-sm">
 					<h3 className="text-xs font-mono font-semibold uppercase tracking-widest text-text-muted mb-4">
 						Billing notes
 					</h3>

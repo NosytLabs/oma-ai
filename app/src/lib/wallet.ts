@@ -15,7 +15,7 @@
 	*   const { address } = await connectWallet();
 	*   const { message, signature } = await signSiweMessage(address, nonce, "oma-ai.com");
 	*/
-import { createWalletClient, custom, encodeFunctionData, type WalletClient } from "viem";
+import { createWalletClient, custom, encodeFunctionData, getAddress, type WalletClient } from "viem";
 import { base } from "viem/chains";
 import { SiweMessage } from "siwe";
 
@@ -61,7 +61,16 @@ export async function connectWallet(): Promise<WalletState> {
 	}
 	const chainIdHex = (await eth.request({ method: "eth_chainId" })) as string;
 	const chainId = Number.parseInt(chainIdHex, 16);
-	return { address: accounts[0] as `0x${string}`, chainId };
+	// Normalize to EIP-55 checksum case. Some wallets return all-lowercase
+	// accounts, which the `siwe` package rejects at message build time
+	// ("line 2: invalid EIP-55 address"). getAddress accepts any hex case.
+	let address: `0x${string}`;
+	try {
+		address = getAddress(accounts[0]);
+	} catch {
+		throw new Error("Wallet returned a malformed address — please try a different account");
+	}
+	return { address, chainId };
 }
 
 function viemWalletClient(): WalletClient {
@@ -84,9 +93,17 @@ export async function signSiweMessage(
 	domain: string,
 ): Promise<{ message: string; signature: string }> {
 	const client = viemWalletClient();
+	// Defensive: callers may pass a raw (lowercase) account. SIWE requires
+	// EIP-55 checksum case on the address line — normalize before building.
+	let checksummed: `0x${string}`;
+	try {
+		checksummed = getAddress(address);
+	} catch {
+		throw new Error("Wallet returned a malformed address — please try a different account");
+	}
 	const message = new SiweMessage({
 		domain,
-		address,
+		address: checksummed,
 		statement: "Sign in to OMA AI",
 		uri: `https://${domain}`,
 		version: "1",
@@ -95,7 +112,7 @@ export async function signSiweMessage(
 		issuedAt: new Date().toISOString(),
 	}).toMessage();
 	const signature = await client.signMessage({
-		account: address,
+		account: checksummed,
 		message,
 	});
 	return { message, signature };
@@ -127,7 +144,12 @@ export async function getConnectedAccount(): Promise<`0x${string}` | null> {
 	if (!eth) return null;
 	try {
 		const accounts = (await eth.request({ method: "eth_accounts" })) as string[];
-		return (accounts?.[0] as `0x${string}`) ?? null;
+		if (!accounts?.[0]) return null;
+		try {
+			return getAddress(accounts[0]);
+		} catch {
+			return null;
+		}
 	} catch {
 		return null;
 	}

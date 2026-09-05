@@ -62,13 +62,13 @@ export default function ContactPage() {
 					Home
 				</Link>
 
-				<p className="section-eyebrow-caps mb-3">
-					contact
-				</p>
-				<h1 className="display-headline text-text-bright mb-4">
-					How to reach OMA
-				</h1>
-				<p className="text-text-secondary max-w-xl mb-12 leading-relaxed">
+			<span className="section-eyebrow-caps">
+				contact
+			</span>
+			<h1 className="display-headline mt-3 text-text-bright">
+				How to reach OMA
+			</h1>
+			<p className="page-intro mt-4 mb-10 max-w-2xl">
 					We are a lean team. Email is the fastest channel. We reply within one
 					business day for outages, and typically within five for privacy
 					requests.
