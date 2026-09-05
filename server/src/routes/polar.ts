@@ -41,6 +41,7 @@ import {
 import { config } from "../config.js";
 import { logger } from "../lib/logger.js";
 import { logPaymentEvent } from "../lib/payment-observability.js";
+import { errorResponse } from "../lib/error-response.js";
 
 export const polarRoutes = new Hono<OmaEnv>();
 
@@ -240,9 +241,9 @@ async function revokeUser(userId: string): Promise<void> {
 	* URL without breaking delivery.
 	*/
 export async function polarWebhookHandler(c: Context<OmaEnv>) {
-		if (!config.POLAR_WEBHOOK_SECRET) {
-				return c.json({ error: "webhook secret not configured" }, 503);
-		}
+	if (!config.POLAR_WEBHOOK_SECRET) {
+		return errorResponse(c, "Webhook secret not configured on the server. Set POLAR_WEBHOOK_SECRET in server/.env.", 503, { type: "not_configured", code: "polar_webhook_secret_missing" });
+	}
 		const rawBody = await c.req.text();
 		const startedAt = Date.now();
 		const eventId = c.req.header("webhook-id") ?? null;
@@ -256,17 +257,17 @@ export async function polarWebhookHandler(c: Context<OmaEnv>) {
 				config.POLAR_WEBHOOK_SECRET,
 		);
 		if (!ok) {
-				logger.warn("[polar] webhook signature verification failed");
-				return c.json({ error: "invalid signature" }, 401);
+			logger.warn("[polar] webhook signature verification failed");
+			return errorResponse(c, "Invalid webhook signature", 401, { code: "invalid_signature" });
 		}
 		let event: WebhookEventPayload;
 		try {
-				event = JSON.parse(rawBody) as WebhookEventPayload;
+			event = JSON.parse(rawBody) as WebhookEventPayload;
 		} catch {
-				return c.json({ error: "invalid json" }, 400);
+			return errorResponse(c, "Request body is not valid JSON", 400, { code: "invalid_json" });
 		}
 		if (!eventId) {
-				return c.json({ error: "missing webhook id" }, 400);
+			return errorResponse(c, "Missing Webhook-Id header", 400, { code: "missing_webhook_id" });
 		}
 		try {
 				await db.insert(polarWebhookEvents).values({
@@ -291,7 +292,7 @@ export async function polarWebhookHandler(c: Context<OmaEnv>) {
 						return c.json({ ok: true, duplicate: true });
 				}
 				logger.error({ err, eventId }, "[polar] failed to claim webhook event");
-				return c.json({ error: "webhook processing unavailable" }, 503);
+				return errorResponse(c, "Webhook processing is temporarily unavailable", 503, { code: "polar_claim_failed" });
 		}
 
 		// SECURITY: derive credits from the server-side product→plan mapping, not
