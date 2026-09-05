@@ -81,7 +81,7 @@ export function Hero() {
 					>
 						One OpenAI&#8209;compatible endpoint for every model. Fund with
 						card, deposit USDC on Base, or let agents settle per request with
-						x402.
+						x402. Website chat is free — no account needed.
 					</m.p>
 
 					<m.div
