@@ -47,7 +47,6 @@ describe("FALLBACK_MAP (inference router)", () => {
 			"google-gemma-4-31b-it",
 			"grok-4-5",
 			"hermes-3-llama-3.1-405b",
-			"kimi-k2-6",
 			"kimi-k3",
 			"llama-3.3-70b",
 			"minimax-m2-7",

@@ -13,16 +13,10 @@ export const FALLBACK_MAP: Record<string, string[]> = {
 	"grok-4-5": ["kimi-k3", "claude-sonnet-4-6", "deepseek-v4-flash-0731-openbroker"],
 
 	// Premium
-	"kimi-k3": ["zai-org-glm-5-2", "kimi-k2-6"],
-	"zai-org-glm-5-2": ["kimi-k3", "kimi-k2-6"],
-	// OMA-AI OpenBroker Kimi — free peers first so freeOnly website chat can
-	// leave a dead OpenBroker key without falling into paid Venice.
-	"kimi-k2-6": [
-		"minimax-m2-7",
-		"deepseek-v4-flash-0731-openbroker",
-		"kimi-k3",
-		"zai-org-glm-5-2",
-	],
+	"kimi-k3": ["zai-org-glm-5-2", "minimax-m2-7", "deepseek-v4-flash-0731-openbroker"],
+	"zai-org-glm-5-2": ["kimi-k3", "minimax-m2-7", "deepseek-v4-flash-0731-openbroker"],
+	// (kimi-k2-6 removed 2026-09-05 — OpenBroker dropped it from the active set.
+	// The two remaining OMA-AI peers below cover the same role.)
 	"deepseek-v4-pro": ["qwen-3-8-max", "kimi-k3"],
 	"qwen-3-8-max": ["deepseek-v4-pro", "kimi-k3"],
 
@@ -39,11 +33,11 @@ export const FALLBACK_MAP: Record<string, string[]> = {
 
 	// Budget
 	"xiaomi-mimo-v2-5": ["deepseek-v4-flash-0731-openbroker", "minimax-m2-7"],
-	// OpenBroker MiniMax — free peers first (same freeOnly constraint as Kimi)
+	// OpenBroker MiniMax — free peers first (freeOnly website chat stays on openbroker)
 	"minimax-m2-7": [
 		"deepseek-v4-flash-0731-openbroker",
-		"kimi-k2-6",
 		"xiaomi-mimo-v2-5",
+		"mistral-small-2603",
 	],
 	"deepseek-v4-flash-0731": [
 		"deepseek-v4-flash-0731-openbroker",
@@ -54,8 +48,8 @@ export const FALLBACK_MAP: Record<string, string[]> = {
 	// OpenBroker default — prefer oma-ai peers first, then budget Venice
 	"deepseek-v4-flash-0731-openbroker": [
 		"minimax-m2-7",
-		"kimi-k2-6",
 		"xiaomi-mimo-v2-5",
+		"mistral-small-2603",
 	],
 	// Venice budget — Gonka peers first so a dead VENICE_API_KEY still
 	// fails over on the free website path.

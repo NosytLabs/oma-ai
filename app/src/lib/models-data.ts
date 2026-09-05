@@ -741,32 +741,21 @@ const FALLBACK_CATALOG: RawCatalog = {
 		},
 	// ── OMA-AI resale (user-facing = 2x Gonka wholesale) ────────────────
 	// OpenBroker / Gonka Network upstream (api.openbroker.gonka.gg).
-	// Verified live 2026-09-04 against /v1/models — exactly 3 chat
-	// models: moonshotai/Kimi-K2.6, MiniMaxAI/MiniMax-M2.7, and
-	// deepseek-ai/DeepSeek-V4-Flash-0731. Adding any other id here
-	// would 404 against the upstream.
+	// Verified live 2026-09-05 against /v1/models — exactly 2 chat
+	// models currently served: MiniMaxAI/MiniMax-M2.7 and
+	// deepseek-ai/DeepSeek-V4-Flash-0731. (Kimi K2.6 was dropped from
+	// the active set by network governance vote per epoch.)
 	//
 	// Free usage is restricted to /chat for signed-out visitors only.
-	// API-token callers (Authorization: Bearer oma_sk_*) ALWAYS pay
+	// API-token callers (Authorization: Bearer *** ALWAYS pay
 	// real credits for these models, even at the same displayed price.
 	//
-	// Base wholesale (gonkabroker.com, verified 2026-09-04):
-	//   Kimi K2.6 256K (262,144 tok)  $0.35 / M tokens  (in == out)
+	// Base wholesale (openbroker.gonka.gg, verified 2026-09-05):
 	//   MiniMax M2.7 200K            $0.30 / M tokens  (in == out)
 	//   DeepSeek V4 Flash 400K       $0.25 / M tokens  (in == out)
-	// User-facing = base x 2 (100% platform margin) → 0.70 / 0.60 / 0.50.
-	"kimi-k2-6": {
-		id: "kimi-k2-6",
-		displayName: "Kimi K2.6",
-		provider: "oma-ai",
-		category: "premium",
-		maxTokens: 262144,
-		inputPricePer1M: 0.70,
-		outputPricePer1M: 0.70,
-		capabilities: ["chat", "reasoning", "coding", "tools"],
-	},
+	// User-facing = base x 2 (100% platform margin) → 0.60 / 0.50.
 	"minimax-m2-7": {
-		id: "minimax-m2-7",
+		id: "MiniMaxAI/MiniMax-M2.7",
 		displayName: "MiniMax M2.7",
 		provider: "oma-ai",
 		category: "budget",
@@ -776,7 +765,7 @@ const FALLBACK_CATALOG: RawCatalog = {
 		capabilities: ["chat", "reasoning", "coding", "tools"],
 	},
 	"deepseek-v4-flash-0731-openbroker": {
-		id: "deepseek-v4-flash-0731-openbroker",
+		id: "deepseek-ai/DeepSeek-V4-Flash-0731",
 		displayName: "DeepSeek V4 Flash (OMA-AI)",
 		provider: "oma-ai",
 		category: "budget",
@@ -822,10 +811,10 @@ export function getModelsByTier(models: Model[]): Record<Tier, Model[]> {
 }
 
 // Marketing model count surfaced across the UI. Must match the live
-// `GET /v1/models` count — 21 curated chat models (18 Venice + 3 OMA-AI).
+// `GET /v1/models` count — 20 curated chat models (18 Venice + 2 OMA-AI).
 // Kept in sync with `server/src/inference/models.ts` defaultCatalog().
-// The 3 OMA-AI models are the exact set served by api.openbroker.gonka.gg.
-export const MODEL_COUNT = 21;
+// The 2 OMA-AI models are the exact set served by api.openbroker.gonka.gg.
+export const MODEL_COUNT = 20;
 
 // DRIFT GUARD: if anyone adds/removes an entry in `FALLBACK_CATALOG`
 // they MUST update `MODEL_COUNT` above — these are the marketing

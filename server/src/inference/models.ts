@@ -394,23 +394,6 @@ const VENICE_MODELS: ModelDef[] = [
 // deepseek-ai/DeepSeek-V4-Flash-0731. Adding any other id here would 404.
 const OMA_AI_MODELS: ModelDef[] = [
 	{
-			id: "kimi-k2-6",
-			provider: "oma-ai",
-			upstream: "openbroker",
-			omaAiId: "moonshotai/Kimi-K2.6",
-			surplusId: "kimi-k2.6",
-			inputPricePer1M: 0.35,
-			outputPricePer1M: 0.35,
-			markupPercent: 100,
-			displayName: "Kimi K2.6",
-			category: "premium",
-			maxTokens: 16384,
-			contextWindow: 262_144,
-			maxOutputTokens: 16384,
-			supportsStreaming: true,
-			capabilities: ["chat", "reasoning", "coding", "tools"],
-	},
-	{
 			id: "minimax-m2-7",
 			provider: "oma-ai",
 			upstream: "openbroker",
@@ -427,17 +410,17 @@ const OMA_AI_MODELS: ModelDef[] = [
 			supportsStreaming: true,
 			capabilities: ["chat", "reasoning", "coding", "tools"],
 	},
-		{
-				// Default free website-chat model. Backed by DeepSeek V4 Flash
-				// on the OMA-AI / Gonka.AI network — verified live on
-				// api.openbroker.gonka.gg/v1/models.
-				//
-				// API-token callers (Authorization: Bearer oma_sk_*) ALWAYS pay
-				// real credits for this; only the public /chat path is free
-				// (see free-website-model.ts).
-				//
-				// Don't add a Venice entry under the same id or it will shadow
-				// the free route and break anonymous website chat (401 on free).
+	{
+			// Default free website-chat model. Backed by DeepSeek V4 Flash
+			// on the OMA-AI / Gonka.AI network — verified live on
+			// api.openbroker.gonka.gg/v1/models 2026-09-05.
+			//
+			// API-token callers (Authorization: Bearer *** ALWAYS pay
+			// real credits for this; only the public /chat path is free
+			// (see free-website-model.ts).
+			//
+			// Don't add a Venice entry under the same id or it will shadow
+			// the free route and break anonymous website chat (401 on free).
 			id: "deepseek-v4-flash-0731-openbroker",
 			provider: "oma-ai",
 			upstream: "openbroker",
@@ -451,10 +434,10 @@ const OMA_AI_MODELS: ModelDef[] = [
 			maxTokens: 16384,
 			contextWindow: 400_000,
 			maxOutputTokens: 16384,
-				supportsStreaming: true,
-				capabilities: ["chat", "reasoning", "fast", "tools"],
-		},
-		];
+			supportsStreaming: true,
+			capabilities: ["chat", "reasoning", "fast", "tools"],
+	},
+	];
 
 function defaultCatalog(): ModelDef[] {
 		return [...VENICE_MODELS, ...OMA_AI_MODELS];

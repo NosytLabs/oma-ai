@@ -63,12 +63,12 @@ describe("usePlaygroundState — model persistence", () => {
 
 	it("?model=<id> wins over localStorage on initial mount (deep links)", async () => {
 		localStorage.setItem("oma_chat_model:guest", "mistral-small-2603");
-		searchParamsRef = new URLSearchParams("model=minimax-m2-7");
+		searchParamsRef = new URLSearchParams("model=MiniMaxAI/MiniMax-M2.7");
 		const { result } = renderHook(() => usePlaygroundState({ authReady: true }));
-		expect(result.current.model).toBe("minimax-m2-7");
+		expect(result.current.model).toBe("MiniMaxAI/MiniMax-M2.7");
 		// Even after the rehydrate effect, the URL choice wins.
 		await act(async () => {});
-		expect(result.current.model).toBe("minimax-m2-7");
+		expect(result.current.model).toBe("MiniMaxAI/MiniMax-M2.7");
 	});
 
 	it("an unknown ?model= falls back to localStorage (no clobber)", async () => {
@@ -92,23 +92,23 @@ describe("usePlaygroundState — model persistence", () => {
 	it("persists to localStorage when the user picks a new model", async () => {
 		const { result } = renderHook(() => usePlaygroundState({ authReady: true }));
 		await act(async () => {
-			result.current.setModel("minimax-m2-7");
+			result.current.setModel("MiniMaxAI/MiniMax-M2.7");
 		});
 		await act(async () => {});
 		expect(localStorage.getItem("oma_chat_model:guest")).toBe(
-			"minimax-m2-7",
+			"MiniMaxAI/MiniMax-M2.7",
 		);
 	});
 
 	it("mirrors the URL when the user picks a model", async () => {
 		const { result } = renderHook(() => usePlaygroundState({ authReady: true }));
 		await act(async () => {
-			result.current.setModel("kimi-k2-6");
+			result.current.setModel("claude-sonnet-4-6");
 		});
 		await act(async () => {});
 		expect(routerMock.replace).toHaveBeenCalled();
 		const callArg = routerMock.replace.mock.calls.at(-1)?.[0] as string;
-		expect(callArg).toContain("model=kimi-k2-6");
+		expect(callArg).toContain("model=claude-sonnet-4-6");
 	});
 
 	it("scopes the storage key to the authenticated user id", async () => {
@@ -117,11 +117,11 @@ describe("usePlaygroundState — model persistence", () => {
 			usePlaygroundState({ authReady: true, userId }),
 		);
 		await act(async () => {
-			result.current.setModel("minimax-m2-7");
+			result.current.setModel("MiniMaxAI/MiniMax-M2.7");
 		});
 		await act(async () => {});
 		expect(localStorage.getItem("oma_chat_model:u:user_abc")).toBe(
-			"minimax-m2-7",
+			"MiniMaxAI/MiniMax-M2.7",
 		);
 		expect(localStorage.getItem("oma_chat_model:guest")).toBeNull();
 	});
@@ -130,10 +130,10 @@ describe("usePlaygroundState — model persistence", () => {
 		// Pre-seed a saved choice. A cold mount must NOT overwrite it
 		// with the URL/default — even when React StrictMode invokes the
 		// persist effect twice.
-		localStorage.setItem("oma_chat_model:guest", "kimi-k2-6");
+		localStorage.setItem("oma_chat_model:guest", "claude-sonnet-4-6");
 		renderHook(() => usePlaygroundState({ authReady: true }));
 		await act(async () => {});
-		expect(localStorage.getItem("oma_chat_model:guest")).toBe("kimi-k2-6");
+		expect(localStorage.getItem("oma_chat_model:guest")).toBe("claude-sonnet-4-6");
 	});
 
 	it("ignores stored values that aren't in the current catalog (stale saves)", async () => {
