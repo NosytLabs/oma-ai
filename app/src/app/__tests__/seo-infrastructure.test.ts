@@ -90,8 +90,6 @@ describe("sitemap.ts - Next.js MetadataRoute.Sitemap", () => {
 			"/blog",
 			"/capabilities",
 			"/compare",
-			"/changelog",
-			"/status",
 			"/support",
 			"/signup",
 			"/disclosures",

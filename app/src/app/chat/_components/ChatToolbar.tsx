@@ -196,7 +196,7 @@ export function ChatToolbar({
 					onClick={() => setParamsOpen(!paramsOpen)}
 					aria-label="PARAMS — toggle parameters panel (Cmd+/)"
 					aria-pressed={paramsOpen}
-					className={`${btnBase} shrink-0 min-h-11 min-w-11 sm:min-h-10 sm:min-w-10 transition-[color,background-color,border-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${paramsOpen ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
+					className={`${btnBase} shrink-0 min-h-11 min-w-11 sm:min-h-10 sm:min-w-10 transition-[color,background-color,border-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${paramsOpen ? "!bg-surface !text-success !border-success/30" : ""} focus-ring ${messageCount === 0 ? "hidden" : ""}`}
 					title="Toggle Parameters (Cmd+/)"
 				>
 					<Settings2 className="h-4 w-4" />
@@ -220,8 +220,9 @@ export function ChatToolbar({
 				)}
 			</div>
 
-			{/* Secondary actions — credits always visible, rest hidden on mobile */}
-			<div className="flex shrink-0 items-center gap-1 sm:gap-2 justify-self-end">
+			{/* Secondary actions — credits always visible, rest hidden until first message
+			    so a fresh visitor sees only model selector + PARAMS + input, not 9 buttons. */}
+			<div className={`flex shrink-0 items-center gap-1 sm:gap-2 justify-self-end ${messageCount === 0 ? "hidden md:flex" : ""}`}>
 				<div className="hidden shrink-0 xl:block">
 					<LazyStatsBar messages={deferredMessages} model={model} />
 				</div>

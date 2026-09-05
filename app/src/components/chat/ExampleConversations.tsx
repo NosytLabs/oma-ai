@@ -274,6 +274,10 @@ interface ExampleConversationsProps {
 
 export function ExampleConversations({ onSelect }: ExampleConversationsProps) {
 	const [expandedId, setExpandedId] = useState<string | null>(null);
+	// Show first 3 examples by default. The full list (9) is long for a fresh
+	// visitor — the "Show all 9" toggle below reveals the rest.
+	const [showAll, setShowAll] = useState(false);
+	const visibleExamples = showAll ? EXAMPLES : EXAMPLES.slice(0, 3);
 
 	return (
 		<div
@@ -290,7 +294,7 @@ export function ExampleConversations({ onSelect }: ExampleConversationsProps) {
 			</div>
 
 			<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-				{EXAMPLES.map((example, i) => {
+				{visibleExamples.map((example, i) => {
 					const Icon = example.icon;
 					const isExpanded = expandedId === example.id;
 					const catColor =
@@ -401,6 +405,17 @@ export function ExampleConversations({ onSelect }: ExampleConversationsProps) {
 					);
 				})}
 			</div>
+			{!showAll && EXAMPLES.length > 3 && (
+				<div className="mt-4 flex justify-center">
+					<button
+						type="button"
+						onClick={() => setShowAll(true)}
+						className="text-[11px] font-mono uppercase tracking-wider text-text-muted hover:text-text-bright border border-border hover:border-accent/40 bg-surface px-3 py-1.5 rounded-md transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+					>
+						Show all {EXAMPLES.length} examples
+					</button>
+				</div>
+			)}
 		</div>
 	);
 }

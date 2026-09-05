@@ -50,6 +50,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
 		entry("/glossary", 0.6, "monthly"),
 		entry("/about", 0.6, "monthly"),
 		entry("/contact", 0.4, "yearly"),
+		// Operational
+		entry("/status", 0.5, "daily"),
+		entry("/changelog", 0.5, "weekly"),
 		// Legal
 		entry("/privacy", 0.25, "yearly"),
 		entry("/terms", 0.25, "yearly"),
