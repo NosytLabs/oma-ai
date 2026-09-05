@@ -120,7 +120,12 @@ export function resolveProvider(provider: string, _modelDef?: ModelDef): Provide
 			baseUrl: `${config.OPENBROKER_API_URL}/v1`,
 			apiKey: config.OPENBROKER_API_KEY,
 			upstreamModel: (id, gid) => gid ?? id,
-			extraBody: (body) => body,
+			// `models` is an OpenRouter-style failover hint consumed by OUR
+			// fallback chain (buildFallbackChain) — never an upstream param.
+			// The Gonka network rejects non-standard params with a hard error
+			// ("currently rejected by the Gonka network"), which surfaced as
+			// an empty stream to website-chat guests. Strip it here.
+			extraBody: ({ models: _clientFailoverHint, ...body }) => body,
 			providerLabel: "oma-ai",
 			routedVia: "oma-ai",
 		};
