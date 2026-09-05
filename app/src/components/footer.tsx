@@ -30,6 +30,7 @@ import {
 	ShieldCheck,
 	BookMarked,
 	BookOpen,
+	Activity,
 } from "lucide-react";
 import { m } from "@/lib/framer-motion-client";
 import Link from "next/link";
@@ -112,6 +113,16 @@ const LEGAL: FooterSection = {
 	],
 };
 
+// Operational pages — small, but expected by users comparing us to
+// Venice-style competitors (both expose status + a changelog).
+const OPERATIONS: FooterSection = {
+	title: "Status",
+	links: [
+		{ label: "Live status", href: "/status", icon: Activity },
+		{ label: "Changelog", href: "/changelog" },
+	],
+};
+
 const SOCIAL_LINKS = [
 	{
 		label: "GitHub",
@@ -132,6 +143,7 @@ export function Footer() {
 		LEARN,
 		accountSection(isAuthenticated),
 		LEGAL,
+		OPERATIONS,
 	];
 
 	// Viewport-locked app surfaces — a footer below them creates a
