@@ -19,7 +19,6 @@ describe("free-tier copy accuracy", () => {
 		expect([...FREE_CHAT_MODEL_IDS].sort()).toEqual(
 			[
 				"deepseek-v4-flash-0731-openbroker",
-				"kimi-k2-6",
 				"minimax-m2-7",
 			].sort(),
 		);

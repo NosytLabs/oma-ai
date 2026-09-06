@@ -389,8 +389,8 @@ const VENICE_MODELS: ModelDef[] = [
 ];
 
 // ── OMA-AI Resale — branded "oma-ai", backed by OpenBroker (Gonka network) ──
-// Verified live against api.openbroker.gonka.gg/v1/models — exactly 3 upstream
-// models: moonshotai/Kimi-K2.6, MiniMaxAI/MiniMax-M2.7, and
+// Verified live against api.openbroker.gonka.gg/v1/models — exactly 2
+// serving models: MiniMaxAI/MiniMax-M2.7 and
 // deepseek-ai/DeepSeek-V4-Flash-0731. Adding any other id here would 404.
 const OMA_AI_MODELS: ModelDef[] = [
 	{

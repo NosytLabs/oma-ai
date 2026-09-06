@@ -12,11 +12,10 @@ import type { ModelOption } from "@/lib/types/model";
  * Free catalog ids (upstream=openbroker — OMA-AI on Gonka.AI only).
  * Mirrors server-side logic in `server/src/inference/free-website-model.ts`.
  * Verified live against api.openbroker.gonka.gg/v1/models, which currently
- * exposes exactly 3 upstream models. Adding any Venice-routed id here would
+ * exposes exactly 2 OpenBroker models. Adding any Venice-routed id here would
  * silently bill the operator for every guest message.
  */
 export const FREE_CHAT_MODEL_IDS = new Set<string>([
-	"kimi-k2-6",
 	"minimax-m2-7",
 	"deepseek-v4-flash-0731-openbroker",
 ]);
@@ -28,10 +27,6 @@ export const FREE_CHAT_MODEL_IDS = new Set<string>([
 export const FREE_DEFAULT_CHAT_MODEL = "deepseek-v4-flash-0731-openbroker";
 
 export const FREE_TIER_LABELS: Record<string, { label: string; tooltip: string }> = {
-	"kimi-k2-6": {
-		label: "Free",
-		tooltip: "Kimi K2.6 — OMA-AI. Free in website chat; API calls billed.",
-	},
 	"minimax-m2-7": {
 		label: "Free",
 		tooltip: "MiniMax M2.7 — OMA-AI. Free in website chat; API calls billed.",

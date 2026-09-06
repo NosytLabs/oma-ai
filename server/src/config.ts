@@ -28,7 +28,7 @@ const envSchema = z.object({
 		VENICE_API_KEY: z.string().min(1).optional(),
 		VENICE_API_URL: z.string().min(1).default("https://api.venice.ai"),
 		// OMA-AI resale upstream (branded "oma-ai" to users):
-		//   OPENBROKER_* → api.openbroker.gonka.gg — MiniMax-M2.7, Kimi-K2.6, etc.
+		//   OPENBROKER_* → api.openbroker.gonka.gg — MiniMax-M2.7, DeepSeek-V4-Flash.
 		// (Zyloo was previously a sister upstream; removed 2026-08-17.)
 
 		LITELLM_API_KEY: z.string().min(1).optional(),

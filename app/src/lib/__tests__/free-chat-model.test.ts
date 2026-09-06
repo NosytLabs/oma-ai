@@ -16,9 +16,9 @@ describe("isFreeChatModel (guest website chat)", () => {
 	it("only OMA-AI / Gonka.AI upstream models are free; everything else requires auth", () => {
 		// Free — every model with server-side upstream === "openbroker"
 		// on api.openbroker.gonka.gg. Verified live against the upstream
-		// catalog (3 models). See server/src/inference/models.ts.
+		// catalog (2 models). See server/src/inference/models.ts.
 		expect(isFreeChatModel("deepseek-v4-flash-0731-openbroker")).toBe(true);
-		expect(isFreeChatModel("kimi-k2-6")).toBe(true);
+		expect(isFreeChatModel("kimi-k2-6")).toBe(false);
 		expect(isFreeChatModel("minimax-m2-7")).toBe(true);
 
 		// Paid — Venice-routed models always require auth. (Pre-2026-08-17
