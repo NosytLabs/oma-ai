@@ -2,6 +2,7 @@
  * HomeView — server-rendered homepage composition.
  * Interactive sections keep their own client boundaries; the page shell stays
  * lightweight and preserves a consistent vertical rhythm across breakpoints.
+ * Production source of truth: main.
  */
 
 import { AgentDemoSection } from "@/app/_components/home/agent-demo";
