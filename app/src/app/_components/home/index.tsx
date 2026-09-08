@@ -1,9 +1,8 @@
 /**
-	* HomeView — server-rendered homepage composition.
-	*
-	* Interactive sections keep their own client boundaries; the page shell no
-	* longer turns the entire marketing surface into one eager client root.
-	*/
+ * HomeView — server-rendered homepage composition.
+ * Interactive sections keep their own client boundaries; the page shell stays
+ * lightweight and preserves a consistent vertical rhythm across breakpoints.
+ */
 
 import { AgentDemoSection } from "@/app/_components/home/agent-demo";
 import { CapabilitiesGrid } from "@/app/_components/home/capabilities-grid";
@@ -18,16 +17,18 @@ import { MODEL_COUNT } from "@/lib/models-data";
 
 export function HomeView() {
 	return (
-		<div className="flex flex-col">
+		<div className="flex min-w-0 flex-col">
 			<Hero />
-			<div className="border-y border-border-subtle bg-surface/30">
-				<div className="container-page py-14 sm:py-18 lg:py-22">
-					<div className="grid gap-8 lg:gap-10 lg:grid-cols-[1fr_2fr] lg:items-stretch">
+
+			<section className="border-y border-border-subtle bg-surface/30">
+				<div className="container-page py-10 sm:py-12 lg:py-16">
+					<div className="grid gap-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.8fr)] lg:items-start lg:gap-12 xl:gap-16">
 						<TrustStrip />
 						<StatsStrip />
 					</div>
 				</div>
-			</div>
+			</section>
+
 			<CapabilitiesGrid />
 			<HowItWorks />
 			<CodeExample modelCount={MODEL_COUNT} />
