@@ -23,6 +23,7 @@ async function createRedisConnection(): Promise<ReturnType<typeof createClient> 
 		try {
 				const client = createClient({
 						url: parsedUrl.toString(),
+						RESP: 3,
 						socket: {
 								connectTimeout: 2000,
 								reconnectStrategy: (retries: number) => {
