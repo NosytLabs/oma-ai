@@ -49,10 +49,7 @@ export default function WalletSignInPanel({
 				);
 			}
 
-			const nonceResp = await authClient.siwe.nonce({
-				walletAddress: wallet.address,
-				chainId: wallet.chainId,
-			});
+			const nonceResp = await authClient.siwe.nonce({});
 			if (!nonceResp.data?.nonce) {
 				throw new Error(
 					nonceResp.error?.message ?? "Failed to get SIWE nonce from server",
@@ -68,8 +65,6 @@ export default function WalletSignInPanel({
 			const verifyResp = await authClient.siwe.verify({
 				message,
 				signature,
-				walletAddress: wallet.address,
-				chainId: wallet.chainId,
 			});
 			if (verifyResp.error) {
 				throw new Error(verifyResp.error.message ?? "Signature verification failed");
