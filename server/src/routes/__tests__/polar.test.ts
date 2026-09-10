@@ -98,7 +98,9 @@ vi.mock("../../auth/middleware.js", () => ({
 // Leaving the real middleware mounted makes every request wait for Redis and
 // turns an infrastructure timeout into an unrelated 503 assertion failure.
 vi.mock("../../middleware/rate-limit.js", () => ({
-	rateLimit: vi.fn(() => async (_c, next) => next()),
+	rateLimit: vi.fn(
+		() => async (_c: unknown, next: () => Promise<void>) => next(),
+	),
 }));
 
 // Add timingSafeEqual mock before using
