@@ -2,7 +2,7 @@
  * Vitest setup — runs before any test file is loaded.
  *
  * Sets required env vars to test placeholder values so config.ts's zod
- * parse doesn't fail at module load time. These are dev-only placeholders;
+ * parse doesn't fail at module load time. These are test-only placeholders;
  * production uses real secrets in server/.env (gitignored).
  *
  * The .env file is NOT auto-loaded by vitest, and we don't want a hidden
@@ -10,9 +10,9 @@
  * for test env defaults.
  */
 
-// Enable development mode for all tests so SURPLUS provider is available
-// (SURPLUS_ENABLED requires NODE_ENV === "development" to prevent accidental production use)
-process.env.NODE_ENV = 'development';
+// Keep database/auth safety guards in test mode. Using development here made
+// isolated route tests call process.exit(1) when their mocked DB was imported.
+process.env.NODE_ENV = 'test';
 
 // Force-clear provider API keys so test env is deterministic. Without this,
 // shell env (e.g. VENICE_API_KEY exported in ~/.zshrc) leaks into vitest and
