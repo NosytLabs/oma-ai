@@ -94,6 +94,15 @@ vi.mock("../../auth/middleware.js", () => ({
 	}),
 }));
 
+// Route behavior is the subject of this suite; Redis-backed throttling is not.
+// Leaving the real middleware mounted makes every request wait for Redis and
+// turns an infrastructure timeout into an unrelated 503 assertion failure.
+vi.mock("../../middleware/rate-limit.js", () => ({
+	rateLimit: vi.fn(
+		() => async (_c: unknown, next: () => Promise<void>) => next(),
+	),
+}));
+
 // Add timingSafeEqual mock before using
 vi.mock("node:crypto", async (importOriginal) => {
 	const original = await importOriginal<typeof import("node:crypto")>();
@@ -120,6 +129,10 @@ describe("polar routes", () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks();
+		// The missing-secret case mutates this shared hoisted object. Restore the
+		// configured default before every test so order and failure paths cannot
+		// leak a 503 state into the rest of the suite.
+		mockConfig.POLAR_WEBHOOK_SECRET = "test-secret";
 	});
 
 	describe("POST /webhooks/polar", () => {
@@ -147,7 +160,7 @@ describe("polar routes", () => {
 
 		it("rejects invalid signature", async () => {
 			// Override the timingSafeEqual specifically for this test
-												vi.mocked(crypto.timingSafeEqual).mockReturnValueOnce(false);
+			vi.mocked(crypto.timingSafeEqual).mockReturnValueOnce(false);
 			const body = JSON.stringify({ type: "test" });
 			const id = "evt_123";
 			const ts = Math.floor(Date.now() / 1000).toString();

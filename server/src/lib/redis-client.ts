@@ -1,15 +1,37 @@
 import { createClient } from "redis";
 import { config } from "../config.js";
 
-let redisClient: ReturnType<typeof createClient> | null = null;
 let redisReady = false;
 let connectionFailed = false;
 let connectionAttempted = false;
 let reconnectAttempts = 0;
-let connectionPromise: Promise<ReturnType<typeof createClient> | null> | null = null;
 const MAX_RECONNECT_ATTEMPTS = 10;
 
-async function createRedisConnection(): Promise<ReturnType<typeof createClient> | null> {
+function createConfiguredRedisClient(url: string) {
+		return createClient({
+				url,
+				socket: {
+						connectTimeout: 2000,
+						reconnectStrategy: (retries: number) => {
+								if (retries > MAX_RECONNECT_ATTEMPTS) {
+										connectionFailed = true;
+										reconnectAttempts = retries;
+										return false;
+								}
+								const delay = Math.min(retries * 100, 3000);
+								reconnectAttempts = retries;
+								return delay;
+						},
+				},
+		});
+}
+
+type RedisClient = ReturnType<typeof createConfiguredRedisClient>;
+
+let redisClient: RedisClient | null = null;
+let connectionPromise: Promise<RedisClient | null> | null = null;
+
+async function createRedisConnection(): Promise<RedisClient | null> {
 		const url = config.REDIS_URL ?? "redis://localhost:6379";
 		
 		let parsedUrl: URL;
@@ -21,22 +43,7 @@ async function createRedisConnection(): Promise<ReturnType<typeof createClient> 
 		}
 		
 		try {
-				const client = createClient({
-						url: parsedUrl.toString(),
-						socket: {
-								connectTimeout: 2000,
-								reconnectStrategy: (retries: number) => {
-										if (retries > MAX_RECONNECT_ATTEMPTS) {
-												connectionFailed = true;
-												reconnectAttempts = retries;
-												return false;
-										}
-										const delay = Math.min(retries * 100, 3000);
-										reconnectAttempts = retries;
-										return delay;
-								},
-						},
-				});
+				const client = createConfiguredRedisClient(parsedUrl.toString());
 				
 				client.on("error", (err) => {
 						// Only fatal connection-level errors should mark the client as failed.
@@ -71,7 +78,7 @@ async function createRedisConnection(): Promise<ReturnType<typeof createClient> 
 		}
 }
 
-export async function getRedisClient(): Promise<ReturnType<typeof createClient> | null> {
+export async function getRedisClient(): Promise<RedisClient | null> {
 		if (connectionFailed && connectionAttempted && reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
 				return null;
 		}

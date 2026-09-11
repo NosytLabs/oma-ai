@@ -17,13 +17,12 @@ vi.mock("../../config.js", () => ({
 	config: {},
 }));
 
-vi.mock("../../auth/middleware.js", async (importOriginal) => {
-	const mod = await importOriginal<typeof import("../../auth/middleware.js")>();
-	return {
-		...mod,
-		optionalAuth: vi.fn(async (_c: unknown, next: () => Promise<void>) => next()),
-	};
-});
+// Mock only the middleware this route consumes. Importing the original module
+// here eagerly constructs Better Auth and its Drizzle adapter, coupling this
+// isolated route test to a real DATABASE_URL before the test body even runs.
+vi.mock("../../auth/middleware.js", () => ({
+	optionalAuth: vi.fn(async (_c: unknown, next: () => Promise<void>) => next()),
+}));
 
 vi.mock("../../middleware/rate-limit.js", () => ({
 	tokenBucket: vi.fn((opts: unknown) => {
