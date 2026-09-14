@@ -63,6 +63,16 @@ describe("createThinkRouter", () => {
 		expect(content).toBe("answerdone");
 	});
 
+	it("routes <think>… response into reasoning and drops the tags", () => {
+		const { content, reasoning } = run([
+			"answer<thin",
+			"k>private reasoning</thin",
+			"k>done",
+		]);
+		expect(reasoning).toBe("private reasoning");
+		expect(content).toBe("answerdone");
+	});
+
 	it("keeps an unclosed thinking block in reasoning until the end", () => {
 		const { content, reasoning } = run(["<thinking>half", "tag"]);
 		expect(reasoning).toBe("halftag");

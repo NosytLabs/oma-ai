@@ -6,7 +6,7 @@
 	* Calls the server's POST /v1/checkout endpoint which creates a Polar
 	* checkout session for one of three plans (hobby / builder / scale) and
 	* returns a redirect URL. The user is sent to Polar's hosted checkout,
-	* pays with card, and on `subscription.created` the server credits their
+	* pays with card, and on `order.paid` the server credits their
 	* account.
 	*
 	* No wallet required — this is the fiat-friendly path.

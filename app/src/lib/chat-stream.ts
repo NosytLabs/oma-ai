@@ -41,18 +41,32 @@ export interface ThinkRouter {
 
 /**
 	* State machine that routes content deltas into prose vs. the "thinking"
-	* section. Some models wrap reasoning inside <thinking>…</think> tags in
+	* section. Some models wrap reasoning inside <think>…</think> or
+	* <thinking>…</thinking> tags in
 	* the `content` field rather than emitting a separate `reasoning_content`
 	* delta; watch for those tags and route the enclosed text to the reasoning
 	* handler so the rendered answer never shows the raw markup. A carry-over
 	* buffer keeps partial tags that span two SSE chunks aligned.
 	*/
 export function createThinkRouter(handlers: ThinkRouterHandlers): ThinkRouter {
-	const THINK_OPEN = "<thinking>";
-	const THINK_CLOSE = "</think>";
+	const THINK_OPEN_TAGS = ["<think>", "<thinking>"];
+	const THINK_CLOSE_TAGS = ["</think>", "</thinking>"];
+	const MAX_OPEN_TAG_LENGTH = Math.max(...THINK_OPEN_TAGS.map((tag) => tag.length));
+	const MAX_CLOSE_TAG_LENGTH = Math.max(...THINK_CLOSE_TAGS.map((tag) => tag.length));
 	let inThinkingBlock = false;
 	// Carry-over buffer for partial tag matches that span two SSE chunks.
 	let tagCarry = "";
+
+	const findNextTag = (stream: string, tags: string[], from: number) => {
+		let match: { index: number; tag: string } | undefined;
+		for (const tag of tags) {
+			const index = stream.indexOf(tag, from);
+			if (index !== -1 && (!match || index < match.index)) {
+				match = { index, tag };
+			}
+		}
+		return match;
+	};
 
 	const route = (token: string) => {
 		if (!token) return;
@@ -63,9 +77,9 @@ export function createThinkRouter(handlers: ThinkRouterHandlers): ThinkRouter {
 		let cursor = 0;
 		while (cursor < stream.length) {
 			if (!inThinkingBlock) {
-				// Look for the next <thinking> opening tag.
-				const openIdx = stream.indexOf(THINK_OPEN, cursor);
-				if (openIdx === -1) {
+				// Look for the next supported thinking opening tag.
+				const open = findNextTag(stream, THINK_OPEN_TAGS, cursor);
+				if (!open) {
 					// No more tags in this slice. Before flushing, keep
 					// the last few chars as carry-over so a partial tag
 					// that landed at the chunk boundary isn't lost. Clamp
@@ -73,7 +87,7 @@ export function createThinkRouter(handlers: ThinkRouterHandlers): ThinkRouter {
 					// isn't sliced off past its start.
 					const safeLen = Math.max(
 						cursor,
-						stream.length - (THINK_OPEN.length - 1),
+						stream.length - (MAX_OPEN_TAG_LENGTH - 1),
 					);
 					const safeSlice = stream.slice(cursor, safeLen);
 					const tail = stream.slice(safeLen);
@@ -82,17 +96,17 @@ export function createThinkRouter(handlers: ThinkRouterHandlers): ThinkRouter {
 					break;
 				}
 				// Flush the prose before the tag, then drop the tag itself.
-				const before = stream.slice(cursor, openIdx);
-				if (before) handlers.onContent(before);
-				cursor = openIdx + THINK_OPEN.length;
-				inThinkingBlock = true;
-			} else {
-				// Inside a thinking block — look for the closing tag.
-				const closeIdx = stream.indexOf(THINK_CLOSE, cursor);
-				if (closeIdx === -1) {
+					const before = stream.slice(cursor, open.index);
+					if (before) handlers.onContent(before);
+					cursor = open.index + open.tag.length;
+					inThinkingBlock = true;
+				} else {
+					// Inside a thinking block — look for the closing tag.
+					const close = findNextTag(stream, THINK_CLOSE_TAGS, cursor);
+					if (!close) {
 					const safeLen = Math.max(
 						cursor,
-						stream.length - (THINK_CLOSE.length - 1),
+							stream.length - (MAX_CLOSE_TAG_LENGTH - 1),
 					);
 					const safeSlice = stream.slice(cursor, safeLen);
 					const tail = stream.slice(safeLen);
@@ -100,9 +114,9 @@ export function createThinkRouter(handlers: ThinkRouterHandlers): ThinkRouter {
 					tagCarry = tail;
 					break;
 				}
-				const inside = stream.slice(cursor, closeIdx);
-				if (inside) handlers.onReasoning(inside);
-				cursor = closeIdx + THINK_CLOSE.length;
+					const inside = stream.slice(cursor, close.index);
+					if (inside) handlers.onReasoning(inside);
+					cursor = close.index + close.tag.length;
 				inThinkingBlock = false;
 			}
 		}

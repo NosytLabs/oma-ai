@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { InViewFade } from "@/components/motion/in-view-fade";
 import { BreadcrumbListJsonLd } from "@/components/json-ld";
+import { PageShell } from "@/app/_components/page-shell";
 
 export const metadata: Metadata = {
 	title: "Glossary — AI & crypto terms, explained",
@@ -171,7 +172,7 @@ export default function GlossaryPage() {
 				<div className="absolute inset-0 bg-grid opacity-[0.35] mask-radial" />
 			</div>
 
-			<div className="container-page page-content max-w-3xl lg:max-w-4xl">
+			<PageShell>
 				<Link
 					href="/"
 					className="flex w-fit min-h-11 items-center gap-1.5 text-sm text-text-secondary hover:text-accent transition-colors duration-200 ease-out mb-8"
@@ -234,7 +235,7 @@ export default function GlossaryPage() {
 						);
 					})}
 				</div>
-			</div>
+			</PageShell>
 		</div>
 	);
 }

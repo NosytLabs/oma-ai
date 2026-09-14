@@ -145,17 +145,14 @@ const envSchema = z.object({
 		// ===========================================================================
 		// x402 facilitator provider selection.
 		//
-		// "coinbase-cdp" (default) — verify/settle locally using viem + CHAIN_RPC_URL,
-		//                            settlement to TREASURY_BASE_ADDRESS via FACILITATOR_PRIVATE_KEY.
-		// "quicknode"            — delegate verify/settle to QuickNode's hosted x402
-		//                            facilitator (marketplace addon). Requires
-		//                            QUICKNODE_X402_URL + QUICKNODE_X402_API_KEY.
-		//                            Falls back to "coinbase-cdp" if QuickNode env vars
-		//                            are unset.
+		// "coinbase-cdp" (legacy name, default) — self-hosted verification and
+		// settlement using viem + CHAIN_RPC_URL, with FACILITATOR_PRIVATE_KEY
+		// funding gas for EIP-3009 transferWithAuthorization.
+		// "quicknode" is retained solely to emit an explicit configuration error;
+		// QuickNode is supported as the Base RPC provider, not as a generic OMA
+		// settlement facilitator.
 		// ===========================================================================
 		X402_FACILITATOR_PROVIDER: z.enum(["coinbase-cdp", "quicknode"]).default("coinbase-cdp"),
-		QUICKNODE_X402_URL: z.string().url().optional(),
-		QUICKNODE_X402_API_KEY: z.string().min(1).optional(),
 
 		// Polar.sh merchant of record configuration
 		POLAR_ACCESS_TOKEN: z.string().min(1).optional(),
@@ -180,6 +177,41 @@ const envSchema = z.object({
 });
 
 export type Config = z.infer<typeof envSchema>;
+
+type PolarConfiguration = Pick<
+	Config,
+	| "POLAR_ACCESS_TOKEN"
+	| "POLAR_WEBHOOK_SECRET"
+	| "POLAR_HOBBY_PRODUCT_ID"
+	| "POLAR_BUILDER_PRODUCT_ID"
+	| "POLAR_SCALE_PRODUCT_ID"
+>;
+
+/**
+ * Card checkout is intentionally opt-in. Once enabled, all credit plans and
+ * the signed webhook path must be present so we never accept an order that
+ * cannot be reconciled to a credit grant.
+ */
+export function getPolarConfigurationErrors(config: PolarConfiguration): string[] {
+	if (!config.POLAR_ACCESS_TOKEN) return [];
+	const missing: string[] = [];
+	if (!config.POLAR_WEBHOOK_SECRET) missing.push("POLAR_WEBHOOK_SECRET");
+	if (!config.POLAR_HOBBY_PRODUCT_ID) missing.push("POLAR_HOBBY_PRODUCT_ID");
+	if (!config.POLAR_BUILDER_PRODUCT_ID) missing.push("POLAR_BUILDER_PRODUCT_ID");
+	if (!config.POLAR_SCALE_PRODUCT_ID) missing.push("POLAR_SCALE_PRODUCT_ID");
+	return missing;
+}
+
+export function getX402ProviderConfigurationErrors(config: { X402_FACILITATOR_PROVIDER?: string }): string[] {
+	// QuickNode's public x402 product provides pay-per-request access to
+	// QuickNode APIs. It is not a generic hosted settlement service for this
+	// merchant, so delegating OMA settlement to an undocumented /verify API is
+	// unsafe. Keep the setting parseable for explicit startup guidance, but
+	// reject it before a production server can accept payments.
+	return config.X402_FACILITATOR_PROVIDER === "quicknode"
+		? ["X402_FACILITATOR_PROVIDER=quicknode"]
+		: [];
+}
 
 function usableProviderKey(key: string | undefined): boolean {
 		if (!key || key.length < 16) return false;
@@ -257,20 +289,22 @@ if (config.FACILITATOR_MODE === "mock" && isProductionEnv) {
 		throw new Error("FATAL: FACILITATOR_MODE=mock is not allowed in production or staging environments. Set FACILITATOR_MODE=live or run in development.");
 }
 
+const unsupportedX402Provider = getX402ProviderConfigurationErrors(config);
+if (unsupportedX402Provider.length > 0) {
+	throw new Error(
+		"FATAL: X402_FACILITATOR_PROVIDER=quicknode is not supported for OMA settlement. " +
+			"Use the self-hosted EIP-3009 facilitator with FACILITATOR_PRIVATE_KEY; QuickNode remains supported as CHAIN_RPC_URL.",
+	);
+}
+
 if (config.FACILITATOR_MODE === "live" && isProductionEnv) {
 		if (config.X402_FACILITATOR_PROVIDER === "coinbase-cdp" && !config.FACILITATOR_PRIVATE_KEY) {
 				throw new Error(
 						"FATAL: FACILITATOR_MODE=live with X402_FACILITATOR_PROVIDER=coinbase-cdp requires FACILITATOR_PRIVATE_KEY to be set. " +
-						"Set a 32-byte hex private key (0x-prefixed, 64 hex chars) or switch X402_FACILITATOR_PROVIDER=quicknode."
-				);
+				"Set a 32-byte hex private key (0x-prefixed, 64 hex chars)."
+			);
 		}
-		if (config.X402_FACILITATOR_PROVIDER === "quicknode" && (!config.QUICKNODE_X402_URL || !config.QUICKNODE_X402_API_KEY)) {
-				throw new Error(
-						"FATAL: X402_FACILITATOR_PROVIDER=quicknode requires QUICKNODE_X402_URL and QUICKNODE_X402_API_KEY to be set. " +
-						"Both are required when delegating x402 settlement to QuickNode."
-				);
-		}
-}
+	}
 
 	if (isProductionEnv) {
 		const treasuryAddress = config.TREASURY_BASE_ADDRESS;
@@ -299,7 +333,17 @@ if (isProductionEnv && config.POLAR_SERVER === "sandbox") {
 		console.error(
 				"[FATAL] POLAR_SERVER='sandbox' is not allowed in production. Set POLAR_SERVER='production' or unset (defaults to production).",
 		);
-		process.exit(1);
+	process.exit(1);
+}
+
+if (isProductionEnv) {
+	const missingPolarSettings = getPolarConfigurationErrors(config);
+	if (missingPolarSettings.length > 0) {
+		throw new Error(
+			`FATAL: POLAR_ACCESS_TOKEN enables card checkout but these settings are missing: ${missingPolarSettings.join(", ")}. ` +
+			"Set the complete Polar card rail configuration or unset POLAR_ACCESS_TOKEN to keep cards disabled.",
+		);
+	}
 }
 
 // SECURITY (A12): Require a Base RPC endpoint in production.

@@ -186,6 +186,9 @@ function LoginInner() {
 							Magic link by email or your wallet. No
 							password to lose.
 						</p>
+						<p className="mt-2 text-[11px] text-text-muted">
+							New user? Sending a magic link here also creates your account.
+						</p>
 
 						<div>
 							{offline && (

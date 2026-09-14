@@ -11,7 +11,7 @@ import {
 	useRef,
 	useState,
 } from "react";
-import type { ExampleConversation, Message } from "@/components/chat";
+import type { Message } from "@/components/chat";
 import { balanceToDollars, useBalance } from "@/components/chat/useBalance";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
@@ -24,8 +24,6 @@ import {
 	systemPromptStorageKey,
 } from "@/lib/chat-storage";
 import {
-	FREE_DEFAULT_CHAT_MODEL,
-	isFreeChatModel,
 } from "@/lib/model-utils";
 import {
 	freeLeftLabel,
@@ -167,30 +165,20 @@ function ShellContent({
 
 	// ─── Auth prompt modal (guest gating) ───
 	const [authPromptOpen, setAuthPromptOpen] = useState(false);
-	const [authPromptReason, setAuthPromptReason] = useState<
-		"paid-model" | "message-limit"
-	>("message-limit");
-	const [authPromptModel, setAuthPromptModel] = useState<string>();
-
-	const handleAuthRequired = useCallback(
-		(modelName: string) => {
-			setAuthPromptReason("paid-model");
-			setAuthPromptModel(modelName);
-			setAuthPromptOpen(true);
-		},
-		[],
+	const [authPromptReason, setAuthPromptReason] = useState<"message-limit">(
+		"message-limit",
 	);
 
 	// ─── Guest free-tier quota (server is source of truth) ───
 	const handleQuotaExhausted = useCallback(() => {
 		setAuthPromptReason("message-limit");
-		setAuthPromptModel(undefined);
 		setAuthPromptOpen(true);
 	}, []);
 	const { guestQuota, onDailyQuota, allowGuestSend } = useGuestQuota({
 		isAuthenticated,
 		onExhausted: handleQuotaExhausted,
 	});
+	const showComposerAdvancedTools = !!input.trim();
 
 	const inputRef = useRef<HTMLTextAreaElement | null>(null);
 	const messagesRef = useRef<Message[]>(messages);
@@ -330,41 +318,6 @@ function ShellContent({
 		toast,
 	]);
 
-	// Guests stay on free OMA-AI models so example/preset clicks never
-	// switch them to a paid model that 401/402s without a key.
-	const pickModelForGuest = useCallback(
-		(candidate?: string) => {
-			if (isAuthenticated) {
-				return candidate;
-			}
-			if (candidate && isFreeChatModel(candidate)) return candidate;
-			if (isFreeChatModel(model)) return model;
-			return FREE_DEFAULT_CHAT_MODEL;
-		},
-		[isAuthenticated, model],
-	);
-
-		const handlePreset = useCallback(
-			(prompt: string, modelOverride?: string) => {
-				setInput(prompt);
-				const next = pickModelForGuest(modelOverride);
-				if (next) {
-					setModel(next);
-				}
-				inputRef.current?.focus();
-			},
-			[setInput, setModel, pickModelForGuest],
-		);
-
-		const handleExampleSelect = useCallback(
-			(example: ExampleConversation) => {
-				setInput(example.prompt);
-				setModel(pickModelForGuest(example.model) ?? FREE_DEFAULT_CHAT_MODEL);
-				inputRef.current?.focus();
-			},
-			[setModel, setInput, pickModelForGuest],
-		);
-
 	const handleCopy = useCallback(() => {
 		if (!isChat) {
 			toast.success("Copied to clipboard");
@@ -474,7 +427,6 @@ function ShellContent({
 				messagesLength={messages.length}
 				deferredMessages={deferredMessages}
 				setShortcutsOpen={setShortcutsOpen}
-				onAuthRequired={handleAuthRequired}
 			/>
 
 			<div className="flex-1 flex overflow-hidden bg-[color-mix(in_srgb,var(--color-surface)_40%,transparent)]">
@@ -521,9 +473,6 @@ function ShellContent({
 						handleScroll={handleScroll}
 						deferredMessages={deferredMessages}
 						handleCopy={handleCopy}
-						handlePreset={handlePreset}
-						handleExampleSelect={handleExampleSelect}
-						inputRef={inputRef}
 						onRegenerate={handleRegenerate}
 						onA2UIAction={(event) => {
 							void sendMessageRef.current(formatA2UIAction(event));
@@ -563,9 +512,12 @@ function ShellContent({
 									textareaRef={inputRef}
 									disabled={isLowBalance}
 									webSearchEnabled={webSearchEnabled}
-									setWebSearchEnabled={setWebSearchEnabled}
+									setWebSearchEnabled={
+										showComposerAdvancedTools ? setWebSearchEnabled : undefined
+									}
 									uiMode={uiMode}
-									setUiMode={setUiMode}
+									setUiMode={showComposerAdvancedTools ? setUiMode : undefined}
+									showAdvancedTools={showComposerAdvancedTools}
 								/>
 
 								<div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-1 sm:mt-2.5 sm:px-2">
@@ -645,7 +597,6 @@ function ShellContent({
 				open={authPromptOpen}
 				onClose={() => setAuthPromptOpen(false)}
 				reason={authPromptReason}
-				modelName={authPromptModel}
 			/>
 		</div>
 	);

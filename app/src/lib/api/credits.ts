@@ -7,7 +7,6 @@
 	* `oma_session` cookie automatically.
 	*/
 import { request } from "./client.js";
-import type { AutoReloadSettings } from "./types.js";
 
 export interface CreditTransaction {
 	id: string;
@@ -53,14 +52,4 @@ export const credits = {
 		}));
 	},
 
-	getAutoReload() {
-		return request<AutoReloadSettings>("/v1/credits/auto-reload");
-	},
-
-	updateAutoReload(settings: Partial<AutoReloadSettings>) {
-		return request<AutoReloadSettings>("/v1/credits/auto-reload", {
-			method: "POST",
-			body: JSON.stringify(settings),
-		});
-	},
 };

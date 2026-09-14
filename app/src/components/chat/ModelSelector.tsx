@@ -13,8 +13,8 @@
 	*/
 
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
-import { springs } from "@/lib/animation";
-import { ChevronDown, Lock, Search } from "lucide-react";
+import Link from "next/link";
+import { ChevronDown, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	displayName,
@@ -32,8 +32,6 @@ interface ModelSelectorProps {
 	compact?: boolean;
 	/** Whether the current user is authenticated (guest = false) */
 	isAuthenticated?: boolean;
-	/** Called when a guest tries to select a paid model */
-	onAuthRequired?: (modelName: string) => void;
 }
 
 // Tier colors — more vivid, with glow variants
@@ -92,31 +90,17 @@ const tierStyles: Record<
 };
 
 const dropdownVariants = {
-	hidden: { opacity: 0, y: -12, scale: 0.96 },
+	hidden: { opacity: 0, y: -4 },
 	visible: {
 		opacity: 1,
 		y: 0,
-		scale: 1,
-		transition: springs.soft,
+		transition: { duration: 0.14, ease: "easeOut" as const },
 	},
 	exit: {
 		opacity: 0,
-		y: -8,
-		scale: 0.97,
-		transition: springs.soft,
+		y: -3,
+		transition: { duration: 0.1, ease: "easeIn" as const },
 	},
-};
-
-const itemVariants = {
-	hidden: { opacity: 0, x: -6 },
-	visible: (i: number) => ({
-		opacity: 1,
-		x: 0,
-		transition: {
-			delay: i * 0.02,
-			...springs.soft,
-		},
-	}),
 };
 
 export function ModelSelector({
@@ -124,7 +108,6 @@ export function ModelSelector({
 	setModel,
 	compact = false,
 	isAuthenticated = false,
-	onAuthRequired,
 }: ModelSelectorProps) {
 	const [open, setOpen] = useState(false);
 	const [search, setSearch] = useState("");
@@ -155,18 +138,17 @@ export function ModelSelector({
 		};
 	}, [open]);
 
-	// Show ALL models in the dropdown. Free models work without auth;
-	// paid models (Venice) require sign-in. Guests see a lock icon on
-	// paid models and trigger the auth prompt on click. Use isFreeChatModel
-	// (which checks the FREE_CHAT_MODEL_IDS set) so model-id-based free
-	// detection works regardless of whether the live API returned
-	// `provider` or `owned_by`.
+	// Guests should only browse models they can select. Paid models stay
+	// discoverable through one explicit sign-in path rather than a long list
+	// of locked, non-actionable options.
 	const isFreeModel = (m: { id: string; provider?: string }) =>
 		isFreeChatModel(m.id, m.provider);
+	const unavailableModelCount = MODELS.filter((item) => !isFreeModel(item)).length;
 
 	const filtered = useMemo(() => {
 		const q = search.toLowerCase();
 		return MODELS.filter((m) => {
+			if (!isAuthenticated && !isFreeModel(m)) return false;
 			const name = displayName(m.id, m.name);
 			const matchesSearch =
 				!q || name.toLowerCase().includes(q) || m.id.toLowerCase().includes(q);
@@ -183,7 +165,7 @@ export function ModelSelector({
 			}
 			return matchesSearch && matchesTier;
 		});
-	}, [search, tierFilter, MODELS]);
+	}, [isAuthenticated, search, tierFilter, MODELS]);
 
 	useEffect(() => {
 		setHighlightedIndex(Math.max(0, filtered.findIndex((item) => item.id === model)));
@@ -255,7 +237,7 @@ export function ModelSelector({
 			<AnimatePresence>
 				{open && (
 					<m.div
-						initial="hidden"
+						initial={false}
 						animate="visible"
 						exit="exit"
 						variants={dropdownVariants}
@@ -279,6 +261,12 @@ export function ModelSelector({
 										name="model-search"
 										value={search}
 										onChange={(e) => setSearch(e.target.value)}
+										onKeyDown={(e) => {
+											if (e.key === "Escape") {
+												e.preventDefault();
+												setOpen(false);
+											}
+										}}
 										placeholder="SEARCH MODELS..."
 										aria-label="Search models"
 										className="
@@ -289,8 +277,8 @@ export function ModelSelector({
 	"
 									/>
 								</div>
-								{/* Tier filter pills */}
-								<div className="flex gap-1 mt-2 flex-wrap">
+								{isAuthenticated ? (
+									<div className="flex gap-1 mt-2 flex-wrap">
 									{(
 										[
 											"all",
@@ -298,9 +286,6 @@ export function ModelSelector({
 											"premium",
 											"mid",
 											"budget",
-											"reasoning",
-											"coding",
-											"uncensored",
 										] as TierFilter[]
 									).map((tier) => {
 										const isActive = tierFilter === tier;
@@ -332,9 +317,18 @@ export function ModelSelector({
 											>
 												{tier}
 											</button>
-										);
+										); 
 									})}
-								</div>
+									</div>
+								) : unavailableModelCount > 0 ? (
+									<Link
+										href="/login"
+										className="mt-2 flex items-center justify-between rounded-[var(--radius-md)] border border-accent/20 bg-accent/5 px-2.5 py-2 text-xs text-text-secondary transition-colors hover:border-accent/40 hover:bg-accent/10"
+									>
+										<span>Sign in to browse all models</span>
+										<span className="font-mono text-[10px] text-accent">+{unavailableModelCount}</span>
+									</Link>
+								) : null}
 							</div>
 						)}
 
@@ -344,15 +338,13 @@ export function ModelSelector({
 						>
 							{filtered.length === 0 ? (
 								<div className="p-4 text-center text-xs text-text-muted font-mono">
-									NO MODELS FOUND
+									NO MODELS MATCH YOUR SEARCH
 								</div>
 							) : (
 								filtered.map((modelItem, i) => {
 									const name = displayName(modelItem.id, modelItem.name);
 									const isSelected = modelItem.id === model;
 									const free = isFreeModel(modelItem);
-const locked = !isAuthenticated && !free;
-										const blocked = locked;
 									const tierStyle =
 										tierStyles[modelItem.category as TierFilter] ||
 										tierStyles.all;
@@ -362,16 +354,7 @@ const locked = !isAuthenticated && !free;
 										<m.button
 											key={modelItem.id}
 											ref={(node) => { optionRefs.current[i] = node; }}
-											custom={i}
-											variants={itemVariants}
-											initial="hidden"
-											animate="visible"
 											onClick={() => {
-												if (locked) {
-													onAuthRequired?.(name);
-													setOpen(false);
-													return;
-												}
 												setModel(modelItem.id);
 												setOpen(false);
 												setSearch("");
@@ -386,7 +369,7 @@ const locked = !isAuthenticated && !free;
 											}}
 											role="menuitemradio"
 											aria-checked={isSelected}
-											aria-label={`${name}, ${modelItem.category} tier, ${modelItem.ctx} context${locked ? ", requires sign-in" : freeTierLabel ? `, ${freeTierLabel.tooltip.toLowerCase()}` : ", free"}${isDefault ? ", default" : ""}`}
+											aria-label={`${name}, ${modelItem.category} tier, ${modelItem.ctx} context${freeTierLabel ? `, ${freeTierLabel.tooltip.toLowerCase()}` : ", available"}${isDefault ? ", default" : ""}`}
 											className={`
 	w-full flex items-center justify-between text-left
 	${compact ? "px-2 py-1.5" : "px-3 py-2.5"}
@@ -394,9 +377,7 @@ const locked = !isAuthenticated && !free;
 	${
 													isSelected
 															? "bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)] text-[var(--color-accent)]"
-															: blocked
-																? "hover:bg-[var(--color-surface)]/40 text-text-muted/60"
-																: "hover:bg-[var(--color-surface)]/80 text-text-secondary"
+														: "hover:bg-[var(--color-surface)]/80 text-text-secondary"
 													}
 	focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]
 	focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--color-void)]
@@ -432,9 +413,6 @@ const locked = !isAuthenticated && !free;
 												</div>
 											</div>
 											<div className="text-right shrink-0 ml-2 flex items-center gap-1.5">
-												{locked && (
-													<Lock className="w-3 h-3 text-text-muted/50" />
-												)}
 												<div>
 													<div
 														className={`

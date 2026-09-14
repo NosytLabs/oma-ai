@@ -57,13 +57,13 @@ const PILLARS: Pillar[] = [
 	eyebrow: "Pay with credits",
 	title: "Prepaid credits",
 	description:
-	"Buy credits with card via Polar or deposit USDC on Base. Spend against any model at listed rates. No subscription lock-in.",
+	"Deposit USDC on Base, or use card checkout when the operator enables Polar. Spend against any model at listed rates. No subscription lock-in.",
 	icon: Banknote,
 	href: "/pricing",
 	cta: "View pricing",
 	accent: "emerald",
 	highlights: [
-	"Card · Apple Pay · USDC",
+	"USDC · optional card checkout",
 	"Usage-based spend",
 	"No monthly minimum",
 	],
@@ -74,10 +74,10 @@ const PILLARS: Pillar[] = [
 	eyebrow: "Agents pay per request",
 	title: "x402 on Base",
 	description:
-	"USDC settlement for agent traffic. Sign EIP-3009, verify at /x402/verify, spend with an API key — no card required.",
+	"Advanced EIP-3009 USDC authorizations for agents. Verify, settle from an authenticated account, then spend the credited balance.",
 	icon: Bot,
 	href: "/docs#x402",
-	cta: "Read x402 docs",
+	cta: "Advanced payment docs",
 	accent: "violet",
 	highlights: ["EIP-3009 on Base", "No card for agents", "402 on empty balance"],
 	visual: "flow",
@@ -122,8 +122,8 @@ const SUPPORT = [
 	{
 	id: "polar-info",
 	icon: CreditCard,
-	title: "Powered by Polar",
-	body: "Industry-standard checkout. Card details never touch OMA.",
+	title: "Polar card checkout",
+	body: "When enabled, checkout is hosted by Polar and card details never touch OMA.",
 	href: "/pricing",
 	},
 ] as const;
@@ -278,7 +278,7 @@ export function CapabilitiesGrid() {
 	return (
 		<section
 		aria-labelledby="capabilities-headline"
-		className="relative py-14 sm:py-18 lg:py-22"
+		className="relative py-12 sm:py-16 lg:py-20"
 		>
 		<div className="container-page">
 <Reveal>
@@ -299,7 +299,7 @@ export function CapabilitiesGrid() {
 	/>
 	</Reveal>
 
-	<RevealStagger className="mt-12 grid grid-cols-1 gap-4 md:grid-cols-3">
+	<RevealStagger className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-3">
 		{PILLARS.map((pillar) => {
 			const Icon = pillar.icon;
 			const a = ACCENT[pillar.accent];
@@ -313,7 +313,7 @@ export function CapabilitiesGrid() {
 					<Link
 						href={pillar.href}
 						className={cn(
-							"group relative flex h-full min-h-0 sm:min-h-[360px] flex-col overflow-hidden rounded-[var(--radius-lg)] border p-7 transition-[transform,box-shadow,border-color] duration-200 ease-out",
+							"group relative flex h-full min-h-0 sm:min-h-[332px] flex-col overflow-hidden rounded-[var(--radius-lg)] border p-6 transition-[transform,box-shadow,border-color] duration-200 ease-out",
 							"active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2",
 							a.wrap,
 							a.ring,
@@ -352,7 +352,7 @@ export function CapabilitiesGrid() {
 							</div>
 						</div>
 
-						<h3 className="mt-6 font-display text-xl sm:text-2xl font-medium tracking-tight text-text-bright">
+						<h3 className="mt-5 font-display text-xl sm:text-2xl font-medium tracking-tight text-text-bright">
 							{pillar.title}
 						</h3>
 						<p className="mt-3 text-[14px] leading-relaxed text-text-secondary">

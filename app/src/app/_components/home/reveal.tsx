@@ -25,11 +25,11 @@ import { springs } from "@/lib/animation";
 import { useEffect, useState, type ReactNode } from "react";
 
 const fadeUpVariant: Variants = {
-	hidden: { opacity: 0, y: 28 },
+	hidden: { opacity: 0, y: 16 },
 	show: {
 		opacity: 1,
 		y: 0,
-		transition: springs.toast, // overshoot 1.08 — settle after a beat
+		transition: springs.card,
 	},
 };
 
@@ -37,14 +37,14 @@ const staggerParent: Variants = {
 	hidden: {},
 	show: {
 		transition: {
-			staggerChildren: 0.08,
-			delayChildren: 0.05,
+			staggerChildren: 0.06,
+			delayChildren: 0.03,
 		},
 	},
 };
 
 export const childFadeUp: Variants = {
-	hidden: { opacity: 0, y: 16 },
+	hidden: { opacity: 0, y: 12 },
 	show: {
 		opacity: 1,
 		y: 0,

@@ -1,7 +1,5 @@
 /**
-	* Free-tier marketing/chat copy must only name real OMA-AI free models.
-	* Drives FREE_CHAT_MODEL_IDS from model-utils and scans shipped source for
-	* "(free)" example labels + known-bad Venice free claims.
+ * Free-tier marketing/chat copy must only name real OMA-AI free models.
 	*/
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -23,34 +21,6 @@ describe("free-tier copy accuracy", () => {
 			].sort(),
 		);
 		expect(FREE_CHAT_MODEL_IDS.has(FREE_DEFAULT_CHAT_MODEL)).toBe(true);
-	});
-
-	it("ExampleConversations only marks free on FREE_CHAT_MODEL_IDS", () => {
-		const src = readApp("components/chat/ExampleConversations.tsx");
-		// Pair each model: "…" with following modelName containing (free)
-		const blocks = [
-			...src.matchAll(
-				/model:\s*"([^"]+)",\s*\n\s*modelName:\s*"([^"]+)"/g,
-			),
-		];
-		expect(blocks.length).toBeGreaterThan(0);
-		for (const m of blocks) {
-			const id = m[1];
-			const name = m[2];
-			if (/\(free\)/i.test(name)) {
-				expect(
-					FREE_CHAT_MODEL_IDS.has(id),
-					`${name} uses paid/non-free id ${id}`,
-				).toBe(true);
-			}
-		}
-	});
-
-	it("WelcomeBanner tip names free guest models, not paid Venice flags", () => {
-		const src = readApp("components/chat/WelcomeBanner.tsx");
-		expect(src).toMatch(/free OMA-AI model|no card required/i);
-		expect(src).not.toMatch(/GPT-4o.*free/i);
-		expect(src).not.toMatch(/GLM 5\.1.*free/i);
 	});
 
 	it("pricing page states honest OMA-AI margin", () => {

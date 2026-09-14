@@ -6,7 +6,8 @@ type PaymentOutcome =
 	| "settled"
 	| "rejected"
 	| "double_spend_blocked"
-	| "attribution_mismatch";
+	| "attribution_mismatch"
+	| "amount_mismatch";
 
 interface PaymentEvent {
 		kind: PaymentKind;

@@ -64,9 +64,9 @@ const CATEGORY_STYLES: Record<Category, { active: string; inactive: string }> =
 const PAYMENT_METHODS = [
 	{
 		icon: CreditCard,
-		title: "Card · Visa · Mastercard",
-		desc: "Buy credits with card via Polar (Apple Pay supported). No wallet required.",
-		tag: "Card",
+		title: "Card checkout · when enabled",
+		desc: "Where the operator has enabled Polar, buy credits by card without a wallet.",
+		tag: "Optional",
 		tagStyle: "bg-accent-dim text-accent border border-accent/30",
 	},
 	{
@@ -124,15 +124,15 @@ const POLAR_TIERS: Array<{
 const FAQ_ITEMS = [
 	{
 		q: "How do I add credits?",
-		a: "Buy credits with a card (Visa, Mastercard, Apple Pay) via Polar — no wallet needed — or deposit USDC on Base at 1:1 USD. Credits land the moment payment settles.",
+		a: "Deposit USDC on Base at 1:1 USD, use x402 per request, or buy credits with card where Polar checkout is enabled. The credits page always shows which rails are available.",
 	},
 	{
 		q: "Do credits expire?",
-		a: "No — credits do not expire. They are non-redeemable and non-transferable. 1 credit = $0.01 USD (so $1 = 100 credits), and each request consumes the model's per-token cost in credits at request time.",
+		a: "Yes. Each credit batch expires 365 days after it is issued, and your dashboard warns you before a batch expires. Credits are non-redeemable and non-transferable. 1 credit = $0.01 USD (so $1 = 100 credits), and each request consumes the model's per-token cost at request time.",
 	},
 	{
 		q: "What payment methods are accepted?",
-		a: "Cards via Polar (Visa, Mastercard, Apple Pay — charges appear as 'NOSYT'), USDC direct on Base at 1:1 USD, or x402 pay-per-request on Base for agents.",
+		a: "USDC direct on Base at 1:1 USD and x402 pay-per-request are supported. Card checkout through Polar is available only when the operator has configured and enabled it; the credits page shows its live status.",
 	},
 	{
 		q: "Is there a free tier?",
@@ -258,7 +258,7 @@ export default function PricingPage() {
 					<div className="meta-strip">
 							<span>{modelCount} live models</span>
 						<span>Usage-based billing</span>
-						<span>Card · USDC · x402</span>
+						<span>USDC · x402 · optional card</span>
 					</div>
 				</div>
 

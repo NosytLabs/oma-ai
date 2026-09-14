@@ -22,7 +22,7 @@ export function FinalCTA() {
 	return (
 		<section
 		aria-labelledby="final-cta-headline"
-		className="relative overflow-hidden border-t border-border-subtle bg-surface/30 py-14 sm:py-18 lg:py-22"
+		className="relative overflow-hidden border-t border-border-subtle bg-surface/30 py-12 sm:py-16 lg:py-20"
 		>
 <div
 		aria-hidden="true"
@@ -40,14 +40,13 @@ export function FinalCTA() {
 	id="final-cta-headline"
 	className="display-headline text-text-bright"
 	>
-	Get an API key.
+	Build with OMA.
 	<br />
 	<span className="gradient-text-accent">Call any model.</span>
 	</h2>
 				<p className="text-base leading-relaxed text-text-secondary sm:text-lg">
-					Fund credits with card via Polar, or deposit USDC on Base. Use
-					x402 when agents need to pay per request. One OpenAI-compatible
-					surface.
+					Explore the catalog, test the playground, then create an API key when your
+					application is ready for one OpenAI-compatible surface.
 				</p>
 	</div>
 
@@ -56,14 +55,14 @@ export function FinalCTA() {
 			href="/login"
 			className="btn-mono btn-primary group w-full sm:w-auto"
 		>
-			<span>Get API key</span>
+			<span>Create free account</span>
 			<ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
 		</Link>
 					<Link
-						href="/pricing"
+						href="/models"
 						className="btn-mono w-full sm:w-auto"
 					>
-		View pricing
+		Explore models
 		</Link>
 		</div>
 	</div>

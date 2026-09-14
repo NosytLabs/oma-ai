@@ -26,7 +26,6 @@ import type { TabId, TimeRangeId } from "../_constants";
 import { QuickActions } from "./QuickActions";
 import { QuickStatsCard } from "./QuickStatsCard";
 import { RecentTransactions } from "./RecentTransactions";
-import { AutoReloadCard } from "./AutoReloadCard";
 import { DashboardErrorBanner } from "./DashboardErrorBanner";
 import {
 	LazyApiKeyManager,
@@ -259,7 +258,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 		onNavigateToApiKeys,
 		walletConnected = false,
 		hasAnyUsage = false,
-		isDemo = false,
+		isDemo: _isDemo = false,
 	} = props;
 
 	// `usage` is already time-range filtered by the page (`filteredUsage`).
@@ -319,9 +318,6 @@ export function DashboardGrid(props: DashboardGridProps) {
 									recentUsage={usage}
 									creditBatches={creditBatches}
 								/>
-							</WidgetErrorBoundary>
-							<WidgetErrorBoundary title="Auto reload">
-								<AutoReloadCard isDemo={isDemo} />
 							</WidgetErrorBoundary>
 							<WidgetErrorBoundary title="Today's stats">
 								<QuickStatsCard

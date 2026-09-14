@@ -6,21 +6,20 @@ import {
 	CheckCircle2,
 	Coins,
 	Columns2,
-	Download,
-	Upload,
 	FileDown,
-	FileText,
 	FileJson,
+	FileText,
 	Keyboard,
+	MessageSquarePlus,
+	MoreHorizontal,
 	Settings2,
 	Share2,
 	Trash2,
-	MessageSquarePlus,
-	Bug,
+	Upload,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { memo, useState, useRef, useEffect } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import type { Message } from "@/components/chat";
 import { formatCreditsShort } from "@/components/chat/useBalance";
@@ -30,18 +29,12 @@ import { useToast } from "@/components/ui/Toast";
 import type { BalanceResponse } from "@/lib/api";
 
 const LazyModelSelector = dynamic(
-	() =>
-		import("@/components/chat/ModelSelector").then(
-			(mod) => mod.ModelSelector,
-		),
+	() => import("@/components/chat/ModelSelector").then((mod) => mod.ModelSelector),
 	{ ssr: false, loading: () => <Skeleton className="h-8 w-40" /> },
 );
 
 const LazyStatsBar = dynamic(
-	() =>
-		import("@/components/playground/PlaygroundComponents").then(
-			(mod) => mod.StatsBar,
-		),
+	() => import("@/components/playground/PlaygroundComponents").then((mod) => mod.StatsBar),
 	{ ssr: false, loading: () => null },
 );
 
@@ -64,35 +57,11 @@ export interface ChatToolbarProps {
 	importConversation?: (messages: Message[]) => void;
 	newConversation?: () => void;
 	clearChat: () => void;
-	/**
-	 * `messages.length` rather than the `Message[]` itself. The toolbar
-	 * uses this only to gate the share/clear buttons. Holding the array
-	 * here would force a re-render on every SSE token flush because the
-	 * streaming flush replaces the messages reference.
-	 */
 	messagesLength: number;
 	deferredMessages: Message[];
 	setShortcutsOpen: Dispatch<SetStateAction<boolean>>;
-	/** Called when a guest tries to select a paid model */
-	onAuthRequired?: (modelName: string) => void;
 }
 
-/**
-	* The top toolbar that sits above the messages pane.
-	*
-	* Three functional clusters, left → right:
-	* 1. Input/mode — model selector + parameters + media-mode (Chat | Create) tabs.
-	*    All three are decisions about *what kind of input this is*, so they live in
-	*    one group. The media-mode toggle is no longer a separate floating cluster
-	*    (see git history for the "orphan tabs at mobile" fix).
-	* 2. (searching badge sits inside cluster 1 when web search is in flight)
-	* 3. Stats bar (desktop / mobile variants), credit balance pill, then
-	*    compare mode, share, shortcuts, export, clear.
-	*
-	* The Toolbar is purely presentational — every interaction is a prop
-	* callback, every label/state is a prop. The page owns the state and
-	* the side effects (export blob creation, share link, clear, etc.).
-	*/
 export function ChatToolbar({
 	variant = "chat",
 	model,
@@ -115,26 +84,25 @@ export function ChatToolbar({
 	messagesLength,
 	deferredMessages,
 	setShortcutsOpen,
-	onAuthRequired,
 }: ChatToolbarProps) {
 	const isChat = variant === "chat";
 	const messageCount = messagesLength;
 	const toast = useToast();
-	const [exportMenuOpen, setExportMenuOpen] = useState(false);
-	const exportMenuRef = useRef<HTMLDivElement>(null);
+	const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+	const moreMenuRef = useRef<HTMLDivElement>(null);
 
-	// Close export menu when clicking outside
 	useEffect(() => {
-		if (!exportMenuOpen) return;
-		function handleClickOutside(e: MouseEvent) {
-			if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node)) {
-				setExportMenuOpen(false);
+		if (!moreMenuOpen) return;
+		function handleClickOutside(event: MouseEvent) {
+			if (!moreMenuRef.current?.contains(event.target as Node)) {
+				setMoreMenuOpen(false);
 			}
 		}
 		document.addEventListener("mousedown", handleClickOutside);
 		return () => document.removeEventListener("mousedown", handleClickOutside);
-	}, [exportMenuOpen]);
+	}, [moreMenuOpen]);
 
+	const closeMoreMenu = () => setMoreMenuOpen(false);
 	const creditsPill =
 		isChat && isAuthenticated ? (
 			balance ? (
@@ -142,235 +110,80 @@ export function ChatToolbar({
 					href="/deposit"
 					aria-label={`Credit balance: ${Math.round(parseFloat(balance.balanceCents))} credits. Click to add credits.`}
 					data-state={isLowBalance ? "low" : "ok"}
-					className={`${btnBase} shrink-0 data-[state=low]:!border-warning/40 data-[state=low]:!text-warning data-[state=low]:!bg-warning/10 min-h-9 min-w-9 sm:min-h-10 sm:min-w-10`}
+					className={`${btnBase} min-h-9 min-w-9 shrink-0 sm:min-h-10 sm:min-w-10 data-[state=low]:!border-warning/40 data-[state=low]:!bg-warning/10 data-[state=low]:!text-warning`}
 					title="Credit balance — click to add credits"
 				>
-					{isLowBalance ? (
-						<AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-					) : (
-						<Coins className="h-3.5 w-3.5 shrink-0" />
-					)}
-					<span className="tabular-nums text-[10px] sm:text-[11px]">
-						{formatCreditsShort(balanceDollars)}
-					</span>
+					{isLowBalance ? <AlertTriangle className="h-3.5 w-3.5" /> : <Coins className="h-3.5 w-3.5" />}
+					<span className="tabular-nums text-[10px] sm:text-[11px]">{formatCreditsShort(balanceDollars)}</span>
 				</Link>
 			) : (
-				<span
-					className={`${btnBase} shrink-0 opacity-60 min-h-9 min-w-9 sm:min-h-10 sm:min-w-10`}
-					aria-label="Loading credit balance"
-					title="Loading credits…"
-				>
-					<Coins className="h-3.5 w-3.5 shrink-0" />
+				<span className={`${btnBase} min-h-9 min-w-9 shrink-0 opacity-60 sm:min-h-10 sm:min-w-10`} aria-label="Loading credit balance" title="Loading credits…">
+					<Coins className="h-3.5 w-3.5" />
 					<span className="tabular-nums text-[10px] sm:text-[11px]">…</span>
 				</span>
 			)
 		) : null;
 
-	// Web search toggle moved into the composer input row (2026-08-01) —
-	// it belongs next to the send action, not in the model/status toolbar.
-
 	return (
-		<header
-			aria-label="Playground toolbar"
-			className="z-20 flex min-h-14 min-w-0 flex-none flex-wrap items-center gap-x-1.5 gap-y-1.5 border-b border-border bg-void/95 px-4 py-1.5 sm:gap-x-3 sm:px-6 md:h-14 md:flex-nowrap md:px-6 md:py-0 lg:px-8"
-		>
-			{/* Left "input/mode" cluster — model + params + media-mode tabs.
-			    All three are decisions about *what kind of input this is*,
-			    so they live in one group. On mobile (<md) the cluster takes
-			    its own row via `basis-full` so it never gets squashed by
-			    the secondary actions. In Create mode the model selector
-			    and PARAMS hide (Create studio picks its own model) but the
-			    Chat | Create tabs stay so the user can switch back. */}
+		<header aria-label="Playground toolbar" className="z-20 flex min-h-14 min-w-0 flex-none flex-wrap items-center gap-x-1.5 gap-y-1.5 border-b border-border bg-void/95 px-4 py-1.5 sm:gap-x-3 sm:px-6 md:h-14 md:flex-nowrap md:px-6 md:py-0 lg:px-8">
 			<div className="flex min-w-0 max-w-full basis-full items-center gap-1.5 sm:gap-2 md:flex-1 md:basis-auto">
-				<div className="min-w-0 max-w-[min(14rem,calc(100%-3rem))] flex-1 overflow-hidden sm:max-w-[220px] md:max-w-[260px]">
-					<LazyModelSelector
-						model={model}
-						setModel={setModel}
-						isAuthenticated={isAuthenticated}
-						onAuthRequired={onAuthRequired}
-					/>
+				<div className="min-w-0 max-w-[min(14rem,calc(100%-3rem))] flex-1 overflow-visible sm:max-w-[220px] md:max-w-[260px]">
+					<LazyModelSelector model={model} setModel={setModel} isAuthenticated={isAuthenticated} />
 				</div>
-
-				<button
-					type="button"
-					onClick={() => setParamsOpen(!paramsOpen)}
-					aria-label="PARAMS — toggle parameters panel (Cmd+/)"
-					aria-pressed={paramsOpen}
-					className={`${btnBase} shrink-0 min-h-11 min-w-11 sm:min-h-10 sm:min-w-10 transition-[color,background-color,border-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${paramsOpen ? "!bg-surface !text-success !border-success/30" : ""} focus-ring ${messageCount === 0 ? "hidden" : ""}`}
-					title="Toggle Parameters (Cmd+/)"
-				>
-					<Settings2 className="h-4 w-4" />
-					<span className="hidden lg:inline text-[11px] font-semibold tracking-wider">
-						PARAMS
-					</span>
-				</button>
-
-				{/* Chat-only mode — no Create tab. The chat surface is text + multimodal LLM only. */}
-
 				{searching && (
-					<div
-						className="flex shrink-0 items-center gap-1.5 border border-accent/20 bg-accent/10 px-2 py-1.5 text-[10px] uppercase tracking-widest text-accent"
-						role="status"
-						aria-live="polite"
-						aria-label="Searching the web"
-					>
+					<div className="flex shrink-0 items-center gap-1.5 border border-accent/20 bg-accent/10 px-2 py-1.5 text-[10px] uppercase tracking-widest text-accent" role="status" aria-live="polite" aria-label="Searching the web">
 						<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
 						<span>SEARCH</span>
 					</div>
 				)}
 			</div>
 
-			{/* Secondary actions — credits always visible, rest hidden until first message
-			    so a fresh visitor sees only model selector + PARAMS + input, not 9 buttons. */}
-			<div className={`flex shrink-0 items-center gap-1 sm:gap-2 justify-self-end ${messageCount === 0 ? "hidden md:flex" : ""}`}>
-				<div className="hidden shrink-0 xl:block">
-					<LazyStatsBar messages={deferredMessages} model={model} />
-				</div>
-
+			<div className={`flex shrink-0 items-center justify-self-end gap-1 sm:gap-2 ${messageCount === 0 ? "hidden" : "md:flex"}`}>
+				<div className="hidden shrink-0 xl:block"><LazyStatsBar messages={deferredMessages} model={model} /></div>
 				{creditsPill}
-
-				<button
-					type="button"
-					onClick={() => setCompareMode(!compareMode)}
-					aria-label="Compare models side-by-side"
-					className={`${btnBase} max-sm:!hidden shrink-0 sm:inline-flex min-h-9 min-w-9 sm:min-h-10 sm:min-w-10 transition-[color,background-color,border-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97] ${compareMode ? "!bg-surface !text-success !border-success/30" : ""} focus-ring`}
-					title="Compare models side-by-side"
-					aria-pressed={compareMode}
-				>
-					<Columns2 className="h-4 w-4" />
-					<span className="hidden xl:inline text-[11px] font-semibold tracking-wider">
-						COMPARE
-					</span>
-				</button>
-
-				<button
-					type="button"
-					onClick={shareConversation}
-					disabled={shareStatus === "default" && messagesLength === 0}
-					data-state={shareStatus}
-					className={`${btnBase} max-md:!hidden shrink-0 focus-ring transition-[color,background-color,border-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97] data-[state=success]:border-success/30 data-[state=success]:bg-success/10 data-[state=success]:text-success md:inline-flex min-h-9 min-w-9 sm:min-h-10 sm:min-w-10`}
-					title="Copy a link that opens this chat with the current model pre-selected"
-					aria-label="Share chat with current model pre-selected"
-				>
-					{shareStatus === "success" ? (
-						<CheckCircle2 className="h-4 w-4" />
-					) : shareStatus === "error" ? (
-						<AlertCircle className="h-4 w-4" />
-					) : (
-						<Share2 className="h-4 w-4" />
-					)}
-					<span className="hidden lg:inline text-[11px] font-semibold tracking-wider">
-						SHARE
-					</span>
-				</button>
-
-				<button
-					type="button"
-					onClick={() => setShortcutsOpen(true)}
-					className={`${btnBase} max-sm:!hidden shrink-0 focus-ring transition-[color,background-color,border-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97] sm:inline-flex min-h-9 min-w-9 sm:min-h-10 sm:min-w-10`}
-					title="Keyboard shortcuts (?)"
-					aria-label="? — show keyboard shortcuts"
-				>
-					<Keyboard className="h-4 w-4" />
-				</button>
-				
-				{newConversation && (
-					<button
-						type="button"
-						onClick={newConversation}
-						aria-label="New Conversation (Cmd/Ctrl+N)"
-						className={`${btnBase} focus-ring transition-[color,background-color,border-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97] hover:!border-success/20 hover:!bg-success/10 hover:!text-success min-h-9 min-w-9 sm:min-h-10 sm:min-w-10`}
-						title="New Conversation (Cmd/Ctrl+N)"
-					>
-						<MessageSquarePlus className="h-4 w-4" />
+				<div ref={moreMenuRef} className="relative">
+					<button type="button" onClick={() => setMoreMenuOpen((open) => !open)} aria-label="More chat actions" aria-expanded={moreMenuOpen} aria-haspopup="menu" className={`${btnBase} min-h-9 min-w-9 shrink-0 sm:min-h-10 sm:min-w-10 ${moreMenuOpen ? "!border-success/30 !bg-surface !text-success" : ""}`} title="More chat actions">
+						<MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+						<span className="hidden text-[11px] font-semibold tracking-wider sm:inline">MORE</span>
 					</button>
-				)}
-
-				<button
-					type="button"
-					onClick={() => window.open('mailto:support@oma-ai.com?subject=OMA AI App Feedback', '_blank')}
-					className={`${btnBase} max-sm:!hidden shrink-0 focus-ring transition-[color,background-color,border-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97] min-h-9 min-w-9 sm:inline-flex sm:min-h-10 sm:min-w-10`}
-					title="Provide Feedback / Report Bug"
-					aria-label="Provide Feedback"
-				>
-					<Bug className="h-4 w-4" />
-				</button>
-
-				<div className="flex shrink-0 items-center gap-1">
-					{importConversation && (
-						<label
-							className={`${btnBase} max-sm:!hidden focus-ring cursor-pointer transition-[color,background-color,border-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97] min-h-9 min-w-9 sm:inline-flex sm:min-h-10 sm:min-w-10`}
-							title="Import conversation (JSON, MD, TXT)"
-						>
-							<Upload className="h-4 w-4" />
-							<input 
-								type="file" 
-								className="hidden" 
-								accept=".json,.md,.txt" 
-								onChange={async (e) => {
-									const file = e.target.files?.[0];
-									if (!file) return;
-									try {
-										const { parseImportedChat } = await import("@/lib/chat-export");
-										const msgs = await parseImportedChat(file);
-										importConversation(msgs);
-									} catch (err: unknown) {
-										const msg = err instanceof Error ? err.message : String(err);
-										toast.error(msg || "Failed to import conversation");
-									}
-									e.target.value = "";
-								}} 
-							/>
-						</label>
-					)}
-					{messageCount > 0 && variant === "chat" && (
-						<>
-							<div className="relative" ref={exportMenuRef}>
-								<button
-									type="button"
-									onClick={() => setExportMenuOpen(!exportMenuOpen)}
-									aria-label="Export conversation"
-									className={`${btnBase} focus-ring transition-[color,background-color,border-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97] min-h-9 min-w-9 sm:min-h-10 sm:min-w-10 ${exportMenuOpen ? "bg-accent/10 text-accent border-accent/20" : ""}`}
-									title="Export conversation"
-								>
-									<Download className="h-4 w-4" />
-								</button>
-								{exportMenuOpen && (
-									<div className="absolute right-0 top-full mt-2 w-40 rounded-lg border border-border bg-surface p-1 shadow-lg z-[100] animate-in fade-in zoom-in duration-200">
-										<button
-											type="button"
-											onClick={() => { exportConversation("json"); setExportMenuOpen(false); }}
-											className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-white/5 focus-visible:outline-none focus-visible:bg-white/5 focus-visible:ring-2 focus-visible:ring-accent/50"
-										>
-											<FileJson className="h-4 w-4" /> JSON
-										</button>
-										<button
-											type="button"
-											onClick={() => { exportConversation("md"); setExportMenuOpen(false); }}
-											className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-white/5 focus-visible:outline-none focus-visible:bg-white/5 focus-visible:ring-2 focus-visible:ring-accent/50"
-										>
-											<FileDown className="h-4 w-4" /> Markdown
-										</button>
-										<button
-											type="button"
-											onClick={() => { exportConversation("txt"); setExportMenuOpen(false); }}
-											className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-white/5 focus-visible:outline-none focus-visible:bg-white/5 focus-visible:ring-2 focus-visible:ring-accent/50"
-										>
-											<FileText className="h-4 w-4" /> Text
-										</button>
-									</div>
-								)}
-							</div>
-							<button
-								type="button"
-								onClick={clearChat}
-								aria-label="Clear conversation and local history"
-								className={`${btnBase} transition-[color,background-color,border-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97] hover:!border-error/20 hover:!bg-error/10 hover:!text-error focus-ring min-h-9 min-w-9 sm:min-h-10 sm:min-w-10`}
-								title="Clear chat (also clears browser local history)"
-							>
-								<Trash2 className="h-4 w-4" />
+					{moreMenuOpen && (
+						<div role="menu" aria-label="More chat actions" className="absolute right-0 top-full z-[100] mt-2 w-56 rounded-xl border border-border bg-surface p-1.5 shadow-2xl shadow-black/40">
+							<button type="button" role="menuitem" onClick={() => { setParamsOpen(!paramsOpen); closeMoreMenu(); }} aria-pressed={paramsOpen} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[11px] text-white/70 hover:bg-white/5 hover:text-white"><Settings2 className="h-3.5 w-3.5" /> Parameters</button>
+							<button type="button" role="menuitem" onClick={() => { setCompareMode(!compareMode); closeMoreMenu(); }} aria-pressed={compareMode} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[11px] text-white/70 hover:bg-white/5 hover:text-white"><Columns2 className="h-3.5 w-3.5" /> Compare models</button>
+							<button type="button" role="menuitem" onClick={() => { setShortcutsOpen(true); closeMoreMenu(); }} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[11px] text-white/70 hover:bg-white/5 hover:text-white"><Keyboard className="h-3.5 w-3.5" /> Keyboard shortcuts</button>
+							{newConversation && <button type="button" role="menuitem" onClick={() => { newConversation(); closeMoreMenu(); }} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[11px] text-white/70 hover:bg-white/5 hover:text-white"><MessageSquarePlus className="h-3.5 w-3.5" /> New conversation</button>}
+							<div className="my-1 border-t border-border" />
+							<button type="button" role="menuitem" onClick={() => { shareConversation(); closeMoreMenu(); }} disabled={shareStatus === "default" && messagesLength === 0} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[11px] text-white/70 hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-35">
+								{shareStatus === "success" ? <CheckCircle2 className="h-3.5 w-3.5" /> : shareStatus === "error" ? <AlertCircle className="h-3.5 w-3.5" /> : <Share2 className="h-3.5 w-3.5" />} {shareStatus === "success" ? "Link copied" : "Share conversation"}
 							</button>
-						</>
+							{importConversation && (
+								<label role="menuitem" className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[11px] text-white/70 hover:bg-white/5 hover:text-white">
+									<Upload className="h-3.5 w-3.5" /> Import conversation
+									<input type="file" className="hidden" accept=".json,.md,.txt" onChange={async (event) => {
+										const file = event.target.files?.[0];
+										if (!file) return;
+										try {
+											const { parseImportedChat } = await import("@/lib/chat-export");
+											importConversation(await parseImportedChat(file));
+										} catch (error: unknown) {
+											toast.error(error instanceof Error ? error.message : "Failed to import conversation");
+										}
+										event.target.value = "";
+										closeMoreMenu();
+									}}
+									/>
+								</label>
+							)}
+							{isChat && messageCount > 0 && (
+								<div className="flex items-center gap-1 px-2.5 py-1.5">
+									<span className="mr-auto text-[10px] uppercase tracking-widest text-white/35">Export</span>
+									<button type="button" onClick={() => { exportConversation("json"); closeMoreMenu(); }} className="rounded px-1.5 py-1 text-[10px] text-white/60 hover:bg-white/5 hover:text-white" title="Export JSON"><FileJson className="mr-0.5 inline h-3 w-3" />JSON</button>
+									<button type="button" onClick={() => { exportConversation("md"); closeMoreMenu(); }} className="rounded px-1.5 py-1 text-[10px] text-white/60 hover:bg-white/5 hover:text-white" title="Export Markdown"><FileDown className="mr-0.5 inline h-3 w-3" />MD</button>
+									<button type="button" onClick={() => { exportConversation("txt"); closeMoreMenu(); }} className="rounded px-1.5 py-1 text-[10px] text-white/60 hover:bg-white/5 hover:text-white" title="Export text"><FileText className="mr-0.5 inline h-3 w-3" />TXT</button>
+								</div>
+							)}
+							<button type="button" role="menuitem" onClick={() => { clearChat(); closeMoreMenu(); }} disabled={messageCount === 0} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[11px] text-red-300/70 hover:bg-red-400/10 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-35"><Trash2 className="h-3.5 w-3.5" /> Clear conversation</button>
+						</div>
 					)}
 				</div>
 			</div>
@@ -378,10 +191,4 @@ export function ChatToolbar({
 	);
 }
 
-// wrap the toolbar in `memo` so SSE token flushes (which
-// replace the messages array reference) don't re-render the entire
-// toolbar — the toolbar reads `messages.length` (via `clearChat`/`share`)
-// but doesn't render the messages themselves. The shell passes a stable
-// `messagesLength: number` to keep the memo effective; the actual
-// `messages: Message[]` reference is not in the toolbar's prop list.
 export const MemoizedChatToolbar = memo(ChatToolbar);

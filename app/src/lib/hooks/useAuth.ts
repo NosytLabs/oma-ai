@@ -13,7 +13,11 @@
 	* via the `/login` page (magic link, anonymous, SIWE plugin).
 	*/
 import { useEffect, useState } from "react";
-import { useSession, signOut as betterSignOut } from "@/lib/auth-client";
+import {
+	useSession,
+	type SignOutOptions,
+	signOut as betterSignOut,
+} from "@/lib/auth-client";
 
 export interface BetterAuthUser {
 	id: string;
@@ -57,7 +61,7 @@ export interface UseAuthResult {
 	evmAddress: string | null;
 	role: string | null;
 	isAdmin: boolean;
-	signOut: () => Promise<void>;
+	signOut: (options?: SignOutOptions) => Promise<void>;
 	refresh: () => Promise<void>;
 }
 
@@ -125,8 +129,8 @@ export function useAuth(): UseAuthResult {
 		evmAddress,
 		role,
 		isAdmin: role === "admin",
-		async signOut() {
-			await betterSignOut();
+		async signOut(options: SignOutOptions = {}) {
+			await betterSignOut(options);
 		},
 		async refresh() {
 			await session.refetch();

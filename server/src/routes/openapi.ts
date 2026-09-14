@@ -12,6 +12,25 @@ import { config } from "../config.js";
 
 export const openapiRoutes = new Hono<OmaEnv>();
 
+export function getOpenApiServers(publicApiUrl: string, localPort: number) {
+	const localApiUrl = `http://localhost:${localPort}`;
+	const isLocalPublicUrl = (() => {
+		try {
+			const hostname = new URL(publicApiUrl).hostname;
+			return hostname === "localhost" || hostname === "127.0.0.1";
+		} catch {
+			return false;
+		}
+	})();
+	if (isLocalPublicUrl) {
+		return [{ url: localApiUrl, description: "Local development" }];
+	}
+	return [
+		{ url: publicApiUrl, description: "Production" },
+		{ url: localApiUrl, description: "Local development" },
+	];
+}
+
 const spec = {
 	openapi: "3.1.0",
 	info: {
@@ -20,10 +39,7 @@ const spec = {
 		description:
 			"OpenAI-compatible inference gateway. Routes to Venice (premium) and OMA-AI / Gonka.AI (decentralized). x402 pay-per-request for agents; USDC on Base for credit top-ups.",
 	},
-	servers: [
-		{ url: config.PUBLIC_API_URL, description: "Production" },
-		{ url: "http://localhost:3001", description: "Local dev" },
-	],
+	servers: getOpenApiServers(config.PUBLIC_API_URL, config.PORT),
 	components: {
 		securitySchemes: {
 			BearerAuth: { type: "http", scheme: "bearer" },
@@ -426,8 +442,25 @@ const spec = {
 	},
 };
 
-openapiRoutes.get("/openapi.json", (c) => c.json(spec));
-openapiRoutes.get("/openapi", (c) => c.json(spec));
+const INTERNAL_DOCUMENTATION_PATHS = new Set([
+	"/v1/site-settings",
+	"/v1/admin/site-settings",
+	"/v1/admin/credit-adjust",
+	"/v1/admin/user-suspend",
+	"/v1/admin/rate-limit-override",
+	"/v1/admin/users",
+]);
+
+export function getPublicOpenApiSpec() {
+	const paths = { ...spec.paths };
+	for (const path of INTERNAL_DOCUMENTATION_PATHS) {
+		delete paths[path as keyof typeof paths];
+	}
+	return { ...spec, paths };
+}
+
+openapiRoutes.get("/openapi.json", (c) => c.json(getPublicOpenApiSpec()));
+openapiRoutes.get("/openapi", (c) => c.json(getPublicOpenApiSpec()));
 // Common alternate paths used by SDK generators / agent tooling
-openapiRoutes.get("/v1/openapi.json", (c) => c.json(spec));
-openapiRoutes.get("/v1/openapi", (c) => c.json(spec));
+openapiRoutes.get("/v1/openapi.json", (c) => c.json(getPublicOpenApiSpec()));
+openapiRoutes.get("/v1/openapi", (c) => c.json(getPublicOpenApiSpec()));

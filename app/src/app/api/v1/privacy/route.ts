@@ -98,7 +98,6 @@ const PRIVACY_MANIFEST = {
 		],
 		payments: [
 			"Circle (USDC) on Base — credit purchases and x402 settlement",
-			"LI.FI, CCTP — cross-chain deposit routing (planned; not yet enabled)",
 		],
 	},
 	retention_policies: {

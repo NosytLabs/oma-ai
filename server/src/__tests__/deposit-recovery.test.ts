@@ -122,7 +122,7 @@ describe("deposit-recovery lib", () => {
 						expect(db.insert).not.toHaveBeenCalled();
 				});
 
-				it("marks existing pending deposit as completed and credits balance", async () => {
+		it("marks existing pending deposit as completed and credits balance", async () => {
 						vi.mocked(db.select as any).mockReturnValueOnce({
 								from: vi.fn().mockReturnThis(),
 								where: vi.fn().mockReturnThis(),
@@ -250,6 +250,32 @@ describe("deposit-recovery lib", () => {
 								"[deposit-recovery] sender does not match recorded fromAddress, marked deposit failed",
 						);
 				});
+		});
+
+		it("rejects a deposit when the declared amount exceeds the verified transfer", async () => {
+			vi.mocked(db.select as any).mockReturnValueOnce({
+				from: vi.fn().mockReturnThis(),
+				where: vi.fn().mockReturnThis(),
+				limit: vi.fn().mockResolvedValueOnce([{
+					id: "dep_123",
+					userId: "usr_abc12345",
+					txHash: "0xabc",
+					amountUsd: "10.00",
+					status: "pending",
+					fromAddress: "0xfrom",
+				}]),
+			});
+
+			await depositRecovery.processTransfer(mockClient as any, {
+				transactionHash: "0xabc",
+				args: { from: "0xfrom", to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", value: 1_000_000n },
+			}, "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913");
+
+			expect(db.insert).not.toHaveBeenCalled();
+			expect(logger.warn).toHaveBeenCalledWith(
+				expect.objectContaining({ declaredAmountCents: 1000, verifiedAmountCents: 100 }),
+				"[deposit-recovery] declared amount does not match verified transfer, marked deposit failed",
+			);
 		});
 
 		describe("runRecoveryIteration", () => {

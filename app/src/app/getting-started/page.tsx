@@ -5,6 +5,7 @@ import { MODEL_COUNT } from "@/lib/models-data";
 import { InViewFade } from "@/components/motion/in-view-fade";
 import { BreadcrumbListJsonLd } from "@/components/json-ld";
 import { CopyableCode } from "@/components/copyable-code";
+import { PageShell } from "@/app/_components/page-shell";
 
 export const metadata: Metadata = {
 	title: "Getting started — how to use OMA in 5 minutes",
@@ -116,7 +117,7 @@ export default function GettingStartedPage() {
 				<div className="absolute inset-0 bg-grid opacity-[0.35] mask-radial" />
 			</div>
 
-			<div className="container-page page-content max-w-3xl lg:max-w-4xl">
+			<PageShell>
 				<Link
 					href="/"
 					className="flex w-fit min-h-11 items-center gap-1.5 text-sm text-text-secondary hover:text-accent transition-colors duration-200 ease-out mb-8"
@@ -197,7 +198,7 @@ export default function GettingStartedPage() {
 					<Wallet className="h-3.5 w-3.5" aria-hidden="true" />
 					<span>No wallet needed for email sign-in or card payments · USDC &amp; x402 are optional superpowers</span>
 				</div>
-			</div>
+			</PageShell>
 		</div>
 	);
 }

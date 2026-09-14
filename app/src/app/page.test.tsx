@@ -160,13 +160,6 @@ describe("HomePage", () => {
 		expect(screen.getAllByText(/get your api key/i).length).toBeGreaterThan(0);
 	});
 
-	it("renders the agent session demo section", async () => {
-		renderWithQueryClient(<HomePage />);
-		await waitFor(() => {
-			expect(screen.getByText(/point any openai client at oma/i)).toBeInTheDocument();
-		});
-	});
-
 	it("renders the stats section with honest metrics", async () => {
 		renderWithQueryClient(<HomePage />);
 		await waitFor(() => {
@@ -176,23 +169,11 @@ describe("HomePage", () => {
 		});
 	});
 
-	it("renders the x402 banner", async () => {
-		renderWithQueryClient(<HomePage />);
-		await waitFor(() => {
-			expect(
-				screen.getByRole("heading", { name: /HTTP 402 payments/i }),
-			).toBeInTheDocument();
-			expect(
-				screen.getAllByText(/No card required/i).length,
-			).toBeGreaterThan(0);
-		});
-	});
-
 	it("renders the final CTA section", async () => {
 		renderWithQueryClient(<HomePage />);
 		await waitFor(() => {
 			expect(
-				screen.getByRole("heading", { name: /Get an API key/i }),
+    screen.getByRole("heading", { name: /Build with OMA/i }),
 			).toBeInTheDocument();
 			expect(screen.getByText(/Call any model/i)).toBeInTheDocument();
 		});

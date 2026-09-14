@@ -20,7 +20,7 @@ OMA-AI stands for **Open Model Access**. It is a single API endpoint that unifie
 | OpenAI-compatible apps | Drop-in `/v1/chat/completions` endpoint |
 | Anthropic-compatible apps | Drop-in `/v1/messages` endpoint |
 | Multi-model routing | Automatic failover across providers (static peer map + hidden Surplus retry) |
-| Agent billing | x402 USDC micropayments + Polar card credits |
+| Agent billing | x402 USDC micropayments + optional Polar card credits |
 | Privacy | Prompts not used for training; usage is metered for billing |
 
 One OpenAI-compatible endpoint for a curated catalog. Venice-routed models include a 25% platform fee; OMA-AI/OpenBroker prices already include margin. Guest chat is free with a daily cap.
@@ -47,7 +47,7 @@ Drop-in replacement for any OpenAI or Anthropic SDK. Unified chat completions (`
 
 ### 🎯 Curated Model Registry
 
-21 curated chat models (18 Venice + 3 OMA-AI) across providers. We curate the best models so you don't have to sift through 100+ low-quality alternatives. The 3 OMA-AI models are sourced exclusively from the live OpenBroker / Gonka.AI upstream.
+A curated chat catalog across providers. We keep the public model list current so you do not have to sift through hundreds of low-quality alternatives; the live `/v1/models` endpoint is the source of truth for availability and pricing.
 
 ### 🆓 Free Guest Chat
 Budget-friendly, sign-in-free chat via OMA-AI models with a generous daily limit for anonymous visitors. Perfect for evaluating the platform before upgrading.
@@ -63,7 +63,7 @@ Budget-friendly, sign-in-free chat via OMA-AI models with a generous daily limit
 | **Database** | PostgreSQL (Neon-ready) + Drizzle ORM |
 | **Cache / Queue** | Redis |
 | **Auth** | Better Auth + SIWE (Ethereum wallets) |
-| **Billing** | Polar.sh (cards) + x402 / EIP-3009 (USDC) |
+| **Billing** | USDC / x402, plus Polar cards when configured |
 | **Testing** | Vitest, Playwright |
 | **Package Manager** | pnpm (monorepo) |
 

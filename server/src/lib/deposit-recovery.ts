@@ -38,9 +38,9 @@ export async function processTransfer(
 
 		if (args.to.toLowerCase() !== depositAddress.toLowerCase()) return;
 
-		const amountUsdCents = Math.round(Number(formatUnits(args.value, USDC_DECIMALS)) * 100);
-		if (amountUsdCents < MIN_DEPOSIT_CENTS) {
-				logger.debug({ txHash, amountUsdCents }, "[deposit-recovery] skipping dust transfer");
+		const verifiedAmountCents = Math.round(Number(formatUnits(args.value, USDC_DECIMALS)) * 100);
+		if (verifiedAmountCents < MIN_DEPOSIT_CENTS) {
+				logger.debug({ txHash, amountUsdCents: verifiedAmountCents }, "[deposit-recovery] skipping dust transfer");
 				return;
 		}
 
@@ -67,7 +67,7 @@ export async function processTransfer(
 								kind: "usdc_deposit",
 								outcome: "double_spend_blocked",
 								userId,
-								amountCents: amountUsdCents,
+						amountCents: verifiedAmountCents,
 								signature: txHash,
 								latencyMs: Date.now() - startedAt,
 						});
@@ -79,7 +79,7 @@ export async function processTransfer(
 				// the txHash. Only credit when the on-chain sender actually matches —
 				// otherwise anyone could submit someone else's transfer hash first and
 				// claim the credits. Legacy rows (no fromAddress) keep the old behavior.
-				if (existingDeposit.fromAddress) {
+			if (existingDeposit.fromAddress) {
 						const sender = (args.from ?? "").toLowerCase();
 						const recorded = existingDeposit.fromAddress.toLowerCase();
 						if (sender !== recorded) {
@@ -91,7 +91,7 @@ export async function processTransfer(
 										kind: "usdc_deposit",
 										outcome: "attribution_mismatch",
 										userId,
-										amountCents: amountUsdCents,
+							amountCents: verifiedAmountCents,
 										signature: txHash,
 										latencyMs: Date.now() - startedAt,
 								});
@@ -100,16 +100,40 @@ export async function processTransfer(
 										"[deposit-recovery] sender does not match recorded fromAddress, marked deposit failed",
 								);
 								return;
-						}
 				}
+			}
+
+			// The browser's declared amount is informational only. Credits must
+			// always equal the amount in the mined USDC Transfer event; otherwise a
+			// caller could submit a small transfer and claim a larger balance.
+			const declaredAmountCents = Math.round(Number(existingDeposit.amountUsd) * 100);
+			if (declaredAmountCents !== verifiedAmountCents) {
+				await db
+					.update(deposits)
+					.set({ status: "failed" })
+					.where(eq(deposits.id, existingDeposit.id));
+				logPaymentEvent({
+					kind: "usdc_deposit",
+					outcome: "amount_mismatch",
+					userId,
+					amountCents: verifiedAmountCents,
+					signature: txHash,
+					latencyMs: Date.now() - startedAt,
+				});
+				logger.warn(
+					{ txHash, userId, declaredAmountCents, verifiedAmountCents },
+					"[deposit-recovery] declared amount does not match verified transfer, marked deposit failed",
+				);
+				return;
+			}
 
 		await db.transaction(async (tx) => {
 				const claimed = await tx
 						.update(deposits)
 						.set({
-								status: "completed",
-								completedAt: new Date(),
-								creditsIssued: existingDeposit.amountUsd,
+						status: "completed",
+						completedAt: new Date(),
+						creditsIssued: (verifiedAmountCents / 100).toFixed(2),
 						})
 						.where(and(eq(deposits.id, existingDeposit.id), eq(deposits.status, "pending")))
 						.returning({ id: deposits.id });
@@ -118,7 +142,7 @@ export async function processTransfer(
 								kind: "usdc_deposit",
 								outcome: "double_spend_blocked",
 								userId,
-								amountCents: amountUsdCents,
+							amountCents: verifiedAmountCents,
 								signature: txHash,
 								latencyMs: Date.now() - startedAt,
 						});
@@ -128,17 +152,17 @@ export async function processTransfer(
 				await tx
 						.insert(creditBalances)
 						.values({
-								userId,
-								balanceCents: Math.round(Number(existingDeposit.amountUsd) * 100).toString(),
-								totalDepositedCents: Math.round(Number(existingDeposit.amountUsd) * 100).toString(),
+					userId,
+					balanceCents: verifiedAmountCents.toString(),
+					totalDepositedCents: verifiedAmountCents.toString(),
 								totalUsedCents: "0",
 								lastActivityAt: new Date(),
 						})
 						.onConflictDoUpdate({
 								target: creditBalances.userId,
 								set: {
-										balanceCents: sql`${creditBalances.balanceCents} + ${Math.round(Number(existingDeposit.amountUsd) * 100)}`,
-										totalDepositedCents: sql`${creditBalances.totalDepositedCents} + ${Math.round(Number(existingDeposit.amountUsd) * 100)}`,
+					balanceCents: sql`${creditBalances.balanceCents} + ${verifiedAmountCents}`,
+					totalDepositedCents: sql`${creditBalances.totalDepositedCents} + ${verifiedAmountCents}`,
 										lastActivityAt: new Date(),
 										updatedAt: new Date(),
 								},
@@ -148,11 +172,11 @@ export async function processTransfer(
 						kind: "usdc_deposit",
 						outcome: "settled",
 						userId,
-						amountCents: amountUsdCents,
+					amountCents: verifiedAmountCents,
 						signature: txHash,
 						latencyMs: Date.now() - startedAt,
 				});
-				logger.info({ txHash, userId, depositId: existingDeposit.id, amountUsdCents }, "[deposit-recovery] marked pending deposit as completed and credited balance");
+				logger.info({ txHash, userId, depositId: existingDeposit.id, amountUsdCents: verifiedAmountCents }, "[deposit-recovery] marked pending deposit as completed and credited balance");
 				});
 				return;
 		}

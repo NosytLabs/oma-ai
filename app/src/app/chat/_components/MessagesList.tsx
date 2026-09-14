@@ -3,37 +3,19 @@
 /**
 	* MESSAGES LIST — Scrollable message area
 	*
-	* Renders the welcome banner + examples when no messages are present,
-	* otherwise the message list with jump-to-bottom controls. The chat
+	* Renders the starter surface when no messages are present, otherwise the
+	* message list with jump-to-bottom controls. The chat
 	* surface is text + multimodal LLM only — no image / video studio.
 	*/
 
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";
-import { ChevronDown, GitCompare, Keyboard } from "lucide-react";
-import dynamic from "next/dynamic";
+import { ChevronDown } from "lucide-react";
 import type { RefObject } from "react";
-import type { ExampleConversation, Message } from "@/components/chat";
+import type { Message } from "@/components/chat";
 import { A2UIRenderer, isA2UI, type A2UIActionEvent } from "@/components/chat/A2UIRenderer";
 import { ChatEmptyState } from "@/components/chat/ChatEmptyState";
 import { ChatMessageed } from "@/components/chat/ChatMessage";
-import { Skeleton } from "@/components/ui/Skeleton";
-
-const LazyWelcomeBanner = dynamic(
-	() =>
-		import("@/components/chat/WelcomeBanner").then(
-			(mod) => mod.WelcomeBanner,
-		),
-	{ ssr: false, loading: () => null },
-);
-
-const LazyExampleConversations = dynamic(
-	() =>
-		import("@/components/chat/ExampleConversations").then(
-			(mod) => mod.ExampleConversations,
-		),
-	{ ssr: false, loading: () => <Skeleton className="h-48 w-full" /> },
-);
 
 /** Safe JSON parse that returns null on failure or non-object input. */
 function safeJsonParse(s: string): unknown {
@@ -191,9 +173,6 @@ export interface MessagesListProps {
 	handleScroll: () => void;
 	deferredMessages: Message[];
 	handleCopy: () => void;
-	handlePreset: (prompt: string, model?: string) => void;
-	handleExampleSelect: (example: ExampleConversation) => void;
-	inputRef: RefObject<HTMLTextAreaElement | null>;
 	/** Regenerate the last assistant turn (ChatGPT-style Retry). */
 	onRegenerate?: () => void;
 	/** Fired when the user clicks an A2UI action button (server action event). */
@@ -201,28 +180,6 @@ export interface MessagesListProps {
 	/** Signed-in users skip guest marketing (welcome + example dump). */
 	isAuthenticated?: boolean;
 }
-
-/**
-	* Feature hints shown below the empty state on first visit.
-	* These help users discover advanced capabilities they might
-	* not find on their own (compare mode, system prompts, etc.).
-	*/
-const FEATURE_HINTS = [
-	{
-		icon: GitCompare,
-		label: "Compare Models",
-		description:
-			"Try two models side-by-side with the COMPARE button in the toolbar",
-	},
-	{
-		icon: Keyboard,
-		label: "Shortcuts",
-		description:
-			"Press ? for keyboard shortcuts — Cmd+K models · Cmd+Shift+P params",
-	},
-];
-
-const FEATURE_HINTS_KEY = "oma-chat-feature-hints-seen";
 
 export function MessagesList({
 	scrollContainerRef,
@@ -233,23 +190,10 @@ export function MessagesList({
 	handleScroll,
 	deferredMessages,
 	handleCopy,
-	handlePreset,
-	handleExampleSelect,
-	inputRef,
 	onRegenerate,
 	onA2UIAction,
 	isAuthenticated = false,
 }: MessagesListProps) {
-	const showFeatureHints =
-		deferredMessages.length === 0 &&
-		(() => {
-			try {
-				return localStorage.getItem(FEATURE_HINTS_KEY) !== "1";
-			} catch {
-				return false;
-			}
-		})();
-
 	return (
 		<div
 			ref={scrollContainerRef}
@@ -263,60 +207,9 @@ export function MessagesList({
 			<div className="max-w-4xl mx-auto relative z-0 min-h-full">
 				{deferredMessages.length === 0 ? (
 					<div className="pb-8">
-						{!isAuthenticated && (
-							<LazyWelcomeBanner
-								onSelectExample={() => {
-									const el = document.getElementById("example-conversations");
-									el?.scrollIntoView({ behavior: "smooth", block: "start" });
-								}}
-								onGetStarted={() => {
-									inputRef.current?.focus();
-								}}
-							/>
-						)}
 						<div className={isAuthenticated ? "pt-8 md:pt-16" : "pt-4 md:pt-6"}>
-							<ChatEmptyState
-								onPreset={handlePreset}
-								signedIn={isAuthenticated}
-							/>
+							<ChatEmptyState signedIn={isAuthenticated} />
 						</div>
-						{!isAuthenticated && (
-							<LazyExampleConversations onSelect={handleExampleSelect} />
-						)}
-
-						{/* Feature discovery hints — guests only */}
-						{showFeatureHints && !isAuthenticated && (
-							<m.div
-								initial={{ opacity: 0, y: 12 }}
-								animate={{ opacity: 1, y: 0 }}
-								transition={{ delay: 0.6, ...springs.soft }}
-								className="mt-8 px-4 md:px-0"
-							>
-								<div className="max-w-4xl mx-auto">
-									<h3 className="text-[10px] font-mono text-text-muted uppercase tracking-widest mb-3 font-bold">
-										DISCOVER MORE
-									</h3>
-									<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-										{FEATURE_HINTS.map((hint, i) => (
-											<div
-												key={i}
-												className="flex items-start gap-2.5 px-3 py-3 border border-border/40 bg-surface/30 text-[10px] font-mono text-text-muted"
-											>
-												<hint.icon className="w-3.5 h-3.5 shrink-0 mt-0.5 text-text-muted/50" />
-												<div>
-													<span className="font-bold text-text-secondary block mb-0.5">
-														{hint.label}
-													</span>
-													<span className="leading-relaxed normal-case">
-														{hint.description}
-													</span>
-												</div>
-											</div>
-										))}
-									</div>
-								</div>
-							</m.div>
-						)}
 					</div>
 				) : (
 					<div className="space-y-3 md:space-y-4 pb-12">

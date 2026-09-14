@@ -44,6 +44,8 @@ interface MessageInputProps {
 	/** UI-mode toggle (A2UI) rendered inside the composer tool rail. */
 	uiMode?: boolean;
 	setUiMode?: (v: boolean) => void;
+	/** Whether the advanced composer tool rail should be visible. Defaults on for standalone callers. */
+	showAdvancedTools?: boolean;
 }
 
 export const MessageInput = forwardRef<
@@ -58,11 +60,12 @@ export const MessageInput = forwardRef<
 		loading,
 		textareaRef: externalTextareaRef,
 		disabled = false,
-		disabledReason,
-		webSearchEnabled = false,
-		setWebSearchEnabled,
-		uiMode = false,
-		setUiMode,
+	disabledReason,
+	webSearchEnabled = false,
+	setWebSearchEnabled,
+	uiMode = false,
+	setUiMode,
+	showAdvancedTools = true,
 	},
 	forwardedRef,
 ) {
@@ -249,7 +252,7 @@ export const MessageInput = forwardRef<
 					{/* Row 2 — tool rail + key hint */}
 					<div className="flex min-h-9 items-center justify-between gap-2 px-2 pb-2 pt-1 sm:px-3">
 						<div className="flex min-w-0 items-center gap-1.5">
-							{setUiMode && (
+							{showAdvancedTools && setUiMode && (
 								<button
 									type="button"
 									onClick={() => setUiMode(!uiMode)}
@@ -274,7 +277,7 @@ export const MessageInput = forwardRef<
 								</button>
 							)}
 
-							{setWebSearchEnabled && (
+							{showAdvancedTools && setWebSearchEnabled && (
 								<button
 									type="button"
 									onClick={() => setWebSearchEnabled(!webSearchEnabled)}

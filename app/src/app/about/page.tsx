@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, Cpu, Shield, Wallet } from "lucide-react";
 import { MODEL_COUNT } from "@/lib/models-data";
 import { InViewFade } from "@/components/motion/in-view-fade";
 import { BreadcrumbListJsonLd } from "@/components/json-ld";
+import { PageShell } from "@/app/_components/page-shell";
 
 export const metadata: Metadata = {
 	title: "About OMA — Open Model Access",
@@ -47,7 +48,7 @@ export default function AboutPage() {
 				]}
 			/>
 
-			<div className="container-page page-content max-w-3xl lg:max-w-4xl">
+			<PageShell>
 				<Link
 					href="/"
 					className="flex w-fit min-h-11 items-center gap-1.5 text-sm text-text-secondary hover:text-accent transition-colors duration-200 ease-out mb-10"
@@ -105,7 +106,7 @@ export default function AboutPage() {
 						<span>Contact</span>
 					</Link>
 				</div>
-			</div>
+			</PageShell>
 		</div>
 	);
 }

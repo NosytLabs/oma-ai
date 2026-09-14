@@ -26,7 +26,9 @@ const PAGES = [
 ];
 
 async function main() {
-  const browser = await chromium.launch({ headless: true });
+	mkdirSync(DIR, { recursive: true });
+
+	const browser = await chromium.launch({ headless: true });
   
   // Desktop screenshots
   console.log('=== DESKTOP (1440x900) ===');

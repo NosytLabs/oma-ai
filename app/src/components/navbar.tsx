@@ -213,7 +213,7 @@ export function Navbar() {
 							className="mx-0.5 hidden h-4 w-px bg-border/60 lg:inline-block"
 						/>
 
-					{isPending ? (
+						{isPending ? (
 						// Skeleton sized to the signed-out "Get API key" CTA
 						// (btn-mono: min-h-10) so the swap to real content
 						// doesn't shift the navbar.
@@ -223,10 +223,10 @@ export function Navbar() {
 							role="status"
 						/>
 					) : isAuthenticated && !isDemo ? (
-							<NavbarUserMenu
+						<NavbarUserMenu
 								evmAddress={evmAddress}
 								email={user?.email ?? null}
-								onSignOut={signOut}
+								onSignOut={() => signOut({ callbackURL: "/" })}
 							/>
 						) : (
 							<Magnetic strength={6}>
@@ -235,7 +235,7 @@ export function Navbar() {
 									aria-label="Sign in or create an account"
 									className={`${pathname === "/chat" || pathname?.startsWith("/chat/") ? "hidden sm:inline-flex" : "inline-flex"} btn-mono btn-primary`}
 								>
-									<span>Get API key</span>
+									<span>Sign in / Sign up</span>
 									<svg
 										className="hidden h-3 w-3 sm:block"
 										viewBox="0 0 24 24"
@@ -281,7 +281,7 @@ export function Navbar() {
 					toggleRef={mobileToggleRef}
 					isConnected={isAuthenticated && !isDemo}
 					section={section}
-					onDisconnect={signOut}
+					onDisconnect={() => signOut({ callbackURL: "/" })}
 				/>
 			</nav>
 		</header>

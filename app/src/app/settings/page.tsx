@@ -155,8 +155,7 @@ function SettingsPageContent() {
 	const handleLogout = async () => {
 		setDeleting(false);
 		try {
-			await signOut();
-			window.location.href = "/";
+			await signOut({ callbackURL: "/" });
 		} catch (e: unknown) {
 			setError(e instanceof Error ? e.message : "Logout failed");
 		}
@@ -167,13 +166,13 @@ function SettingsPageContent() {
 		try {
 			await api.auth.deleteAccount();
 			try {
-				await signOut();
+				await signOut({ callbackURL: "/" });
 			} catch {
 				/* session may already be gone */
 			}
-			window.location.href = "/";
 		} catch (e: unknown) {
 			setError(e instanceof Error ? e.message : "Account deletion failed");
+		} finally {
 			setDeleting(false);
 		}
 	};

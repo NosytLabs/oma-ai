@@ -35,7 +35,7 @@ export type ModelPricing = {
 };
 
 export type EndpointInfo = {
-	method: "GET" | "POST";
+	method: "GET" | "POST" | "DELETE";
 	path: string;
 	/** Stable heading anchor used by the docs sidebar/search (nav-data.ts). */
 	anchor: string;
@@ -226,46 +226,6 @@ export const ENDPOINTS: EndpointInfo[] = [
 	},
 	{
 		method: "GET",
-		path: "/api/auth/get-session",
-		anchor: "ep-session",
-		title: "Session Lookup",
-		desc: "Reads the current authenticated session. Used by middleware to gate protected routes and by client-side auth hooks.",
-		auth: "Session cookie (set by magic-link or SIWE sign-in)",
-		body: undefined,
-		response: `{
-	"user": { "id": "usr_…", "email": "…" },
-	"session": { "expiresAt": "…" }
-}`,
-	},
-	{
-		method: "GET",
-		path: "/api/auth/siwe/nonce · POST /api/auth/siwe/verify",
-		anchor: "ep-siwe",
-		title: "SIWE Nonce + Verify",
-		desc: "Wallet sign-in via EIP-4361 on Base mainnet. Issue a nonce, sign the message with your wallet, then verify — the server sets the HttpOnly session cookie.",
-		auth: "None (nonce is public); POST verifies the signed message via viem",
-		body: {
-			message: "string (required). The EIP-4361 message the wallet signed",
-			signature: "string (required). Hex signature from the wallet",
-			walletAddress: "string (required). Signer address",
-			chainId: "number (required). 8453 for Base mainnet",
-		},
-		response: `{
-	"user": { "id": "usr_…", "walletAddress": "0x…" }
-}`,
-	},
-	{
-		method: "POST",
-		path: "/api/auth/sign-in/magic-link",
-		anchor: "ep-magic-link",
-		title: "Magic Link",
-		desc: "Passwordless email sign-in. Sends a single-use link (5-minute expiry). Clicking it sets the HttpOnly session cookie.",
-		auth: "None",
-		body: { email: "string (required). Recipient email address" },
-		response: `{ "status": 200 }`,
-	},
-	{
-		method: "GET",
 		path: "/v1/balance",
 		anchor: "ep-balance",
 		title: "Credit Balance",
@@ -301,7 +261,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 		path: "/v1/checkout",
 		anchor: "ep-checkout",
 		title: "Polar Checkout",
-		desc: "Creates a Polar hosted-checkout session for Hobby ($10/1000cr), Builder ($50/5000cr), or Scale ($250/25000cr). Polar's webhook credits the user on order.paid.",
+		desc: "Creates a Polar hosted-checkout session for Hobby ($10/1000cr), Builder ($50/5000cr), or Scale ($250/25000cr). Available only when the operator has configured and enabled Polar; otherwise returns 503. Polar's webhook credits the user on order.paid.",
 		auth: "Bearer token (API key)",
 		body: {
 			plan: 'string (required). "hobby" | "builder" | "scale"',
@@ -347,17 +307,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 	},
 	{
 		method: "POST",
-		path: "/webhooks/polar",
-		anchor: "ep-polar-webhook",
-		title: "Polar Webhook (inbound)",
-		desc: "Polar sends signed POSTs here on order events. We verify the HMAC signature, look up the user from checkout metadata, and credit/drain accordingly. Idempotent on webhook-id.",
-		auth: "HMAC SHA-256 signature (Standard Webhooks)",
-		body: undefined,
-		response: `{ "ok": true, "duplicate": true } // 200 on success or duplicate`,
-	},
-	{
-		method: "POST",
-		path: "POST /v1/deposit/usdc",
+		path: "/v1/deposit/usdc",
 		anchor: "ep-deposit-submit",
 		title: "Record USDC Deposit",
 		desc: "Records a pending USDC deposit after you send funds to the treasury address from /v1/deposit/usdc (GET). The on-chain watcher credits your balance once the transfer confirms (typically <60s on Base).",
@@ -449,43 +399,6 @@ export const ENDPOINTS: EndpointInfo[] = [
 	},
 	{
 		method: "GET",
-		path: "/v1/credits/auto-reload",
-		anchor: "ep-auto-reload-get",
-		title: "Auto-Reload Settings",
-		desc: "Reads your current auto-reload settings. Returns defaults when unset.",
-		auth: "Bearer token (API key)",
-		body: undefined,
-		response: `{
-	"enabled": false,
-	"thresholdCents": 500,
-	"reloadAmountCents": 10000,
-	"spendLimitCents": 100000,
-	"paymentMethod": "usdc"
-}`,
-	},
-	{
-		method: "POST",
-		path: "/v1/credits/auto-reload",
-		anchor: "ep-auto-reload-post",
-		title: "Update Auto-Reload",
-		desc: "Update auto-reload settings. When enabled, a USDC reload is initiated once the balance drops below the threshold (subject to the monthly spend limit).",
-		auth: "Bearer token (API key)",
-		body: {
-			enabled: "boolean (optional). Master auto-reload switch",
-			thresholdCents: "number (optional). Reload trigger threshold, 0–1,000,000",
-			reloadAmountCents: "number (optional). Reload size, 100–10,000,000",
-			spendLimitCents: "number (optional). Monthly cap, 0–10,000,000",
-		},
-		response: `{
-	"enabled": true,
-	"thresholdCents": 500,
-	"reloadAmountCents": 10000,
-	"spendLimitCents": 100000,
-	"paymentMethod": "usdc"
-}`,
-	},
-	{
-		method: "GET",
 		path: "/v1/keys",
 		anchor: "ep-keys-list",
 		title: "List API Keys",
@@ -521,44 +434,14 @@ export const ENDPOINTS: EndpointInfo[] = [
 }`,
 	},
 	{
-		method: "GET",
-		path: "DELETE /v1/keys/:id",
+		method: "DELETE",
+		path: "/v1/keys/:id",
 		anchor: "ep-keys-revoke",
 		title: "Revoke API Key",
 		desc: "Revokes an API key by id, immediately invalidating it. The key stops working on all future requests.",
 		auth: "Bearer token (API key) or session cookie",
 		body: undefined,
 		response: `{ "success": true, "id": "key_…" }`,
-	},
-	{
-		method: "GET",
-		path: "DELETE /v1/history",
-		anchor: "ep-history",
-		title: "Wipe Usage History",
-		desc: "Deletes your usage records and audit trail (GDPR right-to-forget) without deleting the account. Balance, API keys, and identity stay intact.",
-		auth: "Bearer token (API key) or session cookie",
-		body: undefined,
-		response: `{
-	"success": true,
-	"deleted": { "usageRecords": 42, "auditLogs": 42 }
-}`,
-	},
-	{
-		method: "GET",
-		path: "GET /v1/export/summary · usage · deposits · account",
-		anchor: "ep-export",
-		title: "Data Export",
-		desc: "One-click account data export for backups and GDPR portability. Each route returns CSV by default (add ?format=json for JSON).",
-		auth: "Bearer token (API key) or session cookie",
-		body: undefined,
-		response: `// /v1/export/summary
-{
-	"balance_cents": "7650",
-	"total_deposited_cents": "10000",
-	"total_used_cents": "2350",
-	"total_requests": 42,
-	"exported_at": "2026-08-01T00:00:00.000Z"
-}`,
 	},
 	{
 		method: "POST",

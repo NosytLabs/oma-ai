@@ -20,72 +20,6 @@ import {
 import { SERVER_TREASURY } from "./treasury.js";
 import type { PaymentPayload, PaymentResponse, PaymentSignature } from "./types.js";
 
-// ============================================================
-// QuickNode hosted x402 facilitator (marketplace add-on)
-// ============================================================
-//
-// When X402_FACILITATOR_PROVIDER=quicknode AND QUICKNODE_X402_URL is set,
-// verify/settle are delegated to QuickNode's hosted x402 facilitator. Local
-// verify (viem + CHAIN_RPC_URL) is the default — most deployments want to
-// keep settlement keys in their own custody. The QuickNode path is for
-// operators who specifically opted into hosted facilitator service.
-//
-// Wire shape: POST {QUICKNODE_X402_URL}/verify with the same PaymentSignature
-// shape used locally. Hosted endpoint returns { valid, txHash, amount,
-// networkId, error? } mirroring `verifyPayment`'s return.
-// not over the top. One fetch helper, one switch on provider.
-
-const QUICKNODE_X402_ENABLED =
-		config.X402_FACILITATOR_PROVIDER === "quicknode" &&
-		!!config.QUICKNODE_X402_URL &&
-		!!config.QUICKNODE_X402_API_KEY;
-
-interface QuicknodeX402VerifyResponse {
-		valid: boolean;
-		txHash?: string;
-		amount?: string;
-		networkId?: string;
-		error?: string;
-}
-
-async function quicknodeX402Verify(
-		paymentSig: PaymentSignature,
-): Promise<PaymentResponse> {
-		if (!config.QUICKNODE_X402_URL || !config.QUICKNODE_X402_API_KEY) {
-				return { valid: false, error: "QuickNode x402 not configured" };
-		}
-		const baseUrl = config.QUICKNODE_X402_URL.replace(/\/+$/, "");
-		try {
-				const res = await fetch(`${baseUrl}/verify`, {
-						method: "POST",
-						headers: {
-								"Content-Type": "application/json",
-								"x-api-key": config.QUICKNODE_X402_API_KEY,
-						},
-						body: JSON.stringify(paymentSig),
-				});
-				if (!res.ok) {
-						const text = await res.text().catch(() => "");
-						logger.error(
-								{ status: res.status, body: text.slice(0, 500) },
-								"[FACILITATOR] QuickNode x402 verify non-2xx",
-						);
-						return { valid: false, error: `QuickNode x402 verify failed: HTTP ${res.status}` };
-				}
-				const body = (await res.json()) as QuicknodeX402VerifyResponse;
-				return {
-						valid: !!body.valid,
-						txHash: body.txHash as Hash | undefined,
-						amount: body.amount,
-						networkId: body.networkId,
-						error: body.error,
-				};
-		} catch (err) {
-				logger.error({ err }, "[FACILITATOR] QuickNode x402 verify network error");
-				return { valid: false, error: "QuickNode x402 verify network error" };
-		}
-}
-
 function checkTransferAmount(
 		rawAmount: bigint,
 		recipient: string,
@@ -338,14 +272,6 @@ export async function verifyPayment(
 				}
 				logger.warn("[FACILITATOR] Processing payment in mock mode -- signatures are NOT verified on-chain");
 				const result = await mockVerifyPayment(signature, payload);
-				cacheVerifiedRecord(payload, result, signature);
-				return result;
-		}
-
-		// route to QuickNode's hosted x402 facilitator when explicitly
-		// configured. Local viem-based verification is the default.
-		if (QUICKNODE_X402_ENABLED) {
-				const result = await quicknodeX402Verify(paymentSig);
 				cacheVerifiedRecord(payload, result, signature);
 				return result;
 		}

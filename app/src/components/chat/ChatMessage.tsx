@@ -20,10 +20,9 @@
 	*/
 
 import {
-		AnimatePresence,
-		m,
-		useReducedMotion,
-		type Variants,
+	AnimatePresence,
+	m,
+	useReducedMotion,
 } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";
 import { ThinkingOrb } from "thinking-orbs";
@@ -57,30 +56,6 @@ import {
 	type Message,
 	type SearchResult,
 } from "./chat-message-shared";
-
-// ═══════════════════════════════════════════════════════════════════
-// STAGGERED ENTRANCE — Messages appear in a cascade, not all at once
-// ═══════════════════════════════════════════════════════════════════
-
-const messageVariants: Variants = {
-		hidden: {
-				opacity: 0,
-				scale: 0.985,
-				y: 8,
-		},
-		visible: {
-				opacity: 1,
-				scale: 1,
-				y: 0,
-				transition: springs.soft,
-		},
-		exit: {
-				opacity: 0,
-				scale: 0.985,
-				y: -6,
-				transition: springs.soft,
-		},
-};
 
 export const TypingBubble = () => (
 		<div className="flex h-6 items-center justify-center gap-1 rounded-full bg-accent/10 border border-accent/20 px-3 shadow-sm w-fit">
@@ -179,11 +154,12 @@ export const ChatMessageed = memo(function ChatMessageed({
 		return (
 				<m.div
 						layout="position"
-						initial={prefersReducedMotion ? false : "hidden"}
-						animate={prefersReducedMotion ? {} : "visible"}
-						exit={prefersReducedMotion ? { opacity: 0 } : "exit"}
-						variants={prefersReducedMotion ? undefined : messageVariants}
-						transition={springs.soft}
+						initial={false}
+						exit={{
+							opacity: 0,
+							y: -4,
+							transition: { duration: 0.1, ease: "easeIn" as const },
+						}}
 						className={`
 	group relative
 	${

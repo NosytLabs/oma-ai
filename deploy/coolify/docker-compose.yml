@@ -18,10 +18,10 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_API_URL=https://api.oma-ai.com
-      - NEXT_PUBLIC_APP_URL=https://oma-ai.com
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-https://api.oma-ai.com}
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-${PUBLIC_APP_URL:-https://oma-ai.com}}
       # Public URL used by the agent card and generated discovery metadata.
-      - PUBLIC_API_URL=https://api.oma-ai.com
+      - PUBLIC_API_URL=${PUBLIC_API_URL:-https://api.oma-ai.com}
       - NEXT_PUBLIC_TREASURY_BASE_ADDRESS=${NEXT_PUBLIC_TREASURY_BASE_ADDRESS:-${USDC_DEPOSIT_ADDRESS}}
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
@@ -46,10 +46,12 @@ services:
       - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
       - BETTER_AUTH_URL=${BETTER_AUTH_URL:-https://oma-ai.com}
       - PUBLIC_APP_URL=${PUBLIC_APP_URL:-https://oma-ai.com}
+      - PUBLIC_API_URL=${PUBLIC_API_URL:-https://api.oma-ai.com}
+      - PRIMARY_DOMAIN=${PRIMARY_DOMAIN:-oma-ai.com}
       - MODEL_OVERRIDES_PATH=${MODEL_OVERRIDES_PATH:-/var/lib/oma/models-overrides.json}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
       - RECEIPT_HMAC_SECRET=${RECEIPT_HMAC_SECRET:-}
-      - CORS_ORIGIN=${CORS_ORIGIN}
+      - CORS_ORIGIN=${CORS_ORIGIN:-${PUBLIC_APP_URL:-https://oma-ai.com}}
       # Production must explicitly use live settlement; startup rejects mock mode.
       - FACILITATOR_MODE=${FACILITATOR_MODE:-live}
       - TREASURY_BASE_ADDRESS=${TREASURY_BASE_ADDRESS}

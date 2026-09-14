@@ -52,7 +52,7 @@ const STEPS: Step[] = [
 		n: "03",
 		title: "Fund credits or use x402",
 		description:
-			"Buy credits by card through Polar, deposit USDC on Base, or let an agent settle each request with x402.",
+			"Deposit USDC on Base, use card checkout when Polar is enabled, or let an agent settle each request with x402.",
 		icon: Rocket,
 	},
 	{
@@ -68,7 +68,7 @@ export function HowItWorks() {
 	return (
 		<section
 			aria-labelledby="how-it-works-headline"
-			className="relative border-t border-border-subtle py-14 sm:py-18 lg:py-22"
+			className="relative border-t border-border-subtle py-12 sm:py-16 lg:py-20"
 		>
 			<div className="container-page">
 				<Reveal>
@@ -89,7 +89,7 @@ export function HowItWorks() {
 
 				<RevealStagger
 					as="ol"
-					className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 relative"
+					className="mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 relative"
 					amount={0.2}
 				>
 					{STEPS.map((step, idx) => (

@@ -6,7 +6,7 @@
 	* The Create / image-video tab was removed in R8 — chat surface is
 	* text + multimodal LLM only.
 	*/
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ChatToolbar } from "../ChatToolbar";
 
@@ -59,10 +59,11 @@ describe("ChatToolbar — single WEB / COMPARE path", () => {
 		cleanup();
 	});
 
-	it("renders exactly one compare control (WEB toggle lives in the composer)", () => {
-		render(<ChatToolbar {...baseProps} />);
+	it("keeps compare inside the single More menu (WEB toggle lives in the composer)", () => {
+		render(<ChatToolbar {...baseProps} messagesLength={1} />);
 
-		const compare = screen.getAllByRole("button", {
+		fireEvent.click(screen.getByRole("button", { name: /more chat actions/i }));
+		const compare = screen.getAllByRole("menuitem", {
 			name: /compare models/i,
 		});
 		expect(compare).toHaveLength(1);

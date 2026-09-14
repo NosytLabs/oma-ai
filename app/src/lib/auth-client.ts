@@ -48,4 +48,24 @@ export const authClient = createAuthClient({
 	plugins: [magicLinkClient(), siweClient()],
 });
 
-export const { signIn, signOut, useSession } = authClient;
+export const { signIn, signOut: rawSignOut, useSession } = authClient;
+
+export interface SignOutOptions {
+	callbackURL?: string;
+	disableRedirect?: boolean;
+	fetchOptions?: {
+		onSuccess?: () => void | Promise<void>;
+	};
+	[key: string]: unknown;
+}
+
+function clearDemoSessionCookie(): void {
+	if (typeof document === "undefined") return;
+	const suffix = document.location.protocol === "https:" ? "; Secure" : "";
+	document.cookie = `oma-demo-public=; Max-Age=0; Path=/; SameSite=Lax${suffix}`;
+}
+
+export async function signOut(options: SignOutOptions = {}): Promise<void> {
+	clearDemoSessionCookie();
+	await rawSignOut(options as Parameters<typeof rawSignOut>[0]);
+}

@@ -4,6 +4,7 @@ import { ArrowLeft, Mail, MessageSquare, Shield } from "lucide-react";
 import { ContactForm } from "./ContactForm";
 import { InViewFade } from "@/components/motion/in-view-fade";
 import { BreadcrumbListJsonLd } from "@/components/json-ld";
+import { PageShell } from "@/app/_components/page-shell";
 
 export const metadata: Metadata = {
 	title: "Contact OMA — support & privacy",
@@ -52,7 +53,7 @@ export default function ContactPage() {
 					{ name: "Contact", url: "/contact" },
 				]}
 			/>
-			<div className="container-page page-content max-w-3xl lg:max-w-4xl">
+			<PageShell>
 				<InViewFade eager>
 				<Link
 					href="/"
@@ -137,7 +138,7 @@ export default function ContactPage() {
 					</Link>
 					.
 				</p>
-			</div>
+			</PageShell>
 		</div>
 	);
 }

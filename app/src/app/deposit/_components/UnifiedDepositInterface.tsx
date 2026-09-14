@@ -64,6 +64,12 @@ export interface PendingDeposit {
 	createdAt: string;
 }
 
+type BroadcastDeposit = {
+	amountUsd: number;
+	txHash: string;
+	fromAddress: `0x${string}`;
+};
+
 function shortAddr(a: string): string {
 	if (a.length <= 12) return a;
 	return `${a.slice(0, 6)}…${a.slice(-4)}`;
@@ -90,6 +96,7 @@ export function UnifiedDepositInterface({
 	const [loadingInstructions, setLoadingInstructions] = useState(true);
 	const [connectedAddress, setConnectedAddress] = useState<`0x${string}` | null>(null);
 	const [connecting, setConnecting] = useState(false);
+	const [broadcastDeposit, setBroadcastDeposit] = useState<BroadcastDeposit | null>(null);
 	const toast = useToast();
 	const id = useId();
 	const { isAuthenticated, isDemo } = useAuth();
@@ -202,13 +209,12 @@ export function UnifiedDepositInterface({
 				from: connectedAddress,
 			});
 			txSent = true;
+			const pendingDeposit = { amountUsd: amount, txHash, fromAddress: connectedAddress };
+			setBroadcastDeposit(pendingDeposit);
 
 			setProcessingStep("Submitting deposit for verification…");
-			const result = await submitDeposit({
-				amountUsd: amount,
-				txHash,
-				fromAddress: connectedAddress,
-			});
+			const result = await submitDeposit(pendingDeposit);
+			setBroadcastDeposit(null);
 			toast.success(
 				`Deposit recorded. ${result.status === "pending" ? "Awaiting on-chain confirmation." : ""}`,
 			);
@@ -229,18 +235,52 @@ export function UnifiedDepositInterface({
 				setStep("select");
 				setError("The transfer was rejected in your wallet. No funds left your account.");
 			} else {
-				setError(errMsg);
+				setError(
+					txSent
+						? "Your USDC transfer was broadcast, but we could not register it yet. Retry registration below; do not send another transfer."
+						: errMsg,
+				);
 				toast.error(errMsg);
 				setStep("error");
 			}
 		}
 	}, [amountUsd, instructions, connectedAddress, toast, onDeposit, fetchRecent]);
 
+	const handleRetryRegistration = useCallback(async () => {
+		if (!broadcastDeposit) return;
+		setError("");
+		setStep("processing");
+		setProcessingStep("Retrying deposit registration…");
+		try {
+			const result = await submitDeposit(broadcastDeposit);
+			setBroadcastDeposit(null);
+			toast.success(
+				`Deposit recorded. ${result.status === "pending" ? "Awaiting on-chain confirmation." : ""}`,
+			);
+			onDeposit?.({
+				id: result.depositId,
+				status: result.status,
+				amountCents: String(result.amountCents),
+				createdAt: new Date().toISOString(),
+			});
+			void fetchRecent();
+			setStep("complete");
+		} catch (err) {
+			setError(
+				err instanceof Error
+					? err.message
+					: "We still could not register this transfer. Please try again in a moment.",
+			);
+			setStep("error");
+		}
+	}, [broadcastDeposit, fetchRecent, onDeposit, toast]);
+
 	const handleReset = () => {
 		setStep("select");
 		setAmountUsd("");
 		setError("");
 		setProcessingStep("");
+		setBroadcastDeposit(null);
 	};
 
 	if (!isAuthenticated || isDemo) {
@@ -545,13 +585,24 @@ export function UnifiedDepositInterface({
 								Deposit submission failed
 							</h3>
 							<p className="mt-1 text-sm text-text-secondary">{error}</p>
-							<button
-								type="button"
-								onClick={handleReset}
-								className="mt-4 inline-flex h-10 items-center justify-center rounded-[var(--radius-md)] border border-border bg-surface px-4 text-sm font-medium text-text-secondary transition-colors duration-200 ease-out hover:border-accent hover:text-accent active:scale-[0.97]"
-							>
-								Try again
-							</button>
+							<div className="mt-4 flex flex-wrap justify-center gap-2">
+								{broadcastDeposit ? (
+									<button
+										type="button"
+										onClick={() => void handleRetryRegistration()}
+										className="inline-flex h-10 items-center justify-center rounded-[var(--radius-md)] border border-accent bg-accent px-4 text-sm font-semibold text-void transition-colors duration-200 ease-out hover:bg-accent-bright active:scale-[0.97]"
+									>
+										Retry registration
+									</button>
+								) : null}
+								<button
+									type="button"
+									onClick={handleReset}
+									className="inline-flex h-10 items-center justify-center rounded-[var(--radius-md)] border border-border bg-surface px-4 text-sm font-medium text-text-secondary transition-colors duration-200 ease-out hover:border-accent hover:text-accent active:scale-[0.97]"
+								>
+									{broadcastDeposit ? "Start over" : "Try again"}
+								</button>
+							</div>
 						</div>
 					)}
 				</m.div>

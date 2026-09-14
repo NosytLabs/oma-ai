@@ -263,7 +263,7 @@ app.route("/", searchRoutes);
 app.route("/", depositRoutes);
 app.route("/", exportRoutes);
 
-// Credit batches / history / auto-reload.
+// Credit batches and history.
 app.route("/", creditsRoutes);
 
 // x402 payments.

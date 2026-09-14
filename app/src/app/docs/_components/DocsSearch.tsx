@@ -77,7 +77,6 @@ export function DocsSearch() {
 	const [open, setOpen] = useState(false);
 	const [selectedIndex, setSelectedIndex] = useState(0);
 	const inputRef = useRef<HTMLInputElement>(null);
-	const resultsRef = useRef<HTMLDivElement>(null);
 	const { panelRef } = useDialog({ open, onClose: () => setOpen(false), initialFocusRef: inputRef });
 
 	const results = useMemo(() => searchDocs(query), [query]);
@@ -222,7 +221,7 @@ export function DocsSearch() {
 						</div>
 
 						{/* Results */}
-						<div ref={resultsRef} className="max-h-[50vh] overflow-y-auto">
+				<div className="max-h-[50vh] overflow-y-auto">
 							{query.length < 2 ? (
 								<div className="px-4 py-8 text-center text-sm text-text-muted">
 									Type at least 2 characters to search

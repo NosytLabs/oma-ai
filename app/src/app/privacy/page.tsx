@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PageShell } from "@/app/_components/page-shell";
 
 export const metadata: Metadata = {
 	title: "Privacy — OMA AI Gateway",
@@ -157,7 +158,7 @@ export default function PrivacyPage() {
 			<div className="overflow-x-clip">
 				<div className="flex flex-col">
 					{/* ===== HERO ===== */}
-					<section className="container-page page-content">
+					<PageShell className="max-w-6xl">
 						<Link
 							href="/"
 							className="mb-6 inline-flex items-center gap-2 text-[12.5px] text-text-muted hover:text-accent transition-colors duration-200 ease-out"
@@ -256,7 +257,7 @@ export default function PrivacyPage() {
 								</div>
 							</aside>
 						</div>
-					</section>
+					</PageShell>
 
 					{/* ===== COLLECTION ===== */}
 					<section

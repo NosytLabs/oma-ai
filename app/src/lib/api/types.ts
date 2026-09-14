@@ -17,10 +17,6 @@ export interface User {
 	// OMA extensions (mirrored from Better Auth's additionalFields in
 	// server/src/auth.ts).
 	evmAddress?: string | null;
-	/** Whether TOTP 2FA is enabled on the account (placeholder for future). */
-	twoFactorEnabled?: boolean;
-	/** Number of unused backup codes remaining after 2FA setup. */
-	backupCodesRemaining?: number;
 	/** ISO timestamp of last password change (null for wallet-only accounts). */
 	lastPasswordChange?: string | null;
 }
@@ -78,14 +74,6 @@ export interface CreditBatch {
 	remainingCents: string;
 	expiresAt: string;
 	paymentMethod: string | null;
-}
-
-export interface AutoReloadSettings {
-	enabled: boolean;
-	thresholdCents: number;
-	reloadAmountCents: number;
-	spendLimitCents: number;
-	paymentMethod: string;
 }
 
 // ─── Models ───────────────────────────────────────────────────────────────────

@@ -1,11 +1,9 @@
 /**
- * Tests for /v1/credits/* routes (balance, transactions, auto-reload).
+ * Tests for /v1/credits/* routes (balance and transactions).
  *
- * Covers the three endpoints exposed by credits.ts:
+ * Covers the two endpoints exposed by credits.ts:
  *   GET  /v1/credits/balance       — active batches + aggregate balance
  *   GET  /v1/credits/transactions  — combined deposit + usage history
- *   GET  /v1/credits/auto-reload   — user auto-reload settings (default + saved)
- *   POST /v1/credits/auto-reload   — upsert auto-reload settings (validation)
  *
  * Auth middleware is stubbed to set userId="user_1". DB is mocked per-test.
  */
@@ -13,10 +11,6 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { Hono } from "hono";
 
 // ─── Mocks ──────────────────────────────────────────────────────────────────
-
-vi.mock("../../middleware/rate-limit.js", () => ({
-	rateLimit: () => async (_c: unknown, next: () => Promise<void>) => next(),
-}));
 
 vi.mock("../../auth/middleware.js", () => ({
 	sessionOrBearerAuth: async (c: { set: (k: string, v: unknown) => void }, next: () => Promise<void>) => {
@@ -55,7 +49,6 @@ const mockDb = vi.hoisted(() => {
 vi.mock("../../db/client.js", () => ({ db: mockDb }));
 
 vi.mock("../../db/schema.js", () => ({
-	autoReloadSettings: { userId: "userId" },
 	creditBalances: { userId: "userId" },
 	creditBatches: { userId: "userId", remainingCents: "remainingCents", expiresAt: "expiresAt", usedAt: "usedAt", createdAt: "createdAt" },
 	deposits: { userId: "userId", createdAt: "createdAt" },
@@ -177,85 +170,4 @@ describe("credits routes", () => {
 		});
 	});
 
-	describe("GET /v1/credits/auto-reload", () => {
-		it("returns defaults when no saved settings exist", async () => {
-			mockSelectReturns([]);
-			const res = await creditRequest("get", "/v1/credits/auto-reload");
-			expect(res.status).toBe(200);
-			const data = await res.json();
-			expect(data.enabled).toBe(false);
-			expect(data.thresholdCents).toBe(500);
-			expect(data.reloadAmountCents).toBe(10000);
-		});
-
-		it("returns saved settings when a row exists", async () => {
-			mockSelectReturns([
-				{
-					enabled: true,
-					thresholdCents: "1000",
-					reloadAmountCents: "20000",
-					spendLimitCents: "50000",
-					paymentMethod: "usdc",
-				},
-			]);
-			const res = await creditRequest("get", "/v1/credits/auto-reload");
-			expect(res.status).toBe(200);
-			const data = await res.json();
-			expect(data.enabled).toBe(true);
-			expect(data.thresholdCents).toBe(1000);
-			expect(data.reloadAmountCents).toBe(20000);
-		});
-	});
-
-	describe("POST /v1/credits/auto-reload", () => {
-		it("rejects invalid body with 400", async () => {
-			const res = await creditRequest("post", "/v1/credits/auto-reload", {
-				thresholdCents: "not-a-number",
-			});
-			expect(res.status).toBe(400);
-		});
-
-		it("rejects reloadAmountCents below minimum (100)", async () => {
-			const res = await creditRequest("post", "/v1/credits/auto-reload", {
-				reloadAmountCents: 50,
-			});
-			expect(res.status).toBe(400);
-		});
-
-		it("rejects spendLimitCents above max (10_000_000)", async () => {
-			const res = await creditRequest("post", "/v1/credits/auto-reload", {
-				spendLimitCents: 20_000_000,
-			});
-			expect(res.status).toBe(400);
-		});
-
-		it("upserts valid settings and returns the saved row", async () => {
-			mockDb.insert.mockReturnValueOnce({
-				values: vi.fn(() => ({
-					onConflictDoUpdate: vi.fn(() => ({
-						returning: vi.fn().mockResolvedValue([
-							{
-								enabled: true,
-								thresholdCents: "800",
-								reloadAmountCents: "25000",
-								spendLimitCents: "100000",
-								paymentMethod: "usdc",
-							},
-						]),
-					})),
-				})),
-			});
-
-			const res = await creditRequest("post", "/v1/credits/auto-reload", {
-				enabled: true,
-				thresholdCents: 800,
-				reloadAmountCents: 25000,
-			});
-			expect(res.status).toBe(200);
-			const data = await res.json();
-			expect(data.enabled).toBe(true);
-			expect(data.thresholdCents).toBe(800);
-			expect(data.reloadAmountCents).toBe(25000);
-		});
-	});
 });

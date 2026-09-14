@@ -1,22 +1,7 @@
-import dynamic from "next/dynamic";
 import { Play, Terminal, Copy, Check } from "lucide-react";
 import { useState } from "react";
 import { copyToClipboard } from "@/lib/clipboard";
-import { Skeleton } from "@/components/ui/Skeleton";
 import { AnimatedSection, CodeBlock, SectionHeading, QUICK_START_STEPS } from "./shared";
-
-const AgentSessionDemo = dynamic(
-	() =>
-		import("@/components/marketing/AgentSessionDemo").then(
-			(m) => m.AgentSessionDemo,
-		),
-	{
-		ssr: true,
-		loading: () => (
-			<Skeleton className="h-[320px] w-full rounded-[var(--radius-xl)] border border-border" />
-		),
-	},
-);
 
 // Compact per-modality curl blocks. Each block's code defaults to a
 // bash snippet, matching the real /v1/* surface: chat completions.
@@ -155,14 +140,6 @@ export function QuickStartSection() {
 	}'`}
 					/>
 				</div>
-			</div>
-
-			{/* Brainless-inspired agent session — OMA-themed marketing demo */}
-			<div className="mt-10">
-				<p className="mb-3 text-xs font-mono uppercase tracking-widest text-text-muted">
-					Agent session · visual demo
-				</p>
-				<AgentSessionDemo />
 			</div>
 		</AnimatedSection>
 	);

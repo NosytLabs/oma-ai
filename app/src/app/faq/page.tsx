@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { MODEL_COUNT } from "@/lib/models-data";
 import { BreadcrumbListJsonLd, FAQPageJsonLd } from "@/components/json-ld";
 import { FAQContent } from "./_components/FAQContent";
+import { PageShell } from "@/app/_components/page-shell";
 
 export const metadata: Metadata = {
 	title: "FAQ — Questions answered in plain language",
@@ -54,7 +55,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "What is a wallet (SIWE) and do I need one?",
-				a: "SIWE (Sign-In With Ethereum) lets you sign in with a crypto wallet instead of an email. You do NOT need a wallet for email sign-in or card payments — only for the USDC pay-per-request (x402) flow, which is an advanced option.",
+				a: "SIWE (Sign-In With Ethereum) lets you sign in with a crypto wallet instead of an email. You do NOT need a wallet for email sign-in or card checkout when it is enabled. A wallet is needed for direct USDC deposits and the advanced x402 pay-per-request flow.",
 			},
 			{
 				q: "Is my data private?",
@@ -67,7 +68,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 		items: [
 			{
 				q: "How do I pay?",
-				a: "Two ways: (1) buy credits with a card (Visa/Mastercard/Apple Pay) or USDC deposit, then use credits per request — the simplest path; or (2) pay-per-request directly in USDC on Base with x402 — no account, no pre-funding, designed for AI agents. Credits never expire.",
+				a: "Use a USDC deposit, then spend credits per request; or pay directly in USDC on Base with x402, with no pre-funding, for agent workflows. Card checkout through Polar is available only when it is enabled, and the credits page shows its live status. Credit batches expire after 365 days, with advance warnings in the dashboard.",
 			},
 			{
 				q: "What is USDC? What is Base?",
@@ -163,7 +164,7 @@ export default function FAQPage() {
 				<div className="absolute inset-0 bg-grid opacity-[0.35] mask-radial" />
 			</div>
 
-			<div className="container-page page-content max-w-3xl lg:max-w-4xl">
+			<PageShell>
 				<Link
 					href="/"
 					className="flex w-fit min-h-11 items-center gap-1.5 text-sm text-text-secondary hover:text-accent transition-colors duration-200 ease-out mb-8"
@@ -195,7 +196,7 @@ export default function FAQPage() {
 						technical detail.
 					</p>
 				</div>
-			</div>
+			</PageShell>
 		</div>
 	);
 }

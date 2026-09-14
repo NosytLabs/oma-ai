@@ -28,7 +28,8 @@ export const DAILY_LIMIT_ANONYMOUS = 20;
 export const DAILY_LIMIT_REGISTERED = 100;
 
 interface DailyUsageResult {
-		allowed: boolean;
+	available: boolean;
+	allowed: boolean;
 		remaining: number;
 		limit: number;
 		resetMs: number;
@@ -47,8 +48,11 @@ async function checkDailyUsageLimit(
 
 		// Fail open if Redis is down (availability > strict limits for free tier)
 		if (!redis || !ready) {
-				logger.warn("Redis unavailable for daily limit check — allowing request");
-				return { allowed: true, remaining: limit, limit, resetMs: 0 };
+			// Free traffic has an unbounded upstream cost. Do not silently make it
+			// unlimited when the quota store is unavailable; paid/API traffic is not
+			// handled by this middleware and remains available.
+			logger.warn("Redis unavailable for daily free-tier limit check — denying request");
+			return { available: false, allowed: false, remaining: 0, limit, resetMs: 0 };
 		}
 
 		const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
@@ -66,16 +70,16 @@ async function checkDailyUsageLimit(
 				const ttl = await redis.ttl(key);
 				const resetMs = ttl > 0 ? ttl * 1000 : 0;
 
-				return {
-						allowed: current <= limit,
+			return {
+				available: true,
+				allowed: current <= limit,
 						remaining,
 						limit,
 						resetMs,
 				};
 		} catch (err) {
 				logger.error({ err }, "Daily usage limit check failed");
-				// Fail open on error
-				return { allowed: true, remaining: limit, limit, resetMs: 0 };
+			return { available: false, allowed: false, remaining: 0, limit, resetMs: 0 };
 		}
 }
 
@@ -128,6 +132,18 @@ export function dailyUsageLimit() {
 				}
 
 				const result = await checkDailyUsageLimit(identifier, limit);
+				if (!result.available) {
+					return c.json(
+						{
+							error: {
+								message: "Free website chat is temporarily unavailable. Please try again shortly.",
+								type: "service_unavailable",
+								code: "free_tier_unavailable",
+							},
+						},
+						503,
+					);
+				}
 
 				if (!result.allowed) {
 						const retryAfterHours = Math.ceil(result.resetMs / 3600000);

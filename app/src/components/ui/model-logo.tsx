@@ -92,7 +92,17 @@ function getInitials(modelId: string): string {
 	return modelId.slice(0, 2).toUpperCase();
 }
 
-// Providers without a dashboard-icons entry — fall back to local tile.
+function lighten(hex: string, amount: number): string {
+	const n = parseInt(hex.slice(1), 16);
+	const mix = (channel: number) => Math.round(channel + (255 - channel) * amount);
+	const toHex = (value: number) => value.toString(16).padStart(2, "0");
+	const red = toHex(mix((n >> 16) & 255));
+	const green = toHex(mix((n >> 8) & 255));
+	const blue = toHex(mix(n & 255));
+	return `#${red}${green}${blue}`;
+}
+
+// Providers without a dashboard-icons entry fall back to local tile.
 const LOCAL_FALLBACKS: Record<string, string> = {
 	mercury: "/logos/providers/mercury.svg",
 	inception: "/logos/providers/mercury.svg",
@@ -177,12 +187,6 @@ export function ModelLogo({
 	// 3) Initials badge fallback
 	const initials = getInitials(modelId);
 	const bgColor = `${color}20`;
-	const lighten = (hex: string, amount: number): string => {
-		const n = parseInt(hex.slice(1), 16);
-		const mix = (c: number) => Math.round(c + (255 - c) * amount);
-		const h = (v: number) => v.toString(16).padStart(2, "0");
-		return `#${h(mix((n >> 16) & 0xff))}${h(mix((n >> 8) & 0xff))}${h(mix(n & 0xff))}`;
-	};
 	const textColor = lighten(color, 0.35);
 
 	return (

@@ -15,8 +15,8 @@ services:
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=http://server:3001
-      - NEXT_PUBLIC_SITE_URL=https://oma-ai.com
-      - PUBLIC_API_URL=https://api.oma-ai.com
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-${PUBLIC_APP_URL:-https://oma-ai.com}}
+      - PUBLIC_API_URL=${PUBLIC_API_URL:-https://api.oma-ai.com}
     depends_on:
       server:
         condition: service_healthy
@@ -44,12 +44,13 @@ services:
       - REDIS_URL=redis://redis:6379
       - NODE_ENV=production
       - PORT=3001
-      - CORS_ORIGIN=https://oma-ai.com,https://www.oma-ai.com
-      - PUBLIC_API_URL=https://api.oma-ai.com
+      - CORS_ORIGIN=${CORS_ORIGIN:-${PUBLIC_APP_URL:-https://oma-ai.com},https://www.oma-ai.com}
+      - PUBLIC_API_URL=${PUBLIC_API_URL:-https://api.oma-ai.com}
       # Auth / crypto secrets (passed from host env / .env.prod)
       - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
       - BETTER_AUTH_URL=${BETTER_AUTH_URL:-https://oma-ai.com}
       - PUBLIC_APP_URL=${PUBLIC_APP_URL:-https://oma-ai.com}
+      - PRIMARY_DOMAIN=${PRIMARY_DOMAIN:-oma-ai.com}
       - MODEL_OVERRIDES_PATH=${MODEL_OVERRIDES_PATH:-/var/lib/oma/models-overrides.json}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
       - RECEIPT_HMAC_SECRET=${RECEIPT_HMAC_SECRET}

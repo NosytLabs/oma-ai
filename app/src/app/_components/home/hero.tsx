@@ -31,7 +31,7 @@ export function Hero() {
 				<div className="absolute right-[-12%] top-[18%] aspect-square w-[58%] max-w-[44rem] rounded-full bg-[radial-gradient(circle_at_center,var(--color-accent)_0%,transparent_55%)] opacity-[0.05] blur-[100px]" />
 			</div>
 
-			<div className="container-page relative z-10 min-w-0 pb-12 pt-12 sm:pb-14 lg:pb-20 lg:pt-20">
+			<div className="container-page relative z-10 min-w-0 pb-10 pt-10 sm:pb-12 sm:pt-12 lg:pb-16 lg:pt-16">
 				<div className="mx-auto flex w-full max-w-5xl flex-col items-center text-center">
 					<m.div {...reveal()} className="mb-5 flex items-center justify-center">
 						<span className="section-eyebrow-caps">Gateway online · OpenAI-compatible</span>
@@ -46,9 +46,9 @@ export function Hero() {
 						{...reveal()}
 						className="mx-auto mt-6 max-w-2xl text-balance text-base leading-relaxed text-text-secondary sm:mt-7 sm:text-lg md:text-xl"
 					>
-						One OpenAI-compatible endpoint for every model. Fund with card, deposit USDC on
-						Base, or let agents settle per request with x402. Website chat is free — no
-						account needed.
+						One OpenAI-compatible endpoint for every model. Start in the playground, then
+						create an API key when you are ready to build. Credits use USDC on Base;
+						agents can settle with x402.
 					</m.p>
 
 					<m.div
@@ -78,8 +78,8 @@ export function Hero() {
 						</Link>
 					</m.div>
 
-					<m.div {...reveal()} className="mt-10 w-full max-w-4xl perspective-[1200px] sm:mt-12">
-						<div className="flex w-full justify-center transform-gpu transition-transform duration-200 ease-out hover:rotate-x-[2deg] hover:rotate-y-[-1deg] hover:scale-[1.01]">
+					<m.div {...reveal()} className="mt-8 w-full max-w-4xl sm:mt-10">
+						<div className="flex w-full justify-center">
 							<LiveRequestCard className="w-full max-w-[706px] shadow-[0_40px_80px_-20px_rgba(0,0,0,1)] ring-1 ring-border-hi/50" />
 						</div>
 					</m.div>
