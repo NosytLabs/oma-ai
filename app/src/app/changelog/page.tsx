@@ -46,7 +46,7 @@ const ENTRIES: {
 export default function ChangelogPage() {
 	return (
 		<section className="page-shell">
-			<div className="max-w-2xl mx-auto">
+			<div className="container-page page-content mx-auto max-w-2xl">
 				<span className="section-eyebrow-caps">Changelog</span>
 				<h1 className="h1-page mt-4 text-text-bright">What&apos;s new on OMA.</h1>
 				<p className="page-intro mt-4">

@@ -233,7 +233,7 @@ export function Navbar() {
 								<Link
 									href={loginHref}
 									aria-label="Sign in or create an account"
-									className={`${pathname === "/chat" || pathname?.startsWith("/chat/") ? "hidden sm:inline-flex" : "inline-flex"} btn-mono btn-primary`}
+									className="hidden sm:inline-flex btn-mono btn-primary"
 								>
 									<span>Sign in / Sign up</span>
 									<svg

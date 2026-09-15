@@ -84,7 +84,7 @@ function LoginFallback() {
 					<Skeleton className="h-16 w-full" />
 					<Skeleton className="h-16 w-full" />
 				</div>
-				<div className="mx-auto w-full max-w-md space-y-4">
+				<div className="mx-auto w-full max-w-md space-y-4 lg:mx-0">
 					<Skeleton className="h-28 w-full rounded-[var(--radius-lg)]" />
 					<Skeleton className="h-64 w-full rounded-[var(--radius-lg)]" />
 				</div>
@@ -177,7 +177,7 @@ function LoginInner() {
 		<div className="page-shell relative flex flex-col items-center justify-center py-10 sm:py-12">
 			<div className="container-page grid w-full max-w-5xl grid-cols-1 items-start gap-8 lg:grid-cols-[1fr_1fr] lg:gap-12">
 				<BrandPitch />
-				<div className="order-first mx-auto w-full max-w-md lg:order-none">
+				<div className="order-first mx-auto w-full max-w-md lg:order-none lg:mx-0">
 					<div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-lg)]">
 						<h2 className="text-lg font-bold text-text-bright">
 							Choose how to sign in

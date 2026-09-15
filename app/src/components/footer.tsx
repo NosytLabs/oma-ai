@@ -237,7 +237,7 @@ export function Footer() {
 					<m.nav
 						variants={fadeUp}
 						aria-label="Footer navigation"
-						className="grid w-full grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 lg:grid-cols-6"
+						className="grid w-full grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6"
 					>
 						{FOOTER_SECTIONS.map((section) => (
 							<div key={section.title} className="min-w-0">

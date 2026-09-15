@@ -138,10 +138,21 @@ export function ChatToolbar({
 				)}
 			</div>
 
-			<div className={`flex shrink-0 items-center justify-self-end gap-1 sm:gap-2 ${messageCount === 0 ? "hidden" : "md:flex"}`}>
-				<div className="hidden shrink-0 xl:block"><LazyStatsBar messages={deferredMessages} model={model} /></div>
+			<div
+				className={`ml-auto flex shrink-0 items-center gap-1 sm:gap-2 ${
+					messageCount === 0 && !creditsPill ? "hidden" : "w-full justify-end md:w-auto"
+				}`}
+			>
+				{messageCount > 0 && (
+					<div className="hidden shrink-0 xl:block">
+						<LazyStatsBar messages={deferredMessages} model={model} />
+					</div>
+				)}
 				{creditsPill}
-				<div ref={moreMenuRef} className="relative">
+				<div
+					ref={moreMenuRef}
+					className={`relative ${messageCount === 0 ? "hidden" : ""}`}
+				>
 					<button type="button" onClick={() => setMoreMenuOpen((open) => !open)} aria-label="More chat actions" aria-expanded={moreMenuOpen} aria-haspopup="menu" className={`${btnBase} min-h-9 min-w-9 shrink-0 sm:min-h-10 sm:min-w-10 ${moreMenuOpen ? "!border-success/30 !bg-surface !text-success" : ""}`} title="More chat actions">
 						<MoreHorizontal className="h-4 w-4" aria-hidden="true" />
 						<span className="hidden text-[11px] font-semibold tracking-wider sm:inline">MORE</span>

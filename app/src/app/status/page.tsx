@@ -66,7 +66,7 @@ export default async function StatusPage() {
 
 	return (
 		<section className="page-shell">
-			<div className="max-w-2xl mx-auto">
+			<div className="container-page page-content mx-auto max-w-2xl">
 				<span className="section-eyebrow-caps">Live status</span>
 				<h1 className="h1-page mt-4 text-text-bright">
 					{allOk ? "All systems normal." : "Degraded — we're on it."}

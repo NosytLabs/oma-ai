@@ -510,9 +510,9 @@ export function UnifiedDepositInterface({
 												{recent.slice(0, 3).map((d) => (
 													<li
 														key={d.id}
-														className="flex items-center justify-between gap-2 text-xs"
+														className="flex flex-col gap-1 text-xs sm:flex-row sm:items-center sm:justify-between sm:gap-2"
 													>
-														<div className="flex items-center gap-2 text-text-secondary">
+														<div className="flex min-w-0 flex-wrap items-center gap-2 text-text-secondary">
 															<span
 																className={`inline-flex rounded-[var(--radius-sm)] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
 																	d.status === "completed"
