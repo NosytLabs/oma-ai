@@ -48,16 +48,16 @@ func main() {
 					Free OMA-AI models (website chat)
 				</h3>
 			<p className="text-sm text-text-muted mb-2">
-				The 3 OMA-AI models
+				The 2 OMA-AI models
 				(<code className="text-accent font-mono text-xs">provider: oma-ai</code>
-				) — <code className="text-accent font-mono text-xs">deepseek-v4-flash-0731-openbroker</code>,{" "}
-				<code className="text-accent font-mono text-xs">kimi-k2-6</code>,{" "}
+				) — <code className="text-accent font-mono text-xs">deepseek-v4-flash-0731-openbroker</code>{" "}
+				and{" "}
 				<code className="text-accent font-mono text-xs">minimax-m2-7</code> — can be
 				used on <code className="text-accent font-mono text-xs">/chat</code>{" "}
 				without sign-in, API key, or wallet (20 msgs/day anonymous, 100/day signed-in). Top up credits to unlock the entire Venice catalog, unlimited concurrency, and dedicated throughput.
 			</p>
 			<p className="text-sm text-text-muted">
-				API-key calls (<code className="text-accent font-mono text-xs">Authorization: Bearer oma_sk_…</code>) always spend credits — even on the 3 free website-chat models. Free usage applies to browser website chat only, never to programmatic API traffic.
+				API-key calls (<code className="text-accent font-mono text-xs">Authorization: Bearer oma_sk_…</code>) always spend credits — even on the 2 free website-chat models. Free usage applies to browser website chat only, never to programmatic API traffic.
 			</p>
 			</div>
 

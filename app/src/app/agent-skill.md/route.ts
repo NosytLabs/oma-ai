@@ -10,12 +10,13 @@
  *   1. Discover models via /v1/models
  *   2. Authenticate (free: magic-link, paid: SIWE + USDC, programmatic: API key)
  *   3. Call /v1/chat/completions (OpenAI-compatible) or /v1/messages (Anthropic-compatible)
- *   4. Pay per request via x402 (no account needed) — sign EIP-3009 transferWithAuthorization on Base
+ *   4. Fund via x402 verify/settle (credits a balance), then spend with an API key
  *
  * URLs are resolved from env at request time so staging/preview
  * deployments advertise the right host instead of leaking prod URLs.
  */
 import { DEFAULT_API_URL } from "@/lib/config";
+import { MODEL_COUNT } from "@/lib/models-data";
 
 export const dynamic = "force-static";
 export const revalidate = 3600;
@@ -33,7 +34,7 @@ export function GET(): Response {
 
 	const BODY = `# OMA AI — Agent Skill
 
-> Drop-in OpenAI-compatible AI gateway with USDC micropayments on Base. Free tier, no signup needed. 21 curated chat models. Use this skill to add OMA to your agent's toolbelt.
+> Drop-in OpenAI-compatible AI gateway with USDC credits on Base. Website free tier on 2 OMA-AI models; API keys for programmatic use. ${MODEL_COUNT} curated chat models. Use this skill to add OMA to your agent's toolbelt.
 
 ## What is OMA?
 
@@ -57,13 +58,19 @@ curl ${apiUrl}/v1/models
 
 Returns the live catalog with IDs, capabilities, and pricing.
 
-### 2. Make an unauthenticated request (free tier, models marked "free" only)
+### 2. Free website chat (browser only — OpenBroker models)
+
+Unauthenticated free usage is for the website \`/chat\` surface with
+\`deepseek-v4-flash-0731-openbroker\` or \`minimax-m2-7\`. Direct API calls
+without a key return 401; use an API key for programmatic access.
 
 \`\`\`bash
+# Authenticated paid example (any catalog model):
 curl -X POST ${apiUrl}/v1/chat/completions \\
+  -H "Authorization: Bearer $OMA_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "model": "llama-3.3-70b",
+    "model": "deepseek-v4-flash-0731-openbroker",
     "messages": [{"role": "user", "content": "Say hi in one short sentence."}],
     "max_tokens": 64
   }'
@@ -76,28 +83,31 @@ curl -X POST ${apiUrl}/v1/chat/completions \\
   -H "Authorization: Bearer $OMA_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "model": "kimi-k2-6",
+    "model": "llama-3.3-70b",
     "messages": [{"role": "user", "content": "Summarize the last 24h of AI news."}],
     "stream": true
   }'
 \`\`\`
 
-### 4. Pay per request with x402 (no account)
+### 4. Fund with x402 (verify → settle → spend)
 
 \`\`\`bash
-# Step 1: Gateway replies 402 with PAYMENT-REQUIRED challenge
-RESP=$(curl -s -o /dev/null -w "%{http_code}" -X POST ${apiUrl}/v1/chat/completions \\
+# Step 1: Verify an EIP-3009 USDC authorization (PAYMENT-SIGNATURE header)
+curl -X POST ${apiUrl}/x402/verify \\
   -H "Content-Type: application/json" \\
-  -d '{"model": "kimi-k2-6", "messages": [{"role": "user", "content": "Hi"}]}')
+  -H "PAYMENT-SIGNATURE: <signed envelope>"
 
-# Step 2: Sign the payment envelope (EIP-3009 transferWithAuthorization on Base)
-# ... your agent's signing logic ...
+# Step 2: Settle from an authenticated OMA session to credit the balance
+curl -X POST ${apiUrl}/x402/settle \\
+  -H "Content-Type: application/json" \\
+  -H "Cookie: <session>" \\
+  -d '{"txHash":"0x...","networkId":"base"}'
 
-# Step 3: Retry with PAYMENT-SIGNATURE header
+# Step 3: Spend with an API key as usual
 curl -X POST ${apiUrl}/v1/chat/completions \\
+  -H "Authorization: Bearer $OMA_API_KEY" \\
   -H "Content-Type: application/json" \\
-  -H "PAYMENT-SIGNATURE: <signed envelope>" \\
-  -d '{"model": "kimi-k2-6", "messages": [{"role": "user", "content": "Hi"}]}'
+  -d '{"model": "llama-3.3-70b", "messages": [{"role": "user", "content": "Hi"}]}'
 \`\`\`
 
 ## Endpoints

@@ -16,7 +16,7 @@
 //     `generateStaticParams`) keeps working without an async fetch; the
 //     lazy loader returns the full catalog for anything that needs it.
 //   - The static fallback mirrors the curated server catalog exactly
-//     (21 chat models: 18 Venice + 3 OMA-AI). See `MODEL_COUNT`.
+//     (20 chat models: 18 Venice + 2 OMA-AI). See `MODEL_COUNT`.
 //
 // Public API is preserved: `Model`, `Capability`, `Provider`, `Tier`,
 // `formatPricePerMillion`, `getModelsByTier`,
