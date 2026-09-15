@@ -196,7 +196,7 @@ export default function GettingStartedPage() {
 
 				<div className="mt-10 flex flex-wrap items-center gap-2 text-xs font-mono text-text-muted">
 					<Wallet className="h-3.5 w-3.5" aria-hidden="true" />
-					<span>No wallet needed for email sign-in or card payments · USDC &amp; x402 are optional superpowers</span>
+					<span>No wallet needed for email sign-in · USDC always available · card &amp; x402 optional when enabled</span>
 				</div>
 			</PageShell>
 		</div>
