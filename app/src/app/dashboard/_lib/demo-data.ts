@@ -94,7 +94,8 @@ export const DEMO_BATCHES: CreditBatch[] = [
 		id: "demo-batch-1",
 		amountCents: "2500",
 		remainingCents: "1284.50",
-		expiresAt: daysAgo(-60),
+		// Credits do not expire while the account is active — keep demo far future.
+		expiresAt: daysAgo(-3650),
 		paymentMethod: "usdc",
 	},
 ];

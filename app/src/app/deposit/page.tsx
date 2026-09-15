@@ -74,7 +74,7 @@ const METHODS: {
 		label: "Card",
 		icon: Banknote,
 		tag: "Visa · Mastercard",
-		desc: "Pay with card via Polar. No wallet needed.",
+		desc: "Card via Polar when enabled — no wallet needed.",
 		rail: "card",
 	},
 	{

@@ -25,5 +25,5 @@ export const CACHE_TTL_MS = TIME.HOURS_PER_DAY * TIME.MINUTES_PER_HOUR * TIME.SE
 export const NONCE_REDIS_TTL_SECONDS = 10 * TIME.SECONDS_PER_MINUTE; // 600
 
 export const RECEIPT_EXPIRY_SECONDS = TIME.DAYS_PER_YEAR * TIME.HOURS_PER_DAY * TIME.SECONDS_PER_MINUTE; // 31536000 (365 days)
-export const CREDIT_EXPIRY_DAYS = TIME.DAYS_PER_YEAR;
+// Credits do not expire while the account is active — do not reintroduce a credit TTL.
 

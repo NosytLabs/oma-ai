@@ -30,7 +30,6 @@ import { DashboardErrorBanner } from "./DashboardErrorBanner";
 import {
 	LazyApiKeyManager,
 	LazyCreatedKeyModal,
-	LazyExpiringCreditsWarning,
 	LazyModelUsageTable,
 	LazyProviderBreakdown,
 	LazyRecentRequestsTable,
@@ -297,14 +296,6 @@ export function DashboardGrid(props: DashboardGridProps) {
 								hasUsage={hasAnyUsage}
 								onNavigateToApiKeys={onNavigateToApiKeys}
 							/>
-						)}
-
-						{creditBatches && creditBatches.length > 0 && (
-							<div className="mb-4">
-								<WidgetErrorBoundary title="Expiring credits">
-									<LazyExpiringCreditsWarning creditBatches={creditBatches} />
-								</WidgetErrorBoundary>
-							</div>
 						)}
 
 						{/* Primary row — three user-facing panels of equal weight. */}
