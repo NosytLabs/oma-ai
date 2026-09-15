@@ -7,7 +7,7 @@
 
 > **One gateway. Every model. No lock-in.**
 
-OMA-AI is an open-source, privacy-first multi-provider AI inference gateway. It exposes an OpenAI-compatible API, routes requests across curated model providers with automatic fallback, and handles billing—including crypto-native x402 micropayments—so developers and agents can build without managing scattered API keys or subscriptions.
+OMA-AI is an open-source, privacy-first multi-provider AI inference gateway. It exposes an OpenAI-compatible API, routes requests across curated model providers with automatic fallback, and handles billing—including USDC deposits and x402 verify/settle funding on Base—so developers and agents can build without managing scattered API keys or subscriptions.
 
 ---
 
@@ -20,7 +20,7 @@ OMA-AI stands for **Open Model Access**. It is a single API endpoint that unifie
 | OpenAI-compatible apps | Drop-in `/v1/chat/completions` endpoint |
 | Anthropic-compatible apps | Drop-in `/v1/messages` endpoint |
 | Multi-model routing | Automatic failover across providers (static peer map + hidden Surplus retry) |
-| Agent billing | x402 USDC micropayments + optional Polar card credits |
+| Agent billing | x402 USDC verify/settle → credits + optional Polar card |
 | Privacy | Prompts not used for training; usage is metered for billing |
 
 One OpenAI-compatible endpoint for a curated catalog. Venice-routed models include a 25% platform fee; OMA-AI/OpenBroker prices already include margin. Guest chat is free with a daily cap.

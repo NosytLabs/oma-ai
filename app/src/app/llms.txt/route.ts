@@ -14,6 +14,7 @@
 	* deployments advertise the right host instead of leaking prod URLs.
 	*/
 import { DEFAULT_API_URL } from "@/lib/config";
+import { MODEL_COUNT } from "@/lib/models-data";
 
 export const dynamic = "force-static";
 export const revalidate = 3600;
@@ -31,7 +32,7 @@ export function GET(): Response {
 
 	const BODY = `# OMA AI — Open Model Access
 
-> One gateway. Every model. No lock-in. OpenAI-compatible multi-provider AI inference with 21 curated chat models, x402 USDC micropayments on Base, and privacy-first routing.
+> One gateway. Every model. No lock-in. OpenAI-compatible multi-provider AI inference with ${MODEL_COUNT} curated chat models, x402 USDC settlement on Base, and privacy-first routing.
 
 ## Docs
 

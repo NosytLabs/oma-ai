@@ -173,7 +173,7 @@ const copy: Record<
 	deposit: {
 		heading: "Top up credits",
 		subheading:
-			"Sign in to fund your account with card or USDC on Base. x402 micropayments work without an account.",
+			"Sign in to fund your account with card or USDC on Base. Agents can also settle USDC via x402 to credit the same balance.",
 		features: [
 			{
 				icon: CreditCard,
