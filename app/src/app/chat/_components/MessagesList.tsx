@@ -198,7 +198,7 @@ export function MessagesList({
 		<div
 			ref={scrollContainerRef}
 			onScroll={handleScroll}
-			className="flex-1 overflow-y-auto px-4 py-4 md:px-6 md:py-6 lg:px-8 lg:py-8 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent relative"
+			className="gutter-page relative flex-1 overflow-y-auto py-4 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent sm:py-5 md:py-6 lg:py-8"
 		>
 			<div
 				className="pointer-events-none absolute inset-0 bg-grid-animated mask-radial"

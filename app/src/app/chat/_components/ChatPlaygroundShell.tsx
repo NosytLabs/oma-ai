@@ -438,7 +438,7 @@ function ShellContent({
 						{isLowBalance && (
 							<div
 								role="status"
-								className="flex-none flex items-center justify-between gap-3 px-4 md:px-6 lg:px-8 py-2 bg-warning/10 border-b border-warning/30 text-xs text-warning font-mono"
+								className="gutter-page flex flex-none items-center justify-between gap-3 border-b border-warning/30 bg-warning/10 py-2 font-mono text-xs text-warning"
 							>
 								<span className="flex items-center gap-2 tracking-wide">
 									<AlertTriangle
@@ -486,7 +486,7 @@ function ShellContent({
 						// against the browser edge (mobile bottom bar / iOS notch home bar)
 						// and there's breathing room above the copyright/footer.
 						<div
-							className="z-10 flex-none border-t border-border bg-[color-mix(in_srgb,var(--color-surface)_60%,transparent)] px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-20px_40px_-20px_rgba(0,0,0,0.6)] backdrop-blur-md sm:px-6 sm:pt-4 sm:pb-[max(1.25rem,env(safe-area-inset-bottom))] lg:px-8"
+							className="gutter-page z-10 flex-none border-t border-border bg-[color-mix(in_srgb,var(--color-surface)_60%,transparent)] pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-20px_40px_-20px_rgba(0,0,0,0.6)] backdrop-blur-md sm:pt-4 sm:pb-[max(1.25rem,env(safe-area-inset-bottom))]"
 						>
 							<div className="max-w-4xl mx-auto">
 								<ChatErrorBanner

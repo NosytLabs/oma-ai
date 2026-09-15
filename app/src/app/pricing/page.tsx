@@ -550,7 +550,7 @@ export default function PricingPage() {
 						<div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center sm:gap-3">
 							<Link
 								href="/login?next=/dashboard"
-								className="btn-mono btn-primary"
+								className="btn-mono btn-primary w-full sm:w-auto"
 							>
 								<Zap className="h-3.5 w-3.5" aria-hidden="true" />
 								<span>Get API key</span>
@@ -558,7 +558,7 @@ export default function PricingPage() {
 							</Link>
 							<Link
 								href={cardActionable ? "/deposit?method=card" : "/deposit?method=usdc"}
-								className="btn-mono"
+								className="btn-mono w-full sm:w-auto"
 							>
 								{cardActionable ? (
 									<CreditCard className="h-3.5 w-3.5" aria-hidden="true" />

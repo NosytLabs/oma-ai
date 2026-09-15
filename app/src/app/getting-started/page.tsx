@@ -128,7 +128,7 @@ export default function GettingStartedPage() {
 
 				<span className="section-eyebrow-caps">First time here?</span>
 				<h1 className="display-headline mt-3 text-text-bright">How to use OMA — 5 minutes, no jargon</h1>
-				<p className="page-intro mt-4 max-w-2xl">
+				<p className="page-intro max-w-2xl">
 					OMA is one account for {MODEL_COUNT} AI models from many providers, paid your way. You do{" "}
 					<em className="text-text-bright">not</em> need to be a developer or a crypto person to start.
 					This is the whole site, in order. Developers: the{" "}

@@ -49,7 +49,7 @@ export default function ChangelogPage() {
 			<div className="container-page page-content mx-auto max-w-2xl">
 				<span className="section-eyebrow-caps">Changelog</span>
 				<h1 className="h1-page mt-4 text-text-bright">What&apos;s new on OMA.</h1>
-				<p className="page-intro mt-4">
+				<p className="page-intro">
 					Notable changes — new models, pricing, fixes, and features.
 					Newest first. For API-level details, see the{" "}
 					<Link href="/docs" className="text-accent underline underline-offset-4">

@@ -233,9 +233,10 @@ export function Navbar() {
 								<Link
 									href={loginHref}
 									aria-label="Sign in or create an account"
-									className="hidden sm:inline-flex btn-mono btn-primary"
+									className="btn-mono btn-primary inline-flex px-2.5 text-[11px] sm:px-4 sm:text-xs"
 								>
-									<span>Sign in / Sign up</span>
+									<span className="sm:hidden">Sign in</span>
+									<span className="hidden sm:inline">Sign in / Sign up</span>
 									<svg
 										className="hidden h-3 w-3 sm:block"
 										viewBox="0 0 24 24"

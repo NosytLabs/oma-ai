@@ -178,7 +178,7 @@ export function DocsContent() {
 									<h1 className="display-headline mt-4 text-text-bright">
 										API Docs
 									</h1>
-									<p className="page-intro mt-4 max-w-2xl">
+									<p className="page-intro max-w-2xl">
 										OpenAI-compatible inference with wallet auth and x402
 										credit billing. One endpoint, one key, every curated model.
 									</p>

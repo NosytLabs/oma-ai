@@ -389,6 +389,12 @@
 		.container-page { padding-left: 2rem; padding-right: 2rem; }
 	}
 
+	/* Shared horizontal gutters for full-bleed shells (chat HUD, etc.)
+	   Keep in lockstep with .container-page / navbar padding steps. */
+	.gutter-page {
+		@apply px-4 sm:px-6 lg:px-8;
+	}
+
 	/* ---------- Surfaces ---------- */
 
 	.surface-card {

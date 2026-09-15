@@ -175,7 +175,7 @@ export default function FAQPage() {
 
 				<span className="section-eyebrow-caps">Help center</span>
 				<h1 className="display-headline mt-3 text-text-bright">FAQ</h1>
-				<p className="page-intro mt-4 max-w-2xl">
+				<p className="page-intro max-w-2xl">
 					Plain-language answers for people who have never used an AI API —
 					and links for developers who want the deep detail. New to all of
 					this? Start at <Link href="/getting-started" className="text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent">getting started</Link> or the{" "}

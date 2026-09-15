@@ -91,7 +91,7 @@ function ModelsPageInner() {
 						<h1 className="display-headline mt-3 text-text-bright">
 							Every model, one&nbsp;catalog.
 						</h1>
-						<p className="page-intro mt-4 max-w-2xl">
+						<p className="page-intro max-w-2xl">
 							Curated chat models from Venice and OMA-AI, all reachable
 							through one OpenAI-compatible endpoint. Filter by tier,
 							provider, capabilities, or context window to find what you

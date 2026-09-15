@@ -71,7 +71,7 @@ export default async function StatusPage() {
 				<h1 className="h1-page mt-4 text-text-bright">
 					{allOk ? "All systems normal." : "Degraded — we're on it."}
 				</h1>
-				<p className="page-intro mt-4">
+				<p className="page-intro">
 					Live health of the services behind OMA. This page checks
 					liveness the moment you load it. Refresh to re-check. No account
 					needed.

@@ -69,7 +69,7 @@ export default function ContactPage() {
 			<h1 className="display-headline mt-3 text-text-bright">
 				How to reach OMA
 			</h1>
-			<p className="page-intro mt-4 mb-10 max-w-2xl">
+			<p className="page-intro mb-10 max-w-2xl">
 					We are a lean team. Email is the fastest channel. We reply within one
 					business day for outages, and typically within five for privacy
 					requests.

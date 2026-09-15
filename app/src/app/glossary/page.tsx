@@ -183,7 +183,7 @@ export default function GlossaryPage() {
 
 				<span className="section-eyebrow-caps">Reference</span>
 				<h1 className="display-headline mt-3 text-text-bright">Glossary</h1>
-				<p className="page-intro mt-4 max-w-2xl">
+				<p className="page-intro max-w-2xl">
 					Every term you&apos;ll meet on OMA, explained without jargon — from
 					tokens and context windows to USDC and x402. New here? Pair this
 					with the <Link href="/faq" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">FAQ</Link> and{" "}
