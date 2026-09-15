@@ -30,7 +30,8 @@ export type RailStatus = {
 
 /**
 	* Derive per-rail status from public site settings.
-	* Defaults are optimistic (Available) only when flags are unknown (null settings).
+	* Unknown settings stay non-actionable (Checking…) so we never flash
+	* "Available" for a rail the server has not confirmed.
 	*/
 export function railStatuses(
 	settings: SitePaymentSettings | null | undefined,
@@ -40,16 +41,16 @@ export function railStatuses(
 			{
 				key: "usdc",
 				label: "USDC (Base)",
-				badge: "Available",
-				actionable: true,
-				reason: null,
+				badge: "Setup required",
+				actionable: false,
+				reason: "Checking payment configuration…",
 			},
 			{
 				key: "card",
 				label: "Card · Polar",
-				badge: "Available",
-				actionable: true,
-				reason: null,
+				badge: "Setup required",
+				actionable: false,
+				reason: "Checking payment configuration…",
 			},
 			{
 				key: "x402",
@@ -61,8 +62,8 @@ export function railStatuses(
 		];
 	}
 
-	const usdcConfigured = settings.usdcDepositConfigured !== false;
-	const polarConfigured = settings.polarConfigured !== false;
+	const usdcConfigured = settings.usdcDepositConfigured === true;
+	const polarConfigured = settings.polarConfigured === true;
 
 	const usdcPaused = settings.cryptoPaymentsEnabled === false;
 	const usdcMissing = !usdcConfigured;
@@ -119,9 +120,9 @@ export function railByKey(
 		railStatuses(settings).find((r) => r.key === key) ?? {
 			key,
 			label: key,
-			badge: "Available",
-			actionable: true,
-			reason: null,
+			badge: "Setup required",
+			actionable: false,
+			reason: "Checking payment configuration…",
 		}
 	);
 }

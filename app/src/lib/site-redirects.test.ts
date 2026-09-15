@@ -55,6 +55,7 @@ describe("SITE_REDIRECTS (shipped next.config source)", () => {
 		expect(bySource["/swap"]).toBe("/deposit");
 		expect(bySource["/credits"]).toBe("/deposit");
 		expect(bySource["/account"]).toBe("/settings");
+		expect(bySource["/api-keys"]).toBe("/dashboard?tab=api-keys");
 	});
 });
 

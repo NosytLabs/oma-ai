@@ -270,7 +270,7 @@ export default function DepositPage() {
 				if (preferred) setMethod(preferred.key);
 			})
 			.catch(() => {
-				/* leave null → optimistic Available until next visit */
+				/* leave null → Setup required until settings load */
 			});
 	}, []);
 

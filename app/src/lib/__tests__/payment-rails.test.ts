@@ -2,14 +2,16 @@ import { describe, expect, it } from "vitest";
 import { railByKey, railStatuses, type SitePaymentSettings } from "@/lib/payment-rails";
 
 describe("railStatuses", () => {
-	it("defaults to Available when settings are null (optimistic until fetch)", () => {
+	it("defaults USDC/card to Setup required when settings are null (no Available flash)", () => {
 		const rails = railStatuses(null);
 		expect(rails.map((r) => r.badge)).toEqual([
-			"Available",
-			"Available",
+			"Setup required",
+			"Setup required",
 			"Agents",
 		]);
-		expect(rails.every((r) => r.actionable)).toBe(true);
+		expect(railByKey(null, "usdc").actionable).toBe(false);
+		expect(railByKey(null, "card").actionable).toBe(false);
+		expect(railByKey(null, "x402").actionable).toBe(true);
 	});
 
 	it("marks USDC Setup required when deposit address is missing", () => {

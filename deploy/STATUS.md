@@ -1,6 +1,6 @@
 # Project status
 
-Last audit: 2026-09-15 (UI/UX + content cleanup complete; Coolify DNS still pending).
+Last audit: 2026-09-15 (layout/content polish; Coolify DNS still pending).
 
 OMA-AI is a TypeScript monorepo (Next.js app + Hono API) with USDC deposits,
 optional Polar card checkout, and x402 verify/settle → credit balance → API spend.
@@ -12,7 +12,7 @@ optional Polar card checkout, and x402 verify/settle → credit balance → API 
 - `./scripts/ops/check-launch-env.sh` (against `.env.prod`)
 
 ## Earn path
-1. Guest website chat (free OMA-AI models, daily cap)
+1. Guest website chat (free OMA-AI models: DeepSeek OpenBroker + MiniMax, daily cap)
 2. Magic link / SIWE wallet login
 3. USDC deposit on Base (when `USDC_DEPOSIT_ADDRESS` set)
 4. x402 `/x402/verify` + authenticated `/x402/settle` → credits `credit_balances`
@@ -31,3 +31,4 @@ Ops still required on your side:
 ## Product truth
 - Credits never expire while the account is active
 - x402 is verify → settle → credit → spend with API key (not mid-request 402 on chat)
+- Card checkout is Setup required until Polar is configured

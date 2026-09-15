@@ -42,6 +42,7 @@ export const SITE_REDIRECTS: readonly SiteRedirect[] = [
 	// Legacy account/credits shortcuts.
 	{ source: "/credits", destination: "/deposit" },
 	{ source: "/account", destination: "/settings" },
+	{ source: "/api-keys", destination: "/dashboard?tab=api-keys" },
 	// AUP merged into Terms ("Acceptable use" section) — single legal doc.
 	{ source: "/aup", destination: "/terms#acceptable-use" },
 	// Internal motion/design-system reference page removed — point at docs.
@@ -71,6 +72,7 @@ export const REMOVED_PUBLIC_PATHS = [
 	"/swap",
 	"/credits",
 	"/account",
+	"/api-keys",
 	"/aup",
 	"/design",
 ] as const;

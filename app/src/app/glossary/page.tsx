@@ -88,11 +88,11 @@ const TERMS: Term[] = [
 	},
 	{
 		term: "HTTP status 402",
-		def: "Payment Required — the API's polite way of saying 'I need payment to fulfill this'. Either your credits ran out or the x402 flow wants a signed payment before it serves the request.",
+		def: "Payment Required — usually means your credit balance is too low for the request. On OMA, chat/API calls spend prepaid credits; they are not interrupted mid-request by an x402 challenge.",
 	},
 	{
 		term: "Credits",
-		def: "OMA's prepaid balance, denominated in USDC. Buy with a card or deposit USDC; each request deducts its cost. Credits never expire.",
+		def: "OMA's prepaid balance, denominated in USDC. Deposit USDC (or use card checkout when Polar is enabled); each API request deducts its listed cost. Credits never expire while your account is active.",
 	},
 	{
 		term: "USDC",
@@ -100,7 +100,7 @@ const TERMS: Term[] = [
 	},
 	{
 		term: "Base",
-		def: "A fast, cheap Ethereum layer-2 blockchain built by Coinbase, where OMA settles USDC payments. Fees are pennies, so per-request payments make sense.",
+		def: "A fast, cheap Ethereum layer-2 blockchain built by Coinbase, where OMA settles USDC deposits and x402 settlements. Fees are pennies.",
 	},
 	{
 		term: "Wallet",
@@ -116,11 +116,11 @@ const TERMS: Term[] = [
 	},
 	{
 		term: "x402",
-		def: "An open standard for paying for a single HTTP request with crypto, automatically (like a vending machine for AI). The API replies 'pay X USDC', your agent signs the payment, the request proceeds. See /docs#x402.",
+		def: "An open HTTP payment standard OMA uses for agent USDC funding on Base: verify a signed EIP-3009 authorization, settle to credit your balance, then spend with an API key. See /docs#x402.",
 	},
 	{
 		term: "EIP-3009",
-		def: "The Ethereum standard OMA uses for x402 payments: transferWithAuthorization lets a wallet sign a gasless USDC transfer — the payer pays no gas fee because the gateway covers it.",
+		def: "The Ethereum standard OMA uses for x402 settlements: transferWithAuthorization lets a wallet sign a gasless USDC transfer — the payer pays no gas fee because the gateway covers it.",
 	},
 	{
 		term: "Gas (fee)",

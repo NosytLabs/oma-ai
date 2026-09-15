@@ -28,6 +28,10 @@ import {
 import { m } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";
 import { PricingTable } from "./_components/PricingTable";
+import {
+	railByKey,
+	type SitePaymentSettings,
+} from "@/lib/payment-rails";
 
 const CATEGORIES: { key: Category; label: string }[] = [
 	{ key: "all", label: "All" },
@@ -194,6 +198,9 @@ export default function PricingPage() {
 	const [category, setCategory] = useState<Category>("all");
 	const [openFaq, setOpenFaq] = useState<number | null>(null);
 	const [models, setModels] = useState<Model[]>(MODELS);
+	const [siteSettings, setSiteSettings] = useState<SitePaymentSettings | null>(
+		null,
+	);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -204,10 +211,23 @@ export default function PricingPage() {
 			.catch(() => {
 				// keep static fallback
 			});
+		fetch("/api/v1/site-settings", { credentials: "same-origin" })
+			.then((r) => (r.ok ? r.json() : null))
+			.then((data) => {
+				if (!cancelled && data && typeof data === "object") {
+					setSiteSettings(data as SitePaymentSettings);
+				}
+			})
+			.catch(() => {
+				/* leave null → Setup required until confirmed */
+			});
 		return () => {
 			cancelled = true;
 		};
 	}, []);
+
+	const cardRail = railByKey(siteSettings, "card");
+	const cardActionable = cardRail.actionable;
 
 	const pricedModels = useMemo(() => models.map(toPricedModel), [models]);
 
@@ -250,10 +270,10 @@ export default function PricingPage() {
 					<span className="section-eyebrow-caps">AI API pricing</span>
 					<h1 className="h1-page text-text-bright max-w-4xl">Pricing for every model.</h1>
 					<p className="page-intro">
-						See model costs first, then choose how to pay. OMA bills per token
-						or per request, with no subscriptions, no lock-in. Listed prices
-						are what you pay — Venice-routed models include a 25% platform
-						fee; OMA-AI models are priced at 2x Gonka wholesale.
+						See model costs first, then choose how to pay. OMA bills from
+						prepaid credits per token, with no subscriptions and no lock-in.
+						Listed prices are what you pay — Venice-routed models include a
+						25% platform fee; OMA-AI models are priced at 2x Gonka wholesale.
 					</p>
 					<div className="meta-strip">
 							<span>{modelCount} live models</span>
@@ -337,8 +357,9 @@ export default function PricingPage() {
 								</h2>
 							</div>
 							<p className="max-w-md text-sm leading-relaxed text-text-secondary sm:text-right">
-								Choose a credit pack instead of managing a monthly subscription or
-								per-token invoice. Every pack is 1:1 USD.
+								{cardActionable
+									? "Choose a credit pack instead of managing a monthly subscription or per-token invoice. Every pack is 1:1 USD."
+									: "Deposit USDC on Base at 1:1 USD, or use x402 settle for agents. Card checkout shows Setup required until Polar is enabled."}
 							</p>
 						</div>
 						<div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -366,22 +387,39 @@ export default function PricingPage() {
 										<p className="mt-5 min-h-12 text-sm leading-relaxed text-text-secondary">
 											{tier.description}
 										</p>
-										<Link
-											href="/deposit?method=card"
-											className={`${recommended ? "btn-mono btn-primary" : "btn-mono"} mt-8 w-full`}
-										>
-											<CreditCard className="h-3.5 w-3.5" aria-hidden="true" />
-											Buy with card
-										</Link>
-										<Link
-											href="/deposit?method=usdc"
-											className="mt-2 inline-flex min-h-10 w-full items-center justify-center text-xs font-mono text-text-muted underline-offset-4 hover:text-accent hover:underline"
-										>
-											or deposit USDC
-										</Link>
-										<p className="mt-3 text-center text-[10px] font-mono uppercase tracking-wider text-text-muted">
-											Powered by Polar
-										</p>
+										{cardActionable ? (
+											<>
+												<Link
+													href="/deposit?method=card"
+													className={`${recommended ? "btn-mono btn-primary" : "btn-mono"} mt-8 w-full`}
+												>
+													<CreditCard className="h-3.5 w-3.5" aria-hidden="true" />
+													Buy with card
+												</Link>
+												<Link
+													href="/deposit?method=usdc"
+													className="mt-2 inline-flex min-h-10 w-full items-center justify-center text-xs font-mono text-text-muted underline-offset-4 hover:text-accent hover:underline"
+												>
+													or deposit USDC
+												</Link>
+												<p className="mt-3 text-center text-[10px] font-mono uppercase tracking-wider text-text-muted">
+													Powered by Polar
+												</p>
+											</>
+										) : (
+											<>
+												<Link
+													href="/deposit?method=usdc"
+													className={`${recommended ? "btn-mono btn-primary" : "btn-mono"} mt-8 w-full`}
+												>
+													<Coins className="h-3.5 w-3.5" aria-hidden="true" />
+													Deposit USDC
+												</Link>
+												<p className="mt-3 text-center text-[10px] font-mono uppercase tracking-wider text-text-muted">
+													Card · {cardRail.badge}
+												</p>
+											</>
+										)}
 									</m.article>
 								);
 							})}
@@ -519,11 +557,15 @@ export default function PricingPage() {
 								<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
 							</Link>
 							<Link
-								href="/deposit?method=card"
+								href={cardActionable ? "/deposit?method=card" : "/deposit?method=usdc"}
 								className="btn-mono"
 							>
-								<CreditCard className="h-3.5 w-3.5" aria-hidden="true" />
-								<span>Buy credits</span>
+								{cardActionable ? (
+									<CreditCard className="h-3.5 w-3.5" aria-hidden="true" />
+								) : (
+									<Coins className="h-3.5 w-3.5" aria-hidden="true" />
+								)}
+								<span>{cardActionable ? "Buy credits" : "Deposit USDC"}</span>
 							</Link>
 						</div>
 						<Link

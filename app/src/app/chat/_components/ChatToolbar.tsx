@@ -126,8 +126,8 @@ export function ChatToolbar({
 
 	return (
 		<header aria-label="Playground toolbar" className="z-20 flex min-h-14 min-w-0 flex-none flex-wrap items-center gap-x-1.5 gap-y-1.5 border-b border-border bg-void/95 px-4 py-1.5 sm:gap-x-3 sm:px-6 md:h-14 md:flex-nowrap md:px-6 md:py-0 lg:px-8">
-			<div className="flex min-w-0 max-w-full basis-full items-center gap-1.5 sm:gap-2 md:flex-1 md:basis-auto">
-				<div className="min-w-0 max-w-[min(14rem,calc(100%-3rem))] flex-1 overflow-visible sm:max-w-[220px] md:max-w-[260px]">
+			<div className="flex min-w-0 max-w-full items-center gap-1.5 sm:gap-2 md:flex-1">
+				<div className="min-w-0 max-w-[min(14rem,calc(100%-3rem))] overflow-visible sm:max-w-[220px] md:max-w-[260px]">
 					<LazyModelSelector model={model} setModel={setModel} isAuthenticated={isAuthenticated} />
 				</div>
 				{searching && (
@@ -139,8 +139,8 @@ export function ChatToolbar({
 			</div>
 
 			<div
-				className={`ml-auto flex shrink-0 items-center gap-1 sm:gap-2 ${
-					messageCount === 0 && !creditsPill ? "hidden" : "w-full justify-end md:w-auto"
+				className={`ml-auto flex shrink-0 items-center justify-end gap-1 sm:gap-2 ${
+					messageCount === 0 && !creditsPill ? "hidden" : ""
 				}`}
 			>
 				{messageCount > 0 && (

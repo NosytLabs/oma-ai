@@ -11,17 +11,9 @@
  * suppresses mismatches for the element's own direct text) so a
  * midnight-UTC rollover between SSR and hydration can't throw.
  *
- * Layout (desktop, lg+):
-	* ┌────────────────────────────────────────────────────────────────┐
-	* │ Logo · tagline · socials (3 cols of nav) │
-	* ├────────────────────────────────────────────────────────────────┤
-	* │ © 2026 NosytLabs. All rights reserved. │
-	* └────────────────────────────────────────────────────────────────┘
-	*
-	* Layout (mobile):
-	* Brand stack, then a 2-column nav grid (Product | Resources),
-	* then the legal row, then the bottom bar.
-	*/
+ * Layout (desktop, lg+): brand column + up to 3 nav columns.
+ * Mobile: brand stack, then 2-col nav (3-col from sm), then bottom bar.
+ */
 
 import {
 	ArrowUpRight,
@@ -237,7 +229,7 @@ export function Footer() {
 					<m.nav
 						variants={fadeUp}
 						aria-label="Footer navigation"
-						className="grid w-full grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6"
+						className="grid w-full grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3"
 					>
 						{FOOTER_SECTIONS.map((section) => (
 							<div key={section.title} className="min-w-0">

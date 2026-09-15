@@ -19,7 +19,7 @@ export function OrganizationJsonLd() {
 		url: BASE_URL,
 		logo: `${BASE_URL}/logos/oma-icon-512.png`,
 		description:
-			"One gateway. Every model. No lock-in. OpenAI-compatible AI inference paid per request in USDC on Base.",
+			"One gateway. Every model. No lock-in. OpenAI-compatible AI inference with prepaid USDC credits on Base (x402 settle optional).",
 		sameAs: ["https://github.com/NosytLabs"],
 		contactPoint: {
 			"@type": "ContactPoint",
