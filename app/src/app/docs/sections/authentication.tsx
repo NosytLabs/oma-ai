@@ -116,7 +116,7 @@ func main() {
 						<li>Enter your email address on the login page</li>
 						<li>Click the link sent to your inbox within 5 minutes</li>
 						<li>Your API key is generated automatically on first sign-in</li>
-						<li>Credits can be added via card or USDC (Base) in your dashboard</li>
+						<li>Credits can be added via USDC on Base (card when Polar is enabled)</li>
 					</ol>
 				</div>
 			</div>

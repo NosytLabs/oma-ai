@@ -32,7 +32,7 @@ const ACTIONS: QuickAction[] = [
 	{
 		href: "/deposit",
 		label: "Buy credits",
-		description: "Top up via card or USDC on Base",
+		description: "Top up via USDC (card when enabled)",
 		icon: Coins,
 	},
 	{

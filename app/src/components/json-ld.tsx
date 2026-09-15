@@ -50,7 +50,7 @@ export function SoftwareApplicationJsonLd() {
 			"@type": "Offer",
 			price: "0",
 			priceCurrency: "USD",
-			description: "Pay-per-request pricing. No monthly fees.",
+			description: "Usage-based pricing in USDC. No monthly fees.",
 		},
 	};
 
