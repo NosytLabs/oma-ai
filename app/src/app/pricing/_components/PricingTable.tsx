@@ -302,7 +302,7 @@ export function PricingTable({
 													{mm.name}
 												</span>
 											</div>
-											<span className="ml-7 text-xs text-text-secondary font-mono hidden sm:inline truncate max-w-[200px] block">
+											<span className="ml-7 mt-0.5 hidden max-w-[200px] truncate font-mono text-xs text-text-secondary sm:block">
 												{mm.id}
 											</span>
 										</td>

@@ -12,7 +12,7 @@ interface EmptyStateProps {
 export function ChatEmptyState({ signedIn = false }: EmptyStateProps) {
 
 	return (
-		<div className="flex flex-col items-center justify-start text-center px-4 py-4 md:py-6">
+		<div className="flex flex-col items-center justify-start py-4 text-center md:py-6">
 			<m.div
 				initial={{ scale: 0.95, opacity: 0 }}
 				animate={{ scale: 1, opacity: 1 }}

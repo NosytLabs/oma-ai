@@ -296,7 +296,7 @@ export default function DepositPage() {
 				role="tablist"
 				id={tablistId}
 				aria-label="Choose a payment method"
-				className="mt-6 grid grid-cols-3 gap-2 rounded-[var(--radius-lg)] border border-border bg-surface/40 p-1"
+				className="mt-6 grid grid-cols-3 gap-1 rounded-[var(--radius-lg)] border border-border bg-surface/40 p-1 sm:gap-2"
 			>
 				{METHODS.map((m) => {
 					const Icon = m.icon;
@@ -311,17 +311,17 @@ export default function DepositPage() {
 							aria-controls={`${tablistId}-panel-${m.key}`}
 							tabIndex={isActive ? 0 : -1}
 							onClick={() => setMethod(m.key)}
-							className={`flex flex-col items-start gap-1 rounded-[var(--radius-md)] px-3 py-2.5 text-left transition-[background-color,color,box-shadow] duration-200 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void ${
+							className={`flex min-w-0 flex-col items-center gap-0.5 rounded-[var(--radius-md)] px-1.5 py-2 text-center transition-[background-color,color,box-shadow] duration-200 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void sm:items-start sm:gap-1 sm:px-3 sm:py-2.5 sm:text-left ${
 								isActive
 									? "bg-accent/10 text-accent shadow-[inset_0_0_0_1px_var(--color-accent)]"
 									: "text-text-muted hover:bg-surface hover:text-text"
 							}`}
 						>
-							<span className="flex items-center gap-1.5 font-mono text-[12px] font-semibold uppercase tracking-wider">
-								<Icon className="h-3.5 w-3.5" aria-hidden="true" />
-								{m.label}
+							<span className="flex max-w-full items-center justify-center gap-1 font-mono text-[11px] font-semibold uppercase tracking-wide sm:gap-1.5 sm:text-[12px] sm:tracking-wider">
+								<Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+								<span className="truncate">{m.label}</span>
 							</span>
-							<span className="font-mono text-[10px] uppercase tracking-wider opacity-80">
+							<span className="hidden min-w-0 truncate font-mono text-[10px] uppercase tracking-wider opacity-80 sm:block">
 								{m.tag}
 							</span>
 						</button>

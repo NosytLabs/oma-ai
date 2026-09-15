@@ -228,7 +228,7 @@ export const NAV_ITEMS: NavItem[] = [
 			"crypto",
 			"usdc",
 			"base",
-			"pay per request",
+			"agent settlement",
 			"no account",
 			"agent",
 			"402",

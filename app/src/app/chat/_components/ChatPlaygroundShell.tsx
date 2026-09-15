@@ -486,8 +486,7 @@ function ShellContent({
 						// against the browser edge (mobile bottom bar / iOS notch home bar)
 						// and there's breathing room above the copyright/footer.
 						<div
-							className="flex-none px-4 pt-3 pb-4 sm:px-6 sm:pt-4 sm:pb-5 lg:px-8 bg-[color-mix(in_srgb,var(--color-surface)_60%,transparent)] border-t border-border shadow-[0_-20px_40px_-20px_rgba(0,0,0,0.6)] backdrop-blur-md z-10"
-							style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
+							className="z-10 flex-none border-t border-border bg-[color-mix(in_srgb,var(--color-surface)_60%,transparent)] px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-20px_40px_-20px_rgba(0,0,0,0.6)] backdrop-blur-md sm:px-6 sm:pt-4 sm:pb-[max(1.25rem,env(safe-area-inset-bottom))] lg:px-8"
 						>
 							<div className="max-w-4xl mx-auto">
 								<ChatErrorBanner

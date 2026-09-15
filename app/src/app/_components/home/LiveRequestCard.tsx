@@ -30,7 +30,7 @@ const ROUNDS: DemoRound[] = [
 	modelLabel: "Claude Opus 5",
 	prompt: "Summarize OMA in one sentence.",
 	reply:
-	"One gateway for every OMA model — buy credits by card, deposit USDC, or pay per call with x402.",
+	"One gateway for every OMA model — buy credits by card, deposit USDC, or settle USDC via x402.",
 	},
 	{
 	model: "deepseek-v4-flash-0731-openbroker",

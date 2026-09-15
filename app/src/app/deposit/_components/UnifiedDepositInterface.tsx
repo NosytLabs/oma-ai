@@ -316,12 +316,12 @@ export function UnifiedDepositInterface({
 		<div className="space-y-6">
 			<nav
 				aria-label="Deposit progress"
-				className="flex items-start justify-center gap-0 px-2"
+				className="flex w-full items-start justify-center gap-0 px-0 sm:px-2"
 			>
 				{STEPS.map((s, i) => (
-					<div key={s.key} className="flex items-start min-w-0">
+					<div key={s.key} className="flex min-w-0 flex-1 items-start sm:flex-none">
 						<div
-							className="flex w-24 shrink-0 flex-col items-center gap-1.5"
+							className="flex w-full min-w-0 flex-col items-center gap-1.5 sm:w-24 sm:shrink-0"
 							aria-current={i === currentStepIdx ? "step" : undefined}
 						>
 							<div
@@ -338,7 +338,7 @@ export function UnifiedDepositInterface({
 								{i + 1}
 							</div>
 							<span
-									className={`text-center text-[10px] font-mono uppercase tracking-wider leading-tight ${
+									className={`max-w-full px-0.5 text-center text-[9px] font-mono uppercase tracking-wider leading-tight sm:text-[10px] ${
 									step === "error" && i === currentStepIdx
 										? "text-error"
 										: i === currentStepIdx
@@ -354,7 +354,7 @@ export function UnifiedDepositInterface({
 						{i < STEPS.length - 1 && (
 							<div
 								aria-hidden="true"
-								className={`mt-4 h-px w-6 shrink-0 ${
+								className={`mt-4 h-px min-w-3 flex-1 sm:w-6 sm:flex-none sm:min-w-0 ${
 									i < currentStepIdx ? "bg-success/40" : "bg-border-bright"
 								}`}
 							/>

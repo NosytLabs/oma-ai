@@ -156,7 +156,7 @@ export function DocsContent() {
 				<Sidebar activeId={activeId} />
 
 				<div className="min-w-0 lg:pl-72">
-					<div className="mx-auto max-w-5xl min-w-0 px-4 py-3 sm:px-6 lg:px-8">
+					<div className="mx-auto max-w-5xl min-w-0 px-4 pb-24 pt-6 sm:px-6 sm:pt-8 lg:px-8 lg:pb-10 lg:pt-10">
 						<div className="relative mb-10 overflow-hidden rounded-[var(--radius-2xl)] border border-accent/20 bg-surface/50 p-8 sm:p-10 lg:p-12 shadow-2xl">
 							<div
 								aria-hidden="true"

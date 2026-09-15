@@ -11,7 +11,7 @@ export const revalidate = 3600;
 	* advertises `inputModes` + `outputModes` + tags so agent directories and
 	* tool-using models can route themselves to the right endpoint without a
 	* follow-up probe request. The x402 payment block mirrors the v2 spec so
-	* the card is self-describing for the pay-per-request flow.
+	* the card is self-describing for the x402 settlement + credit spend flow.
 	*/
 const USDC_BASE_MAINNET = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 const FALLBACK_TREASURY = "0x8581784D3E598cCa3482375CFF2409Ac9DD8c402";
@@ -28,7 +28,7 @@ export async function GET() {
 
 	const agentCard = {
 		name: "OMA AI Gateway",
-		description: `Permissionless AI inference across ${MODEL_COUNT_LABEL} models. Buy credits with card, deposit USDC on Base, or let agents pay per request in USDC via x402. OpenAI-compatible endpoint, privacy-first routing, A2UI-ready responses.`,
+		description: `Permissionless AI inference across ${MODEL_COUNT_LABEL} models. Buy credits with card, deposit USDC on Base, or settle USDC via x402 then spend with an API key. OpenAI-compatible endpoint, privacy-first routing, A2UI-ready responses.`,
 		url: `${appUrl}/.well-known/agent-card.json`,
 		version: "2.1.0",
 		documentation: `${appUrl}/docs`,
@@ -85,17 +85,17 @@ export async function GET() {
 				endpoint: `${apiUrl}/v1/messages`,
 			},
 			{
-				id: "x402-pay-per-request",
-				name: "x402 Pay-Per-Request (agent billing)",
-				description: "Agents pay for a single request in USDC on Base via EIP-3009 transferWithAuthorization. No account, no API key, no subscription — the gateway replies 402 with a PAYMENT-REQUIRED challenge, the agent signs and retries with PAYMENT-SIGNATURE.",
+				id: "x402-settlement",
+				name: "x402 Agent Settlement (USDC funding)",
+				description: "Agents fund with USDC on Base via EIP-3009: verify with PAYMENT-SIGNATURE, settle from an authenticated session to credit a balance, then spend with an API key. Facilitator pays gas.",
 				tags: [
 					"x402",
 					"agentic-billing",
 					"usdc",
 					"base",
 					"eip-3009",
-					"http-402",
-					"no-account",
+					"credits",
+					"api-key",
 				],
 				inputModes: ["text"],
 				outputModes: ["text", "application/a2ui+json"],
