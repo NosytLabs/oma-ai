@@ -19,12 +19,13 @@
 
 import { Hono } from "hono";
 import type { Context, Next, MiddlewareHandler } from "hono";
+import { sql } from "drizzle-orm";
 import { config } from "../config.js";
 import { buildV2Challenge, buildXPaymentResponse, parseXPaymentHeader } from "./v2.js";
 import type { OmaEnv } from "../types.js";
 import { sessionAuth } from "../auth/middleware.js";
 import { db } from "../db/client.js";
-import { settlements } from "../db/schema.js";
+import { creditBalances, deposits, settlements } from "../db/schema.js";
 import { eq, and } from "drizzle-orm";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { USDC_BASE } from "../constants.js";
@@ -44,7 +45,101 @@ import {
 		type PaymentMiddlewareConfig,
 		type PaymentRequired,
 		type PaymentSignature,
+		type SettlementResponse,
 } from "./types.js";
+
+/**
+ * Credit the authenticated user after a successful x402 settlement.
+ * Idempotent via deposits.tx_hash unique index — retries / cache-hit
+ * replays do not double-credit.
+ */
+async function creditSettledPayment(
+		userId: string,
+		txHash: string,
+		amountUsd: string,
+): Promise<{ creditedCents: number; alreadyCredited: boolean }> {
+		const atomic = parseUsdcAtomic(amountUsd);
+		// USDC has 6 decimals; 1 credit = $0.01 = 10_000 atomic units.
+		const creditedCents = Number(atomic / 10_000n);
+		if (creditedCents <= 0) {
+				throw new Error("x402 settlement amount too small to credit");
+		}
+		const amountUsdFixed = (creditedCents / 100).toFixed(8);
+
+		return await db.transaction(async (tx) => {
+				const existing = await tx
+						.select({ id: deposits.id, userId: deposits.userId })
+						.from(deposits)
+						.where(eq(deposits.txHash, txHash))
+						.limit(1);
+
+				if (existing.length > 0) {
+						if (existing[0].userId !== userId) {
+								throw new Error("x402 settlement already credited to another account");
+						}
+						return { creditedCents, alreadyCredited: true };
+				}
+
+				await tx.insert(deposits).values({
+						userId,
+						type: "usdc_direct",
+						amountUsd: amountUsdFixed,
+						creditsIssued: creditedCents.toFixed(8),
+						txHash,
+						depositAddress: SERVER_TREASURY || config.TREASURY_BASE_ADDRESS || null,
+						status: "completed",
+						completedAt: new Date(),
+				});
+
+				await tx
+						.insert(creditBalances)
+						.values({
+								userId,
+								balanceCents: creditedCents.toString(),
+								totalDepositedCents: creditedCents.toString(),
+								totalUsedCents: "0",
+								lastActivityAt: new Date(),
+						})
+						.onConflictDoUpdate({
+								target: creditBalances.userId,
+								set: {
+										balanceCents: sql`${creditBalances.balanceCents}::numeric + ${creditedCents}`,
+										totalDepositedCents: sql`${creditBalances.totalDepositedCents}::numeric + ${creditedCents}`,
+										lastActivityAt: new Date(),
+										updatedAt: new Date(),
+								},
+						});
+
+				logPaymentEvent({
+						kind: "x402",
+						outcome: "settled",
+						userId,
+						amountCents: creditedCents,
+						signature: txHash,
+						latencyMs: 0,
+				});
+
+				return { creditedCents, alreadyCredited: false };
+		});
+}
+
+async function settleAndCredit(
+		userId: string,
+		txHash: string,
+		amount: string,
+		networkId: string,
+		payee: string,
+): Promise<SettlementResponse & { creditedCents?: number }> {
+		const result = await settlePaymentAsync(txHash, amount, networkId, payee);
+		if (!result.settled) return result;
+		try {
+				const credit = await creditSettledPayment(userId, txHash, amount);
+				return { ...result, creditedCents: credit.creditedCents };
+		} catch (err) {
+				logger.error({ err, userId, txHash }, "[FACILITATOR] settle succeeded but credit failed");
+				throw err;
+		}
+}
 
 // ── Public surface (unchanged import paths for routes, tests, retry lib) ────
 export { parseUsdcAtomic };
@@ -213,9 +308,22 @@ x402Routes.post("/x402/settle", sessionAuth, async (c) => {
 		const cacheKey = getSettlementCacheKey(body.networkId, body.txHash);
 		const cached = settlementCache.get(cacheKey);
 		if (cached) {
-				// Use settlePaymentAsync which persists the receipt to the DB.
-				const result = await settlePaymentAsync(body.txHash, cached.amount, cached.networkId, expectedPayee);
-				return c.json(result, result.settled ? 200 : 422);
+				try {
+						const result = await settleAndCredit(
+								userId,
+								body.txHash,
+								cached.amount,
+								cached.networkId,
+								expectedPayee,
+						);
+						return c.json(result, result.settled ? 200 : 422);
+				} catch (err) {
+						const message = err instanceof Error ? err.message : "Failed to credit settlement";
+						return c.json(
+								{ error: { message, type: "payment_error", code: "x402_credit_failed" } },
+								message.includes("another account") ? 409 : 500,
+						);
+				}
 		}
 
 		// Cache miss — check the DB for an existing settlement.
@@ -225,7 +333,8 @@ x402Routes.post("/x402/settle", sessionAuth, async (c) => {
 				.where(and(eq(settlements.txHash, body.txHash), eq(settlements.networkId, body.networkId)))
 				.limit(1);
 		if (existingSettlement.length > 0) {
-				// Repopulate the cache and return the stored receipt.
+				// Repopulate the cache and credit if this settle has not yet
+				// been applied to a user balance (idempotent via deposits.tx_hash).
 				atomicCacheSet(cacheKey, {
 						txHash: existingSettlement[0].txHash,
 						amount: existingSettlement[0].amount,
@@ -234,7 +343,27 @@ x402Routes.post("/x402/settle", sessionAuth, async (c) => {
 						settledAt: existingSettlement[0].settledAt.getTime(),
 						receipt: existingSettlement[0].receipt,
 				});
-				return c.json({ settled: true, receipt: existingSettlement[0].receipt }, 200);
+				try {
+						const credit = await creditSettledPayment(
+								userId,
+								existingSettlement[0].txHash,
+								existingSettlement[0].amount,
+						);
+						return c.json(
+								{
+										settled: true,
+										receipt: existingSettlement[0].receipt,
+										creditedCents: credit.creditedCents,
+								},
+								200,
+						);
+				} catch (err) {
+						const message = err instanceof Error ? err.message : "Failed to credit settlement";
+						return c.json(
+								{ error: { message, type: "payment_error", code: "x402_credit_failed" } },
+								message.includes("another account") ? 409 : 500,
+						);
+				}
 		}
 
 		// No record anywhere — client must call /x402/verify first.

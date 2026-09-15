@@ -43,3 +43,38 @@ cannot be accepted without a verified credit-grant webhook.
 The `docker-compose.yml` uses an internal network and relies on a reverse proxy like Caddy or Cloudflare Tunnels to handle SSL and routing. If you use Caddy, you can use the provided `Caddyfile`.
 
 Alternatively, Coolify can handle the reverse proxy automatically if you set the domains on the services (`app` -> `oma-ai.com`, `server` -> `api.oma-ai.com`).
+
+## 4. DNS (Spaceship / any registrar)
+
+As of the 2026-09-15 audit, `oma-ai.com` has Spaceship nameservers
+(`launch1/2.spaceship.net`) but **no A/AAAA records** — the public site cannot
+resolve until you add them.
+
+In the Spaceship DNS panel for `oma-ai.com`, point traffic at your Coolify VPS:
+
+| Type | Host | Value | TTL |
+|------|------|-------|-----|
+| A | `@` | `<COOLIFY_VPS_IPV4>` | 300 |
+| A | `api` | `<COOLIFY_VPS_IPV4>` | 300 |
+| A | `www` | `<COOLIFY_VPS_IPV4>` | 300 |
+| AAAA | `@` / `api` / `www` | `<COOLIFY_VPS_IPV6>` (optional) | 300 |
+
+Then in Coolify assign domains: app → `oma-ai.com` (+ `www`), server → `api.oma-ai.com`.
+Wait for TLS, then verify:
+
+```bash
+dig +short oma-ai.com A
+dig +short api.oma-ai.com A
+curl -fsS https://api.oma-ai.com/health
+curl -fsS -o /dev/null -w "%{http_code}\n" https://oma-ai.com/
+```
+
+## 5. Earn-path smoke after deploy
+
+1. Sign in (magic link or SIWE) on `https://oma-ai.com/login`.
+2. Create an API key on `/dashboard`.
+3. Deposit a small USDC amount on Base via `/deposit` (or settle via `/x402/*`).
+4. Call `POST https://api.oma-ai.com/v1/chat/completions` with the key.
+5. Confirm balance decreases on `/dashboard`.
+
+Card rail: only after Polar env + webhook `https://api.oma-ai.com/webhooks/polar`.

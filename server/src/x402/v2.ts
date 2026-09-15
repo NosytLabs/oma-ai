@@ -220,7 +220,7 @@ export const CHAT_COMPLETIONS_BAZAAR: BazaarResourceInfo = {
 		resource: {
 				url: "https://api.oma-ai.com/v1/chat/completions",
 				description:
-						"OpenAI-compatible chat completions across the curated Venice + OMA-AI/OpenBroker catalog, with flat-rate x402 pay-per-request in USDC on Base.",
+						"OpenAI-compatible chat completions across the curated Venice + OMA-AI/OpenBroker catalog. Fund with USDC credits on Base, including x402 verify/settle.",
 				mimeType: "application/json",
 				serviceName: "OMA — Open Model Access",
 				tags: ["ai", "llm", "chat-completions", "openai-compatible", "inference"],

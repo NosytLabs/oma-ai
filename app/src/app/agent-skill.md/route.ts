@@ -45,7 +45,7 @@ OMA-AI is a single OpenAI-compatible API endpoint that routes requests across cu
   1. **Magic-link email** — humans, free tier, no payment needed.
   2. **SIWE (Sign-In with Ethereum)** — wallet-bound sessions, pay with USDC.
   3. **API key** — machine-to-machine, \`oma_sk_...\` format, credit-billed.
-- **x402 pay-per-request** — agents sign an EIP-3009 \`transferWithAuthorization\` envelope, gateway pays gas, no account needed.
+- **x402 settlement** — agents sign an EIP-3009 \`transferWithAuthorization\` envelope, verify + settle to credit a balance, then spend with an API key. Facilitator pays gas.
 
 ## Quick start
 

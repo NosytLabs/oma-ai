@@ -45,7 +45,7 @@ export function SoftwareApplicationJsonLd() {
 		operatingSystem: "Web",
 		url: BASE_URL,
 		description:
-			"OpenAI-compatible API gateway. Multi-model routing, wallet-based auth, and USDC pay-per-request on Base.",
+			"OpenAI-compatible API gateway. Multi-model routing, wallet-based auth, and USDC credits on Base.",
 		offers: {
 			"@type": "Offer",
 			price: "0",

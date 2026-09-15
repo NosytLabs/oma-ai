@@ -4,7 +4,7 @@ import { CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 export const metadata: Metadata = {
 	title: "Status — live service health",
 	description:
-		"Live health of the OMA web app, inference gateway, and free website chat. Updated every 30 seconds from your browser.",
+		"Live health of the OMA web app, inference gateway, and free website chat. Checked on each page load.",
 	alternates: { canonical: "/status" },
 	robots: { index: true, follow: true },
 };
@@ -72,9 +72,9 @@ export default async function StatusPage() {
 					{allOk ? "All systems normal." : "Degraded — we're on it."}
 				</h1>
 				<p className="page-intro mt-4">
-					Real-time health of the services behind OMA. This page checks
-					liveness the moment you load it; your browser re-checks every 30
-					seconds while it's open. No account needed.
+					Live health of the services behind OMA. This page checks
+					liveness the moment you load it. Refresh to re-check. No account
+					needed.
 				</p>
 
 				<ul className="mt-10 flex flex-col gap-4">

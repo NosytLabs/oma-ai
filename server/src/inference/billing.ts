@@ -3,12 +3,11 @@
 	*
 	* Extracted from proxy.ts for focused responsibility.
 	*/
-import { config } from "../config.js";
 import { db } from "../db/client.js";
 import { creditBalances, usageRecords } from "../db/schema.js";
 import { auditLog } from "../middleware/audit.js";
 import { logger } from "../lib/logger.js";
-import { sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { getModelPricing } from "./billing-service.js";
 import { ProviderError } from "./provider-route.js";
 
@@ -49,8 +48,8 @@ function estimateUserCostCents(
 
 /**
 	* Preflight the authenticated credit balance. This is deliberately a read
-	* only check; the transaction in recordUsage remains the authoritative final
-	* deduction and protects against concurrent callers.
+	* only check; the conditional UPDATE in recordUsage is the authoritative
+	* final deduction and protects against concurrent callers.
 	*/
 export async function assertSufficientBalance(
 		userId: string,
@@ -61,7 +60,7 @@ export async function assertSufficientBalance(
 		const [balance] = await db
 				.select({ balanceCents: creditBalances.balanceCents })
 				.from(creditBalances)
-				.where(sql`${creditBalances.userId} = ${userId}`)
+				.where(eq(creditBalances.userId, userId))
 				.limit(1);
 		const available = Number(balance?.balanceCents ?? 0);
 		const estimated = estimateUserCostCents(pricing, promptTokens, maxOutputTokens);
@@ -75,6 +74,35 @@ export async function assertSufficientBalance(
 		}
 }
 
+/**
+	* Conditionally deduct `costCents` from the user balance.
+	* Returns true when a row was updated (balance was sufficient).
+	* Never floors below zero and never re-seeds free-trial credits.
+	*/
+export async function deductCreditsIfSufficient(
+		userId: string,
+		costCents: number,
+		tx: Parameters<Parameters<typeof db.transaction>[0]>[0] = db as never,
+): Promise<boolean> {
+		if (costCents <= 0) return true;
+		const cost = costCents.toFixed(4);
+		const updated = await tx
+				.update(creditBalances)
+				.set({
+						balanceCents: sql`${creditBalances.balanceCents}::numeric - ${cost}::numeric`,
+						totalUsedCents: sql`${creditBalances.totalUsedCents}::numeric + ${cost}::numeric`,
+						lastActivityAt: sql`NOW()`,
+				})
+				.where(
+						and(
+								eq(creditBalances.userId, userId),
+								sql`${creditBalances.balanceCents}::numeric >= ${cost}::numeric`,
+						),
+				)
+				.returning({ userId: creditBalances.userId });
+		return updated.length > 0;
+}
+
 /** Record usage, deduct credits, and emit an audit log entry. */
 export async function recordUsage(args: RecordUsageArgs): Promise<void> {
 		const {
@@ -84,16 +112,17 @@ export async function recordUsage(args: RecordUsageArgs): Promise<void> {
 				promptTokens,
 				outputTokens,
 				pricing,
-		requestId,
-			status,
-			skipBilling = false,
-			apiKeyId = null,
-	} = args;
+				requestId,
+				status,
+				skipBilling = false,
+				apiKeyId = null,
+		} = args;
 		const totalTokens = promptTokens + outputTokens;
 		// Pricing fields are in DOLLARS per 1M tokens; multiply by 100 for cents.
 		const upstreamCostCents =
 				((promptTokens / 1_000_000) * pricing.inputPer1M +
-				(outputTokens / 1_000_000) * pricing.outputPer1M) * 100;
+						(outputTokens / 1_000_000) * pricing.outputPer1M) *
+				100;
 		const markupMultiplier = 1 + pricing.markup / 100;
 		const userCostCents = upstreamCostCents * markupMultiplier;
 		const markupCents = userCostCents - upstreamCostCents;
@@ -106,30 +135,24 @@ export async function recordUsage(args: RecordUsageArgs): Promise<void> {
 
 		try {
 				await db.transaction(async (tx) => {
-						// Only deduct credits if not free website chat AND user is authed.
-						// Upsert: seed a fresh credit row on first call (with the configured
-						// free-trial cents) instead of silently letting the call go free when
-						// the user has no balance row. Without this, every new user gets free
-						// inference forever and the ledger never moves.
 						if (status === "completed" && !skipBilling && !isAnonymous) {
-								const freeTrialCents = Number(config.FREE_SIGNUP_CENTS ?? 0);
-								const initialBalanceCents = Math.max(0, freeTrialCents - userCostCents);
-								await tx
-										.insert(creditBalances)
-										.values({
-												userId,
-												balanceCents: initialBalanceCents.toFixed(4),
-												totalDepositedCents: freeTrialCents.toFixed(4),
-												totalUsedCents: userCostCents.toFixed(4),
-										})
-										.onConflictDoUpdate({
-												target: creditBalances.userId,
-												set: {
-														balanceCents: sql`GREATEST(${creditBalances.balanceCents}::numeric - ${userCostCents.toFixed(4)}::numeric, 0)`,
-														totalUsedCents: sql`${creditBalances.totalUsedCents}::numeric + ${userCostCents.toFixed(4)}::numeric`,
-														lastActivityAt: sql`NOW()`,
+								const deducted = await deductCreditsIfSufficient(
+										userId,
+										userCostCents,
+										tx,
+								);
+								if (!deducted) {
+										// Stream/completion already finished; do not invent balance.
+										// Log so ops can reconcile — concurrent callers lost the race.
+										logger.error(
+												{
+														userId,
+														requestId,
+														costCents: userCostCents.toFixed(4),
 												},
-										});
+												"[billing] deduction skipped: insufficient balance (race or missing ledger row)",
+										);
+								}
 						}
 						// Only persist usage for authenticated users. Anonymous free-tier
 						// is tracked in Redis by the daily-limit middleware.
@@ -151,7 +174,7 @@ export async function recordUsage(args: RecordUsageArgs): Promise<void> {
 				});
 				await auditLog({
 						userId,
-						action: "USER_CREATED",
+						action: "CREDIT_DEDUCTED",
 						resource: "chat_completion",
 						resourceId: requestId,
 						metadata: {

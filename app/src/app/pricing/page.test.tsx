@@ -32,7 +32,7 @@ describe("PricingPage", () => {
 		expect(
 			screen.getAllByText((_, el) => !!el && (el.textContent ?? "").includes("Transfer USDC")).length,
 		).toBeGreaterThan(0);
-		expect(screen.getAllByText(/x402 Pay-Per-Request/i).length).toBeGreaterThan(0);
+		expect(screen.getAllByText(/x402 Agent Settlement/i).length).toBeGreaterThan(0);
 	});
 
 	it("renders model pricing table with headers", async () => {

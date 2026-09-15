@@ -182,6 +182,6 @@ the base `.btn-mono` slab with a modifier class:
 
 1. **Primary Interface:** Web3-ready Sign-In with Ethereum (SIWE) is rendered as the primary login trigger on `/login`.
 2. **Alternative Methods:** Users can fall back to standard email magic-links. *(Future iterations reserve a 16-digit account-number protocol)*.
-3. **Agent Integration:** Programmable agents authenticate directly via cryptographic HTTP `x402` pay-per-request headers.
+3. **Agent Integration:** Programmable agents fund via x402 verify/settle (EIP-3009 USDC on Base), then spend with an API key against the credited balance.
 
 **Session Storage:** Upon successful validation, the system establishes a highly secure `HttpOnly` cookie labeled `oma_session` containing the required client metadata. All subsequent frontend API requests are proxied via standard `/api/*` structures, passing the validated session to the Hono backend under standard `Authorization: Bearer <token>` schemas.

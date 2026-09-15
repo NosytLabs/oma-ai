@@ -81,8 +81,8 @@ const METHODS: {
 		key: "x402",
 		label: "x402",
 		icon: Zap,
-		tag: "Pay-per-request",
-		desc: "Agents pay per request. No upfront deposit.",
+		tag: "Agent settle",
+		desc: "Verify and settle USDC to credit your balance, then spend with an API key.",
 		rail: "x402",
 	},
 ];
@@ -99,7 +99,7 @@ function PaymentMethodsInfo({
 				? "Pay with your wallet — USDC sent directly to the Base treasury. Instant credit once confirmed."
 				: r.key === "card"
 					? "Visa, Mastercard, Apple Pay via Polar. No wallet, no USDC required."
-					: "Gasless payments with automatic fee deduction per API request. No upfront deposit required.",
+					: "Agents verify and settle USDC on Base to credit the same balance, then spend with an API key.",
 		badge: r.badge,
 		reason: r.reason,
 	}));
@@ -149,8 +149,8 @@ function PaymentMethodsInfo({
 				))}
 			</div>
 			<p className="mt-3 font-mono text-[10px] text-text-muted">
-				Credits apply after payment confirmation. x402 settles per request on
-				Base without a pre-deposit.
+				Credits apply after payment confirmation. x402 verify/settle credits
+				the same balance for API spend.
 			</p>
 		</m.div>
 	);
@@ -189,13 +189,14 @@ function X402Info() {
 					</div>
 					<div className="min-w-0">
 						<h3 className="text-sm font-semibold text-text-bright">
-							x402 — pay per request
+							x402 — agent USDC settlement
 						</h3>
 						<p className="mt-1 text-[12px] leading-relaxed text-text-secondary">
 							Agents fund with no card and no signup dance. The client signs
-							a USDC payment on Base and POSTs it as a PAYMENT-SIGNATURE
-							header to /x402/verify; credits land on settlement and the
-							agent calls with an API key. Gas is paid by the facilitator.
+							a USDC authorization on Base, POSTs it as a PAYMENT-SIGNATURE
+							to /x402/verify, then settles from an authenticated session.
+							Credits land on settlement; the agent spends with an API key.
+							Gas is paid by the facilitator.
 						</p>
 					</div>
 				</div>
@@ -357,7 +358,7 @@ export default function DepositPage() {
 										usdc.reason ??
 										"This payment rail is not available right now."
 									}
-									fallback="Use card checkout or x402 pay-per-request instead."
+									fallback="Use card checkout or x402 settlement instead."
 								/>
 							))}
 						{method === "card" &&
@@ -375,7 +376,7 @@ export default function DepositPage() {
 										card.reason ??
 										"This payment rail is not available right now."
 									}
-									fallback="Use USDC on Base or x402 pay-per-request instead."
+									fallback="Use USDC on Base or x402 settlement instead."
 								/>
 							))}
 						{method === "x402" && <X402Info />}

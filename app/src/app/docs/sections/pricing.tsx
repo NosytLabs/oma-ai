@@ -98,7 +98,7 @@ export function PricingSection() {
 					<div className="flex items-start gap-2">
 						<CheckCircle2 className="h-4 w-4 text-accent mt-0.5" />
 						<span className="text-sm text-text-muted">
-							Credits expire 365 days after purchase
+							Credits never expire while your account is active
 						</span>
 					</div>
 				</div>

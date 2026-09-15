@@ -55,7 +55,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "What is a wallet (SIWE) and do I need one?",
-				a: "SIWE (Sign-In With Ethereum) lets you sign in with a crypto wallet instead of an email. You do NOT need a wallet for email sign-in or card checkout when it is enabled. A wallet is needed for direct USDC deposits and the advanced x402 pay-per-request flow.",
+				a: "SIWE (Sign-In With Ethereum) lets you sign in with a crypto wallet instead of an email. You do NOT need a wallet for email sign-in or card checkout when it is enabled. A wallet is needed for direct USDC deposits and the advanced x402 settlement flow.",
 			},
 			{
 				q: "Is my data private?",
@@ -68,7 +68,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 		items: [
 			{
 				q: "How do I pay?",
-				a: "Use a USDC deposit, then spend credits per request; or pay directly in USDC on Base with x402, with no pre-funding, for agent workflows. Card checkout through Polar is available only when it is enabled, and the credits page shows its live status. Credit batches expire after 365 days, with advance warnings in the dashboard.",
+				a: "Deposit USDC on Base, then spend credits per request. Agents can also fund via x402 verify/settle, which credits the same balance before API spend. Card checkout through Polar is available only when it is enabled, and the credits page shows its live status. Credits never expire while your account is active.",
 			},
 			{
 				q: "What is USDC? What is Base?",
@@ -76,7 +76,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "What is x402?",
-				a: "x402 is a standard for paying for a single API request with crypto, automatically. Your AI agent asks for a request, the API replies 'pay X USDC', the agent signs the payment, and the request completes — no account or key needed for one-off calls. It's like a vending machine for AI.",
+				a: "x402 is a crypto payment flow for agents: sign a USDC authorization on Base, verify at /x402/verify, settle to credit your account, then call the API with your key. Inference itself is billed from that credit balance — not attached as a mid-request 402 on chat today.",
 			},
 			{
 				q: "How much does it cost?",
@@ -134,7 +134,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "Can my AI agent use OMA?",
-				a: `Yes, and it can even set itself up: point it at /agent-skill.md (a plain-text instruction file) and it can create an account, make a key, and verify with a test request — including the x402 pay-per-request flow. OMA also publishes an A2A agent card at /.well-known/agent-card.json and a machine-readable /llms.txt.`,
+				a: `Yes, and it can even set itself up: point it at /agent-skill.md (a plain-text instruction file) and it can create an account, make a key, and verify with a test request — including the x402 settlement flow. OMA also publishes an A2A agent card at /.well-known/agent-card.json and a machine-readable /llms.txt.`,
 			},
 			{
 				q: "What happens when a model provider is down?",
@@ -142,7 +142,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "I got a 402 error — what now?",
-				a: "A 402 means payment is required: either your credits ran out (top up at /deposit), or you hit the x402 pay-per-request flow (sign the payment and retry — docs: /docs#x402). If you keep getting 402s on x402, ensure your wallet has enough USDC on Base, that you have approved the deposit, and that you are signing the exact transaction details the API returned.",
+				a: "A 402 means payment is required — usually your credit balance is empty. Top up at /deposit (USDC or card when enabled), or use the x402 verify/settle flow to credit your balance, then retry with an API key (docs: /docs#x402).",
 			},
 			{
 				q: "How do I troubleshoot x402 errors?",

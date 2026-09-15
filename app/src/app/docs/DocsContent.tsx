@@ -180,7 +180,7 @@ export function DocsContent() {
 									</h1>
 									<p className="page-intro mt-4 max-w-2xl">
 										OpenAI-compatible inference with wallet auth and x402
-										pay-per-request. One endpoint, one key, every curated model.
+										credit billing. One endpoint, one key, every curated model.
 									</p>
 								</div>
 							<div className="flex flex-col gap-3 lg:min-w-[21rem] lg:items-end">

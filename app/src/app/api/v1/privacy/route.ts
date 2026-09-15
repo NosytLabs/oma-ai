@@ -58,7 +58,7 @@ const PRIVACY_MANIFEST = {
 				"credit_batches (with expiry)",
 			],
 			retention:
-				"Credit batches expire after the configured CREDIT_EXPIRY_DAYS (default 365).",
+				"Credits never expire while the account is active; they are removed on account deletion.",
 		},
 		usage_records: {
 			description:

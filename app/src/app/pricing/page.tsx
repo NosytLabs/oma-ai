@@ -78,8 +78,8 @@ const PAYMENT_METHODS = [
 	},
 	{
 		icon: Rocket,
-		title: "x402 Pay-Per-Request",
-		desc: "HTTP 402 settlement on Base. Agents pay per request without pre-funding credits.",
+		title: "x402 Agent Settlement",
+		desc: "EIP-3009 USDC on Base. Agents verify, settle to credit a balance, then spend with an API key.",
 		tag: "Agents",
 		tagStyle: "bg-surface text-text-secondary border border-border",
 	},
@@ -124,23 +124,23 @@ const POLAR_TIERS: Array<{
 const FAQ_ITEMS = [
 	{
 		q: "How do I add credits?",
-		a: "Deposit USDC on Base at 1:1 USD, use x402 per request, or buy credits with card where Polar checkout is enabled. The credits page always shows which rails are available.",
+		a: "Deposit USDC on Base at 1:1 USD, settle USDC via x402 to credit your balance, or buy credits with card where Polar checkout is enabled. The credits page always shows which rails are available.",
 	},
 	{
 		q: "Do credits expire?",
-		a: "Yes. Each credit batch expires 365 days after it is issued, and your dashboard warns you before a batch expires. Credits are non-redeemable and non-transferable. 1 credit = $0.01 USD (so $1 = 100 credits), and each request consumes the model's per-token cost at request time.",
+		a: "No. Credits never expire while your account is active. They are non-redeemable and non-transferable. 1 credit = $0.01 USD (so $1 = 100 credits), and each request consumes the model's listed per-token cost at request time.",
 	},
 	{
 		q: "What payment methods are accepted?",
-		a: "USDC direct on Base at 1:1 USD and x402 pay-per-request are supported. Card checkout through Polar is available only when the operator has configured and enabled it; the credits page shows its live status.",
+		a: "USDC direct on Base at 1:1 USD, plus x402 verify/settle to credit your balance for agent workflows. Card checkout through Polar is available only when the operator has configured and enabled it; the credits page shows its live status.",
 	},
 	{
 		q: "Is there a free tier?",
 		a: "Yes — the 3 OMA-AI models are free in browser website chat only: 20 messages/day anonymous, 100/day signed in. API-key calls always spend credits, even on those models. New sign-ups also get $1.00 in trial credit.",
 	},
 	{
-		q: "What is x402 pay-per-request?",
-		a: "x402 lets agents fund with USDC on Base without a card: sign the payment envelope, verify at /x402/verify, and spend with an API key. Ideal for agents and automated workflows — no human in the loop.",
+		q: "What is x402?",
+		a: "x402 lets agents fund with USDC on Base without a card: sign the payment envelope, verify at /x402/verify, settle to credit your account, then spend with an API key. Ideal for agents and automated workflows.",
 	},
 ];
 
@@ -294,7 +294,7 @@ export default function PricingPage() {
 								Base.
 							</p>
 							<p className="mt-3 text-xs leading-relaxed text-[var(--color-text-muted)]">
-								x402 pay-per-request also supported for agents —{" "}
+								x402 settlement also supported for agents —{" "}
 								<Link href="#x402" className="font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] transition-colors duration-200 ease-out inline-flex items-center">
 									see below
 								</Link>

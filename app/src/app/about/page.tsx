@@ -9,12 +9,12 @@ import { PageShell } from "@/app/_components/page-shell";
 export const metadata: Metadata = {
 	title: "About OMA — Open Model Access",
 	description:
-		"OMA is an OpenAI-compatible AI inference gateway with wallet auth, multi-provider routing, and USDC pay-per-request on Base. Built for agents and developers.",
+		"OMA is an OpenAI-compatible AI inference gateway with wallet auth, multi-provider routing, and USDC x402 settlement on Base. Built for agents and developers.",
 	alternates: { canonical: "/about" },
 	openGraph: {
 		title: "About OMA — Open Model Access",
 		description:
-			"One gateway. Every model. Wallet auth and USDC pay-per-request — no lock-in.",
+			"One gateway. Every model. Wallet auth and USDC x402 settlement — no lock-in.",
 		images: [{ url: "/og-image.webp", width: 1280, height: 720, alt: "About OMA" }],
 	},
 	robots: { index: true, follow: true },

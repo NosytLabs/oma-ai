@@ -399,7 +399,7 @@ function BrandPitch() {
 		{
 			Icon: Coins,
 			title: "Crypto-native billing.",
-			body: "Credits in USDC on Base. x402 pay-per-request for agents — wallet-based.",
+			body: "Credits in USDC on Base. x402 settlement for agents — wallet-based.",
 		},
 	];
 	return (
@@ -445,19 +445,19 @@ function X402Callout() {
 				<div className="min-w-0 flex-1">
 					<div className="flex items-center gap-2">
 						<p className="text-sm font-semibold text-text-bright">
-							Pay per request with x402
+							Fund with x402 (agents)
 						</p>
 						<span className="rounded-[var(--radius-sm)] border border-[var(--color-accent)]/30 bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-[var(--color-accent)]">
 							Agents
 						</span>
 					</div>
 					<p className="mt-1 text-[11px] leading-relaxed text-text-muted">
-						Call chat completions with no account; on 402, retry with a signed{" "}
+						Sign an EIP-3009 USDC authorization on Base, verify with{" "}
 						<code className="font-mono text-text-secondary">
 							PAYMENT-SIGNATURE
-						</code>{" "}
-						envelope (EIP-3009 USDC on Base). Flat rate per request — wallet-based,
-						no card needed, gas paid by the facilitator.
+						</code>
+						, settle from a session to credit your balance, then spend with an
+						API key. Wallet-based, no card needed; facilitator pays gas.
 					</p>
 					<Link
 						href="/docs#x402"

@@ -104,7 +104,7 @@ const TERMS: Term[] = [
 	},
 	{
 		term: "Wallet",
-		def: "Software that holds your crypto and proves ownership with signatures. Used on OMA for wallet sign-in (SIWE) and the x402 pay-per-request flow.",
+		def: "Software that holds your crypto and proves ownership with signatures. Used on OMA for wallet sign-in (SIWE) and the x402 settlement flow.",
 	},
 	{
 		term: "SIWE",

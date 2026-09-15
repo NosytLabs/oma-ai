@@ -72,7 +72,7 @@ export default async function OpengraphImage({
 					<span>·</span>
 					<span>USDC on Base</span>
 					<span>·</span>
-					<span>x402 pay-per-request</span>
+					<span>x402 settlement</span>
 				</div>
 			</div>
 		),

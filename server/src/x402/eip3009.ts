@@ -302,7 +302,7 @@ async function submitEip3009Transfer(
 /**
 	* Verifies, simulates, and executes an incoming gasless EIP-3009 payment.
 	* 
-	* Why: Orchestrates the entire pay-per-request payment verification and settlement pipeline
+	* Why: Orchestrates the x402 payment verification and settlement pipeline
 	* required by x402 headers. Performs multi-layered checks (double-spend/replay protection,
 	* signature recovery, time bounds, and recipient treasury validation) to guarantee that
 	* each request is fully authorized and backed by sufficient USDC balances prior to processing

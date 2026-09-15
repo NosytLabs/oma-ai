@@ -63,7 +63,7 @@ const STEPS = [
 			<>
 				Go to <Link href="/deposit" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">Deposit Credits</Link>. Pay with any standard credit card (Visa, Mastercard, Apple Pay) or send USDC on Base. Credits never expire, and a simple $10 deposit gives you enough tokens to handle thousands of requests.
 				<br /><br />
-				<strong>Autonomous Agent option:</strong> If you are writing software agents and prefer not to pre-fund an account, you can use our <Link href="/docs#x402" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">x402 pay-per-request flow</Link> to let your software pay for each request directly in USDC on-chain.
+				<strong>Autonomous Agent option:</strong> If you are writing software agents, you can use our <Link href="/docs#x402" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">x402 settlement flow</Link> to verify and settle USDC into credits, then spend with an API key.
 			</>
 		),
 	},
@@ -72,7 +72,7 @@ const STEPS = [
 		title: "Make your first API call",
 		body: (
 			<>
-				You&apos;re done! OMA acts as a drop-in replacement for OpenAI&apos;s API. In any app, library, or script where you currently use OpenAI, just swap the base URL to <code className="font-mono text-accent">https://api.oma-ai.com/v1</code>, drop in your new API key, and specify any model from our <Link href="/models" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">catalog</Link> (like <code className="font-mono text-text-bright">gpt-5.6-sol</code> or <code className="font-mono text-text-bright">claude-opus-5</code>). Try the one-line examples below, or jump to the <Link href="/docs#quickstart" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">developer quickstart</Link>.
+				You&apos;re done! OMA acts as a drop-in replacement for OpenAI&apos;s API. In any app, library, or script where you currently use OpenAI, just swap the base URL to <code className="font-mono text-accent">https://api.oma-ai.com/v1</code>, drop in your new API key, and specify any model from our <Link href="/models" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">catalog</Link> (like <code className="font-mono text-text-bright">openai-gpt-56-sol</code> or <code className="font-mono text-text-bright">claude-opus-5</code>). Try the one-line examples below, or jump to the <Link href="/docs#quickstart" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">developer quickstart</Link>.
 			</>
 		),
 	},

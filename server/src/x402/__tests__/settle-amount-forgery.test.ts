@@ -66,10 +66,15 @@ const { chain, resetChain } = vi.hoisted(() => {
 				configurable: true,
 		});
 
+		// settle → credit path uses db.transaction(async (tx) => …).
+		// Reuse the same chain as the transactional client.
+		ch.transaction = vi.fn(async (fn: (tx: MockChain) => unknown) => fn(ch));
+
 		function reset() {
 				for (const m of METHODS) {
 						;(ch[m] as Mock).mockReturnValue(ch);
 				}
+				ch.transaction = vi.fn(async (fn: (tx: MockChain) => unknown) => fn(ch));
 				ch._resultQueue = [];
 		}
 

@@ -53,7 +53,7 @@ export function railStatuses(
 			},
 			{
 				key: "x402",
-				label: "x402 Pay-Per-Request",
+				label: "x402 Agent Settle",
 				badge: "Agents",
 				actionable: true,
 				reason: null,
@@ -102,7 +102,7 @@ export function railStatuses(
 		},
 		{
 			key: "x402",
-			label: "x402 Pay-Per-Request",
+			label: "x402 Agent Settle",
 			badge: "Agents",
 			// x402 does not require pre-funded deposit UI; protocol lives on the API.
 			actionable: true,

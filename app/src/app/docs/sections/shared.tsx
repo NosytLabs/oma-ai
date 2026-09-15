@@ -448,7 +448,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 		path: "/x402/verify",
 		anchor: "ep-x402-verify",
 		title: "x402 Payment Verify",
-		desc: "Verifies an x402 USDC payment signed with the PAYMENT-SIGNATURE header (EIP-3009 transfer + signature payload). Returns 200 with a receipt when valid, 422 otherwise. For agent-native pay-per-request billing.",
+		desc: "Verifies an x402 USDC payment signed with the PAYMENT-SIGNATURE header (EIP-3009 transfer + signature payload). Returns 200 when valid, 422 otherwise. Follow with authenticated /x402/settle to credit the balance.",
 		auth: "PAYMENT-SIGNATURE header (x402)",
 		body: undefined,
 		response: `{
@@ -472,7 +472,7 @@ export const ERROR_CODES: ErrorInfo[] = [
 	{
 		code: 402,
 		type: "payment_error",
-		desc: "Insufficient credits. Deposit more or use x402 pay-per-request.",
+		desc: "Insufficient credits. Deposit more USDC or settle via x402, then retry.",
 	},
 	{
 		code: 429,

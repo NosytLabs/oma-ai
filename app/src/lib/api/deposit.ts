@@ -32,10 +32,15 @@ function writeState(state: Record<string, string>): void {
 
 export const deposit = {
 	/** USDC deposit — submit an on-chain transfer for credit settlement. */
-	async usdc(amountUsd: number, txHash: string) {
+	async usdc(amountUsd: number, txHash: string, fromAddress: string) {
 		return request("/v1/deposit/usdc", {
 			method: "POST",
-			body: JSON.stringify({ amountUsd, txHash, network: "base" }),
+			body: JSON.stringify({
+				amountUsd,
+				txHash,
+				network: "base",
+				fromAddress,
+			}),
 		});
 	},
 

@@ -71,15 +71,15 @@ const PILLARS: Pillar[] = [
 	},
 	{
 	id: "x402-native",
-	eyebrow: "Agents pay per request",
+	eyebrow: "Agent USDC settlement",
 	title: "x402 on Base",
 	description:
-	"Advanced EIP-3009 USDC authorizations for agents. Verify, settle from an authenticated account, then spend the credited balance.",
+	"Advanced EIP-3009 USDC authorizations for agents. Verify, settle from an authenticated account, then spend the credited balance with an API key.",
 	icon: Bot,
 	href: "/docs#x402",
 	cta: "Advanced payment docs",
 	accent: "violet",
-	highlights: ["EIP-3009 on Base", "No card for agents", "402 on empty balance"],
+	highlights: ["EIP-3009 on Base", "No card for agents", "Credits after settle"],
 	visual: "flow",
 	},
 	{
@@ -295,7 +295,7 @@ export function CapabilitiesGrid() {
 		</span>
 		</>
 		}
-		subhead="Pay with credits, pay per request, or route privately — OMA is built for maximum developer control and zero lock-in."
+		subhead="Pay with credits, settle USDC via x402, or route privately — OMA is built for maximum developer control and zero lock-in."
 	/>
 	</Reveal>
 
