@@ -29,7 +29,7 @@ const PILLARS = [
 	{
 		icon: Wallet,
 		title: "Crypto-native billing",
-		body: "Pay per request in USDC on Base, or settle with x402 receipts. No credit-card gate for agents or privacy-first users.",
+		body: "Deposit USDC on Base, or settle via x402 to credit a balance, then spend with an API key. Card checkout is optional when Polar is enabled.",
 	},
 	{
 		icon: Shield,

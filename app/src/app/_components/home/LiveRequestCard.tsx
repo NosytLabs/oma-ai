@@ -36,7 +36,7 @@ const ROUNDS: DemoRound[] = [
 	model: "deepseek-v4-flash-0731-openbroker",
 	modelLabel: "DeepSeek V4 Flash",
 	prompt: "How do I pay without a card?",
-	reply: "Deposit USDC on Base, or use x402 for agent-native billing.",
+	reply: "Deposit USDC on Base, or settle USDC via x402 to credit your balance.",
 	free: true,
 	},
 	{

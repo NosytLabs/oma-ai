@@ -28,9 +28,9 @@ const STEPS = [
 		body: (
 			<>
 				Open the <Link href="/chat" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">chat playground</Link> and send a
-				message. Guests get a handful of free messages every day on OMA-AI&apos;s budget models — just to see how it works.
-				Chat, write code, or analyze images with frontier multimodal models. No
-				sign-up, no credit card, nothing to install.
+				message. Guests get a handful of free messages every day on the two OMA-AI
+				budget models — just to see how it works. No sign-up, no credit card,
+				nothing to install.
 			</>
 		),
 	},
@@ -61,7 +61,7 @@ const STEPS = [
 		title: "Add a little credit",
 		body: (
 			<>
-				Go to <Link href="/deposit" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">Deposit Credits</Link>. Pay with any standard credit card (Visa, Mastercard, Apple Pay) or send USDC on Base. Credits never expire, and a simple $10 deposit gives you enough tokens to handle thousands of requests.
+				Go to <Link href="/deposit" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">Deposit Credits</Link>. Send USDC on Base, or use card checkout when Polar is enabled. Credits never expire, and a simple $10 deposit gives you enough tokens to handle thousands of requests.
 				<br /><br />
 				<strong>Autonomous Agent option:</strong> If you are writing software agents, you can use our <Link href="/docs#x402" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">x402 settlement flow</Link> to verify and settle USDC into credits, then spend with an API key.
 			</>
