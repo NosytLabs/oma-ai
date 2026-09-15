@@ -200,7 +200,7 @@ export function Footer() {
 
 						<p className="text-[13px] leading-relaxed text-text-secondary">
 							One gateway. Every model. No lock-in. OpenAI-compatible inference
-							paid by card, USDC on Base, or x402.
+							paid with USDC on Base, x402, or card when enabled.
 						</p>
 
 						{/* Social row */}

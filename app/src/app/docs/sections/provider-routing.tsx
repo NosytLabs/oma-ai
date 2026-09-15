@@ -48,9 +48,9 @@ export function ProviderRoutingSection() {
 						<span className="font-semibold text-text text-sm">OMA-AI</span>
 					</div>
 					<p className="text-sm text-text-muted">
-						Budget-tier models branded as OMA-AI — Gemini, GPT, Kimi, MiniMax,
-						Qwen, and DeepSeek. Same billing, same failover rules as the
-						primary catalog, at lower per-token rates.
+						Budget-tier models branded as OMA-AI — MiniMax M2.7 and DeepSeek
+						V4 Flash on Gonka/OpenBroker. Same billing, same failover rules as
+						the primary catalog, at lower per-token rates.
 					</p>
 					<div className="mt-3 flex flex-wrap gap-1">
 						<span className="rounded-[var(--radius-sm)] bg-surface px-1.5 py-0.5 text-[10px] text-text-muted border border-border/50">chat</span>

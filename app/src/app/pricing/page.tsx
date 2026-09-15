@@ -288,10 +288,10 @@ export default function PricingPage() {
 							<p className="text-[11px] font-mono uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
 								Pay your way
 							</p>
-							<p className="mt-3 text-3xl font-semibold text-[var(--color-text-bright)]">Card or USDC</p>
+							<p className="mt-3 text-3xl font-semibold text-[var(--color-text-bright)]">USDC · optional card</p>
 							<p className="mt-2 text-sm leading-relaxed text-[var(--color-text)]">
-								Buy credits with Visa or Mastercard via Polar, or top up with USDC on
-								Base.
+								Top up with USDC on Base, or buy with card via Polar when checkout is
+								enabled.
 							</p>
 							<p className="mt-3 text-xs leading-relaxed text-[var(--color-text-muted)]">
 								x402 settlement also supported for agents —{" "}

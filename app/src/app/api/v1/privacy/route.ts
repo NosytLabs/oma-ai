@@ -94,7 +94,7 @@ const PRIVACY_MANIFEST = {
 	third_party_processors: {
 		inference: [
 			"Venice AI — primary LLM provider; processes prompts/completions",
-			"OMA-AI budget-tier upstreams — serve Gemini/GPT/Kimi/MiniMax/Qwen/DeepSeek models; prompts forwarded for completion only, not retained",
+			"OMA-AI budget-tier upstreams — serve MiniMax M2.7 and DeepSeek V4 Flash; prompts forwarded for completion only, not retained",
 		],
 		payments: [
 			"Circle (USDC) on Base — credit purchases and x402 settlement",

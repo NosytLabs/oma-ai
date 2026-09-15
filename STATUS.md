@@ -1,6 +1,6 @@
 # Project status
 
-Last audit: 2026-09-15 (full launch readiness + Coolify path).
+Last audit: 2026-09-15 (UI/UX + content cleanup complete; Coolify DNS still pending).
 
 OMA-AI is a TypeScript monorepo (Next.js app + Hono API) with USDC deposits,
 optional Polar card checkout, and x402 verify/settle → credit balance → API spend.

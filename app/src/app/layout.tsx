@@ -73,16 +73,16 @@ export const metadata: Metadata = {
 		canonical: "/",
 	},
 	title: {
-		default: "OMA · Open Model Access — AI inference, paid by card or USDC",
+		default: "OMA · Open Model Access — AI inference, USDC on Base",
 		template: "%s · OMA",
 	},
 	description:
-		"One gateway. Every model. No lock-in. OpenAI-compatible AI inference with wallet-based auth, card credits, USDC on Base, and x402 agent settlement.",
+		"One gateway. Every model. No lock-in. OpenAI-compatible AI inference with wallet-based auth, USDC on Base, optional card checkout, and x402 settlement.",
 	openGraph: {
 		siteName: "OMA",
-		title: "OMA · Open Model Access — AI inference, paid by card or USDC",
+		title: "OMA · Open Model Access — AI inference, USDC on Base",
 		description:
-			"One gateway. Every model. No lock-in. OpenAI-compatible AI inference with wallet-based auth, card credits, USDC on Base, and x402 agent settlement.",
+			"One gateway. Every model. No lock-in. OpenAI-compatible AI inference with wallet-based auth, USDC on Base, optional card checkout, and x402 settlement.",
 		type: "website",
 		images: [
 			{

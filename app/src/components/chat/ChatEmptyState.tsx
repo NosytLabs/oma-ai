@@ -30,7 +30,7 @@ export function ChatEmptyState({ signedIn = false }: EmptyStateProps) {
 				transition={{ delay: 0.08, ...springs.soft }}
 				className="mb-1.5 text-xl font-mono tracking-tight text-text-bright sm:text-2xl"
 			>
-				Chat with any model
+				{signedIn ? "Chat with any model" : "Chat free on OMA-AI models"}
 			</m.h2>
 			<m.p
 				initial={{ y: 12, opacity: 0 }}
@@ -39,8 +39,8 @@ export function ChatEmptyState({ signedIn = false }: EmptyStateProps) {
 				className="mb-5 max-w-md text-sm leading-relaxed text-text-secondary"
 			>
 				{signedIn
-					? "Start with a question below."
-					: "Start with a question below. Guest chats are free on OMA-AI models."}
+					? "Start with a question below. Credits unlock the full catalog."
+					: "Start with a question below. Guests get free messages on OMA-AI budget models."}
 			</m.p>
 
 			{!signedIn && (

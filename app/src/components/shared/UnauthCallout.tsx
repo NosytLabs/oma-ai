@@ -173,12 +173,12 @@ const copy: Record<
 	deposit: {
 		heading: "Top up credits",
 		subheading:
-			"Sign in to fund your account with card or USDC on Base. Agents can also settle USDC via x402 to credit the same balance.",
+			"Sign in to fund your account with USDC on Base (card when Polar is enabled). Agents can also settle USDC via x402 to credit the same balance.",
 		features: [
 			{
 				icon: CreditCard,
-				label: "Card or USDC",
-				description: "Polar checkout or Base deposit",
+				label: "USDC · optional card",
+				description: "Base deposit · Polar when enabled",
 			},
 			{
 				icon: Coins,

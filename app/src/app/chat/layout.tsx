@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-	title: "Chat Playground — try every model free",
+	title: "Chat Playground — free OMA-AI models",
 	description:
-		"Free AI chat playground. Try any model, compare responses, stream completions. No account required for OMA-AI models. Sign in for the full catalog and saved conversations.",
+		"Free AI chat playground on OMA-AI budget models. No account required for guests. Sign in for the full catalog and saved conversations.",
 	alternates: { canonical: "/chat" },
 	// Free public playground — indexable. robots.ts and sitemap.ts both
 	// allow /chat to be crawled; keep the metadata aligned so the page
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 	openGraph: {
 		title: "OMA Chat Playground",
 		description:
-			"Try any model in the free AI chat playground — no account required.",
+			"Try OMA-AI models free in the chat playground — no account required. Sign in for the full catalog.",
 		images: [
 			{
 				url: "/og-image.webp",
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
 		card: "summary_large_image",
 		title: "OMA Chat Playground",
 		description:
-			"Try any model in the free AI chat playground — no account required.",
+			"Try OMA-AI models free in the chat playground — no account required. Sign in for the full catalog.",
 	},
 };
 

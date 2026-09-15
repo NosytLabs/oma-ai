@@ -43,7 +43,7 @@ export const toolsLinks: NavItem[] = [
 		href: "/deposit",
 		label: "Buy credits",
 		icon: Coins,
-		desc: "Card or USDC on Base",
+		desc: "USDC on Base · card when enabled",
 	},
 	{
 		href: "/docs#endpoints",

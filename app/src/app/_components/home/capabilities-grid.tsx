@@ -236,10 +236,10 @@ function FlowVisual({ lineClass }: { lineClass: string }) {
 	>
 	<div className="flex flex-1 flex-col gap-1 justify-center">
 	<span className="rounded-[var(--radius-md)] border border-border bg-panel px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-text-secondary text-center">
-	POST /v1/chat
+	POST /x402/verify
 	</span>
 	<span className="rounded-[var(--radius-md)] border border-border bg-panel px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-text-muted text-center">
-	402 · payment
+	POST /x402/settle
 	</span>
 	</div>
 	<div className="flex flex-col items-center gap-1 justify-center">
@@ -254,7 +254,7 @@ function FlowVisual({ lineClass }: { lineClass: string }) {
 	EIP-3009
 	</span>
 	<span className="rounded-[var(--radius-md)] border border-border bg-panel px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-text-secondary text-center">
-	200 · stream
+	200 · credited
 	</span>
 	</div>
 	</div>

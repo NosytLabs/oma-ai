@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
 		name: "OMA AI — Open Model Access",
 		short_name: "OMA",
 		description:
-			"One gateway. Every model. No lock-in. OpenAI-compatible inference — card, USDC, or x402.",
+			"One gateway. Every model. No lock-in. OpenAI-compatible inference — USDC, x402, or card when enabled.",
 		start_url: "/",
 		display: "standalone",
 		background_color: BRAND_COLORS.void,
