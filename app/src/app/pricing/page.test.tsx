@@ -73,9 +73,16 @@ describe("PricingPage", () => {
 
 	it("renders CTA buttons linking to deposit and models", async () => {
 		render(<PricingPage />);
+		// Card rail is off until /api/v1/site-settings confirms Polar — CTA
+		// then says "Deposit USDC"; when card is actionable it says "Buy credits".
 		await waitFor(() => {
-			const buyLinks = screen.getAllByRole("link", { name: /buy/i });
-			expect(buyLinks.length).toBeGreaterThan(0);
+			const depositLinks = screen.getAllByRole("link", {
+				name: /buy credits|deposit usdc/i,
+			});
+			expect(depositLinks.length).toBeGreaterThan(0);
+			expect(
+				depositLinks.some((el) => el.getAttribute("href")?.startsWith("/deposit")),
+			).toBe(true);
 		});
 		expect(
 			screen.getByRole("link", { name: /view all models/i }),
