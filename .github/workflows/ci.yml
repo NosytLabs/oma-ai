@@ -1,12 +1,8 @@
 name: CI
 
+# Automatic paid runs are paused for cost containment.
 on:
-  push:
-    branches:
-      - main
-      - 'audit/**'
-      - 'fix/**'
-  pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -23,11 +19,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Setup Node
         uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
+          package-manager-cache: false
 
       - name: Install pnpm
         run: npm install --global pnpm@9.15.9
