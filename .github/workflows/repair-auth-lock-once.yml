@@ -1,0 +1,79 @@
+name: Repair verified auth lock mismatch once
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/repair-auth-lock-once.yml']
+permissions:
+  contents: write
+  actions: write
+jobs:
+  repair-and-verify:
+    if: >-
+      github.event.head_commit.message == 'ops: repair verified auth lock mismatch once'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      OPENAI_API_KEY: ''
+      AI_GATEWAY_API_KEY: ''
+    steps:
+      - name: Disable this one-time workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          workflow_id="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" --jq .workflow_id)"
+          gh api --method PUT "repos/${GITHUB_REPOSITORY}/actions/workflows/${workflow_id}/disable"
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - run: npm install --global pnpm@9.15.9
+      - name: Synchronize only the two verified auth specifiers
+        run: |
+          python3 - <<'PY'
+          import json, pathlib, subprocess
+          path = pathlib.Path('pnpm-lock.yaml')
+          assert subprocess.check_output(['git', 'hash-object', str(path)], text=True).strip() == 'ccc28af4058d805515dd2e808ed8158c4b90acf2', 'Lockfile changed; review before repair'
+          for workspace in ('app', 'server'):
+              manifest = json.loads(pathlib.Path(workspace, 'package.json').read_text())
+              assert manifest['dependencies']['better-auth'] == '1.7.2', 'Manifest changed; review before repair'
+          before = path.read_text()
+          old = '      better-auth:\n        specifier: ^1.7.2\n        version: 1.7.2('
+          new = old.replace('specifier: ^1.7.2', 'specifier: 1.7.2')
+          assert before.count(old) == 2, 'Unexpected lockfile structure'
+          after = before.replace(old, new)
+          assert after.replace(new, old) == before, 'Unexpected dependency resolution changes'
+          path.write_text(after)
+          PY
+      - name: Verify strict frozen installation
+        run: pnpm install --frozen-lockfile
+      - name: Commit the verified lockfile-only fix
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import base64, json, os, pathlib, subprocess
+          repo = os.environ['GITHUB_REPOSITORY']
+          assert repo == 'NosytLabs/oma-ai'
+          for path in ('package.json', 'app/package.json', 'server/package.json'):
+              remote = json.loads(subprocess.check_output(['gh', 'api', f'repos/{repo}/contents/{path}?ref=main']))
+              assert base64.b64decode(remote['content']) == pathlib.Path(path).read_bytes(), 'Manifest changed during verification'
+          changed = subprocess.check_output(['git', 'diff', '--name-only'], text=True).splitlines()
+          assert changed == ['pnpm-lock.yaml'], changed
+          body = {'branch': 'main', 'sha': 'ccc28af4058d805515dd2e808ed8158c4b90acf2',
+                  'message': 'fix(deps): match pinned auth manifests in frozen lockfile [skip ci]',
+                  'content': base64.b64encode(pathlib.Path('pnpm-lock.yaml').read_bytes()).decode()}
+          result = json.loads(subprocess.check_output(['gh', 'api', '--method', 'PUT', f'repos/{repo}/contents/pnpm-lock.yaml', '--input', '-'], input=json.dumps(body).encode()))
+          print('LOCK_REPAIR_COMMIT=' + result['commit']['sha'])
+          verify = json.loads(subprocess.check_output(['gh', 'api', f'repos/{repo}/contents/pnpm-lock.yaml?ref=main']))
+          assert base64.b64decode(verify['content']) == pathlib.Path('pnpm-lock.yaml').read_bytes()
+          PY
+      - name: Typecheck, lint, and test current application
+        run: pnpm validate
+      - name: Build app
+        run: pnpm --filter app run build
+      - name: Build server
+        run: pnpm --filter oma-server run build
