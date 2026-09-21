@@ -1,0 +1,28 @@
+name: Owner-requested bounded log maintenance
+# One-time request; the script disables this helper before deleting logs.
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/log-maintenance-20260921.yml']
+permissions:
+  contents: read
+  actions: write
+concurrency:
+  group: owner-requested-oma-log-maintenance
+  cancel-in-progress: false
+jobs:
+  logs:
+    if: >-
+      github.repository == 'NosytLabs/oma-ai' && github.event.head_commit.message == 'ops: run bounded OMA log maintenance'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: 6503fc2b891bd2a05e960ed00d324593ae72f2e9
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Consume the prior receipt safely and clean a bounded batch
+        run: python3 .github/scripts/prune_logs_20260921.py
+        env:
+          GH_TOKEN: ${{ github.token }}
