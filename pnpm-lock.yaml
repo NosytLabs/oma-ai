@@ -157,6 +157,9 @@ importers:
       '@hono/node-server':
         specifier: ^2.0.12
         version: 2.1.1(hono@4.13.5)
+      '@neon/config':
+        specifier: ^1.7.2
+        version: 1.7.2
       '@neondatabase/serverless':
         specifier: ^1.1.0
         version: 1.1.0
@@ -915,6 +918,14 @@ packages:
 
   '@levischuck/tiny-cbor@0.2.11':
     resolution: {integrity: sha512-llBRm4dT4Z89aRsm6u2oEZ8tfwL/2l6BwpZ7JcyieouniDECM5AqNgr/y08zalEIvW3RSK4upYyybDcmjXqAow==}
+
+  '@neon/config@1.7.2':
+    resolution: {integrity: sha512-AFLHYl5Qg6p7cGjMxrXpmdniNMO6gOIzv5gAr+5LRMaXeFggTGEWP8Tpe48CKKeE1PUtyE0XoKazDNjQWGvUAw==}
+    engines: {node: '>=20.19.0'}
+
+  '@neon/sdk@6.0.0':
+    resolution: {integrity: sha512-ILfSjXGvCaR1zz9Z8y97Hwe6N4fAHDtab473GpMNbfUzAYMhZXJGuzW3KUEjX5U87OHF/+2RuJLZNI/L7ly5IQ==}
+    engines: {node: '>=20.19.0'}
 
   '@neondatabase/serverless@1.1.0':
     resolution: {integrity: sha512-r3ZZhRjEcfEdKIZnoB1RusNgvHuaBRqfCzV4Gi+5A9yUX0S4HTws/ASWqt13wL4y4I+0rqsWGdA2w7EQXHi3+Q==}
@@ -5060,6 +5071,14 @@ snapshots:
   '@js-sdsl/ordered-map@4.4.2': {}
 
   '@levischuck/tiny-cbor@0.2.11': {}
+
+  '@neon/config@1.7.2':
+    dependencies:
+      '@neon/sdk': 6.0.0
+      jiti: 2.7.0
+      zod: 4.5.4
+
+  '@neon/sdk@6.0.0': {}
 
   '@neondatabase/serverless@1.1.0': {}
 

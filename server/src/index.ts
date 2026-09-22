@@ -5,6 +5,7 @@ import { compress } from "hono/compress";
 import { serve } from "@hono/node-server";
 import { HTTPException } from "hono/http-exception";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
+import { eq } from "drizzle-orm";
 import { config } from "./config.js";
 import { securityHeaders } from "./middleware/security.js";
 import { logger } from "./lib/logger.js";
@@ -33,7 +34,7 @@ import { generateCorrelationId } from "./tracing.js";
 import { rateLimit } from "./middleware/rate-limit.js";
 import { demoModeGuard } from "./middleware/demo-mode-guard.js";
 import { db } from "./db/client.js";
-import { siteSettings } from "./db/schema.js";
+import { siteSettings, depositRecoveryState } from "./db/schema.js";
 import { runRecoveryIteration } from "./lib/deposit-recovery.js";
 import { getPublicClient } from "./lib/rpc-client.js";
 
@@ -41,47 +42,81 @@ import { getPublicClient } from "./lib/rpc-client.js";
 // import, so test imports of the auth middleware don't exit the process.
 initAuth();
 
+// ---------------------------------------------------------------
+// Neon Functions mode.
+//
+// This module also ships as the entrypoint for a Neon Function
+// (`export default app` at the bottom). On Neon there is no
+// long-lived HTTP server process: the platform owns the socket and
+// invokes our `fetch`-handler per request, and it may cold-start /
+// evict instances at any time. So we must NOT:
+//   - call startServer() (would try to bind a port), or
+//   - run an in-memory setInterval background loop (nothing to hold it,
+//     and state is lost on eviction).
+//
+// Instead deposit recovery runs as a Neon Function Trigger (cron) that
+// hits an internal route; the block cursor is persisted in Postgres so
+// each run is stateless. `NEON_FUNCTION=1` is set in the neon.ts env.
+// ---------------------------------------------------------------
+const isNeonFunction = process.env.NEON_FUNCTION === "1";
+
+// Deprecated runtime flag kept for old deployments; true when the
+// platform is running us as a function (no PORT binding expected).
+const runsAsHttpServer = !isNeonFunction && config.NODE_ENV !== "test";
+
 // Boot-time model catalog load. Await so the server doesn't accept traffic
 // before the catalog is ready — initial requests would fail with "Model not found".
-ensureCatalogLoaded()
-		.then(() => {
-				startServer();
-		})
-		.catch((err) => {
-				logger.error({ err }, "[startup] model catalog load failed; starting server anyway (will retry on first request)");
-				startServer();
-		});
+ensureCatalogLoaded().then(startServerIfHttp).catch((err) => {
+	logger.error({ err }, "[startup] model catalog load failed; starting server anyway (will retry on first request)");
+	startServerIfHttp();
+});
 
-if (config.NODE_ENV !== "test" && config.USDC_DEPOSIT_ADDRESS) {
-		const client = getPublicClient();
-		let fromBlock = 0n;
-		let isRunning = false;
-		const runDepositRecovery = async (): Promise<void> => {
-				// Concurrency guard. If an iteration takes longer than the 30s
-				// interval (slow RPC, large block range), don't fire a second loop
-				// that would race on `fromBlock` and waste RPC quota.
-				if (isRunning) {
-						logger.warn(
-								"[deposit-recovery] previous iteration still running, skipping this tick",
-						);
-						return;
-				}
-				isRunning = true;
-				try {
-						if (fromBlock === 0n) {
-								const current = await client.getBlockNumber();
-								fromBlock = current > 1_000n ? current - 1_000n : 0n;
-						}
-						fromBlock = await runRecoveryIteration(client, config.USDC_DEPOSIT_ADDRESS as string, fromBlock);
-				} catch (err) {
-						logger.error({ err, fromBlock }, "[deposit-recovery] scheduled iteration failed");
-				} finally {
-						isRunning = false;
-				}
-		};
-		void runDepositRecovery();
-		setInterval(() => void runDepositRecovery(), 30_000).unref();
+function startServerIfHttp() {
+	if (runsAsHttpServer) {
+		startServer();
+	}
 }
+
+// Deposit recovery: inbound USDC transfers to the treasury address are
+// matched against recorded deposits and credited on chain confirmation.
+//
+// HTTP mode (self-hosted / Coolify): a lightweight 30s in-memory loop with a
+// concurrency guard. Only runs here — a Neon Function has no background loop.
+//
+// Neon Functions mode: recovery runs as a scheduler (Function Trigger cron)
+// that POSTs to /internal/recover-deposits, which persists the block cursor
+// in Postgres so each stateless invocation resumes from the last checkpoint.
+if (runsAsHttpServer && config.USDC_DEPOSIT_ADDRESS) {
+	const client = getPublicClient();
+	let fromBlock = 0n;
+	let isRunning = false;
+	const runDepositRecovery = async (): Promise<void> => {
+		// Concurrency guard. If an iteration takes longer than the 30s
+		// interval (slow RPC, large block range), don't fire a second loop
+		// that would race on `fromBlock` and waste RPC quota.
+		if (isRunning) {
+			logger.warn(
+				"[deposit-recovery] previous iteration still running, skipping this tick",
+			);
+			return;
+		}
+		isRunning = true;
+		try {
+			if (fromBlock === 0n) {
+				const current = await client.getBlockNumber();
+				fromBlock = current > 1_000n ? current - 1_000n : 0n;
+			}
+			fromBlock = await runRecoveryIteration(client, config.USDC_DEPOSIT_ADDRESS as string, fromBlock);
+		} catch (err) {
+			logger.error({ err, fromBlock }, "[deposit-recovery] scheduled iteration failed");
+		} finally {
+			isRunning = false;
+		}
+	};
+	void runDepositRecovery();
+	setInterval(() => void runDepositRecovery(), 30_000).unref();
+}
+
 
 if (config.CORS_ORIGIN === "*" && config.NODE_ENV === "production") {
 		logger.fatal("[SECURITY] CORS_ORIGIN='*' is not allowed in production. Refusing to start. Set specific origins (comma-separated).");
@@ -212,6 +247,59 @@ app.route("/", healthRoutes);
 app.route("/", metricsRoutes);
 app.route("/", opsRoutes);
 app.route("/", openapiRoutes);
+
+// ---------------------------------------------------------------------
+// Internal: deposit-recovery ticker.
+//
+// Runs one deposit-recovery iteration and persists the block cursor in
+// Postgres (`deposit_recovery_state`). In HTTP mode this is a manual/admin
+// trigger; in Neon Functions mode it is the cron / Function-Trigger target so
+// each invocation is stateless and resumes from the last checkpoint.
+//
+// Auth: accepts either a matching RECOVERY_TOKEN bearer token (admin / manual
+// trigger) OR a Neon scheduled-invocation call identified by the trusted
+// X-Neon-Trigger-Invocation-Id header (Neon strips client-set X-Neon-* headers,
+// so its presence proves the call came from Neon's scheduler, which sends no
+// credentials).
+// ---------------------------------------------------------------------
+app.post("/internal/recover-deposits", async (c) => {
+	const token = c.req.header("Authorization")?.replace(/^Bearer\s+/i, "") ?? "";
+	const expected = process.env.RECOVERY_TOKEN;
+	const fromNeonScheduler = Boolean(c.req.header("x-neon-trigger-invocation-id"));
+	const authorized = fromNeonScheduler || (Boolean(expected) && token === expected);
+	if (!authorized) {
+		return c.json({ error: { message: "forbidden", type: "forbidden" } }, 403);
+	}
+	if (!config.USDC_DEPOSIT_ADDRESS) {
+		return c.json({ error: { message: "deposit address not configured", type: "server_error" } }, 503);
+	}
+	try {
+		const client = getPublicClient();
+		// Load persisted cursor (defaults to a lookback behind head on first run).
+		const [state] = await db
+			.select({ lastBlock: depositRecoveryState.lastBlock })
+			.from(depositRecoveryState)
+			.where(eq(depositRecoveryState.depositAddress, config.USDC_DEPOSIT_ADDRESS))
+			.limit(1);
+		let fromBlock = state?.lastBlock ?? 0n;
+		if (fromBlock === 0n) {
+			const current = await client.getBlockNumber();
+			fromBlock = current > 1_000n ? current - 1_000n : 0n;
+		}
+		const nextBlock = await runRecoveryIteration(client, config.USDC_DEPOSIT_ADDRESS, fromBlock);
+		await db
+			.insert(depositRecoveryState)
+			.values({ depositAddress: config.USDC_DEPOSIT_ADDRESS, lastBlock: nextBlock })
+			.onConflictDoUpdate({
+				target: depositRecoveryState.depositAddress,
+				set: { lastBlock: nextBlock },
+			});
+		return c.json({ fromBlock: fromBlock.toString(), processedThrough: nextBlock.toString() });
+	} catch (err) {
+		logger.error({ err }, "[deposit-recovery] internal ticker failed");
+		return c.json({ error: { message: "deposit recovery failed", type: "server_error" } }, 500);
+	}
+});
 
 // Better Auth — sign-in / sign-up / magic-link / anonymous / SIWE / session.
 // Session *reads* (get-session) are high-frequency: every page mount calls

@@ -26,6 +26,7 @@ import {
 		uniqueIndex,
 		numeric,
 		integer,
+		bigint,
 		pgEnum,
 		uuid,
 		check,
@@ -639,3 +640,28 @@ export const rateLimitOverrides = pgTable(
 		},
 		(t) => [index("idx_rate_limit_overrides_set_by").on(t.setBy)],
 );
+
+/**
+ * Deposit-recovery block cursor.
+ *
+ * For Neon Functions (hostless), deposit recovery cannot hold a block cursor in
+ * memory — the platform cold-starts / evicts instances at any time. This table
+ * persists the last-processed Base block so each cron-triggered run is stateless
+ * and resumes from the previous checkpoint. `runRecoveryIteration` is already
+ * idempotent (double-spend is blocked in deposit-recovery.ts), so an occasional
+ * overlapping run is safe. Single logical row keyed by deposit address.
+ */
+export const depositRecoveryState = pgTable("deposit_recovery_state", {
+	// The USDC treasury/deposit address being monitored (unique per key).
+	depositAddress: text("deposit_address").primaryKey(),
+	// Last Base block number processed (exclusive cursor for next run).
+	// bigint mode keeps the value as a JS bigint, matching runRecoveryIteration.
+	// Default uses raw SQL so drizzle-kit can serialize the snapshot (0n can't).
+	lastBlock: bigint("last_block", { mode: "bigint" })
+		.notNull()
+		.default(sql`0`),
+	updatedAt: timestamp("updated_at", { withTimezone: true })
+		.defaultNow()
+		.notNull()
+		.$onUpdateFn(() => new Date()),
+});
