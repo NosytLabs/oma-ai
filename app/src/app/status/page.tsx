@@ -15,14 +15,24 @@ type ServiceState = {
 	detail: string;
 };
 
-async function fetchJson(url: string, ms = 4000): Promise<Record<string, unknown> | null> {
+async function fetchJson(url: string, ms = 2500): Promise<Record<string, unknown> | null> {
+	// A backend pointing at localhost is never reachable from a serverless
+	// host (there is no local API process), and waiting on it can blow the
+	// function's execution budget and 500 this page. Short-circuit to a clean
+	// "unreachable" state instead of letting the fetch hang.
+	if (/^http:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)/.test(url)) {
+		return null;
+	}
 	try {
 		const r = await fetch(url, {
 			cache: "no-store",
+			// AbortSignal.timeout is not universally reliable inside serverless
+			// isolates; an explicit controller + hard cap guarantees we return
+			// within ms and never 500 the page for a slow/unreachable backend.
 			signal: AbortSignal.timeout(ms),
 		});
 		if (!r.ok) return null;
-		return (await r.json()) as Record<string, unknown>;
+		return (await r.json()) as Record<string, unknown> | null;
 	} catch {
 		return null;
 	}
