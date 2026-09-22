@@ -141,11 +141,12 @@ chatRoutes.post(
 					"http://localhost:3000",
 					"http://127.0.0.1:3000",
 				].filter(Boolean) as string[];
+				// Exact match or path-prefix match only. A bare `startsWith(allowed)`
+				// would also accept attacker-controlled origins like
+				// `http://localhost:3000.evil.com`, letting them dodge auth/billing
+				// and take the anonymous free-chat path for any free-tier model.
 				const originOk = allowedOrigins.some(
-					(allowed) =>
-						origin === allowed ||
-						origin.startsWith(`${allowed}/`) ||
-						origin.startsWith(allowed),
+					(allowed) => origin === allowed || origin.startsWith(`${allowed}/`),
 				);
 			const isWebsiteRequest = source === "website" && originOk;
 			const isFreeModel = isFreeWebsiteModel(model);
@@ -316,5 +317,3 @@ chatRoutes.post(
 				}
 		},
 );
-
-export { ProviderError, estimateTokens, flattenMessageContent };

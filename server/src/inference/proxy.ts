@@ -9,7 +9,6 @@
 	*   - streaming.ts       — createStreamingProxy, parseNonStreamingResponse
 	*/
 import { getModelById } from "./models.js";
-import { getModelPricing } from "./billing-service.js";
 import { buildFallbackChain } from "./fallback.js";
 import { logger } from "../lib/logger.js";
 
@@ -35,7 +34,6 @@ export {
 export { FALLBACK_MAP, buildFallbackChain, rewriteSseModelField } from "./fallback.js";
 
 import { ProviderError, resolveProvider } from "./provider-route.js";
-import { estimateTokens, flattenMessageContent } from "./token-utils.js";
 
 export interface CallProviderOptions {
 		modelId: string;
@@ -68,10 +66,8 @@ async function callProvider(opts: CallProviderOptions): Promise<Response> {
 
 		const modelDef = getModelById(modelId);
 		if (!modelDef) {
-				throw new ProviderError(`Model ${modelId} not found`, 404);
+			throw new ProviderError(`Model ${modelId} not found`, 404);
 		}
-
-		const _pricing = getModelPricing(modelId);
 
 		// Resolve upstream provider (Venice vs OMA-AI/OpenBroker).
 		const provider = providerOverride ?? modelDef.provider;
@@ -83,11 +79,8 @@ async function callProvider(opts: CallProviderOptions): Promise<Response> {
 				modelDef.omaAiId,
 		);
 
-		const promptText = messages.map((m) => flattenMessageContent(m.content)).join("\n");
-		const _promptTokens = estimateTokens(promptText);
-
 		const upstreamBody = route.extraBody({
-				model: upstreamModel,
+			model: upstreamModel,
 				messages: messages.map((m) => ({
 						role: m.role,
 						content: m.content,

@@ -203,7 +203,7 @@ function createAnthropicStream(
 																				content: [],
 																				stop_reason: null,
 																				stop_sequence: null,
-																				usage: { input_tokens: obj.usage?.prompt_tokens ? { input_tokens: obj.usage.prompt_tokens, output_tokens: 0 } : { input_tokens: 0, output_tokens: 0 } },
+																				usage: { input_tokens: obj.usage?.prompt_tokens ?? 0, output_tokens: 0 },
 																		},
 																})}\n\n`,
 														),
