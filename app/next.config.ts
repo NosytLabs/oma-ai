@@ -38,6 +38,15 @@ const nextConfig: NextConfig = {
 		],
 	},
 
+	// Vercel + Next 15.5: `next/dist/compiled/source-map` is required at runtime
+	// by `next/dist/compiled/next-server/server.runtime.prod.js`, but the Vercel
+	// file tracer drops it even with a hoisted node_modules layout (upstream
+	// vercel/next.js#83248). Every server-rendered route then 500s with
+	// "Cannot find module 'next/dist/compiled/source-map'". Force-include it.
+	outputFileTracingIncludes: {
+		"/**/*": ["./node_modules/next/dist/compiled/source-map/**"],
+	},
+
 	env: {
 		NEXT_PUBLIC_BUILD_SHA:
 			process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ??
