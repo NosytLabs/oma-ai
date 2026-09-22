@@ -195,6 +195,8 @@ export const TIER_COLORS: Record<
 interface RawEntry {
 	id: string;
 	veniceId?: string;
+	/** Raw provider model id when the public OMA id must stay URL-safe. */
+	upstreamId?: string;
 	provider: string;
 	primaryProvider?: string;
 	inputPricePer1M: number;
@@ -372,7 +374,7 @@ function toModel(entry: RawEntry): Model {
 		inputPricePer1M: entry.inputPricePer1M,
 		outputPricePer1M: entry.outputPricePer1M,
 		capabilities: deriveCapabilities(entry.id, entry.displayName, entry.description, serverCaps),
-		modelId: entry.veniceId ?? entry.id,
+		modelId: entry.upstreamId ?? entry.veniceId ?? entry.id,
 		inputModalities: ["text"],
 		outputModalities: ["text"],
 	};
@@ -755,7 +757,8 @@ const FALLBACK_CATALOG: RawCatalog = {
 	//   DeepSeek V4 Flash 400K       $0.25 / M tokens  (in == out)
 	// User-facing = base x 2 (100% platform margin) → 0.60 / 0.50.
 	"minimax-m2-7": {
-		id: "MiniMaxAI/MiniMax-M2.7",
+		id: "minimax-m2-7",
+		upstreamId: "MiniMaxAI/MiniMax-M2.7",
 		displayName: "MiniMax M2.7",
 		provider: "oma-ai",
 		category: "budget",
@@ -765,7 +768,8 @@ const FALLBACK_CATALOG: RawCatalog = {
 		capabilities: ["chat", "reasoning", "coding", "tools"],
 	},
 	"deepseek-v4-flash-0731-openbroker": {
-		id: "deepseek-ai/DeepSeek-V4-Flash-0731",
+		id: "deepseek-v4-flash-0731-openbroker",
+		upstreamId: "deepseek-ai/DeepSeek-V4-Flash-0731",
 		displayName: "DeepSeek V4 Flash (OMA-AI)",
 		provider: "oma-ai",
 		category: "budget",
