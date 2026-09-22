@@ -39,9 +39,17 @@ const initialNodeEnv = process.env.NODE_ENV ?? 'production';
 const isDevelopment = initialNodeEnv !== 'production' && initialNodeEnv !== 'staging';
 const initialLevel = process.env.LOG_LEVEL ?? (isDevelopment ? 'debug' : 'info');
 
+// pino-pretty is a worker-thread transport that esbuild (Neon Functions'
+// bundler) cannot resolve as a runtime target ("unable to determine transport
+// target for pino-pretty" -> function fails to load). It is a dev-only
+// convenience for a local console. On Neon Functions (NEON_FUNCTION=1) always
+// emit plain JSON logs instead, which is what Neon's log tail expects anyway.
+const useJsonOnly = process.env.NEON_FUNCTION === '1';
+const usePretty = isDevelopment && !useJsonOnly;
+
 export const logger: Logger = pino({
 		level: initialLevel,
-		transport: isDevelopment
+		transport: usePretty
 				? {
 								target: 'pino-pretty',
 								options: {
