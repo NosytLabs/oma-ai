@@ -22,6 +22,17 @@ const nextConfig: NextConfig = {
 	output: "standalone",
 	outputFileTracingRoot: __dirname,
 
+	// Vercel + pnpm: `next/dist/compiled/source-map` is required at runtime by
+	// `next/dist/compiled/next-server/server.runtime.prod.js`, but node-file-trace
+	// cannot statically see that require through pnpm's symlinked store, so the
+	// folder is omitted from the serverless bundle. Every server-rendered route
+	// then dies with "Cannot find module 'next/dist/compiled/source-map'" and a
+	// 500, while statically prerendered pages keep working (they never invoke a
+	// function). Upstream: vercel/next.js#83248. Force-include it.
+	outputFileTracingIncludes: {
+		"/**/*": ["./node_modules/next/dist/compiled/source-map/**"],
+	},
+
 	env: {
 		NEXT_PUBLIC_BUILD_SHA:
 			process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ??
