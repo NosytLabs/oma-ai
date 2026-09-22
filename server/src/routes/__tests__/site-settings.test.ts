@@ -29,6 +29,10 @@ const mockConfig = vi.hoisted(() => ({
 	POLAR_ACCESS_TOKEN: "polar_test_token",
 	POLAR_HOBBY_PRODUCT_ID: "prod_hobby",
 	USDC_DEPOSIT_ADDRESS: "0xabc",
+	FACILITATOR_MODE: "live",
+	FACILITATOR_PRIVATE_KEY: "0x" + "1".repeat(64),
+	CHAIN_RPC_URL: "https://base.example.invalid",
+	TREASURY_BASE_ADDRESS: "0x1111111111111111111111111111111111111111",
 }));
 
 vi.mock("../../config.js", () => ({ config: mockConfig }));
@@ -54,6 +58,10 @@ describe("GET /v1/site-settings", () => {
 		mockConfig.POLAR_ACCESS_TOKEN = "polar_test_token";
 		mockConfig.POLAR_HOBBY_PRODUCT_ID = "prod_hobby";
 		mockConfig.USDC_DEPOSIT_ADDRESS = "0xabc";
+		mockConfig.FACILITATOR_MODE = "live";
+		mockConfig.FACILITATOR_PRIVATE_KEY = "0x" + "1".repeat(64);
+		mockConfig.CHAIN_RPC_URL = "https://base.example.invalid";
+		mockConfig.TREASURY_BASE_ADDRESS = "0x1111111111111111111111111111111111111111";
 	});
 
 	it("returns DB settings merged with env defaults when DB read succeeds", async () => {
@@ -74,6 +82,7 @@ describe("GET /v1/site-settings", () => {
 		// Env-derived (no DB column) — should reflect config
 		expect(body.usdcDepositConfigured).toBe(true);
 		expect(body.polarConfigured).toBe(true);
+		expect(body.x402Configured).toBe(true);
 	});
 
 	it("returns env defaults when the DB row is empty", async () => {
@@ -99,6 +108,7 @@ describe("GET /v1/site-settings", () => {
 		expect(body.cryptoPaymentsEnabled).toBe(true);
 		expect(body.usdcDepositConfigured).toBe(true);
 		expect(body.polarConfigured).toBe(true);
+		expect(body.x402Configured).toBe(true);
 	});
 
 	it("reports polarConfigured=false when Polar token or product id missing", async () => {
@@ -109,6 +119,16 @@ describe("GET /v1/site-settings", () => {
 		expect(res.status).toBe(200);
 		const body = (await res.json()) as Record<string, unknown>;
 		expect(body.polarConfigured).toBe(false);
+	});
+
+	it("reports x402Configured=false unless the live facilitator is complete", async () => {
+		mockConfig.FACILITATOR_PRIVATE_KEY = "";
+		mockDb.limit.mockResolvedValueOnce([]);
+
+		const res = await app.request("/v1/site-settings");
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as Record<string, unknown>;
+		expect(body.x402Configured).toBe(false);
 	});
 
 	it("reports usdcDepositConfigured=false when no treasury address", async () => {
