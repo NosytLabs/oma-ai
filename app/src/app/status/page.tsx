@@ -46,32 +46,67 @@ export default async function StatusPage() {
 		detail: "You're reading this page, so the site is serving.",
 	};
 
-	const backendJson = await fetchJson(
-		`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001"}/health`,
-	);
+	const apiBase =
+		process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+	const [backendJson, modelsJson] = await Promise.all([
+		fetchJson(`${apiBase}/health`),
+		fetchJson(`${apiBase}/v1/models`),
+	]);
 	const apiVersion =
 		typeof backendJson?.version === "string" ? backendJson.version : null;
-	const apiEnv = typeof backendJson?.env === "string" ? backendJson.env : null;
 	const api: ServiceState = {
 		name: "Inference gateway (API)",
 		ok: backendJson !== null,
 		detail:
 			backendJson !== null
-				? `Healthy${apiVersion ? ` — v${apiVersion}` : ""}${apiEnv ? ` (${apiEnv})` : ""}`
+				? `Healthy${apiVersion ? ` — v${apiVersion}` : ""}`
 				: "Unreachable — chat, key management, and billing may fail. Retry in a moment.",
 	};
 
-	// The free website chat depends on the gateway; if the gateway is up,
-	// chat is served by the same process, so this derives rather than pings.
-	const chat: ServiceState = {
-		name: "Free website chat",
-		ok: api.ok,
-		detail: api.ok
-			? "Available — free models stream through the gateway above."
-			: "Paused while the gateway is unreachable.",
+	type ModelStatus = {
+		id?: unknown;
+		provider?: unknown;
+		available?: unknown;
+	};
+	const modelRows: ModelStatus[] = Array.isArray(modelsJson?.data)
+		? (modelsJson.data as ModelStatus[])
+		: [];
+	const availableModels = modelRows.filter((model) => model.available === true);
+	const availableProviders = new Set(
+		availableModels
+			.map((model) =>
+				typeof model.provider === "string" ? model.provider : null,
+			)
+			.filter((provider): provider is string => provider !== null),
+	);
+	const providers: ServiceState = {
+		name: "Model providers",
+		ok: modelRows.length > 0 && availableModels.length > 0,
+		detail:
+			modelsJson === null
+				? "Model catalog could not be reached."
+				: modelRows.length === 0
+					? "No models are currently published by the gateway."
+					: availableModels.length === 0
+						? `0/${modelRows.length} models available — provider credentials or upstream capacity need attention.`
+						: `${availableModels.length}/${modelRows.length} models available across ${availableProviders.size} provider${availableProviders.size === 1 ? "" : "s"}.`,
 	};
 
-	const services = [web, api, chat];
+	const freeChatModel = modelRows.find(
+		(model) => model.id === "deepseek-v4-flash-0731-openbroker",
+	);
+	const chatAvailable = api.ok && freeChatModel?.available === true;
+	const chat: ServiceState = {
+		name: "Free website chat",
+		ok: chatAvailable,
+		detail: chatAvailable
+			? "Available — the default free model is ready."
+			: api.ok
+				? "Paused — the default free model is not currently available."
+				: "Paused while the gateway is unreachable.",
+	};
+
+	const services = [web, api, providers, chat];
 	const allOk = services.every((s) => s.ok);
 
 	return (
@@ -116,8 +151,8 @@ export default async function StatusPage() {
 
 				<p className="mt-8 text-xs text-text-muted flex items-center gap-2">
 					<AlertCircle className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" />
-					Health reflects reachability, not model-level capacity. If chat
-					streams slowly, the free-tier compute pool may be busy — retry.
+					Health includes gateway reachability and advertised model-provider
+					availability. Individual upstreams can still have transient capacity issues.
 				</p>
 			</div>
 		</section>
