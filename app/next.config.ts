@@ -43,8 +43,10 @@ const nextConfig: NextConfig = {
 	// file tracer drops it even with a hoisted node_modules layout (upstream
 	// vercel/next.js#83248). Every server-rendered route then 500s with
 	// "Cannot find module 'next/dist/compiled/source-map'". Force-include it.
+	// NOTE: with the hoisted pnpm layout, `next` lives at the monorepo ROOT
+	// node_modules (outputFileTracingRoot is app/), so the glob must be ../.
 	outputFileTracingIncludes: {
-		"/**/*": ["./node_modules/next/dist/compiled/source-map/**"],
+		"/**/*": ["../node_modules/next/dist/compiled/source-map/**"],
 	},
 
 	env: {
