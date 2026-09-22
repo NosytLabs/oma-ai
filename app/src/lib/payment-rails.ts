@@ -13,6 +13,8 @@ export type SitePaymentSettings = {
 	usdcDepositConfigured?: boolean;
 	/** Polar token + at least one product id present. */
 	polarConfigured?: boolean;
+	/** Live x402 facilitator has signing key, RPC, and treasury configured. */
+	x402Configured?: boolean;
 };
 
 export type RailKey = "usdc" | "card" | "x402";
@@ -55,9 +57,9 @@ export function railStatuses(
 			{
 				key: "x402",
 				label: "x402 Agent Settle",
-				badge: "Agents",
-				actionable: true,
-				reason: null,
+				badge: "Setup required",
+				actionable: false,
+				reason: "Checking facilitator configuration…",
 			},
 		];
 	}
@@ -69,6 +71,8 @@ export function railStatuses(
 	const usdcMissing = !usdcConfigured;
 	const cardPaused = settings.cardPaymentsEnabled === false;
 	const cardMissing = !polarConfigured;
+	const x402Configured = settings.x402Configured === true;
+	const x402Paused = settings.cryptoPaymentsEnabled === false;
 
 	return [
 		{
@@ -104,10 +108,17 @@ export function railStatuses(
 		{
 			key: "x402",
 			label: "x402 Agent Settle",
-			badge: "Agents",
-			// x402 does not require pre-funded deposit UI; protocol lives on the API.
-			actionable: true,
-			reason: null,
+			badge: x402Paused
+				? "Paused"
+				: x402Configured
+					? "Agents"
+					: "Setup required",
+			actionable: !x402Paused && x402Configured,
+			reason: x402Paused
+				? "Crypto settlement is paused by the operator."
+				: x402Configured
+					? null
+					: "The live x402 facilitator is not fully configured.",
 		},
 	];
 }
