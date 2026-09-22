@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { NextConfig } from "next";
 import { SITE_REDIRECTS } from "./src/lib/site-redirects";
 import nextBundleAnalyzer from "@next/bundle-analyzer";
@@ -20,7 +21,19 @@ const nextConfig: NextConfig = {
 	compress: false,
 
 	output: "standalone",
-	outputFileTracingRoot: __dirname,
+
+	// This app is one package inside a pnpm monorepo. With node-linker=hoisted,
+	// Next.js itself lives in the repository-root node_modules, not app/node_modules.
+	// Trace from the monorepo root so Vercel can package runtime dependencies that
+	// sit outside the Next.js project directory.
+	outputFileTracingRoot: path.join(__dirname, ".."),
+
+	// Next 15.5.x can miss this runtime require from server.runtime.prod.js.
+	// Include the actual hoisted package path (relative to the Next project root)
+	// for every server trace. Static routes are unaffected.
+	outputFileTracingIncludes: {
+		"/*": ["../node_modules/next/dist/compiled/source-map/**/*"],
+	},
 
 	env: {
 		NEXT_PUBLIC_BUILD_SHA:
