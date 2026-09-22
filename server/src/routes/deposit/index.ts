@@ -286,6 +286,11 @@ depositRoutes.get("/v1/site-settings", async (c) => {
 										config.POLAR_BUILDER_PRODUCT_ID ||
 										config.POLAR_SCALE_PRODUCT_ID,
 						),
+				x402Configured:
+						config.FACILITATOR_MODE === "live" &&
+						Boolean(config.FACILITATOR_PRIVATE_KEY) &&
+						Boolean(config.CHAIN_RPC_URL) &&
+						Boolean(config.TREASURY_BASE_ADDRESS),
 		};
 		try {
 				const [settings] = await db.select().from(siteSettings).limit(1);
@@ -297,6 +302,7 @@ depositRoutes.get("/v1/site-settings", async (c) => {
 								settings?.cryptoPaymentsEnabled ?? envDefaults.cryptoPaymentsEnabled,
 						usdcDepositConfigured: envDefaults.usdcDepositConfigured,
 						polarConfigured: envDefaults.polarConfigured,
+						x402Configured: envDefaults.x402Configured,
 				});
 		} catch (err) {
 				logger.warn(
