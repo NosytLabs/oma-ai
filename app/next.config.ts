@@ -28,11 +28,14 @@ const nextConfig: NextConfig = {
 	// sit outside the Next.js project directory.
 	outputFileTracingRoot: path.join(__dirname, ".."),
 
-	// Next 15.5.x can miss this runtime require from server.runtime.prod.js.
-	// Include the actual hoisted package path (relative to the Next project root)
-	// for every server trace. Static routes are unaffected.
+	// Next 15.5.x externalizes runtime helpers from server.runtime.prod.js, and
+	// Vercel file tracing can miss them when Next is hoisted outside app/.
+	// Include the required helpers from the actual monorepo-root package path.
 	outputFileTracingIncludes: {
-		"/*": ["../node_modules/next/dist/compiled/source-map/**/*"],
+		"/*": [
+			"../node_modules/next/dist/compiled/source-map/**/*",
+			"../node_modules/next/dist/compiled/stacktrace-parser/**/*",
+		],
 	},
 
 	env: {
