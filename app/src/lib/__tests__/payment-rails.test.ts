@@ -7,11 +7,11 @@ describe("railStatuses", () => {
 		expect(rails.map((r) => r.badge)).toEqual([
 			"Setup required",
 			"Setup required",
-			"Agents",
+			"Setup required",
 		]);
 		expect(railByKey(null, "usdc").actionable).toBe(false);
 		expect(railByKey(null, "card").actionable).toBe(false);
-		expect(railByKey(null, "x402").actionable).toBe(true);
+		expect(railByKey(null, "x402").actionable).toBe(false);
 	});
 
 	it("marks USDC Setup required when deposit address is missing", () => {
@@ -56,13 +56,28 @@ describe("railStatuses", () => {
 		expect(usdc.actionable).toBe(false);
 	});
 
-	it("keeps x402 as Agents and actionable regardless of deposit flags", () => {
+	it("marks x402 Setup required until the live facilitator is configured", () => {
 		const settings: SitePaymentSettings = {
-			maintenanceMode: true,
-			cardPaymentsEnabled: false,
-			cryptoPaymentsEnabled: false,
+			maintenanceMode: false,
+			cardPaymentsEnabled: true,
+			cryptoPaymentsEnabled: true,
 			usdcDepositConfigured: false,
 			polarConfigured: false,
+			x402Configured: false,
+		};
+		const x402 = railByKey(settings, "x402");
+		expect(x402.badge).toBe("Setup required");
+		expect(x402.actionable).toBe(false);
+	});
+
+	it("marks configured x402 as an actionable agent rail", () => {
+		const settings: SitePaymentSettings = {
+			maintenanceMode: false,
+			cardPaymentsEnabled: true,
+			cryptoPaymentsEnabled: true,
+			usdcDepositConfigured: false,
+			polarConfigured: false,
+			x402Configured: true,
 		};
 		const x402 = railByKey(settings, "x402");
 		expect(x402.badge).toBe("Agents");
