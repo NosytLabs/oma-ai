@@ -3,11 +3,11 @@
 	* agent docs. Parses openapi.ts paths so drift fails CI.
 	*/
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { basename, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 function openapiSourcePaths(): string[] {
-	const basePath = process.cwd().endsWith("/server") ? "" : "server/";
+	const basePath = basename(process.cwd()) === "server" ? "" : "server/";
 	const src = readFileSync(resolve(process.cwd(), basePath + "src/routes/openapi.ts"), "utf8");
 	// Match /v1/*, /x402/*, /health keys
 	return [
@@ -52,7 +52,7 @@ describe("OpenAPI path inventory", () => {
 	});
 
 	it("registers OpenAPI at /openapi.json and /v1/openapi.json", () => {
-		const basePath = process.cwd().endsWith("/server") ? "" : "server/";
+		const basePath = basename(process.cwd()) === "server" ? "" : "server/";
 		const src = readFileSync(resolve(process.cwd(), basePath + "src/routes/openapi.ts"), "utf8");
 		expect(src).toMatch(/openapiRoutes\.get\("\/openapi\.json"/);
 		expect(src).toMatch(/openapiRoutes\.get\("\/v1\/openapi\.json"/);

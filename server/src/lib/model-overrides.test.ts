@@ -1,13 +1,14 @@
 import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, sep as pathSep } from "node:path";
 import { describe, expect, it } from "vitest";
 import { readModelPricingOverrides, resolveModelOverridesFilePath } from "./model-overrides.js";
 
 describe("resolveModelOverridesFilePath", () => {
 		it("resolves the repository sidecar next to server/models.json", () => {
-				expect(resolveModelOverridesFilePath(process.cwd())).toMatch(/server\/models-overrides\.json$/);
-				expect(resolveModelOverridesFilePath(process.cwd())).not.toMatch(/server\/models\.json$/);
+				const resolved = resolveModelOverridesFilePath(process.cwd()).split(pathSep).join("/");
+				expect(resolved).toMatch(/server\/models-overrides\.json$/);
+				expect(resolved).not.toMatch(/server\/models\.json$/);
 		});
 
 		it("reads only valid persisted override entries", () => {
