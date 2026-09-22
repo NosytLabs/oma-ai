@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 			"Try OMA-AI models free in the chat playground — no account required. Sign in for the full catalog.",
 		images: [
 			{
-				url: "/og-image.webp",
+				url: "/og-image.png",
 				width: 1280,
 				height: 720,
 				alt: "OMA Chat Playground",

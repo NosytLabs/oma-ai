@@ -91,7 +91,7 @@ export async function generateMetadata({
 				title,
 				description,
 				url: `${SITE_URL}/models/${model.id}`,
-				images: [{ url: "/og-image.webp", width: 1280, height: 720 }],
+				images: [{ url: "/og-image.png", width: 1280, height: 720 }],
 			},
 			twitter: { card: "summary_large_image", title, description },
 			alternates: { canonical: `${SITE_URL}/models/${model.id}` },

@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 	openGraph: {
 		title: "Transparent AI API pricing — OMA",
 		description: `Pay per use with USDC on Base (card optional). ${MODEL_COUNT} models, no subscriptions, no hidden fees.`,
-		images: [{ url: "/og-image.webp", width: 1280, height: 720, alt: "OMA Pricing" }],
+		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA Pricing" }],
 	},
 };
 

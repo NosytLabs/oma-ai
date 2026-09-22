@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 		title: "Glossary — AI & crypto terms, explained",
 		description:
 			"Token? Context window? USDC? x402? A jargon-free dictionary for the AI API world.",
-		images: [{ url: "/og-image.webp", width: 1280, height: 720, alt: "OMA Glossary" }],
+		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA Glossary" }],
 	},
 	robots: { index: true, follow: true },
 };

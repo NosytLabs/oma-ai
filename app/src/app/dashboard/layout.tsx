@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 			"Manage your API keys, view usage statistics, and deposit credits.",
 		images: [
 			{
-				url: "/og-image.webp",
+				url: "/og-image.png",
 				width: 1280,
 				height: 720,
 				alt: "OMA — One gateway. Every model.",

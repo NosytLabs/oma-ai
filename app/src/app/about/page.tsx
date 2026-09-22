@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 		title: "About OMA — Open Model Access",
 		description:
 			"One gateway. Every model. Wallet auth and USDC x402 settlement — no lock-in.",
-		images: [{ url: "/og-image.webp", width: 1280, height: 720, alt: "About OMA" }],
+		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "About OMA" }],
 	},
 	robots: { index: true, follow: true },
 };

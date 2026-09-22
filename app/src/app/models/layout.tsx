@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 		title: "AI Models Catalog — OMA",
 		description: `Browse ${MODEL_COUNT} models with transparent per-token pricing. One API key, multi-provider routing.`,
 		images: [
-			{ url: "/og-image.webp", width: 1280, height: 720, alt: "OMA Models" },
+			{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA Models" },
 		],
 	},
 };

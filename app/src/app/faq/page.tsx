@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 		title: "FAQ — OMA AI, explained simply",
 		description:
 			"Do I need a wallet? What is an API key? What is a token? Plain-language answers to the questions everyone asks.",
-		images: [{ url: "/og-image.webp", width: 1280, height: 720, alt: "OMA FAQ" }],
+		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA FAQ" }],
 	},
 	robots: { index: true, follow: true },
 };

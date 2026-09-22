@@ -27,14 +27,14 @@ export const metadata: Metadata = {
 		title: "Terms · OMA",
 		description:
 			"OMA API usage rules, acceptable use policy, credit mechanics, and account termination. Pay by card or in USDC, no sales funnel.",
-		images: [{ url: "/og-image.webp", width: 1280, height: 720, alt: "OMA Terms" }],
+		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA Terms" }],
 	},
 	twitter: {
 		card: "summary_large_image",
 		title: "Terms · OMA",
 		description:
 			"OMA API usage rules, acceptable use policy, credit mechanics, and account termination.",
-		images: ["/og-image.webp"],
+		images: ["/og-image.png"],
 	},
 	robots: { index: true, follow: true },
 };

@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 		title: "API Documentation — OMA",
 		description:
 			"OpenAI-compatible API reference: auth, chat, streaming, x402 payments, rate limits.",
-		images: [{ url: "/og-image.webp", width: 1280, height: 720, alt: "OMA Docs" }],
+		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA Docs" }],
 	},
 };
 

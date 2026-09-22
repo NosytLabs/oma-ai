@@ -86,7 +86,7 @@ export const metadata: Metadata = {
 		type: "website",
 		images: [
 			{
-				url: "/og-image.webp",
+				url: "/og-image.png",
 				width: 1280,
 				height: 720,
 				alt: "OMA — One gateway. Every model.",
@@ -98,7 +98,7 @@ export const metadata: Metadata = {
 	// Twitter falls back to each page's og:title/og:description when absent.
 	twitter: {
 		card: "summary_large_image",
-		images: ["/og-image.webp"],
+		images: ["/og-image.png"],
 	},
 	icons: {
 		icon: [

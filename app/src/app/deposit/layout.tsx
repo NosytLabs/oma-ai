@@ -12,14 +12,14 @@ export const metadata: Metadata = {
 		title: "Deposit USDC credits · OMA",
 		description:
 			"Deposit credits to your OMA AI account. USDC on Base supported for usage-based inference.",
-		images: [{ url: "/og-image.webp", width: 1280, height: 720, alt: "OMA Deposit" }],
+		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA Deposit" }],
 	},
 	twitter: {
 		card: "summary_large_image",
 		title: "Deposit USDC credits · OMA",
 		description:
 			"Deposit credits to your OMA AI account. USDC on Base supported.",
-		images: ["/og-image.webp"],
+		images: ["/og-image.png"],
 	},
 	// Session-gated — keep out of the public index.
 	robots: { index: false, follow: false },

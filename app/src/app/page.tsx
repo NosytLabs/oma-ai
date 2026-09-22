@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 	openGraph: {
 		title: "OMA · Open Model Access — AI inference, USDC on Base",
 		description: `One gateway. Every model. No lock-in. OpenAI-compatible API with ${MODEL_COUNT} models, wallet-based auth, USDC on Base, optional card checkout, and x402 settlement.`,
-		images: [{ url: "/og-image.webp", width: 1280, height: 720, alt: "OMA" }],
+		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA" }],
 	},
 	robots: { index: true, follow: true },
 };

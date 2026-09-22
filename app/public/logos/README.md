@@ -47,6 +47,6 @@ Inline React mark: `src/components/ui/oma-logo.tsx` (theme tokens at runtime).
 
 - Keep aspect ratio and clear space of at least one signal-dot diameter.
 - Prefer SVG for web UI; PNG for social and app metadata.
-- The public Open Graph image remains `/og-image.webp`; the brand card is the downloadable press/social variant.
+- The public Open Graph image remains `/og-image.png`; the brand card is the downloadable press/social variant.
 
 The inline React logo at `src/components/ui/oma-logo.tsx` intentionally shares this same geometry while inheriting runtime theme tokens.

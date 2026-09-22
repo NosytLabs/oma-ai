@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 	openGraph: {
 		title: "API Documentation — OMA AI Gateway",
 		description: `OpenAI-compatible AI inference reference. ${MODEL_COUNT} models behind one endpoint. Wallet auth and x402 settlement on Base.`,
-		images: [{ url: "/og-image.webp", width: 1280, height: 720, alt: "OMA API Documentation" }],
+		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA API Documentation" }],
 		type: "article",
 	},
 	twitter: {

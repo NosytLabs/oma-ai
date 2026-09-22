@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 		title: "Contact OMA",
 		description:
 			"Product support, privacy requests, and legal questions for the OMA AI gateway.",
-		images: [{ url: "/og-image.webp", width: 1280, height: 720, alt: "Contact OMA" }],
+		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "Contact OMA" }],
 	},
 	robots: { index: true, follow: true },
 };
