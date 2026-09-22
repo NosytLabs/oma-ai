@@ -68,3 +68,18 @@ describe("models-data caching", () => {
 		expect(models.length).toBeGreaterThan(0);
 	});
 });
+
+describe("static OMA model routing ids", () => {
+	it("keeps public model ids URL-safe while preserving upstream ids", async () => {
+		const { MODELS } = await import("./models-data");
+		const minimax = MODELS.find((m) => m.id === "minimax-m2-7");
+		const deepseek = MODELS.find(
+			(m) => m.id === "deepseek-v4-flash-0731-openbroker",
+		);
+
+		expect(minimax?.id).not.toContain("/");
+		expect(minimax?.modelId).toBe("MiniMaxAI/MiniMax-M2.7");
+		expect(deepseek?.id).not.toContain("/");
+		expect(deepseek?.modelId).toBe("deepseek-ai/DeepSeek-V4-Flash-0731");
+	});
+});
