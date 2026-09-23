@@ -187,9 +187,9 @@ export const ENDPOINTS: EndpointInfo[] = [
 	"permission": [],
 	"root": "llama-3.3-70b",
 	"parent": null,
-	"pricing": { "prompt": "0.00000150", "completion": "0.00000550" },
-	"category": "chat",
-	"context_length": 8192
+		"pricing": { "prompt": "0.875", "completion": "3.50" },
+		"category": "mid",
+		"context_length": 128000
 	},
 {
 "id": "deepseek-v4-flash-0731-openbroker",
@@ -219,9 +219,9 @@ export const ENDPOINTS: EndpointInfo[] = [
 	"provider": "venice",
 	"category": "mid",
 	"context_length": 128000,
-	"supports_streaming": true,
-	"supports_tools": true,
-	"pricing": { "prompt": "1.50", "completion": "5.50" }
+		"supports_streaming": true,
+		"supports_tools": true,
+		"pricing": { "prompt": "0.875", "completion": "3.50" }
 }`,
 	},
 	{

@@ -88,7 +88,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "How much does it cost?",
-				a: `A typical chat answer costs a fraction of a cent. Budget models start at $0.50 per million tokens of input. OMA-AI currently focuses on curating chat models. There is no subscription and no monthly fee — you only pay for what you use. See /pricing for the full breakdown.`,
+				a: `A typical chat answer costs a fraction of a cent. Budget models start at $0.15 per million tokens of input, and no model has a subscription or monthly fee — you only pay for what you use. See /pricing for the full breakdown.`,
 			},
 			{
 				q: "What happens when I run out of credits?",
