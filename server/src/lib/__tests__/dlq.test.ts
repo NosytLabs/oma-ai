@@ -4,19 +4,19 @@ import { addToDlq, getDlqEntries, retryFromDlq, clearDlq } from '../dlq.js'
 let redisAvailable = true
 
 const mockRedisClient = vi.hoisted(() => ({
-		lPush: vi.fn().mockImplementation(() => {
+		lpush: vi.fn().mockImplementation(() => {
 				if (!redisAvailable) throw new Error('Redis not available')
 				return 1
 		}),
-		lRange: vi.fn().mockImplementation(() => {
+		lrange: vi.fn().mockImplementation(() => {
 				if (!redisAvailable) return []
 				return []
 		}),
-		lTrim: vi.fn().mockImplementation(() => {
+		ltrim: vi.fn().mockImplementation(() => {
 				if (!redisAvailable) throw new Error('Redis not available')
 				return 'OK'
 		}),
-		lLen: vi.fn().mockImplementation(() => {
+		llen: vi.fn().mockImplementation(() => {
 				if (!redisAvailable) return 0
 				return 0
 		}),
@@ -46,7 +46,7 @@ describe('DLQ', () => {
 				it('pushes entry to Redis DLQ list', async () => {
 						await addToDlq('onramp', '{"sessionId":"test-123"}', 'Network timeout')
 
-						expect(mockRedisClient.lPush).toHaveBeenCalledWith(
+						expect(mockRedisClient.lpush).toHaveBeenCalledWith(
 								'webhook:dlq',
 								expect.stringContaining('"provider":"onramp"')
 						)
@@ -67,7 +67,7 @@ describe('DLQ', () => {
 								JSON.stringify({ provider: 'onramp', body: '{"sessionId":"1"}', error: 'timeout', timestamp: '2025-01-01T00:00:00Z' }),
 								JSON.stringify({ provider: 'deposit', body: '{"txHash":"0xabc"}', error: 'retry', timestamp: '2025-01-02T00:00:00Z' }),
 						]
-						mockRedisClient.lRange.mockResolvedValueOnce(entries)
+						mockRedisClient.lrange.mockResolvedValueOnce(entries)
 
 						const result = await getDlqEntries(0, 10)
 
@@ -77,7 +77,7 @@ describe('DLQ', () => {
 				})
 
 				it('returns empty array when DLQ is empty', async () => {
-						mockRedisClient.lRange.mockResolvedValueOnce([])
+						mockRedisClient.lrange.mockResolvedValueOnce([])
 
 						const result = await getDlqEntries(0, 10)
 
@@ -96,17 +96,17 @@ describe('DLQ', () => {
 		describe('retryFromDlq', () => {
 				it('pops entry from DLQ and returns it', async () => {
 						const entry = { provider: 'onramp', body: '{"sessionId":"test"}', error: 'timeout', timestamp: '2025-01-01T00:00:00Z' }
-						mockRedisClient.lRange.mockResolvedValueOnce([JSON.stringify(entry)])
-						mockRedisClient.lTrim.mockResolvedValueOnce('OK')
+						mockRedisClient.lrange.mockResolvedValueOnce([JSON.stringify(entry)])
+						mockRedisClient.ltrim.mockResolvedValueOnce('OK')
 
 						const result = await retryFromDlq()
 
 						expect(result).toEqual(entry)
-						expect(mockRedisClient.lTrim).toHaveBeenCalledWith('webhook:dlq', 1, -1)
+						expect(mockRedisClient.ltrim).toHaveBeenCalledWith('webhook:dlq', 1, -1)
 				})
 
 				it('returns null when DLQ is empty', async () => {
-						mockRedisClient.lRange.mockResolvedValueOnce([])
+						mockRedisClient.lrange.mockResolvedValueOnce([])
 
 						const result = await retryFromDlq()
 

@@ -34,7 +34,7 @@ const mockDb = vi.hoisted(() => {
 
 const mockRedis = vi.hoisted(() => ({
 	get: vi.fn(),
-	setEx: vi.fn(),
+	setex: vi.fn(),
 	del: vi.fn(),
 }));
 
@@ -112,7 +112,7 @@ describe("validateApiKey", () => {
 		const result = await validateApiKey(rawKey);
 		expect(result).toEqual(dbRow);
 		// Should set cache
-		expect(mockRedis.setEx).toHaveBeenCalledWith(`apikey:${keyHash}`, expect.any(Number), JSON.stringify(dbRow));
+		expect(mockRedis.setex).toHaveBeenCalledWith(`apikey:${keyHash}`, expect.any(Number), JSON.stringify(dbRow));
 	});
 
 	it("handles expired keys by returning expired=true without caching", async () => {
@@ -132,7 +132,7 @@ describe("validateApiKey", () => {
 
 		const result = await validateApiKey(rawKey);
 		expect(result).toEqual({ ...dbRow, expired: true });
-		expect(mockRedis.setEx).not.toHaveBeenCalled();
+		expect(mockRedis.setex).not.toHaveBeenCalled();
 	});
 
 	it("retrieves valid keys from redis cache without DB query", async () => {
