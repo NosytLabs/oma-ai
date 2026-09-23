@@ -443,61 +443,8 @@ const OMA_AI_MODELS: ModelDef[] = [
 	},
 	];
 
-// ── LiteLLM / NVIDIA API — generic OpenAI-compatible upstream ────────────
-// Wired to the operator's NVIDIA Build API key (free tier) via the generic
-// `litellm` provider (LITELLM_API_URL + LITELLM_API_KEY). `litellmId` is the
-// upstream model id sent to NVIDIA (their catalog uses slashed ids). Only
-// models verified live on integrate.api.nvidia.com/v1 are listed here.
-const LITELLM_MODELS: ModelDef[] = [
-	{
-		id: "nvidia-gpt-oss-20b",
-		provider: "litellm",
-		litellmId: "openai/gpt-oss-20b",
-		inputPricePer1M: 0,
-		outputPricePer1M: 0,
-		markupPercent: 25,
-		displayName: "NVIDIA GPT-OSS 20B",
-		category: "budget",
-		maxTokens: 16384,
-		contextWindow: 32_768,
-		maxOutputTokens: 16384,
-		supportsStreaming: true,
-		capabilities: ["chat", "reasoning", "coding", "tools"],
-	},
-	{
-		id: "nvidia-glm-5-3-flash",
-		provider: "litellm",
-		litellmId: "z-ai/glm-5.3-flash",
-		inputPricePer1M: 0,
-		outputPricePer1M: 0,
-		markupPercent: 25,
-		displayName: "NVIDIA GLM-5.3 Flash",
-		category: "budget",
-		maxTokens: 16384,
-		contextWindow: 128_000,
-		maxOutputTokens: 16384,
-		supportsStreaming: true,
-		capabilities: ["chat", "reasoning", "fast", "tools"],
-	},
-	{
-		id: "nvidia-kimi-k3",
-		provider: "litellm",
-		litellmId: "moonshotai/kimi-k3",
-		inputPricePer1M: 0,
-		outputPricePer1M: 0,
-		markupPercent: 25,
-		displayName: "NVIDIA Kimi K3",
-		category: "mid",
-		maxTokens: 16384,
-		contextWindow: 128_000,
-		maxOutputTokens: 16384,
-		supportsStreaming: true,
-		capabilities: ["chat", "reasoning", "tools"],
-	},
-];
-
 function defaultCatalog(): ModelDef[] {
-		return [...VENICE_MODELS, ...OMA_AI_MODELS, ...LITELLM_MODELS];
+		return [...VENICE_MODELS, ...OMA_AI_MODELS];
 }
 
 export async function ensureCatalogLoaded(): Promise<void> {

@@ -9,11 +9,9 @@ import { MODELS, normalizeProvider } from "@/lib/models-data";
 import type { ModelOption } from "@/lib/types/model";
 
 /**
- * Free catalog ids (upstream=openbroker — OMA-AI on Gonka.AI only).
+ * Free catalog ids (upstream=openbroker — OMA-AI on Gonka.AI).
  * Mirrors server-side logic in `server/src/inference/free-website-model.ts`.
- * Verified live against api.openbroker.gonka.gg/v1/models, which currently
- * exposes exactly 2 OpenBroker models. Adding any Venice-routed id here would
- * silently bill the operator for every guest message.
+ * Only zero-upstream-cost OpenBroker models qualify as free in /chat.
  */
 export const FREE_CHAT_MODEL_IDS = new Set<string>([
 	"minimax-m2-7",

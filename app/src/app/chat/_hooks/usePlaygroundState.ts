@@ -5,6 +5,7 @@ import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Message } from "@/components/chat";
 import { MODELS } from "@/lib/models-data";
+import { FREE_DEFAULT_CHAT_MODEL } from "@/lib/model-utils";
 
 /**
 	* Status enum for the share-conversation button. No 'loading' state —
@@ -159,7 +160,7 @@ export function usePlaygroundState(
 		// the SSR pass and the first client render agree — useState's
 		// initializer runs on both, and a localStorage hit on the server
 		// would throw (or return null, making the two passes diverge).
-		return "deepseek-v4-flash-0731-openbroker";
+		return FREE_DEFAULT_CHAT_MODEL;
 	})();
 
 	// --- Core chat ---
@@ -235,7 +236,7 @@ export function usePlaygroundState(
 	// Default the compare slot to a free OMA-AI peer so guests can run
 	// side-by-side without signing in for Venice models.
 	const [compareMode, setCompareMode] = useState<boolean>(false);
-	const [compareModel, setCompareModel] = useState<string>("deepseek-v4-flash-0731-openbroker");
+	const [compareModel, setCompareModel] = useState<string>(FREE_DEFAULT_CHAT_MODEL);
 	const [compareMessages, setCompareMessages] = useState<Message[]>([]);
 
 	// --- Misc UI ---
