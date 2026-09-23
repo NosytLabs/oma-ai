@@ -10,8 +10,29 @@ import {
 	signSiweMessage,
 } from "@/lib/wallet";
 
-const SIWE_DOMAIN =
-	typeof window !== "undefined" ? window.location.host : "oma-ai.com";
+/**
+ * The SIWE `domain` in the signed message MUST equal the host the server's
+ * better-auth instance checks against (its `domain` option = the host of
+ * PUBLIC_APP_URL, e.g. `localhost:3000` in dev / `oma-ai.com` in prod).
+ *
+ * We derive it from NEXT_PUBLIC_APP_URL (the canonical origin the server and
+ * app are configured with) instead of `window.location.host`, so signing in
+ * from `127.0.0.1:3000` or `localhost:3000` produces the SAME message that
+ * passes server-side validation. Using `window.location.host` here when the
+ * two differ (e.g. 127.0.0.1 vs localhost) makes better-auth reject the
+ * signature with "SIWE message does not match the expected nonce, domain,
+ * address, or chain ID" and prevents wallet sign-in.
+ */
+const SIWE_DOMAIN = (() => {
+	if (typeof window !== "undefined") {
+		const canonical =
+			process.env.NEXT_PUBLIC_APP_URL?.replace(/^https?:\/\//, "").split("/")[0];
+		if (canonical) return canonical;
+		return window.location.host;
+	}
+	return "oma-ai.com";
+})();
+
 
 interface WalletSignInPanelProps {
 	next: string;
