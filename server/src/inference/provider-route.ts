@@ -100,7 +100,10 @@ export function resolveProvider(provider: string, _modelDef?: ModelDef): Provide
 		return {
 			baseUrl: config.LITELLM_API_URL,
 			apiKey: config.LITELLM_API_KEY,
-			upstreamModel: (id) => id,
+			// Generic OpenAI-compatible upstream: use the model's dedicated
+			// `litellmId` (e.g. NVIDIA API model id) when set, else the
+			// catalog id/veniceId as-is.
+			upstreamModel: (id, _gid) => _modelDef?.litellmId ?? id,
 			extraBody: (body) => body,
 			providerLabel: "litellm",
 			routedVia: "litellm",

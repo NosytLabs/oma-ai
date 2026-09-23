@@ -63,12 +63,12 @@ describe("usePlaygroundState — model persistence", () => {
 
 	it("?model=<id> wins over localStorage on initial mount (deep links)", async () => {
 		localStorage.setItem("oma_chat_model:guest", "mistral-small-2603");
-		searchParamsRef = new URLSearchParams("model=MiniMaxAI/MiniMax-M2.7");
+		searchParamsRef = new URLSearchParams("model=claude-sonnet-4-6");
 		const { result } = renderHook(() => usePlaygroundState({ authReady: true }));
-		expect(result.current.model).toBe("MiniMaxAI/MiniMax-M2.7");
+		expect(result.current.model).toBe("claude-sonnet-4-6");
 		// Even after the rehydrate effect, the URL choice wins.
 		await act(async () => {});
-		expect(result.current.model).toBe("MiniMaxAI/MiniMax-M2.7");
+		expect(result.current.model).toBe("claude-sonnet-4-6");
 	});
 
 	it("an unknown ?model= falls back to localStorage (no clobber)", async () => {
@@ -92,11 +92,11 @@ describe("usePlaygroundState — model persistence", () => {
 	it("persists to localStorage when the user picks a new model", async () => {
 		const { result } = renderHook(() => usePlaygroundState({ authReady: true }));
 		await act(async () => {
-			result.current.setModel("MiniMaxAI/MiniMax-M2.7");
+			result.current.setModel("claude-sonnet-4-6");
 		});
 		await act(async () => {});
 		expect(localStorage.getItem("oma_chat_model:guest")).toBe(
-			"MiniMaxAI/MiniMax-M2.7",
+			"claude-sonnet-4-6",
 		);
 	});
 
@@ -117,11 +117,11 @@ describe("usePlaygroundState — model persistence", () => {
 			usePlaygroundState({ authReady: true, userId }),
 		);
 		await act(async () => {
-			result.current.setModel("MiniMaxAI/MiniMax-M2.7");
+			result.current.setModel("claude-sonnet-4-6");
 		});
 		await act(async () => {});
 		expect(localStorage.getItem("oma_chat_model:u:user_abc")).toBe(
-			"MiniMaxAI/MiniMax-M2.7",
+			"claude-sonnet-4-6",
 		);
 		expect(localStorage.getItem("oma_chat_model:guest")).toBeNull();
 	});
