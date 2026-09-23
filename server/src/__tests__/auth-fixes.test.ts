@@ -116,7 +116,6 @@ vi.mock("../inference/models.js", () => ({
 }));
 
 import { auth } from "../auth.js";
-import { db } from "../db/client.js";
 
 beforeEach(() => {
 		// Re-apply mock implementations so each test starts from a known state.
