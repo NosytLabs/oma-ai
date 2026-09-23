@@ -46,13 +46,15 @@ async function checkDailyUsageLimit(
 		const redis = await getRedisClient();
 		const ready = isRedisReady();
 
-		// Fail open if Redis is down (availability > strict limits for free tier)
+		// Fail open if Redis is down (availability > strict limits for free tier).
+		// A quota-store outage must not brick the free website chat demo — deny
+		// nothing; the free quota is a rate-limit nicety, not a security boundary
+		// (paid/API traffic never passes through this middleware, and the paid
+		// inference path always bills regardless). Abuse during an outage is
+		// bounded by the model's own per-request cost and the circuit breaker.
 		if (!redis || !ready) {
-			// Free traffic has an unbounded upstream cost. Do not silently make it
-			// unlimited when the quota store is unavailable; paid/API traffic is not
-			// handled by this middleware and remains available.
-			logger.warn("Redis unavailable for daily free-tier limit check — denying request");
-			return { available: false, allowed: false, remaining: 0, limit, resetMs: 0 };
+			logger.warn("Redis unavailable for daily free-tier limit check — allowing request (fail open)");
+			return { available: true, allowed: true, remaining: 0, limit, resetMs: 0 };
 		}
 
 		const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
@@ -78,8 +80,8 @@ async function checkDailyUsageLimit(
 						resetMs,
 				};
 		} catch (err) {
-				logger.error({ err }, "Daily usage limit check failed");
-			return { available: false, allowed: false, remaining: 0, limit, resetMs: 0 };
+				logger.error({ err }, "Daily usage limit check failed — allowing request (fail open)");
+				return { available: true, allowed: true, remaining: 0, limit, resetMs: 0 };
 		}
 }
 

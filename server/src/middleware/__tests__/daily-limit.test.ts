@@ -28,7 +28,7 @@ describe("dailyUsageLimit", () => {
 		mocks.isRedisReady.mockReturnValue(false);
 	});
 
-	it("fails closed for free website chat when the quota store is unavailable", async () => {
+	it("fails OPEN for free website chat when the quota store is unavailable", async () => {
 		const app = new Hono();
 		app.use("/v1/chat/completions", dailyUsageLimit());
 		app.post("/v1/chat/completions", (c) => c.json({ ok: true }));
@@ -39,9 +39,9 @@ describe("dailyUsageLimit", () => {
 			body: JSON.stringify({ model: "minimax-m2-7" }),
 		});
 
-		expect(response.status).toBe(503);
-		await expect(response.json()).resolves.toMatchObject({
-			error: { code: "free_tier_unavailable", type: "service_unavailable" },
-		});
+		// Quota-store outage must not brick the free chat demo: the request
+		// passes through (fail open) so the headline free tier stays available.
+		expect(response.status).toBe(200);
+		await expect(response.json()).resolves.toMatchObject({ ok: true });
 	});
 });
