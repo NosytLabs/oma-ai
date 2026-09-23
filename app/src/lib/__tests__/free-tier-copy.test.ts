@@ -24,7 +24,7 @@ describe("free-tier copy accuracy", () => {
 	});
 
 	it("pricing page states honest OMA-AI margin", () => {
-		const src = readApp("app/pricing/page.tsx");
+		const src = readApp("app/pricing/_components/PricingPageClient.tsx");
 		expect(src).toMatch(/OMA-AI models are priced at 2x Gonka wholesale\./);
 		expect(src).not.toMatch(/OMA-AI models do not\./);
 	});

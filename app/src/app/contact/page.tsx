@@ -9,7 +9,7 @@ import { PageShell } from "@/app/_components/page-shell";
 export const metadata: Metadata = {
 	title: "Contact OMA — support & privacy",
 	description:
-		"Contact OMA AI for product support, privacy requests, and legal questions. Email support@nosytlabs.com or hi@nosytlabs.com.",
+		"Contact OMA AI for product support, privacy requests, and legal questions. Email support@nosytlabs.com.",
 	alternates: { canonical: "/contact" },
 	openGraph: {
 		title: "Contact OMA",
@@ -39,8 +39,8 @@ const CHANNELS = [
 		icon: Mail,
 		title: "Legal",
 		body: "Terms, acceptable use, and partnership inquiries.",
-		href: "mailto:hi@nosytlabs.com",
-		label: "hi@nosytlabs.com",
+		href: "mailto:support@nosytlabs.com",
+		label: "support@nosytlabs.com",
 	},
 ] as const;
 

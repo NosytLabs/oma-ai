@@ -4,7 +4,7 @@
 	*/
 import { describe, expect, it } from "vitest";
 import { authClient, signIn, signOut, useSession } from "@/lib/auth-client";
-import { safeLoginNext } from "@/app/login/page";
+import { safeLoginNext } from "@/app/login/_components/LoginPageClient";
 
 describe("auth-client (Better Auth browser surface)", () => {
 	it("exports authClient, signIn, signOut, useSession from better-auth/react", () => {

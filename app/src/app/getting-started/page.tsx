@@ -8,7 +8,7 @@ import { CopyableCode } from "@/components/copyable-code";
 import { PageShell } from "@/app/_components/page-shell";
 
 export const metadata: Metadata = {
-	title: "Getting started — how to use OMA in 5 minutes",
+	title: { absolute: "Getting started — how to use OMA in 5 minutes" },
 	description:
 		"Use OMA without any prior AI or crypto experience: try the free chat, create an account, make an API key, add credits, and make your first API call.",
 	alternates: { canonical: "/getting-started" },
@@ -28,8 +28,8 @@ const STEPS = [
 		body: (
 			<>
 				Open the <Link href="/chat" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">chat playground</Link> and send a
-				message. Guests get a handful of free messages every day on the two OMA-AI
-				budget models — just to see how it works. No sign-up, no credit card,
+				message. Guests get 20 free messages a day on the two OMA-AI
+				budget models, and 100 a day once you sign in. No credit card,
 				nothing to install.
 			</>
 		),

@@ -17,14 +17,14 @@ import { NextResponse } from "next/server";
 	*/
 
 const TOPIC_TO_INBOX: Record<string, string> = {
-	General: "hi@nosytlabs.com",
+	General: "support@nosytlabs.com",
 	Billing: "support@nosytlabs.com",
 	Refund: "support@nosytlabs.com",
 	Privacy: "support@nosytlabs.com",
 	Security: "support@nosytlabs.com",
-	Bug: "hi@nosytlabs.com",
-	Feature: "hi@nosytlabs.com",
-	Partnership: "hi@nosytlabs.com",
+	Bug: "support@nosytlabs.com",
+	Feature: "support@nosytlabs.com",
+	Partnership: "support@nosytlabs.com",
 };
 
 type SupportPayload = {
