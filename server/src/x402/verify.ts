@@ -223,10 +223,11 @@ async function mockVerifyPayment(
 				"[FACILITATOR] Mock-mode verification accepted",
 		);
 
-		const mockTxHash =
-				payload.scheme === "evm"
-						? `0x${randomBytes(32).toString("hex")}`
-						: `0x${randomBytes(32).toString("hex")}`;
+		// Mock mode still emits a plausible txHash so the settle cache + receipt
+		// contract work identically to live mode (the hash is synthetic and never
+		// corresponds to an on-chain tx). Scheme is always "evm" for x402, so no
+		// branching is needed — both branches were byte-identical.
+		const mockTxHash = `0x${randomBytes(32).toString("hex")}`;
 
 		return {
 				valid: true,

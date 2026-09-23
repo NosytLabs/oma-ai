@@ -40,6 +40,10 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 				q: "What can I do with it?",
 				a: `Chat, write code, summarize documents, analyze data, work with image inputs, and more — across ${MODEL_COUNT} models from many providers through one API.`,
 			},
+			{
+				q: "Is there a free tier?",
+				a: "Yes. Website chat is free on the two OMA-AI budget models — no account needed for guests (a small daily message cap), and more messages per day once you sign in. New sign-ups also get a small amount of trial credit. API-key calls always spend credits, even on those models; the free tier lives in the browser chat, not the API. See /pricing for limits.",
+			},
 		],
 	},
 	{
@@ -48,6 +52,10 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			{
 				q: "What is an API key?",
 				a: "An API key is like a password that lets your code (or an AI tool you use) talk to OMA on your behalf. It looks like `oma_sk_...`. Keep it secret — anyone with your key can spend your credits. You can create and revoke keys from the dashboard.",
+			},
+			{
+				q: "Do you store my API keys?",
+				a: "Only a salted one-way hash of your key is stored — not the key itself. The plaintext `oma_sk_...` is shown once when you create it and can't be viewed again; if you lose it, just revoke and create a new one. Keys are tied to your account and can be revoked instantly from the dashboard. Your prompts and completions are not logged. See /privacy for the full detail.",
 			},
 			{
 				q: "What is a magic link?",
