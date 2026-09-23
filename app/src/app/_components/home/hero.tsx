@@ -10,6 +10,7 @@ import { ArrowRight, KeyRound, Sparkles } from "lucide-react";
 import { m } from "@/lib/framer-motion-client";
 import Link from "next/link";
 import { LiveRequestCard } from "./LiveRequestCard";
+import { MODEL_COUNT } from "@/lib/models-data";
 import { springs } from "@/lib/animation";
 
 function reveal() {
@@ -46,7 +47,7 @@ export function Hero() {
 						{...reveal()}
 						className="mx-auto mt-6 max-w-2xl text-balance text-base leading-relaxed text-text-secondary sm:mt-7 sm:text-lg md:text-xl"
 					>
-						One OpenAI-compatible endpoint, 20 models, in minutes. Try it free in
+						One OpenAI-compatible endpoint, {MODEL_COUNT} models, in minutes. Try it free in
 						the playground, then create an API key when you are ready to build.
 					</m.p>
 

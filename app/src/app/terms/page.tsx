@@ -260,10 +260,10 @@ export default function TermsPage() {
 								<div className="px-4 py-2.5 border-t border-border text-[11px] text-text-tertiary">
 									Questions?{" "}
 									<a
-										href="mailto:hi@nosytlabs.com"
+										href="mailto:support@nosytlabs.com"
 										className="text-accent hover:underline underline-offset-2"
 									>
-										hi@nosytlabs.com
+										support@nosytlabs.com
 									</a>
 								</div>
 							</aside>
@@ -539,10 +539,10 @@ export default function TermsPage() {
 							<p className="text-[11px] sm:text-xs text-text-muted">
 								Questions about these Terms?{" "}
 								<a
-									href="mailto:hi@nosytlabs.com"
+									href="mailto:support@nosytlabs.com"
 									className="font-medium text-accent underline decoration-2 underline-offset-2 hover:no-underline"
 								>
-									hi@nosytlabs.com
+									support@nosytlabs.com
 								</a>
 								, or reach us via{" "}
 								<Link

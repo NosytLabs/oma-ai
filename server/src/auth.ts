@@ -35,7 +35,7 @@ import { logger } from "./lib/logger.js";
 import { ensureCatalogLoaded, listAllModels } from "./inference/models.js";
 import { getRedisClient } from "./lib/redis-client.js";
 
-const RESEND_FROM = config.RESEND_FROM ?? "OMA-AI <noreply@nosytlabs.com>";
+const RESEND_FROM = config.RESEND_FROM ?? "OMA-AI <noreply@oma-ai.com>";
 
 // SECURITY (audit 1.2): per-email cooldown for magic-link + email-OTP sends.
 // Without this, the IP-level 40/min bucket lets an attacker flood any inbox
@@ -87,42 +87,48 @@ async function grantFreeTrialOnce(email: string, cents: number, userId: string):
 	if (cents <= 0) return false;
 	const normalized = email.trim().toLowerCase();
 	try {
-		await db.transaction(async (tx) => {
-			const inserted = await tx
-				.insert(creditGrants)
-				.values({
-					emailNormalized: normalized,
-					userId,
-					grantType: "free_signup",
-					cents: cents.toString(),
-				})
-				.onConflictDoNothing({
-					target: [creditGrants.emailNormalized, creditGrants.grantType],
-				})
-				.returning({ id: creditGrants.id });
+		// The Neon HTTP driver (@neondatabase/serverless) does NOT support
+		// db.transaction() ("No transactions support in neon-http driver").
+		// The free-trial grant previously used a transaction here, which
+		// threw on Neon and silently dropped the credit on every signup
+		// (FREE_SIGNUP_CENTS was configured but never applied). We now insert
+		// sequentially; the one-shot-per-email guarantee is enforced by the
+		// UNIQUE index on credit_grants(email_normalized, grant_type), so we
+		// only credit the balance when a grant row was newly created.
+		const inserted = await db
+			.insert(creditGrants)
+			.values({
+				emailNormalized: normalized,
+				userId,
+				grantType: "free_signup",
+				cents: cents.toString(),
+			})
+			.onConflictDoNothing({
+				target: [creditGrants.emailNormalized, creditGrants.grantType],
+			})
+			.returning({ id: creditGrants.id });
 
-			if (inserted.length === 0) {
-				// Already granted for this email — do nothing.
-				return;
-			}
+		if (inserted.length === 0) {
+			// Already granted for this email — do nothing.
+			return false;
+		}
 
-			await tx
-				.insert(creditBalances)
-				.values({
-					userId,
-					balanceCents: cents.toString(),
-					totalDepositedCents: cents.toString(),
-					totalUsedCents: "0",
-				})
-				.onConflictDoUpdate({
-					target: creditBalances.userId,
-					set: {
-						balanceCents: sql`${creditBalances.balanceCents}::numeric + ${cents}::numeric`,
-						totalDepositedCents: sql`${creditBalances.totalDepositedCents}::numeric + ${cents}::numeric`,
-						lastActivityAt: sql`NOW()`,
-					},
-				});
-		});
+		await db
+			.insert(creditBalances)
+			.values({
+				userId,
+				balanceCents: cents.toString(),
+				totalDepositedCents: cents.toString(),
+				totalUsedCents: "0",
+			})
+			.onConflictDoUpdate({
+				target: creditBalances.userId,
+				set: {
+					balanceCents: sql`${creditBalances.balanceCents}::numeric + ${cents}::numeric`,
+					totalDepositedCents: sql`${creditBalances.totalDepositedCents}::numeric + ${cents}::numeric`,
+					lastActivityAt: sql`NOW()`,
+				},
+			});
 		return true;
 	} catch (err) {
 		logger.warn(
