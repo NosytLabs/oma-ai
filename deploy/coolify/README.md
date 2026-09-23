@@ -1,6 +1,8 @@
 # Coolify Deployment Guide
 
-This directory contains the production-ready `docker-compose.yml` and `Caddyfile` for self-hosting OMA-AI on Coolify (or any Docker Compose environment).
+This directory contains `docker-compose.yml` and a `Caddyfile` for **optional self-hosting** of OMA-AI on Coolify (or another Docker Compose environment).
+
+The verified public web frontend is currently served by the existing Vercel `oma` project. Do not repoint the working `oma-ai.com` / `www` frontend records to Coolify as routine cleanup. Use this guide only when intentionally choosing Coolify for an app or API deployment.
 
 ## Prerequisites
 
@@ -46,28 +48,23 @@ Alternatively, Coolify can handle the reverse proxy automatically if you set the
 
 ## 4. DNS (Spaceship / any registrar)
 
-As of the 2026-09-15 audit, `oma-ai.com` has Spaceship nameservers
-(`launch1/2.spaceship.net`) but **no A/AAAA records** — the public site cannot
-resolve until you add them.
+Current verified state on 2026-09-23:
 
-In the Spaceship DNS panel for `oma-ai.com`, point traffic at your Coolify VPS:
+- `oma-ai.com` / `www.oma-ai.com` serves the web frontend.
+- `api.oma-ai.com` failed external DNS resolution and must be repaired before the public API is considered live.
 
-| Type | Host | Value | TTL |
-|------|------|-------|-----|
-| A | `@` | `<COOLIFY_VPS_IPV4>` | 300 |
-| A | `api` | `<COOLIFY_VPS_IPV4>` | 300 |
-| A | `www` | `<COOLIFY_VPS_IPV4>` | 300 |
-| AAAA | `@` / `api` / `www` | `<COOLIFY_VPS_IPV6>` (optional) | 300 |
+If you intentionally choose Coolify for the API, point **only the API hostname you intend Coolify to serve** at the Coolify VPS and verify the service before changing any working frontend records. If you choose another backend target (for example the repository's Neon Function path), use that target's DNS instructions instead.
 
-Then in Coolify assign domains: app → `oma-ai.com` (+ `www`), server → `api.oma-ai.com`.
-Wait for TLS, then verify:
+After any DNS change, verify the exact host and TLS before announcing it:
 
 ```bash
 dig +short oma-ai.com A
 dig +short api.oma-ai.com A
-curl -fsS https://api.oma-ai.com/health
 curl -fsS -o /dev/null -w "%{http_code}\n" https://oma-ai.com/
+curl -fsS https://api.oma-ai.com/health
 ```
+
+Do not overwrite `@` or `www` merely because this optional Coolify example exists.
 
 ## 5. Earn-path smoke after deploy
 
