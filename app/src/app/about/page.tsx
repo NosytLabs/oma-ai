@@ -94,6 +94,38 @@ export default function AboutPage() {
 					))}
 				</ul>
 
+				<section className="mb-14" aria-labelledby="how-oma-works">
+					<h2
+						id="how-oma-works"
+						className="section-eyebrow-caps text-text-bright"
+					>
+						How OMA works
+					</h2>
+					<div className="mt-4 space-y-3 text-sm text-text-secondary leading-relaxed max-w-2xl">
+						<p>
+							OMA is a single OpenAI-compatible endpoint —
+							<code className="rounded border border-border bg-surface px-1.5 py-0.5 font-mono text-[13px] text-text-bright">https://api.oma-ai.com/v1</code> —
+							in front of a rotating catalog of chat models routed across
+							multiple upstream providers. Each request is dispatched to the
+							best available model with circuit-breaker failover: if an
+							upstream goes down, traffic shifts to the next healthy route
+							instead of erroring out.
+						</p>
+						<p>
+							You pay from a prepaid credit balance. Top up with a card when
+							Polar checkout is enabled, deposit USDC directly on Base to the
+							treasury, or settle per-request via x402 (EIP-3009) — an agent
+							signs the payment envelope, OMA verifies it, and spends with an
+							API key. There are no subscriptions and no minimums.
+						</p>
+						<p>
+							Auth is passwordless by default: magic-link email or SIWE with
+							your existing wallet. Usage and spend are metered for billing;
+							prompt and completion content are not logged.
+						</p>
+					</div>
+				</section>
+
 				<div className="flex flex-wrap gap-3">
 					<Link href="/login" className="btn-mono btn-primary">
 						<span>Get API key</span>
