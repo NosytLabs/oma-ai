@@ -30,7 +30,7 @@ const ROUNDS: DemoRound[] = [
 	modelLabel: "Claude Opus 5",
 	prompt: "Summarize OMA in one sentence.",
 	reply:
-	"One gateway for every OMA model — buy credits by card, deposit USDC, or settle USDC via x402.",
+	"One gateway for every OMA model. Buy credits by card, deposit USDC, or settle USDC via x402.",
 	},
 	{
 	model: "deepseek-v4-flash-0731-openbroker",
@@ -43,7 +43,7 @@ const ROUNDS: DemoRound[] = [
 	model: "llama-3.3-70b",
 	modelLabel: "Llama 3.3 70B",
 	prompt: "What's the cheapest chat model?",
-	reply: "OMA budget tier — from $0.15 per 1M input tokens. x402 ready.",
+	reply: "OMA budget tier, from $0.15 per 1M input tokens. x402 ready.",
 	},
 ];
 

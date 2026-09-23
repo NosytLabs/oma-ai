@@ -101,11 +101,11 @@ const POLAR_TIERS: Array<{
 }> = CREDIT_PLANS.map((p) => {
 	const tierCopy: Record<string, { description: string; badge?: string }> = {
 		Hobby: {
-			description: "A small, flexible start for side projects and exploration.",
+			description: "A small start for side projects and first experiments.",
 		},
 		Builder: {
 			description:
-				"A practical runway for production apps and autonomous agents.",
+				"Enough credits to carry a production app or an autonomous agent.",
 			badge: "Recommended",
 		},
 		Scale: {
@@ -272,7 +272,7 @@ export default function PricingPage() {
 					<p className="page-intro">
 						See model costs first, then choose how to pay. OMA bills from
 						prepaid credits per token, with no subscriptions and no lock-in.
-						Listed prices are what you pay — Venice-routed models include a
+						Listed prices are what you pay: Venice-routed models include a
 						25% platform fee; OMA-AI models are priced at 2x Gonka wholesale.
 					</p>
 					<div className="meta-strip">
@@ -496,8 +496,8 @@ export default function PricingPage() {
 									</span>
 								</div>
 								<p className="mt-2 text-sm text-text-secondary leading-relaxed">
-									Native x402 support lets applications fund with USDC on Base —
-									no card, no signup dance. Verify once, spend with an API key.
+									Native x402 support lets applications fund with USDC on Base
+									without a card. Verify once, spend with an API key.
 									<Link
 										href="/docs#x402"
 										className="ml-2 font-medium text-accent hover:text-accent-hover transition-colors duration-200 ease-out inline-flex items-center"

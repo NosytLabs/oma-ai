@@ -36,7 +36,7 @@ Passwordless onboarding with magic-link email sign-in or SIWE (Sign-In with Ethe
 Agent-native USDC funding powered by EIP-3009. Agents sign the payment envelope, verify at `/x402/verify`, and spend with an API key — same listed prices in USDC on Base. No subscriptions, no minimums.
 
 ### 🛡️ Fallback Routing & Circuit Breakers
-Built-in health checks and automatic provider failover. If one upstream goes down, OMA-AI seamlessly routes traffic to the next best available model—so your app stays up.
+Built-in health checks and automatic provider failover. If one upstream goes down, OMA-AI routes traffic to the next available model so your app stays up.
 
 ### 📊 Developer Dashboard
 Manage API keys, monitor real-time usage and spend, inspect request logs, and configure model preferences—all from a polished, real-time dashboard.
@@ -75,7 +75,7 @@ Get OMA-AI running locally in under 2 minutes.
 
 ### Prerequisites
 
-- **Node.js** ≥ 20
+- **Node.js** ≥ 24
 - **pnpm** 9.x (pinned via `packageManager`)
 - **PostgreSQL** 16 (local or Docker)
 - **Redis** (local or Docker)
@@ -189,7 +189,7 @@ oma-ai/
 ```
 
 - **USDC direct deposits (Base):** a watcher daemon verifies Transfer logs to the treasury and credits balances.
-- **x402 funding:** EIP-3009 USDC envelopes verified at `/x402/verify`, gasless via the QuickNode facilitator; spend with an API key.
+- **x402 funding:** EIP-3009 USDC envelopes verified at `/x402/verify` and settled by a self-hosted facilitator (viem + `CHAIN_RPC_URL`); QuickNode serves only as the Base RPC provider. Spend with an API key.
 
 ### Production Docker Builds
 
@@ -199,6 +199,15 @@ docker build -t oma-server -f server/Dockerfile .
 ```
 
 For end-to-end self-hosting on Coolify (or any Docker Compose host), including the Caddy reverse proxy, environment checklist, and Polar webhook setup, see [`deploy/coolify/README.md`](deploy/coolify/README.md).
+
+For the production backend running as a Neon Function, the infra-as-code manifest lives in `server/neon.ts`. From the repo root, preview and deploy with:
+
+```bash
+neon config plan --config server/neon.ts            # preview changes (no apply)
+neon deploy --config server/neon.ts --update-existing
+```
+
+(`NEON_API_KEY` must be exported.) The manifest registers the `omaapi` function plus the `oma-deposit-recovery` scheduled trigger.
 
 ---
 

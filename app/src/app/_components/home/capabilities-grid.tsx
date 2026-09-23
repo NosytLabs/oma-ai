@@ -295,7 +295,7 @@ export function CapabilitiesGrid() {
 		</span>
 		</>
 		}
-		subhead="Pay with credits, settle USDC via x402, or route privately — OMA is built for maximum developer control and zero lock-in."
+		subhead="Pay with credits, settle USDC via x402, or route privately. No subscription, no vendor lock-in."
 	/>
 	</Reveal>
 

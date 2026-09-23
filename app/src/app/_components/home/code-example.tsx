@@ -19,7 +19,7 @@ function buildExampleCode(modelCount: number) {
 	return `import OpenAI from "openai";
 
 const client = new OpenAI({
-	apiKey: process.env.OMA_KEY, // one key for every model
+	apiKey: process.env.OPENAI_KEY, // one key for every model
 	baseURL: "https://api.oma-ai.com/v1",
 });
 
@@ -55,7 +55,7 @@ export function CodeExample({ modelCount }: CodeExampleProps) {
 								</span>
 							</>
 						}
-						subhead="Drop-in OpenAI compatibility. Swap baseURL, keep your SDK. Migrate per-request or per-team — no platform lock-in."
+						subhead="Drop-in OpenAI compatibility. Swap in your baseURL, keep your SDK, and move per-request or per-team. There is no platform lock-in."
 					/>
 				</Reveal>
 
