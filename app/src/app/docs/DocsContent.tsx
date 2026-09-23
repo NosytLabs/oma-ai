@@ -13,6 +13,7 @@ import { AuthenticationSection } from "./sections/authentication";
 import { AvailableModelsSection } from "./sections/available-models";
 import { EndpointsSection } from "./sections/endpoints";
 import { ErrorsSection } from "./sections/errors";
+import { WebhooksSection } from "./sections/webhooks";
 import { IntegrationsSection } from "./sections/integrations";
 import { PricingSection } from "./sections/pricing";
 import { ProviderRoutingSection } from "./sections/provider-routing";
@@ -227,6 +228,7 @@ export function DocsContent() {
 							<PricingSection />
 							<X402Section />
 							<SDKsSection />
+							<WebhooksSection />
 							<ErrorsSection />
 						</div>
 					</div>

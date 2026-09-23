@@ -40,7 +40,7 @@ const TERMS: Term[] = [
 	},
 	{
 		term: "Context window",
-		def: "How much text a model can see at once — your whole conversation, pasted documents, and its answer. OMA offers models with up to 1M+ token windows: enough to read an entire book in one go.",
+		def: "How much text a model can see at once — your whole conversation, pasted documents, and its answer. OMA offers models with up to 1M token windows: enough to read an entire book in one go.",
 	},
 	{
 		term: "Model",

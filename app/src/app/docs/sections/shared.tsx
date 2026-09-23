@@ -183,7 +183,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 	"id": "llama-3.3-70b",
 	"object": "model",
 	"created": 1717194000,
-	"owned_by": "oma",
+	"owned_by": "venice",
 	"permission": [],
 	"root": "llama-3.3-70b",
 	"parent": null,
@@ -456,6 +456,16 @@ export const ENDPOINTS: EndpointInfo[] = [
 	"receipt": { "txHash": "0x…", "amount": "…", "networkId": "8453" }
 }`,
 	},
+	{
+		method: "POST",
+		path: "/x402/settle",
+		anchor: "ep-x402-settle",
+		title: "x402 Payment Settle",
+		desc: "Credits the authenticated user's balance for a previously-verified x402 USDC payment. Requires a session API key. Call this after a successful /x402/verify. Amount is derived server-side from the verified payment — never from the request body. Idempotent across retries.",
+		auth: "Bearer token (API key) or session cookie",
+		body: undefined,
+		response: `{ "settled": true, "receipt": { "txHash": "0x…", "amount": "…", "networkId": "8453" } }`,
+	},
 ];
 
 export const ERROR_CODES: ErrorInfo[] = [
@@ -475,9 +485,29 @@ export const ERROR_CODES: ErrorInfo[] = [
 		desc: "Insufficient credits. Deposit more USDC or settle via x402, then retry.",
 	},
 	{
+		code: 403,
+		type: "forbidden",
+		desc: "Authenticated but not allowed. E.g. a resource/endpoint you lack permission for, or feature_disabled.",
+	},
+	{
+		code: 404,
+		type: "not_found",
+		desc: "Route, model, key, or resource does not exist.",
+	},
+	{
+		code: 409,
+		type: "conflict",
+		desc: "Request conflicts with current state (e.g. settle already applied to another account).",
+	},
+	{
+		code: 422,
+		type: "validation_error",
+		desc: "Request is well-formed but semantically invalid; also returned as invalid_request_error for schema failures.",
+	},
+	{
 		code: 429,
 		type: "rate_limit_error",
-		desc: "Rate limit exceeded. Wait Retry-After seconds, then retry.",
+		desc: "Rate limit exceeded. Wait Retry-After seconds, then retry. Specific codes: rate_limit_exceeded, daily_limit_exceeded.",
 	},
 	{
 		code: 500,

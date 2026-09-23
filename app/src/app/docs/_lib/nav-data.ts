@@ -9,6 +9,7 @@ import {
 	Key,
 	Package,
 	Play,
+	Radio,
 	Terminal,
 	Zap,
 } from "lucide-react";
@@ -116,6 +117,7 @@ export const NAV_ITEMS: NavItem[] = [
 			{ id: "ep-keys-create", label: "Create API key" },
 			{ id: "ep-keys-revoke", label: "Revoke API key" },
 			{ id: "ep-x402-verify", label: "x402 verify" },
+			{ id: "ep-x402-settle", label: "x402 settle" },
 		],
 	},
 	{
@@ -267,6 +269,18 @@ export const NAV_ITEMS: NavItem[] = [
 			{ id: "sdk-stream", label: "Streaming" },
 			{ id: "sdk-models", label: "List Models" },
 			{ id: "sdk-vercel", label: "Vercel AI SDK" },
+		],
+	},
+	{
+		id: "webhooks",
+		label: "Webhooks",
+		icon: Radio,
+		keywords: ["webhook", "event", "polar", "order", "subscription", "callback", "signature", "push"],
+		headings: [
+			{ id: "wh-what", label: "When to use them" },
+			{ id: "wh-endpoint", label: "Endpoint" },
+			{ id: "wh-sig", label: "Signature verification" },
+			{ id: "wh-events", label: "Supported events" },
 		],
 	},
 	{
