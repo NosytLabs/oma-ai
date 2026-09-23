@@ -44,7 +44,7 @@ adminRoutes.post(
 		"/v1/admin/site-settings",
 		sessionOrBearerAuth,
 		requireAdmin(),
-		rateLimit({ windowMs: 60_000, maxRequests: 30 }),
+		rateLimit({ windowMs: 60_000, maxRequests: 30, failClosed: false }),
 		// SECURITY (audit 5.4): the SITE_SETTINGS_UPDATED action is fixed,
 		// so the audit middleware factory is the right tool. The handler
 		// stashes the patch on the context before returning; the middleware
@@ -120,7 +120,7 @@ adminRoutes.post(
 		"/v1/admin/credit-adjust",
 		sessionOrBearerAuth,
 		requireAdmin(),
-		rateLimit({ windowMs: 60_000, maxRequests: 30 }),
+		rateLimit({ windowMs: 60_000, maxRequests: 30, failClosed: false }),
 		async (c) => {
 				const body = await c.req.json().catch(() => null);
 				const parsed = creditAdjustSchema.safeParse(body);
@@ -189,7 +189,7 @@ adminRoutes.post(
 		"/v1/admin/user-suspend",
 		sessionOrBearerAuth,
 		requireAdmin(),
-		rateLimit({ windowMs: 60_000, maxRequests: 30 }),
+		rateLimit({ windowMs: 60_000, maxRequests: 30, failClosed: false }),
 		async (c) => {
 				const body = await c.req.json().catch(() => null);
 				const parsed = suspendSchema.safeParse(body);
@@ -245,7 +245,7 @@ adminRoutes.post(
 		"/v1/admin/rate-limit-override",
 		sessionOrBearerAuth,
 		requireAdmin(),
-		rateLimit({ windowMs: 60_000, maxRequests: 30 }),
+		rateLimit({ windowMs: 60_000, maxRequests: 30, failClosed: false }),
 		async (c) => {
 				const body = await c.req.json().catch(() => null);
 				const parsed = rateLimitOverrideSchema.safeParse(body);
@@ -314,7 +314,7 @@ adminRoutes.get(
 		"/v1/admin/users",
 		sessionOrBearerAuth,
 		requireAdmin(),
-		rateLimit({ windowMs: 60_000, maxRequests: 60 }),
+		rateLimit({ windowMs: 60_000, maxRequests: 60, failClosed: false }),
 		async (c) => {
 				const url = new URL(c.req.url);
 				const parsed = listUsersSchema.safeParse({

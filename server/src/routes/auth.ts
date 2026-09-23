@@ -272,7 +272,7 @@ authRoutes.get("/v1/keys", sessionAuth, async (c) => {
 // POST /v1/keys — mint a new key. Returns the raw key ONCE.
 authRoutes.post(
 		"/v1/keys",
-		rateLimit({ windowMs: 60_000, maxRequests: 10 }),
+		rateLimit({ windowMs: 60_000, maxRequests: 10, failClosed: false }),
 		sessionAuth,
 		async (c) => {
 				const userId = c.get("userId");
