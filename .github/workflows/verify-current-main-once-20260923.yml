@@ -23,3 +23,5 @@ jobs:
       - run: pnpm validate
       - run: pnpm --filter app run build
       - run: pnpm --filter oma-server run build
+
+# retry: lint-fix
