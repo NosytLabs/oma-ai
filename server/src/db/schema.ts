@@ -211,6 +211,11 @@ export const account = pgTable("account", {
 		userId: text("user_id")
 				.notNull()
 				.references(() => user.id, { onDelete: "cascade" }),
+		// Better Auth requires this column on the account model (used by the
+		// SIWE/oauth account-linking insert path). Missing before wallet sign-in
+		// errored with 'The field "issuer" does not exist in the "account"
+		// Drizzle schema' during siwe.verify.
+		issuer: text("issuer"),
 		accessToken: text("access_token"),
 		refreshToken: text("refresh_token"),
 		idToken: text("id_token"),
