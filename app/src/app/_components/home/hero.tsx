@@ -46,9 +46,8 @@ export function Hero() {
 						{...reveal()}
 						className="mx-auto mt-6 max-w-2xl text-balance text-base leading-relaxed text-text-secondary sm:mt-7 sm:text-lg md:text-xl"
 					>
-						One OpenAI-compatible endpoint for every model. Start in the playground, then
-						create an API key when you are ready to build. Credits use USDC on Base;
-						agents can settle with x402.
+						One OpenAI-compatible endpoint, 20 models, in minutes. Try it free in
+						the playground, then create an API key when you are ready to build.
 					</m.p>
 
 					<m.div

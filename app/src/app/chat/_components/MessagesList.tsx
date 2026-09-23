@@ -207,7 +207,13 @@ export function MessagesList({
 			<div className="max-w-4xl mx-auto relative z-0 min-h-full">
 				{deferredMessages.length === 0 ? (
 					<div className="pb-8">
-						<div className={isAuthenticated ? "pt-8 md:pt-16" : "pt-4 md:pt-6"}>
+						<div
+							className={
+								isAuthenticated
+									? "pt-8 md:pt-16"
+									: "flex min-h-[58vh] flex-col justify-center pt-6 md:min-h-[62vh]"
+							}
+						>
 							<ChatEmptyState signedIn={isAuthenticated} />
 						</div>
 					</div>
