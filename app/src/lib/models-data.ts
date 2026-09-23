@@ -16,7 +16,7 @@
 //     `generateStaticParams`) keeps working without an async fetch; the
 //     lazy loader returns the full catalog for anything that needs it.
 //   - The static fallback mirrors the curated server catalog exactly
-//     (20 chat models: 18 Venice + 2 OMA-AI). See `MODEL_COUNT`.
+//     (23 chat models: 18 Venice + 2 OMA-AI + 3 NVIDIA/litellm). See `MODEL_COUNT`.
 //
 // Public API is preserved: `Model`, `Capability`, `Provider`, `Tier`,
 // `formatPricePerMillion`, `getModelsByTier`,
@@ -778,6 +778,38 @@ const FALLBACK_CATALOG: RawCatalog = {
 		outputPricePer1M: 0.50,
 		capabilities: ["chat", "reasoning", "fast", "tools"],
 	},
+	// NVIDIA API upstream (generic litellm provider). Backed by the operator's
+	// NVIDIA Build key — verified live on integrate.api.nvidia.com/v1.
+	"nvidia-gpt-oss-20b": {
+		id: "nvidia-gpt-oss-20b",
+		displayName: "NVIDIA GPT-OSS 20B",
+		provider: "litellm",
+		category: "budget",
+		maxTokens: 32768,
+		inputPricePer1M: 0,
+		outputPricePer1M: 0,
+		capabilities: ["chat", "reasoning", "coding", "tools"],
+	},
+	"nvidia-glm-5-3-flash": {
+		id: "nvidia-glm-5-3-flash",
+		displayName: "NVIDIA GLM-5.3 Flash",
+		provider: "litellm",
+		category: "budget",
+		maxTokens: 128000,
+		inputPricePer1M: 0,
+		outputPricePer1M: 0,
+		capabilities: ["chat", "reasoning", "fast", "tools"],
+	},
+	"nvidia-kimi-k3": {
+		id: "nvidia-kimi-k3",
+		displayName: "NVIDIA Kimi K3",
+		provider: "litellm",
+		category: "mid",
+		maxTokens: 128000,
+		inputPricePer1M: 0,
+		outputPricePer1M: 0,
+		capabilities: ["chat", "reasoning", "tools"],
+	},
 	},
 };
 
@@ -815,10 +847,10 @@ export function getModelsByTier(models: Model[]): Record<Tier, Model[]> {
 }
 
 // Marketing model count surfaced across the UI. Must match the live
-// `GET /v1/models` count — 20 curated chat models (18 Venice + 2 OMA-AI).
+// `GET /v1/models` count — 23 curated chat models (18 Venice + 2 OMA-AI + 3 NVIDIA).
 // Kept in sync with `server/src/inference/models.ts` defaultCatalog().
 // The 2 OMA-AI models are the exact set served by api.openbroker.gonka.gg.
-export const MODEL_COUNT = 20;
+export const MODEL_COUNT = 23;
 
 // DRIFT GUARD: if anyone adds/removes an entry in `FALLBACK_CATALOG`
 // they MUST update `MODEL_COUNT` above — these are the marketing
