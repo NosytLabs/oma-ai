@@ -317,6 +317,11 @@ const authMutationLimit = rateLimit({
 		windowMs: 60_000,
 		maxRequests: 40,
 		keyPrefix: "auth",
+		// Fail open when Redis is unavailable so a Redis blip never bricks the
+		// whole login flow (magic-link, SIWE, OTP). Abuse is still bounded by the
+		// per-email `checkEmailSendCooldown` (which also fails open) and the
+		// per-IP `extractClientIp` keying; on return of Redis, limiting resumes.
+		failClosed: false,
 });
 app.use("/api/auth/*", async (c, next) => {
 		const path = c.req.path;

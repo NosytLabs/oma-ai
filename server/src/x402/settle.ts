@@ -23,7 +23,7 @@ async function acquireSettlementLock(cacheKey: string): Promise<boolean> {
 		const redis = await getRedisClient();
 		if (!redis) return true;
 		const lockKey = `settlement:lock:${cacheKey}`;
-		const result = await redis.set(lockKey, "1", { NX: true, EX: LOCK_TTL_SECONDS });
+		const result = await redis.set(lockKey, "1", { nx: true, ex: LOCK_TTL_SECONDS });
 		return result === "OK";
 }
 

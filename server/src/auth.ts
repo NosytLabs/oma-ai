@@ -57,7 +57,7 @@ export async function checkEmailSendCooldown(
 		return { ok: true };
 	}
 	try {
-		const set = await redis.set(key, "1", { NX: true, EX: EMAIL_SEND_COOLDOWN_SECONDS });
+		const set = await redis.set(key, "1", { nx: true, ex: EMAIL_SEND_COOLDOWN_SECONDS });
 		if (set === "OK") return { ok: true };
 		const ttl = await redis.ttl(key);
 		return { ok: false, retryAfter: ttl > 0 ? ttl : EMAIL_SEND_COOLDOWN_SECONDS };

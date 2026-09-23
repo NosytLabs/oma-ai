@@ -51,7 +51,7 @@ export async function addToDlq(provider: string, rawBody: string, errorMessage: 
 		};
 
 		try {
-				await redis.lPush(DLQ_LISTS[listName], JSON.stringify(entry));
+				await redis.lpush(DLQ_LISTS[listName], JSON.stringify(entry));
 		} catch (err) {
 				logger.error({ err, provider }, "[DLQ] Error pushing to DLQ");
 		}
@@ -80,7 +80,7 @@ export async function addSettlementToDlq(
 		};
 
 		try {
-				await redis.lPush(DLQ_LISTS.settlement, JSON.stringify(entry));
+				await redis.lpush(DLQ_LISTS.settlement, JSON.stringify(entry));
 		} catch (err) {
 				logger.error({ err, orderId }, "[DLQ] Error pushing settlement to DLQ");
 		}
@@ -91,8 +91,8 @@ export async function getDlqEntries(start: number, count: number, listName: keyo
 		if (!redis) return [];
 
 		try {
-				const entries = await redis.lRange(DLQ_LISTS[listName], start, start + count - 1);
-				return entries.map((e) => JSON.parse(e) as DlqEntry);
+				const entries = await redis.lrange(DLQ_LISTS[listName], start, start + count - 1);
+				return entries.map((e: string) => JSON.parse(e) as DlqEntry);
 		} catch (err) {
 				logger.error({ err, listName }, "[DLQ] Error reading from DLQ");
 				return [];
@@ -104,8 +104,8 @@ export async function getSettlementDlqEntries(start: number, count: number): Pro
 		if (!redis) return [];
 
 		try {
-				const entries = await redis.lRange(DLQ_LISTS.settlement, start, start + count - 1);
-				return entries.map((e) => JSON.parse(e) as SettlementDlqEntry);
+				const entries = await redis.lrange(DLQ_LISTS.settlement, start, start + count - 1);
+				return entries.map((e: string) => JSON.parse(e) as SettlementDlqEntry);
 		} catch (err) {
 				logger.error({ err }, "[DLQ] Error reading settlement DLQ");
 				return [];
@@ -117,11 +117,11 @@ export async function retryFromDlq(): Promise<DlqEntry | null> {
 		if (!redis) return null;
 
 		try {
-				const entries = await redis.lRange(DLQ_LISTS.webhook, 0, 0);
+				const entries = await redis.lrange(DLQ_LISTS.webhook, 0, 0);
 				if (entries.length === 0) return null;
 
 				const entry = JSON.parse(entries[0]) as DlqEntry;
-				await redis.lTrim(DLQ_LISTS.webhook, 1, -1);
+				await redis.ltrim(DLQ_LISTS.webhook, 1, -1);
 				return entry;
 		} catch (err) {
 				logger.error({ err }, "[DLQ] Error retrying from DLQ");
@@ -134,11 +134,11 @@ export async function retrySettlementFromDlq(): Promise<SettlementDlqEntry | nul
 		if (!redis) return null;
 
 		try {
-				const entries = await redis.lRange(DLQ_LISTS.settlement, 0, 0);
+				const entries = await redis.lrange(DLQ_LISTS.settlement, 0, 0);
 				if (entries.length === 0) return null;
 
 				const entry = JSON.parse(entries[0]) as SettlementDlqEntry;
-				await redis.lTrim(DLQ_LISTS.settlement, 1, -1);
+				await redis.ltrim(DLQ_LISTS.settlement, 1, -1);
 				return entry;
 		} catch (err) {
 				logger.error({ err }, "[DLQ] Error retrying settlement from DLQ");
@@ -167,18 +167,18 @@ export async function removeSettlementDlqEntry(index: number): Promise<boolean> 
 				// Read ALL entries in the list (LRANGE 0 -1) so we can rebuild it
 				// without the target entry. lTrim cannot remove a single element
 				// by index — it only KEEPS a range. We must DEL + RPUSH.
-				const allEntries = await redis.lRange(DLQ_LISTS.settlement, 0, -1);
+				const allEntries = await redis.lrange(DLQ_LISTS.settlement, 0, -1);
 				if (allEntries.length === 0) return false;
 				if (index < 0 || index >= allEntries.length) return false;
 
-				const remaining = allEntries.filter((_, i) => i !== index);
+				const remaining = allEntries.filter((_: string, i) => i !== index);
 
 				// Atomically replace the list: DEL + RPUSH preserves the original
 				// insertion order (lPush on the producer side, so consumers iterate
 				// oldest-first; rPush here restores the same order from oldest to newest).
 				await redis.del(DLQ_LISTS.settlement);
 				if (remaining.length > 0) {
-						await redis.rPush(DLQ_LISTS.settlement, remaining);
+						await redis.rpush(DLQ_LISTS.settlement, remaining);
 				}
 				return true;
 		} catch (err) {
@@ -192,7 +192,7 @@ export async function getSettlementDlqLength(): Promise<number> {
 		if (!redis) return 0;
 
 		try {
-				return await redis.lLen(DLQ_LISTS.settlement);
+				return await redis.llen(DLQ_LISTS.settlement);
 		} catch (err) {
 				logger.error({ err }, "[DLQ] Error getting settlement DLQ length");
 				return 0;

@@ -32,14 +32,11 @@ export async function checkTokenBucket(
 				// node-redis v4+ requires eval({ keys, arguments }) with string ARGV.
 				// The legacy (script, numKeys, key, ...args) form fails at runtime with
 				// "Lua redis lib command arguments must be strings or integers".
-				const result = (await redis.eval(TOKEN_BUCKET_SCRIPT, {
-						keys: [key],
-						arguments: [
-								String(config.bucketSize),
-								String(config.refillRate),
-								String(requested),
-						],
-				})) as RedisEvalResult;
+				const result = (await redis.eval(TOKEN_BUCKET_SCRIPT, [key], [
+						String(config.bucketSize),
+						String(config.refillRate),
+						String(requested),
+				])) as RedisEvalResult;
 				return {
 						allowed: result[0] === 1,
 						remaining: Math.floor(result[1]),

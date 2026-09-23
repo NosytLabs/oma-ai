@@ -25,6 +25,12 @@ const envBoolean = z.preprocess(parseBooleanEnv, z.boolean());
 const envSchema = z.object({
 		DATABASE_URL: z.string().min(1).optional().default("postgresql://localhost:5432/oma"),
 		REDIS_URL: z.string().min(1).optional().default("redis://localhost:6379"),
+		// Upstash (serverless/HTTP) Redis — preferred over a local TCP Redis
+		// daemon so the server runs without Docker on both Neon and local dev.
+		UPSTASH_REDIS_REST_URL: z.string().optional(),
+		UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
+		// Compat fallback token for REDIS_URL-based connection strings.
+		REDIS_TOKEN: z.string().optional(),
 		VENICE_API_KEY: z.string().min(1).optional(),
 		VENICE_API_URL: z.string().min(1).default("https://api.venice.ai"),
 		// OMA-AI resale upstream (branded "oma-ai" to users):

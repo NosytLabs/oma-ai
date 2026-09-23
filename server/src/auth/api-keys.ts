@@ -225,7 +225,7 @@ export async function validateApiKey(rawKey: string): Promise<ApiKey | null> {
 				try {
 						const cached = await redis.get(`apikey:${keyHash}`);
 						if (cached) {
-								const apiKey = JSON.parse(cached) as ApiKey;
+								const apiKey = JSON.parse(cached as string) as ApiKey;
 								const rawPrefix = rawKey.slice(0, 12);
 								if (!timingSafeEqual(apiKey.keyPrefix, rawPrefix)) return null;
 								if (apiKey.active === false) {
@@ -235,7 +235,7 @@ export async function validateApiKey(rawKey: string): Promise<ApiKey | null> {
 								if (apiKey.expiresAt && new Date(apiKey.expiresAt) < now) {
 										return { ...apiKey, expired: true };
 								}
-								await redis.setEx(`apikey:${keyHash}`, API_KEY_CACHE_TTL_SECONDS, JSON.stringify(apiKey));
+								await redis.setex(`apikey:${keyHash}`, API_KEY_CACHE_TTL_SECONDS, JSON.stringify(apiKey));
 								return apiKey;
 						}
 				} catch { /* ignore cache errors */ }
@@ -265,7 +265,7 @@ export async function validateApiKey(rawKey: string): Promise<ApiKey | null> {
 
 		if (redis) {
 				try {
-						await redis.setEx(`apikey:${keyHash}`, API_KEY_CACHE_TTL_SECONDS, JSON.stringify(apiKey));
+						await redis.setex(`apikey:${keyHash}`, API_KEY_CACHE_TTL_SECONDS, JSON.stringify(apiKey));
 				} catch { /* ignore cache errors */ }
 		}
 

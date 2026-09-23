@@ -65,7 +65,7 @@ export async function consumeNonce(nonce: string | undefined): Promise<{ ok: boo
 		// Redis available - clear the warning flag
 		consumeNonce._redisWarned = false;
 		const key = `x402:nonce:${nonce}`;
-		const set = await redis.set(key, "1", { NX: true, EX: NONCE_REDIS_TTL_SECONDS });
+		const set = await redis.set(key, "1", { nx: true, ex: NONCE_REDIS_TTL_SECONDS });
 		return set === "OK" ? { ok: true } : { ok: false, reason: "nonce_already_used" };
 }
 
