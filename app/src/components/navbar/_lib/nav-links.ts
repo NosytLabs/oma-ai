@@ -86,7 +86,7 @@ export const mobileGroups: NavGroup[] = [
 ];
 
 /** Mobile-menu "account" card links. Treated as active when the current
-	*  pathname is any of these (used to highlight the card outline). */
+ *  pathname is any of these (used to highlight the card outline). */
 /** Mobile account card — only true account surfaces (not docs). */
 export const accountHrefs = [
 	"/dashboard",
@@ -107,17 +107,11 @@ export function sectionLabelFor(pathname: string): string {
 	const matched = primaryLinks.find((link) =>
 		isCurrentPath(pathname, link.href),
 	);
-	if (matched) {
-		const label = matched.label.replace(/^\//, "").split("/")[0];
-		return label ?? "home";
-	}
+	if (matched) return matched.label;
 	const toolsMatched = toolsLinks.find((link) =>
 		isCurrentPath(pathname, link.href),
 	);
-	if (toolsMatched) {
-		const label = toolsMatched.label.replace(/^\//, "").split("/")[0];
-		return label ?? "home";
-	}
+	if (toolsMatched) return toolsMatched.label;
 	const segment = pathname.split("/").filter(Boolean)[0];
 	return segment ?? "home";
 }
