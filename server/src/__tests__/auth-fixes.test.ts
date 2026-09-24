@@ -77,11 +77,24 @@ vi.mock("better-auth/adapters/drizzle", () => ({
 		drizzleAdapter: vi.fn(),
 }));
 
+// Capture the options each plugin was constructed with so tests can assert
+// the real security-relevant config (e.g. magicLink's storeToken).
+const capturedPluginOpts = vi.hoisted(() => ({
+	magicLink: undefined as Record<string, unknown> | undefined,
+	siwe: undefined as Record<string, unknown> | undefined,
+}));
+
 vi.mock("better-auth/plugins", () => ({
-		magicLink: () => ({}),
-		siwe: () => ({}),
-		emailOTP: (opts: { sendVerificationOTP?: unknown }) => opts,
-		admin: () => ({}),
+	magicLink: (opts: Record<string, unknown>) => {
+		capturedPluginOpts.magicLink = opts;
+		return {};
+	},
+	siwe: (opts: Record<string, unknown>) => {
+		capturedPluginOpts.siwe = opts;
+		return {};
+	},
+	emailOTP: (opts: { sendVerificationOTP?: unknown }) => opts,
+	admin: () => ({}),
 }));
 
 vi.mock("@better-auth/agent-auth", () => ({
@@ -182,7 +195,27 @@ describe("free-trial credit via creditGrants (audit fix #4)", () => {
 
 describe("auth.ts boots with the audit-fix surface", () => {
 		it("exports a configured better-auth instance", () => {
-				expect(auth).toBeDefined();
-				expect(typeof (auth as { handler: unknown }).handler).toBe("function");
+			expect(auth).toBeDefined();
+			expect(typeof (auth as { handler: unknown }).handler).toBe("function");
+		});
+});
+
+describe("auth plugin security configuration", () => {
+		it("stores magic-link tokens hashed, not in plaintext", () => {
+			// better-auth's magicLink plugin defaults storeToken to "plain",
+			// persisting the sign-in token verbatim. That turns any read-only
+			// DB leak into a set of replayable sign-in links. Pin the hardened
+			// value so a dependency bump cannot silently revert it.
+			expect(capturedPluginOpts.magicLink).toBeDefined();
+			expect(capturedPluginOpts.magicLink?.storeToken).toBe("hashed");
+		});
+
+		it("gives the siwe plugin exactly one domain string", () => {
+			// SIWEPluginOptions.domain is a single string — the plugin rejects
+			// a message whose domain differs. Assert it is a non-empty string
+			// (not an array, which cannot be passed and would break sign-in).
+			const domain = capturedPluginOpts.siwe?.domain;
+			expect(typeof domain).toBe("string");
+			expect((domain as string).length).toBeGreaterThan(0);
 		});
 });

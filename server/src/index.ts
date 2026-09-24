@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import { cors } from "hono/cors";
 import { compress } from "hono/compress";
 import { serve } from "@hono/node-server";
@@ -135,6 +136,24 @@ app.use("*", async (c, next) => {
 
 app.use("*", compress());
 app.use("*", securityHeaders);
+
+// SECURITY: without an explicit body limit, any route that calls
+// c.req.json()/text()/arrayBuffer() will buffer an arbitrarily large
+// request into memory first. A single oversized POST to /v1/chat/completions
+// is enough to pressure the worker. 2 MiB comfortably covers a large
+// multimodal/tool payload; anything larger should be chunked client-side.
+app.use("*", bodyLimit({ maxSize: 2 * 1024 * 1024, onError: (c) =>
+	c.json(
+		{
+			error: {
+				message: "Request body is too large",
+				type: "invalid_request_error",
+				code: "payload_too_large",
+			},
+		},
+		413,
+	),
+}));
 
 const corsOptions = {
 		origin: (origin: string | undefined): string | null => {

@@ -134,7 +134,12 @@ const { mockConfig, TREASURY } = vi.hoisted(() => ({
 				TREASURY_BASE_ADDRESS: "0x8581784D3E598cCa3482375CFF2409Ac9DD8c402",
 		},
 }));
-vi.mock("../../config.js", () => ({ config: mockConfig }));
+vi.mock("../../config.js", () => ({
+	config: mockConfig,
+	// facilitator.ts gates its dev-only test routes on this export.
+	// false keeps those routes mounted, matching this suite's dev setup.
+	isProductionEnv: false,
+}));
 
 // ── Auth middleware mock ─────────────────────────────────────
 vi.mock("../../auth/middleware.js", () => ({

@@ -4,6 +4,7 @@ import { config } from "../config.js";
 import { db } from "../db/client.js";
 import { sql } from "drizzle-orm";
 import { redisHealthCheck } from "../lib/redis-client.js";
+import { logger } from "../lib/logger.js";
 
 export const healthRoutes = new Hono<OmaEnv>();
 
@@ -48,12 +49,13 @@ healthRoutes.get("/ready", async (c) => {
 						latencyMs: Date.now() - dbStart,
 				};
 		} catch (err) {
-				checks.database = {
-						ok: false,
-						status: "outage",
-						latencyMs: Date.now() - dbStart,
-						error: err instanceof Error ? err.message : "db unreachable",
-				};
+			// SECURITY: /ready is public. Keep the raw driver message in the logs.
+			logger.error({ err }, "[health] database readiness check failed");
+			checks.database = {
+				ok: false,
+				status: "outage",
+				latencyMs: Date.now() - dbStart,
+			};
 		}
 
 		try {
@@ -66,11 +68,12 @@ healthRoutes.get("/ready", async (c) => {
 						error: redisOk ? undefined : redis.status,
 				};
 		} catch (err) {
-				checks.redis = {
-						ok: false,
-						status: "degraded",
-						error: err instanceof Error ? err.message : "redis check failed",
-				};
+			// SECURITY: /ready is public. Keep the raw driver message in the logs.
+			logger.error({ err }, "[health] redis readiness check failed");
+			checks.redis = {
+				ok: false,
+				status: "degraded",
+			};
 		}
 
 		const ready = Object.values(checks).every((c) => c.ok);

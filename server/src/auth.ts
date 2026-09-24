@@ -281,11 +281,29 @@ const isSecureCookieEnv = shouldUseSecureCookies(config.NODE_ENV);
 // The SIWE `domain` must equal the host the browser signs in from —
 // better-auth rejects the message when they differ ("...does not match
 // the expected nonce, domain, address, or chain ID"). In production that
-// is PRIMARY_DOMAIN (oma-ai.com); in dev the browser is on localhost, so
+// is the canonical www host; in dev the browser is on localhost, so
 // derive the host from PUBLIC_APP_URL (http://localhost:3000) instead of
 // demanding the production domain on a local origin.
+//
+// IMPORTANT: better-auth's siwe plugin accepts a SINGLE `domain: string`
+// (see SIWEPluginOptions in @better-auth/siwe), so there is no supported
+// way to allow-list both apex and www here. We therefore normalise to the
+// canonical www host rather than trusting PRIMARY_DOMAIN verbatim: the
+// apex 308-redirects to www, so a real browser is ALWAYS on www, and the
+// client signs window.location.host. Deriving the apex here would reject
+// every genuine wallet sign-in.
+//
+// An earlier attempt returned an array of allowed domains from this
+// function; that could never be passed to the plugin and silently left
+// the mismatch in place.
 function resolveSiweDomain(): string {
-	if (isSecureCookieEnv) return config.PRIMARY_DOMAIN ?? "oma-ai.com";
+	if (isSecureCookieEnv) {
+		const primary = (config.PRIMARY_DOMAIN ?? "oma-ai.com").trim();
+		// Only the apex/www pair needs canonicalising — that is the pair the
+		// site actually serves. Any other host (a preview deployment, a
+		// custom domain) is trusted exactly as configured.
+		return primary === "oma-ai.com" ? "www.oma-ai.com" : primary;
+	}
 	try {
 		const host = new URL(config.PUBLIC_APP_URL ?? "http://localhost:3000").host;
 		if (host) return host;
@@ -414,9 +432,17 @@ user: {
 
 		plugins: [
 				magicLink({
-						sendMagicLink,
-						expiresIn: 60 * 5,
-						disableSignUp: false,
+					sendMagicLink,
+					expiresIn: 60 * 5,
+					disableSignUp: false,
+					// SECURITY: better-auth's magicLink plugin defaults
+					// `storeToken` to "plain", which persists the sign-in token
+					// verbatim in the verification table. A read-only DB leak
+					// (backup, replica, SQLi, a stray pg_dump) would then hand
+					// an attacker every live magic link — a password reset token
+					// by another name. "hashed" stores a digest instead, so the
+					// stored value cannot be replayed.
+					storeToken: "hashed",
 				}),
 
 			siwe({

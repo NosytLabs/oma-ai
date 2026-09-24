@@ -105,7 +105,12 @@ const { mockConfig, TREASURY } = vi.hoisted(() => ({
 				APP_URL: 'https://oma-ai.com',
 		},
 }))
-vi.mock('../../config.js', () => ({ config: mockConfig }))
+vi.mock('../../config.js', () => ({
+	config: mockConfig,
+	// facilitator.ts gates its dev-only test routes on this export.
+	// false keeps those routes mounted, matching this suite's dev setup.
+	isProductionEnv: false,
+}))
 
 vi.mock('../../auth/middleware.js', () => ({
 		sessionAuth: async (c: { set: (k: string, v: unknown) => void; get: (k: string) => unknown; req: { header: (h: string) => string | undefined } }, next: () => void) => {

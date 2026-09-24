@@ -265,6 +265,10 @@ export { ADMIN_WALLET_ADDRESSES_SET };
 
 const validProductionEnvironments: string[] = ["production", "staging", "prod", "preview"];
 const isProductionEnv = validProductionEnvironments.includes(config.NODE_ENV);
+// Exported so capability guards (e.g. the x402 test routes) can reuse this
+// canonical list instead of hand-rolling `NODE_ENV !== "production"`, which
+// wrongly mounts dev-only routes on staging and preview deployments.
+export { isProductionEnv };
 
 // Better Auth prod guards — fail fast on insecure defaults before any
 // request is served. The dev defaults are obviously insecure (32-z char

@@ -20,7 +20,7 @@
 import { Hono } from "hono";
 import type { Context, Next, MiddlewareHandler } from "hono";
 import { sql } from "drizzle-orm";
-import { config } from "../config.js";
+import { config, isProductionEnv } from "../config.js";
 import { buildV2Challenge, buildXPaymentResponse, parseXPaymentHeader } from "./v2.js";
 import type { OmaEnv } from "../types.js";
 import { sessionAuth } from "../auth/middleware.js";
@@ -405,7 +405,7 @@ x402Routes.post("/x402/settle", sessionAuth, async (c) => {
 });
 
 // ── Test routes — dev/staging only ──────────────────────────────────────────
-if (config.NODE_ENV !== "production") {
+if (!isProductionEnv) {
 x402Routes.post("/x402/pay-req-test",
 		rateLimit({ windowMs: 60_000, maxRequests: 30 }),
 		async (c) => {
@@ -469,7 +469,7 @@ if (testPayeeAddress) {
 x402Routes.post("/x402/middleware-test", async (c) => {
 		return c.json({ success: true });
 });
-} // end NODE_ENV !== "production" test routes
+} // end dev-only test routes
 
 // Houdini/crosschain deposit flow removed — /v1/x402/proxy/chat/completions no longer exists.
 

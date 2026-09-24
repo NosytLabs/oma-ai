@@ -145,7 +145,12 @@ const { mockConfig } = vi.hoisted(() => ({
 				REDIS_URL: 'redis://localhost:6379',
 		},
 }))
-vi.mock('../../config.js', () => ({ config: mockConfig }))
+vi.mock('../../config.js', () => ({
+	config: mockConfig,
+	// facilitator.ts gates its dev-only test routes on this export.
+	// false keeps those routes mounted, matching this suite's dev setup.
+	isProductionEnv: false,
+}))
 
 vi.mock('../../auth/middleware.js', () => ({
 		sessionAuth: async (_c: unknown, next: () => void) => next(),
