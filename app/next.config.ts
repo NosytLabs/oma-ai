@@ -11,7 +11,9 @@ const nextConfig: NextConfig = {
 	devIndicators: false,
 	poweredByHeader: false,
 
-	eslint: { ignoreDuringBuilds: false },
+	// Next 16 removed the `eslint` config key entirely; the standalone
+	// `lint` script still runs eslint via the CLI. Keeping the key here is a
+	// hard TS2353 type error on NextConfig.
 	typescript: { ignoreBuildErrors: false },
 
 	// Next.js 15 dev server sends `Content-Encoding: gzip` on streamed RSC

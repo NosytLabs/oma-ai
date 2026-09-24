@@ -293,17 +293,24 @@ depositRoutes.get("/v1/site-settings", async (c) => {
 						Boolean(config.TREASURY_BASE_ADDRESS),
 		};
 		try {
-				const [settings] = await db.select().from(siteSettings).limit(1);
-				return c.json({
-						maintenanceMode: settings?.maintenanceMode ?? envDefaults.maintenanceMode,
-						cardPaymentsEnabled:
-								settings?.cardPaymentsEnabled ?? envDefaults.cardPaymentsEnabled,
-						cryptoPaymentsEnabled:
-								settings?.cryptoPaymentsEnabled ?? envDefaults.cryptoPaymentsEnabled,
-						usdcDepositConfigured: envDefaults.usdcDepositConfigured,
-						polarConfigured: envDefaults.polarConfigured,
-						x402Configured: envDefaults.x402Configured,
-				});
+			const [settings] = await db.select().from(siteSettings).limit(1);
+			// Card checkout is only advertised when it can actually complete.
+			// The admin toggle is a necessary-but-not-sufficient condition: the
+			// DB default is `true`, so a site with no POLAR_ACCESS_TOKEN and no
+			// product IDs was rendering a "Card · Polar" option that 404s on
+			// /checkout/session. Gate the advertised flag on BOTH the toggle and
+			// real Polar configuration, so the UI never offers a dead payment
+			// path. The toggle still governs intent; this governs capability.
+			const cardToggle = settings?.cardPaymentsEnabled ?? envDefaults.cardPaymentsEnabled;
+			return c.json({
+				maintenanceMode: settings?.maintenanceMode ?? envDefaults.maintenanceMode,
+				cardPaymentsEnabled: cardToggle && envDefaults.polarConfigured,
+				cryptoPaymentsEnabled:
+					settings?.cryptoPaymentsEnabled ?? envDefaults.cryptoPaymentsEnabled,
+				usdcDepositConfigured: envDefaults.usdcDepositConfigured,
+				polarConfigured: envDefaults.polarConfigured,
+				x402Configured: envDefaults.x402Configured,
+			});
 		} catch (err) {
 				logger.warn(
 						{ err: (err as Error).message },

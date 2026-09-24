@@ -23,10 +23,13 @@ function wantsDemo(request: NextRequest): boolean {
 }
 
 /**
- * Edge middleware — Next requires this file to be named `middleware.ts`
- * (src/middleware.ts). Security headers + demo-tour cookies.
+ * Next 16 renamed the Edge middleware convention to `proxy` — the file must
+ * be `src/proxy.ts` and export `proxy`. Behaviour is unchanged: security
+ * headers (COOP/COEP) + demo-tour cookies.
+ *
+ * The `matcher` below is carried over verbatim from the old middleware.ts.
  */
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
 	const response = NextResponse.next();
 	// CSP is owned by next.config.ts headers() (generateContentSecurityPolicy).
 	response.headers.set("Cross-Origin-Opener-Policy", "same-origin");
