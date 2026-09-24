@@ -122,6 +122,16 @@ describe("HomePage", () => {
 		expect(h1.textContent).toMatch(/Every model/i);
 	});
 
+	it("does not advertise the static catalog size on the hero", async () => {
+		// The hero previously rendered MODEL_COUNT (a hardcoded static
+		// fallback, 20) while the API reported only 2 live models — a 10x
+		// overstatement in the first sentence of the page. The count must
+		// come from the live catalog instead.
+		renderWithQueryClient(<HomePage />);
+		await screen.findByRole("heading", { level: 1 });
+		expect(document.body.textContent).not.toMatch(/\b20 models\b/i);
+	});
+
 	it("renders the primary CTA", async () => {
 		renderWithQueryClient(<HomePage />);
 		const ctaLinks = await screen.findAllByRole("link", {

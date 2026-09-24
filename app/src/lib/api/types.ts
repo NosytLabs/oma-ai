@@ -83,6 +83,21 @@ export interface Model {
 	object: string;
 	created: number;
 	owned_by: string;
+	/**
+	 * Whether this model is currently serving requests. The upstream catalog
+	 * sets `false` for models whose provider credential is missing or whose
+	 * upstream is saturated — those pages render but error on use, so
+	 * anything that advertises availability (hero count, sitemap) must
+	 * filter on this rather than assuming every catalog entry is live.
+	 */
+	available?: boolean;
+	display_name?: string;
+	provider?: string;
+	category?: string;
+	modality?: string;
+	context_length?: number;
+	supports_streaming?: boolean;
+	supports_tools?: boolean;
 	pricing?: {
 		prompt: string;
 		completion: string;

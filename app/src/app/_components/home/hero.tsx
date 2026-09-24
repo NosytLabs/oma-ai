@@ -9,9 +9,41 @@
 import { ArrowRight, KeyRound, Sparkles } from "lucide-react";
 import { m } from "@/lib/framer-motion-client";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { LiveRequestCard } from "./LiveRequestCard";
-import { MODEL_COUNT } from "@/lib/models-data";
+import { models as modelsApi } from "@/lib/api/resources";
 import { springs } from "@/lib/animation";
+
+/**
+ * Live count of models actually accepting requests.
+ *
+ * The hero previously interpolated MODEL_COUNT, a hardcoded static fallback
+ * that does not know which providers are dark. It rendered "20 models" while
+ * the catalog reported 2 available — a 10x overstatement in the first
+ * sentence of the page. Falls back to the static number only until the
+ * catalog resolves, so SSR still has something truthful-ish to paint, and
+ * never renders a zero or a stale claim once live data arrives.
+ */
+function useLiveModelCount(): number | null {
+	const [count, setCount] = useState<number | null>(null);
+	useEffect(() => {
+		let cancelled = false;
+		modelsApi
+			.list()
+			.then((res) => {
+				if (cancelled) return;
+				const live = (res.data ?? []).filter((m) => m.available !== false).length;
+				setCount(live > 0 ? live : null);
+			})
+			.catch(() => {
+				/* keep the static fallback; the API may be briefly down */
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+	return count;
+}
 
 function reveal() {
 	return {
@@ -22,6 +54,11 @@ function reveal() {
 }
 
 export function Hero() {
+	const liveCount = useLiveModelCount();
+	// Until the catalog resolves, omit the number entirely rather than
+	// assert a static count we cannot currently stand behind.
+	const scale = liveCount ? `${liveCount} live models` : "a live model catalog";
+
 	return (
 		<section className="relative overflow-hidden">
 			<div
@@ -47,8 +84,8 @@ export function Hero() {
 						{...reveal()}
 						className="mx-auto mt-6 max-w-2xl text-balance text-base leading-relaxed text-text-secondary sm:mt-7 sm:text-lg md:text-xl"
 					>
-						One OpenAI-compatible endpoint, {MODEL_COUNT} models, in minutes. Try it free in
-						the playground, then create an API key when you are ready to build.
+						One OpenAI-compatible endpoint, {scale}. Try it free in the playground, then create
+						an API key when you are ready to build.
 					</m.p>
 
 					<m.div
