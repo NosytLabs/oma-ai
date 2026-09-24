@@ -55,7 +55,10 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 							className="mt-0.5 shadow-sm rounded-[var(--radius-lg)]"
 						/>
 						<div className="min-w-0 flex-1">
-							<Link href={`/models/${model.id}`} className="block rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel">
+							<Link
+								href={`/models/${model.id}`}
+								className="flex min-h-6 items-center rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel"
+							>
 								<p className="text-[15px] font-semibold tracking-tight text-text-bright line-clamp-2 leading-tight transition-colors group-hover:text-accent">
 									{model.name ?? "Unknown"}
 								</p>
@@ -202,7 +205,7 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 					</p>
 				) : (
 					<div className="mt-3">
-						<Link href={`/chat?model=${model.id}`} className="inline-flex items-center gap-1.5 rounded-sm text-[11px] font-mono font-semibold uppercase tracking-wider text-accent/70 hover:text-accent transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel">
+						<Link href={`/chat?model=${model.id}`} className="inline-flex min-h-6 items-center gap-1.5 rounded-sm text-[11px] font-mono font-semibold uppercase tracking-wider text-accent/70 hover:text-accent transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel">
 							<MessageSquare className="h-3 w-3" aria-hidden="true" />
 							Try in chat
 						</Link>
