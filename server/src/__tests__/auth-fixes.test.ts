@@ -124,7 +124,7 @@ vi.mock("../inference/models.js", () => ({
 		listAllModels: vi.fn(() => []),
 }));
 
-import { auth } from "../auth.js";
+import { auth, resolveTrustedOrigins, resolveAuthBaseURL } from "../auth.js";
 
 beforeEach(() => {
 		// Re-apply mock implementations so each test starts from a known state.
@@ -206,7 +206,74 @@ describe("auth plugin security configuration", () => {
 			expect(capturedPluginOpts.magicLink?.storeToken).toBe("hashed");
 		});
 
-		it("gives the siwe plugin exactly one domain string", () => {
+		it("trusts the canonical production origins derived from PRIMARY_DOMAIN", () => {
+		// LIVE OUTAGE (2026-09-24): the deployed Neon function was published
+		// from server/.env, which carried PUBLIC_APP_URL=http://localhost:3000.
+		// trustedOrigins was built from PUBLIC_APP_URL alone, so EVERY request
+		// from https://www.oma-ai.com was rejected with
+		// 403 {"code":"INVALID_ORIGIN"} — sign-in was completely dead in
+		// production while a localhost Origin was accepted.
+		//
+		// The canonical origins must be derived from PRIMARY_DOMAIN so a
+		// stale/misconfigured app URL cannot lock real users out of auth.
+		const origins = resolveTrustedOrigins({
+			PUBLIC_APP_URL: "http://localhost:3000",
+			PRIMARY_DOMAIN: "oma-ai.com",
+			NODE_ENV: "production",
+		});
+		expect(origins).toContain("https://www.oma-ai.com");
+		expect(origins).toContain("https://oma-ai.com");
+	});
+
+	it("keeps the apex and www pair trusted for a custom primary domain", () => {
+		const origins = resolveTrustedOrigins({
+			PUBLIC_APP_URL: "https://staging.example.org",
+			PRIMARY_DOMAIN: "example.org",
+			NODE_ENV: "production",
+		});
+		expect(origins).toContain("https://example.org");
+		expect(origins).toContain("https://www.example.org");
+		// The configured app URL stays trusted too.
+		expect(origins).toContain("https://staging.example.org");
+	});
+
+	it("does not fabricate https origins for localhost development", () => {
+		const origins = resolveTrustedOrigins({
+			PUBLIC_APP_URL: "http://localhost:3000",
+			PRIMARY_DOMAIN: "localhost",
+			NODE_ENV: "development",
+		});
+		expect(origins).not.toContain("https://localhost");
+		expect(origins).not.toContain("https://www.localhost");
+		expect(origins).toContain("http://localhost:3000");
+	});
+
+	it("builds magic-link callback URLs against the canonical site, not localhost", () => {
+		// The same stale env would have emailed a
+		// `http://localhost:3000/api/auth/magic-link/verify?token=...` link,
+		// which no real recipient can open.
+		expect(
+			resolveAuthBaseURL({
+				BETTER_AUTH_URL: "http://localhost:3000",
+				PUBLIC_APP_URL: "http://localhost:3000",
+				PRIMARY_DOMAIN: "oma-ai.com",
+				NODE_ENV: "production",
+			}),
+		).toBe("https://www.oma-ai.com");
+	});
+
+	it("honours the configured base URL in local development", () => {
+		expect(
+			resolveAuthBaseURL({
+				BETTER_AUTH_URL: "http://localhost:3000",
+				PUBLIC_APP_URL: "http://localhost:3000",
+				PRIMARY_DOMAIN: "localhost",
+				NODE_ENV: "development",
+			}),
+		).toBe("http://localhost:3000");
+	});
+
+	it("gives the siwe plugin exactly one domain string", () => {
 			// SIWEPluginOptions.domain is a single string — the plugin rejects
 			// a message whose domain differs. Assert it is a non-empty string
 			// (not an array, which cannot be passed and would break sign-in).

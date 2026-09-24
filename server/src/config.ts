@@ -390,5 +390,44 @@ if (config.NODE_ENV !== "test" && !isProductionEnv && config.RECEIPT_HMAC_SECRET
 }
 
 if (isProductionEnv && (config.DATABASE_URL.includes("localhost") || !config.DATABASE_URL.includes("@"))) {
-		throw new Error("[FATAL] DATABASE_URL must have proper credentials in production. Set a user:password@host in the connection string.");
+	throw new Error("[FATAL] DATABASE_URL must have proper credentials in production. Set a user:password@host in the connection string.");
+}
+
+/**
+ * A deployed Neon Function is reachable from the public internet and snapshots
+ * real secrets, so it is production by definition.
+ *
+ * LIVE OUTAGE (2026-09-24): the function was published from server/.env, which
+ * carried NODE_ENV=development. That one value bypassed every production guard
+ * (mock facilitator accepted, dev auth secrets accepted, localhost origins
+ * trusted) and served the public site in development mode — /health reported
+ * {"env":"development"} and the real production Origin was rejected with 403
+ * INVALID_ORIGIN, taking sign-in offline.
+ *
+ * Returned as a message (rather than thrown inline) so it is unit-testable
+ * without importing this module's side effects.
+ */
+export function getDeployedFunctionEnvError(input: {
+	NODE_ENV: string | undefined;
+	NEON_FUNCTION: string | undefined;
+	ALLOW_DEV_MODE_DEPLOY?: string | undefined;
+}): string | null {
+	if (input.NODE_ENV === "production") return null;
+	if (input.NEON_FUNCTION !== "1") return null;
+	if (input.ALLOW_DEV_MODE_DEPLOY === "1") return null;
+	return (
+		`A deployed Neon Function (NEON_FUNCTION=1) must run with NODE_ENV=production. ` +
+		`Refusing to serve public traffic with NODE_ENV='${input.NODE_ENV}', which bypasses every production ` +
+		"security guard. Set NODE_ENV=production in the deploy env, or ALLOW_DEV_MODE_DEPLOY=1 for a " +
+		"deliberately non-public preview function."
+	);
+}
+
+const deployedFunctionEnvError = getDeployedFunctionEnvError({
+	NODE_ENV: config.NODE_ENV,
+	NEON_FUNCTION: process.env.NEON_FUNCTION,
+	ALLOW_DEV_MODE_DEPLOY: process.env.ALLOW_DEV_MODE_DEPLOY,
+});
+if (deployedFunctionEnvError) {
+	throw new Error(`[FATAL] ${deployedFunctionEnvError}`);
 }
