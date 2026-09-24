@@ -301,7 +301,19 @@ export function PricingTable({
 												<span className="text-sm font-medium text-text-bright truncate">
 													{mm.name}
 												</span>
-											</div>
+												{/* `available:false` = the backing provider's key is missing
+												    or a placeholder, so the model 503s. This is the
+												    page where visitors commit to buying, so say so
+												    instead of quoting a price for a dead model. */}
+												{mm.available === false && (
+													<span
+														title="This model's provider key is not configured yet, so requests currently fail. Price shown is for when it comes online."
+														className="shrink-0 rounded-[var(--radius-sm)] border border-amber/30 bg-amber/10 px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider text-amber"
+													>
+														Unavailable
+													</span>
+												)}
+												</div>
 											<span className="ml-7 mt-0.5 hidden max-w-[200px] truncate font-mono text-xs text-text-secondary sm:block">
 												{mm.id}
 											</span>

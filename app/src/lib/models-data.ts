@@ -103,6 +103,14 @@ export interface Model {
 	modelId: string;
 	inputModalities?: string[];
 	outputModalities?: string[];
+	/**
+	 * Whether this model can actually be called right now. The server sets
+	 * `available: false` when the backing provider's API key is missing or a
+	 * placeholder, so surfaces can flag it instead of advertising a model
+	 * that will 503. Defaults to true when the field is absent (older
+	 * cached payloads and the static fallback catalog omit it).
+	 */
+	available?: boolean;
 }
 
 export type Capability =
@@ -423,6 +431,11 @@ interface ApiModelEntry {
 	provider?: string;
 	/** Video generation duration (e.g. "10s") for video models. */
 	duration?: string;
+	/**
+	 * False when the backing provider's key is missing/placeholder, so the
+	 * model 503s. See `Model.available`.
+	 */
+	available?: boolean;
 	architecture?: { input_modalities?: string[]; output_modalities?: string[] };
 	supported_parameters?: string[];
 }
@@ -530,6 +543,10 @@ const tier: Tier =
 						modelId: entry.id,
 						inputModalities: entry.architecture?.input_modalities ?? ["text"],
 						outputModalities: entry.architecture?.output_modalities ?? ["text"],
+						// Absent means "no signal" (older cache / static fallback),
+						// which must read as available so a missing flag never hides
+						// a working model.
+						available: entry.available !== false,
 					};
 				});
 			_liveModels = models;

@@ -38,6 +38,12 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 	const hasBadges =
 		nonTextInputs.length > 0 || nonTextOutputs.length > 0 || displayCaps.length > 0;
 
+	// `available: false` means the backing provider's key is missing or a
+	// placeholder, so the model 503s. Flag it and drop the "Try in chat"
+	// dead-end rather than advertising something that cannot run. An omitted
+	// flag means "no signal" (static fallback catalog) and stays available.
+	const unavailable = model.available === false;
+
 	return (
 		<InViewFade key={model.id} delay={index * 0.05} spring eager>
 			<article className="group relative rounded-[var(--radius-xl)] border border-border bg-panel p-5 transition-[border-color,transform] duration-200 ease-out hover:border-accent/40 shadow-[var(--shadow-md)] active:scale-[0.97] h-full flex flex-col">
@@ -70,6 +76,14 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 						{model.modality && model.modality !== "chat" && (
 							<span className="px-2.5 py-1 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider border border-blue/30 bg-blue/10 text-blue">
 								{MODALITY_LABELS[model.modality]}
+							</span>
+						)}
+						{unavailable && (
+							<span
+								title="This model's provider key is not configured yet, so requests currently fail. Pricing shown is for when it comes online."
+								className="px-2.5 py-1 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider border border-amber/30 bg-amber/10 text-amber"
+							>
+								Unavailable
 							</span>
 						)}
 					</div>
@@ -182,12 +196,18 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 						? `Price ${model.pricePerUnit.toFixed(model.pricePerUnit < 0.1 ? 4 : 3)}${model.priceUnit ?? ""}`
 						: `Input $${typeof model.inputPricePer1M === "number" ? model.inputPricePer1M.toFixed(model.inputPricePer1M < 0.01 ? 4 : 2) : "?"} per 1M tokens, output $${typeof model.outputPricePer1M === "number" ? model.outputPricePer1M.toFixed(model.outputPricePer1M < 0.01 ? 4 : 2) : "?"} per 1M tokens`}
 				</span>
-				<div className="mt-3">
-					<Link href={`/chat?model=${model.id}`} className="inline-flex items-center gap-1.5 rounded-sm text-[11px] font-mono font-semibold uppercase tracking-wider text-accent/70 hover:text-accent transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel">
-						<MessageSquare className="h-3 w-3" aria-hidden="true" />
-						Try in chat
-					</Link>
-				</div>
+				{unavailable ? (
+					<p className="text-[11px] font-mono font-semibold uppercase tracking-wider text-text-muted">
+						Temporarily offline
+					</p>
+				) : (
+					<div className="mt-3">
+						<Link href={`/chat?model=${model.id}`} className="inline-flex items-center gap-1.5 rounded-sm text-[11px] font-mono font-semibold uppercase tracking-wider text-accent/70 hover:text-accent transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel">
+							<MessageSquare className="h-3 w-3" aria-hidden="true" />
+							Try in chat
+						</Link>
+					</div>
+				)}
 			</article>
 		</InViewFade>
 	);

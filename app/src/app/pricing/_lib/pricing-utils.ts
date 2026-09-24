@@ -11,6 +11,11 @@ export interface PricedModel {
 	outputPer1M: number;
 	ctx: string;
 	contextTokens: number;
+	/**
+	 * False when the backing provider's key is missing/placeholder, so the
+	 * model 503s. Carried from `Model.available`; omitted means available.
+	 */
+	available?: boolean;
 }
 
 export function toPricedModel(model: Model): PricedModel {
@@ -28,6 +33,7 @@ export function toPricedModel(model: Model): PricedModel {
 		outputPer1M: model.outputPricePer1M,
 		ctx: model.contextLength,
 		contextTokens: model.contextTokens || 0,
+		available: model.available,
 	};
 }
 
