@@ -20,11 +20,11 @@ interface NavbarToolsDropdownProps {
 }
 
 /**
-	* Tools dropdown (desktop only). Click-outside closes via `useClickOutside`.
-	* Escape closes AND restores focus to the toggle button (same contract as
-	* `NavbarUserMenu`) via a separate keydown effect so `useClickOutside`
-	* stays single-purpose.
-	*/
+ * Tools dropdown (desktop only). Click-outside closes via `useClickOutside`.
+ * Escape closes AND restores focus to the toggle button (same contract as
+ * `NavbarUserMenu`) via a separate keydown effect so `useClickOutside`
+ * stays single-purpose.
+ */
 export function NavbarToolsDropdown({
 	open,
 	onOpenChange,
@@ -33,7 +33,6 @@ export function NavbarToolsDropdown({
 	const toggleRef = useRef<HTMLButtonElement | null>(null);
 	const pathname = usePathname();
 	const prefersReduced = useReducedMotion();
-	const visibleLinks = toolsLinks;
 	// Only show "tools" as active when a primary link is NOT already
 	// representing the same path. Without this, /docs (a primary link)
 	// AND /docs#endpoints (a tool) both light up the navbar at once,
@@ -42,7 +41,7 @@ export function NavbarToolsDropdown({
 		isCurrentPath(pathname ?? "/", l.href),
 	);
 	const isToolsActive = !onPrimaryLink &&
-		visibleLinks.some((l) => isCurrentPath(pathname ?? "/", l.href));
+		toolsLinks.some((l) => isCurrentPath(pathname ?? "/", l.href));
 
 	useClickOutside(containerRef, open, () => onOpenChange(false));
 
@@ -124,13 +123,13 @@ export function NavbarToolsDropdown({
 						}
 						transition={springs.soft}
 						style={{ transformOrigin: "top left" }}
-						className={`absolute left-0 top-full mt-2 w-72 rounded-sm border border-border bg-void/95 backdrop-blur-md p-2 shadow-2xl shadow-overlay font-mono z-[60]`}
+						className="absolute left-0 top-full mt-2 w-72 rounded-sm border border-border bg-void/95 backdrop-blur-md p-2 shadow-2xl shadow-overlay font-mono z-[60]"
 					>
-					<p className="px-3 pt-2 pb-1 text-[11px] uppercase tracking-widest text-text-tertiary">
-						tools
-					</p>
-					<ul className="space-y-1">
-						{visibleLinks.map((link) => {
+						<p className="px-3 pt-2 pb-1 text-[11px] uppercase tracking-widest text-text-tertiary">
+							tools
+						</p>
+						<ul className="space-y-1">
+							{toolsLinks.map((link) => {
 								const Icon = link.icon;
 								const isActive = isCurrentPath(pathname ?? "/", link.href);
 								return (
