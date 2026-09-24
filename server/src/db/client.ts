@@ -1,7 +1,9 @@
 /**
 	* Database client.
 	*
-	* - Neon cloud (`*.neon.tech`): HTTP driver via `@neondatabase/serverless`.
+	* - Neon cloud (`*.neon.tech`): WebSocket driver via
+	*   `@neondatabase/serverless` + `drizzle-orm/neon-serverless`.
+	*   NOT `neon-http`, which cannot run transactions (see createNeonDb).
 	* - Local / self-hosted Postgres: TCP via `pg` + `drizzle-orm/node-postgres`.
 	*/
 
