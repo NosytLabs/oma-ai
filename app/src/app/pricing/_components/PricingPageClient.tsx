@@ -587,7 +587,7 @@ export default function PricingPage() {
 					</h3>
 					<div className="grid grid-cols-1 gap-2 md:grid-cols-2">
 						{[
-						"Credits are 1:1 USD, non-redeemable, non-transferable",
+						"1 credit = $0.01; credits are non-redeemable and non-transferable",
 						"Credits never expire while your account is active",
 						"No credit float — credits appear after settlement",
 						"Billed per token, deducted in real-time",

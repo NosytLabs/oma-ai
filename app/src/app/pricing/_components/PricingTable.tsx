@@ -331,7 +331,16 @@ export function PricingTable({
 												{mm.provider}
 											</span>
 										</td>
-										<td className="px-4 py-3 text-right font-mono tabular-nums text-sm font-medium text-[var(--color-accent)]">
+										{/* An unavailable model must not render its price in the
+										    accent colour: a dimmed row with a live-looking green
+										    price implies the model can actually be bought. */}
+										<td
+											className={`px-4 py-3 text-right font-mono tabular-nums text-sm font-medium ${
+												mm.available === false
+													? "text-text-muted line-through"
+													: "text-[var(--color-accent)]"
+											}`}
+										>
 											{fmtPrice(mm.inputPer1M)}
 										</td>
 										<td className="px-4 py-3 text-right font-mono tabular-nums text-sm font-medium text-text-secondary">
