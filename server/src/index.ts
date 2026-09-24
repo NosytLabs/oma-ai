@@ -8,6 +8,7 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { eq } from "drizzle-orm";
 import { config } from "./config.js";
 import { securityHeaders } from "./middleware/security.js";
+import { originGuard } from "./middleware/origin-guard.js";
 import { logger } from "./lib/logger.js";
 import { auth } from "./auth.js";
 import { initAuth } from "./auth/middleware.js";
@@ -322,7 +323,28 @@ const authMutationLimit = rateLimit({
 		// per-email `checkEmailSendCooldown` (which also fails open) and the
 		// per-IP `extractClientIp` keying; on return of Redis, limiting resumes.
 		failClosed: false,
-});
+	});
+// CSRF: explicit Origin/Referer check for OMA's own session-authenticated
+// mutations. Scoped to the exact cookie-authenticated mutation paths rather
+// than app-wide, so the OpenAI-compatible gateway (bearer-token, called by
+// SDKs and curl rather than browsers) is unaffected — a machine client sends
+// no Origin and a blanket rule would reject it.
+//
+// These are the routes guarded only by `sessionAuth`, i.e. the ones a forged
+// cross-site request could ride a victim's cookie into:
+//   POST   /v1/keys, /v1/keys/install
+//   DELETE /v1/keys/:id, /v1/history, /sessions, /sessions/:id
+// Reads (GET /user, /sessions, /v1/keys) are deliberately not gated.
+const csrfOriginGuard = originGuard();
+for (const p of [
+	"/v1/keys",
+	"/v1/keys/*",
+	"/v1/history",
+	"/sessions",
+	"/sessions/*",
+]) {
+	app.use(p, csrfOriginGuard);
+}
 app.use("/api/auth/*", async (c, next) => {
 		const path = c.req.path;
 		const isSessionRead =
@@ -346,6 +368,15 @@ app.get("/.well-known/agent-configuration", (c) => {
 });
 
 // OMA-specific auth-adjacent routes (CSRF, /user, /keys).
+//
+// These are OMA's own Hono handlers, not Better Auth's. Better Auth
+// hardens its own endpoints; these are guarded only by `sessionAuth`, so
+// they get an explicit Origin check on state-changing requests. The
+// session cookie is SameSite=Lax, which blocks the classic cross-site
+// POST, but Lax still permits same-site sibling origins and stops
+// protecting this the moment the cookie's scope widens. Safe methods
+// (GET/HEAD/OPTIONS) are unaffected, so reads and the page's own fetches
+// are untouched.
 app.route("/", authRoutes);
 
 // OpenAI-compatible gateway surface.
