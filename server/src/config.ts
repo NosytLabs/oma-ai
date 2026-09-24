@@ -143,6 +143,9 @@ const envSchema = z.object({
 		// Trusted proxy IPs for X-Forwarded-For validation (comma-separated)
 		// Only trust X-Forwarded-For headers from these known proxy IPs
 		TRUSTED_PROXY_IPS: z.string().optional().default(""),
+	// Shared secret authenticating the Vercel -> Neon hop so the function can
+	// trust Vercel's forwarded client IP. See middleware/rate-limit/utils.ts.
+	INTERNAL_PROXY_SECRET: z.string().optional().default(""),
 
 		// Build metadata (injected at build time)
 		BUILD_SHA: z.string().optional().default("dev"),
