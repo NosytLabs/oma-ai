@@ -41,7 +41,7 @@ const STEPS = [
 			<>
 				Head to <Link href="/login" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">login</Link>. Choose{" "}
 				<strong className="text-text-bright"> email magic link</strong> (simplest — we email you a secure sign-in link, no password to remember)
-				or <strong className="text-text-bright">connect wallet</strong> if you already use web3 apps. Signing in gives you {MODEL_COUNT} curated models across the full Venice and OMA-AI catalog, saved conversations, and higher rate limits.
+				or <strong className="text-text-bright">connect wallet</strong> if you already use web3 apps. Signing in gives you the full curated catalog, saved conversations, and higher rate limits.
 			</>
 		),
 	},
