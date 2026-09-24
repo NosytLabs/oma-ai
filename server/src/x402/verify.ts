@@ -242,28 +242,44 @@ async function mockVerifyPayment(
 // ============================================================
 
 export async function verifyPayment(
-		paymentSig: PaymentSignature,
+	paymentSig: PaymentSignature,
 ): Promise<PaymentResponse> {
-		const { signature, authorization, payload } = paymentSig;
-		const cacheKey = getVerificationCacheKey(payload, signature);
+	const { signature, authorization, payload } = paymentSig;
+	const cacheKey = getVerificationCacheKey(payload, signature);
 
-		const cached = settlementCache.get(cacheKey);
-		if (cached) {
-				return {
-						valid: true,
-						txHash: cached.txHash,
-						amount: cached.amount,
-						networkId: cached.networkId,
-				};
-		}
+	// The validity window is checked BEFORE the cache is consulted, and that
+	// ordering is load-bearing.
+	//
+	// A cache hit used to short-circuit straight to `{ valid: true }`, which
+	// skipped both this expiry check and the nonce consumption further down
+	// (consumeNonce in verifyEipmPayment and again in the EIP-3009 path).
+	// Because the verification cache is retained for CACHE_TTL_MS — 24 hours —
+	// a single captured payment signature stayed replayable for a full day,
+	// long after its own 5-minute validBefore closed, authorizing repeated
+	// paid inference for one payment.
+	//
+	// The cache exists for settlement idempotency (don't re-submit an
+	// on-chain transfer for a client retry), which is legitimate, but it must
+	// never extend an authorization's life. Bounding a cache hit by the
+	// signed validity window keeps that retry behaviour while capping reuse
+	// at the window the payer actually signed.
+	const now = Math.floor(Date.now() / 1000);
+	if (payload.validBefore && now > payload.validBefore) {
+		return { valid: false, error: "Payment authorization expired" };
+	}
+	if (payload.validAfter && now < payload.validAfter) {
+		return { valid: false, error: "Payment authorization not yet valid" };
+	}
 
-		const now = Math.floor(Date.now() / 1000);
-		if (payload.validBefore && now > payload.validBefore) {
-				return { valid: false, error: "Payment authorization expired" };
-		}
-		if (payload.validAfter && now < payload.validAfter) {
-				return { valid: false, error: "Payment authorization not yet valid" };
-		}
+	const cached = settlementCache.get(cacheKey);
+	if (cached) {
+		return {
+			valid: true,
+			txHash: cached.txHash,
+			amount: cached.amount,
+			networkId: cached.networkId,
+		};
+	}
 
 		const mode = config.FACILITATOR_MODE ?? "mock";
 
