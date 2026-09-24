@@ -3,6 +3,7 @@ import { getRedisClient, isRedisReady } from "../../lib/redis-client.js";
 import { RPM_LIMIT_SCRIPT } from "./lua-scripts.js";
 import { extractClientIp, type RateLimitResult, type RedisEvalResult } from "./utils.js";
 import { logger } from "../../lib/logger.js";
+import { checkFallbackLimit } from "./memory-store.js";
 
 // RPM limiter using sliding window
 export async function checkRpmLimit(
@@ -46,8 +47,11 @@ export interface RateLimitOptions {
 }
 
 export function rateLimit(options: RateLimitOptions) {
-		const { windowMs, maxRequests, keyPrefix = "rl", failClosed = true } = options;
-		const windowSec = Math.ceil(windowMs / 1000);
+	const { windowMs, maxRequests, keyPrefix = "rl", failClosed = true } = options;
+	const windowSec = Math.ceil(windowMs / 1000);
+	// Per-limiter-instance, not per-process: each configured route gets its
+	// own one-shot warning instead of the first one silencing the rest.
+	let degradedWarned = false;
 
 		return async (c: Context, next: Next) => {
 				const apiKeyId = (c.get("apiKeyId") as string | undefined) || (c.get("apiKey") as { id?: string } | undefined)?.id;
@@ -65,8 +69,36 @@ export function rateLimit(options: RateLimitOptions) {
 
 				if (!redis || !ready) {
 						if (!failClosed) {
-								c.header("X-RateLimit-Policy", "fail-open");
-								return next();
+							// Degrade to a per-process limiter rather than removing the
+							// limit. Returning next() here made the cap vanish entirely
+							// for the duration of a Redis outage: unbounded magic-link
+							// sends, unbounded OTP attempts, unbounded SIWE. Failing
+							// closed instead would take login down entirely, which is
+							// the availability cost this option exists to avoid.
+							//
+							// The memory store is per-process, so the bound holds within
+							// an instance rather than cluster-wide. That is a weaker
+							// guarantee than Redis, and deliberately labelled so in the
+							// response header rather than being passed off as a normal
+							// rate-limited response.
+							if (!degradedWarned) {
+									logger.warn(
+										{ keyPrefix },
+										"Redis unavailable -- rate limiting degraded to per-process memory store",
+									);
+									degradedWarned = true;
+								}
+							const fb = checkFallbackLimit(rateLimitKey);
+							c.header("X-RateLimit-Policy", "degraded-memory");
+							c.header("X-RateLimit-Remaining", String(fb.remaining));
+							if (!fb.allowed) {
+								c.header("Retry-After", String(Math.ceil(fb.resetMs / 1000)));
+								return c.json(
+									{ error: { message: "Rate limit exceeded. Please try again later.", type: "rate_limit_error", code: "rate_limit_exceeded" } },
+									429,
+								);
+							}
+							return next();
 						}
 						logger.error("Redis unavailable -- failing CLOSED for auth route (rate limiting required)");
 						c.header("X-RateLimit-Limit", String(maxRequests));
@@ -101,10 +133,20 @@ export function rateLimit(options: RateLimitOptions) {
 								);
 						}
 				} catch (err) {
-						if (!failClosed) {
-								c.header("X-RateLimit-Policy", "fail-open-error");
-								return next();
+					if (!failClosed) {
+						// Same reasoning as the unavailable branch above: a Redis
+						// error must not silently remove the cap.
+						const fb = checkFallbackLimit(rateLimitKey);
+						c.header("X-RateLimit-Policy", "degraded-memory");
+						if (!fb.allowed) {
+							c.header("Retry-After", String(Math.ceil(fb.resetMs / 1000)));
+							return c.json(
+								{ error: { message: "Rate limit exceeded. Please try again later.", type: "rate_limit_error", code: "rate_limit_exceeded" } },
+								429,
+							);
 						}
+						return next();
+					}
 						logger.error({ err }, "Redis operation failed -- failing CLOSED for auth route");
 						c.header("X-RateLimit-Limit", String(maxRequests));
 						c.header("X-RateLimit-Remaining", "0");
