@@ -93,38 +93,61 @@ export function setErrorAttributes(
 		}
 }
 
-const traceExporter = new OTLPTraceExporter({
-		url: config.OTEL_EXPORTER_OTLP_ENDPOINT ?? "http://localhost:4318/v1/traces",
-});
+/**
+ * Trace exporter endpoint.
+ *
+ * Unset in production today. The SDK auto-instruments http + express, so with
+ * the SDK running and no endpoint every request built spans that were buffered
+ * and shipped to http://localhost:4318 (the exporter default) where nothing
+ * listens -- real per-request cost for observability output that went nowhere.
+ *
+ * Setting OTEL_EXPORTER_OTLP_ENDPOINT is all it takes to turn tracing on; the
+ * SDK, the instrumentations and the shutdown hook are all kept below.
+ */
+const otlpEndpoint = config.OTEL_EXPORTER_OTLP_ENDPOINT;
 
-// Initialize SDK before other imports
-const sdk = new NodeSDK({
-			resource: resourceFromAttributes({
-					[ATTR_SERVICE_NAME]: config.OTEL_SERVICE_NAME ?? "oma-server",
-					[ATTR_SERVICE_VERSION]: "0.1.0",
-					[ATTR_DEPLOYMENT_ENVIRONMENT_NAME]: config.NODE_ENV,
+if (otlpEndpoint && config.NODE_ENV !== "test") {
+	const traceExporter = new OTLPTraceExporter({ url: otlpEndpoint });
+
+	// Initialize SDK before other imports
+	const sdk = new NodeSDK({
+		resource: resourceFromAttributes({
+			[ATTR_SERVICE_NAME]: config.OTEL_SERVICE_NAME ?? "oma-server",
+			[ATTR_SERVICE_VERSION]: "0.1.0",
+			[ATTR_DEPLOYMENT_ENVIRONMENT_NAME]: config.NODE_ENV,
+		}),
+		traceExporter,
+		instrumentations: [
+			getNodeAutoInstrumentations({
+				"@opentelemetry/instrumentation-fs": { enabled: false },
+				"@opentelemetry/instrumentation-http": {
+					enabled: true,
+					ignoreIncomingRequestHook: (req) => req.url === "/health",
+				},
+				"@opentelemetry/instrumentation-express": { enabled: true },
 			}),
-			traceExporter,
-			instrumentations: [
-					getNodeAutoInstrumentations({
-							"@opentelemetry/instrumentation-fs": { enabled: false },
-							"@opentelemetry/instrumentation-http": {
-									enabled: true,
-									ignoreIncomingRequestHook: (req) => req.url === "/health",
-							},
-							"@opentelemetry/instrumentation-express": { enabled: true },
-					}),
-			],
+		],
 	});
 
-	if (config.NODE_ENV !== "test") sdk.start();
+	sdk.start();
+	logger.info(
+		{ endpoint: otlpEndpoint },
+		"[otel] OpenTelemetry SDK started",
+	);
 
 	process.on("SIGTERM", async () => {
 		try {
-				await sdk.shutdown();
-				logger.info("[otel] OpenTelemetry SDK shut down successfully");
+			await sdk.shutdown();
+			logger.info("[otel] OpenTelemetry SDK shut down successfully");
 		} catch (err) {
-				logger.error("[otel] Error shutting down OpenTelemetry SDK: %s", err);
+			logger.error({ err }, "[otel] Error shutting down OpenTelemetry SDK");
 		}
-});
+	});
+} else {
+	// generateCorrelationId() below is still used for request correlation, so
+	// the module stays imported; only the exporter machinery is skipped.
+	logger.info(
+		"[otel] tracing disabled (set OTEL_EXPORTER_OTLP_ENDPOINT to enable)",
+	);
+}
 

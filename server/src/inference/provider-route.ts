@@ -58,37 +58,6 @@ export class ProviderError extends Error {
 	}
 }
 
-/**
- * Build a Surplus fallback route for a Venice- or OMA-AI-branded model.
- * The label stays as the user's chosen provider (so the customer never
- * sees "surplus"). Throws if SURPLUS_API_KEY isn't set.
- */
-export function buildSurplusFallbackRoute(modelDef: ModelDef): ProviderRoute {
-	if (!config.SURPLUS_API_KEY) {
-		throw new ProviderError(
-			"Surplus Intelligence fallback requested but SURPLUS_API_KEY is not configured.",
-			503,
-		);
-	}
-	if (!modelDef.surplusId) {
-		throw new ProviderError(
-			`Model ${modelDef.id} has no surplusId configured for Surplus procurement.`,
-			503,
-		);
-	}
-	// Inherit the user-facing label from the model's primary provider.
-	const userLabel: "venice" | "oma-ai" =
-		modelDef.provider === "venice" ? "venice" : "oma-ai";
-	return {
-		baseUrl: `${config.SURPLUS_API_URL}/v1`,
-		apiKey: config.SURPLUS_API_KEY,
-		upstreamModel: (_id, _gid, sid) => sid ?? _id,
-		extraBody: (body) => body,
-		providerLabel: userLabel,
-		routedVia: "surplus",
-	};
-}
-
 export function resolveProvider(provider: string, _modelDef?: ModelDef): ProviderRoute {
 	if (provider === "litellm") {
 		if (!config.LITELLM_API_KEY) {

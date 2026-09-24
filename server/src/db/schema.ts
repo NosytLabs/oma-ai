@@ -15,6 +15,16 @@
 	*   - twoFactorBackupCodes                  (Better Auth 2FA plugin when needed)
 	*   - signingKeys                           (pinning scheme was experimental)
 	*   - audit_action enum removed twoFactor enum (kept the rest)
+	*
+	* Tables present in the schema but NOT wired to any code path (verified by
+	* whole-tree search, 2026-09-24). They are intentionally left in place rather
+	* than dropped: removing a table from the schema generates a DROP TABLE
+	* migration, which is irreversible and buys nothing while the rows are empty.
+	* Do NOT assume these features work because the tables exist:
+	*   - refundRequests       - refunds shown in the dashboard are read from the
+	*                            credit ledger, not from this table
+	*   - webhookSubscriptions - no subscription create/list/deliver path exists
+	*   - autoReloadSettings   - no admin surface reads or writes it
 	*/
 import {
 		pgTable,
