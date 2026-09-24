@@ -40,7 +40,6 @@
     "url": "git+https://github.com/NosytLabs/oma-ai.git"
   },
   "devDependencies": {
-    "@types/react": "19.3.0",
     "eslint-plugin-react-hooks": "^6",
     "typescript": "7.0.2"
   },
