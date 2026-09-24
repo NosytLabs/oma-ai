@@ -313,6 +313,32 @@ function resolveSiweDomain(): string {
 	return "localhost:3000";
 }
 
+/**
+ * Agent Auth is OFF by default because its four tables were never migrated.
+ *
+ * Better Auth validates the ENTIRE plugin schema when `betterAuth()` is
+ * constructed, not per-route. The `@better-auth/agent-auth` plugin requires
+ * `agent`, `agentHost`, `agentCapabilityGrant` and `approvalRequest`, and
+ * none of them exist in `src/db/schema.ts` or in either migration. While the
+ * plugin was registered unconditionally, that made EVERY auth call throw:
+ *
+ *   GET /api/auth/get-session -> 500 "Drizzle schema mismatch"
+ *
+ * i.e. sign-in and sign-up were completely down in production.
+ *
+ * Gating the plugin restores auth immediately and without a production
+ * database migration. To turn the capability on:
+ *   1. add the four tables (the plugin's own `mergeSchema` output is the
+ *      authoritative shape — do not hand-write it from memory),
+ *   2. generate + apply the migration,
+ *   3. set AGENT_AUTH_ENABLED=true.
+ *
+ * Model discovery is unaffected either way: GET /api/v1/models is public and
+ * unauthenticated, and it is what the plugin's `list_models` capability
+ * wrapped in the first place.
+ */
+const AGENT_AUTH_ENABLED = config.AGENT_AUTH_ENABLED === "true";
+
 export const auth = betterAuth({
 	baseURL: config.BETTER_AUTH_URL ?? config.PUBLIC_APP_URL ?? "http://localhost:3000",
 	secret: config.BETTER_AUTH_SECRET,
@@ -551,7 +577,8 @@ user: {
 								verifyCurrentEmail: true,
 						},
 				}),
-
+			...(AGENT_AUTH_ENABLED
+				? [
 				// Agent Auth — programmatic agent authentication with capability-based access control.
 				agentAuthPlugin({
 						providerName: "OMA-AI",
@@ -597,6 +624,8 @@ user: {
 								}
 						},
 				}),
+				]
+				: []),
 		],
 });
 
