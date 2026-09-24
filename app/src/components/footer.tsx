@@ -301,7 +301,7 @@ export function Footer() {
 								href="https://github.com/NosytLabs"
 								target="_blank"
 								rel="noopener noreferrer"
-								className="inline-flex items-center gap-1 hover:text-text transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void rounded-sm"
+								className="inline-flex min-h-6 items-center gap-1 hover:text-text transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void rounded-sm"
 							>
 								github <ArrowUpRight className="h-3 w-3" aria-hidden="true" />
 							</a>
