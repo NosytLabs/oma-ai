@@ -92,8 +92,21 @@ chatRoutes.post(
 		rateLimit({
 			windowMs: 60_000,
 			maxRequests: 60,
-			// Guest playground traffic is useless if Redis blips 503 every send.
-			failClosed: process.env.NODE_ENV === "production",
+			// Fail OPEN to the in-memory bound, including in production.
+			//
+			// This used to be `failClosed: process.env.NODE_ENV === "production"`,
+			// which contradicted the comment directly above it and the policy
+			// documented in rate-limit/sliding-window.ts ("a missing cache
+			// dependency should degrade enforcement, not availability").
+			// With no Redis configured, EVERY visitor's chat send returned
+			// 503 service_unavailable — the entire free playground was offline.
+			//
+			// This per-minute limiter is a burst guard, not the cost gate: the
+			// real cap is dailyUsageLimit() below (20 msgs/day anonymous), and
+			// it still applies. Degrading here keeps a per-instance bound
+			// without taking the product offline. Configure real Redis for a
+			// shared, multi-instance-accurate limit.
+			failClosed: false,
 		}),
 		// Authenticate before the daily limiter so signed-in website users receive
 		// the registered-user quota instead of being treated as anonymous.
