@@ -157,19 +157,26 @@ function generateContentSecurityPolicy(): string {
 
 	const connectSrc = [
 		"'self'",
-		// Local API — needed for locally-run prod builds (`next start`) where
-		// the playground streams from a local Hono backend; harmless remotely.
-		"http://localhost:3001",
-		"ws://localhost:3001",
-		"http://127.0.0.1:3001",
+		// Local API — only for a locally-run dev server. Gated on the
+		// environment for the same reason 'unsafe-eval' is: a production CSP
+		// allowing connect-src to localhost is NOT harmless remotely. It lets
+		// any injected script send requests to services on the *visitor's* own
+		// machine (a local wallet, bridge, or dev server listening on 3001)
+		// and read the response. The old comment claimed "harmless remotely",
+		// which is exactly backwards.
+		isDev ? "http://localhost:3001" : null,
+		isDev ? "ws://localhost:3001" : null,
+		isDev ? "http://127.0.0.1:3001" : null,
 		// Public RPC fallbacks used by the injected wallet for read-only chain calls
 		"https://*.infura.io",
 		"https://*.alchemy.com",
 		"wss://*.ws.alchemy.com",
 		"https://base-rpc.publicnode.com",
 		"https://api.alchemy.com",
-		// Production API host (same-origin /api proxy is preferred; allow direct too)
-		"https://api.oma-ai.com",
+		// The API is same-origin via the /api proxy on Vercel, so 'self'
+		// already covers it. `https://api.oma-ai.com` was listed here but the
+		// host has no DNS record (NXDOMAIN) — a dead entry that can never
+		// match. Remove it rather than keep a phantom host in the policy.
 		"https://oma-ai.com",
 		// GA4 beacons post here; the wildcard covers regional endpoints.
 		process.env.NEXT_PUBLIC_GA_ID
