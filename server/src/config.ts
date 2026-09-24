@@ -434,3 +434,27 @@ const deployedFunctionEnvError = getDeployedFunctionEnvError({
 if (deployedFunctionEnvError) {
 	throw new Error(`[FATAL] ${deployedFunctionEnvError}`);
 }
+
+/**
+ * INTERNAL_PROXY_SECRET authenticates the Vercel -> Neon hop so the function
+ * can trust Vercel's forwarded client IP.
+ *
+ * It is deliberately optional in the schema (local dev and a direct
+ * `curl localhost` need no proxy), but on a PUBLIC function its absence is
+ * not a harmless default: both Vercel proxies then omit the auth header, the
+ * function stops honouring forwarded IPs, and every anonymous visitor falls
+ * back to Vercel's single egress address — silently collapsing rate limits
+ * and the free-tier quota back into ONE shared bucket. Nothing would fail; the
+ * product would just quietly break. So fail loudly at boot instead.
+ */
+if (process.env.NEON_FUNCTION === "1" && config.NODE_ENV === "production") {
+	const secret = config.INTERNAL_PROXY_SECRET;
+	if (!secret || secret.length < 32) {
+		throw new Error(
+			"[FATAL] INTERNAL_PROXY_SECRET is missing or too short on a public Neon Function. " +
+				"Without it, every anonymous visitor resolves to Vercel's shared egress IP and they all " +
+				"share one rate-limit and free-tier bucket. Set the same strong value (32+ chars) on " +
+				"the Neon function and in Vercel's production env.",
+		);
+	}
+}

@@ -8,6 +8,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://oma-ai.com";
 import { MODELS } from "@/lib/models-data";
 import { StaticModelDetail } from "./_components/StaticModelDetail";
 import { LiveModelDetail } from "./_components/LiveModelDetail";
+import { isModelAvailable } from "@/lib/model-availability";
 
 type LiveModelDetail = {
 	id: string;
@@ -85,7 +86,7 @@ const fetchModelAvailability = cache(
 			const json = (await res.json()) as { data?: { id?: string; available?: boolean }[] };
 			const match = json.data?.find((m) => m.id === slug);
 			if (!match) return null;
-			return match.available !== false;
+			return isModelAvailable(match);
 		} catch {
 			return null;
 		}

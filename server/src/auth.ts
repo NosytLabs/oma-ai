@@ -313,30 +313,52 @@ function resolveSiweDomain(): string {
 }
 
 
-export function resolveTrustedOrigins(input: {
+/** Environment fields the origin resolvers read. */
+export interface AuthOriginConfig {
+	BETTER_AUTH_URL?: string | undefined;
 	PUBLIC_APP_URL?: string | undefined;
 	PRIMARY_DOMAIN?: string | undefined;
 	NODE_ENV?: string | undefined;
-}): string[] {
-	const isProd = input.NODE_ENV !== "development" && input.NODE_ENV !== "test";
+}
+
+/**
+ * Strip scheme, path, port and case from a configured domain.
+ *
+ * Single source of truth: the trusted-origin list, the auth base URL and the
+ * SIWE domain previously each normalized PRIMARY_DOMAIN by hand, and the
+ * copies had already drifted (only one of them treated `::1` as local).
+ */
+function normalizePrimaryDomain(raw: string | undefined): string {
+	return (raw ?? "").trim().replace(/^https?:\/\//i, "").replace(/\/.*$/, "").replace(/:\d+$/, "").toLowerCase();
+}
+
+/** True when a normalized domain refers to the local machine, not a site. */
+function isLocalDomain(domain: string): boolean {
+	if (!domain) return true;
+	if (domain === "::1" || domain === "[::1]") return true;
+	if (domain === "localhost" || domain.endsWith(".localhost")) return true;
+	if (/^127\./.test(domain)) return true;
+	return false;
+}
+
+/**
+ * The canonical public origins for a real domain: apex and www.
+ *
+ * Deriving these from PRIMARY_DOMAIN is what stops a stale PUBLIC_APP_URL from
+ * locking real users out of sign-in (a misconfigured localhost value used to
+ * make Better Auth 403 the live site with INVALID_ORIGIN). Only real,
+ * non-local domains get fabricated https origins; dev keeps its explicit
+ * localhost list below.
+ */
+export function resolveTrustedOrigins(input: AuthOriginConfig): string[] {
+	const isProd = shouldUseSecureCookies(input.NODE_ENV);
 	const origins = new Set<string>();
 
 	// The configured app origin (dev/preview/staging deployments).
 	if (input.PUBLIC_APP_URL) origins.add(input.PUBLIC_APP_URL);
 
-	// Derive the canonical apex/www pair from PRIMARY_DOMAIN.
-	//
-	// LIVE OUTAGE (2026-09-24): trusting PUBLIC_APP_URL alone meant a single
-	// stale or misconfigured value (the deployed function had
-	// PUBLIC_APP_URL=http://localhost:3000) made Better Auth reject the real
-	// site with 403 INVALID_ORIGIN and killed sign-in in production, while a
-	// localhost Origin was accepted. Deriving the canonical pair from
-	// PRIMARY_DOMAIN makes the production origin survive that class of
-	// misconfiguration. Only ever done for a real, non-local domain so dev
-	// never gains fabricated https://localhost entries.
-	const domain = (input.PRIMARY_DOMAIN ?? "").trim().replace(/^https?:\/\//, "").replace(/\/.*$/, "");
-	const isLocalDomain = !domain || domain === "localhost" || domain.endsWith(".localhost") || /^127\./.test(domain) || domain === "::1";
-	if (isProd && domain && !isLocalDomain) {
+	const domain = normalizePrimaryDomain(input.PRIMARY_DOMAIN);
+	if (isProd && !isLocalDomain(domain)) {
 		origins.add(`https://${domain}`);
 		origins.add(`https://www.${domain}`);
 	}
@@ -354,24 +376,15 @@ export function resolveTrustedOrigins(input: {
  * The base URL Better Auth uses to build callback URLs (magic-link redirects,
  * email verification links).
  *
- * LIVE OUTAGE (2026-09-24): the deployed function had
- * BETTER_AUTH_URL/PUBLIC_APP_URL set to http://localhost:3000, so every
- * magic-link email would have contained a `http://localhost:3000/...` verify
- * link — unusable for a real recipient even once the Origin check was fixed.
- * In a non-local environment the canonical https://www.<PRIMARY_DOMAIN>
- * origin is therefore the authoritative base, with the configured values kept
- * only as a fallback for dev/preview/staging.
+ * Must resolve to the SAME canonical origin as resolveTrustedOrigins: if the
+ * two disagree, a link can be accepted for sending yet emailed pointing
+ * somewhere unusable. In a non-local environment the canonical www origin wins;
+ * configured values remain the fallback for dev/preview/staging.
  */
-export function resolveAuthBaseURL(input: {
-	BETTER_AUTH_URL?: string | undefined;
-	PUBLIC_APP_URL?: string | undefined;
-	PRIMARY_DOMAIN?: string | undefined;
-	NODE_ENV?: string | undefined;
-}): string {
-	const isProd = input.NODE_ENV !== "development" && input.NODE_ENV !== "test";
-	const domain = (input.PRIMARY_DOMAIN ?? "").trim().replace(/^https?:\/\//, "").replace(/\/.*$/, "");
-	const isLocalDomain = !domain || domain === "localhost" || domain.endsWith(".localhost") || /^127\./.test(domain);
-	if (isProd && domain && !isLocalDomain) return `https://www.${domain}`;
+export function resolveAuthBaseURL(input: AuthOriginConfig): string {
+	const isProd = shouldUseSecureCookies(input.NODE_ENV);
+	const domain = normalizePrimaryDomain(input.PRIMARY_DOMAIN);
+	if (isProd && !isLocalDomain(domain)) return `https://www.${domain}`;
 	return input.BETTER_AUTH_URL ?? input.PUBLIC_APP_URL ?? "http://localhost:3000";
 }
 

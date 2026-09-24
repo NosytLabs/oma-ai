@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { DEFAULT_API_URL as API_URL } from "@/lib/config";
 import { proxyResponse } from "@/lib/api/proxy-response";
+import { applyTrustedProxyHeaders } from "@/lib/api/proxy-headers";
 
 /**
  * Shared core proxy function for catch-all API routes.
@@ -27,25 +28,7 @@ export async function proxy(req: NextRequest) {
 
 	const headers = new Headers(req.headers);
 	headers.delete("host");
-
-	// Authenticate this hop to the backend.
-	//
-	// The Neon Function is publicly reachable, so it refuses to trust a
-	// forwarded client IP unless the caller proves it is us. Without this
-	// header every visitor resolved to Vercel's egress IP and shared ONE
-	// rate-limit / free-tier bucket (20 msgs/day for the whole internet).
-	//
-	// The browser cannot forge this: the frontend never sets the header, and
-	// anything the browser sends is overwritten here.
-	const proxySecret = process.env.INTERNAL_PROXY_SECRET;
-	if (proxySecret) {
-		headers.set("x-oma-proxy-secret", proxySecret);
-	}
-	// The client's own forwarding headers are meaningless to the backend —
-	// drop them so only the value Vercel itself set is considered.
-	headers.delete("x-forwarded-for");
-	headers.delete("x-vercel-forwarded-for");
-	headers.delete("x-real-ip");
+	applyTrustedProxyHeaders(headers);
 
 	try {
 		const res = await fetch(url, {

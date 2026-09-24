@@ -1,6 +1,5 @@
 "use client";
 
-
 import {
 	ArrowRight,
 	ChevronDown,
@@ -14,7 +13,7 @@ import {
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { InViewFade } from "@/components/motion/in-view-fade";
-import { formatPricePerMillion, loadModels, MODEL_COUNT, type Model, MODELS } from "@/lib/models-data";
+import { MODELS, MODEL_COUNT, formatPricePerMillion, loadModels, type Model } from "@/lib/models-data";
 import { CREDIT_PLANS } from "@/lib/credit-utils";
 import {
 	toPricedModel,
@@ -28,6 +27,7 @@ import {
 import { m } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";
 import { PricingTable } from "./PricingTable";
+import { selectAvailableModels } from "@/lib/model-availability";
 import {
 	railByKey,
 	type SitePaymentSettings,
@@ -234,19 +234,26 @@ export default function PricingPage() {
 
 	const pricedModels = useMemo(() => models.map(toPricedModel), [models]);
 
-	const modelCount = models.filter((model) => model.available !== false).length;
-	// The entry price must be one a visitor can ACTUALLY buy, so it is derived
-	// from available models only. It previously used the whole catalog, so the
-	// page advertised "Starts at $0.15" for a model listed right below it as
-	// UNAVAILABLE, while the cheapest usable model was $0.50.
-	const lowestAvailableInputPrice = useMemo(() => {
-		const available = models.filter((model) => model.available !== false);
-		if (available.length === 0) return null;
-		return formatPricePerMillion(
-			Math.min(...available.map(toPricedModel).map((m) => m.inputPer1M)),
-		);
-	}, [models]);
-	const lowestInputPrice = lowestAvailableInputPrice ?? "—";
+	// One availability projection feeds both the headline count and the entry
+	// price, so the two can never disagree and the catalog is not scanned (and
+	// re-priced) twice per update.
+	//
+	// The entry price must be one a visitor can ACTUALLY buy. It previously used
+	// the whole catalog, so the page advertised "Starts at $0.15" for a model
+	// listed right below it as UNAVAILABLE, while the cheapest usable model was
+	// $0.50.
+	const { modelCount, lowestInputPrice } = useMemo(() => {
+		const available = selectAvailableModels(pricedModels);
+		if (available.length === 0) {
+			return { modelCount: 0, lowestInputPrice: "—" };
+		}
+		return {
+			modelCount: available.length,
+			lowestInputPrice: formatPricePerMillion(
+				Math.min(...available.map((m) => m.inputPer1M)),
+			),
+		};
+	}, [pricedModels]);
 
 	return (
 		<div className="relative overflow-x-clip bg-void">

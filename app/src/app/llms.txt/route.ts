@@ -15,6 +15,7 @@
 	*/
 import { DEFAULT_API_URL } from "@/lib/config";
 import { MODEL_COUNT } from "@/lib/models-data";
+import { isModelAvailable } from "@/lib/model-availability";
 
 export const dynamic = "force-static";
 export const revalidate = 3600;
@@ -44,8 +45,8 @@ export async function GET(): Promise<Response> {
 		if (res.ok) {
 			const body = (await res.json()) as { data?: unknown };
 			const rows = Array.isArray(body?.data) ? body.data : [];
-			const live = rows.filter(
-				(m) => (m as { available?: boolean })?.available !== false,
+			const live = rows.filter((row) =>
+				isModelAvailable(row as { available?: boolean }),
 			);
 			if (live.length > 0) modelCount = live.length;
 		}

@@ -2,17 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useUrlFilters } from "@/components/shared/useUrlFilters";
-import {
-	distinctProviders,
-	getModelsByTier,
-	loadModels,
-	MODALITY_LABELS,
-	MODALITY_ORDER,
-	MODELS,
-	TIER_ORDER,
-	type Model,
-} from "@/lib/models-data";
+import { MODALITY_LABELS, MODALITY_ORDER, MODELS, TIER_ORDER, distinctProviders, getModelsByTier, loadModels, type Model } from "@/lib/models-data";
 import { TIER_LABELS } from "../_lib/labels";
+import { selectAvailableModels } from "@/lib/model-availability";
 
 export type SortKey = "name" | "price-in" | "price-out" | "tier" | "context";
 
@@ -316,11 +308,13 @@ export function useModelFilters() {
 
 	const totalModels = safeModels.length;
 	const visibleModels = filtered.length;
-	// How many are actually accepting requests. `available` is optional and an
-	// OMITTED flag means available (see ModelCard), so only an explicit
-	// `false` counts as offline. Without this the headline said "20 models
-	// available" while 18 of them were marked UNAVAILABLE right below it.
-	const availableCount = safeModels.filter((m) => m.available !== false).length;
+	// How many are actually accepting requests. Uses the canonical availability
+	// rule so this headline can never disagree with /pricing, the sitemap or
+	// the docs — they all read the same predicate now.
+	const availableCount = useMemo(
+		() => selectAvailableModels(safeModels).length,
+		[safeModels],
+	);
 
 	const handleSearch = (value: string) => {
 		setLocalSearch(value);

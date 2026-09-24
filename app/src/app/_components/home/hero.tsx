@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 import { LiveRequestCard } from "./LiveRequestCard";
 import { models as modelsApi } from "@/lib/api/resources";
 import { springs } from "@/lib/animation";
+import { isModelAvailable } from "@/lib/model-availability";
 
 /**
  * Live count of models actually accepting requests.
@@ -32,7 +33,7 @@ function useLiveModelCount(): number | null {
 			.list()
 			.then((res) => {
 				if (cancelled) return;
-				const live = (res.data ?? []).filter((m) => m.available !== false).length;
+				const live = (res.data ?? []).filter(isModelAvailable).length;
 				setCount(live > 0 ? live : null);
 			})
 			.catch(() => {

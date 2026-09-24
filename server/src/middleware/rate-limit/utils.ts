@@ -28,21 +28,31 @@ const TRUSTED_PROXIES: Set<string> = new Set(
  */
 const INTERNAL_PROXY_SECRET = config.INTERNAL_PROXY_SECRET || "";
 
+/**
+ * Decoded once at module load. Config cannot change after startup, and
+ * `extractClientIp` runs on every rate-limited request, so re-encoding the
+ * secret per call was pure per-request allocation.
+ */
+const INTERNAL_PROXY_SECRET_BUF = INTERNAL_PROXY_SECRET
+	? Buffer.from(INTERNAL_PROXY_SECRET, "utf8")
+	: null;
+
 function proxyIsAuthenticated(headers: {
 	header: (k: string) => string | undefined;
 }): boolean {
 	// An unset/empty configured secret must never match, or an attacker
 	// sending an empty header would authenticate.
-	if (!INTERNAL_PROXY_SECRET) return false;
+	if (!INTERNAL_PROXY_SECRET_BUF) return false;
 	const provided = headers.header("x-oma-proxy-secret");
 	if (!provided) return false;
-	// Length check first: timingSafeEqual throws on a length mismatch.
-	if (provided.length !== INTERNAL_PROXY_SECRET.length) return false;
-	try {
-		return timingSafeEqual(Buffer.from(provided), Buffer.from(INTERNAL_PROXY_SECRET));
-	} catch {
-		return false;
-	}
+	const providedBuf = Buffer.from(provided, "utf8");
+	// Compare ENCODED lengths, not string lengths: a multibyte header would
+	// otherwise pass the string check and then throw inside timingSafeEqual,
+	// turning a hostile request into a swallowed server error.
+	if (providedBuf.length !== INTERNAL_PROXY_SECRET_BUF.length) return false;
+	// Equal-length buffers cannot make timingSafeEqual throw, so no try/catch:
+	// an empty catch here would silently disguise a real bug as "untrusted".
+	return timingSafeEqual(providedBuf, INTERNAL_PROXY_SECRET_BUF);
 }
 
 // C3: Production warning when no trusted proxies are configured

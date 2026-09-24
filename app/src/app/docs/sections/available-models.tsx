@@ -4,6 +4,7 @@ import { BookOpen, Terminal } from "lucide-react";
 import { useEffect, useState } from "react";
 import { loadModels } from "@/lib/models-data";
 import { AnimatedSection, CodeBlock, fmt, MODELS, MODEL_COUNT, SectionHeading } from "./shared";
+import { isModelAvailable } from "@/lib/model-availability";
 
 export function AvailableModelsSection() {
 	// Static fallback renders immediately (SSR-safe); the live catalog
@@ -55,7 +56,7 @@ export function AvailableModelsSection() {
 		},
 	];
 
-	const availableCount = models.filter((m) => m.available !== false).length;
+	const availableCount = models.filter(isModelAvailable).length;
 
 	return (
 		<AnimatedSection delay={250}>

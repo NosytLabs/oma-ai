@@ -31,6 +31,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { useDialog } from "@/lib/use-dialog";
 import { useToast } from "@/components/ui/Toast";
+import { isModelAvailable } from "@/lib/model-availability";
 
 interface OpsSnapshot {
 	status: "ok" | "degraded";
@@ -134,7 +135,7 @@ export default function AdminPage() {
 			const p = m.provider ?? "unknown";
 			const cur = byProvider.get(p) ?? { total: 0, available: 0 };
 			cur.total += 1;
-			if (m.available !== false) cur.available += 1;
+			if (isModelAvailable(m)) cur.available += 1;
 			byProvider.set(p, cur);
 		}
 		return [...byProvider.entries()];

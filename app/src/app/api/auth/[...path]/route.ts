@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { buildAuthEndpoint, resolveAuthBackend } from '@/lib/auth-proxy';
+import { applyTrustedProxyHeaders } from '@/lib/api/proxy-headers';
 
 /**
 	* Proxy for Better Auth — handles all /api/auth/* requests, forwarding to the real backend.
@@ -42,18 +43,15 @@ async function proxyToAuth(req: NextRequest, { params }: { params: Promise<{ pat
 			headers[key] = val;
 		});
 
-		// Authenticate this hop to the backend — see lib/api/proxy-handler.ts.
-		// The Neon Function refuses to trust a forwarded client IP from an
-		// unauthenticated caller, so without this every visitor resolved to
-		// Vercel's egress IP and shared one rate-limit bucket.
-		const proxySecret = process.env.INTERNAL_PROXY_SECRET;
-		if (proxySecret) {
-			headers['x-oma-proxy-secret'] = proxySecret;
-		}
-		// Drop client-supplied forwarding headers; only Vercel's own value counts.
-		delete headers['x-forwarded-for'];
-		delete headers['x-vercel-forwarded-for'];
-		delete headers['x-real-ip'];
+		// Same trust policy as the main proxy — shared so the two cannot drift.
+		applyTrustedProxyHeaders({
+			set: (name, value) => {
+				headers[name] = value;
+			},
+			delete: (name) => {
+				delete headers[name];
+			},
+		});
 
 		// Forward cookies manually
 		if (req.headers.has('cookie')) {

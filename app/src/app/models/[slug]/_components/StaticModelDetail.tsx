@@ -8,6 +8,7 @@ import { TIER_LABELS } from "@/app/models/_lib/labels";
 import {
 	PROVIDER_COLORS,
 	TIER_COLORS,
+	formatContextLength,
 	type Model,
 } from "@/lib/models-data";
 import { playgroundHrefForModel } from "@/lib/playground-href";
@@ -20,25 +21,12 @@ function formatPrice(per1M: number): string {
 }
 
 function formatContextWithVisual(tokens: number | undefined | null): string {
-	if (typeof tokens !== "number" || !Number.isFinite(tokens) || tokens <= 0) {
-		return "—";
-	}
-	// Context window is a TOKEN metric. A "pages" figure is an unsourced
-	// conversion (it implies a page size nobody agreed on) and was actively
-	// misleading — the catalog itself labels this model "200K ctx". Show the
-	// real, comparable unit and, for large windows, a rounded tier label.
-	const n = tokens.toLocaleString();
-	if (tokens >= 1_000_000) {
-		const m = tokens / 1_000_000;
-		const mLabel = Number.isInteger(m) ? `${m}M` : `${m.toFixed(1)}M`;
-		return `${mLabel} tokens (${n})`;
-	}
-	if (tokens >= 1_000) {
-		const k = tokens / 1_000;
-		const kLabel = Number.isInteger(k) ? `${k}K` : `${k.toFixed(1)}K`;
-		return `${kLabel} tokens (${n})`;
-	}
-	return `${n} tokens`;
+	// Context window is a TOKEN metric. An earlier "pages" label was an
+	// unsourced conversion (it implied a page size nobody agreed on) and
+	// contradicted the catalogue's own "200K ctx" labelling. Reuse the
+	// canonical formatter so static and live model pages cannot drift.
+	if (typeof tokens !== "number") return "—";
+	return `${formatContextLength(tokens)} (${tokens.toLocaleString()} tokens)`;
 }
 
 export function StaticModelDetail({ model }: { model: Model }) {

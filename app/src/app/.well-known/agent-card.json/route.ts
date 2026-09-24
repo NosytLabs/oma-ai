@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { MODEL_COUNT } from "@/lib/models-data";
+import { isModelAvailable } from "@/lib/model-availability";
 
 export const dynamic = "force-static";
 export const revalidate = 3600;
@@ -41,7 +42,7 @@ async function liveModelCount(): Promise<number> {
 		const rows = Array.isArray(body?.data) ? body.data : [];
 		const live = rows.filter((m) => {
 			const model = m as { available?: boolean };
-			return model?.available !== false;
+			return isModelAvailable(model ?? {});
 		});
 		return live.length > 0 ? live.length : MODEL_COUNT;
 	} catch {

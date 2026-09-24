@@ -26,6 +26,8 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { Hono } from "hono";
+import type { Context } from "hono";
+import type { OmaEnv } from "../../../types.js";
 
 const SECRET = "test-internal-proxy-secret-abcdef0123456789";
 
@@ -59,11 +61,18 @@ async function loadExtract(secret: string | undefined) {
 	return mod.extractClientIp;
 }
 
+/**
+ * Build the minimal Context surface extractClientIp reads.
+ *
+ * One documented cast in a single factory beats scattering casts across every
+ * call site. The production signature stays honest (it really does require a
+ * Hono Context); only this test double is partial.
+ */
 function ctxWith(headers: Record<string, string>) {
 	return {
 		req: { header: (k: string) => headers[k.toLowerCase()] },
 		env: {},
-	} as never;
+	} as unknown as Context<OmaEnv>;
 }
 
 beforeEach(() => counts.clear());
@@ -137,9 +146,9 @@ describe("the shared-bucket bug this prevents", () => {
 		// is visible: two different real visitors get the SAME key.
 		const extractClientIp = await loadExtract(undefined);
 		const app = new Hono();
-		// The helper takes a Context<OmaEnv>; a bare Hono() yields Context<BlankEnv>,
-		// so cast at this boundary rather than weakening the helper's signature.
-		app.get("/x", (c) => c.text(extractClientIp(c as never)));
+		// A bare Hono() yields Context<BlankEnv>, so declare the env generic
+		// instead of casting through `never`.
+		app.get("/x", (c) => c.text(extractClientIp(c as unknown as Context<OmaEnv>)));
 		const req = (ip: string) =>
 			app.request("http://local/x", { headers: { "x-forwarded-for": ip } });
 		const a = (await (await req("198.51.100.1")).text()).trim();

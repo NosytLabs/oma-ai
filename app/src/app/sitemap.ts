@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { MODELS } from "@/lib/models-data";
+import { isModelAvailable } from "@/lib/model-availability";
 
 /**
  * Hard ceiling on the catalog read. A hung upstream must never stall the
@@ -29,7 +30,7 @@ async function fetchAvailableModelIds(): Promise<Set<string> | null> {
 		};
 		if (!Array.isArray(json.data)) return null;
 		return new Set(
-			json.data.filter((m) => m.available !== false && m.id).map((m) => m.id as string),
+			json.data.filter((m) => m.id && isModelAvailable(m)).map((m) => m.id as string),
 		);
 	} catch {
 		return null;

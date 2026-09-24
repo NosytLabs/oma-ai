@@ -7,6 +7,7 @@
 
 import { MODELS, normalizeProvider } from "@/lib/models-data";
 import type { ModelOption } from "@/lib/types/model";
+import { isModelAvailable } from "@/lib/model-availability";
 
 /**
  * Free catalog ids (upstream=openbroker — OMA-AI on Gonka.AI).
@@ -201,7 +202,7 @@ export function mapLiveModel(m: LiveModelRaw): ModelOption {
 		name: liveDisplayName(m.id, m.display_name) || humanizeModelId(m.id),
 		category: cat,
 		provider,
-		available: m.available !== false,
+		available: isModelAvailable(m),
 		inputPer1M: m.pricing?.prompt
 			? parseFloat(m.pricing.prompt)
 			: 0,
