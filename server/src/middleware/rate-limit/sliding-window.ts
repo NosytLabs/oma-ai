@@ -42,12 +42,27 @@ export interface RateLimitOptions {
 		windowMs: number;
 		maxRequests: number;
 		keyPrefix?: string;
-		/** Session reads should fail-open so a Redis blip doesn't 503 every page. */
+		/**
+		 * When Redis is unavailable: `false` degrades to a bounded
+		 * per-process memory store (still 429s, header `degraded-memory`);
+		 * `true` returns 503 instead.
+		 *
+		 * Defaults to `false`. The previous `true` default meant that any
+		 * deployment without working @upstash/redis credentials silently
+		 * 503'd every route using the default — in production that took out
+		 * POST /api/v1/checkout and POST /x402/verify (both verified 503
+		 * rate_limit_error), i.e. the entire revenue path, while the rest of
+		 * the API looked healthy. A missing cache dependency should degrade
+		 * enforcement, not availability.
+		 *
+		 * Opt in to `true` only for a route where failing open is worse than
+		 * failing closed.
+		 */
 		failClosed?: boolean;
 }
 
 export function rateLimit(options: RateLimitOptions) {
-	const { windowMs, maxRequests, keyPrefix = "rl", failClosed = true } = options;
+	const { windowMs, maxRequests, keyPrefix = "rl", failClosed = false } = options;
 	const windowSec = Math.ceil(windowMs / 1000);
 	// Per-limiter-instance, not per-process: each configured route gets its
 	// own one-shot warning instead of the first one silencing the rest.

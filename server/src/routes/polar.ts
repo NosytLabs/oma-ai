@@ -563,7 +563,29 @@ async function markEventProcessedTx(
 				);
 }
 
-const polarWebhookRateLimit = rateLimit({ windowMs: 60_000, maxRequests: 1000 }); // High limit to allow spikes, but prevent basic DoS
+// Fails OPEN on purpose.
+//
+// `rateLimit` defaults to `failClosed: true`, which returns 503 whenever the
+// Redis backend is unreachable. The rate limiter here uses @upstash/redis
+// (REST) and the deployment only sets REDIS_URL — no UPSTASH_REDIS_REST_URL /
+// UPSTASH_REDIS_REST_TOKEN — so `isRedisReady()` is false and EVERY Polar
+// webhook delivery was rejected with 503. That silently blocks all revenue:
+// the endpoint URL and signature secret are both correct, orders settle on
+// Polar's side, and our ledger never gets credited.
+//
+// This endpoint is cryptographically signature-verified with standardwebhooks
+// (see polarWebhookHandler), so an attacker cannot forge an accepted payload
+// without the secret. That verification — not this limiter — is the real
+// security boundary. A Redis outage must not be able to stop payments.
+//
+// The in-process fallback cap still applies when Redis is down, so this is
+// bounded, not unlimited.
+const polarWebhookRateLimit = rateLimit({
+	windowMs: 60_000,
+	maxRequests: 1000,
+	keyPrefix: "polar-webhook",
+	failClosed: false,
+});
 
 polarRoutes.post("/webhooks/polar", polarWebhookRateLimit, polarWebhookHandler);
 polarRoutes.post("/api/webhook/polar", polarWebhookRateLimit, polarWebhookHandler);
