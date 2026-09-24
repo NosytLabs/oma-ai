@@ -1,5 +1,10 @@
 import { z } from "zod";
 import { PLACEHOLDER_ADDRESSES } from "./constants.js";
+// NOTE: deliberately NOT importing lib/logger.js here -- it imports config.js
+// for its level/transport settings, so importing it back would create a cycle
+// (and the circular value would be undefined at module-eval time). Startup
+// guards in this module use console directly; the pino logger is wired up in
+// index.ts once config has finished evaluating.
 
 const INSECURE_DEFAULTS = [
 		"dev-secret-change-me-in-prod-32ch",
@@ -459,8 +464,8 @@ if (deployedFunctionEnvError) {
 if (process.env.NEON_FUNCTION === "1" && config.NODE_ENV === "production") {
 	const secret = config.INTERNAL_PROXY_SECRET;
 	if (!secret || secret.length < 32) {
-		logger.error(
-			"[rate-limit] INTERNAL_PROXY_SECRET is missing or too short on this public Neon " +
+		console.error(
+			"[degraded] INTERNAL_PROXY_SECRET is missing or too short on this public Neon " +
 				"Function. Requests still work, but every anonymous visitor resolves to Vercel's " +
 				"shared egress IP, so they all share one rate-limit and free-tier bucket. Set the " +
 				"same 32+ char value as Vercel's INTERNAL_PROXY_SECRET in the Neon dashboard " +
