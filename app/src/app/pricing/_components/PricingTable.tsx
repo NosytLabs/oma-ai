@@ -339,34 +339,33 @@ export function PricingTable({
 										    exact colour a live value uses) made half a dead model's
 										    price read as buyable. Context is muted but not struck:
 										    a line through "128K" reads as a typo, not as unavailable. */}
-										{(() => {
-											const dead = mm.available === false;
-											return (
-												<>
-													<td
-														className={`px-4 py-3 text-right font-mono tabular-nums text-sm font-medium ${
-															dead ? "text-text-muted line-through" : "text-[var(--color-accent)]"
-														}`}
-													>
-														{fmtPrice(mm.inputPer1M)}
-													</td>
-													<td
-														className={`px-4 py-3 text-right font-mono tabular-nums text-sm font-medium ${
-															dead ? "text-text-muted line-through" : "text-text-secondary"
-														}`}
-													>
-														{fmtPrice(mm.outputPer1M)}
-													</td>
-													<td
-														className={`px-4 py-3 text-right text-xs font-mono tabular-nums ${
-															dead ? "text-text-muted" : "text-text-secondary"
-														}`}
-													>
-														{mm.ctx}
-													</td>
-												</>
-											);
-										})()}
+										<td
+											className={`px-4 py-3 text-right font-mono tabular-nums text-sm font-medium ${
+												mm.available === false
+													? "text-text-muted line-through"
+													: "text-[var(--color-accent)]"
+											}`}
+										>
+											{fmtPrice(mm.inputPer1M)}
+										</td>
+										<td
+											className={`px-4 py-3 text-right font-mono tabular-nums text-sm font-medium ${
+												mm.available === false
+													? "text-text-muted line-through"
+													: "text-text-secondary"
+											}`}
+										>
+											{fmtPrice(mm.outputPer1M)}
+										</td>
+										<td
+											className={`px-4 py-3 text-right text-xs font-mono tabular-nums ${
+												mm.available === false
+													? "text-text-muted"
+													: "text-text-secondary"
+											}`}
+										>
+											{mm.ctx}
+										</td>
 									</tr>
 								))
 							) : (
