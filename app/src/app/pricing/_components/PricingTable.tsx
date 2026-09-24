@@ -333,22 +333,40 @@ export function PricingTable({
 										</td>
 										{/* An unavailable model must not render its price in the
 										    accent colour: a dimmed row with a live-looking green
-										    price implies the model can actually be bought. */}
-										<td
-											className={`px-4 py-3 text-right font-mono tabular-nums text-sm font-medium ${
-												mm.available === false
-													? "text-text-muted line-through"
-													: "text-[var(--color-accent)]"
-											}`}
-										>
-											{fmtPrice(mm.inputPer1M)}
-										</td>
-										<td className="px-4 py-3 text-right font-mono tabular-nums text-sm font-medium text-text-secondary">
-											{fmtPrice(mm.outputPer1M)}
-										</td>
-										<td className="px-4 py-3 text-right text-xs text-text-secondary font-mono tabular-nums">
-											{mm.ctx}
-										</td>
+										    price implies the model can actually be bought. The same
+										    treatment has to cover BOTH price columns -- striking the
+										    input while leaving the output in text-text-secondary (the
+										    exact colour a live value uses) made half a dead model's
+										    price read as buyable. Context is muted but not struck:
+										    a line through "128K" reads as a typo, not as unavailable. */}
+										{(() => {
+											const dead = mm.available === false;
+											return (
+												<>
+													<td
+														className={`px-4 py-3 text-right font-mono tabular-nums text-sm font-medium ${
+															dead ? "text-text-muted line-through" : "text-[var(--color-accent)]"
+														}`}
+													>
+														{fmtPrice(mm.inputPer1M)}
+													</td>
+													<td
+														className={`px-4 py-3 text-right font-mono tabular-nums text-sm font-medium ${
+															dead ? "text-text-muted line-through" : "text-text-secondary"
+														}`}
+													>
+														{fmtPrice(mm.outputPer1M)}
+													</td>
+													<td
+														className={`px-4 py-3 text-right text-xs font-mono tabular-nums ${
+															dead ? "text-text-muted" : "text-text-secondary"
+														}`}
+													>
+														{mm.ctx}
+													</td>
+												</>
+											);
+										})()}
 									</tr>
 								))
 							) : (
