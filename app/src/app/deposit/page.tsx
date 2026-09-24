@@ -111,10 +111,10 @@ function PaymentMethodsInfo({
 			transition={{ delay: 0.15, ...springs.card }}
 			className="mt-8 rounded-[var(--radius-lg)] border border-border bg-surface/50 p-5"
 		>
-			<h3 className="mb-3 flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-text-secondary">
+			<h2 className="mb-3 flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-text-secondary">
 				<Zap className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
 				Payment methods
-			</h3>
+			</h2>
 			<div className="grid gap-3 sm:grid-cols-3">
 				{methods.map((m) => (
 					<div

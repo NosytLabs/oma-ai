@@ -147,6 +147,10 @@ function generateContentSecurityPolicy(): string {
 		"'self'",
 		isDev ? "'unsafe-eval'" : null,
 		"'unsafe-inline'", // Next.js inline bootstraps + theme FOUC script
+		// Google Analytics 4 (gtag.js). Gated on the same env var the
+		// <GoogleAnalytics> component reads, so a build without the ID also
+		// does not widen its CSP.
+		process.env.NEXT_PUBLIC_GA_ID ? "https://www.googletagmanager.com" : null,
 	].filter(Boolean).join(" ");
 
 	const connectSrc = [
@@ -165,7 +169,13 @@ function generateContentSecurityPolicy(): string {
 		// Production API host (same-origin /api proxy is preferred; allow direct too)
 		"https://api.oma-ai.com",
 		"https://oma-ai.com",
-	].join(" ");
+		// GA4 beacons post here; the wildcard covers regional endpoints.
+		process.env.NEXT_PUBLIC_GA_ID
+			? "https://www.google-analytics.com https://region1.google-analytics.com"
+			: null,
+	]
+		.filter(Boolean)
+		.join(" ");
 
 	const directives = [
 		"default-src 'self'",
