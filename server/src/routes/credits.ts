@@ -5,6 +5,14 @@
 	* Backed by the `credit_batches`, `credit_balances`, `deposits`,
 	* `usage_records` tables. All routes require a
 	* session or bearer token (same as /v1/balance).
+	*
+	* KNOWN GAP: `credit_batches` is never written. Grepping the server for
+	* `insert(creditBatches)` returns nothing, so `activeBatches` is always an
+	* empty array and any UI rendering it shows nothing. The aggregate
+	* `balanceCents` is accurate and is the authoritative figure. Populating
+	* batches requires an expiry policy decision (the column is NOT NULL and the
+	* site currently promises "credits never expire"), so it is deliberately
+	* not backfilled with invented data here.
 	*/
 import { Hono } from "hono";
 import { z } from "zod";
