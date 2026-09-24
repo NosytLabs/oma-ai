@@ -159,11 +159,19 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 							: "—"}
 					</span>
 					<div className="flex items-center gap-2 text-[11px] font-mono tabular-nums">
+						{/* An unavailable model's price must not keep the accent
+						    colour: that green is the buy signal, and a visitor
+						    commits on the price, not the badge. The badge and the
+						    CTA below already say "Unavailable" -- the price has
+						    to agree with them. Verified live: the dead card
+						    painted rgb(70,211,154), byte-identical to the live
+						    card's. Output is muted too, but not struck, so the
+						    "input . output" pair stays readable as a pair. */}
 						{isNonChat &&
 						typeof model.pricePerUnit === "number" &&
 						model.pricePerUnit > 0 ? (
 							<span
-								className="text-accent"
+								className={unavailable ? "text-text-muted line-through" : "text-accent"}
 								title={`Price${model.priceUnit ?? ""}`}
 							>
 								${model.pricePerUnit.toFixed(model.pricePerUnit < 0.1 ? 4 : 3)}
@@ -171,7 +179,12 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 							</span>
 						) : (
 							<>
-								<span className="text-accent" aria-hidden="true">
+								<span
+									className={
+										unavailable ? "text-text-muted line-through" : "text-accent"
+									}
+									aria-hidden="true"
+								>
 									$
 									{typeof model.inputPricePer1M === "number"
 										? model.inputPricePer1M < 0.01
@@ -182,7 +195,10 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 								<span className="text-text-muted" aria-hidden="true">
 									&middot;
 								</span>
-								<span className="text-text-secondary" aria-hidden="true">
+								<span
+									className={unavailable ? "text-text-muted" : "text-text-secondary"}
+									aria-hidden="true"
+								>
 									$
 									{typeof model.outputPricePer1M === "number"
 										? model.outputPricePer1M < 0.01

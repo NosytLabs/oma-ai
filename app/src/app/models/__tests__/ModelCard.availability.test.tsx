@@ -49,4 +49,37 @@ describe("ModelCard availability", () => {
 		expect(screen.queryByText(/unavailable/i)).toBeNull();
 		expect(screen.getByText(/try in chat/i)).toBeTruthy();
 	});
+
+	/**
+	 * The badge and the CTA were honest, but the PRICE was not. Measured live
+	 * on a real 1440px render: the unavailable Claude Opus 5 card painted its
+	 * input price rgb(70,211,154) text-accent and its output price
+	 * rgb(184,195,209) text-text-secondary -- byte-identical to the live
+	 * MiniMax M2.7 card. Price is what a visitor commits on, so a badge alone
+	 * does not carry the message; the accent colour is the buy signal.
+	 */
+	describe("price presentation", () => {
+		function inputPriceSpan(container: HTMLElement): HTMLElement | undefined {
+			return Array.from(container.querySelectorAll<HTMLElement>('span[aria-hidden="true"]')).find(
+				(s) => (s.textContent ?? "").indexOf("$7.50") === 0,
+			);
+		}
+
+		it("mutes and strikes the input price on an unavailable model", () => {
+			const { container } = render(<ModelCard model={{ ...base, available: false }} index={0} />);
+			const inputSpan = inputPriceSpan(container);
+			expect(inputSpan, "input price span not found").toBeTruthy();
+			expect(inputSpan!.className).toMatch(/line-through/);
+			expect(inputSpan!.className).toMatch(/text-text-muted/);
+			expect(inputSpan!.className).not.toMatch(/text-accent/);
+		});
+
+		it("keeps the accent price on an available model", () => {
+			const { container } = render(<ModelCard model={{ ...base, available: true }} index={0} />);
+			const inputSpan = inputPriceSpan(container);
+			expect(inputSpan, "input price span not found").toBeTruthy();
+			expect(inputSpan!.className).toMatch(/text-accent/);
+			expect(inputSpan!.className).not.toMatch(/line-through/);
+		});
+	});
 });
