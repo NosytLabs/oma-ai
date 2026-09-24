@@ -5,8 +5,8 @@
 	* - Local / self-hosted Postgres: TCP via `pg` + `drizzle-orm/node-postgres`.
 	*/
 
-import { neon } from "@neondatabase/serverless";
-import { drizzle as drizzleNeon } from "drizzle-orm/neon-http";
+import { Pool } from "@neondatabase/serverless";
+import { drizzle as drizzleNeonWs } from "drizzle-orm/neon-serverless";
 import { drizzle as drizzleNode, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import * as schema from "./schema.js";
@@ -20,6 +20,7 @@ export type AppDb = NodePgDatabase<typeof schema>;
 let _db: AppDb | null = null;
 let _dbInitFailed = false;
 let _pgPool: pg.Pool | null = null;
+let _neonPool: InstanceType<typeof Pool> | null = null;
 
 function isNeonUrl(url: string): boolean {
 	try {
@@ -31,12 +32,31 @@ function isNeonUrl(url: string): boolean {
 }
 
 function createNeonDb(dbUrl: string): AppDb {
-	const poolUrl = dbUrl.includes("neon.tech")
-		? `${dbUrl}${dbUrl.includes("?") ? "&" : "?"}pgbouncer=true&pool_timeout=30&connection_limit=${config.CONNECTION_POOL_SIZE}`
-		: dbUrl;
-	const sql = neon(poolUrl);
-	// Neon HTTP drizzle is structurally close enough for our query surface.
-	return drizzleNeon(sql, { schema }) as unknown as AppDb;
+	// CRITICAL: must use the WebSocket driver (`neon-serverless`), NOT
+	// `neon-http`. The HTTP driver throws on every transaction:
+	//
+	//   node_modules/drizzle-orm/neon-http/session.js:152
+	//     throw new Error("No transactions support in neon-http driver");
+	//
+	// Four money paths call db.transaction() and were therefore failing
+	// outright on Neon: credit deduction (inference/billing.ts), Polar
+	// settlement (routes/polar.ts), x402 settlement (x402/facilitator.ts)
+	// and deposit recovery (lib/deposit-recovery.ts). Local dev uses
+	// node-postgres, which also supports transactions, so tests and
+	// production silently diverged.
+	//
+	// `drizzle-orm/neon-serverless` is backed by a WebSocket pool and DOES
+	// implement transaction(). This code runs on Neon compute (the Node
+	// runtime, `node dist/index.js`), where WebSockets are available.
+	const pool = new Pool({
+		connectionString: dbUrl,
+		max: Math.min(config.CONNECTION_POOL_SIZE ?? 10, 20),
+	});
+	pool.on("error", (err: Error) => {
+		logger.error({ err }, "[db] neon pool idle client error");
+	});
+	_neonPool = pool;
+	return drizzleNeonWs(pool, { schema }) as unknown as AppDb;
 }
 
 function createNodePgDb(dbUrl: string): AppDb {
@@ -76,7 +96,7 @@ function getDb() {
 		try {
 			_db = isNeonUrl(dbUrl) ? createNeonDb(dbUrl) : createNodePgDb(dbUrl);
 			logger.info(
-				{ driver: isNeonUrl(dbUrl) ? "neon-http" : "node-postgres" },
+				{ driver: isNeonUrl(dbUrl) ? "neon-serverless(ws)" : "node-postgres" },
 				"[db] connected",
 			);
 		} catch (err) {
@@ -92,6 +112,25 @@ function getDb() {
 		}
 	}
 	return _db;
+}
+
+/**
+ * Close pooled connections on shutdown.
+ *
+ * The previous neon-http driver was stateless (one HTTP request per query),
+ * so there was nothing to release. `neon-serverless` holds an open WebSocket
+ * pool, which would otherwise keep the process alive on SIGTERM/SIGINT and
+ * leak connections across hot reloads.
+ */
+export async function closeDb(): Promise<void> {
+	if (_neonPool) {
+		await _neonPool.end();
+		_neonPool = null;
+	}
+	if (_pgPool) {
+		await _pgPool.end();
+		_pgPool = null;
+	}
 }
 
 const createMockDrizzle = (): AppDb => {
