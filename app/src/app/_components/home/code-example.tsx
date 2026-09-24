@@ -20,7 +20,7 @@ function buildExampleCode(modelCount: number) {
 
 const client = new OpenAI({
 	apiKey: process.env.OPENAI_KEY, // one key for every model
-	baseURL: "https://api.oma-ai.com/v1",
+	baseURL: "https://www.oma-ai.com/api/v1",
 });
 
 const response = await client.chat.completions.create({

@@ -5,7 +5,7 @@ import type { Context, Next } from "hono";
  * CSP, HSTS, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, and
  * Permissions-Policy to every response — including responses proxied through
  * the Next `/api/*` catch-all. We only add Hono-only responses get these
- * (e.g. direct hits to api.oma-ai.com that bypass the Next proxy).
+ * (e.g. direct hits to the API base that bypass the Next proxy).
  *
  * The CSP here is intentionally a *subset* of the Next CSP so that when both
  * fire on a single response (Next proxy + Hono middleware) the duplicate

@@ -15,8 +15,8 @@ describe("getOpenApiServers", () => {
 	});
 
 	it("includes production and local endpoints for a public API URL", () => {
-		expect(getOpenApiServers("https://api.oma-ai.com", 3001)).toEqual([
-			{ url: "https://api.oma-ai.com", description: "Production" },
+		expect(getOpenApiServers("https://www.oma-ai.com/api", 3001)).toEqual([
+			{ url: "https://www.oma-ai.com/api", description: "Production" },
 			{ url: "http://localhost:3001", description: "Local development" },
 		]);
 	});

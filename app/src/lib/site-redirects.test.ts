@@ -60,8 +60,8 @@ describe("SITE_REDIRECTS (shipped next.config source)", () => {
 });
 
 describe("sitemap excludes removed marketing routes", () => {
-	it("does not list any REMOVED_PUBLIC_PATHS URL", () => {
-		const urls = sitemap().map((e) => e.url);
+	it("does not list any REMOVED_PUBLIC_PATHS URL", async () => {
+		const urls = (await sitemap()).map((e) => e.url);
 		for (const path of REMOVED_PUBLIC_PATHS) {
 			const hit = urls.some(
 				(u) =>

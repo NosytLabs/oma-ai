@@ -100,7 +100,7 @@ const envSchema = z.object({
 		// server-rendered surface that surfaces the public endpoint to clients.
 		// Falls back to the production domain; production deployments can override
 		// (e.g. staging environments).
-		PUBLIC_API_URL: z.string().url().default("https://api.oma-ai.com"),
+		PUBLIC_API_URL: z.string().url().default("https://www.oma-ai.com/api"),
 		// PUBLIC_APP_URL — the Next.js app origin. Used by Better Auth's
 		// trustedOrigins and as the baseURL fallback for session cookie domain.
 		// Falls back to localhost in dev.

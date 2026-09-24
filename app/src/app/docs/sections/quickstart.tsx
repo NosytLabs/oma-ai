@@ -48,7 +48,7 @@ function ModalityExample({ title, code }: { title: string; code: string }) {
 }
 
 export function QuickStartSection() {
-	const curlCode = `curl https://api.oma-ai.com/v1/chat/completions \\
+	const curlCode = `curl https://www.oma-ai.com/api/v1/chat/completions \\
 	-H "Authorization: Bearer oma_sk_your_key_here" \\
 	-H "Content-Type: application/json" \\
 	-d '{
@@ -99,7 +99,7 @@ export function QuickStartSection() {
 			<div className="mt-4 grid gap-3 sm:grid-cols-2">
 				<div className="rounded-[var(--radius-lg)] border border-border bg-panel shadow-[var(--shadow-md)] p-3">
 					<h3 className="text-xs text-text-muted mb-1">Base URL</h3>
-					<code className="text-sm text-accent">https://api.oma-ai.com/v1</code>
+					<code className="text-sm text-accent">https://www.oma-ai.com/api/v1</code>
 				</div>
 				<div className="rounded-[var(--radius-lg)] border border-border bg-panel shadow-[var(--shadow-md)] p-3">
 					<h3 className="text-xs text-text-muted mb-1">SDK Install</h3>
@@ -119,7 +119,7 @@ export function QuickStartSection() {
 				<div className="grid gap-3 md:grid-cols-2">
 					<ModalityExample
 						title="Chat (OpenAI-compatible)"
-						code={`curl https://api.oma-ai.com/v1/chat/completions \\
+						code={`curl https://www.oma-ai.com/api/v1/chat/completions \\
 		-H "Authorization: Bearer oma_sk_your_key_here" \\
 		-H "Content-Type: application/json" \\
 		-d '{
@@ -129,7 +129,7 @@ export function QuickStartSection() {
 					/>
 					<ModalityExample
 						title="Messages (Anthropic-compatible)"
-						code={`curl https://api.oma-ai.com/v1/messages \\
+						code={`curl https://www.oma-ai.com/api/v1/messages \\
 	-H "x-api-key: oma_sk_your_key_here" \\
 	-H "anthropic-version: 2023-06-01" \\
 	-H "Content-Type: application/json" \\

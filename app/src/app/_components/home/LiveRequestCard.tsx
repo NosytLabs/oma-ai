@@ -65,7 +65,7 @@ export function LiveRequestCard({ className }: { className?: string }) {
 
 	// Build the static request lines that always render in full.
 	const requestHeader = `POST /v1/chat/completions HTTP/1.1
-Host: api.oma-ai.com
+Host: www.oma-ai.com/api
 Authorization: Bearer $OMA_KEY
 Content-Type: application/json`;
 	const requestBody = `{
@@ -178,7 +178,7 @@ Content-Type: application/json`;
 	aria-hidden="true"
 	/>
 	<span className="ml-3 truncate font-mono text-[11px] text-text-muted">
-	api.oma-ai.com/v1/chat/completions
+	www.oma-ai.com/api/v1/chat/completions
 	</span>
 	<span
 			className={cn(
@@ -216,7 +216,7 @@ Content-Type: application/json`;
 	return (
 	<span key={idx} className="block">
 	<span className="text-text-muted">Host:</span>{" "}
-	<span className="text-info">api.oma-ai.com</span>
+	<span className="text-info">www.oma-ai.com/api</span>
 	</span>
 	);
 	if (line.startsWith("Authorization:"))

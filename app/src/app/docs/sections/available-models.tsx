@@ -174,7 +174,7 @@ export function AvailableModelsSection() {
 							current model catalog with pricing and capabilities.
 						</p>
 						<CodeBlock
-							code={`curl https://api.oma-ai.com/v1/models | jq '.data | length'`}
+							code={`curl https://www.oma-ai.com/api/v1/models | jq '.data | length'`}
 							lang="bash"
 						/>
 					</div>

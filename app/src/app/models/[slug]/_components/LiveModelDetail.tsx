@@ -85,7 +85,7 @@ export function LiveModelDetail({
 	const inputPrice = formatPrice(inputPricePer1M ?? 0);
 	const outputPrice = formatPrice(outputPricePer1M ?? 0);
 
-	const liveCurlExample = `curl https://api.oma-ai.com/v1/chat/completions \\
+	const liveCurlExample = `curl https://www.oma-ai.com/api/v1/chat/completions \\
 	-H "Content-Type: application/json" \\
 	-H "Authorization: Bearer $OMA_API_KEY" \\
 	-d '{
@@ -102,7 +102,7 @@ import openai
 
 client = openai.OpenAI(
 	api_key=os.getenv("OMA_API_KEY"),
-	base_url="https://api.oma-ai.com/v1"
+	base_url="https://www.oma-ai.com/api/v1"
 )
 
 response = client.chat.completions.create(
@@ -120,7 +120,7 @@ print(response.choices[0].message.content)`;
 
 const client = new OpenAI({
 	apiKey: process.env.OMA_API_KEY,
-	baseURL: "https://api.oma-ai.com/v1"
+	baseURL: "https://www.oma-ai.com/api/v1"
 });
 
 const response = await client.chat.completions.create({

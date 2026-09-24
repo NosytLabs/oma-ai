@@ -43,7 +43,7 @@ export function StaticModelDetail({ model }: { model: Model }) {
 	const inputPrice = formatPrice(model.inputPricePer1M);
 	const outputPrice = formatPrice(model.outputPricePer1M);
 
-	const curlExample = `curl https://api.oma-ai.com/v1/chat/completions \\
+	const curlExample = `curl https://www.oma-ai.com/api/v1/chat/completions \\
 	-H "Content-Type: application/json" \\
 	-H "Authorization: Bearer $OMA_API_KEY" \\
 	-d '{
@@ -59,7 +59,7 @@ export function StaticModelDetail({ model }: { model: Model }) {
 
 client = openai.OpenAI(
 	api_key=os.getenv("OMA_API_KEY"),
-	base_url="https://api.oma-ai.com/v1"
+	base_url="https://www.oma-ai.com/api/v1"
 )
 
 response = client.chat.completions.create(
@@ -77,7 +77,7 @@ print(response.choices[0].message.content)`;
 
 const client = new OpenAI({
 	apiKey: process.env.OMA_API_KEY,
-	baseURL: "https://api.oma-ai.com/v1"
+	baseURL: "https://www.oma-ai.com/api/v1"
 });
 
 const response = await client.chat.completions.create({

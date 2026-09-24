@@ -23,7 +23,7 @@ export async function GET() {
 	const apiUrl = (
 		process.env.PUBLIC_API_URL ||
 		process.env.NEXT_PUBLIC_PUBLIC_API_URL ||
-		"https://api.oma-ai.com"
+		"https://www.oma-ai.com/api"
 	).replace(/\/+$/, "");
 
 	const agentCard = {

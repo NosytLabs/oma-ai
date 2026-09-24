@@ -2,7 +2,7 @@ import { Zap } from "lucide-react";
 import { AnimatedSection, CodeBlock, SectionHeading, TabbedCode } from "./shared";
 
 export function StreamingSection() {
-	const streamCode = `curl https://api.oma-ai.com/v1/chat/completions \\
+	const streamCode = `curl https://www.oma-ai.com/api/v1/chat/completions \\
 	-H "Authorization: Bearer oma_sk_your_key_here" \\
 	-H "Content-Type: application/json" \\
 	-d '{
@@ -24,7 +24,7 @@ data: [DONE]`;
 	const pythonStreamCode = `from openai import OpenAI
 client = OpenAI(
 	api_key="oma_sk_your_key_here",
-	base_url="https://api.oma-ai.com/v1"
+	base_url="https://www.oma-ai.com/api/v1"
 )
 
 stream = client.chat.completions.create(
@@ -40,7 +40,7 @@ for chunk in stream:
 	const jsStreamCode = `import OpenAI from "openai";
 const client = new OpenAI({
 	apiKey: "oma_sk_your_key_here",
-	baseURL: "https://api.oma-ai.com/v1"
+	baseURL: "https://www.oma-ai.com/api/v1"
 });
 
 const stream = await client.chat.completions.create({

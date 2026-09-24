@@ -15,22 +15,22 @@ describe("manifest.ts - Next.js MetadataRoute.Manifest", () => {
 });
 
 describe("sitemap.ts - Next.js MetadataRoute.Sitemap", () => {
-	it("returns a non-empty array", () => {
-		const result = sitemap();
+	it("returns a non-empty array", async () => {
+		const result = await sitemap();
 		expect(Array.isArray(result)).toBe(true);
 		// Public product surface — auth-gated routes intentionally excluded
 		expect(result.length).toBeGreaterThanOrEqual(10);
 	});
 
-	it("every entry has a valid https url under oma-ai.com", () => {
-		const result = sitemap();
+	it("every entry has a valid https url under oma-ai.com", async () => {
+		const result = await sitemap();
 		for (const entry of result) {
-			expect(entry.url).toMatch(/^https:\/\/oma-ai\.com(\/.*)?$/);
+			expect(entry.url).toMatch(/^https:\/\/(www\.)?oma-ai\.com(\/.*)?$/);
 		}
 	});
 
-	it("every entry has lastModified, changeFrequency, priority", () => {
-		const result = sitemap();
+	it("every entry has lastModified, changeFrequency, priority", async () => {
+		const result = await sitemap();
 		for (const entry of result) {
 			expect(entry.lastModified).toBeInstanceOf(Date);
 			expect([
@@ -48,9 +48,9 @@ describe("sitemap.ts - Next.js MetadataRoute.Sitemap", () => {
 		}
 	});
 
-	it("includes critical public marketing pages", () => {
-		const result = sitemap();
-		const urls = result.map((e) => e.url.replace("https://oma-ai.com", "") || "/");
+	it("includes critical public marketing pages", async () => {
+		const result = await sitemap();
+		const urls = result.map((e) => e.url.replace(/^https:\/\/(www\.)?oma-ai\.com/, "") || "/");
 		for (const required of [
 			"/",
 			"/pricing",
@@ -65,9 +65,9 @@ describe("sitemap.ts - Next.js MetadataRoute.Sitemap", () => {
 		}
 	});
 
-	it("excludes auth-gated product surfaces", () => {
-		const result = sitemap();
-		const urls = result.map((e) => e.url.replace("https://oma-ai.com", "") || "/");
+	it("excludes auth-gated product surfaces", async () => {
+		const result = await sitemap();
+		const urls = result.map((e) => e.url.replace(/^https:\/\/(www\.)?oma-ai\.com/, "") || "/");
 		// /chat is public free playground and is listed.
 		// image/video legacy paths redirect and must not be listed.
 		for (const gated of [
@@ -83,9 +83,9 @@ describe("sitemap.ts - Next.js MetadataRoute.Sitemap", () => {
 		}
 	});
 
-	it("excludes removed marketing routes", () => {
-		const result = sitemap();
-		const paths = result.map((e) => e.url.replace("https://oma-ai.com", "") || "/");
+	it("excludes removed marketing routes", async () => {
+		const result = await sitemap();
+		const paths = result.map((e) => e.url.replace(/^https:\/\/(www\.)?oma-ai\.com/, "") || "/");
 		for (const dead of [
 			"/blog",
 			"/capabilities",
@@ -99,9 +99,9 @@ describe("sitemap.ts - Next.js MetadataRoute.Sitemap", () => {
 		}
 	});
 
-	it("root entry (/) has priority 1", () => {
-		const result = sitemap();
-		const root = result.find((e) => e.url === "https://oma-ai.com");
+	it("root entry (/) has priority 1", async () => {
+		const result = await sitemap();
+		const root = result.find((e) => /^https:\/\/(www\.)?oma-ai\.com\/?$/.test(e.url));
 		expect(root).toBeDefined();
 		expect(root?.priority).toBe(1);
 	});

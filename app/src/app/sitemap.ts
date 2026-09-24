@@ -2,6 +2,32 @@ import type { MetadataRoute } from "next";
 import { MODELS } from "@/lib/models-data";
 
 /**
+ * Ids of models currently accepting requests, or null when the catalog
+ * could not be read.
+ *
+ * Resolved relative to this app rather than a hardcoded host so preview and
+ * staging builds query their own API. Same-origin relative fetch also avoids
+ * needing an absolute URL at build time.
+ */
+async function fetchAvailableModelIds(): Promise<Set<string> | null> {
+	const base = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
+	const url = base ? `${base}/v1/models` : "/api/v1/models";
+	try {
+		const res = await fetch(url, { next: { revalidate: 300 } });
+		if (!res.ok) return null;
+		const json = (await res.json()) as {
+			data?: { id?: string; available?: boolean }[];
+		};
+		if (!Array.isArray(json.data)) return null;
+		return new Set(
+			json.data.filter((m) => m.available !== false && m.id).map((m) => m.id as string),
+		);
+	} catch {
+		return null;
+	}
+}
+
+/**
  * Public marketing / product sitemap only.
  * Auth-gated surfaces (/chat is indexable since it's the free playground —
  * see robots.ts and the chat layout metadata. /deposit, /dashboard,
@@ -16,10 +42,11 @@ import { MODELS } from "@/lib/models-data";
  * baseUrl resolves from env so staging / preview builds advertise the right
  * host instead of leaking production URLs.
  */
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 	const baseUrl =
 		process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") ||
-		"https://oma-ai.com";
+		// The apex 308-redirects to www, so www is the canonical host.
+		"https://www.oma-ai.com";
 	const now = new Date();
 	const dayStamp = new Date(
 		Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
@@ -36,11 +63,31 @@ export default function sitemap(): MetadataRoute.Sitemap {
 		priority,
 	});
 
+	const availableModelIds = await fetchAvailableModelIds();
+
+	/**
+	 * Only advertise model pages that actually serve requests.
+	 *
+	 * Most of the catalog is dark whenever an upstream provider key is
+	 * missing, and a model page for a dark model is a dead end: it indexes,
+	 * it ranks, and then the visitor gets an error when they try the model.
+	 * Filtering keeps the sitemap honest and self-heals automatically once
+	 * the provider key is restored — no deploy needed.
+	 *
+	 * If the catalog cannot be reached we fall back to the full static list
+	 * rather than publishing an empty catalog: a transient API blip should
+	 * not silently drop every model page from the index.
+	 */
+	const modelPages =
+		availableModelIds === null
+			? MODELS.map((m) => m.id)
+			: MODELS.filter((m) => availableModelIds.has(m.id)).map((m) => m.id);
+
 	return [
 		entry("/", 1, "weekly"),
 		// Marketing / product (public)
 		entry("/models", 0.9, "daily"),
-		...MODELS.map((model) => entry(`/models/${model.id}`, 0.8, "weekly")),
+		...modelPages.map((id) => entry(`/models/${id}`, 0.8, "weekly")),
 		// Free playground (no auth required for OMA-AI models) — crawlable demo.
 		entry("/chat", 0.85, "weekly"),
 		entry("/pricing", 0.9, "weekly"),

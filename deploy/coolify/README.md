@@ -61,7 +61,7 @@ After any DNS change, verify the exact host and TLS before announcing it:
 dig +short oma-ai.com A
 dig +short api.oma-ai.com A
 curl -fsS -o /dev/null -w "%{http_code}\n" https://oma-ai.com/
-curl -fsS https://api.oma-ai.com/health
+curl -fsS https://www.oma-ai.com/api/health
 ```
 
 Do not overwrite `@` or `www` merely because this optional Coolify example exists.
@@ -71,7 +71,7 @@ Do not overwrite `@` or `www` merely because this optional Coolify example exist
 1. Sign in (magic link or SIWE) on `https://oma-ai.com/login`.
 2. Create an API key on `/dashboard`.
 3. Deposit a small USDC amount on Base via `/deposit` (or settle via `/x402/*`).
-4. Call `POST https://api.oma-ai.com/v1/chat/completions` with the key.
+4. Call `POST https://www.oma-ai.com/api/v1/chat/completions` with the key.
 5. Confirm balance decreases on `/dashboard`.
 
-Card rail: only after Polar env + webhook `https://api.oma-ai.com/webhooks/polar`.
+Card rail: only after Polar env + webhook `https://www.oma-ai.com/api/webhooks/polar`.

@@ -7,7 +7,7 @@ export function SDKsSection() {
 
 client = OpenAI(
 	api_key="oma_sk_your_key_here",
-	base_url="https://api.oma-ai.com/v1"
+	base_url="https://www.oma-ai.com/api/v1"
 )
 
 response = client.chat.completions.create(
@@ -26,7 +26,7 @@ print(response.choices[0].message.content)`;
 
 const client = new OpenAI({
 	apiKey: "oma_sk_your_key_here",
-	baseURL: "https://api.oma-ai.com/v1",
+	baseURL: "https://www.oma-ai.com/api/v1",
 });
 
 const response = await client.chat.completions.create({
@@ -39,7 +39,7 @@ const response = await client.chat.completions.create({
 	max_tokens: 256,
 });`;
 
-	const curlChatCode = `curl https://api.oma-ai.com/v1/chat/completions \\
+	const curlChatCode = `curl https://www.oma-ai.com/api/v1/chat/completions \\
 	-H "Authorization: Bearer oma_sk_your_key_here" \\
 	-H "Content-Type: application/json" \\
 	-d '{
@@ -74,7 +74,7 @@ func main() {
 	})
 
 	req, _ := http.NewRequest("POST",
-		"https://api.oma-ai.com/v1/chat/completions",
+		"https://www.oma-ai.com/api/v1/chat/completions",
 		bytes.NewBuffer(body))
 	req.Header.Set("Authorization", "Bearer oma_sk_your_key_here")
 	req.Header.Set("Content-Type", "application/json")
@@ -94,7 +94,7 @@ func main() {
 
 client = OpenAI(
 	api_key="oma_sk_your_key_here",
-	base_url="https://api.oma-ai.com/v1"
+	base_url="https://www.oma-ai.com/api/v1"
 )
 
 stream = client.chat.completions.create(
@@ -111,7 +111,7 @@ for chunk in stream:
 
 const client = new OpenAI({
 	apiKey: "oma_sk_your_key_here",
-	baseURL: "https://api.oma-ai.com/v1",
+	baseURL: "https://www.oma-ai.com/api/v1",
 });
 
 const stream = await client.chat.completions.create({
@@ -125,7 +125,7 @@ for await (const chunk of stream) {
 	if (content) process.stdout.write(content);
 }`;
 
-	const curlStreamCode = `curl https://api.oma-ai.com/v1/chat/completions \\
+	const curlStreamCode = `curl https://www.oma-ai.com/api/v1/chat/completions \\
 	-H "Authorization: Bearer oma_sk_your_key_here" \\
 	-H "Content-Type: application/json" \\
 	-d '{
@@ -156,7 +156,7 @@ func main() {
 	})
 
 	req, _ := http.NewRequest("POST",
-		"https://api.oma-ai.com/v1/chat/completions",
+		"https://www.oma-ai.com/api/v1/chat/completions",
 		bytes.NewBuffer(body))
 	req.Header.Set("Authorization", "Bearer oma_sk_your_key_here")
 	req.Header.Set("Content-Type", "application/json")
@@ -189,7 +189,7 @@ func main() {
 
 client = OpenAI(
 	api_key="oma_sk_your_key_here",
-	base_url="https://api.oma-ai.com/v1"
+	base_url="https://www.oma-ai.com/api/v1"
 )
 
 models = client.models.list()
@@ -200,7 +200,7 @@ for model in models.data:
 
 const client = new OpenAI({
 	apiKey: "oma_sk_your_key_here",
-	baseURL: "https://api.oma-ai.com/v1",
+	baseURL: "https://www.oma-ai.com/api/v1",
 });
 
 const models = await client.models.list();
@@ -208,7 +208,7 @@ for (const model of models.data) {
 	// Do something with model.id
 }`;
 
-	const curlModelsCode = `curl https://api.oma-ai.com/v1/models \\
+	const curlModelsCode = `curl https://www.oma-ai.com/api/v1/models \\
 	-H "Authorization: Bearer oma_sk_your_key_here" | jq '.data[].id'`;
 
 	const goModelsCode = `package main
@@ -222,7 +222,7 @@ import (
 
 func main() {
 	req, _ := http.NewRequest("GET",
-		"https://api.oma-ai.com/v1/models", nil)
+		"https://www.oma-ai.com/api/v1/models", nil)
 	req.Header.Set("Authorization", "Bearer oma_sk_your_key_here")
 
 	resp, err := http.DefaultClient.Do(req)
@@ -352,7 +352,7 @@ func main() {
 							All examples use the same base URL. Just swap your API key and you&apos;re ready:
 						</p>
 						<code className="mt-2 inline-block rounded-[var(--radius-lg)] bg-surface/80 border border-border/50 px-3 py-1.5 font-mono text-sm text-accent">
-							https://api.oma-ai.com/v1
+							https://www.oma-ai.com/api/v1
 						</code>
 					</div>
 				</div>
@@ -372,7 +372,7 @@ func main() {
 import { createOpenAI } from '@ai-sdk/openai';
 
 const oma = createOpenAI({
-	baseURL: 'https://api.oma-ai.com/v1',
+	baseURL: 'https://www.oma-ai.com/api/v1',
 	apiKey: 'oma_sk_your_key_here',
 });
 

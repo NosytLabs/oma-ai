@@ -218,7 +218,7 @@ export function buildV2Challenge(params: {
 	*/
 export const CHAT_COMPLETIONS_BAZAAR: BazaarResourceInfo = {
 		resource: {
-				url: "https://api.oma-ai.com/v1/chat/completions",
+				url: "https://www.oma-ai.com/api/v1/chat/completions",
 				description:
 						"OpenAI-compatible chat completions across the curated Venice + OMA-AI/OpenBroker catalog. Fund with USDC credits on Base, including x402 verify/settle.",
 				mimeType: "application/json",

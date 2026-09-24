@@ -538,7 +538,7 @@ export const QUICK_START_STEPS = [
 		n: "3",
 		id: "qs-step-response",
 		title: "Start Building",
-		desc: "Use the OpenAI SDK with base_url=https://api.oma-ai.com/v1",
+		desc: "Use the OpenAI SDK with base_url=https://www.oma-ai.com/api/v1",
 	},
 ];
 

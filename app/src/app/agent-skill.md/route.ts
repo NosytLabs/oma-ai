@@ -30,7 +30,7 @@ function resolveSiteUrl(): string {
 export function GET(): Response {
 	const siteUrl = resolveSiteUrl();
 	const apiUrl =
-		DEFAULT_API_URL?.replace(/\/+$/, "") || "https://api.oma-ai.com";
+		DEFAULT_API_URL?.replace(/\/+$/, "") || "https://www.oma-ai.com/api";
 
 	const BODY = `# OMA AI — Agent Skill
 

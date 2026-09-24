@@ -187,7 +187,7 @@ function SectionDivider() {
 // ═══════════════════════════════════════════════════════════════════
 
 const AGENT_ENV_SNIPPET = `export OPENAI_API_KEY="oma_sk_your_key_here"
-export OPENAI_BASE_URL="https://api.oma-ai.com/v1"`;
+export OPENAI_BASE_URL="https://www.oma-ai.com/api/v1"`;
 
 function AgentsConnector() {
 	const [expanded, setExpanded] = useState(false);
@@ -236,7 +236,7 @@ function AgentsConnector() {
 							</div>
 							<p className="text-[10px] text-text-muted font-mono mb-3 leading-relaxed">
 								Point OpenCode, Claude Code, Cursor, or any OpenAI client at
-								api.oma-ai.com/v1 with an oma_sk_ key from the dashboard.
+								www.oma-ai.com/api/v1 with an oma_sk_ key from the dashboard.
 							</p>
 							<button
 								type="button"

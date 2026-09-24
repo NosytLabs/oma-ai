@@ -5,13 +5,13 @@ const flowCode = `# 1. Obtain an EIP-3009 USDC authorization for the OMA treasur
 # The authorization is signed by the wallet; it does not send a transaction.
 
 # 2. Verify the authorization. A 200 response only means it is valid.
-curl https://api.oma-ai.com/x402/verify \\
+curl https://www.oma-ai.com/api/x402/verify \\
   -H "Content-Type: application/json" \\
   -H 'PAYMENT-SIGNATURE: {"signature":"0x...","payload":{...}}'
 
 # 3. With an authenticated OMA session, settle the verified authorization.
 # Use the txHash and networkId returned by verification; amount is server-derived.
-curl https://api.oma-ai.com/x402/settle \\
+curl https://www.oma-ai.com/api/x402/settle \\
   -H "Content-Type: application/json" \\
   -H "Cookie: <your-session-cookie>" \\
   -d '{"txHash":"0x...","networkId":"base"}'

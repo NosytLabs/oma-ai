@@ -86,7 +86,7 @@ describe("buildV2Challenge", () => {
 				const challenge = buildV2Challenge({
 						priceUsd: "0.10",
 						payTo: AUTH.to,
-						resource: "https://api.oma-ai.com/v1/chat/completions",
+						resource: "https://www.oma-ai.com/api/v1/chat/completions",
 				});
 				expect(challenge.x402Version).toBe(2);
 				expect(challenge.accepts).toHaveLength(1);

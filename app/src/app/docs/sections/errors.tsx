@@ -12,7 +12,7 @@ export function ErrorsSection() {
 
 	const retryCode = `import time
 from openai import OpenAI
-client = OpenAI(api_key="oma_sk_...", base_url="https://api.oma-ai.com/v1")
+client = OpenAI(api_key="oma_sk_...", base_url="https://www.oma-ai.com/api/v1")
 for attempt in range(5):
 	try:
 	response = client.chat.completions.create(model="llama-3.3-70b", messages=[{"role": "user", "content": "Hi"}])

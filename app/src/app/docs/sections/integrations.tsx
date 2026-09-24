@@ -10,7 +10,7 @@ import { DOCS_EXAMPLE_MODEL } from "@/lib/model-utils";
 	* base URL + Bearer key. Keep model ids in sync with the live catalog.
 	*/
 export function IntegrationsSection() {
-	const baseUrl = "https://api.oma-ai.com/v1";
+	const baseUrl = "https://www.oma-ai.com/api/v1";
 	const model = DOCS_EXAMPLE_MODEL;
 
 	return (
@@ -19,7 +19,7 @@ export function IntegrationsSection() {
 				id="integrations"
 				icon={<Bot className="h-5 w-5" />}
 				title="Agent & IDE integrations"
-				subtitle="Use any OpenAI-compatible client: set base URL to api.oma-ai.com/v1 and Authorization: Bearer $OMA_KEY"
+				subtitle="Use any OpenAI-compatible client: set base URL to www.oma-ai.com/api/v1 and Authorization: Bearer $OMA_KEY"
 			/>
 
 			<div className="mb-6 rounded-[var(--radius-xl)] border border-accent/25 bg-accent/5 p-4 text-sm text-text-secondary leading-relaxed">
@@ -70,7 +70,7 @@ export function IntegrationsSection() {
 					lang="bash"
 					code={`# ~/.bashrc / shell profile (or OpenCode env UI)
 export OPENAI_API_KEY="oma_sk_your_key_here"
-export OPENAI_BASE_URL="https://api.oma-ai.com/v1"
+export OPENAI_BASE_URL="https://www.oma-ai.com/api/v1"
 
 # Optional: default model for sessions
 export OPENAI_MODEL="${model}"
@@ -128,7 +128,7 @@ export OPENAI_MODEL="${model}"
 					lang="bash"
 					code={`# Claude Code / Anthropic SDK env
 export ANTHROPIC_API_KEY="oma_sk_your_key_here"
-export ANTHROPIC_BASE_URL="https://api.oma-ai.com"
+export ANTHROPIC_BASE_URL="https://www.oma-ai.com/api"
 
 # Note: base URL is the origin (no /v1). The client appends /v1/messages.
 # Model ids are OMA catalog ids (not anthropic/claude-3-5-sonnet):
@@ -137,7 +137,7 @@ export ANTHROPIC_BASE_URL="https://api.oma-ai.com"
 				<CodeBlock
 					lang="bash"
 					code={`# One-shot smoke test (Messages API — x-api-key style)
-curl https://api.oma-ai.com/v1/messages \\
+curl https://www.oma-ai.com/api/v1/messages \\
 	-H "x-api-key: oma_sk_your_key_here" \\
 	-H "anthropic-version: 2023-06-01" \\
 	-H "Content-Type: application/json" \\
@@ -148,7 +148,7 @@ curl https://api.oma-ai.com/v1/messages \\
 	}'
 
 # Same call with Bearer (OpenAI-style auth also accepted)
-curl https://api.oma-ai.com/v1/messages \\
+curl https://www.oma-ai.com/api/v1/messages \\
 	-H "Authorization: Bearer oma_sk_your_key_here" \\
 	-H "anthropic-version: 2023-06-01" \\
 	-H "Content-Type: application/json" \\

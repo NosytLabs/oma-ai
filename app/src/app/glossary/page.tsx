@@ -68,7 +68,7 @@ const TERMS: Term[] = [
 	},
 	{
 		term: "OpenAI-compatible",
-		def: "Speaking the same API language as OpenAI. Tools, SDKs, and tutorials written for OpenAI work with OMA by just changing the base URL to https://api.oma-ai.com/v1.",
+		def: "Speaking the same API language as OpenAI. Tools, SDKs, and tutorials written for OpenAI work with OMA by just changing the base URL to https://www.oma-ai.com/api/v1.",
 	},
 	{
 		term: "Embedding",

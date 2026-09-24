@@ -5,7 +5,7 @@ export function AuthenticationSection() {
 	const pythonCode = `from openai import OpenAI
 client = OpenAI(
 	api_key="oma_sk_your_key_here",
-	base_url="https://api.oma-ai.com/v1"
+	base_url="https://www.oma-ai.com/api/v1"
 )
 response = client.chat.completions.create(
 	model="llama-3.3-70b",
@@ -15,7 +15,7 @@ response = client.chat.completions.create(
 	const jsCode = `import OpenAI from "openai";
 const client = new OpenAI({
 	apiKey: "oma_sk_your_key_here",
-	baseURL: "https://api.oma-ai.com/v1"
+	baseURL: "https://www.oma-ai.com/api/v1"
 });
 const response = await client.chat.completions.create({
 	model: "llama-3.3-70b",
@@ -28,7 +28,7 @@ import (
 )
 func main() {
 	client := openai.New("oma_sk_your_key_here")
-	client.BaseURL = "https://api.oma-ai.com/v1"
+	client.BaseURL = "https://www.oma-ai.com/api/v1"
 }`;
 
 	return (
@@ -74,7 +74,7 @@ func main() {
 					{
 						label: "cURL",
 						lang: "bash",
-						code: `curl https://api.oma-ai.com/v1/chat/completions \\
+						code: `curl https://www.oma-ai.com/api/v1/chat/completions \\
 	-H "Authorization: Bearer oma_sk_your_key_here" \\
 	-H "Content-Type: application/json" \\
 	-d '{"model":"llama-3.3-70b","messages":[{"role":"user","content":"Hello"}]}'`,
