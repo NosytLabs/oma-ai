@@ -62,12 +62,28 @@ export async function consumeNonce(nonce: string | undefined): Promise<{ ok: boo
 				const fresh = x402NonceMemoryConsume(nonce);
 				return fresh ? { ok: true } : { ok: false, reason: "nonce_already_used" };
 		}
-		// Redis available - clear the warning flag
-		consumeNonce._redisWarned = false;
 		const key = `x402:nonce:${nonce}`;
-		const set = await redis.set(key, "1", { nx: true, ex: NONCE_REDIS_TTL_SECONDS });
-		return set === "OK" ? { ok: true } : { ok: false, reason: "nonce_already_used" };
-}
+		try {
+			const set = await redis.set(key, "1", { nx: true, ex: NONCE_REDIS_TTL_SECONDS });
+			// Redis recovered, so clear the degraded-state warning.
+			consumeNonce._redisWarned = false;
+			return set === "OK" ? { ok: true } : { ok: false, reason: "nonce_already_used" };
+		} catch (err) {
+			// A CONFIGURED Redis that rejects a command (revoked or mistyped
+			// token, network blip) is just as unavailable as no Redis at all.
+			// This used to propagate, failing live x402 settlements. Degrade
+			// enforcement, never availability -- same policy as the limiter.
+			if (!consumeNonce._redisWarned) {
+				logger.warn(
+					{ err },
+					"[FACILITATOR] Redis command failed — falling back to in-memory nonce store (bounded LRU, 10k entries). Replay protection across restarts is reduced.",
+				);
+				consumeNonce._redisWarned = true;
+			}
+			const fresh = x402NonceMemoryConsume(nonce);
+			return fresh ? { ok: true } : { ok: false, reason: "nonce_already_used" };
+		}
+		}
 
 // Attach property to function for warning state
 consumeNonce._redisWarned = false;
