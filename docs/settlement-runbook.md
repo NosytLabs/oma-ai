@@ -32,3 +32,73 @@ Status: **CONFIGURED, NOT LIVE** — treasury wallet created + wired, settlement
 ## Deploy note (Vercel prod-branch bug)
 Project `productionBranch` is stuck on the retired `master` (API re-link 400s; needs manual dashboard re-link). Workaround that works:
 `vercel deploy --prod --yes` from `app/` (the project rootDir). Push-to-main does NOT auto-deploy.
+
+---
+
+# Polar (card checkout) — verified state & constraints
+
+Checked live against Polar MCP on 2026-09-24, org `16ba0e5c-ea67-47ab-a54b-10a62851d95a`.
+
+## Products (all `one_time`, non-recurring, public)
+
+| Plan | Product ID | Price | Credits |
+|---|---|---|---|
+| Hobby | `4c1e6343-0e85-411c-b5e1-16d03aaed33d` | $10 | 1,000 |
+| Builder | `7dade4d9-78d7-4163-a530-b35d95f9b457` | $50 | 5,000 |
+| Scale | `da4cb123-d1a1-48d6-b97c-9c6023f8a81f` | $250 | 25,000 |
+
+1 credit = $0.01, matching `creditsPerCent: 1` in `server/src/routes/deposit/index.ts`.
+Also in this org: 7 ARCHIVED legacy products (`proxyresell*`, `cheapai*`, `datavalid*`) from
+earlier brands. Not wired to OMA. Leave archived.
+
+## Do NOT attach a metered price
+
+Polar docs: "Metered prices are only applicable to Subscription Products."
+All three products are `type=one_time`, so a metered price cannot be attached. Polar's own
+Credits guidance: "To avoid any overage charges, don't create any Metered price on your product."
+
+Architecture: Polar collects payment and is merchant of record. **Our Postgres credit ledger
+is the authoritative spendable balance.** Polar meters are reporting-only.
+
+## Benefits are empty on all three products
+
+`benefits: []` on Hobby/Builder/Scale. Polar grants no entitlement via a benefit today.
+Our own `order.*` webhook path issues credits, so checkout still functions. If we later want
+Polar to be the entitlement authority, Polar recommends a **Feature Flag benefit** for tier
+gating (purpose-built, supports key-value metadata) rather than a custom benefit.
+Unconfirmed: whether a Credits benefit behaves correctly on a one-time product — verify in
+the Polar dashboard before relying on it.
+
+## Cost Insights is available but NOT automatic
+
+Requires per-request `_cost` annotation via the Event Ingestion API:
+`metadata._cost = { amount, currency }`. Gotchas: `amount` is in **cents, not dollars**, and
+**only USD is supported**. Sub-cent precision is retained, so token-level costs aren't rounded.
+Polar lists "AI/LLM Applications" as a first-class use case.
+
+## Rate limits
+
+Production **500 req/min** per org/customer or OAuth2 client; sandbox 100 req/min. Exceeding
+returns `429` with `Retry-After`. Batch ingestion is available (`inserted` / `duplicates` in
+the response). **No documented separate per-batch event-count limit** — unconfirmed.
+
+**Important:** Polar attributes events to billing periods by *when Polar received them*, not
+the supplied `timestamp`. Late events land in the current cycle. Another reason not to treat
+a Polar meter as a real-time balance.
+
+## Still required to complete checkout
+
+1. `POLAR_ACCESS_TOKEN` — org-scoped OAT. Server-side only. `vercel env add POLAR_ACCESS_TOKEN production`
+2. `POLAR_WEBHOOK_SECRET` — Dashboard → Settings → Developers → Webhooks (shown once)
+
+### Rotating the webhook secret is a one-way door
+
+If the server verifies signatures against a single key, rotating it invalidates every
+signature ever issued and historical payments silently stop reconciling. Add a `kid` keyring
+and accept the previous key BEFORE rotating. The access token is safe to rotate freely.
+
+## Deploy note (Vercel)
+
+`productionBranch` is stuck on the retired `master`; push-to-main does NOT auto-deploy.
+Use `vercel deploy --prod --yes` from the repo root. API runs on **Neon**, not Vercel —
+a Vercel deploy ships the frontend only and will NOT pick up server-side changes.
