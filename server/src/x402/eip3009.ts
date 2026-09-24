@@ -313,6 +313,16 @@ async function submitEip3009Transfer(
 	}
 
 /**
+ * Upper bound on the receipt wait, in ms.
+ *
+ * viem's own default is 180_000 (3 minutes), which exceeds most gateway and
+ * serverless request deadlines. The x402 facilitator guidance is explicit that
+ * the wait should sit below the platform deadline so a process killed mid-wait
+ * returns something reconcilable rather than a bare 5xx with no hash.
+ */
+const SETTLEMENT_CONFIRMATION_TIMEOUT_MS = 25_000;
+
+/**
  * Dispatches the transfer AND waits for it to actually settle.
  *
  * `writeContract` returns as soon as the transaction is *broadcast* — it says
@@ -343,20 +353,36 @@ export async function submitEip3009TransferAndConfirm(
 		receipt = await client.waitForTransactionReceipt({
 			hash: txHash,
 			confirmations: 1,
+			// Bound the wait. viem's own default is 180s, which is longer than
+			// most gateway/serverless request deadlines — being killed mid-wait
+			// loses the hash entirely. The x402 spec calls for the receipt wait
+			// to sit below the platform deadline for exactly this reason.
+			timeout: SETTLEMENT_CONFIRMATION_TIMEOUT_MS,
 		});
 	} catch (err) {
-		// A timeout here is NOT a success. The transfer may still land later,
-		// but we must not grant a credit for an unconfirmed payment.
+		// NOT a terminal failure and NOT a success. The transfer is already
+		// broadcast, so it may still confirm on chain. The x402 spec models
+		// this as a non-terminal `settlement_pending`: the response carries the
+		// broadcast hash so the caller can reconcile on chain before deciding
+		// whether to retry, rather than re-submitting and double-paying.
+		//
+		// The hash is returned alongside the failure on purpose — dropping it
+		// would leave an unknown broadcast transaction nobody can reconcile.
 		logger.error(
 			{ err, txHash },
-			"[FACILITATOR] settlement tx did not confirm; refusing to credit",
+			"[FACILITATOR] settlement unconfirmed; returning hash for reconciliation",
 		);
-		throw new Error(
+		const pending = new Error(
 			`Settlement transaction ${txHash} was not confirmed; payment not credited`,
-		);
+		) as Error & { txHash?: string };
+		pending.txHash = txHash;
+		throw pending;
 	}
 
 	if (receipt.status !== "success") {
+		// Terminal: the transaction mined and reverted, so the funds did not
+		// move. Retrying the same authorization is pointless (the nonce is
+		// spent) and the payer must be told to sign a new one.
 		logger.error(
 			{ txHash, status: receipt.status },
 			"[FACILITATOR] settlement tx reverted; refusing to credit",
