@@ -58,7 +58,9 @@ describe("ModelsPage", () => {
 		render(<ModelsPage />);
 		await act(async () => {
 			await waitFor(() => {
-				expect(screen.getByText(/models available/i)).toBeInTheDocument();
+				// Wording must NOT claim every catalogued model is usable —
+				// 18 of 20 are marked UNAVAILABLE when Venice is unconfigured.
+				expect(screen.getByText(/models in the catalog/i)).toBeInTheDocument();
 			});
 		});
 	});

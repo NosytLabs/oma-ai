@@ -37,7 +37,7 @@ for chunk in stream:
 	if chunk.choices[0].delta.content:
 	print(chunk.choices[0].delta.content, end="")`;
 
-	const jsStreamCode = `import OpenAI from "openai";
+	const jsStreamCode = `import { OpenAI } from "openai";
 const client = new OpenAI({
 	apiKey: "oma_sk_your_key_here",
 	baseURL: "https://www.oma-ai.com/api/v1"

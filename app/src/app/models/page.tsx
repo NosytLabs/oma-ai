@@ -53,6 +53,7 @@ function ModelsPageInner() {
 
 		// Derived
 		availableProviders,
+		availableCount,
 		groupedModels,
 		totalModels,
 		visibleModels,
@@ -98,7 +99,15 @@ function ModelsPageInner() {
 							need.
 						</p>
 						<p className="mt-4 font-mono text-xs uppercase tracking-[0.18em] text-text-muted">
-							{totalModels} models available
+							{totalModels} models in the catalog
+							{availableCount > 0 && (
+								<>
+									{" "}
+									·{" "}
+									<span className="text-accent">{availableCount}</span> accepting
+									requests now
+								</>
+							)}
 							{isLoadingModels && (
 								<span className="ml-2 text-text-tertiary normal-case tracking-normal">
 									· loading full catalog…

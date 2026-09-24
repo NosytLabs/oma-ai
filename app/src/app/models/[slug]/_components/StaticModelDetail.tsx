@@ -23,18 +23,22 @@ function formatContextWithVisual(tokens: number | undefined | null): string {
 	if (typeof tokens !== "number" || !Number.isFinite(tokens) || tokens <= 0) {
 		return "—";
 	}
-	// Industry convention (≈500 words/page, ≈1.3 tokens/word → ~650
-	// tokens/page, cf. "1M tokens ≈ 1,500 pages"). Keeps the human
-	// comparison honest next to providers quoting the same scale.
-	const tokensPerPage = 650;
-	const pages = Math.round(tokens / tokensPerPage);
-
-	if (pages >= 1000) {
-		const k = pages / 1000;
-		const kLabel = Number.isInteger(k) ? `${k}` : k.toFixed(1);
-		return `${kLabel}k pages (${tokens.toLocaleString()} tokens)`;
+	// Context window is a TOKEN metric. A "pages" figure is an unsourced
+	// conversion (it implies a page size nobody agreed on) and was actively
+	// misleading — the catalog itself labels this model "200K ctx". Show the
+	// real, comparable unit and, for large windows, a rounded tier label.
+	const n = tokens.toLocaleString();
+	if (tokens >= 1_000_000) {
+		const m = tokens / 1_000_000;
+		const mLabel = Number.isInteger(m) ? `${m}M` : `${m.toFixed(1)}M`;
+		return `${mLabel} tokens (${n})`;
 	}
-	return `${pages} pages (${tokens.toLocaleString()} tokens)`;
+	if (tokens >= 1_000) {
+		const k = tokens / 1_000;
+		const kLabel = Number.isInteger(k) ? `${k}K` : `${k.toFixed(1)}K`;
+		return `${kLabel} tokens (${n})`;
+	}
+	return `${n} tokens`;
 }
 
 export function StaticModelDetail({ model }: { model: Model }) {
@@ -55,7 +59,8 @@ export function StaticModelDetail({ model }: { model: Model }) {
 	"temperature": 0.7
 	}'`;
 
-	const pythonExample = `import openai
+	const pythonExample = `import os
+import openai
 
 client = openai.OpenAI(
 	api_key=os.getenv("OMA_API_KEY"),
@@ -73,7 +78,10 @@ response = client.chat.completions.create(
 
 print(response.choices[0].message.content)`;
 
-	const jsExample = `import OpenAI from "openai";
+	// The `openai` Node package is CommonJS: a default import is not callable
+	// under the documented `new OpenAI(...)` form in native ESM. The named
+	// import is the correct, copy-pasteable shape.
+	const jsExample = `import { OpenAI } from "openai";
 
 const client = new OpenAI({
 	apiKey: process.env.OMA_API_KEY,

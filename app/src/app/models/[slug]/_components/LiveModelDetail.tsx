@@ -116,7 +116,7 @@ response = client.chat.completions.create(
 
 print(response.choices[0].message.content)`;
 
-	const liveJsExample = `import OpenAI from "openai";
+	const liveJsExample = `import { OpenAI } from "openai";
 
 const client = new OpenAI({
 	apiKey: process.env.OMA_API_KEY,

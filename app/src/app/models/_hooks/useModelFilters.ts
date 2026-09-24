@@ -316,6 +316,11 @@ export function useModelFilters() {
 
 	const totalModels = safeModels.length;
 	const visibleModels = filtered.length;
+	// How many are actually accepting requests. `available` is optional and an
+	// OMITTED flag means available (see ModelCard), so only an explicit
+	// `false` counts as offline. Without this the headline said "20 models
+	// available" while 18 of them were marked UNAVAILABLE right below it.
+	const availableCount = safeModels.filter((m) => m.available !== false).length;
 
 	const handleSearch = (value: string) => {
 		setLocalSearch(value);
@@ -400,6 +405,7 @@ export function useModelFilters() {
 		groupedModels,
 		totalModels,
 		visibleModels,
+		availableCount,
 		hasFilters,
 
 		// Handlers

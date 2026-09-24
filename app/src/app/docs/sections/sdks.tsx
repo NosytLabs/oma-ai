@@ -22,7 +22,7 @@ response = client.chat.completions.create(
 
 print(response.choices[0].message.content)`;
 
-	const tsChatCode = `import OpenAI from "openai";
+	const tsChatCode = `import { OpenAI } from "openai";
 
 const client = new OpenAI({
 	apiKey: "oma_sk_your_key_here",
@@ -107,7 +107,7 @@ for chunk in stream:
 	if chunk.choices[0].delta.content:
 	print(chunk.choices[0].delta.content, end="")`;
 
-	const tsStreamCode = `import OpenAI from "openai";
+	const tsStreamCode = `import { OpenAI } from "openai";
 
 const client = new OpenAI({
 	apiKey: "oma_sk_your_key_here",
@@ -196,7 +196,7 @@ models = client.models.list()
 for model in models.data:
 	print(f"{model.id} ({model.get('category', 'chat')})")`;
 
-	const tsModelsCode = `import OpenAI from "openai";
+	const tsModelsCode = `import { OpenAI } from "openai";
 
 const client = new OpenAI({
 	apiKey: "oma_sk_your_key_here",

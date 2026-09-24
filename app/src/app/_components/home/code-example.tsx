@@ -16,7 +16,7 @@ export interface CodeExampleProps {
 }
 
 function buildExampleCode(modelCount: number) {
-	return `import OpenAI from "openai";
+	return `import { OpenAI } from "openai";
 
 const client = new OpenAI({
 	apiKey: process.env.OPENAI_KEY, // one key for every model

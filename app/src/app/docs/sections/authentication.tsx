@@ -12,7 +12,7 @@ response = client.chat.completions.create(
 	messages=[{"role": "user", "content": "Hello!"}]
 )`;
 
-	const jsCode = `import OpenAI from "openai";
+	const jsCode = `import { OpenAI } from "openai";
 const client = new OpenAI({
 	apiKey: "oma_sk_your_key_here",
 	baseURL: "https://www.oma-ai.com/api/v1"

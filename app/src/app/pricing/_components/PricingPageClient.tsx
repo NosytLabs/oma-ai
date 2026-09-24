@@ -234,14 +234,19 @@ export default function PricingPage() {
 
 	const pricedModels = useMemo(() => models.map(toPricedModel), [models]);
 
-	const lowestInputPrice = useMemo(
-		() =>
-			formatPricePerMillion(
-				Math.min(...pricedModels.map((m) => m.inputPer1M)),
-			),
-		[pricedModels],
-	);
 	const modelCount = models.filter((model) => model.available !== false).length;
+	// The entry price must be one a visitor can ACTUALLY buy, so it is derived
+	// from available models only. It previously used the whole catalog, so the
+	// page advertised "Starts at $0.15" for a model listed right below it as
+	// UNAVAILABLE, while the cheapest usable model was $0.50.
+	const lowestAvailableInputPrice = useMemo(() => {
+		const available = models.filter((model) => model.available !== false);
+		if (available.length === 0) return null;
+		return formatPricePerMillion(
+			Math.min(...available.map(toPricedModel).map((m) => m.inputPer1M)),
+		);
+	}, [models]);
+	const lowestInputPrice = lowestAvailableInputPrice ?? "—";
 
 	return (
 		<div className="relative overflow-x-clip bg-void">
@@ -299,8 +304,8 @@ export default function PricingPage() {
 								{lowestInputPrice}
 							</p>
 							<p className="mt-2 text-sm leading-relaxed text-[var(--color-text)]">
-								Lowest displayed price tier per 1M input tokens across the current
-								catalog.
+								Lowest price per 1M input tokens among the models currently
+								accepting requests.
 							</p>
 						</m.div>
 						<m.div
