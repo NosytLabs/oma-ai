@@ -15,11 +15,45 @@ export const revalidate = 3600;
 	*/
 const USDC_BASE_MAINNET = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 const FALLBACK_TREASURY = "0x8581784D3E598cCa3482375CFF2409Ac9DD8c402";
-const MODEL_COUNT_LABEL = `${MODEL_COUNT}`;
+
+/**
+ * Prefer the live catalog count over the static MODEL_COUNT fallback.
+ *
+ * MODEL_COUNT is a compile-time constant (20) and overstates what is
+ * actually callable, so any crawler-facing surface that prints it
+ * advertises models a customer cannot call. This route is read by AI
+ * agents, so it gets the real number. Falls back to the static value
+ * only if the catalog is unreachable.
+ */
+async function liveModelCount(): Promise<number> {
+	try {
+		const base = (
+			process.env.PUBLIC_API_URL ||
+			process.env.NEXT_PUBLIC_PUBLIC_API_URL ||
+			"https://www.oma-ai.com/api"
+		).replace(/\/+$/, "");
+		const res = await fetch(`${base}/v1/models`, {
+			signal: AbortSignal.timeout(4_000),
+			next: { revalidate: 900 },
+		});
+		if (!res.ok) return MODEL_COUNT;
+		const body = (await res.json()) as { data?: unknown };
+		const rows = Array.isArray(body?.data) ? body.data : [];
+		const live = rows.filter((m) => {
+			const model = m as { available?: boolean };
+			return model?.available !== false;
+		});
+		return live.length > 0 ? live.length : MODEL_COUNT;
+	} catch {
+		return MODEL_COUNT;
+	}
+}
 
 export async function GET() {
+	const MODEL_COUNT_LIVE = await liveModelCount();
+	const MODEL_COUNT_LABEL_LIVE = `${MODEL_COUNT_LIVE}`;
 	const payee = process.env.TREASURY_BASE_ADDRESS || FALLBACK_TREASURY;
-	const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://oma-ai.com").replace(/\/+$/, "");
+	const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://www.oma-ai.com").replace(/\/+$/, "");
 	const apiUrl = (
 		process.env.PUBLIC_API_URL ||
 		process.env.NEXT_PUBLIC_PUBLIC_API_URL ||
@@ -28,13 +62,13 @@ export async function GET() {
 
 	const agentCard = {
 		name: "OMA AI Gateway",
-		description: `Permissionless AI inference across ${MODEL_COUNT_LABEL} models. Buy credits with card, deposit USDC on Base, or settle USDC via x402 then spend with an API key. OpenAI-compatible endpoint, privacy-first routing, A2UI-ready responses.`,
+		description: `Permissionless AI inference across ${MODEL_COUNT_LABEL_LIVE} models. Buy credits with card, deposit USDC on Base, or settle USDC via x402 then spend with an API key. OpenAI-compatible endpoint, privacy-first routing, A2UI-ready responses.`,
 		url: `${appUrl}/.well-known/agent-card.json`,
 		version: "2.1.0",
 		documentation: `${appUrl}/docs`,
 		provider: {
 			organization: "NosytLabs",
-			url: "https://nosytlabs.com",
+			url: "https://github.com/NosytLabs",
 		},
 		capabilities: {
 			streaming: true,
@@ -56,7 +90,7 @@ export async function GET() {
 			{
 				id: "chat-completions",
 				name: "Chat Completions",
-				description: `OpenAI-compatible chat across ${MODEL_COUNT_LABEL} models: frontier, premium, mid, and budget tiers. Streaming + tool/function calling + system prompts + JSON mode + multimodal input.`,
+				description: `OpenAI-compatible chat across ${MODEL_COUNT_LABEL_LIVE} models: frontier, premium, mid, and budget tiers. Streaming + tool/function calling + system prompts + JSON mode + multimodal input.`,
 				tags: [
 					"openai-compatible",
 					"chat",

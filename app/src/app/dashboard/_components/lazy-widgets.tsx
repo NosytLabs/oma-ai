@@ -3,14 +3,6 @@
 import dynamic from "next/dynamic";
 import { Skeleton } from "@/components/ui/Skeleton";
 
-export const LazyExpiringCreditsWarning = dynamic(
-	() =>
-		import("@/components/dashboard/ExpiringCreditsWarning").then(
-			(mod) => mod.ExpiringCreditsWarning,
-		),
-	{ ssr: false, loading: () => <Skeleton className="h-20 w-full" /> },
-);
-
 export const LazyUsageChart = dynamic(
 	() =>
 		import("@/components/dashboard/UsageChart").then((mod) => mod.UsageChart),

@@ -293,7 +293,7 @@ export function Footer() {
 							<span className="text-text-tertiary">·</span>{" "}
 							<span>MIT licensed</span>{" "}
 							<span className="text-text-tertiary">·</span>{" "}
-							<span>base mainnet</span>
+							<span>Base mainnet</span>
 						</p>
 
 						<div className="flex flex-wrap items-center gap-x-4 gap-y-2 font-mono">

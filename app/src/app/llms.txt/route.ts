@@ -21,18 +21,41 @@ export const revalidate = 3600;
 
 function resolveSiteUrl(): string {
 	return (
-		process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") || "https://oma-ai.com"
+		process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") || "https://www.oma-ai.com"
 	);
 }
 
-export function GET(): Response {
+export async function GET(): Promise<Response> {
 	const siteUrl = resolveSiteUrl();
 	const apiUrl =
 		DEFAULT_API_URL?.replace(/\/+$/, "") || "https://www.oma-ai.com/api";
 
+	// MODEL_COUNT is a compile-time constant (20) that overstates what is
+	// actually callable. llms.txt is the primary discovery surface for LLM
+	// crawlers, so quoting the static number here advertises models an agent
+	// will get a 503 trying to call. Resolve the live count, and only fall
+	// back to the static value if the catalog is unreachable.
+	let modelCount = MODEL_COUNT;
+	try {
+		const res = await fetch(`${apiUrl}/v1/models`, {
+			signal: AbortSignal.timeout(4_000),
+			next: { revalidate: 900 },
+		});
+		if (res.ok) {
+			const body = (await res.json()) as { data?: unknown };
+			const rows = Array.isArray(body?.data) ? body.data : [];
+			const live = rows.filter(
+				(m) => (m as { available?: boolean })?.available !== false,
+			);
+			if (live.length > 0) modelCount = live.length;
+		}
+	} catch {
+		/* catalog unreachable — keep the static fallback */
+	}
+
 	const BODY = `# OMA AI — Open Model Access
 
-> One gateway. Every model. No lock-in. OpenAI-compatible multi-provider AI inference with ${MODEL_COUNT} curated chat models, x402 USDC settlement on Base, and privacy-first routing.
+> One gateway. Every model. No lock-in. OpenAI-compatible multi-provider AI inference with ${modelCount} curated chat models, x402 USDC settlement on Base, and privacy-first routing.
 
 ## Docs
 

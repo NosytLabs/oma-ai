@@ -217,6 +217,7 @@ function LoginInner() {
 
 							{error && (
 								<div
+									id="email-error"
 									role="alert"
 									aria-live="assertive"
 									className="mt-4 rounded-[var(--radius-lg)] border border-[var(--color-error)]/30 bg-[color-mix(in_srgb,var(--color-error)_10%,transparent)] p-3 text-xs text-[var(--color-error)]"
@@ -263,6 +264,7 @@ function LoginInner() {
 								>
 									<form
 										onSubmit={handleMagic}
+										noValidate
 										className="space-y-3"
 									>
 									<label
@@ -283,6 +285,8 @@ function LoginInner() {
 											setEmail(e.target.value.trim());
 											if (magicSent) setMagicSent(false);
 										}}
+										aria-invalid={error ? "true" : undefined}
+										aria-describedby={error ? "email-error" : undefined}
 										required
 										// React 19 may disagree with the browser on an empty style attr
 										// during hydration of controlled inputs — suppress the noise.
@@ -465,7 +469,7 @@ function X402Callout() {
 					</p>
 					<Link
 						href="/docs#x402"
-						className="mt-2.5 inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--color-accent)] hover:underline underline-offset-2 transition-colors duration-200 ease-out hover:text-[var(--color-accent-hover)]"
+						className="mt-2.5 inline-flex min-h-6 items-center gap-1 text-[11px] font-semibold text-[var(--color-accent)] hover:underline underline-offset-2 transition-colors duration-200 ease-out hover:text-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 					>
 						How x402 works
 						<ArrowRight className="h-3 w-3" aria-hidden="true" />

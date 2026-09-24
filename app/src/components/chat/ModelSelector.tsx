@@ -208,7 +208,7 @@ export function ModelSelector({
 				aria-haspopup="menu"
 				aria-label={`Select AI model — ${selectedName || "Choose model"}`}
 				className={`
-	flex w-full min-w-0 items-center gap-2 bg-[var(--color-surface)]/70 border border-[var(--color-border)]
+					flex min-h-11 w-full min-w-0 items-center gap-2 bg-[var(--color-surface)]/70 border border-[var(--color-border)]
 	hover:border-[var(--color-accent)]/40 hover:bg-[var(--color-surface)] transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97]
 	group rounded-[var(--radius-lg)]
 	focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]

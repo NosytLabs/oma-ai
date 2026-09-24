@@ -225,6 +225,11 @@ describe("Footer", () => {
 		expect(githubLinks[0]).toHaveAttribute("href", "https://github.com/NosytLabs");
 	});
 
+	it("uses the product's Base capitalization", () => {
+		renderWithQueryClient(<Footer />);
+		expect(screen.getByText(/Base mainnet/i)).toBeInTheDocument();
+	});
+
 	it("renders copyright line with year + license", () => {
 		renderWithQueryClient(<Footer />);
 		expect(screen.getAllByText(/2026/).length).toBeGreaterThan(0);

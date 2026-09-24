@@ -82,7 +82,7 @@ export function Hero() {
 
 					<m.p
 						{...reveal()}
-						className="mx-auto mt-6 max-w-2xl text-balance text-base leading-relaxed text-text-secondary sm:mt-7 sm:text-lg md:text-xl"
+						className="mx-auto mt-6 max-w-2xl text-balance text-base leading-relaxed text-text-secondary sm:mt-7 sm:text-lg lg:text-xl"
 					>
 						One OpenAI-compatible key and {scale}. Change the model ID to change the
 						model — no new integration, no new account. Try it free in the playground.

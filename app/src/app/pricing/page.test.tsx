@@ -35,6 +35,11 @@ describe("PricingPage", () => {
 		expect(screen.getAllByText(/x402 Agent Settlement/i).length).toBeGreaterThan(0);
 	});
 
+	it("does not describe unavailable catalog entries as live models", () => {
+		render(<PricingPage />);
+		expect(screen.queryByText(/^\d+ live models$/i)).toBeNull();
+	});
+
 	it("renders model pricing table with headers", async () => {
 		render(<PricingPage />);
 		await waitFor(() => {

@@ -113,8 +113,11 @@ const POLAR_TIERS: Array<{
 			badge: "Best value",
 		},
 	};
+	// Note: 1 credit = $0.01, so a pack is NOT "credits at 1:1 USD" —
+	// $10 buys 1,000 credits. Stating the real rate here keeps the card
+	// consistent with the FAQ and the credits page.
 	const copy = tierCopy[p.tag] ?? {
-		description: `${p.credits.toLocaleString()} credits at 1:1 USD.`,
+		description: `${p.credits.toLocaleString()} credits (1 credit = $0.01).`,
 	};
 	return {
 		name: p.tag,
@@ -238,7 +241,7 @@ export default function PricingPage() {
 			),
 		[pricedModels],
 	);
-	const modelCount = models.length;
+	const modelCount = models.filter((model) => model.available !== false).length;
 
 	return (
 		<div className="relative overflow-x-clip bg-void">
@@ -276,7 +279,7 @@ export default function PricingPage() {
 						25% platform fee; OMA-AI models are priced at 2x Gonka wholesale.
 					</p>
 					<div className="meta-strip">
-							<span>{modelCount} live models</span>
+							<span>{modelCount} available models</span>
 						<span>Usage-based billing</span>
 						<span>USDC · x402 · optional card</span>
 					</div>
@@ -403,7 +406,7 @@ export default function PricingPage() {
 													or deposit USDC
 												</Link>
 												<p className="mt-3 text-center text-[10px] font-mono uppercase tracking-wider text-text-muted">
-													Powered by Polar
+													Card checkout by Polar · USDC direct on Base
 												</p>
 											</>
 										) : (
@@ -570,7 +573,7 @@ export default function PricingPage() {
 						</div>
 						<Link
 							href="/models"
-							className="font-mono text-xs text-text-muted transition-colors duration-200 ease-out hover:text-accent"
+							className="inline-flex min-h-11 items-center justify-center font-mono text-xs text-text-muted transition-colors duration-200 ease-out hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 						>
 							View all models
 						</Link>

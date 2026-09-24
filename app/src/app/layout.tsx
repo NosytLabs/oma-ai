@@ -111,6 +111,9 @@ export const metadata: Metadata = {
 	},
 	manifest: "/manifest.webmanifest",
 	applicationName: "OMA AI",
+	verification: {
+		google: "ugK-2CdwnQDrVaB5ew7ZmEAIjW6POklReEkwqJQBMVk",
+	},
 	keywords: [
 		"AI API",
 		"OpenAI compatible",
