@@ -20,6 +20,29 @@ const MIN_INPUT_PRICE = Math.min(
 	...MODELS.map((m) => m.inputPricePer1M).filter((p) => p > 0),
 );
 
+/**
+ * Count the models a visitor can actually call right now.
+ *
+ * The previous count filtered by modality only, so the "Models live" stat
+ * reported the whole catalog (20) while the API was serving 2 as available
+ * and 18 as unavailable — the same signal the /models and /pricing badges
+ * already surface. An unavailable entry is not live, so it is excluded here
+ * too; entries that omit the flag are counted, matching loadModels().
+ */
+export function countLiveModels(
+	entries: readonly { modality?: string; category?: string; available?: boolean }[],
+): number {
+	return entries.filter((e) => {
+		if (e.available === false) return false;
+		const m = (e.modality ?? "").toLowerCase();
+		if (m) return m === "chat";
+		const c = (e.category ?? "").toLowerCase();
+		return (
+			c === "budget" || c === "mid" || c === "premium" || c === "frontier"
+		);
+	}).length;
+}
+
 function useLiveModelCount() {
 	const [count, setCount] = useState<number | null>(null);
 	useEffect(() => {
@@ -32,18 +55,9 @@ function useLiveModelCount() {
 				// exposes image / video / tts / embedding / asr / music / upscale
 				// / inpaint rows. Without this the live number is inflated by
 				// every modality bucket and the hero drifts from the static
-				// `MODEL_COUNT` claim.
-				const chatCount = entries.filter((e) => {
-					const m = (e.modality ?? "").toLowerCase();
-					if (m) return m === "chat";
-					const c = (e.category ?? "").toLowerCase();
-					return (
-						c === "budget" ||
-						c === "mid" ||
-						c === "premium" ||
-						c === "frontier"
-					);
-				}).length;
+				// `MODEL_COUNT` claim. Unavailable entries are excluded by
+				// countLiveModels so the stat reports what can be called.
+				const chatCount = countLiveModels(entries);
 				setCount(chatCount > 0 ? chatCount : entries.length);
 			})
 			.catch(() => {

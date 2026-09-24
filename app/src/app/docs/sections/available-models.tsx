@@ -55,13 +55,19 @@ export function AvailableModelsSection() {
 		},
 	];
 
+	const availableCount = models.filter((m) => m.available !== false).length;
+
 	return (
 		<AnimatedSection delay={250}>
 			<SectionHeading
 				id="models"
 				icon={<BookOpen className="h-5 w-5" />}
 				title="Available Models"
-				subtitle={`${MODEL_COUNT} curated chat models across four tiers, plus web search in the playground.`}
+				subtitle={
+					availableCount === models.length
+						? `${MODEL_COUNT} curated chat models across four tiers, plus web search in the playground.`
+						: `${availableCount} of ${models.length} curated chat models are accepting requests right now. The rest are listed for reference and are marked below.`
+				}
 			/>
 
 			<div className="mb-6 grid gap-4 sm:grid-cols-2">
@@ -124,6 +130,11 @@ export function AvailableModelsSection() {
 												<td className="py-2">
 													<code className="font-mono text-xs text-accent">{m.id}</code>
 													<div className="text-xs text-text-muted">{m.name}</div>
+													{m.available === false && (
+														<span className="mt-1 inline-flex items-center gap-1 rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-warning">
+															Unavailable
+														</span>
+													)}
 												</td>
 												<td className="py-2 text-right font-mono text-xs text-text-secondary">
 													{fmt(m.inputPricePer1M)}
