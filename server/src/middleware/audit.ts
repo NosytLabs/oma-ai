@@ -2,6 +2,7 @@ import type { Context, Next } from "hono";
 import { db } from "../db/client.js";
 import { auditLogs } from "../db/schema.js";
 import { logger } from "../lib/logger.js";
+import { extractClientIp } from "./rate-limit/utils.js";
 
 type AuditAction = typeof auditLogs.$inferInsert.action;
 
@@ -52,9 +53,7 @@ export function createAuditLogger(params: { action: AuditAction; resource: strin
 		return async (c: Context, next: Next) => {
 				await next();
 				const userId = c.get("userId") as string | undefined;
-				const ipAddress = c.req.header("x-real-ip")
-						?? c.req.header("x-forwarded-for")?.split(",")[0]?.trim()
-						?? "unknown";
+				const ipAddress = extractClientIp(c);
 				const userAgent = c.req.header("user-agent") ?? null;
 				await auditLog({
 						userId,
@@ -86,9 +85,7 @@ export function auditWriteOp(
 		return async (c: Context, next: Next) => {
 				await next();
 				const userId = c.get("userId") as string | undefined;
-				const ipAddress = c.req.header("x-real-ip")
-						?? c.req.header("x-forwarded-for")?.split(",")[0]?.trim()
-						?? "unknown";
+				const ipAddress = extractClientIp(c);
 				const userAgent = c.req.header("user-agent") ?? null;
 				await auditLog({
 						userId,

@@ -32,6 +32,7 @@
 import type { Context, Next } from "hono";
 import type { OmaEnv } from "../types.js";
 import { logger } from "../lib/logger.js";
+import { extractClientIpOrNull } from "./rate-limit/utils.js";
 
 const DEMO_COOKIE_NAME = "oma-demo";
 
@@ -69,9 +70,7 @@ export async function demoModeGuard(c: Context<OmaEnv>, next: Next) {
 			path: c.req.path,
 			correlationId,
 			remoteAddress:
-				c.req.header("x-real-ip")
-				?? c.req.header("x-forwarded-for")?.split(",")[0]?.trim()
-				?? null,
+				extractClientIpOrNull(c),
 			userAgent: c.req.header("user-agent") ?? null,
 		},
 		"[demo-guard] mutation blocked for demo session",

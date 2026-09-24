@@ -22,6 +22,7 @@ import {
 } from "../auth/api-keys.js";
 import { auth } from "../auth.js";
 import type { OmaEnv } from "../types.js";
+import { extractClientIpOrNull } from "../middleware/rate-limit/utils.js";
 
 export const authRoutes = new Hono<OmaEnv>();
 
@@ -192,10 +193,7 @@ authRoutes.delete(
 				);
 		}
 		const userId = session.user.id;
-		const ipAddress =
-				c.req.header("x-real-ip") ??
-				c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ??
-				undefined;
+		const ipAddress = extractClientIpOrNull(c) ?? undefined;
 		const userAgent = c.req.header("user-agent") ?? undefined;
 		// Audit BEFORE deletion — the FK on audit_logs.user_id is `set null`
 		// so post-delete logs would lose the userId. The "requested" row

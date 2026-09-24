@@ -14,6 +14,7 @@ import {
 } from "../db/schema.js";
 import { auditLog } from "../middleware/audit.js";
 import { logger } from "../lib/logger.js";
+import { extractClientIpOrNull } from "../middleware/rate-limit/utils.js";
 
 export const exportRoutes = new Hono<OmaEnv>();
 
@@ -155,10 +156,7 @@ exportRoutes.get("/v1/export/summary", sessionAuth, async (c) => {
 // ============================================================
 exportRoutes.get("/v1/export/account", sessionAuth, async (c) => {
 		const userId = c.get("userId");
-		const ipAddress =
-				c.req.header("x-real-ip")
-				?? c.req.header("x-forwarded-for")?.split(",")[0]?.trim()
-				?? undefined;
+		const ipAddress = extractClientIpOrNull(c) ?? undefined;
 		const userAgent = c.req.header("user-agent") ?? undefined;
 
 		// Pull every slice in parallel — each query is indexed on userId.

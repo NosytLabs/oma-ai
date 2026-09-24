@@ -149,6 +149,20 @@ export function extractClientIp(c: Context<OmaEnv>): string {
 		return xRealIp || socketRemoteAddress(c) || "unknown";
 }
 
+/**
+ * Nullable form for audit/compliance consumers, which store an absent address
+ * as SQL NULL rather than the string "unknown".
+ *
+ * Every security surface must resolve the caller's identity through
+ * extractClientIp, never by reading x-forwarded-for directly: the function is
+ * publicly reachable, so a direct header read records whatever the caller
+ * asserted and silently makes the audit trail worthless for abuse tracing.
+ */
+export function extractClientIpOrNull(c: Context<OmaEnv>): string | null {
+	const ip = extractClientIp(c);
+	return ip === "unknown" ? null : ip;
+}
+
 // Helper to get client IP from proxy headers safely
 // X-Forwarded-For format: client, proxy1, proxy2, ...
 // We take the FIRST (leftmost) IP as it should be the original client
