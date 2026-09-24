@@ -179,7 +179,11 @@ function LoginInner() {
 				<BrandPitch />
 				<div className="order-first mx-auto w-full max-w-md lg:order-none lg:mx-0 lg:justify-self-start">
 					<div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-lg)]">
-						<h2 className="text-lg font-bold text-text-bright">
+						{/* Card-level title: body sans, not the editorial display serif.
+						    The global heading rule sets Instrument Serif, which at this
+						    size fought the dense form card and clashed with the sibling
+						    card title below. */}
+						<h2 className="font-sans text-lg font-bold text-text-bright">
 							Choose how to sign in
 						</h2>
 						<p className="mt-1 text-xs text-text-muted">
@@ -444,9 +448,9 @@ function X402Callout() {
 				</span>
 				<div className="min-w-0 flex-1">
 					<div className="flex items-center gap-2">
-						<p className="text-sm font-semibold text-text-bright">
+						<h3 className="font-sans text-sm font-semibold text-text-bright">
 							Fund with x402 (agents)
-						</p>
+						</h3>
 						<span className="rounded-[var(--radius-sm)] border border-[var(--color-accent)]/30 bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-[var(--color-accent)]">
 							Agents
 						</span>
