@@ -50,11 +50,11 @@ const ACCOUNT_LINKS_GUEST: { href: string; label: string; icon: typeof Key }[] =
 ];
 
 /**
-	* Grouped card layout for the mobile navigation drawer. Owns its body-scroll
-	* lock. Focus trap (Tab/Shift+Tab cycle, Escape close, focus restore on
-	* close) is delegated to `useFocusTrap` with the toggle as the restore
-	* target — identical to the original behavior.
-	*/
+ * Grouped card layout for the mobile navigation drawer. Owns its body-scroll
+ * lock. Focus trap (Tab/Shift+Tab cycle, Escape close, focus restore on
+ * close) is delegated to `useFocusTrap` with the toggle as the restore
+ * target — identical to the original behavior.
+ */
 export function NavbarMobileMenu({
 	open,
 	onOpenChange,
@@ -138,7 +138,7 @@ export function NavbarMobileMenu({
 						animate={{ opacity: 1 }}
 						exit={{ opacity: 0 }}
 						transition={springs.soft}
-						className="fixed inset-0 top-14 z-[60] bg-void/70 backdrop-blur-sm lg:hidden"
+						className="fixed inset-0 z-[60] bg-void/70 backdrop-blur-sm lg:hidden"
 						aria-hidden="true"
 						onClick={() => onOpenChange(false)}
 					/>
@@ -157,22 +157,22 @@ export function NavbarMobileMenu({
 						transition={springs.card}
 						className="fixed inset-y-0 right-0 z-[70] w-full sm:max-w-sm overflow-y-auto border-l border-border bg-void font-mono shadow-2xl lg:hidden"
 					>
-		<div className="mx-auto flex max-w-6xl flex-col px-4 py-4 sm:px-6">
-			{/* Status row */}
-			<div className="mb-4 flex items-center justify-between gap-3 text-[11px] text-text-muted">
+						<div className="mx-auto flex max-w-6xl flex-col px-4 py-4 sm:px-6">
+							{/* Status row */}
+							<div className="mb-4 flex items-center justify-between gap-3 text-[11px] text-text-muted">
 								<span className="truncate">
 									<span className="text-text-tertiary">~/ </span>
 									<span className="text-text-secondary">{section}</span>
-				</span>
-				<button
-					type="button"
-					onClick={() => onOpenChange(false)}
-					aria-label="Close navigation menu"
-					className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-sm border border-border bg-surface text-text-secondary transition-colors hover:bg-surface-hi hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-				>
-					<X className="h-4 w-4" aria-hidden="true" />
-				</button>
-			</div>
+								</span>
+								<button
+									type="button"
+									onClick={() => onOpenChange(false)}
+									aria-label="Close navigation menu"
+									className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-sm border border-border bg-surface text-text-secondary transition-colors hover:bg-surface-hi hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+								>
+									<X className="h-4 w-4" aria-hidden="true" />
+								</button>
+							</div>
 
 							{/* Grouped card grid */}
 							<div className="space-y-3">
@@ -238,7 +238,7 @@ export function NavbarMobileMenu({
 									);
 								})}
 
-							{/* Account card */}
+								{/* Account card */}
 								<m.div
 									initial="hidden"
 									animate="show"
