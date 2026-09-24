@@ -106,6 +106,9 @@ const envSchema = z.object({
 		// Falls back to localhost in dev.
 		PUBLIC_APP_URL: z.string().url().optional().default("http://localhost:3000"),
 		RECEIPT_HMAC_SECRET: z.string().min(1).optional().default("placeholder_hmac_secret_32_chars_min"),
+		// Comma-separated, verification-only. Lets RECEIPT_HMAC_SECRET rotate
+		// without invalidating receipts already issued under the old key.
+		RECEIPT_HMAC_SECRET_PREVIOUS: z.string().optional().default(""),
 		NODE_ENV: z.enum(["development", "production", "test", "staging", "preview"]).default("development"),
 		// Log level for the server logger (trace, debug, info, warn, error, fatal)
 		LOG_LEVEL: z.enum(["trace", "debug", "info", "warn", "error", "fatal"]).optional(),

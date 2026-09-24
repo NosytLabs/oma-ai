@@ -16,14 +16,51 @@ import {
 
 const RECEIPT_VERSION = "1";
 
+/**
+ * Verification keys in retirement order: the active signing key first, then
+ * any keys listed in RECEIPT_HMAC_SECRET_PREVIOUS.
+ *
+ * A single secret made rotation destructive — changing
+ * RECEIPT_HMAC_SECRET invalidated the MAC on every receipt ever issued, so
+ * every in-flight settlement became unredeemable. With a keyring, rotation
+ * is: set the new key as primary, move the old one to
+ * RECEIPT_HMAC_SECRET_PREVIOUS, deploy, then drop the old key once nothing
+ * signed with it is still outstanding.
+ *
+ * Retired keys are verify-only. They are never used to sign, so a leaked
+ * old key cannot mint new receipts.
+ */
+function verificationKeys(): string[] {
+	const primary = config.RECEIPT_HMAC_SECRET;
+	const previous = (config.RECEIPT_HMAC_SECRET_PREVIOUS ?? "")
+		.split(",")
+		.map((s) => s.trim())
+		.filter((s) => s.length > 0);
+	return [primary, ...previous].filter((k): k is string => typeof k === "string" && k.length > 0);
+}
+
+function hmacHex(secret: string, data: string): string {
+	return createHmac("sha256", secret).update(data).digest("hex");
+}
+
+/** Constant-time compare that tolerates differing lengths. */
+function safeEqual(a: string, b: string): boolean {
+	const aBuf = Buffer.from(a, "utf8");
+	const bBuf = Buffer.from(b, "utf8");
+	const len = Math.max(aBuf.length, bBuf.length);
+	const aPad = Buffer.alloc(len);
+	const bPad = Buffer.alloc(len);
+	aBuf.copy(aPad);
+	bBuf.copy(bPad);
+	return timingSafeEqual(aPad, bPad);
+}
+
 export function signReceipt(data: string): string {
 	const secret = config.RECEIPT_HMAC_SECRET;
 	if (!secret) {
 		throw new Error("RECEIPT_HMAC_SECRET is not configured");
 	}
-	const hmac = createHmac("sha256", secret);
-	hmac.update(data);
-	return hmac.digest("hex");
+	return hmacHex(secret, data);
 }
 
 export function verifyReceipt(
@@ -49,15 +86,9 @@ export function verifyReceipt(
 	if (Date.now() > effectiveExpiry * 1000) {
 		return false;
 	}
-	const expected = signReceipt(data);
-	const expectedBuf = Buffer.from(expected, "utf8");
-	const receiptBuf = Buffer.from(receipt, "utf8");
-	const len = Math.max(expectedBuf.length, receiptBuf.length);
-	const aPadded = Buffer.alloc(len);
-	const bPadded = Buffer.alloc(len);
-	expectedBuf.copy(aPadded);
-	receiptBuf.copy(bPadded);
-	return timingSafeEqual(aPadded, bPadded);
+	// Try every key in the ring. Expiry is enforced above regardless of which
+	// key matched, so a retired key is not an expiry bypass.
+	return verificationKeys().some((secret) => safeEqual(hmacHex(secret, data), receipt));
 }
 
 export function createReceiptPayload(
