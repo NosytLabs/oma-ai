@@ -20,7 +20,8 @@
 	* Spec: https://github.com/coinbase/x402/blob/main/specs/x402-specification-v2.md
 	*/
 
-import { USDC_BASE } from "../constants.js";
+import { USDC_BASE, USDC_DECIMALS } from "../constants.js";
+import { formatUnits } from "viem";
 import { parseUsdcAtomic } from "./facilitator-signing.js";
 import type { PaymentSignature } from "./facilitator.js";
 
@@ -32,14 +33,9 @@ const CAIP2_TO_INTERNAL: Record<string, string> = {
 		base: "base",
 };
 
-const USDC_DECIMALS = 6n;
-const ATOMIC_PER_USDC = 10n ** USDC_DECIMALS;
-
 /** Atomic USDC units → decimal string ("100000" → "0.10"). */
 export function atomicToDecimal(atomic: bigint): string {
-		const whole = atomic / ATOMIC_PER_USDC;
-		const frac = (atomic % ATOMIC_PER_USDC).toString().padStart(6, "0").replace(/0+$/, "");
-		return frac ? `${whole}.${frac}` : whole.toString();
+	return formatUnits(atomic, USDC_DECIMALS);
 }
 
 interface XPaymentV2 {

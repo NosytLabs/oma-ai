@@ -26,17 +26,45 @@ export function normalizeUsageRecord(raw: RawUsageRecord): UsageRecord {
 	};
 }
 
+/**
+ * In-flight request registry, keyed by cache key.
+ *
+ * Without this, several callers that miss the cache before the first response
+ * resolves each fire their own identical request — a dashboard mounting three
+ * queries at once produced three /v1/balance calls. Storing the promise means
+ * later callers await the one already in flight.
+ *
+ * Entries are always cleared on settle, including rejection, so a failed
+ * request is retried by the next caller rather than replayed forever.
+ */
+const inFlight = new Map<string, Promise<unknown>>();
+
+async function cachedResource<T>(cacheKey: string, ttl: number, fetcher: () => Promise<T>): Promise<T> {
+	const cached = getCached<T>(cacheKey);
+	if (cached) return cached;
+
+	const existing = inFlight.get(cacheKey) as Promise<T> | undefined;
+	if (existing) return existing;
+
+	const pending = fetcher()
+		.then((data) => {
+			setCache(cacheKey, data, ttl);
+			return data;
+		})
+		.finally(() => {
+			inFlight.delete(cacheKey);
+		});
+
+	inFlight.set(cacheKey, pending);
+	return pending;
+}
+
 export const balance = {
 	get() {
-		const cacheKey = "/v1/balance";
-		const cached = getCached<BalanceResponse>(cacheKey);
-		if (cached) return Promise.resolve(cached);
-		return import("./client.js").then(({ request }) =>
-			request<BalanceResponse>("/v1/balance").then((data) => {
-				setCache(cacheKey, data, 120_000);
-				return data;
-			}),
-		);
+		return cachedResource<BalanceResponse>("/v1/balance", 120_000, async () => {
+			const { request } = await import("./client.js");
+			return request<BalanceResponse>("/v1/balance");
+		});
 	},
 };
 
@@ -74,14 +102,9 @@ export const usage = {
 
 export const models = {
 	list() {
-		const cacheKey = "/v1/models";
-		const cached = getCached<ModelsResponse>(cacheKey);
-		if (cached) return Promise.resolve(cached);
-		return import("./client.js").then(({ request }) =>
-			request<ModelsResponse>("/v1/models").then((data) => {
-				setCache(cacheKey, data, STALE_TTL);
-				return data;
-			}),
-		);
+		return cachedResource<ModelsResponse>("/v1/models", STALE_TTL, async () => {
+			const { request } = await import("./client.js");
+			return request<ModelsResponse>("/v1/models");
+		});
 	},
 };

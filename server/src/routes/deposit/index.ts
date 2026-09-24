@@ -27,9 +27,9 @@ import { creditBalances, deposits, siteSettings } from "../../db/schema.js";
 import { auditLog } from "../../middleware/audit.js";
 import { config } from "../../config.js";
 import { logger } from "../../lib/logger.js";
+import { USDC_BASE } from "../../constants.js";
 
-// USDC contract on Base mainnet.
-const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
+// Chain id for Base mainnet.
 const USDC_BASE_CHAIN_ID = 8453;
 
 export const depositRoutes = new Hono<OmaEnv>();

@@ -5,8 +5,7 @@ import { eq, and, sql } from "drizzle-orm";
 import { logger } from "../lib/logger.js";
 import { logPaymentEvent } from "./payment-observability.js";
 
-const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as const;
-const USDC_DECIMALS = 6;
+import { USDC_BASE, USDC_DECIMALS } from "../constants.js";
 const MIN_DEPOSIT_CENTS = 100;
 
 const TRANSFER_ABI = parseAbi([

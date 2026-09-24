@@ -119,16 +119,24 @@ export function isQuotaError(err: unknown): boolean {
 		return false;
 }
 
-/** Get a cached entry by key. Returns null if missing or beyond STALE_TTL. */
+/**
+ * Get a cached entry by key. Returns null once the entry is older than its
+ * own ttl, or past STALE_TTL (which remains a hard upper bound).
+ *
+ * The per-entry ttl used to be ignored: entries were only compared against
+ * STALE_TTL, so a resource stored with a 120s ttl (balance) or the 60s default
+ * stayed served for the full 300s and every caller's requested freshness was
+ * silently ignored.
+ */
 export function getCached<T>(key: string): T | null {
-		const entry = cache.get(key);
-		if (!entry) return null;
-		const age = Date.now() - entry.timestamp;
-		if (age > STALE_TTL) {
-				cache.delete(key);
-				return null;
-		}
-		return entry.data as T;
+	const entry = cache.get(key);
+	if (!entry) return null;
+	const age = Date.now() - entry.timestamp;
+	if (age > Math.min(entry.ttl, STALE_TTL)) {
+		cache.delete(key);
+		return null;
+	}
+	return entry.data as T;
 }
 
 /** Set a cache entry. Defaults to DEFAULT_TTL (60s). */

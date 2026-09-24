@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { DEFAULT_API_URL } from "@/lib/config";
 import { CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -46,8 +47,10 @@ export default async function StatusPage() {
 		detail: "You're reading this page, so the site is serving.",
 	};
 
-	const apiBase =
-		process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+	// Use the shared, trailing-slash-normalized base instead of re-reading
+	// NEXT_PUBLIC_API_URL here, so this page cannot drift from the route
+	// handlers (a double slash or a divergent fallback would 404).
+	const apiBase = DEFAULT_API_URL;
 	const [backendJson, modelsJson] = await Promise.all([
 		fetchJson(`${apiBase}/health`),
 		fetchJson(`${apiBase}/v1/models`),

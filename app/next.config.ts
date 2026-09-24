@@ -45,12 +45,11 @@ const nextConfig: NextConfig = {
 			process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ??
 			process.env.NEXT_PUBLIC_BUILD_SHA ??
 			"dev",
-		// Hardcode the fallback to a stable string so SSR and CSR agree
-		// (avoids the `new Date()`-at-config-eval-time server/client
-		// hydration mismatch). Bump in source on each deploy.
-		NEXT_PUBLIC_BUILD_DATE:
-			process.env.NEXT_PUBLIC_BUILD_DATE ??
-			"2026-09-04",
+		// NEXT_PUBLIC_BUILD_DATE was removed: nothing in app/src read it, so
+		// the hardcoded "2026-09-04" fallback was manual busywork ("bump in
+		// source on each deploy") feeding a value no consumer ever saw. If a
+		// build timestamp is genuinely wanted, derive it from the Vercel build
+		// environment at request time rather than pinning a literal in source.
 	},
 
 	serverExternalPackages: [],

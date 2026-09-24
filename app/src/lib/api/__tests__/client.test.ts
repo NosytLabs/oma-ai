@@ -220,5 +220,29 @@ describe("api client", () => {
 			// Should be deleted
 			expect(getCached("stale-key")).toBeNull(); 
 		});
+
+		it("honors the per-entry ttl instead of only the global STALE_TTL", () => {
+			// Regression: getCached() only compared against STALE_TTL and never
+			// read entry.ttl, so a resource cached with a 120s ttl (balance) or
+			// 60s default stayed served for the full 300s. Callers' requested
+			// freshness was silently ignored.
+			setCache("short-ttl", "data", 1_000);
+			vi.advanceTimersByTime(1_001);
+			expect(getCached("short-ttl")).toBeNull();
+		});
+
+		it("still serves an entry before its ttl elapses", () => {
+			setCache("within-ttl", "data", 1_000);
+			vi.advanceTimersByTime(999);
+			expect(getCached("within-ttl")).toBe("data");
+		});
+
+		it("caps a ttl longer than STALE_TTL at STALE_TTL", () => {
+			// STALE_TTL stays an upper bound so an over-long ttl cannot pin an
+			// entry in memory indefinitely.
+			setCache("long-ttl", "data", STALE_TTL * 10);
+			vi.advanceTimersByTime(STALE_TTL + 1);
+			expect(getCached("long-ttl")).toBeNull();
+		});
 	});
 });
