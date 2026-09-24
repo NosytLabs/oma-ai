@@ -29,9 +29,10 @@ export async function checkTokenBucket(
 		requested: number = 1
 ): Promise<RateLimitResult> {
 		try {
-				// node-redis v4+ requires eval({ keys, arguments }) with string ARGV.
-				// The legacy (script, numKeys, key, ...args) form fails at runtime with
-				// "Lua redis lib command arguments must be strings or integers".
+				// @upstash/redis signature: eval(script, keys[], args[]).
+				// This client is @upstash/redis (see lib/redis-client.ts), NOT
+				// node-redis, so the node-redis v4 object form
+				// eval(script, { keys, arguments }) does NOT apply here.
 				const result = (await redis.eval(TOKEN_BUCKET_SCRIPT, [key], [
 						String(config.bucketSize),
 						String(config.refillRate),
