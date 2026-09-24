@@ -1,11 +1,30 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+// Defined once and reused below: without explicit openGraph/twitter blocks a
+// page only sets `title`/`description`, and both social cards then fall back
+// to the ROOT layout's copy — so a shared /changelog link showed the generic
+// "AI inference, USDC on Base" title instead of the changelog's own.
+const TITLE = "Changelog — what's new on OMA";
+const DESCRIPTION =
+	"Notable changes to OMA: new models, pricing updates, fixes, and features. Plain entries, newest first.";
+
 export const metadata: Metadata = {
-	title: "Changelog — what's new on OMA",
-	description:
-		"Notable changes to OMA: new models, pricing updates, fixes, and features. Plain entries, newest first.",
+	title: TITLE,
+	description: DESCRIPTION,
 	alternates: { canonical: "/changelog" },
+	openGraph: {
+		title: TITLE,
+		description: DESCRIPTION,
+		url: "/changelog",
+		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA changelog" }],
+	},
+	twitter: {
+		card: "summary_large_image",
+		title: TITLE,
+		description: DESCRIPTION,
+		images: ["/og-image.png"],
+	},
 	robots: { index: true, follow: true },
 };
 

@@ -11,6 +11,7 @@ import { LiveModelDetail } from "./_components/LiveModelDetail";
 
 type LiveModelDetail = {
 	id: string;
+	available?: boolean;
 	category?: string;
 	context_length?: number | null;
 	provider?: string;
@@ -66,6 +67,31 @@ function formatLivePrice(per1M: number | undefined): string {
 	return formatPrice(per1M);
 }
 
+/**
+ * Whether a catalog entry is currently accepting requests.
+ *
+ * `null` means the catalog could not be read, which is NOT the same as
+ * "unavailable" — an API blip must not suddenly deindex the whole catalog.
+ * Callers therefore only act on an explicit `false`.
+ */
+const fetchModelAvailability = cache(
+	async (slug: string): Promise<boolean | null> => {
+		const apiBase = DEFAULT_API_URL;
+		try {
+			const res = await fetch(`${apiBase}/v1/models`, {
+				next: { revalidate: 300 },
+			});
+			if (!res.ok) return null;
+			const json = (await res.json()) as { data?: { id?: string; available?: boolean }[] };
+			const match = json.data?.find((m) => m.id === slug);
+			if (!match) return null;
+			return match.available !== false;
+		} catch {
+			return null;
+		}
+	},
+);
+
 export function generateStaticParams() {
 	return MODELS.map((m) => ({ slug: m.id }));
 }
@@ -81,12 +107,23 @@ export async function generateMetadata({
 }): Promise<Metadata> {
 	const { slug } = await params;
 	const model = MODELS.find((m) => m.id === slug);
+	// A model whose upstream credential is missing still renders (the page is
+	// useful and the provider may return), but it must not be INDEXED: a
+	// crawler that ranks it sends the visitor to a model that errors. The
+	// sitemap already omits these; this closes the discovery paths that do
+	// not go through the sitemap — internal links, old indexed URLs, referrers.
+	const available = await fetchModelAvailability(slug);
+	const robots =
+		available === false
+			? { index: false, follow: true }
+			: { index: true, follow: true };
 	if (model) {
 		const title = `${model.name} · ${model.provider}`;
 		const description = `${model.description} ${formatPrice(model.inputPricePer1M)}/M input, ${formatPrice(model.outputPricePer1M)}/M output, ${model.contextLength} context.`;
 		return {
 			title,
 			description,
+			robots,
 			openGraph: {
 				title,
 				description,
@@ -103,6 +140,7 @@ export async function generateMetadata({
 	return {
 		title: name,
 		description: `${name} — served via the OMA gateway. ${formatLivePrice(livePricePer1M(live.pricing?.prompt))}/M input, ${formatLivePrice(livePricePer1M(live.pricing?.completion))}/M output.`,
+		robots,
 		alternates: { canonical: `${SITE_URL}/models/${slug}` },
 	};
 }

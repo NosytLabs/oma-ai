@@ -156,7 +156,10 @@ describe("robots.ts - Next.js MetadataRoute.Robots", () => {
 
 	it("declares sitemap and omits deprecated host field", () => {
 		const result = robots();
-		expect(result.sitemap).toBe("https://oma-ai.com/sitemap.xml");
+		// Must match sitemap.ts and every page's alternates.canonical. The
+		// apex 308-redirects to www, so pointing crawlers at it here would
+		// advertise a redirect instead of the sitemap. Was the bare apex.
+		expect(result.sitemap).toBe("https://www.oma-ai.com/sitemap.xml");
 		// `host` is deprecated by Google and produces an invalid robots.txt —
 		// intentionally omitted since the 2026-07-31 audit.
 		expect(result.host).toBeUndefined();
