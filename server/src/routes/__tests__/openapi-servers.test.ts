@@ -22,6 +22,38 @@ describe("getOpenApiServers", () => {
 			{ url: "https://www.oma-ai.com/api", description: "Production" },
 		]);
 	});
+
+	it("does not hand SDK generators the internal Neon function host", () => {
+		// PUBLIC_API_URL is set to the Neon compute hostname in production.
+		// That is infrastructure, not the public API: it is not what the docs
+		// tell developers to use, and it changes if the branch is recreated.
+		// The canonical public API is the same-origin proxied path.
+		const servers = getOpenApiServers(
+			"https://br-sweet-rain-b40o54xa-omaapi.compute.c-6.us-east-2.aws.neon.tech",
+			3001,
+			"https://www.oma-ai.com",
+		);
+		expect(servers[0].url).toBe("https://www.oma-ai.com/api");
+		expect(JSON.stringify(servers)).not.toContain("neon.tech");
+	});
+
+	it("tolerates a trailing slash on the app origin", () => {
+		const servers = getOpenApiServers(
+			"https://x.neon.tech",
+			3001,
+			"https://www.oma-ai.com/",
+		);
+		expect(servers[0].url).toBe("https://www.oma-ai.com/api");
+	});
+
+	it("still honours an explicitly public non-internal PUBLIC_API_URL", () => {
+		const servers = getOpenApiServers(
+			"https://api.example.com/v1",
+			3001,
+			"https://www.oma-ai.com",
+		);
+		expect(servers[0].url).toBe("https://api.example.com/v1");
+	});
 });
 
 describe("getPublicOpenApiSpec", () => {

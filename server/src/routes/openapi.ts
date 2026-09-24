@@ -12,7 +12,27 @@ import { config } from "../config.js";
 
 export const openapiRoutes = new Hono<OmaEnv>();
 
-export function getOpenApiServers(publicApiUrl: string, localPort: number) {
+function isInternalApiHost(url: string): boolean {
+	try {
+		const { hostname } = new URL(url);
+		// Neon Function compute endpoints look like
+		// <branch>-<fn>.compute.<region>.aws.neon.tech. They are the internal
+		// origin the Vercel proxy forwards to, not the public API.
+		return (
+			hostname.endsWith(".neon.tech") ||
+			hostname.endsWith(".compute.aws.neon.tech") ||
+			hostname.includes(".compute.")
+		);
+	} catch {
+		return false;
+	}
+}
+
+export function getOpenApiServers(
+	publicApiUrl: string,
+	localPort: number,
+	appUrl?: string,
+) {
 	const localApiUrl = `http://localhost:${localPort}`;
 	const isLocalPublicUrl = (() => {
 		try {
@@ -30,6 +50,16 @@ export function getOpenApiServers(publicApiUrl: string, localPort: number) {
 	// generators at the consumer's own machine, and a public URL that does not
 	// resolve (e.g. an api. subdomain with no DNS record) makes every
 	// generated client fail on first request.
+	//
+	// PUBLIC_API_URL is set to the Neon function hostname in production, so
+	// when that happens advertise the canonical same-origin proxy the docs
+	// actually use instead. An explicitly public PUBLIC_API_URL still wins.
+	if (appUrl && isInternalApiHost(publicApiUrl)) {
+		const origin = appUrl.replace(/\/+$/, "");
+		if (origin) {
+			return [{ url: `${origin}/api`, description: "Production" }];
+		}
+	}
 	return [{ url: publicApiUrl, description: "Production" }];
 }
 
@@ -41,7 +71,11 @@ const spec = {
 		description:
 			"OpenAI-compatible inference gateway. Routes to Venice (premium) and OMA-AI / Gonka.AI (decentralized). USDC on Base for credit top-ups; x402 verify/settle for agent USDC funding.",
 	},
-	servers: getOpenApiServers(config.PUBLIC_API_URL, config.PORT),
+	servers: getOpenApiServers(
+		config.PUBLIC_API_URL,
+		config.PORT,
+		config.PUBLIC_APP_URL,
+	),
 	components: {
 		securitySchemes: {
 			BearerAuth: { type: "http", scheme: "bearer" },

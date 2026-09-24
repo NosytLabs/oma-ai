@@ -31,6 +31,13 @@ export async function GET(): Promise<Response> {
 	const apiUrl =
 		DEFAULT_API_URL?.replace(/\/+$/, "") || "https://www.oma-ai.com/api";
 
+	// NEXT_PUBLIC_API_URL points at the Neon function's own hostname, which is
+	// infrastructure, not the public API. Advertising it in llms.txt hands
+	// agents an internal origin that is not what the docs tell developers to
+	// use, and it changes if the branch is ever recreated. The canonical
+	// public API is the same-origin proxy: <site>/api.
+	const publicApiUrl = `${siteUrl}/api`;
+
 	// MODEL_COUNT is a compile-time constant (20) that overstates what is
 	// actually callable. llms.txt is the primary discovery surface for LLM
 	// crawlers, so quoting the static number here advertises models an agent
@@ -87,8 +94,8 @@ export async function GET(): Promise<Response> {
 
 - [Agent skill (autonomous setup instructions)](${siteUrl}/agent-skill.md)
 - [A2A agent card](${siteUrl}/.well-known/agent-card.json)
-- [OpenAPI spec](${apiUrl}/v1/openapi)
-- [Model catalog](${apiUrl}/v1/models)
+- [OpenAPI spec](${publicApiUrl}/v1/openapi)
+- [Model catalog](${publicApiUrl}/v1/models)
 - [GitHub](https://github.com/NosytLabs)
 `;
 
