@@ -489,6 +489,47 @@ export const autoReloadSettings = pgTable("auto_reload_settings", {
 				.$onUpdateFn(() => new Date()),
 });
 
+/**
+ * Durable retry queue for x402 settlements that were accepted on-chain but
+ * could not be persisted to `settlements`.
+ *
+ * This lives in Postgres rather than Redis on purpose:
+ *  - the thing being retried IS a database write, so queueing it in a
+ *    different store means a total DB failure also destroys the only record
+ *    that a payment happened;
+ *  - production runs no Redis, so a Redis-backed queue silently discarded
+ *    every entry (getRedisClient() returned null and the caller returned).
+ *
+ * `txHash` + `networkId` is unique so enqueueing the same failed settlement
+ * twice cannot create duplicate work, and the drain is safe to run
+ * concurrently because the insert into `settlements` is onConflictDoNothing.
+ */
+export const settlementDlq = pgTable(
+	"settlement_dlq",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		txHash: text("tx_hash").notNull(),
+		networkId: text("network_id").notNull(),
+		amount: text("amount").notNull(),
+		// Required to rebuild the settlements row; the old Redis entry omitted
+		// both, so it could not have been replayed even with Redis present.
+		payee: text("payee").notNull(),
+		receipt: text("receipt").notNull(),
+		settledAt: timestamp("settled_at", { withTimezone: true }).notNull(),
+		attempts: integer("attempts").notNull().default(1),
+		lastError: text("last_error").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+		// Exponential backoff gate; the drain only considers due entries.
+		nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+	},
+	(t) => [
+		uniqueIndex("idx_settlement_dlq_txhash_network_unique").on(t.txHash, t.networkId),
+		index("idx_settlement_dlq_next_attempt").on(t.nextAttemptAt),
+	],
+);
+
 export const settlements = pgTable(
 		"settlements",
 		{

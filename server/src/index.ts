@@ -11,6 +11,7 @@ import { config } from "./config.js";
 import { securityHeaders } from "./middleware/security.js";
 import { originGuard } from "./middleware/origin-guard.js";
 import { logger } from "./lib/logger.js";
+import { drainSettlementDlq, getSettlementDlqLength } from "./lib/dlq.js";
 import { auth } from "./auth.js";
 import { initAuth } from "./auth/middleware.js";
 import { ensureCatalogLoaded } from "./inference/models.js";
@@ -324,6 +325,38 @@ app.post("/internal/recover-deposits", async (c) => {
 	} catch (err) {
 		logger.error({ err }, "[deposit-recovery] internal ticker failed");
 		return c.json({ error: { message: "deposit recovery failed", type: "server_error" } }, 500);
+	}
+});
+
+// ---------------------------------------------------------------------
+// Settlement DLQ drain.
+//
+// A settlement that was accepted on-chain but could not be persisted lands in
+// the `settlement_dlq` table (Postgres-backed; see lib/dlq.ts). This route
+// replays those rows into `settlements`. Before this existed the queue was
+// write-only, so a failed persist was unrecoverable.
+//
+// Auth is identical to /internal/recover-deposits: either the Neon scheduler
+// header (which Neon strips from clients) or the RECOVERY_TOKEN bearer.
+// ---------------------------------------------------------------------
+app.post("/internal/drain-settlement-dlq", async (c) => {
+	const token = c.req.header("Authorization")?.replace(/^Bearer\s+/i, "") ?? "";
+	const expected = process.env.RECOVERY_TOKEN;
+	const fromNeonScheduler = Boolean(c.req.header("x-neon-trigger-invocation-id"));
+	const authorized = fromNeonScheduler || (Boolean(expected) && token === expected);
+	if (!authorized) {
+		return c.json({ error: { message: "forbidden", type: "forbidden" } }, 403);
+	}
+	try {
+		const result = await drainSettlementDlq();
+		const remaining = await getSettlementDlqLength();
+		if (result.recovered > 0 || result.abandoned > 0) {
+			logger.info({ ...result, remaining }, "[DLQ] Settlement drain completed");
+		}
+		return c.json({ ...result, remaining });
+	} catch (err) {
+		logger.error({ err }, "[DLQ] Settlement drain failed");
+		return c.json({ error: { message: "settlement drain failed", type: "server_error" } }, 500);
 	}
 });
 

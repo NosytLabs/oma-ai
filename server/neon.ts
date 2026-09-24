@@ -117,5 +117,14 @@ export default defineConfig({
 			cron: "*/1 * * * *",
 			functionPath: "/internal/recover-deposits",
 		},
+		// Replays settlements that were accepted on-chain but failed to
+		// persist. Every minute: the queue is normally empty, and each entry
+		// backs off exponentially on repeated failure, so this is cheap.
+		"oma-settlement-dlq": {
+			type: "schedule",
+			function: "omaapi",
+			cron: "*/1 * * * *",
+			functionPath: "/internal/drain-settlement-dlq",
+		},
 	},
 });

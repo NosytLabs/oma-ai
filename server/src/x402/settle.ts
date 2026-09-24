@@ -118,7 +118,13 @@ export async function settlePaymentAsync(
 								const receiptPayload = createReceiptPayload(txHash, amount, networkId, payee, settledAt);
 								const receipt = signReceipt(receiptPayload);
 
-								const record: SettlementRecord = {
+								// Narrower than the shared SettlementRecord: this record is built
+						// from a freshly signed receipt, so `receipt` is definitely present.
+						// The shared type keeps receipt optional because a verified-but-not-
+						// settled cache entry has none. The DLQ needs the receipt to rebuild
+						// the NOT NULL settlements column, so state that here rather than
+						// casting at the call site.
+						const record: SettlementRecord & { receipt: string } = {
 										txHash,
 										amount,
 										networkId,
@@ -167,9 +173,23 @@ export async function settlePaymentAsync(
 								}
 
 								if (!result) {
-										await atomicCacheDelete(cacheKey);
-										await addSettlementToDlq(txHash, amount, networkId, lastError?.message || "Unknown error", 1);
-										throw new Error(`Failed to persist settlement to DB after 3 attempts: ${lastError?.message}`);
+									await atomicCacheDelete(cacheKey);
+									// Queue the FULL record (payee + receipt included) so the
+									// retry can rebuild the settlements row. The old Redis
+									// entry stored only txHash/amount/chain, which could not
+									// satisfy the NOT NULL columns, so it was unrecoverable.
+									const queued = await addSettlementToDlq(
+										record,
+										lastError?.message || "Unknown error",
+										1,
+									);
+									if (!queued) {
+										logger.error(
+											{ txHash, networkId, amount },
+											"[FACILITATOR] CRITICAL: settlement neither persisted nor queued",
+										);
+									}
+									throw new Error(`Failed to persist settlement to DB after 3 attempts: ${lastError?.message}`);
 								}
 
 								// Cache only after durable DB persistence — see AUDIT-X402-2026-06-14 CRITICAL-4.

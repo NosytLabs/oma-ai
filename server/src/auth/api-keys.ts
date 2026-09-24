@@ -7,6 +7,7 @@ import { eq, and, or, isNull, gt, inArray } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { config } from "../config.js";
 import { getRedisClient } from "../lib/redis-client.js";
+import { logger } from "../lib/logger.js";
 
 const KEY_ROTATION_WARNING_DAYS = 60;
 const API_KEY_CACHE_TTL_SECONDS = 300;
@@ -14,21 +15,54 @@ const MAX_CIDR_RANGES = 20;
 
 const pendingLastUsedUpdates = new Set<string>();
 let flushTimer: ReturnType<typeof setInterval> | null = null;
+let flushInProgress = false;
+
+/**
+ * Flush queued `lastUsedAt` touches.
+ *
+ * This used to clear the pending set BEFORE awaiting the update and swallow
+ * any error, so a slow or failing DB write permanently dropped those ids --
+ * unlogged, and contradicting the "best-effort" comment. It also had no
+ * concurrency guard, so a slow flush could overlap the next interval.
+ *
+ * Now the ids are only removed once the write succeeds, failures are logged
+ * and the ids stay queued for the next tick, and a second flush cannot start
+ * while one is running.
+ */
+async function flushLastUsedUpdates(): Promise<void> {
+	if (flushInProgress) return;
+	if (pendingLastUsedUpdates.size === 0) return;
+
+	flushInProgress = true;
+	// Snapshot, but do NOT clear: ids stay queued until the write succeeds.
+	// An id re-queued while the write is in flight is already covered by the
+	// NOW() the UPDATE stamps, and `lastUsedAt` is a coarse "recently used"
+	// signal, so at worst a sub-second difference is lost.
+	const ids = Array.from(pendingLastUsedUpdates);
+
+	try {
+		await db.update(apiKeys)
+			.set({ lastUsedAt: sql`NOW()` })
+			.where(inArray(apiKeys.id, ids));
+		for (const id of ids) pendingLastUsedUpdates.delete(id);
+	} catch (err) {
+		// Keep the ids queued so the next tick retries them.
+		logger.warn(
+			{ err, count: ids.length },
+			"[api-keys] lastUsedAt flush failed; keeping ids queued for retry",
+		);
+	} finally {
+		flushInProgress = false;
+	}
+}
 
 function startLastUsedFlusher(): void {
-		if (flushTimer) return;
-		flushTimer = setInterval(async () => {
-				if (pendingLastUsedUpdates.size === 0) return;
-				const ids = Array.from(pendingLastUsedUpdates);
-				pendingLastUsedUpdates.clear();
-				try {
-						await db.update(apiKeys)
-								.set({ lastUsedAt: sql`NOW()` })
-								.where(inArray(apiKeys.id, ids));
-				} catch {
-						// best-effort batch update
-				}
-		}, 60_000);
+	if (flushTimer) return;
+	flushTimer = setInterval(() => {
+		void flushLastUsedUpdates();
+	}, 60_000);
+	// Never hold the process open just for this maintenance timer.
+	flushTimer.unref?.();
 }
 
 function queueLastUsedUpdate(keyId: string): void {
