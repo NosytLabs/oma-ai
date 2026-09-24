@@ -118,8 +118,13 @@ describe("HomePage", () => {
 		renderWithQueryClient(<HomePage />);
 		const h1 = await screen.findByRole("heading", { level: 1 });
 		expect(h1).toBeInTheDocument();
-		expect(h1.textContent).toMatch(/One endpoint/i);
-		expect(h1.textContent).toMatch(/Every model/i);
+		// "One endpoint / Every model" was category table stakes — OpenRouter,
+		// Together, Replicate and HF all lead with the same idea — and "Every
+		// model" was an overclaim while 18 of 20 catalog entries were dark.
+		// The headline now sells model switching, which is the actual outcome.
+		expect(h1.textContent).toMatch(/One API/i);
+		expect(h1.textContent).toMatch(/Switch models/i);
+		expect(h1.textContent).not.toMatch(/Every model/i);
 	});
 
 	it("does not advertise the static catalog size on the hero", async () => {

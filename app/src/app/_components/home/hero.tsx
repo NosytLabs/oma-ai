@@ -76,16 +76,16 @@ export function Hero() {
 					</m.div>
 
 					<m.h1 {...reveal()} className="h1-hero max-w-4xl text-balance text-text-bright">
-						<span className="block">One endpoint.</span>
-						<span className="block text-accent italic">Every model.</span>
+						<span className="block">One API.</span>
+						<span className="block text-accent italic">Switch models freely.</span>
 					</m.h1>
 
 					<m.p
 						{...reveal()}
 						className="mx-auto mt-6 max-w-2xl text-balance text-base leading-relaxed text-text-secondary sm:mt-7 sm:text-lg md:text-xl"
 					>
-						One OpenAI-compatible endpoint, {scale}. Try it free in the playground, then create
-						an API key when you are ready to build.
+						One OpenAI-compatible key and {scale}. Change the model ID to change the
+						model — no new integration, no new account. Try it free in the playground.
 					</m.p>
 
 					<m.div
