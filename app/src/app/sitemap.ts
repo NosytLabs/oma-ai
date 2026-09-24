@@ -2,6 +2,12 @@ import type { MetadataRoute } from "next";
 import { MODELS } from "@/lib/models-data";
 
 /**
+ * Hard ceiling on the catalog read. A hung upstream must never stall the
+ * whole build; the abort turns an indefinite wait into the fail-closed path.
+ */
+const CATALOG_TIMEOUT_MS = 5_000;
+
+/**
  * Ids of models currently accepting requests, or null when the catalog
  * could not be read.
  *
@@ -13,7 +19,10 @@ async function fetchAvailableModelIds(): Promise<Set<string> | null> {
 	const base = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 	const url = base ? `${base}/v1/models` : "/api/v1/models";
 	try {
-		const res = await fetch(url, { next: { revalidate: 300 } });
+		const res = await fetch(url, {
+			next: { revalidate: 300 },
+			signal: AbortSignal.timeout(CATALOG_TIMEOUT_MS),
+		});
 		if (!res.ok) return null;
 		const json = (await res.json()) as {
 			data?: { id?: string; available?: boolean }[];
@@ -74,13 +83,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 	 * Filtering keeps the sitemap honest and self-heals automatically once
 	 * the provider key is restored — no deploy needed.
 	 *
-	 * If the catalog cannot be reached we fall back to the full static list
-	 * rather than publishing an empty catalog: a transient API blip should
-	 * not silently drop every model page from the index.
+	 * When the catalog cannot be read we FAIL CLOSED in production: publish
+	 * no model pages rather than the whole static list. The old behaviour
+	 * (fall back to every model) turned a transient build-time network blip
+	 * into 18 dead pages permanently advertised in production — exactly the
+	 * soft-404 this filter exists to prevent. Omitting them is recoverable
+	 * on the next deploy; ranking an error page is not.
+	 *
+	 * Dev keeps the permissive fallback: there are no SEO stakes locally and
+	 * a full catalog is the more useful debugging surface.
 	 */
 	const modelPages =
 		availableModelIds === null
-			? MODELS.map((m) => m.id)
+			? process.env.NODE_ENV === "production"
+				? []
+				: MODELS.map((m) => m.id)
 			: MODELS.filter((m) => availableModelIds.has(m.id)).map((m) => m.id);
 
 	return [

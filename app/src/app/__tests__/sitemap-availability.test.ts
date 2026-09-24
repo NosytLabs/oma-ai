@@ -64,15 +64,52 @@ describe("sitemap model availability filtering", () => {
 		}
 	});
 
-	it("falls back to all models when the catalog cannot be reached", async () => {
-		// A sitemap that silently drops every model page because the API had a
-		// blip would be worse than a slightly-stale one. Never lose the pages.
+	it("fails closed in production when the catalog cannot be reached", async () => {
+		// Production must NOT publish the full catalog on a fetch failure.
+		// A build-time network blip would otherwise permanently advertise
+		// every dark model page, which then ranks and errors for visitors —
+		// strictly worse than omitting them until availability is re-confirmed.
+		vi.stubEnv("NODE_ENV", "production");
+		global.fetch = vi.fn(async () => {
+			throw new Error("network down");
+		}) as unknown as typeof fetch;
+		const sitemapFn = await load();
+		const urls = (await sitemapFn()).map((e) => e.url);
+		expect(urls.filter((u) => u.includes("/models/"))).toHaveLength(0);
+		// Core marketing pages must survive regardless.
+		expect(urls).toContain("https://www.oma-ai.com/models");
+		vi.unstubAllEnvs();
+	});
+
+	it("falls back to all models in dev when the catalog cannot be reached", async () => {
+		// Local dev has no dark-model SEO stakes, and a full list is the more
+		// useful debugging surface. Production is the only strict case.
+		vi.stubEnv("NODE_ENV", "development");
 		global.fetch = vi.fn(async () => {
 			throw new Error("network down");
 		}) as unknown as typeof fetch;
 		const sitemapFn = await load();
 		const urls = (await sitemapFn()).map((e) => e.url);
 		expect(urls.filter((u) => u.includes("/models/")).length).toBe(MODELS.length);
+		vi.unstubAllEnvs();
+	});
+
+	it("never hangs the build on a slow catalog", async () => {
+		// A hung upstream must not stall the whole build; the AbortSignal
+		// turns an indefinite wait into the same fail-closed path.
+		vi.stubEnv("NODE_ENV", "production");
+		global.fetch = vi.fn(
+			(_url: string, init?: RequestInit) =>
+				new Promise((_resolve, reject) => {
+					init?.signal?.addEventListener("abort", () =>
+						reject(new Error("aborted")),
+					);
+				}),
+		) as unknown as typeof fetch;
+		const sitemapFn = await load();
+		const urls = (await sitemapFn()).map((e) => e.url);
+		expect(urls.filter((u) => u.includes("/models/"))).toHaveLength(0);
+		vi.unstubAllEnvs();
 	});
 
 	it("advertises the canonical www host", async () => {
