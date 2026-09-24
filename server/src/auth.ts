@@ -22,7 +22,6 @@ import {
 	emailOTP,
 	admin,
 } from "better-auth/plugins";
-import { agentAuth as agentAuthPlugin } from "@better-auth/agent-auth";
 import { verifyMessage, createPublicClient, http, getAddress } from "viem";
 import { mainnet } from "viem/chains";
 import { generateRandomString } from "better-auth/crypto";
@@ -32,7 +31,7 @@ import * as schema from "./db/schema.js";
 import { creditBalances, creditGrants } from "./db/schema.js";
 import { config } from "./config.js";
 import { logger } from "./lib/logger.js";
-import { ensureCatalogLoaded, listAllModels } from "./inference/models.js";
+
 import { getRedisClient } from "./lib/redis-client.js";
 
 const RESEND_FROM = config.RESEND_FROM ?? "OMA-AI <noreply@oma-ai.com>";
@@ -313,31 +312,6 @@ function resolveSiweDomain(): string {
 	return "localhost:3000";
 }
 
-/**
- * Agent Auth is OFF by default because its four tables were never migrated.
- *
- * Better Auth validates the ENTIRE plugin schema when `betterAuth()` is
- * constructed, not per-route. The `@better-auth/agent-auth` plugin requires
- * `agent`, `agentHost`, `agentCapabilityGrant` and `approvalRequest`, and
- * none of them exist in `src/db/schema.ts` or in either migration. While the
- * plugin was registered unconditionally, that made EVERY auth call throw:
- *
- *   GET /api/auth/get-session -> 500 "Drizzle schema mismatch"
- *
- * i.e. sign-in and sign-up were completely down in production.
- *
- * Gating the plugin restores auth immediately and without a production
- * database migration. To turn the capability on:
- *   1. add the four tables (the plugin's own `mergeSchema` output is the
- *      authoritative shape — do not hand-write it from memory),
- *   2. generate + apply the migration,
- *   3. set AGENT_AUTH_ENABLED=true.
- *
- * Model discovery is unaffected either way: GET /api/v1/models is public and
- * unauthenticated, and it is what the plugin's `list_models` capability
- * wrapped in the first place.
- */
-const AGENT_AUTH_ENABLED = config.AGENT_AUTH_ENABLED === "true";
 
 export const auth = betterAuth({
 	baseURL: config.BETTER_AUTH_URL ?? config.PUBLIC_APP_URL ?? "http://localhost:3000",
@@ -456,6 +430,16 @@ user: {
 						: {}),
 		},
 
+		// NOTE: `@better-auth/agent-auth` used to be registered here and is
+		// deliberately NOT re-added yet. It requires four tables that have never
+		// been migrated — `agent`, `agentHost`, `agentCapabilityGrant`,
+		// `approvalRequest` — and Better Auth validates the whole plugin schema
+		// when betterAuth() is constructed, not per route. Registering it without
+		// those tables made EVERY auth call throw a "Drizzle schema mismatch"
+		// and took production sign-in/sign-up offline.
+		// Model discovery is unaffected: GET /api/v1/models is public.
+		// Re-enable only after migrating all four tables — see
+		// src/__tests__/agent-auth-gating.test.ts, which guards this.
 		plugins: [
 				magicLink({
 					sendMagicLink,
@@ -577,55 +561,7 @@ user: {
 								verifyCurrentEmail: true,
 						},
 				}),
-			...(AGENT_AUTH_ENABLED
-				? [
-				// Agent Auth — programmatic agent authentication with capability-based access control.
-				agentAuthPlugin({
-						providerName: "OMA-AI",
-						providerDescription: "OMA-AI inference gateway — discover and inspect AI models via the Agent Auth Protocol.",
-						modes: ["delegated", "autonomous"],
-						capabilities: [
-								{
-										name: "list_models",
-										description: "List all available AI inference models with provider, context window, and pricing.",
-								},
-								{
-										name: "get_model",
-										description: "Get details for a single AI inference model by its id.",
-										input: {
-												type: "object",
-												properties: {
-														modelId: { type: "string", description: "The model id, e.g. 'deepseek-v4-flash-0731-openbroker'." },
-												},
-												required: ["modelId"],
-										},
-								},
-						],
-						async onExecute({ capability, arguments: args }) {
-								await ensureCatalogLoaded();
-								const serialize = (m: ReturnType<typeof listAllModels>[number]) => ({
-										id: m.id,
-										provider: m.provider ?? "oma",
-										context_length: m.contextWindow ?? 0,
-										supports_streaming: m.supportsStreaming,
-										supports_tools: m.capabilities?.includes("tools") ?? false,
-										pricing: { prompt: m.inputPricePer1M, completion: m.outputPricePer1M },
-								});
-								switch (capability) {
-										case "list_models":
-												return listAllModels().map(serialize);
-										case "get_model": {
-												const model = listAllModels().find((x) => x.id === String(args?.modelId));
-												if (!model) throw new Error(`Model not found: ${String(args?.modelId)}`);
-												return serialize(model);
-										}
-										default:
-												throw new Error(`Unsupported capability: ${capability}`);
-								}
-						},
-				}),
-				]
-				: []),
+
 		],
 });
 

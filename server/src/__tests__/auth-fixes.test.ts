@@ -97,10 +97,6 @@ vi.mock("better-auth/plugins", () => ({
 	admin: () => ({}),
 }));
 
-vi.mock("@better-auth/agent-auth", () => ({
-		agentAuth: () => () => ({}),
-}));
-
 vi.mock("better-auth/crypto", () => ({
 		generateRandomString: vi.fn(() => "nonce_abc"),
 }));

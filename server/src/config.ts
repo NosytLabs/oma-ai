@@ -168,9 +168,6 @@ const envSchema = z.object({
 		POLAR_WEBHOOK_SECRET: z.string().min(1).optional(),
 		POLAR_ORGANIZATION_ID: z.string().min(1).optional(),
 		POLAR_SERVER: z.enum(["production", "sandbox"]).optional().default("production"),
-	// Opt-in: requires the agent/agentHost/agentCapabilityGrant/approvalRequest
-	// tables, which are not yet migrated. See the AGENT_AUTH_ENABLED note in auth.ts.
-	AGENT_AUTH_ENABLED: z.enum(["true", "false"]).default("false"),
 
 		// USDC deposit receiver on Base. Operator wallet that credits user balances
 		// after on-chain transfer confirmation. Empty in dev = surface a 503 instead
