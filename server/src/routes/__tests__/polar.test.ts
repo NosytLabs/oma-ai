@@ -14,6 +14,11 @@ const mockConfig = vi.hoisted(() => ({
 const mockDb = vi.hoisted(() => {
 	const limitMock = vi.fn().mockReturnThis();
 	const whereMock = vi.fn().mockReturnThis();
+	// drainUserTx now reads the post-drain balance via
+	// update().set().where().returning(), so the chain must terminate in a
+	// `returning` mock instead of `this`.
+	const returningMock = vi.fn().mockResolvedValue([{ balanceCents: "0" }]);
+	whereMock.mockReturnValue({ returning: returningMock });
 	const setMock = vi.fn().mockReturnValue({ where: whereMock });
 	const updateMock = vi.fn().mockReturnValue({ set: setMock });
 	const onConflictDoUpdateMock = vi.fn().mockReturnThis();
@@ -350,12 +355,13 @@ describe("polar routes", () => {
 			});
 			
 			expect(res.status).toBe(200);
-			// Event row + drain upsert (drain uses onConflictDoUpdate upsert pattern)
-			expect(mockDb.insert).toHaveBeenCalledTimes(2);
-			expect(mockDb.values).toHaveBeenCalledWith(expect.objectContaining({
-				userId: "user_123",
-				balanceCents: "0" // Drain inserts 0 and sets balance to GREATEST(..., 0)
-			}));
+			// Only the event row is INSERTed now. The drain was changed from an
+			// insert-on-conflict upsert to a guarded UPDATE that reads back the
+			// post-drain balance, so it shows up in update(), not insert().
+			expect(mockDb.insert).toHaveBeenCalledTimes(1);
+			// GREATEST(balance - credits, 0) means a refund can never overdraw.
+			expect(mockDb.update).toHaveBeenCalled();
+			expect(mockDb.set).toHaveBeenCalled();
 		});
 	});
 });

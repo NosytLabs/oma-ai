@@ -137,23 +137,7 @@ app.use("*", async (c, next) => {
 app.use("*", compress());
 app.use("*", securityHeaders);
 
-// SECURITY: without an explicit body limit, any route that calls
-// c.req.json()/text()/arrayBuffer() will buffer an arbitrarily large
-// request into memory first. A single oversized POST to /v1/chat/completions
-// is enough to pressure the worker. 2 MiB comfortably covers a large
-// multimodal/tool payload; anything larger should be chunked client-side.
-app.use("*", bodyLimit({ maxSize: 2 * 1024 * 1024, onError: (c) =>
-	c.json(
-		{
-			error: {
-				message: "Request body is too large",
-				type: "invalid_request_error",
-				code: "payload_too_large",
-			},
-		},
-		413,
-	),
-}));
+
 
 const corsOptions = {
 		origin: (origin: string | undefined): string | null => {
@@ -216,7 +200,29 @@ const corsOptions = {
 		maxAge: 86400,
 };
 
+// CORS must run BEFORE bodyLimit: an oversized request is rejected with 413 by
+// bodyLimit, and if CORS had not yet added the Access-Control-* headers the
+// browser would report an opaque network error instead of payload_too_large.
 app.use("*", cors(corsOptions));
+
+// SECURITY: without an explicit body limit, any route that calls
+// c.req.json()/text()/arrayBuffer() will buffer an arbitrarily large
+// request into memory first. A single oversized POST to /v1/chat/completions
+// is enough to pressure the worker. 2 MiB comfortably covers a large
+// multimodal/tool payload; anything larger should be chunked client-side.
+app.use("*", bodyLimit({ maxSize: 2 * 1024 * 1024, onError: (c) =>
+	c.json(
+		{
+			error: {
+				message: "Request body is too large",
+				type: "invalid_request_error",
+				code: "payload_too_large",
+			},
+		},
+		413,
+	),
+}));
+
 app.use("*", metricsMiddleware);
 
 // Global Maintenance Mode Check

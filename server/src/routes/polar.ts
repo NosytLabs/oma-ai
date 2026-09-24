@@ -27,7 +27,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { Polar } from "@polar-sh/sdk";
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { Context } from "hono";
 import type { OmaEnv } from "../types.js";
 import { sessionOrBearerAuth } from "../auth/middleware.js";
@@ -513,23 +513,39 @@ async function drainUserTx(
 		userId: string,
 		credits: number,
 ): Promise<void> {
-		await tx
-				.insert(creditBalances)
-				.values({
-						userId,
-						balanceCents: "0",
-						totalDepositedCents: "0",
-						totalUsedCents: "0",
-				})
-				.onConflictDoUpdate({
-						target: creditBalances.userId,
-						set: {
-								balanceCents: sql`GREATEST(${creditBalances.balanceCents}::numeric - ${credits}::numeric, 0)`,
-								totalDepositedCents: sql`GREATEST(${creditBalances.totalDepositedCents}::numeric - ${credits}::numeric, 0)`,
-								lastActivityAt: sql`NOW()`,
-						},
-				});
-		logger.info({ userId, credits }, "[polar] refunded; credits drained");
+		// Known limitation (audit MEDIUM, not yet migrated): this drains the
+		// AGGREGATE balance, not the specific grant the refund belongs to. A
+		// user who buys pack A, spends it, then buys pack B will have pack B's
+		// credits drained when pack A is refunded.
+		//
+		// The correct fix is a per-grant credit-lot ledger (FIFO consume, refund
+		// reverses its own lot) plus a migration. That is a schema change and a
+		// money-semantics decision, so it is NOT done blind here.
+		//
+		// What we DO have: GREATEST(...,0) means the balance can never go
+		// negative, and capturing the post-drain balance makes an over-drain
+		// visible in logs instead of silent.
+		const [after] = await tx
+			.update(creditBalances)
+			.set({
+				balanceCents: sql`GREATEST(${creditBalances.balanceCents}::numeric - ${credits}::numeric, 0)`,
+				totalDepositedCents: sql`GREATEST(${creditBalances.totalDepositedCents}::numeric - ${credits}::numeric, 0)`,
+				lastActivityAt: sql`NOW()`,
+			})
+			.where(eq(creditBalances.userId, userId))
+			.returning({ balanceCents: creditBalances.balanceCents });
+
+		const remaining = after?.balanceCents != null ? Number(after.balanceCents) : null;
+		if (remaining !== null && remaining === 0 && credits > 0) {
+			// We asked to take more than remained. Legitimate if the user
+			// already spent the credits, but it means the refund consumed
+			// balance from other grants — flag it for reconciliation.
+			logger.warn(
+				{ userId, requested: credits, remaining },
+				"[polar] refund drained balance to zero; may have consumed credits from other grants (per-grant lot ledger not yet implemented)",
+			);
+		}
+		logger.info({ userId, credits, remaining }, "[polar] refunded; credits drained");
 }
 
 /**
