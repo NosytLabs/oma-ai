@@ -77,11 +77,14 @@ vi.mock('../../middleware/rate-limit.js', () => ({
 }))
 
 // ── Viem mocks ────────────────────────────────────────────
-const { recoverTypedDataAddressMock, callMock, writeContractMock, privateKeyToAccountMock } = vi.hoisted(() => ({
-		recoverTypedDataAddressMock: vi.fn(),
-		callMock: vi.fn(),
-		writeContractMock: vi.fn(),
-		privateKeyToAccountMock: vi.fn(() => ({ address: '0xFac1l1tat0r00000000000000000000000000000' })),
+const { recoverTypedDataAddressMock, callMock, writeContractMock, privateKeyToAccountMock, receiptMock } = vi.hoisted(() => ({
+	recoverTypedDataAddressMock: vi.fn(),
+	callMock: vi.fn(),
+	writeContractMock: vi.fn(),
+	// Settlement now waits for finality: a mined, successful receipt by
+	// default, so the happy path models a real chain, not a bare broadcast.
+	receiptMock: vi.fn(async () => ({ status: 'success' })),
+	privateKeyToAccountMock: vi.fn(() => ({ address: '0xFac1l1tat0r00000000000000000000000000000' })),
 }))
 vi.mock('viem', () => ({
 		createPublicClient: vi.fn(() => ({ call: callMock })),
@@ -106,9 +109,15 @@ vi.mock('viem/chains', () => ({
 		base: { id: 8453, name: 'Base' },
 }))
 vi.mock('../../lib/rpc-client.js', () => ({
-		getPublicClient: vi.fn(() => ({ call: callMock })),
+		getPublicClient: vi.fn(() => ({
+			call: callMock,
+			// Settlement waits for the receipt before reporting success, so a
+			// missing method here correctly fails the verify — this mock has to
+			// model a mined, successful transfer.
+			waitForTransactionReceipt: receiptMock,
+		})),
 		resetPublicClient: vi.fn(),
-}))
+	}))
 
 // ── Config mock ──────────────────────────────────────────
 const TREASURY = '0x8581784D3E598cCa3482375CFF2409Ac9DD8c402'
@@ -236,6 +245,22 @@ describe('EIP-3009 V1 verify path', () => {
 				expect(writeArgs.args[0]).toBe(PAYER)
 				expect(writeArgs.args[1]).toBe(TREASURY)
 				expect(writeArgs.args[2]).toBe(USDC_AMOUNT_ATOMIC)
+			// The hash is only returned once the transfer is actually mined and
+			// succeeded — a broadcast hash alone is not proof of payment.
+			expect(receiptMock).toHaveBeenCalledWith(
+				expect.objectContaining({ hash: '0x' + 'dd'.repeat(32) }),
+			)
+		})
+
+		it('refuses to report a payment as valid when the settlement tx reverts', async () => {
+			mockConfig.FACILITATOR_PRIVATE_KEY = '0x' + 'aa'.repeat(32)
+			writeContractMock.mockResolvedValue('0x' + 'dd'.repeat(32))
+			receiptMock.mockResolvedValueOnce({ status: 'reverted' })
+
+			const result = await verifyPayment(makeEip3009PaymentSig())
+
+			expect(result.valid).toBe(false)
+			expect(result.error).toMatch(/revert/i)
 		})
 
 		// ── Signature length ─────────────────────────────────────

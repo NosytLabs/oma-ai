@@ -296,20 +296,77 @@ async function submitEip3009Transfer(
 				transport: http(config.CHAIN_RPC_URL),
 		});
 		const txHash = await walletClient.writeContract({
-				address: USDC_BASE,
-				abi: USDC_EIP3009_ABI,
-				functionName: "transferWithAuthorization",
-				args: [
-						auth.from as `0x${string}`,
-						auth.to as `0x${string}`,
-						BigInt(auth.value),
-						BigInt(auth.validAfter),
-						BigInt(auth.validBefore),
-						auth.nonce as `0x${string}`,
-						signature,
-				],
+			address: USDC_BASE,
+			abi: USDC_EIP3009_ABI,
+			functionName: "transferWithAuthorization",
+			args: [
+				auth.from as `0x${string}`,
+				auth.to as `0x${string}`,
+				BigInt(auth.value),
+				BigInt(auth.validAfter),
+				BigInt(auth.validBefore),
+				auth.nonce as `0x${string}`,
+				signature,
+			],
 		});
 		return txHash as Hash;
+	}
+
+/**
+ * Dispatches the transfer AND waits for it to actually settle.
+ *
+ * `writeContract` returns as soon as the transaction is *broadcast* — it says
+ * nothing about whether the transaction was ever mined, and nothing about
+ * whether it succeeded. The caller persisted that hash as a completed
+ * settlement and issued credits against it, so a transfer that was dropped
+ * from the mempool, reverted (insufficient balance at broadcast time, a race
+ * that already consumed the nonce, a paused contract), or never mined at all
+ * still read as a paid request.
+ *
+ * This waits for the receipt and requires status "success". A reverted or
+ * missing receipt throws, so no credit is ever issued for a transfer that did
+ * not complete. The cost is latency: settlement now blocks for finality
+ * instead of returning immediately, which is the correct trade for a payment
+ * that grants credits.
+ */
+export async function submitEip3009TransferAndConfirm(
+	auth: Eip3009Authorization,
+	signature: Hex,
+): Promise<Hash> {
+	const txHash = await submitEip3009Transfer(auth, signature);
+	const client = getPublicClient();
+
+	let receipt: Awaited<
+		ReturnType<typeof client.waitForTransactionReceipt>
+	>;
+	try {
+		receipt = await client.waitForTransactionReceipt({
+			hash: txHash,
+			confirmations: 1,
+		});
+	} catch (err) {
+		// A timeout here is NOT a success. The transfer may still land later,
+		// but we must not grant a credit for an unconfirmed payment.
+		logger.error(
+			{ err, txHash },
+			"[FACILITATOR] settlement tx did not confirm; refusing to credit",
+		);
+		throw new Error(
+			`Settlement transaction ${txHash} was not confirmed; payment not credited`,
+		);
+	}
+
+	if (receipt.status !== "success") {
+		logger.error(
+			{ txHash, status: receipt.status },
+			"[FACILITATOR] settlement tx reverted; refusing to credit",
+		);
+		throw new Error(
+			`Settlement transaction ${txHash} reverted on chain; payment not credited`,
+		);
+	}
+
+	return txHash;
 }
 
 /**
@@ -457,7 +514,11 @@ export async function verifyEip3009Payment(
 				//    don't yet have a funded facilitator wallet.
 				if (config.FACILITATOR_PRIVATE_KEY) {
 						try {
-								txHash = await submitEip3009Transfer(auth, sigHex);
+								// Confirm the transfer actually settled before returning the
+						// hash. A broadcast hash alone is not proof of payment: a
+						// reverted or never-mined transfer would otherwise be
+						// persisted as a completed settlement and credited.
+						txHash = await submitEip3009TransferAndConfirm(auth, sigHex);
 						} catch (submitErr) {
 								// Surface a clear error if the facilitator key is configured but the
 								// submit failed — the receipt can't be issued without a real txHash.
