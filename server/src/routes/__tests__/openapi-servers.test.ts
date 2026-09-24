@@ -14,10 +14,12 @@ describe("getOpenApiServers", () => {
 		]);
 	});
 
-	it("includes production and local endpoints for a public API URL", () => {
+	it("advertises ONLY the public production URL, never localhost", () => {
+		// A public OpenAPI document must not list a local endpoint: SDK
+		// generators would point consumers at their own machine, and every
+		// generated client would fail on its first request.
 		expect(getOpenApiServers("https://www.oma-ai.com/api", 3001)).toEqual([
 			{ url: "https://www.oma-ai.com/api", description: "Production" },
-			{ url: "http://localhost:3001", description: "Local development" },
 		]);
 	});
 });

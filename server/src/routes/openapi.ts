@@ -25,10 +25,12 @@ export function getOpenApiServers(publicApiUrl: string, localPort: number) {
 	if (isLocalPublicUrl) {
 		return [{ url: localApiUrl, description: "Local development" }];
 	}
-	return [
-		{ url: publicApiUrl, description: "Production" },
-		{ url: localApiUrl, description: "Local development" },
-	];
+	// Only advertise resolvable, public HTTPS hosts in production. Shipping
+	// `http://localhost:3001` in a public OpenAPI document points SDK
+	// generators at the consumer's own machine, and a public URL that does not
+	// resolve (e.g. an api. subdomain with no DNS record) makes every
+	// generated client fail on first request.
+	return [{ url: publicApiUrl, description: "Production" }];
 }
 
 const spec = {
