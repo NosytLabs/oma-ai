@@ -38,6 +38,11 @@ const APP_VARS = [
 	"BETTER_AUTH_URL",
 	"ENCRYPTION_KEY",
 	"BETTER_AUTH_SECRET",
+	// Authenticates the Vercel -> Neon hop so the function can trust Vercel's
+	// forwarded client IP. Omitting it here made the function boot-fail on the
+	// production guard, because fnEnv() only forwards the vars listed here --
+	// having it in the shell/.env file is not sufficient.
+	"INTERNAL_PROXY_SECRET",
 	"OPENBROKER_API_KEY",
 	"GONKA_API_KEY",
 	"OBK_API_KEY",

@@ -439,22 +439,32 @@ if (deployedFunctionEnvError) {
  * INTERNAL_PROXY_SECRET authenticates the Vercel -> Neon hop so the function
  * can trust Vercel's forwarded client IP.
  *
- * It is deliberately optional in the schema (local dev and a direct
- * `curl localhost` need no proxy), but on a PUBLIC function its absence is
- * not a harmless default: both Vercel proxies then omit the auth header, the
- * function stops honouring forwarded IPs, and every anonymous visitor falls
- * back to Vercel's single egress address — silently collapsing rate limits
- * and the free-tier quota back into ONE shared bucket. Nothing would fail; the
- * product would just quietly break. So fail loudly at boot instead.
+ * Without it, both Vercel proxies omit the auth header, the function stops
+ * honouring forwarded IPs, and every anonymous visitor falls back to Vercel's
+ * single egress address — collapsing rate limits and the free-tier quota into
+ * ONE shared bucket. The request still succeeds, so this is a correctness and
+ * abuse-resistance problem, not an availability one.
+ *
+ * This therefore WARNS rather than throws. An earlier revision threw, which
+ * turned a missing optional secret into a total outage: every request returned
+ * `function_load_failed` and the entire product was dark. Losing per-visitor
+ * rate-limit accuracy is strictly better than serving nothing, and the
+ * operator needs a loud signal, not a dead site.
+ *
+ * To close it properly the secret must be set in the Neon dashboard: the
+ * org-scoped NEON_API_KEY can list projects and branches but cannot write
+ * secrets, so `neon deploy` cannot provision it even though server/neon.ts
+ * forwards it.
  */
 if (process.env.NEON_FUNCTION === "1" && config.NODE_ENV === "production") {
 	const secret = config.INTERNAL_PROXY_SECRET;
 	if (!secret || secret.length < 32) {
-		throw new Error(
-			"[FATAL] INTERNAL_PROXY_SECRET is missing or too short on a public Neon Function. " +
-				"Without it, every anonymous visitor resolves to Vercel's shared egress IP and they all " +
-				"share one rate-limit and free-tier bucket. Set the same strong value (32+ chars) on " +
-				"the Neon function and in Vercel's production env.",
+		logger.error(
+			"[rate-limit] INTERNAL_PROXY_SECRET is missing or too short on this public Neon " +
+				"Function. Requests still work, but every anonymous visitor resolves to Vercel's " +
+				"shared egress IP, so they all share one rate-limit and free-tier bucket. Set the " +
+				"same 32+ char value as Vercel's INTERNAL_PROXY_SECRET in the Neon dashboard " +
+				"(the org NEON_API_KEY cannot write secrets).",
 		);
 	}
 }
