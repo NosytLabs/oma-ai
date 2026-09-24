@@ -69,17 +69,45 @@ const USDC_DOMAIN_BY_NETWORK: Record<string, UsdcDomain> = {
 		},
 };
 
+/**
+ * Strict network resolution for anything user-supplied.
+ *
+ * usdcDomainForNetwork deliberately falls back to Base so an unrecognised
+ * network still verifies against the chain OMA actually settles on — funds
+ * can never be diverted, because the EIP-712 domain and the transfer target
+ * both stay pinned to USDC_BASE.
+ *
+ * That fallback is correct for verification but wrong for *accepting a
+ * request*: a caller could declare `networkId: "ethereum-mainnet"` and be
+ * told the payment was verified, even though nothing about that declaration
+ * was checked. This resolver refuses instead, so a contradictory claim is
+ * rejected rather than quietly reinterpreted.
+ */
+export function resolveSettlementNetwork(networkId: string | undefined): UsdcDomain {
+	const key = (networkId ?? "base").toLowerCase();
+	const domain = USDC_DOMAIN_BY_NETWORK[key];
+	if (!domain) {
+		throw new Error(`Unsupported settlement network: ${networkId}`);
+	}
+	return domain;
+}
+
+/** True when `asset` is the USDC contract OMA settles against. */
+export function isSupportedSettlementAsset(asset: string | undefined): boolean {
+	return (asset ?? "").toLowerCase() === USDC_BASE.toLowerCase();
+}
+
 function usdcDomainForNetwork(networkId: string | undefined): UsdcDomain {
-		// SECURITY (audit 3.1): the chainId is derived from the request's
-		// networkId, never hardcoded. The default is Base mainnet, which is
-		// the only chain OMA settles on today. Adding a new network requires
-		// adding the corresponding entry to USDC_DOMAIN_BY_NETWORK.
-		const key = (networkId ?? "base").toLowerCase();
-		return (
-				USDC_DOMAIN_BY_NETWORK[key] ?? {
-						...USDC_DOMAIN_BY_NETWORK.base,
-				}
-		);
+	// SECURITY (audit 3.1): the chainId is derived from the request's
+	// networkId, never hardcoded. The default is Base mainnet, which is
+	// the only chain OMA settles on today. Adding a new network requires
+	// adding the corresponding entry to USDC_DOMAIN_BY_NETWORK.
+	const key = (networkId ?? "base").toLowerCase();
+	return (
+		USDC_DOMAIN_BY_NETWORK[key] ?? {
+			...USDC_DOMAIN_BY_NETWORK.base,
+		}
+	);
 }
 
 const EIP3009_TRANSFER_WITH_AUTH_TYPES = {

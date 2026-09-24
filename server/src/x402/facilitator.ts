@@ -29,6 +29,10 @@ import { creditBalances, deposits, settlements } from "../db/schema.js";
 import { eq, and } from "drizzle-orm";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { USDC_BASE } from "../constants.js";
+import {
+	isSupportedSettlementAsset,
+	resolveSettlementNetwork,
+} from "./eip3009.js";
 import { logger } from "../lib/logger.js";
 import { logPaymentEvent } from "../lib/payment-observability.js";
 import { parseUsdcAtomic } from "./facilitator-signing.js";
@@ -220,10 +224,31 @@ x402Routes.post("/x402/verify", rateLimit({ windowMs: 60_000, maxRequests: 10 })
 		}
 
 		if (!paymentSig.payload.scheme || !paymentSig.payload.amount || !paymentSig.payload.networkId) {
-				return c.json(
-						{ error: { message: "Payload must include scheme, amount, and networkId", type: "payment_error" } },
-						400,
-				);
+			return c.json(
+				{ error: { message: "Payload must include scheme, amount, and networkId", type: "payment_error" } },
+				400,
+			);
+		}
+
+		// Pin the declared chain and asset instead of quietly settling against
+		// Base regardless. Verification already falls back to USDC_BASE for an
+		// unrecognised network, which protects the funds but means a caller could
+		// assert any network at all and still be told the payment verified. An
+		// unsupported chain or a different token is a client error, not something
+		// to reinterpret.
+		try {
+			resolveSettlementNetwork(paymentSig.payload.networkId);
+		} catch {
+			return c.json(
+				{ error: { message: "Unsupported settlement network", type: "unsupported_network" } },
+				400,
+			);
+		}
+		if (!isSupportedSettlementAsset(paymentSig.payload.asset)) {
+			return c.json(
+				{ error: { message: "Unsupported settlement asset", type: "unsupported_asset" } },
+				400,
+			);
 		}
 
 		const result = await verifyPayment(paymentSig);

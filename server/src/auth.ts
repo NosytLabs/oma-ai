@@ -265,8 +265,18 @@ const ensClient = createPublicClient({
 // so insecure cookies (secure:false) leak the session token on every
 // non-HTTPS hop. Dev-only environments keep secure:false so localhost
 // HTTP works.
-const isSecureCookieEnv =
-	config.NODE_ENV === "production" || config.NODE_ENV === "preview";
+//
+// This is an allow-list of the environments that are *definitely* local
+// HTTP, rather than an enumeration of the ones that are secure. The old
+// form (`production` or `preview`) meant any environment added later —
+// `staging` was the one that actually shipped — silently defaulted to
+// secure:false on a real HTTPS host. Fail closed instead: anything that
+// is not explicitly local development or test gets Secure cookies.
+export function shouldUseSecureCookies(nodeEnv: string | undefined): boolean {
+	return nodeEnv !== "development" && nodeEnv !== "test";
+}
+
+const isSecureCookieEnv = shouldUseSecureCookies(config.NODE_ENV);
 
 // The SIWE `domain` must equal the host the browser signs in from —
 // better-auth rejects the message when they differ ("...does not match
