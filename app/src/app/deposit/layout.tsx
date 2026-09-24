@@ -6,12 +6,12 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
 	title: "Deposit USDC credits",
 	description:
-		"Deposit credits to your OMA AI account. USDC on Base supported for usage-based inference.",
+		"Fund your prepaid OMA AI balance with USDC on Base.",
 	alternates: { canonical: "/deposit" },
 	openGraph: {
 		title: "Deposit USDC credits · OMA",
 		description:
-			"Deposit credits to your OMA AI account. USDC on Base supported for usage-based inference.",
+			"Fund your prepaid OMA AI balance with USDC on Base.",
 		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA Deposit" }],
 	},
 	twitter: {

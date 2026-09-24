@@ -280,16 +280,7 @@ export function Footer() {
 							<span className="text-text-secondary">©</span>{" "}
 							<span suppressHydrationWarning aria-label="Copyright year">{CURRENT_YEAR}</span>{" "}
 							<span className="text-text-tertiary">·</span>{" "}
-							<span>
-								<a
-									href="https://www.nosytlabs.com"
-									target="_blank"
-									rel="noopener noreferrer"
-									className="hover:text-accent transition-colors duration-200 ease-out"
-								>
-									by nosytlabs.com
-								</a>
-							</span>{" "}
+							<span>by NosytLabs</span>{" "}
 							<span className="text-text-tertiary">·</span>{" "}
 							<span>MIT licensed</span>{" "}
 							<span className="text-text-tertiary">·</span>{" "}

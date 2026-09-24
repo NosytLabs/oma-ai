@@ -356,7 +356,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 		path: "/v1/credits/balance",
 		anchor: "ep-credits-balance",
 		title: "Credit Batches",
-		desc: "Returns your aggregate balance plus each active credit batch (with expiry and payment method). Useful for budgeting around expiring credits.",
+		desc: "Returns your aggregate balance plus each active credit batch, including its internal expiry record and payment method.",
 		auth: "Bearer token (API key)",
 		body: undefined,
 		response: `{

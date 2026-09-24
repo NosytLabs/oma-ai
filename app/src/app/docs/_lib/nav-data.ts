@@ -275,7 +275,7 @@ export const NAV_ITEMS: NavItem[] = [
 		id: "webhooks",
 		label: "Webhooks",
 		icon: Radio,
-		keywords: ["webhook", "event", "polar", "order", "subscription", "callback", "signature", "push"],
+		keywords: ["webhook", "event", "polar", "order", "refund", "callback", "signature", "push"],
 		headings: [
 			{ id: "wh-what", label: "When to use them" },
 			{ id: "wh-endpoint", label: "Endpoint" },

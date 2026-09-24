@@ -92,7 +92,7 @@ const TERMS: Term[] = [
 	},
 	{
 		term: "Credits",
-		def: "OMA's prepaid balance, denominated in USDC. Deposit USDC (or use card checkout when Polar is enabled); each API request deducts its listed cost. Credits never expire while your account is active.",
+		def: "OMA's prepaid balance, denominated in credits. Deposit USDC (or use card checkout when Polar is enabled); each API request deducts its listed cost. Credits never expire while your account is active.",
 	},
 	{
 		term: "USDC",

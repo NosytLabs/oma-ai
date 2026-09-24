@@ -25,7 +25,7 @@ expected = base64(hmac_sha256(
 				id="webhooks"
 				icon={<Radio className="h-5 w-5" />}
 				title="Webhooks"
-				subtitle="Receive payment events so you can react to order and subscription changes in real time."
+				subtitle="Receive signed Polar payment events for one-time credit-pack orders."
 			/>
 
 			<div id="wh-what" className="mb-6 scroll-mt-24">
@@ -77,12 +77,6 @@ expected = base64(hmac_sha256(
 					<li>
 						<code className="font-mono text-accent">order.refunded</code> — drains
 						the credited amount from the user&apos;s balance.
-					</li>
-					<li>
-						<code className="font-mono text-accent">subscription.created / active / updated</code>{" "}
-						— reflect subscription lifecycle;{" "}
-						<code className="font-mono text-accent">subscription.active</code>{" "}
-						credits the plan&apos;s credits.
 					</li>
 				</ul>
 				<div className="mt-4">
