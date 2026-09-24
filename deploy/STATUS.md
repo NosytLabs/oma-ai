@@ -32,10 +32,36 @@ The public frontend can therefore be healthy while the API hostname is unavailab
 
 ## Deployment paths
 
-- **Current verified web host:** Vercel project `oma`.
-- **Backend:** verify the intended production target and restore `api.oma-ai.com` DNS before claiming the API is live.
-- **Coolify:** optional self-hosting path documented in `deploy/coolify/README.md`; it is not the verified current frontend host.
-- **Neon Function:** the repository also contains `server/neon.ts` for the backend deployment path documented in the root README.
+Verified 2026-09-24 against production, not inferred from config:
+
+- **Frontend:** Vercel project `oma` → `https://www.oma-ai.com`. The apex
+  `oma-ai.com` 308-redirects to `www`, so **`www` is the canonical host**.
+- **Backend:** a **Neon compute endpoint** (`*.compute.<region>.aws.neon.tech`,
+  referenced by `NEXT_PUBLIC_API_URL`). Confirmed live: `/v1/models` and
+  `/health` both return 200.
+- **Database:** Neon Postgres via `DATABASE_URL` / `DATABASE_URL_UNPOOLED`.
+- **No `api.oma-ai.com` DNS exists and none is required.** The frontend serves
+  `/api/*` from App Router handlers under `app/api/**` (including a
+  catch-all) that proxy to the Neon endpoint. This is deliberately *not* a
+  `next.config` rewrite — a rewrite would skip the HttpOnly
+  session-cookie → `Authorization` translation and 401 every authenticated
+  call after a hard reload.
+
+### Where secrets live
+
+The Vercel project carries only **five** variables, all frontend-scoped
+(`RESEND_API_KEY`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_API_URL`,
+`DATABASE_URL`, `DATABASE_URL_UNPOOLED`).
+
+The API secrets — `BETTER_AUTH_SECRET`, `RECEIPT_HMAC_SECRET`,
+`ENCRYPTION_KEY`, `VENICE_API_KEY`, `FACILITATOR_PRIVATE_KEY` — are **not**
+in Vercel. They belong to the **Neon** deployment, because that is the
+process that actually runs the Hono server. Do not add them to Vercel; that
+project does not execute the API.
+
+`deploy/coolify/` is **unused**. It is retained only as a self-host
+reference and is not the production path. Anything asserting Coolify as the
+production host is stale.
 
 Do not point working frontend DNS at a new host as a cleanup step. Hosting changes require verifying environment variables, domains, health endpoints, and rollback paths first.
 
