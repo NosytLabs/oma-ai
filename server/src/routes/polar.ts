@@ -269,30 +269,63 @@ export async function polarWebhookHandler(c: Context<OmaEnv>) {
 		if (!eventId) {
 			return errorResponse(c, "Missing Webhook-Id header", 400, { code: "missing_webhook_id" });
 		}
+		// Claim the event, and decide whether this delivery should actually run
+		// the credit/refund step.
+		//
+		// BUG (audit HIGH): the original code returned `{duplicate:true}` for ANY
+		// unique-constraint collision. The row is inserted with `processed = 0`
+		// and committed BEFORE the credit transaction runs, so a transient failure
+		// (DB blip, timeout, crash) left a row stuck at processed=0. Every
+		// subsequent Polar retry then took the duplicate branch and returned 200 —
+		// the customer was never credited, and nothing ever repaired it. The
+		// comment below claiming the claim, the grant, and the processed flip are
+		// "one transaction" was false: the claim commits on its own.
+		//
+		// Fix: only short-circuit when the existing row is already processed. An
+		// existing processed=0 row means a prior attempt failed partway, so we
+		// resume it. `processInTransaction` flips processed=1 with a
+		// `processed = 0` guard, so concurrent retries can still never
+		// double-credit.
 		try {
-				await db.insert(polarWebhookEvents).values({
-						polarEventId: eventId,
-						eventType: event.type,
-						payload: rawBody,
-						processed: 0,
-				});
+			await db.insert(polarWebhookEvents).values({
+				polarEventId: eventId,
+				eventType: event.type,
+				payload: rawBody,
+				processed: 0,
+			});
 		} catch (err) {
-				if (
-						err &&
-						typeof err === "object" &&
-						"code" in err &&
-						(err as { code?: string }).code === "23505"
-				) {
-						logPaymentEvent({
-								kind: "polar",
-								outcome: "double_spend_blocked",
-								signature: eventId,
-								latencyMs: Date.now() - startedAt,
-						});
-						return c.json({ ok: true, duplicate: true });
+			if (
+				err &&
+				typeof err === "object" &&
+				"code" in err &&
+				(err as { code?: string }).code === "23505"
+			) {
+				const existing = await db
+					.select({ processed: polarWebhookEvents.processed })
+					.from(polarWebhookEvents)
+					.where(sql`${polarWebhookEvents.polarEventId} = ${eventId}`)
+					.limit(1);
+
+				if (existing[0]?.processed === 1) {
+					logPaymentEvent({
+						kind: "polar",
+						outcome: "double_spend_blocked",
+						signature: eventId,
+						latencyMs: Date.now() - startedAt,
+					});
+					return c.json({ ok: true, duplicate: true });
 				}
+
+				// processed = 0 on an existing row => a previous delivery claimed
+				// the event but never completed. Resume it rather than dropping it.
+				logger.warn(
+					{ eventId, eventType: event.type },
+					"[polar] resuming previously-failed webhook event",
+				);
+			} else {
 				logger.error({ err, eventId }, "[polar] failed to claim webhook event");
 				return errorResponse(c, "Webhook processing is temporarily unavailable", 503, { code: "polar_claim_failed" });
+			}
 		}
 
 		// SECURITY: derive credits from the server-side product→plan mapping, not

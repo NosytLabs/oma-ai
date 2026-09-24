@@ -56,7 +56,12 @@ vi.mock("../../db/client.js", () => ({
 }));
 
 vi.mock("../../db/schema.js", () => ({
-	polarWebhookEvents: { polarEventId: "polarEventId" },
+	// `processed` must be present: the resume path reads
+	// polarWebhookEvents.processed to tell a genuine replay (processed=1)
+	// from a previously-failed event (processed=0). Without this column the
+	// handler saw undefined and both cases behaved identically, so the
+	// regression test could not fail.
+	polarWebhookEvents: { polarEventId: "polarEventId", processed: "processed" },
 	creditBalances: { userId: "userId", balanceCents: "balanceCents", totalDepositedCents: "totalDepositedCents" },
 	siteSettings: {}
 }));
@@ -202,12 +207,21 @@ describe("polar routes", () => {
 			const id = "evt_123";
 			const ts = Math.floor(Date.now() / 1000);
 			const sig = generateSignature("test-secret", id, ts, body);
-			
+
 			// Simulate unique constraint violation
 			const err = new Error("duplicate") as any;
 			err.code = "23505";
 			mockDb.values.mockRejectedValueOnce(err);
-			
+			// An ALREADY-PROCESSED row: a genuine replay. The handler must
+			// short-circuit and must NOT credit a second time.
+			mockDb.select.mockReturnValueOnce({
+				from: () => ({
+					where: () => ({
+						limit: async () => [{ processed: 1 }],
+					}),
+				}),
+			});
+
 			const res = await app.request("/webhooks/polar", {
 				method: "POST",
 				body,
@@ -217,11 +231,60 @@ describe("polar routes", () => {
 					"webhook-signature": sig
 				}
 			});
-			
+
 			expect(res.status).toBe(200);
 			const data = await res.json() as { duplicate: boolean };
 			expect(data.duplicate).toBe(true);
 			expect(mockLogPaymentEvent).toHaveBeenCalledWith(expect.objectContaining({ outcome: "double_spend_blocked" }));
+		});
+
+		it("RESUMES a previously-failed event instead of dropping the credit", async () => {
+			// REGRESSION (audit HIGH): the row is claimed and committed with
+			// processed=0 BEFORE the credit transaction runs. If that
+			// transaction then failed (DB blip, timeout, crash), the row stayed
+			// at processed=0. The old code treated ANY unique-constraint
+			// collision as a duplicate and returned 200, so every Polar retry
+			// was swallowed and the customer was NEVER credited — permanently,
+			// with no repair path. A processed=0 row must be resumed.
+			const body = JSON.stringify({
+				type: "order.paid",
+				data: {
+					product: { id: "prod_hobby" },
+					metadata: { userId: "user_1" },
+				},
+			});
+			const id = "evt_resume";
+			const ts = Math.floor(Date.now() / 1000);
+			const sig = generateSignature("test-secret", id, ts, body);
+
+			const err = new Error("duplicate") as any;
+			err.code = "23505";
+			mockDb.values.mockRejectedValueOnce(err);
+			// processed=0 => a previous attempt claimed but never completed.
+			mockDb.select.mockReturnValueOnce({
+				from: () => ({
+					where: () => ({
+						limit: async () => [{ processed: 0 }],
+					}),
+				}),
+			});
+
+			const res = await app.request("/webhooks/polar", {
+				method: "POST",
+				body,
+				headers: {
+					"webhook-id": id,
+					"webhook-timestamp": ts.toString(),
+					"webhook-signature": sig
+				}
+			});
+
+			expect(res.status).toBe(200);
+			// Must NOT be reported as a duplicate — that was the money bug.
+			const data = await res.json() as { duplicate?: boolean };
+			expect(data.duplicate).toBeUndefined();
+			// The credit must actually have been re-attempted.
+			expect(mockDb.transaction).toHaveBeenCalled();
 		});
 
 		it("processes order.paid successfully and credits user", async () => {

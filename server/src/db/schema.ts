@@ -96,6 +96,10 @@ export const auditActionEnum = pgEnum("audit_action", [
 		"USER_UNSUSPENDED",
 		"CREDIT_ADJUSTED",
 		"CREDIT_DEDUCTED",
+		// A guarded deduction that matched no rows (insufficient balance, or a
+		// concurrent request won the race). Distinct from CREDIT_DEDUCTED so
+		// reconciliation can find uncharged-but-served requests.
+		"CREDIT_DEDUCTION_REJECTED",
 		"SITE_SETTINGS_UPDATED",
 		"REFUND_ISSUED",
 ]);

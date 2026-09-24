@@ -133,27 +133,29 @@ export async function recordUsage(args: RecordUsageArgs): Promise<void> {
 		// Redis. Skip the DB write entirely for anon to avoid the FK throw.
 		const isAnonymous = userId === "anonymous" || !userId;
 
+		let deductionRejected = false;
 		try {
-				await db.transaction(async (tx) => {
-						if (status === "completed" && !skipBilling && !isAnonymous) {
-								const deducted = await deductCreditsIfSufficient(
-										userId,
-										userCostCents,
-										tx,
-								);
-								if (!deducted) {
-										// Stream/completion already finished; do not invent balance.
-										// Log so ops can reconcile — concurrent callers lost the race.
-										logger.error(
-												{
-														userId,
-														requestId,
-														costCents: userCostCents.toFixed(4),
-												},
-												"[billing] deduction skipped: insufficient balance (race or missing ledger row)",
-										);
-								}
-						}
+			await db.transaction(async (tx) => {
+				if (status === "completed" && !skipBilling && !isAnonymous) {
+					const deducted = await deductCreditsIfSufficient(
+						userId,
+						userCostCents,
+						tx,
+					);
+					if (!deducted) {
+						// Stream/completion already finished; do not invent balance.
+						// Log so ops can reconcile — concurrent callers lost the race.
+						deductionRejected = true;
+						logger.error(
+							{
+								userId,
+								requestId,
+								costCents: userCostCents.toFixed(4),
+							},
+							"[billing] deduction skipped: insufficient balance (race or missing ledger row)",
+						);
+					}
+				}
 						// Only persist usage for authenticated users. Anonymous free-tier
 						// is tracked in Redis by the daily-limit middleware.
 						if (!isAnonymous) {
@@ -172,20 +174,25 @@ export async function recordUsage(args: RecordUsageArgs): Promise<void> {
 								});
 						}
 				});
+				// Only claim a deduction that actually happened. When the guarded
+				// UPDATE matched no rows (insufficient balance, or a concurrent
+				// request won the race) the user was NOT charged, so recording
+				// CREDIT_DEDUCTED would make the audit log contradict the ledger —
+				// and hide a real reconciliation signal behind a success entry.
 				await auditLog({
-						userId,
-						action: "CREDIT_DEDUCTED",
-						resource: "chat_completion",
-						resourceId: requestId,
-						metadata: {
-								model,
-								provider,
-								promptTokens,
-								outputTokens,
-								totalTokens,
-								costCents: userCostCents.toFixed(4),
-								status,
-						},
+					userId,
+					action: deductionRejected ? "CREDIT_DEDUCTION_REJECTED" : "CREDIT_DEDUCTED",
+					resource: "chat_completion",
+					resourceId: requestId,
+					metadata: {
+						model,
+						provider,
+						promptTokens,
+						outputTokens,
+						totalTokens,
+						costCents: userCostCents.toFixed(4),
+						status,
+					},
 				});
 		} catch (err) {
 				logger.error({ err, requestId }, "[proxy] usage record failed");
