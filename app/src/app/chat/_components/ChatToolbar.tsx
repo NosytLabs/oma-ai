@@ -38,7 +38,7 @@ const LazyStatsBar = dynamic(
 	{ ssr: false, loading: () => null },
 );
 
-export interface ChatToolbarProps {
+interface ChatToolbarProps {
 	variant?: "chat" | "playground";
 	model: string;
 	setModel: Dispatch<SetStateAction<string>>;

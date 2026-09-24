@@ -12,7 +12,7 @@ interface ShareToast {
 
 type ShareStatus = "default" | "success" | "error";
 
-export interface UseConversationShareOptions {
+interface UseConversationShareOptions {
 	isChat: boolean;
 	messages: Message[];
 	model: string;

@@ -8,7 +8,8 @@ Status: **CONFIGURED, NOT LIVE** — treasury wallet created + wired, settlement
   - `TREASURY_BASE_ADDRESS=0x3144293aACC1c26Eb803591151D775ed89eefcfE`
   - `USDC_DEPOSIT_ADDRESS=0x3144293aACC1c26Eb803591151D775ed89eefcfE`
   - `FACILITATOR_PRIVATE_KEY=<0x…>` (derives the address above — verified cryptographically)
-- Private key rests ONLY in `server/.env`. Copy it into Bitwarden as the source of truth.
+- **Authoritative store:** the Bitwarden entry. `server/.env` holds a local copy for the running
+  process only. If the two ever disagree, treat Bitwarden as correct and re-export from it.
 
 ## To go LIVE (2 steps, in order)
 1. **Fund the wallet on Base:**

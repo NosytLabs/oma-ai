@@ -29,7 +29,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
-export interface ChatErrorBannerProps {
+interface ChatErrorBannerProps {
 	error: string | null;
 	onDismiss: () => void;
 	onRetry?: () => void;

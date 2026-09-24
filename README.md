@@ -160,7 +160,7 @@ oma-ai/
 ### Authentication Flow
 
 - **Web app auth:** Better Auth session cookies (magic-link email or SIWE wallet sign-in).
-- **API access:** Dashboard-issued `oma_sk_...` keys, sent as `Authorization: Bearer <token>`.
+- **API access:** Dashboard-issued `oma_sk_...` keys, sent as `Authorization: Bearer oma_sk_...`
 - **SIWE:** EIP-4361 wallet sign-in maps addresses to user profiles.
 
 ### Payments & Treasury

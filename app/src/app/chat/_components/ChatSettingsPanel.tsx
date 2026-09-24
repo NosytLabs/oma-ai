@@ -15,7 +15,7 @@ const LazySettingsPanel = dynamic(
 	{ ssr: false, loading: () => <Skeleton className="h-96 w-full" /> },
 );
 
-export interface ChatSettingsPanelProps {
+interface ChatSettingsPanelProps {
 	paramsOpen: boolean;
 	setParamsOpen: Dispatch<SetStateAction<boolean>>;
 	temperature: number;

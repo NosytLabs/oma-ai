@@ -8,7 +8,10 @@ The verified public web frontend is currently served by the existing Vercel `oma
 
 1. A server with at least 2 vCPUs and 2GB RAM.
 2. [Coolify](https://coolify.io) installed on your server.
-3. A domain name pointed to your server (e.g., `oma-ai.com` and `api.oma-ai.com`).
+3. A hostname pointed to your server. **Do not use `api.oma-ai.com`** -- no such record is
+   wanted. Production serves the API from `https://www.oma-ai.com/api/*` via the Next.js
+   proxy, and `api.oma-ai.com` is intentionally NXDOMAIN. Only repoint `oma-ai.com` or
+   `www.oma-ai.com` if you are deliberately replacing the Vercel frontend.
 
 ## 1. Environment Setup
 
@@ -44,14 +47,18 @@ cannot be accepted without a verified credit-grant webhook.
 
 The `docker-compose.yml` uses an internal network and relies on a reverse proxy like Caddy or Cloudflare Tunnels to handle SSL and routing. If you use Caddy, you can use the provided `Caddyfile`.
 
-Alternatively, Coolify can handle the reverse proxy automatically if you set the domains on the services (`app` -> `oma-ai.com`, `server` -> `api.oma-ai.com`).
+Alternatively, Coolify can handle the reverse proxy automatically if you set the domains on the
+services. Point **one** hostname at the edge -- either `app` or `server`, not both. There is no
+`api.oma-ai.com` hostname in this architecture; the server is reached through the frontend's
+`/api/*` proxy path.
 
 ## 4. DNS (Spaceship / any registrar)
 
-Current verified state on 2026-09-23:
+Current verified state:
 
-- `oma-ai.com` / `www.oma-ai.com` serves the web frontend.
-- `api.oma-ai.com` failed external DNS resolution and must be repaired before the public API is considered live.
+- `oma-ai.com` / `www.oma-ai.com` serves the web frontend (Vercel, project `oma`).
+- There is **no** `api.oma-ai.com` record, by design. The API is `https://www.oma-ai.com/api/*`.
+- The backend is a Neon Function (`omaapi`), not a long-lived server process. Coolify is unused.
 
 If you intentionally choose Coolify for the API, point **only the API hostname you intend Coolify to serve** at the Coolify VPS and verify the service before changing any working frontend records. If you choose another backend target (for example the repository's Neon Function path), use that target's DNS instructions instead.
 
@@ -59,9 +66,10 @@ After any DNS change, verify the exact host and TLS before announcing it:
 
 ```bash
 dig +short oma-ai.com A
-dig +short api.oma-ai.com A
 curl -fsS -o /dev/null -w "%{http_code}\n" https://oma-ai.com/
 curl -fsS https://www.oma-ai.com/api/health
+# api.oma-ai.com should NOT resolve. If it does, you have created a record that should not exist:
+dig +short api.oma-ai.com A   # expected: empty
 ```
 
 Do not overwrite `@` or `www` merely because this optional Coolify example exists.

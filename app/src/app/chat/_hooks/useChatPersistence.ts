@@ -9,7 +9,7 @@ import { persistMessages } from "@/lib/chat-storage";
 const STORAGE_KEY = "oma_chat_conversation";
 const DEFAULT_SYSTEM_PROMPT_KEY = "oma_chat_system_prompt";
 
-export interface UseChatPersistenceOptions {
+interface UseChatPersistenceOptions {
 	messages: Message[];
 	setMessages: Dispatch<SetStateAction<Message[]>>;
 	systemPrompt: string;

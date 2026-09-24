@@ -3,7 +3,7 @@
 import type { RefObject } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export interface UseChatScrollResult {
+interface UseChatScrollResult {
 	scrollContainerRef: RefObject<HTMLDivElement | null>;
 	messagesEndRef: RefObject<HTMLDivElement | null>;
 	isNearBottomRef: RefObject<boolean>;

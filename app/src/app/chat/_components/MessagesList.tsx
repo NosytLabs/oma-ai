@@ -164,7 +164,7 @@ function classifyMessage(content: string): Classification {
 	return result;
 }
 
-export interface MessagesListProps {
+interface MessagesListProps {
 	scrollContainerRef: RefObject<HTMLDivElement | null>;
 	messagesEndRef: RefObject<HTMLDivElement | null>;
 	isScrolledAway: boolean;

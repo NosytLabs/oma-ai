@@ -11,9 +11,12 @@ optional Polar card checkout, and x402 verify/settle → credit balance → API 
 - **Vercel project:** `oma` has a READY production deployment from GitHub `main`, currently at commit `e30f6086141b1598f0400c48ecc9eb9323d037e3`.
 - **Verified source:** the newer `main` application state passed frozen install, full validation, app build, and server build in GitHub Actions run `35870621887` after fixing one unused test import.
 - **Deployment gap:** GitHub does not currently have a `VERCEL_TOKEN` secret, so the verified newer source could not be explicitly redeployed from Actions. Do not add or expose a token merely to make CI green.
-- **API DNS:** `api.oma-ai.com` did not resolve in the September 23 external check. Treat the API as unavailable on that public hostname until DNS and the intended backend target are verified.
+- **API DNS:** there is intentionally no `api.oma-ai.com` record. The public API is served from
+  `https://www.oma-ai.com/api/*` via the Next.js proxy, which forwards to the Neon Function.
+  Do not create DNS for `api.oma-ai.com`.
 
-The public frontend can therefore be healthy while the API hostname is unavailable. A green frontend request is not proof of end-to-end inference availability.
+A green frontend request is still not proof of end-to-end inference availability. Verify with a real
+chat completion against `/api/v1/chat/completions`.
 
 ## Local verify
 

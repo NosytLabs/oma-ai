@@ -3,7 +3,7 @@
 import { ChevronDown, ChevronUp } from "lucide-react";
 import type { Dispatch, SetStateAction } from "react";
 
-export interface ChatSystemPromptPanelProps {
+interface ChatSystemPromptPanelProps {
 	systemPrompt: string;
 	setSystemPrompt: Dispatch<SetStateAction<string>>;
 	systemPromptOpen: boolean;

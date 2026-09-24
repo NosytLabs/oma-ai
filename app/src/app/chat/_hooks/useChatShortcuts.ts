@@ -3,7 +3,7 @@
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import { useEffect } from "react";
 
-export interface UseChatShortcutsOptions {
+interface UseChatShortcutsOptions {
 	sendMessageRef: RefObject<(prompt?: string) => Promise<void>>;
 	input: string;
 	loading: boolean;

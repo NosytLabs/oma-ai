@@ -70,7 +70,7 @@ function newMessageId(prefix: string): string {
 	return `${prefix}-${n.toString(36)}-${rand}`;
 }
 
-export interface UseStreamingChatOptions {
+interface UseStreamingChatOptions {
 	messagesRef: RefObject<Message[]>;
 	compareMessagesRef: RefObject<Message[]>;
 	input: string;
@@ -102,7 +102,7 @@ export interface UseStreamingChatOptions {
 	onDailyQuota?: (quota: DailyQuota) => void;
 }
 
-export interface UseStreamingChatResult {
+interface UseStreamingChatResult {
 	sendMessage: (overridePrompt?: string) => Promise<void>;
 	abortRef: RefObject<AbortController | null>;
 }

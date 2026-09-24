@@ -11,13 +11,13 @@ import {
 	type GuestQuota,
 } from "@/lib/guest-daily-quota";
 
-export interface UseGuestQuotaOptions {
+interface UseGuestQuotaOptions {
 	isAuthenticated: boolean;
 	/** Fired when the user hits the wall (gatedSend / 429). Callers open their modal. */
 	onExhausted?: () => void;
 }
 
-export interface UseGuestQuotaResult {
+interface UseGuestQuotaResult {
 	guestQuota: GuestQuota | null;
 	/** Wire the stream hook's onDailyQuota to this to mirror server quota. */
 	onDailyQuota: (info: DailyQuota) => void;
