@@ -19,6 +19,7 @@ import type { OmaEnv } from "../types.js";
 import { getRedisClient, isRedisReady } from "../lib/redis-client.js";
 import { logger } from "../lib/logger.js";
 import { extractClientIp } from "./rate-limit/utils.js";
+import { checkMemoryCounter } from "./rate-limit/memory-store.js";
 import { getModelById } from "../inference/models.js";
 import { isFreeWebsiteModel } from "../inference/free-website-model.js";
 
@@ -47,14 +48,19 @@ async function checkDailyUsageLimit(
 		const ready = isRedisReady();
 
 		// Fail open if Redis is down (availability > strict limits for free tier).
-		// A quota-store outage must not brick the free website chat demo — deny
-		// nothing; the free quota is a rate-limit nicety, not a security boundary
-		// (paid/API traffic never passes through this middleware, and the paid
-		// inference path always bills regardless). Abuse during an outage is
-		// bounded by the model's own per-request cost and the circuit breaker.
+		// A quota-store outage must not brick the free website chat demo.
+		//
+		// But "fail open" must mean *degrade enforcement*, not *drop* it. This
+		// used to return `allowed: true, remaining: 0` unconditionally, which
+		// made the anonymous 20/day cap completely unenforced in production
+		// (there are no working Upstash credentials there) AND told every caller
+		// they had 0 left while happily serving them. Degrade to a bounded
+		// per-process counter instead, same policy the rate limiter already uses
+		// for its `degraded-memory` mode.
 		if (!redis || !ready) {
-			logger.warn("Redis unavailable for daily free-tier limit check — allowing request (fail open)");
-			return { available: true, allowed: true, remaining: 0, limit, resetMs: 0 };
+			logger.warn("Redis unavailable for daily free-tier limit — enforcing a bounded in-memory cap (degraded)");
+			const mem = checkMemoryCounter(identifier, limit, 86_400_000);
+			return { available: true, allowed: mem.allowed, remaining: mem.remaining, limit, resetMs: mem.resetMs };
 		}
 
 		const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
