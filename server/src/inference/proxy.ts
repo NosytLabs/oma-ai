@@ -159,11 +159,20 @@ async function callProvider(opts: CallProviderOptions): Promise<Response> {
 								429,
 						);
 				}
+				// SECURITY: never forward the raw upstream body. For non-5xx
+				// errors that body can contain provider account identifiers,
+				// internal model/route names, or fragments of another tenant's
+				// response. Status codes are the only part safe to surface;
+				// the detail belongs in the server log.
+				logger.warn(
+					{ status, errBody: errBody.slice(0, 200) },
+					"[proxy] upstream returned an error status",
+				);
 				throw new ProviderError(
-						status >= 500
-								? "Inference provider temporarily unavailable"
-								: `Upstream ${status}: ${errBody.slice(0, 200)}`,
-						safeStatus,
+					status >= 500
+						? "Inference provider temporarily unavailable"
+						: `Upstream request failed (${status})`,
+					safeStatus,
 				);
 		}
 
