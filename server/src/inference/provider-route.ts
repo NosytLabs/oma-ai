@@ -143,7 +143,12 @@ export function resolveProvider(provider: string, _modelDef?: ModelDef): Provide
 	return {
 		baseUrl: `${config.VENICE_API_URL}/api/v1`,
 		apiKey: config.VENICE_API_KEY,
-		upstreamModel: (id) => id,
+		// Send the catalog's `veniceId` when it declares one, else the public
+		// id. A few entries keep a stable public id that differs from their
+		// Venice id (e.g. public `mistral-small-2603` -> Venice
+		// `mistral-small-3-2-24b-instruct`); without this the public id went
+		// upstream verbatim and 404'd. Mirrors the `litellmId` behavior above.
+		upstreamModel: (id) => _modelDef?.veniceId ?? id,
 		extraBody: (body) => ({
 			...body,
 			// Venice privacy: force private mode unless the operator explicitly

@@ -92,9 +92,12 @@ let _catalog: ModelDef[] | null = null;
 //   Kimi K2.6 256K (262,144 tok)  $0.35 / M tokens  (in == out)
 //   MiniMax M2.7 200K            $0.30 / M tokens  (in == out)
 //   DeepSeek V4 Flash 400K       $0.25 / M tokens  (in == out)
-// user-facing = base x (1 + markupPercent/100). OMA-AI markupPercent = 100
-// (2x Gonka wholesale). OpenBroker /v1/models returns the same 3 ids as
-// below — adding any other `omaAiId` here would 404 upstream.
+// user-facing = base * (1 + markupPercent/100). OMA-AI markupPercent = 100
+// (2x Gonka wholesale). OpenBroker's live /v1/models serves THREE ids
+// (MiniMaxAI/MiniMax-M2.7, deepseek-ai/DeepSeek-V4-Flash-0731,
+// zai-org/GLM-5.3-Flash); we deliberately curate only the first two below —
+// adding `zai-org/GLM-5.3-Flash` as an `omaAiId` without also curating its
+// price/context would be a new product decision, not a bug fix.
 //
 // Prices stored here are *upstream base* (what OMA pays Venice/OMA-AI).
 // billing-service.ts applies markupPercent at checkout:
@@ -361,9 +364,13 @@ const VENICE_MODELS: ModelDef[] = [
 				capabilities: ["chat", "reasoning", "fast"],
 		},
 		{
-				id: "mistral-small-2603",
-				provider: "venice",
-				surplusId: "mistral-small-4",
+			id: "mistral-small-2603",
+			provider: "venice",
+			// Venice has no `mistral-small-2603`; its live catalog carries
+			// `mistral-small-3-2-24b-instruct`. The public id stays stable for
+			// API consumers and the Venice route sends this override upstream.
+			veniceId: "mistral-small-3-2-24b-instruct",
+			surplusId: "mistral-small-4",
 			inputPricePer1M: 0.1875,
 			outputPricePer1M: 0.75,
 				markupPercent: 25,
