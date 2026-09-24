@@ -240,7 +240,7 @@ export function PricingTable({
 										type="button"
 										onClick={() => toggleSort("name")}
 										aria-label={`Model, sort by model name. Current order: ${sortField === "name" ? sortOrder : "none"}`}
-										className="group inline-flex items-center gap-1.5 rounded px-1 hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+										className="group inline-flex min-h-8 items-center gap-1.5 whitespace-nowrap rounded px-1 hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
 									>
 										Model
 										<ArrowUpDown className="h-3 w-3 text-text-muted group-hover:text-text-bright transition-colors" />
@@ -254,7 +254,7 @@ export function PricingTable({
 										type="button"
 										onClick={() => toggleSort("inputPrice")}
 										aria-label={`Input / 1M, sort by input price. Current order: ${sortField === "inputPrice" ? sortOrder : "none"}`}
-										className="group ml-auto inline-flex items-center gap-1.5 rounded px-1 hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+										className="group ml-auto inline-flex min-h-8 items-center gap-1.5 whitespace-nowrap rounded px-1 hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
 									>
 										Input / 1M
 										<ArrowUpDown className="h-3 w-3 text-text-muted group-hover:text-text-bright transition-colors" />
@@ -265,7 +265,7 @@ export function PricingTable({
 										type="button"
 										onClick={() => toggleSort("outputPrice")}
 										aria-label={`Output / 1M, sort by output price. Current order: ${sortField === "outputPrice" ? sortOrder : "none"}`}
-										className="group ml-auto inline-flex items-center gap-1.5 rounded px-1 hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+										className="group ml-auto inline-flex min-h-8 items-center gap-1.5 whitespace-nowrap rounded px-1 hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
 									>
 										Output / 1M
 										<ArrowUpDown className="h-3 w-3 text-text-muted group-hover:text-text-bright transition-colors" />
@@ -276,7 +276,7 @@ export function PricingTable({
 										type="button"
 										onClick={() => toggleSort("context")}
 										aria-label={`Ctx, sort by context length. Current order: ${sortField === "context" ? sortOrder : "none"}`}
-										className="group ml-auto inline-flex items-center gap-1.5 rounded px-1 hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+										className="group ml-auto inline-flex min-h-8 items-center gap-1.5 whitespace-nowrap rounded px-1 hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
 									>
 										Ctx
 										<ArrowUpDown className="h-3 w-3 text-text-muted group-hover:text-text-bright transition-colors" />

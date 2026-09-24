@@ -148,8 +148,8 @@ export function ThemeToggle() {
 				aria-haspopup="menu"
 				aria-expanded={open}
 				aria-controls="theme-menu"
-				aria-label={`Theme: ${activeLabel}`}
-				title={`Theme · ${activeLabel}`}
+				aria-label={`Accent theme: ${activeLabel}. Change accent theme`}
+				title={`Accent theme · ${activeLabel}`}
 				data-theme-toggle
 				className="inline-flex items-center gap-1.5 h-11 px-2.5 rounded-[var(--radius-md)] text-text-tertiary hover:text-text-bright hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.97] transition-[color,background-color,transform] duration-200 ease-out"
 			>
