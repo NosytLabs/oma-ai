@@ -1,13 +1,17 @@
 import { ImageResponse } from "next/og";
 
-export const runtime = "edge";
+// NOTE: this used to declare `runtime = "edge"`. The Satori + resvg bundle
+// is ~1.07 MB, which is over Vercel Hobby's 1 MB Edge Function limit — the
+// production deploy was REJECTED with "The Edge Function 'opengraph-image'
+// size is 1.07 MB and your plan size limit is 1 MB." Node runtime is not
+// subject to that cap, and the same works on a paid plan if you move back.
 export const alt = "OMA — Open Model Access";
 export const size = { width: 1280, height: 720 };
 export const contentType = "image/png";
 
 export default async function OpengraphImage({
 	title = "OMA · Open Model Access",
-	subtitle = "One endpoint. Every model. No lock-in.",
+	subtitle = "One API. Switch models freely. No lock-in.",
 }: {
 	title?: string;
 	subtitle?: string;
