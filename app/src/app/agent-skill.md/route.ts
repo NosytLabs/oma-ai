@@ -34,7 +34,7 @@ export function GET(): Response {
 
 	const BODY = `# OMA AI — Agent Skill
 
-> Drop-in OpenAI-compatible AI gateway with USDC credits on Base. Website free tier on 2 OMA-AI models; API keys for programmatic use. ${MODEL_COUNT} curated chat models. Use this skill to add OMA to your agent's toolbelt.
+> Drop-in OpenAI-compatible AI gateway with USDC credits on Base. Website free tier on 3 OMA-AI models; API keys for programmatic use. ${MODEL_COUNT} curated chat models. Use this skill to add OMA to your agent's toolbelt.
 
 ## What is OMA?
 

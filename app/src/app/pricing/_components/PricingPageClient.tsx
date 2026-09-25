@@ -143,7 +143,7 @@ const FAQ_ITEMS = [
 	},
 	{
 		q: "Is there a free tier?",
-		a: "Yes — the 2 OMA-AI models are free in browser website chat only: 20 messages/day anonymous, 100/day signed in. API-key calls always spend credits, even on those models. New sign-ups also get $1.00 in trial credit.",
+		a: "Yes — the 3 OMA-AI models are free in browser website chat only: 20 messages/day anonymous, 100/day signed in. API-key calls always spend credits, even on those models. New sign-ups also get $1.00 in trial credit.",
 	},
 	{
 		q: "What is x402?",

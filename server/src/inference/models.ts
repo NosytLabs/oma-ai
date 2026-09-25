@@ -92,12 +92,12 @@ let _catalog: ModelDef[] | null = null;
 //   Kimi K2.6 256K (262,144 tok)  $0.35 / M tokens  (in == out)
 //   MiniMax M2.7 200K            $0.30 / M tokens  (in == out)
 //   DeepSeek V4 Flash 400K       $0.25 / M tokens  (in == out)
+//   GLM-5.3 Flash 1M (Z.ai list) $0.15 in / $0.50 out (added 2026-09-24)
 // user-facing = base * (1 + markupPercent/100). OMA-AI markupPercent = 100
-// (2x Gonka wholesale). OpenBroker's live /v1/models serves THREE ids
-// (MiniMaxAI/MiniMax-M2.7, deepseek-ai/DeepSeek-V4-Flash-0731,
-// zai-org/GLM-5.3-Flash); we deliberately curate only the first two below —
-// adding `zai-org/GLM-5.3-Flash` as an `omaAiId` without also curating its
-// price/context would be a new product decision, not a bug fix.
+// OpenBroker's live /v1/models serves THREE ids (MiniMaxAI/MiniMax-M2.7,
+// deepseek-ai/DeepSeek-V4-Flash-0731, zai-org/GLM-5.3-Flash); all three are
+// curated below as `minimax-m2-7`, `deepseek-v4-flash-0731-openbroker`, and
+// `zai-org-glm-5-3` (GLM price = Z.ai official list, verified 2026-09-24).
 //
 // Prices stored here are *upstream base* (what OMA pays Venice/OMA-AI).
 // billing-service.ts applies markupPercent at checkout:
@@ -455,7 +455,29 @@ const OMA_AI_MODELS: ModelDef[] = [
 			supportsStreaming: true,
 			capabilities: ["chat", "reasoning", "fast", "tools"],
 	},
-	];
+	{
+			// The third model served by api.openbroker.gonka.gg.
+			// Base = Z.ai official list: $0.15 in / $0.50 out per 1M
+			// (the 50% launch promo ended 2026-09-09; list stands).
+			// User-facing = base × 2 (markupPercent 100), matching the
+			// other OMA-AI resale entries.
+			id: "zai-org-glm-5-3",
+			provider: "oma-ai",
+			upstream: "openbroker",
+			omaAiId: "zai-org/GLM-5.3-Flash",
+			surplusId: "zai-org/glm-5.3-flash",
+			inputPricePer1M: 0.15,
+			outputPricePer1M: 0.50,
+			markupPercent: 100,
+			displayName: "GLM-5.3 Flash (OMA-AI)",
+			category: "budget",
+			maxTokens: 16384,
+			contextWindow: 1_000_000,
+			maxOutputTokens: 128_000,
+			supportsStreaming: true,
+			capabilities: ["chat", "reasoning", "fast", "tools", "multimodal"],
+	},
+];
 
 function defaultCatalog(): ModelDef[] {
 		return [...VENICE_MODELS, ...OMA_AI_MODELS];

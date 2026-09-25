@@ -48,11 +48,12 @@ func main() {
 					Free OMA-AI models (website chat)
 				</h3>
 			<p className="text-sm text-text-muted mb-2">
-				The 2 OMA-AI models
+				The 3 OMA-AI models
 				(<code className="text-accent font-mono text-xs">provider: oma-ai</code>
 				) — <code className="text-accent font-mono text-xs">deepseek-v4-flash-0731-openbroker</code>{" "}
 				and{" "}
-				<code className="text-accent font-mono text-xs">minimax-m2-7</code> — can be
+				<code className="text-accent font-mono text-xs">minimax-m2-7</code> and{" "}
+				<code className="text-accent font-mono text-xs">zai-org-glm-5-3</code> — can be
 				used on <code className="text-accent font-mono text-xs">/chat</code>{" "}
 				without sign-in, API key, or wallet (20 msgs/day anonymous, 100/day signed-in). Top up credits to unlock the entire Venice catalog, unlimited concurrency, and dedicated throughput.
 			</p>

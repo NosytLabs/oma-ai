@@ -5,8 +5,8 @@
  * cost. Verified live against api.openbroker.gonka.gg/v1/models, which
  * exposes exactly 3 serving models: MiniMaxAI/MiniMax-M2.7,
  * deepseek-ai/DeepSeek-V4-Flash-0731, and zai-org/GLM-5.3-Flash (curated
- * as `minimax-m2-7`, `deepseek-v4-flash-0731-openbroker`; GLM not yet
- * curated). A real OPENBROKER_API_KEY is configured.
+ * as `minimax-m2-7`, `deepseek-v4-flash-0731-openbroker`, and
+ * `zai-org-glm-5-3`). A real OPENBROKER_API_KEY is configured.
  *
  * NOTE: API-token callers (Authorization: Bearer oma_sk_*) ALWAYS pay
  * real credits, including for these models. Free usage is restricted to
@@ -19,6 +19,7 @@
 export const FREE_WEBSITE_MODEL_IDS = new Set([
 	"deepseek-v4-flash-0731-openbroker", // OpenBroker DeepSeek V4 Flash (0731)
 	"minimax-m2-7", //                    OpenBroker MiniMax M2.7
+	"zai-org-glm-5-3", //                 OpenBroker GLM-5.3 Flash
 ]);
 
 export function isFreeWebsiteModel(modelId: string): boolean {

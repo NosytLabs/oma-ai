@@ -16,7 +16,7 @@
 //     `generateStaticParams`) keeps working without an async fetch; the
 //     lazy loader returns the full catalog for anything that needs it.
 //   - The static fallback mirrors the curated server catalog exactly
-//     (20 chat models: 18 Venice + 2 OMA-AI). See `MODEL_COUNT`.
+//     (21 chat models: 18 Venice + 3 OMA-AI). See `MODEL_COUNT`.
 //
 // Public API is preserved: `Model`, `Capability`, `Provider`, `Tier`,
 // `formatPricePerMillion`, `getModelsByTier`,
@@ -795,6 +795,17 @@ const FALLBACK_CATALOG: RawCatalog = {
 		outputPricePer1M: 0.50,
 		capabilities: ["chat", "reasoning", "fast", "tools"],
 	},
+	"zai-org-glm-5-3": {
+		id: "zai-org-glm-5-3",
+		upstreamId: "zai-org/GLM-5.3-Flash",
+		displayName: "GLM-5.3 Flash (OMA-AI)",
+		provider: "oma-ai",
+		category: "budget",
+		maxTokens: 1000000,
+		inputPricePer1M: 0.30,
+		outputPricePer1M: 1.00,
+		capabilities: ["chat", "reasoning", "fast", "tools", "multimodal"],
+	},
 	},
 };
 
@@ -832,10 +843,10 @@ export function getModelsByTier(models: Model[]): Record<Tier, Model[]> {
 }
 
 // Marketing model count surfaced across the UI. Must match the live
-// `GET /v1/models` count — 20 curated chat models (18 Venice + 2 OMA-AI).
+// `GET /v1/models` count — 21 curated chat models (18 Venice + 3 OMA-AI).
 // Kept in sync with `server/src/inference/models.ts` defaultCatalog().
-// The 2 OMA-AI models are the exact set served by api.openbroker.gonka.gg.
-export const MODEL_COUNT = 20;
+// The 3 OMA-AI models are the exact set served by api.openbroker.gonka.gg.
+export const MODEL_COUNT = 21;
 
 // DRIFT GUARD: if anyone adds/removes an entry in `FALLBACK_CATALOG`
 // they MUST update `MODEL_COUNT` above — these are the marketing
