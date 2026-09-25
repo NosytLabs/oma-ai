@@ -8,7 +8,7 @@ import Link from "next/link";
 // that rots the moment a provider key is added, revoked or expires. Measured
 // live: 18 of 20 models were dark while this still advertised "20 curated".
 // The body keeps reporting the real number; the metadata describes the page.
-const TITLE = "Pricing — frontier, premium and mid-range AI models, USDC on Base";
+const TITLE = "Pricing — AI models, USDC on Base";
 const DESCRIPTION =
 	"Transparent per-token pricing behind one OpenAI-compatible endpoint. Pay in USDC on Base; free signup credits included.";
 
