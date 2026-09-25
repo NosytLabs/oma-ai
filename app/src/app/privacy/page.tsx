@@ -23,29 +23,29 @@ import { PageShell } from "@/app/_components/page-shell";
 export const metadata: Metadata = {
 	title: "Privacy — OMA AI Gateway",
 	description:
-		"OMA collects the minimum data needed to operate the service. Wallet address, API usage, and on-chain deposit hashes. No prompt or completion logging, ever.",
+		"OMA minimizes stored data. OMA does not persist prompt or completion content; inference providers process request content transiently to generate responses.",
 	alternates: { canonical: "/privacy" },
 	openGraph: {
 		title: "Privacy · OMA",
 		description:
-			"OMA collects the minimum data needed to operate the service. Wallet address, API usage, and on-chain deposit hashes. No prompt or completion logging, ever.",
+			"OMA minimizes stored data. OMA does not persist prompt or completion content; inference providers process request content transiently to generate responses.",
 		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA Privacy" }],
 	},
 	twitter: {
 		card: "summary_large_image",
 		title: "Privacy · OMA",
 		description:
-			"Minimal data collection policy. No prompt or completion logging, ever.",
+			"Minimal stored data. OMA does not persist prompt or completion content; inference providers process requests transiently.",
 		images: ["/og-image.png"],
 	},
 	robots: { index: true, follow: true },
 };
 
-const ISSUED = "2026-08-01";
+const ISSUED = "2026-09-25";
 
 const SECTIONS = [
 	{ idx: "02", id: "collection", title: "Collection", meta: "what we keep" },
-	{ idx: "03", id: "auth", title: "Authentication", meta: "wallet only" },
+	{ idx: "03", id: "auth", title: "Authentication", meta: "email or wallet" },
 	{
 		idx: "04",
 		id: "logs",
@@ -196,15 +196,16 @@ export default function PrivacyPage() {
 									</p>
 									<p className="text-[14px] sm:text-[15px] text-text-bright leading-relaxed">
 										OMA collects the minimum data needed to run the service:
-										your wallet address, a salted hash of any API keys, a
-										per-call usage counter, and the on-chain hash of your
-										deposits.
+										the email address or wallet address you choose for sign-in,
+										a SHA-256 hash of API keys, per-call usage records, and
+										on-chain deposit or settlement identifiers.
 									</p>
 									<p className="mt-3 text-[13.5px] sm:text-[14px] text-text-secondary leading-relaxed">
-										We do not sell personal information. We retain only the
-										account and billing metadata described below. Inference
-										requests are processed in memory and never persisted.
-										You can export or delete everything we have on you from
+										We do not sell personal information. OMA does not persist
+										prompt or completion content. Request content is forwarded
+										transiently to the selected inference provider so it can
+										generate a response; provider handling is described below.
+										You can export or delete the account data OMA stores from
 										the dashboard.
 									</p>
 								</div>
@@ -284,6 +285,10 @@ export default function PrivacyPage() {
 								</div>
 								<ul className="space-y-3">
 									<DataPoint
+										term="Email address"
+										detail="Stored when you choose magic-link sign-in and used for authentication and account messages."
+									/>
+									<DataPoint
 										term="Wallet address"
 										detail="Used for authentication via SIWE (EVM) signatures."
 									/>
@@ -305,7 +310,7 @@ export default function PrivacyPage() {
 								<div className="mb-3 flex items-center gap-2">
 									<CircleX className="h-4 w-4 text-error" aria-hidden="true" />
 									<h3 className="text-[13px] font-semibold text-text-bright">
-										What we never store
+										What OMA does not persist
 									</h3>
 								</div>
 								<ul className="space-y-3">
@@ -325,8 +330,8 @@ export default function PrivacyPage() {
 										tone="warning"
 									/>
 									<DataPoint
-										term="Personal profile"
-										detail="No name, email, or contact info is required."
+										term="Profile enrichment"
+										detail="No legal name or demographic profile is required beyond the email or wallet identifier you choose for authentication."
 										tone="warning"
 									/>
 								</ul>
@@ -343,33 +348,33 @@ export default function PrivacyPage() {
 						<SectionHeading
 							id="auth-heading"
 							title="Authentication"
-							meta="Wallet-based authentication"
+							meta="Passwordless email or SIWE wallet"
 						/>
 
 						<p className="text-[13px] sm:text-sm text-text-secondary max-w-2xl mb-5">
-							Sign-In With Ethereum (SIWE) signatures establish your
-							authenticated session. Your wallet address is used to:
+							You can authenticate with a passwordless email magic link or
+							Sign-In With Ethereum (SIWE). OMA stores only the identifier
+							needed for the method you choose.
 						</p>
 
 						<div className="border border-border bg-surface p-5">
 							<ul className="space-y-3">
 								<DataPoint
-									term="Session token"
-									detail="Issue a short-lived JWT bound to your wallet."
+									term="Email sign-in"
+									detail="Stores your email address so we can deliver magic links and account messages."
+								/>
+								<DataPoint
+									term="Wallet sign-in"
+									detail="Stores your public wallet address after you prove control with a SIWE signature."
 								/>
 								<DataPoint
 									term="Usage attribution"
-									detail="Associate token spend with your account for billing."
-								/>
-								<DataPoint
-									term="Credit deposit"
-									detail="Link incoming transfers to your credit balance."
+									detail="Associates token spend, keys, and credits with your account for billing."
 								/>
 							</ul>
 							<p className="mt-5 text-[12.5px] sm:text-[13px] text-text-secondary leading-relaxed">
-								Your wallet address is stored, but OMA does not track wallet
-								activity. We cannot see your token balances, NFTs, or
-								transaction history on-chain.
+								If you use wallet sign-in, OMA does not crawl your wallet
+								history or build a profile from unrelated on-chain activity.
 							</p>
 						</div>
 					</section>
@@ -464,7 +469,7 @@ export default function PrivacyPage() {
 								[
 									"Account data",
 									"until deletion",
-									"wallet address and profile",
+									"email or wallet identifier and account settings",
 								],
 								["Credits", "Until account deletion", "non-redeemable, do not expire"],
 								["API keys", "on revoke", "deletion revokes immediately"],
@@ -500,9 +505,11 @@ export default function PrivacyPage() {
 						/>
 
 						<p className="text-[13px] sm:text-sm text-text-secondary max-w-2xl mb-5">
-							OMA shares the minimum metadata needed to route inference, swap
-							tokens, and verify deposits. No party receives prompt or
-							completion content.
+							Inference cannot happen without sending request content to the
+							service that runs the selected model. OMA forwards that content
+							transiently for inference and does not persist it. Provider
+							retention and privacy guarantees depend on the selected provider
+							and model; review the provider terms for sensitive workloads.
 						</p>
 
 						<ul className="border border-border bg-surface divide-y divide-border">
@@ -510,12 +517,17 @@ export default function PrivacyPage() {
 								[
 									"Venice AI",
 									"Inference",
-									"routes model calls; content not logged",
+									"receives request content to run the selected model; Venice privacy mode and provider policies apply",
 								],
 								[
-									"OMA-AI",
-									"Decentralized inference",
-									"free-tier failover; no content logging",
+									"OMA-AI / OpenBroker",
+									"Inference",
+									"request content is processed by the Gonka/OpenBroker-backed model that serves the call",
+								],
+								[
+									"Surplus Intelligence (if enabled)",
+									"Fallback inference",
+									"mapped models may be retried through this optional fallback after a primary-provider failure",
 								],
 								["Base", "Settlement", "on-chain transaction verification"],
 							].map(([name, role, note]) => (
@@ -554,8 +566,10 @@ export default function PrivacyPage() {
 							meta="DPA list"
 						/>
 						<p className="text-[13px] sm:text-sm text-text-secondary max-w-2xl mb-5">
-							Vendors that process limited operational data on our behalf. None
-							receive prompt or completion content. Contact{" "}
+							Operational vendors that process account, billing, rate-limit, or
+							email data on our behalf. These are separate from the inference
+							providers listed above and do not receive prompt or completion
+							content as part of their operational role. Contact{" "}
 							<a
 								href="mailto:support@nosytlabs.com"
 								className="text-accent underline underline-offset-2"

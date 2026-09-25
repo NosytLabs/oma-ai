@@ -114,17 +114,6 @@ const nextConfig: NextConfig = {
 				],
 			},
 			{
-				source: "/_next/static/:path*",
-				headers: [
-					{
-						key: "Cache-Control",
-						value: isDev
-							? "no-cache, no-store, must-revalidate"
-							: "public, max-age=31536000, immutable",
-					},
-				],
-			},
-			{
 				source: "/api/:path*",
 				headers: [
 					{ key: "Cache-Control", value: "no-store, no-cache, must-revalidate" },

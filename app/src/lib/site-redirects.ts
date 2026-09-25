@@ -14,6 +14,11 @@ export const SITE_REDIRECTS: readonly SiteRedirect[] = [
 	{ source: "/blog/:path*", destination: "/docs" },
 	{ source: "/capabilities", destination: "/models" },
 	{ source: "/compare", destination: "/models" },
+	// Retired standalone surfaces from the pre-gateway product.
+	{ source: "/compute", destination: "/models" },
+	{ source: "/compute/:path*", destination: "/models" },
+	{ source: "/wallet", destination: "/getting-started" },
+	{ source: "/wallet/:path*", destination: "/getting-started" },
 	{ source: "/support", destination: "/contact" },
 	{ source: "/signup", destination: "/login" },
 	// Common auth URL aliases — product is passwordless magic-link/SIWE only.
@@ -55,6 +60,8 @@ export const REMOVED_PUBLIC_PATHS = [
 	"/blog",
 	"/capabilities",
 	"/compare",
+	"/compute",
+	"/wallet",
 	"/support",
 	"/signup",
 	"/sign-in",

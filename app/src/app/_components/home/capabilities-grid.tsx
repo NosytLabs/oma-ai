@@ -84,12 +84,12 @@ const PILLARS: Pillar[] = [
 	eyebrow: "Routing & privacy",
 	title: "Multi-provider routing",
 	description:
-	"One gateway across Venice and OMA-AI models. Private Venice mode by default, with circuit-breaker failover.",
+	"One gateway across Venice and OMA-AI models. OMA does not persist prompt or completion content; upstream handling depends on the selected provider and model.",
 	icon: Zap,
 	href: "/docs#endpoints",
 	cta: "API endpoints",
 	accent: "info",
-	highlights: ["OpenAI-compatible", "Failover routing", "Private by default"],
+	highlights: ["OpenAI-compatible", "Circuit-breaker protection", "No OMA prompt logging"],
 	visual: "ledger",
 	},
 ];

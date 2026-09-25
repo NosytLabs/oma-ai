@@ -24,7 +24,7 @@ const PILLARS = [
 	{
 		icon: Cpu,
 		title: "Open Model Access",
-		body: `One OpenAI-compatible API across ${MODEL_COUNT} curated models and multiple providers, with circuit-breaker failover when an upstream is down.`,
+		body: `One OpenAI-compatible API across ${MODEL_COUNT} curated models and multiple providers, with circuit-breaker protection and configured fallbacks where available.`,
 	},
 	{
 		icon: Wallet,
@@ -33,8 +33,29 @@ const PILLARS = [
 	},
 	{
 		icon: Shield,
-		title: "Privacy by default",
-		body: "SIWE wallet auth and magic-link email. No credit-card signup. We meter usage for billing; we do not log prompt or completion content.",
+		title: "Minimal OMA retention",
+		body: "SIWE wallet auth and magic-link email. OMA meters billing metadata but does not persist prompt or completion content; inference providers process requests as described in Privacy.",
+	},
+] as const;
+
+const USE_CASES = [
+	{
+		title: "Migrate an OpenAI-compatible app",
+		body: "Keep your existing SDK and request shape. Change the base URL, use an OMA key, and choose a catalog model per request.",
+		href: "/docs#quickstart",
+		cta: "Migration quickstart",
+	},
+	{
+		title: "Compare models without rebuilding",
+		body: "Use one catalog to compare model price, context window, provider, and capabilities instead of maintaining separate vendor integrations.",
+		href: "/models",
+		cta: "Browse models",
+	},
+	{
+		title: "Run automated agent workloads",
+		body: "Use API keys with prepaid credits, direct USDC deposits, or the optional x402 settlement flow for software-driven funding.",
+		href: "/docs#x402",
+		cta: "Agent payment docs",
 	},
 ] as const;
 
@@ -106,10 +127,10 @@ export default function AboutPage() {
 							OMA is a single OpenAI-compatible endpoint —
 							<code className="rounded border border-border bg-surface px-1.5 py-0.5 font-mono text-[13px] text-text-bright">https://www.oma-ai.com/api/v1</code> —
 							in front of a rotating catalog of chat models routed across
-							multiple upstream providers. Each request is dispatched to the
-							best available model with circuit-breaker failover: if an
-							upstream goes down, traffic shifts to the next healthy route
-							instead of erroring out.
+							multiple upstream providers. Each requested model resolves to
+							its configured upstream route. Circuit breakers stop repeated
+							calls to unhealthy routes, and mapped models can use a configured
+							fallback where one is available.
 						</p>
 						<p>
 							You pay from a prepaid credit balance. Top up with a card when
@@ -124,6 +145,56 @@ export default function AboutPage() {
 							prompt and completion content are not logged.
 						</p>
 					</div>
+				</section>
+
+				<section className="mb-14" aria-labelledby="what-oma-is-for">
+					<h2 id="what-oma-is-for" className="section-eyebrow-caps text-text-bright">
+						What OMA is for
+					</h2>
+					<div className="mt-4 grid gap-3 md:grid-cols-3">
+						{USE_CASES.map((item) => (
+							<Link
+								key={item.title}
+								href={item.href}
+								className="group rounded-[var(--radius-md)] border border-border bg-surface p-5 transition-[border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-accent/40"
+							>
+								<h3 className="font-display text-base font-medium text-text-bright">
+									{item.title}
+								</h3>
+								<p className="mt-2 text-sm leading-relaxed text-text-secondary">
+									{item.body}
+								</p>
+								<span className="mt-4 inline-flex items-center gap-1.5 text-xs font-mono text-accent">
+									{item.cta}
+									<ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+								</span>
+							</Link>
+						))}
+					</div>
+				</section>
+
+				<section className="mb-14" aria-labelledby="operational-boundaries">
+					<h2 id="operational-boundaries" className="section-eyebrow-caps text-text-bright">
+						Operational boundaries
+					</h2>
+					<ul className="mt-4 max-w-2xl space-y-3 text-sm leading-relaxed text-text-secondary">
+						<li>
+							<strong className="text-text-bright">Availability changes.</strong>{" "}
+							Model capacity and upstream health are live conditions. Check the{" "}
+							<Link href="/models" className="text-accent underline underline-offset-2">catalog</Link>{" "}
+							and <Link href="/status" className="text-accent underline underline-offset-2">status page</Link>{" "}
+							before depending on a model in production.
+						</li>
+						<li>
+							<strong className="text-text-bright">Free chat is not free API traffic.</strong>{" "}
+							The OMA-AI browser-chat allowance has daily caps; API-key calls spend credits at the listed rate.
+						</li>
+						<li>
+							<strong className="text-text-bright">Inference still has a data path.</strong>{" "}
+							OMA does not persist prompt or completion content, but the inference provider that handles a request must process that content to return an answer. See{" "}
+							<Link href="/privacy" className="text-accent underline underline-offset-2">Privacy</Link>.
+						</li>
+					</ul>
 				</section>
 
 				<div className="flex flex-wrap gap-3">

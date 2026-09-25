@@ -34,11 +34,5 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Typecheck, lint, and test
+      - name: Validate and build
         run: pnpm validate
-
-      - name: Build app
-        run: pnpm --filter app run build
-
-      - name: Build server
-        run: pnpm --filter oma-server run build
