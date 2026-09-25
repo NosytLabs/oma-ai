@@ -4,9 +4,8 @@
 	* InViewFade — small client-side entrance animation for server components.
 	*
 	* Wraps any block with a fade-up reveal the first time it scrolls into
-	* view. Uses framer-motion's `useInView` (so reduced-motion users get an
-	* instant render with no transform), and exposes a `delay` prop for
-	* staging child sections.
+	* view. Uses a framer-free IntersectionObserver-based hook, and exposes a
+	* `delay` prop for staging child sections.
 	*
 	* Includes a short safety timeout: if IntersectionObserver doesn't fire
 	* quickly (SSR, headless, restricted containers), the content paints
