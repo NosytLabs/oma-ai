@@ -24,7 +24,6 @@ import {
 	BookOpen,
 	Activity,
 } from "lucide-react";
-import { cn } from "@/components/ui/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { OmaNavLockup } from "@/components/ui/oma-logo";

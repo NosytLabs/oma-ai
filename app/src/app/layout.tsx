@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Instrument_Serif, Geist, Space_Grotesk } from "next/font/google";
 import { BRAND_COLORS } from "@/lib/brand";
 import SITE_URL from "@/lib/site";
-import { MotionProvider } from "@/lib/animation/MotionProvider";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { Footer } from "@/components/footer";
@@ -153,22 +152,20 @@ export default function RootLayout({
 				</a>
 				<ThemeProvider>
 					<ToastProviderClient>
-						<MotionProvider>
-							<Providers>
-								<div className="flex min-h-dvh flex-col">
-									<MaintenanceBanner />
-									<Navbar />
-									<main
-										id="main-content"
-										className="flex min-h-0 min-w-0 w-full flex-1 flex-col"
-										tabIndex={-1}
-									>
-										<ErrorBoundary>{children}</ErrorBoundary>
-									</main>
-									<Footer />
-								</div>
-							</Providers>
-						</MotionProvider>
+						<Providers>
+							<div className="flex min-h-dvh flex-col">
+								<MaintenanceBanner />
+								<Navbar />
+								<main
+									id="main-content"
+									className="flex min-h-0 min-w-0 w-full flex-1 flex-col"
+									tabIndex={-1}
+								>
+									<ErrorBoundary>{children}</ErrorBoundary>
+								</main>
+								<Footer />
+							</div>
+						</Providers>
 					</ToastProviderClient>
 				</ThemeProvider>
 			</body>

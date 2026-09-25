@@ -2,6 +2,7 @@
 export const dynamic = "force-dynamic";
 
 import type { Metadata } from "next";
+import { MotionProvider } from "@/lib/animation/MotionProvider";
 
 export const metadata: Metadata = {
 	title: "Settings — account, theme & sessions",
@@ -16,5 +17,5 @@ export default function SettingsLayout({
 }: {
 	children: React.ReactNode;
 }) {
-	return children;
+	return <MotionProvider>{children}</MotionProvider>;
 }

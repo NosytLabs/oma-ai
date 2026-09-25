@@ -2,6 +2,7 @@
 export const dynamic = "force-dynamic";
 
 import type { Metadata } from "next";
+import { MotionProvider } from "@/lib/animation/MotionProvider";
 
 export const metadata: Metadata = {
 	title: "Dashboard — keys, usage & credits",
@@ -37,7 +38,7 @@ export default function DashboardLayout({
 }) {
 	return (
 		<div className="bg-void text-text-secondary">
-			{children}
+			<MotionProvider>{children}</MotionProvider>
 		</div>
 	);
 }
