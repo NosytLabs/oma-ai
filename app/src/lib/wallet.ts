@@ -123,22 +123,10 @@ export function hasWallet(): boolean {
 	return Boolean(getEthereum());
 }
 
-/** Read the connected chainId without prompting. */
-async function _readChainId(): Promise<number | null> {
-	const eth = getEthereum();
-	if (!eth) return null;
-	try {
-		const hex = (await eth.request({ method: "eth_chainId" })) as string;
-		return Number.parseInt(hex, 16);
-	} catch {
-		return null;
-	}
-}
-
 /**
-	* Returns the currently authorized account without prompting
-	* (`eth_accounts`), or null when the wallet is locked / not connected.
-	*/
+ * Returns the currently authorized account without prompting
+ * (`eth_accounts`), or null when the wallet is locked / not connected.
+ */
 export async function getConnectedAccount(): Promise<`0x${string}` | null> {
 	const eth = getEthereum();
 	if (!eth) return null;
