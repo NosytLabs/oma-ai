@@ -47,11 +47,7 @@ export function OrganizationJsonLd() {
 	);
 }
 
-/**
- * WebSite + Sitelinks SearchBox structured data.
- * Enables the Google sitelinks searchbox for branded / navigational queries
- * ("oma chat", "oma models"). Rendered once in the root layout head.
- */
+/** WebSite entity rendered once in the root layout head. */
 export function WebSiteJsonLd() {
 	const data = {
 		"@context": "https://schema.org",
@@ -63,14 +59,6 @@ export function WebSiteJsonLd() {
 		description:
 			"OpenAI-compatible AI inference gateway with USDC payments on Base.",
 		publisher: { "@id": `${SITE_URL}/#organization` },
-		potentialAction: {
-			"@type": "SearchAction",
-			target: {
-				"@type": "EntryPoint",
-				urlTemplate: `${SITE_URL}/models?q={search_term_string}`,
-			},
-			"query-input": "required name=search_term_string",
-		},
 	};
 
 	return (
