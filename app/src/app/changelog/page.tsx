@@ -38,6 +38,12 @@ const ENTRIES: {
 }[] = [
 	{
 		date: "2026-09-25",
+		title: "FAQ expanded for teams and agents",
+		body: "The FAQ grew two new sections: \"Using OMA with your tools\" (Claude Code, OpenCode, Cursor, migrating an OpenAI app, the Anthropic Messages endpoint) and \"Reliability & safety\" (provider outages, rate limits, what a provider can see).",
+		tags: ["content", "site"],
+	},
+	{
+		date: "2026-09-25",
 		title: "Faster landing pages and lighter first paint",
 		body: "The anonymous marketing path no longer ships the animation library: hero, scroll-reveals, navbar, footer, and mobile menu now render with plain CSS and the browser's IntersectionObserver. Framer Motion is still available inside the signed-in product areas (models, pricing, chat, dashboard) that use it. Heavy app pages also stop prefetching their chunks from the landing page, and stable public pages now serve from the edge cache instead of re-rendering on every request.",
 		tags: ["perf", "site"],

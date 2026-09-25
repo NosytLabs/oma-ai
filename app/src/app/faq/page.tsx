@@ -22,6 +22,40 @@ export const metadata: Metadata = {
 
 const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 	{
+		heading: "Using OMA with your tools",
+		items: [
+			{
+				q: "Can I use OMA inside Claude Code, OpenCode, or Cursor?",
+				a: `Yes. Because OMA is OpenAI-compatible, most agent CLIs and IDEs accept a custom base URL and an OMA API key. Point the tool at /docs#integrations and set the base URL to https://www.oma-ai.com/api/v1 with your oma_sk_... key, then pick any catalog model. OpenCode, Claude Code, Cursor, and Continue are covered step-by-step in the docs.`,
+			},
+			{
+				q: "How do I migrate an app that already uses OpenAI?",
+				a: `You keep your request shape and SDK. Change one thing — the base URL is now https://www.oma-ai.com/api/v1 — swap the key, and specify an OMA catalog model per request. The openai-python package, Vercel AI SDK, and anything else that speaks OpenAI's API work as-is.`,
+			},
+			{
+				q: "Does OMA support the Anthropic Messages API?",
+				a: `Yes — OMA exposes an Anthropic-compatible Messages endpoint alongside the OpenAI-compatible /chat/completions path, so tools written against the Anthropic SDK can also point at OMA with the same key. See /docs#endpoints for the exact paths and request shapes.`,
+			},
+		],
+	},
+	{
+		heading: "Reliability & safety",
+		items: [
+			{
+				q: "How does OMA handle provider outages?",
+				a: `A circuit breaker keeps traffic off an unhealthy upstream route. If the requested model has a configured fallback, OMA can retry that mapped model on the fallback route; otherwise the request returns an upstream/unavailable error rather than silently swapping to a different model. Check /status for live gateway health.`,
+			},
+			{
+				q: "Can a provider see my prompts?",
+				a: `OMA itself does not persist prompt or completion content and meters only billing metadata. However, the inference provider that serves a request must process that content to answer it, so provider-side retention guarantees depend on the model and provider you select. See /privacy for the exact data-flow.`,
+			},
+			{
+				q: "What are the rate limits?",
+				a: `There are no per-plan rate tiers; a single shared token-bucket set applies, with per-model overrides where a provider needs them (for example llama-3.3-70b). The docs list the burst, refill, sustained RPM, and per-model token ceilings at /docs#rate-limits. Rate-limit headers are returned on each response.`,
+			},
+		],
+	},
+	{
 		heading: "Getting started",
 		items: [
 			{
