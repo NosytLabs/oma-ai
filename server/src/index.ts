@@ -520,10 +520,16 @@ function startServer() {
 				server.close(async () => {
 						logger.info("[OMA] HTTP server closed");
 						try {
-								const { closeRedisClient } = await import("./lib/redis-client.js");
-								await closeRedisClient();
+							const { closeRedisClient } = await import("./lib/redis-client.js");
+							await closeRedisClient();
 						} catch (err) {
-								logger.warn({ error: err }, "[OMA] Redis close error");
+							logger.warn({ error: err }, "[OMA] Redis close error");
+						}
+						try {
+							const { closeDb } = await import("./db/client.js");
+							await closeDb();
+						} catch (err) {
+							logger.warn({ error: err }, "[OMA] DB close error");
 						}
 						process.exit(0);
 				});
