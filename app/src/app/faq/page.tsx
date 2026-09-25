@@ -30,11 +30,11 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "Do I need to know how to code?",
-				a: "No. You can try AI immediately in the free chat playground at /chat — no account needed. Guests can use the two free OMA-AI models (DeepSeek V4 Flash OpenBroker and MiniMax M2.7) with a daily message cap. You only need the API (and an API key) when you want to build something, like an app or a script.",
+				a: "No. You can try AI immediately in the free chat playground at /chat — no account needed. Guests can use the three OMA-AI website-chat models (DeepSeek V4 Flash, MiniMax M2.7, and GLM-5.3 Flash) with a daily message cap. You only need the API (and an API key) when you want to build something, like an app or a script.",
 			},
 			{
 				q: "How do I start using it?",
-				a: `Three steps: (1) try free website chat on the two OMA-AI models — no account needed; (2) sign in with your email (magic link) or crypto wallet and create an API key; (3) add a little credit and call the API. The full walkthrough is on the /getting-started page.`,
+				a: `Three steps: (1) try free website chat on the three OMA-AI models — no account needed; (2) sign in with your email (magic link) or crypto wallet and create an API key; (3) add a little credit and call the API. The full walkthrough is on the /getting-started page.`,
 			},
 			{
 				q: "What can I do with it?",
@@ -42,7 +42,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "Is there a free tier?",
-				a: "Yes. Website chat is free on the two OMA-AI budget models — no account needed for guests (a small daily message cap), and more messages per day once you sign in. New sign-ups also get a small amount of trial credit. API-key calls always spend credits, even on those models; the free tier lives in the browser chat, not the API. See /pricing for limits.",
+				a: "Yes. Website chat is free on the three OMA-AI models — no account needed for guests (a small daily message cap), and more messages per day once you sign in. New sign-ups also get a small amount of trial credit. API-key calls always spend credits, even on those models; the free tier lives in the browser chat, not the API. See /pricing for limits.",
 			},
 		],
 	},

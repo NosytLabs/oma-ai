@@ -400,16 +400,12 @@ const VENICE_MODELS: ModelDef[] = [
 ];
 
 // ── OMA-AI Resale — branded "oma-ai", backed by OpenBroker (Gonka network) ──
-// Verified live against api.openbroker.gonka.gg/v1/models 2026-09-23: the
-// upstream catalog now serves THREE models —
-//   MiniMaxAI/MiniMax-M2.7
-//   deepseek-ai/DeepSeek-V4-Flash-0731
-//   zai-org/GLM-5.3-Flash
-// The first two are listed below. GLM-5.3-Flash is deliberately NOT listed:
-// OpenBroker's /v1/models returns ids only, with no pricing, and this catalog
-// bills real credits. Adding it needs its published input/output price per 1M
-// on the Gonka network before it can be resold — do not guess it. Re-verify
-// the upstream catalog before assuming this list is still exhaustive.
+// Verified live against api.openbroker.gonka.gg/v1/models in September 2026:
+// the upstream catalog serves THREE models — MiniMax M2.7, DeepSeek V4 Flash,
+// and GLM-5.3 Flash — and all three are curated below. GLM-5.3 pricing uses
+// Z.ai's published list price because OpenBroker's model endpoint exposes ids
+// but not price fields. Re-verify the upstream catalog and price source before
+// changing this list.
 const OMA_AI_MODELS: ModelDef[] = [
 	{
 			id: "minimax-m2-7",

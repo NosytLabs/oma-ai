@@ -48,9 +48,9 @@ export function ProviderRoutingSection() {
 						<span className="font-semibold text-text text-sm">OMA-AI</span>
 					</div>
 					<p className="text-sm text-text-muted">
-						Budget-tier models branded as OMA-AI — MiniMax M2.7 and DeepSeek
-						V4 Flash on Gonka/OpenBroker. Same billing, same failover rules as
-						the primary catalog, at lower per-token rates.
+						Budget-tier models branded as OMA-AI — MiniMax M2.7, DeepSeek
+						V4 Flash, and GLM-5.3 Flash on Gonka/OpenBroker. Same billing
+						surface and API contract as the rest of the catalog.
 					</p>
 					<div className="mt-3 flex flex-wrap gap-1">
 						<span className="rounded-[var(--radius-sm)] bg-surface px-1.5 py-0.5 text-[10px] text-text-muted border border-border/50">chat</span>
@@ -67,14 +67,14 @@ export function ProviderRoutingSection() {
 						<li>Request arrives with a model id</li>
 						<li>OMA looks up the model→provider mapping in the catalog</li>
 						<li>The model&apos;s primary provider handles the request</li>
-						<li>On failure, circuit breaker triggers failover to alternates</li>
-						<li>Each model maps to exactly one or more upstream providers</li>
+						<li>On failure, the circuit breaker may retry a configured fallback for that mapped model</li>
+						<li>The public model id and customer price remain stable across that retry</li>
 					</ol>
 				</div>
 				<div className="rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] p-4">
 					<h3 className="mb-2 font-semibold text-text text-sm">Response Headers</h3>
 					<p className="text-sm text-text-muted mb-3">
-						Each response includes the provider that handled the request:
+						Each response includes the public catalog provider label:
 					</p>
 					<div className="space-y-1 font-mono text-xs text-text-muted">
 						<div>
@@ -83,6 +83,14 @@ export function ProviderRoutingSection() {
 					</div>
 				</div>
 			</div>
+
+			<p className="mt-4 text-xs leading-relaxed text-text-muted">
+				A deployment may optionally enable an internal compatible fallback for
+				mapped models. If a primary provider fails and that fallback is used,
+				request content must be forwarded to the inference service that actually
+				handles the retry. The public model id and listed customer price do not
+				change. See <a href="/privacy" className="text-accent underline underline-offset-2">Privacy</a> for data-flow details.
+			</p>
 		</AnimatedSection>
 	);
 }

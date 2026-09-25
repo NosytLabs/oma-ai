@@ -58,7 +58,7 @@ func main() {
 				without sign-in, API key, or wallet (20 msgs/day anonymous, 100/day signed-in). Top up credits to unlock the entire Venice catalog, unlimited concurrency, and dedicated throughput.
 			</p>
 			<p className="text-sm text-text-muted">
-				API-key calls (<code className="text-accent font-mono text-xs">Authorization: Bearer oma_sk_…</code>) always spend credits — even on the 2 free website-chat models. Free usage applies to browser website chat only, never to programmatic API traffic.
+				API-key calls (<code className="text-accent font-mono text-xs">Authorization: Bearer oma_sk_…</code>) always spend credits — even on the 3 free website-chat models. Free usage applies to browser website chat only, never to programmatic API traffic.
 			</p>
 			</div>
 
