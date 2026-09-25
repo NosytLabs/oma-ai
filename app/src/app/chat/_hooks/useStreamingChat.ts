@@ -22,6 +22,7 @@ import {
 	isFreeChatModel,
 } from "@/lib/model-utils";
 import { estimateTokens } from "@/lib/text";
+import { appendCapped, parseStreamData } from "./stream-parser";
 
 // Same-origin /api proxy so the Better Auth cookie is sent. Hitting
 // :3001 directly drops the session (cross-origin) and playground
@@ -421,64 +422,42 @@ export function useStreamingChat(
 				};
 
 				const appendToContent = (chunk: string) => {
-					if (!chunk) return;
-					if (accumulated.length < MAX_MESSAGE_LENGTH) {
-						accumulated += chunk;
-					} else if (!accumulated.endsWith("[response truncated at 100 KB]")) {
-						// Surface truncation exactly once so the user
-						// knows the response was capped, instead of
-						// silently dropping content.
-						accumulated += "\n\n…[response truncated at 100 KB]";
-					}
+					accumulated = appendCapped(
+						accumulated,
+						chunk,
+						MAX_MESSAGE_LENGTH,
+						"\n\n…[response truncated at 100 KB]",
+					);
 				};
 				const appendToReasoning = (chunk: string) => {
-					if (!chunk) return;
-					if (accumulatedReasoning.length < MAX_MESSAGE_LENGTH) {
-						accumulatedReasoning += chunk;
-					}
+					accumulatedReasoning = appendCapped(
+						accumulatedReasoning,
+						chunk,
+						MAX_MESSAGE_LENGTH,
+					);
 				};
 				const router = createThinkRouter({
 					onContent: appendToContent,
 					onReasoning: appendToReasoning,
 				});
 				const processData = (raw: string) => {
-					const data = raw.trim();
-					if (!data || data === "[DONE]") return;
-					try {
-						const parsed = JSON.parse(data);
-						const choice = parsed.choices?.[0];
-						const delta = choice?.delta?.content;
-						if (delta) {
-							router.route(delta);
-							flushToState();
-						}
-						// Reasoning models (DeepSeek R1, Claude extended thinking) emit
-						// `reasoning_content` separately from `content`. Some models
-						// emits it as `reasoning`. Capture both so the thinking phase
-						// is visible in the collapsible "Thinking" section instead of
-						// showing blank while the model reasons.
-						const reasoningDelta =
-							choice?.delta?.reasoning_content ?? choice?.delta?.reasoning;
-						if (reasoningDelta) {
-							appendToReasoning(reasoningDelta);
-							flushToState();
-						}
-						// OpenAI streams emit a final chunk with `usage` when
-						// `stream_options.include_usage` is set (or some providers do it
-						// unconditionally). Prefer the real count over our estimate.
-						if (parsed.usage?.total_tokens) {
-							realTokenCount = parsed.usage.total_tokens;
-						}
-						// Capture finish_reason from the upstream so we can flag the
-						// message as truncated. The "length" reason means the model
-						// hit the max_tokens budget mid-answer and the response is
-						// incomplete — show a TRUNCATED hint in the UI.
-						const reason = choice?.finish_reason;
-						if (reason && reason !== null) {
-							finishReason = reason as typeof finishReason;
-						}
-					} catch (err) {
-						log.warn("Failed to parse streaming response", err);
+					// Frame parsing lives in stream-parser.ts so it can be tested
+					// without mounting this hook and driving a live stream.
+					const d = parseStreamData(raw);
+					if (!d) return;
+					if (d.content) {
+						router.route(d.content);
+						flushToState();
+					}
+					if (d.reasoning) {
+						appendToReasoning(d.reasoning);
+						flushToState();
+					}
+					if (d.totalTokens !== undefined) {
+						realTokenCount = d.totalTokens;
+					}
+					if (d.finishReason) {
+						finishReason = d.finishReason as typeof finishReason;
 					}
 				};
 
