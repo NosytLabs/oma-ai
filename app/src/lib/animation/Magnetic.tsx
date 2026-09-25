@@ -1,32 +1,20 @@
 "use client";
 
-import {
-	m,
-	useMotionValue,
-	useReducedMotion,
-	useSpring,
-} from "@/lib/framer-motion-client";
-import type { ReactNode } from "react";
-import { useEffect, useRef } from "react";
-import { springs } from "./springs";
-
 /**
-	* Magnetic — element follows the cursor with a spring, snapping back on
-	* leave. Kinetics ref: magnet.
-	*
-	* This is the merged magnetic primitive (formerly duplicated as
-	* `Magnetic` in `@/lib/motion` and `MagneticButton` here). This
-	* implementation won because:
-	*   - Real spring physics (useMotionValue + useSpring) — interruptible,
-	*     GPU-composited, no fixed-duration snap.
-	*   - Explicit `useReducedMotion` guard — renders a static span for
-	*     users who opt out. (The old CSS-var version bypassed framer, so
-	*     `MotionConfig reducedMotion="user"` could not no-op it.)
-	*   - Listener cleanup on unmount.
-	*
-	* The wrap is `display: inline-block` and does not capture pointer
-	* events — the child stays clickable.
-	*/
+ * Magnetic — element follows the cursor with a spring, snapping back on
+ * leave. Kinetics ref: magnet.
+ *
+ * Framer-free implementation using a native rAF-driven transform toward the
+ * cursor target (eased), so no framer-motion runtime is pulled into the
+ * bundle. Honors prefers-reduced-motion (static span), does not capture
+ * pointer events, and cleans up listeners on unmount.
+ *
+ * The wrap is `display: inline-block` and does not capture pointer events —
+ * the child stays clickable.
+ */
+
+import type { ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface MagneticProps {
 	children: ReactNode;
@@ -35,39 +23,68 @@ interface MagneticProps {
 	strength?: number;
 }
 
-export function Magnetic({
-	children,
-	className,
-	strength = 12,
-}: MagneticProps) {
-	const prefersReduced = useReducedMotion();
+export function Magnetic({ children, className, strength = 12 }: MagneticProps) {
 	const ref = useRef<HTMLSpanElement>(null);
-	// LazyMotion-friendly: use the `m` component for both the static span and
-	// the inner motion-target so we don't need the full `motion` import.
-	// We use plain DOM refs + framer-motion hooks here, which work in LazyMotion.
-	const x = useMotionValue(0);
-	const y = useMotionValue(0);
-	const sx = useSpring(x, springs.magnet);
-	const sy = useSpring(y, springs.magnet);
+	const [reduced, setReduced] = useState(false);
 
 	useEffect(() => {
-		if (prefersReduced) return;
+		const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+		setReduced(mq.matches);
+		const onChange = (e: MediaQueryListEvent) => setReduced(e.matches);
+		mq.addEventListener("change", onChange);
+		return () => mq.removeEventListener("change", onChange);
+	}, []);
+
+	useEffect(() => {
+		if (reduced) return;
 		const el = ref.current;
 		if (!el) return;
+
+		// Current animated position.
+		let cx = 0;
+		let cy = 0;
+		// Target from the cursor.
+		let tx = 0;
+		let ty = 0;
+		let raf = 0;
+		let active = false;
+
+		const ease = 0.16; // spring-ish follow; interruptible.
+
+		const step = () => {
+			cx += (tx - cx) * ease;
+			cy += (ty - cy) * ease;
+			if (Math.abs(tx - cx) < 0.05 && Math.abs(ty - cy) < 0.05) {
+				cx = tx;
+				cy = ty;
+				active = false;
+				raf = 0;
+			} else {
+				raf = requestAnimationFrame(step);
+			}
+			el.style.transform = `translate3d(${cx.toFixed(2)}px, ${cy.toFixed(2)}px, 0)`;
+		};
 
 		const handleMove = (e: MouseEvent) => {
 			const rect = el.getBoundingClientRect();
 			const relX = e.clientX - (rect.left + rect.width / 2);
 			const relY = e.clientY - (rect.top + rect.height / 2);
-			// Normalize to [-1, 1] and scale by strength.
 			const nx = (relX / Math.max(rect.width, 1)) * strength;
 			const ny = (relY / Math.max(rect.height, 1)) * strength;
-			x.set(nx);
-			y.set(ny);
+			tx = nx;
+			ty = ny;
+			if (!active) {
+				active = true;
+				raf = requestAnimationFrame(step);
+			}
 		};
 		const handleLeave = () => {
-			x.set(0);
-			y.set(0);
+			tx = 0;
+			ty = 0;
+			if (!active) {
+				active = true;
+				raf = requestAnimationFrame(step);
+			}
 		};
 
 		el.addEventListener("mousemove", handleMove);
@@ -75,21 +92,21 @@ export function Magnetic({
 		return () => {
 			el.removeEventListener("mousemove", handleMove);
 			el.removeEventListener("mouseleave", handleLeave);
+			if (raf) cancelAnimationFrame(raf);
 		};
-	}, [prefersReduced, strength, x, y]);
+	}, [reduced, strength]);
 
-	if (prefersReduced) {
+	if (reduced) {
 		return <span className={className}>{children}</span>;
 	}
 
 	return (
-		<m.span
+		<span
 			ref={ref}
 			className={`inline-block ${className ?? ""}`}
-			style={{ x: sx, y: sy }}
-			whileTap={{ scale: 0.97 }}
+			style={{ willChange: "transform" }}
 		>
 			{children}
-		</m.span>
+		</span>
 	);
 }
