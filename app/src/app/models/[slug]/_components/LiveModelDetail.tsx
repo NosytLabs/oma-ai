@@ -17,6 +17,7 @@ import {
 } from "@/lib/models-data";
 import { playgroundHrefForModel } from "@/lib/playground-href";
 import { Stat } from "./ModelDetailShared";
+import { liveDisplayName, livePricePer1M } from "@/app/models/_lib/format";
 
 type LiveModelDetail = {
 	id: string;
@@ -30,25 +31,6 @@ type LiveModelDetail = {
 	};
 	supported_parameters?: string[];
 };
-
-function liveDisplayName(id: string): string {
-	return id
-		.replace(/^(openai|minimax|together|deepinfra|venice)\//i, "")
-		.split(/[-_]/)
-		.map((part) => (part ? part.charAt(0).toUpperCase() + part.slice(1) : ""))
-		.filter(Boolean)
-		.join(" ");
-}
-
-function livePricePer1M(
-	perToken: string | null | undefined,
-): number | undefined {
-	if (!perToken) return undefined;
-	const n = parseFloat(perToken);
-	return Number.isFinite(n) ? n * 1_000_000 : undefined;
-}
-
-
 
 export function LiveModelDetail({
 	slug,
