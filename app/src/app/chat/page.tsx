@@ -12,6 +12,7 @@ import { AlertTriangle } from "lucide-react";
 import nextDynamic from "next/dynamic";
 import { ThinkingOrb } from "thinking-orbs";
 import { ErrorBoundary } from "@/components/error-boundary";
+import Link from "next/link";
 
 // Lazy-load the chat shell (framer-motion + wallet hooks) with a branded
 // ThinkingOrb fallback so first paint is never a blank main region.
@@ -61,6 +62,11 @@ export default function ChatPage() {
 		// stays on screen at each of those widths, so a Navbar height change
 		// fails CI rather than silently clipping the composer.
 		<div className="flex h-[calc(100dvh-57px)] min-h-0 flex-col overflow-hidden">
+		<nav aria-label="Chat resources" className="absolute right-3 top-2 z-20 flex gap-3 text-xs text-text-muted sm:right-5">
+			<Link href="/models" className="hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">Models</Link>
+			<Link href="/getting-started" className="hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">Getting started</Link>
+			<Link href="/faq" className="hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">FAQ</Link>
+		</nav>
 		<ErrorBoundary
 			fallback={
 				<div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center">

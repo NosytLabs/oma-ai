@@ -1,13 +1,7 @@
 import type { MetadataRoute } from "next";
+import SITE_URL from "@/lib/site";
 
 export default function robots(): MetadataRoute.Robots {
-	// The fallback must match the canonical host used by sitemap.ts and every
-	// page's alternates.canonical. The apex 308-redirects to www, so
-	// advertising it here would point crawlers at a redirect instead of the
-	// sitemap whenever NEXT_PUBLIC_APP_URL is unset.
-	const baseUrl =
-		process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") ||
-		"https://www.oma-ai.com";
 	return {
 		rules: [
 			{
@@ -17,14 +11,18 @@ export default function robots(): MetadataRoute.Robots {
 					"/api/",
 					"/admin",
 					"/admin/",
+					"/admin/:path*",
 					"/dashboard",
 					"/dashboard/",
+					"/dashboard/:path*",
 					"/settings",
 					"/settings/",
+					"/settings/:path*",
 					"/login",
 					// Auth-gated product surfaces (session required)
 					"/deposit",
 					"/deposit/",
+					"/deposit/:path*",
 					// /chat is the public free playground — indexable. Legacy
 					// `/image-generation`, `/video-generation`, `/create`,
 					// `/studio` paths are caught by the permanent-redirect map
@@ -32,6 +30,6 @@ export default function robots(): MetadataRoute.Robots {
 				],
 			},
 		],
-		sitemap: `${baseUrl}/sitemap.xml`,
+		sitemap: `${SITE_URL}/sitemap.xml`,
 	};
 }
