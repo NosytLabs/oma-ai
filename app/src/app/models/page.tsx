@@ -11,13 +11,14 @@ import {
 	Trophy,
 	Zap,
 } from "lucide-react";
+import Link from "next/link";
 import { Suspense, useMemo } from "react";
 import { BreadcrumbListJsonLd } from "@/components/json-ld";
 import { InViewFade } from "@/components/motion/in-view-fade";
 import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { springs } from "@/lib/animation";
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
-import { TIER_COLORS, TIER_ORDER } from "@/lib/models-data";
+import { MODELS, TIER_COLORS, TIER_ORDER } from "@/lib/models-data";
 import { ModelCard } from "./_components/ModelCard";
 import { ModelFiltersSidebar } from "./_components/ModelFiltersSidebar";
 import { SORT_OPTIONS, useModelFilters } from "./_hooks/useModelFilters";
@@ -298,6 +299,66 @@ function ModelsPageInner() {
 
 export { formatPriceRange } from "./_hooks/useModelFilters";
 
+function ModelsSeoFallback() {
+	return (
+		<div className="bg-void">
+			<div className="container-page py-14 sm:py-18 lg:py-22">
+				<Breadcrumb items={[{ label: "Models" }]} />
+				<span className="section-eyebrow-caps">AI Model Catalog</span>
+				<h1 className="display-headline mt-3 text-text-bright">
+					Every model, one catalog.
+				</h1>
+				<p className="page-intro max-w-2xl">
+					Browse OMA&apos;s curated language-model catalog before the interactive
+					filters load. Each model page includes provider, context window,
+					capabilities, pricing, and copy-paste API examples.
+				</p>
+				<p className="mt-4 font-mono text-xs uppercase tracking-[0.18em] text-text-muted">
+					{MODELS.length} curated catalog entries · live availability loads in the browser
+				</p>
+
+				<section className="mt-10" aria-labelledby="static-model-list-heading">
+					<h2
+						id="static-model-list-heading"
+						className="font-display text-xl font-medium text-text-bright"
+					>
+						Browse model pages
+					</h2>
+					<div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+						{MODELS.map((model) => (
+							<Link
+								key={model.id}
+								href={`/models/${model.id}`}
+								className="rounded-[var(--radius-lg)] border border-border bg-panel p-4 transition-colors hover:border-accent/40"
+							>
+								<span className="block text-sm font-semibold text-text-bright">
+									{model.name}
+								</span>
+								<span className="mt-1 block text-xs text-text-muted">
+									{model.provider} · {model.tier} · {model.contextLength} context
+								</span>
+								<span className="mt-2 block font-mono text-[11px] text-accent">
+									{model.id}
+								</span>
+							</Link>
+						))}
+					</div>
+				</section>
+
+				<nav
+					aria-label="Model catalog resources"
+					className="mt-10 flex flex-wrap gap-x-5 gap-y-2 border-t border-border pt-5 text-sm text-text-secondary"
+				>
+					<Link href="/pricing" className="hover:text-accent">Compare pricing</Link>
+					<Link href="/docs" className="hover:text-accent">API documentation</Link>
+					<Link href="/getting-started" className="hover:text-accent">Getting started</Link>
+					<Link href="/chat" className="hover:text-accent">Try the playground</Link>
+				</nav>
+			</div>
+		</div>
+	);
+}
+
 export default function ModelsPage() {
 	return (
 		<>
@@ -307,25 +368,7 @@ export default function ModelsPage() {
 					{ name: "Models", url: "/models" },
 				]}
 			/>
-			<Suspense
-				fallback={
-					<div className="bg-void">
-						<div className="container-page py-14 sm:py-18 lg:py-22">
-							<div className="h-8 w-32 bg-panel rounded-[var(--radius-sm)] animate-pulse mb-8" />
-							<div className="h-10 w-64 bg-panel rounded-[var(--radius-sm)] animate-pulse mb-4" />
-							<div className="h-4 w-48 bg-panel rounded-[var(--radius-sm)] animate-pulse mb-6" />
-							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
-								{Array.from({ length: 8 }).map((_, i) => (
-									<div
-										key={i}
-										className="h-36 bg-panel rounded-[var(--radius-xl)] animate-pulse"
-									/>
-								))}
-							</div>
-						</div>
-					</div>
-				}
-			>
+			<Suspense fallback={<ModelsSeoFallback />}>
 				<ModelsPageInner />
 			</Suspense>
 		</>

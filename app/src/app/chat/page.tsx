@@ -24,23 +24,42 @@ const ChatPlaygroundShell = nextDynamic(
 	{
 		ssr: false,
 		loading: () => (
-			<div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center">
-				<div className="flex flex-col items-center gap-4">
-					<ThinkingOrb
-						state="searching"
-						size={64}
-						theme="auto"
-						aria-label="Loading chat"
-					/>
-					<p className="font-mono text-[11px] uppercase tracking-widest text-text-muted">
-						Loading playground…
+			<section
+				aria-labelledby="chat-loading-heading"
+				className="flex min-h-[60vh] flex-col items-center justify-center p-8 text-center"
+			>
+				<div className="w-full max-w-xl">
+					<span className="section-eyebrow-caps">Public playground</span>
+					<h1 id="chat-loading-heading" className="mt-3 font-display text-3xl font-semibold text-text-bright sm:text-4xl">
+						Free AI chat playground
+					</h1>
+					<p className="mx-auto mt-4 max-w-lg text-sm leading-relaxed text-text-secondary sm:text-base">
+						Try the OMA-AI models currently available for website chat without
+						an account. Guest daily limits apply; API-key requests use paid
+						credits at the catalog rate.
 					</p>
-					<div
-						className="animate-shimmer h-1.5 w-48 max-w-full rounded-full bg-surface-elevated"
-						aria-hidden="true"
-					/>
+					<div className="mt-5 flex flex-wrap justify-center gap-x-4 gap-y-2 text-sm">
+						<Link href="/models" className="text-accent hover:underline">Browse models</Link>
+						<Link href="/pricing" className="text-accent hover:underline">Pricing</Link>
+						<Link href="/getting-started" className="text-accent hover:underline">Getting started</Link>
+					</div>
+					<div className="mt-8 flex flex-col items-center gap-4">
+						<ThinkingOrb
+							state="searching"
+							size={64}
+							theme="auto"
+							aria-label="Loading chat"
+						/>
+						<p className="font-mono text-[11px] uppercase tracking-widest text-text-muted">
+							Loading playground…
+						</p>
+						<div
+							className="animate-shimmer h-1.5 w-48 max-w-full rounded-full bg-surface-elevated"
+							aria-hidden="true"
+						/>
+					</div>
 				</div>
-			</div>
+			</section>
 		),
 	},
 );

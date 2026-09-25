@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { MotionProvider } from "@/lib/animation/MotionProvider";
+import { MODELS } from "@/lib/models-data";
+import SITE_URL from "@/lib/site";
 
 // models/ page is fully client; opt the whole segment out of static prerender.
 
@@ -40,5 +42,28 @@ export default function ModelsLayout({
 }: {
 	children: React.ReactNode;
 }) {
-	return <MotionProvider>{children}</MotionProvider>;
+	const itemList = {
+		"@context": "https://schema.org",
+		"@type": "ItemList",
+		name: "OMA AI model catalog",
+		numberOfItems: MODELS.length,
+		itemListElement: MODELS.map((model, index) => ({
+			"@type": "ListItem",
+			position: index + 1,
+			name: model.name,
+			url: `${SITE_URL}/models/${model.id}`,
+		})),
+	};
+
+	return (
+		<>
+			<script
+				type="application/ld+json"
+				dangerouslySetInnerHTML={{
+					__html: JSON.stringify(itemList).replace(/</g, "\\u003c"),
+				}}
+			/>
+			<MotionProvider>{children}</MotionProvider>
+		</>
+	);
 }
