@@ -37,6 +37,24 @@ const ENTRIES: {
 	tags?: string[];
 }[] = [
 	{
+		date: "2026-09-25",
+		title: "Faster landing pages and lighter first paint",
+		body: "The anonymous marketing path no longer ships the animation library: hero, scroll-reveals, navbar, footer, and mobile menu now render with plain CSS and the browser's IntersectionObserver. Framer Motion is still available inside the signed-in product areas (models, pricing, chat, dashboard) that use it. Heavy app pages also stop prefetching their chunks from the landing page, and stable public pages now serve from the edge cache instead of re-rendering on every request.",
+		tags: ["perf", "site"],
+	},
+	{
+		date: "2026-09-25",
+		title: "New glossary reference is fully linked up",
+		body: "The 32-term /glossary reference — What is an API key, a token, x402, a context window, and so on — now has an indexed, sitemapped detail page per term. Related-term cross-links and a shared canonical URL keep the set consistent.",
+		tags: ["feature", "seo"],
+	},
+	{
+		date: "2026-09-25",
+		title: "Canonical and structured-data cleanup",
+		body: "The site now uses one source of truth for its canonical origin instead of scattered per-page hardcodes, and the root head gained WebSite + Sitelinks SearchBox structured data so engines understand the site's name and search action.",
+		tags: ["seo"],
+	},
+	{
 		date: "2026-09-05",
 		title: "Free website chat fixed for guests",
 		body: "A non-standard parameter in our internal failover hints was rejected by the upstream inference network, which made free-tier chat stream empty replies for signed-out visitors. Failover hints are now stripped at the provider boundary — guests get real responses again.",
