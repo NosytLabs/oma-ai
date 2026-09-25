@@ -39,11 +39,11 @@ export const TERMS: GlossaryTerm[] = [
 	},
 	{
 		term: "Provider",
-		def: "The company that actually runs the model hardware — e.g. the labs behind the models OMA routes to. OMA is the gateway in front of them all, so one API works across providers.",
+		def: "The upstream service or network that actually handles a model request. OMA is the gateway in front of these routes, so the same API contract can be used across the catalog.",
 	},
 	{
 		term: "Gateway",
-		def: "A single front door to many models and providers. You call one API; the gateway picks the best provider, handles failures (circuit-breaker failover), and bills you once.",
+		def: "A single front door to many models and providers. You call one API; OMA maps the requested model to its configured upstream, meters the request, and uses circuit-breaker protection plus a configured fallback where one exists.",
 	},
 	{
 		term: "OpenAI-compatible",
@@ -75,11 +75,11 @@ export const TERMS: GlossaryTerm[] = [
 	},
 	{
 		term: "USDC",
-		def: "A stablecoin: a digital token that always equals 1 US dollar, issued by regulated companies. It lets money move automatically over blockchains.",
+		def: "A U.S.-dollar-denominated stablecoin issued by Circle. Its market price is designed to track one U.S. dollar, and OMA uses USDC on Base for deposits and agent settlement.",
 	},
 	{
 		term: "Base",
-		def: "A fast, cheap Ethereum layer-2 blockchain built by Coinbase, where OMA settles USDC deposits and x402 settlements. Fees are pennies.",
+		def: "An Ethereum layer-2 network incubated by Coinbase, where OMA settles USDC deposits and x402 settlements. Network fees are generally lower than Ethereum mainnet but can vary.",
 	},
 	{
 		term: "Wallet",
@@ -115,11 +115,11 @@ export const TERMS: GlossaryTerm[] = [
 	},
 	{
 		term: "A2A",
-		def: "Agent-to-Agent — an open protocol (now a W3C standard) for AI agents to discover and talk to each other. OMA publishes an A2A agent card at /.well-known/agent-card.json so agents can learn how to use it autonomously.",
+		def: "Agent-to-Agent — an open standard for independent AI agents to discover capabilities, exchange messages, and coordinate tasks. The project is governed in the Linux Foundation's agentic ecosystem. OMA publishes an agent card at /.well-known/agent-card.json.",
 	},
 	{
 		term: "A2UI",
-		def: "Agent-to-User Interface — an open protocol for models to render interactive UI (buttons, forms, cards) inside chat apps. Enable UI mode in the OMA playground and ask for a form to see it live.",
+		def: "Agent-to-User Interface — an open, JSON-based streaming protocol for agents to describe portable UI that a host app renders with its own components. OMA's playground can demonstrate agent-driven interface output.",
 	},
 	{
 		term: "llms.txt",
@@ -131,7 +131,7 @@ export const TERMS: GlossaryTerm[] = [
 	},
 	{
 		term: "Zero data retention",
-		def: "OMA's privacy stance: your prompt and completion content are not logged or stored. Usage is metered for billing only.",
+		def: "A policy term meaning request content is not retained after processing. OMA does not persist prompt or completion content itself, but the upstream inference provider that handles a request must process that content and its own retention and privacy terms still matter.",
 	},
 ];
 
