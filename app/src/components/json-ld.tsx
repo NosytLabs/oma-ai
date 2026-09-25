@@ -4,20 +4,31 @@
 	* See: https://developers.google.com/search/docs/appearance/structured-data
 	*/
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://oma-ai.com";
+import SITE_URL from "@/lib/site";
 
 function safeJsonStringify(data: unknown) {
-	return JSON.stringify(data).replace(/</g, '\\u003c');
+	return JSON.stringify(data).replace(
+		/[<>&\u2028\u2029]/g,
+		(character) =>
+			({
+				"<": "\\u003c",
+				">": "\\u003e",
+				"&": "\\u0026",
+				"\u2028": "\\u2028",
+				"\u2029": "\\u2029",
+			})[character] ?? character,
+	);
 }
 
 export function OrganizationJsonLd() {
 	const data = {
 		"@context": "https://schema.org",
 		"@type": "Organization",
+		"@id": `${SITE_URL}/#organization`,
 		name: "OMA AI",
 		alternateName: "Open Model Access",
-		url: BASE_URL,
-		logo: `${BASE_URL}/logos/oma-icon-512.png`,
+		url: SITE_URL,
+		logo: `${SITE_URL}/logos/oma-icon-512.png`,
 		description:
 			"One gateway. Every model. No lock-in. OpenAI-compatible AI inference with prepaid USDC credits on Base (x402 settle optional).",
 		sameAs: ["https://github.com/NosytLabs"],
@@ -36,14 +47,49 @@ export function OrganizationJsonLd() {
 	);
 }
 
+/**
+ * WebSite + Sitelinks SearchBox structured data.
+ * Enables the Google sitelinks searchbox for branded / navigational queries
+ * ("oma chat", "oma models"). Rendered once in the root layout head.
+ */
+export function WebSiteJsonLd() {
+	const data = {
+		"@context": "https://schema.org",
+		"@type": "WebSite",
+		"@id": `${SITE_URL}/#website`,
+		url: SITE_URL,
+		name: "OMA AI",
+		alternateName: "Open Model Access",
+		description:
+			"OpenAI-compatible AI inference gateway with USDC payments on Base.",
+		publisher: { "@id": `${SITE_URL}/#organization` },
+		potentialAction: {
+			"@type": "SearchAction",
+			target: {
+				"@type": "EntryPoint",
+				urlTemplate: `${SITE_URL}/models?q={search_term_string}`,
+			},
+			"query-input": "required name=search_term_string",
+		},
+	};
+
+	return (
+		<script
+			type="application/ld+json"
+			dangerouslySetInnerHTML={{ __html: safeJsonStringify(data) }}
+		/>
+	);
+}
+
 export function SoftwareApplicationJsonLd() {
 	const data = {
 		"@context": "https://schema.org",
 		"@type": "SoftwareApplication",
+		"@id": `${SITE_URL}/#software-application`,
 		name: "OMA AI Gateway",
 		applicationCategory: "DeveloperApplication",
 		operatingSystem: "Web",
-		url: BASE_URL,
+		url: SITE_URL,
 		description:
 			"OpenAI-compatible API gateway. Multi-model routing, wallet-based auth, and USDC credits on Base.",
 		offers: {
@@ -75,7 +121,7 @@ export function BreadcrumbListJsonLd({
 			"@type": "ListItem",
 			position: i + 1,
 			name: item.name,
-			item: `${BASE_URL}${item.url}`,
+			item: `${SITE_URL}${item.url}`,
 		})),
 	};
 

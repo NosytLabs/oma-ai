@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Instrument_Serif, Geist, Space_Grotesk } from "next/font/google";
 import { BRAND_COLORS } from "@/lib/brand";
+import SITE_URL from "@/lib/site";
 import { MotionProvider } from "@/lib/animation/MotionProvider";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
@@ -9,7 +10,7 @@ import { Navbar } from "@/components/navbar";
 import { Providers } from "@/components/providers";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ToastProviderClient } from "@/components/ui/ToastProviderClient";
-import { OrganizationJsonLd, SoftwareApplicationJsonLd } from "@/components/json-ld";
+import { OrganizationJsonLd, SoftwareApplicationJsonLd, WebSiteJsonLd } from "@/components/json-ld";
 import { MaintenanceBanner } from "@/components/shared/MaintenanceBanner";
 import "./globals.css";
 
@@ -56,8 +57,6 @@ const body = Geist({
 // in globals.css is more than good enough for the few mono labels. Drop the
 // web font entirely — saves ~14 KB and silences the console warning.
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://oma-ai.com";
-
 export const viewport: Viewport = {
 	themeColor: [
 		{ media: "(prefers-color-scheme: dark)", color: BRAND_COLORS.void },
@@ -69,7 +68,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-	metadataBase: new URL(BASE_URL),
+	metadataBase: new URL(SITE_URL),
 	alternates: {
 		canonical: "/",
 	},
@@ -85,6 +84,7 @@ export const metadata: Metadata = {
 		description:
 			"One gateway. Every model. No lock-in. OpenAI-compatible AI inference with wallet-based auth, USDC on Base, optional card checkout, and x402 settlement.",
 		type: "website",
+		url: SITE_URL,
 		images: [
 			{
 				url: "/og-image.png",
@@ -139,6 +139,7 @@ export default function RootLayout({
 			<head>
 				<script dangerouslySetInnerHTML={{ __html: `(function(){try{var d=document.documentElement;d.style.backgroundColor='#07090a';d.style.colorScheme='dark';var t=localStorage.getItem('oma-theme');if(t==='emerald'||t==='amber'||t==='mono'||t==='synth'){if(t==='emerald'){d.removeAttribute('data-theme');}else{d.setAttribute('data-theme',t);}}}catch(e){}})();` }} />
 				<OrganizationJsonLd />
+				<WebSiteJsonLd />
 				<SoftwareApplicationJsonLd />
 				<link rel="preconnect" href="https://base-rpc.publicnode.com" />
 			</head>
