@@ -1577,6 +1577,35 @@
 }
 
 /* ============================================================================
+   Drawer entrances (framer-free mobile menu).
+   CSS-only, GPU-composited. The global reduced-motion block below zeroes
+   animation/transition duration so these collapse to instant shows for
+   prefers-reduced-motion users.
+   ========================================================================== */
+@keyframes motion-fade-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+@keyframes motion-slide-in-right {
+	from {
+		transform: translateX(100%);
+	}
+	to {
+		transform: translateX(0);
+	}
+}
+.motion-fade-in {
+	animation: motion-fade-in 180ms ease-out both;
+}
+.motion-slide-in-right {
+	animation: motion-slide-in-right 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ============================================================================
    Reduced motion — global safety net.
    Component-level guards (framer's MotionConfig reducedMotion="user", JS
    matchMedia checks) handle the JS-driven paths; this catch-all covers every

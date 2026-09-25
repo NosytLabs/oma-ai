@@ -24,7 +24,7 @@ import {
 	BookOpen,
 	Activity,
 } from "lucide-react";
-import { m } from "@/lib/framer-motion-client";
+import { cn } from "@/components/ui/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { OmaNavLockup } from "@/components/ui/oma-logo";
@@ -34,7 +34,7 @@ import {
 	primaryLinks,
 	toolsLinks,
 } from "./navbar/_lib/nav-links";
-import { EASE_SPRING, fadeUp, StaggerReveal } from "@/lib/animation";
+import { RevealStagger } from "@/app/_components/home/reveal";
 import { useAuth } from "@/lib/hooks/useAuth";
 
 type FooterLink = {
@@ -166,13 +166,11 @@ export function Footer() {
 			/>
 
 			<div className="container-page">
-				<StaggerReveal
+				<RevealStagger
 					className="grid gap-x-10 gap-y-10 pt-14 pb-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]"
-					stagger={0.04}
 				>
 					{/* BRAND COLUMN */}
-					<m.div
-						variants={fadeUp}
+					<div
 						className="flex max-w-sm flex-col gap-5"
 					>
 						<Link
@@ -181,13 +179,11 @@ export function Footer() {
 							className="group inline-flex w-fit items-center rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 							aria-label="OMA home"
 						>
-							<m.span
-								whileHover={{ y: -2 }}
-								transition={EASE_SPRING}
-								className="inline-flex transition-[filter] duration-300 group-hover:drop-shadow-[0_0_6px_var(--color-accent)] [&_span]:group-hover:text-accent"
+							<span
+								className="lift inline-flex transition-[filter] duration-300 group-hover:drop-shadow-[0_0_6px_var(--color-accent)] [&_span]:group-hover:text-accent"
 							>
 								<OmaNavLockup size="sm" />
-							</m.span>
+							</span>
 						</Link>
 
 						<p className="text-[13px] leading-relaxed text-text-secondary">
@@ -200,15 +196,13 @@ export function Footer() {
 							{SOCIAL_LINKS.map((s) => {
 								const Icon = s.icon;
 								return (
-									<m.a
+									<a
 										key={s.label}
 										href={s.href}
 										target="_blank"
 										rel="noopener noreferrer"
 										aria-label={`${s.label} · ${s.handle} (opens in new tab)`}
-										whileHover={{ y: -1 }}
-										transition={EASE_SPRING}
-										className="group inline-flex items-center gap-2 rounded-sm border border-border bg-surface/40 px-3 py-1.5 text-[11px] text-text-secondary transition-colors duration-200 ease-out hover:border-accent hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+										className="lift group inline-flex items-center gap-2 rounded-sm border border-border bg-surface/40 px-3 py-1.5 text-[11px] text-text-secondary transition-colors duration-200 ease-out hover:border-accent hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 									>
 										<Icon
 											className="h-3.5 w-3.5 opacity-80 group-hover:opacity-100"
@@ -219,15 +213,14 @@ export function Footer() {
 											className="h-3 w-3 opacity-50 group-hover:opacity-100"
 											aria-hidden="true"
 										/>
-									</m.a>
+									</a>
 								);
 							})}
 						</div>
-					</m.div>
+					</div>
 
 					{/* NAV COLUMNS */}
-					<m.nav
-						variants={fadeUp}
+					<nav
 						aria-label="Footer navigation"
 						className="grid w-full grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3"
 					>
@@ -276,8 +269,8 @@ export function Footer() {
 								</ul>
 							</div>
 						))}
-					</m.nav>
-				</StaggerReveal>
+					</nav>
+				</RevealStagger>
 
 				{/* BOTTOM BAR */}
 				<div className="border-t border-border-subtle">
