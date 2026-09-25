@@ -29,10 +29,13 @@ describe("sitemap.ts - Next.js MetadataRoute.Sitemap", () => {
 		}
 	});
 
-	it("every entry has lastModified, changeFrequency, priority", async () => {
+	it("every entry has changeFrequency and priority", async () => {
 		const result = await sitemap();
 		for (const entry of result) {
-			expect(entry.lastModified).toBeInstanceOf(Date);
+			// lastModified is intentionally omitted — see sitemap.ts. Using the
+			// deploy date makes unchanged pages look freshly edited every
+			// release and produces noisy freshness signals.
+			expect(entry.lastModified).toBeUndefined();
 			expect([
 				"always",
 				"hourly",

@@ -122,6 +122,74 @@ if (typeof window !== "undefined" && !window.matchMedia) {
 	});
 }
 
+/**
+ * jsdom implements neither IntersectionObserver nor ResizeObserver. Anything
+ * that reveals on scroll constructs one inside an effect, so the missing
+ * global throws at mount and takes the whole test file down rather than
+ * degrading. Stub them the way matchMedia is stubbed above.
+ *
+ * The observer must be a real class — `vi.fn()` is not constructible, and
+ * `new IntersectionObserver(...)` throws "is not a constructor". It reports
+ * targets as intersecting on `observe()` so content gated on visibility
+ * renders in tests instead of staying stuck at opacity-0.
+ */
+class MockIntersectionObserver implements IntersectionObserver {
+	readonly root: Element | null = null;
+	readonly rootMargin: string = "";
+	readonly scrollMargin: string = "";
+	readonly thresholds: ReadonlyArray<number> = [];
+	private readonly callback: IntersectionObserverCallback;
+	constructor(callback: IntersectionObserverCallback, options?: IntersectionObserverInit) {
+		this.callback = callback;
+		this.root = (options?.root as Element | null) ?? null;
+		this.rootMargin = options?.rootMargin ?? "";
+	}
+	observe(target: Element): void {
+		this.callback(
+			[
+				{
+					target,
+					isIntersecting: true,
+					intersectionRatio: 1,
+				} as IntersectionObserverEntry,
+			],
+			this,
+		);
+	}
+	unobserve(): void {}
+	disconnect(): void {}
+	takeRecords(): IntersectionObserverEntry[] {
+		return [];
+	}
+}
+
+if (typeof globalThis.IntersectionObserver === "undefined") {
+	vi.stubGlobal("IntersectionObserver", MockIntersectionObserver);
+}
+if (typeof window !== "undefined" && !window.IntersectionObserver) {
+	Object.defineProperty(window, "IntersectionObserver", {
+		writable: true,
+		configurable: true,
+		value: MockIntersectionObserver,
+	});
+}
+
+class MockResizeObserver implements ResizeObserver {
+	disconnect(): void {}
+	observe(): void {}
+	unobserve(): void {}
+}
+if (typeof globalThis.ResizeObserver === "undefined") {
+	vi.stubGlobal("ResizeObserver", MockResizeObserver);
+}
+if (typeof window !== "undefined" && !window.ResizeObserver) {
+	Object.defineProperty(window, "ResizeObserver", {
+		writable: true,
+		configurable: true,
+		value: MockResizeObserver,
+	});
+}
+
 // Suppress framer-motion React.Fragment className warnings in jsdom
 // This is a known compatibility issue in jsdom - framer-motion v12 internally
 // renders as Fragment during testing, which triggers this harmless warning
