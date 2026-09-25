@@ -1,6 +1,6 @@
 # Brand & Voice Guidelines
 
-Welcome to the brand guidelines for **OMA AI** (**Open Model Access**). This document outlines our visual identity, brand voice, design tokens, and user experience standards.
+Brand guidelines for **OMA AI** (**Open Model Access**): visual identity, brand voice, design tokens, and user-experience standards.
 
 - **Primary Domain:** `oma-ai.com`
 - **Slogan:** *"One gateway. Every model. No lock-in."*
@@ -79,7 +79,7 @@ Before a production deployment, ensure the following core assets are correctly v
 ### 1. Value Proposition (Homepage / Hero)
 > *"Open Model Access for AI builders."*
 >
-> Route prompts across private, open-source, and commercial models seamlessly using a single, unified, OpenAI-compatible API interface.
+> Route prompts across private, open-source, and commercial models through one OpenAI-compatible API.
 
 ### 2. Privacy & Sovereign Execution
 > *"Private AI inference powered by Venice. Zero data retention on prompt content."*
@@ -135,8 +135,8 @@ Our positioning is centered around **sovereignty, privacy, and low-friction util
 
 | Role | Typography Font Family | Character / Tone |
 | :--- | :--- | :--- |
-| **Display & Headers**| *Instrument Serif* | Editorial, striking, highly polished |
-| **Body Text** | *Geist Sans* | Clean, highly legible, modern |
+| **Display & Headers**| *Instrument Serif* | Editorial, polished |
+| **Body Text** | *Geist Sans* | Legible, modern |
 | **Monospace / Code** | *Geist Mono* | Structured, technical, precise |
 
 ### Interactive Buttons

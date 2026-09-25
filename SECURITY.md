@@ -1,6 +1,6 @@
 # Security Policy
 
-We take security seriously at OMA AI. Thank you for helping keep our software and users secure.
+Thank you for helping keep our software and users secure.
 
 > [!WARNING]
 > **Please do not file security vulnerabilities in public GitHub issues, pull requests, discussions, or any other public forums.** 
@@ -40,7 +40,7 @@ To help us triage and resolve the issue quickly, please include:
 
 ## Response SLA
 
-We are committed to resolving vulnerabilities in a timely manner. Our target SLA metrics are outlined below:
+Our target SLA metrics are outlined below:
 
 | Stage | Target Response Time |
 | :--- | :--- |

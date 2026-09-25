@@ -13,7 +13,7 @@ OMA-AI is an open-source, privacy-first multi-provider AI inference gateway. It 
 
 ## What is OMA-AI?
 
-OMA-AI stands for **Open Model Access**. It is a single API endpoint that unifies access to the best AI models across multiple providers.
+OMA-AI (**Open Model Access**) is a single API endpoint that fronts multiple AI providers.
 
 | Need | OMA-AI Solution |
 |------|-----------------|
