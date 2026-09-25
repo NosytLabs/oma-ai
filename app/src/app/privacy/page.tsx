@@ -197,7 +197,7 @@ export default function PrivacyPage() {
 									<p className="text-[14px] sm:text-[15px] text-text-bright leading-relaxed">
 										OMA collects the minimum data needed to run the service:
 										the email address or wallet address you choose for sign-in,
-										a salted hash of API keys, per-call usage records, and
+										a SHA-256 hash of API keys, per-call usage records, and
 										on-chain deposit or settlement identifiers.
 									</p>
 									<p className="mt-3 text-[13.5px] sm:text-[14px] text-text-secondary leading-relaxed">

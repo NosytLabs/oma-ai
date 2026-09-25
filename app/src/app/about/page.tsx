@@ -24,7 +24,7 @@ const PILLARS = [
 	{
 		icon: Cpu,
 		title: "Open Model Access",
-		body: `One OpenAI-compatible API across ${MODEL_COUNT} curated models and multiple providers, with circuit-breaker failover when an upstream is down.`,
+		body: `One OpenAI-compatible API across ${MODEL_COUNT} curated models and multiple providers, with circuit-breaker protection and configured fallbacks where available.`,
 	},
 	{
 		icon: Wallet,
@@ -33,8 +33,8 @@ const PILLARS = [
 	},
 	{
 		icon: Shield,
-		title: "Privacy by default",
-		body: "SIWE wallet auth and magic-link email. No credit-card signup. We meter usage for billing; we do not log prompt or completion content.",
+		title: "Minimal OMA retention",
+		body: "SIWE wallet auth and magic-link email. OMA meters billing metadata but does not persist prompt or completion content; inference providers process requests as described in Privacy.",
 	},
 ] as const;
 
@@ -127,10 +127,10 @@ export default function AboutPage() {
 							OMA is a single OpenAI-compatible endpoint —
 							<code className="rounded border border-border bg-surface px-1.5 py-0.5 font-mono text-[13px] text-text-bright">https://www.oma-ai.com/api/v1</code> —
 							in front of a rotating catalog of chat models routed across
-							multiple upstream providers. Each request is dispatched to the
-							best available model with circuit-breaker failover: if an
-							upstream goes down, traffic shifts to the next healthy route
-							instead of erroring out.
+							multiple upstream providers. Each requested model resolves to
+							its configured upstream route. Circuit breakers stop repeated
+							calls to unhealthy routes, and mapped models can use a configured
+							fallback where one is available.
 						</p>
 						<p>
 							You pay from a prepaid credit balance. Top up with a card when

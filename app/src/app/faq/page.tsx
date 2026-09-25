@@ -55,7 +55,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "Do you store my API keys?",
-				a: "Only a salted one-way hash of your key is stored — not the key itself. The plaintext `oma_sk_...` is shown once when you create it and can't be viewed again; if you lose it, just revoke and create a new one. Keys are tied to your account and can be revoked instantly from the dashboard. Your prompts and completions are not logged. See /privacy for the full detail.",
+				a: "Only the SHA-256 hash of your key is stored — not the key itself. The plaintext `oma_sk_...` is shown once when you create it and can't be viewed again; if you lose it, just revoke and create a new one. Keys are tied to your account and can be revoked instantly from the dashboard. OMA does not persist prompt or completion content. See /privacy for the full detail.",
 			},
 			{
 				q: "What is a magic link?",
@@ -67,7 +67,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "Is my data private?",
-				a: "Yes, by design. OMA meters usage for billing but does not log prompt or completion content — zero data retention on prompt content. See /privacy for details.",
+				a: "OMA itself does not persist prompt or completion content. The inference provider that serves a request must process that content, and provider retention/privacy guarantees depend on the selected provider and model. See /privacy for the data-flow details.",
 			},
 		],
 	},
@@ -101,7 +101,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 		items: [
 			{
 				q: "What is a model?",
-				a: "A model is a specific AI brain with a personality and strengths — like a faster-cheaper one for simple chat, or a bigger one for math and code. You pick the model per request, or let OMA route automatically.",
+				a: "A model is a specific AI system with different strengths, context limits, and prices. You pick the model id per request; OMA routes that requested model to its configured upstream provider.",
 			},
 			{
 				q: "What is a token?",
@@ -109,7 +109,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "What is a context window?",
-				a: "The context window is how much text a model can see at once — your whole conversation plus the answer. Bigger windows mean the model can read entire books or large codebases in one go. OMA-AI models offer 200K–400K tokens; some Venice-routed models go up to 1M. Each model page shows its exact window.",
+				a: "The context window is how much text a model can see at once — your whole conversation plus the answer. OMA-AI models currently span 200K to 1M tokens, and several Venice-routed models also reach 1M. Each model page shows its exact limit.",
 			},
 			{
 				q: "What does 'OpenAI-compatible' mean?",
@@ -125,7 +125,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "Do you support multimodal inputs?",
-				a: "Yes — frontier and premium models accept image inputs alongside text. Send them in the OpenAI multimodal `messages[].content` array shape (array of `{type:'text'|'image_url',...}` parts). The chat UI uploads images directly via the composer.",
+				a: "Some catalog models accept image inputs alongside text. Check the model page or capability filters before relying on vision support. Compatible models use the OpenAI multimodal `messages[].content` array shape (for example text and image_url parts).",
 			},
 		],
 	},
@@ -146,7 +146,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "What happens when a model provider is down?",
-				a: "OMA's circuit-breaker failover automatically reroutes to an equivalent model from another provider, so your request still gets an answer.",
+				a: "The circuit breaker stops repeatedly sending traffic to an unhealthy route. If the requested model has a configured fallback, OMA can retry that mapped model there. If no fallback is configured, the request can return an upstream/unavailable error rather than silently substituting a different model.",
 			},
 			{
 				q: "I got a 402 error — what now?",
