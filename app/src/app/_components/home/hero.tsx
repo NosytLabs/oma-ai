@@ -7,12 +7,10 @@
  */
 
 import { ArrowRight, KeyRound, Sparkles } from "lucide-react";
-import { m } from "@/lib/framer-motion-client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { LiveRequestCard } from "./LiveRequestCard";
 import { models as modelsApi } from "@/lib/api/resources";
-import { springs } from "@/lib/animation";
 import { isModelAvailable } from "@/lib/model-availability";
 
 /**
@@ -46,14 +44,6 @@ function useLiveModelCount(): number | null {
 	return count;
 }
 
-function reveal() {
-	return {
-		initial: false as const,
-		animate: { opacity: 1, y: 0, filter: "blur(0px)" },
-		transition: { ...springs.card },
-	};
-}
-
 export function Hero() {
 	const liveCount = useLiveModelCount();
 	// Until the catalog resolves, omit the number entirely rather than
@@ -72,27 +62,21 @@ export function Hero() {
 
 			<div className="container-page relative z-10 min-w-0 pb-10 pt-10 sm:pb-12 sm:pt-12 lg:pb-16 lg:pt-16">
 				<div className="mx-auto flex w-full max-w-5xl flex-col items-center text-center">
-					<m.div {...reveal()} className="mb-5 flex items-center justify-center">
+					<div className="mb-5 flex items-center justify-center">
 						<span className="section-eyebrow-caps">Gateway online · OpenAI-compatible</span>
-					</m.div>
+					</div>
 
-					<m.h1 {...reveal()} className="h1-hero max-w-4xl text-balance text-text-bright">
+					<h1 className="h1-hero max-w-4xl text-balance text-text-bright">
 						<span className="block">One API.</span>
 						<span className="block text-accent italic">Switch models freely.</span>
-					</m.h1>
+					</h1>
 
-					<m.p
-						{...reveal()}
-						className="mx-auto mt-6 max-w-2xl text-balance text-base leading-relaxed text-text-secondary sm:mt-7 sm:text-lg lg:text-xl"
-					>
+					<p className="mx-auto mt-6 max-w-2xl text-balance text-base leading-relaxed text-text-secondary sm:mt-7 sm:text-lg lg:text-xl">
 						One OpenAI-compatible key and {scale}. Change the model ID to change the
 						model — no new integration, no new account. Try it free in the playground.
-					</m.p>
+					</p>
 
-					<m.div
-						{...reveal()}
-						className="mt-8 flex w-full flex-col items-center justify-center gap-3 sm:mt-9 sm:w-auto sm:flex-row"
-					>
+					<div className="mt-8 flex w-full flex-col items-center justify-center gap-3 sm:mt-9 sm:w-auto sm:flex-row">
 						<Link
 							href="/login"
 							className="btn-mono btn-primary group relative w-full overflow-hidden sm:w-auto"
@@ -117,13 +101,13 @@ export function Hero() {
 							/>
 							<span>Try chat</span>
 						</Link>
-					</m.div>
+					</div>
 
-					<m.div {...reveal()} className="mt-8 w-full max-w-4xl sm:mt-10">
+					<div className="mt-8 w-full max-w-4xl sm:mt-10">
 						<div className="flex w-full justify-center">
 							<LiveRequestCard className="w-full max-w-[706px] shadow-[0_40px_80px_-20px_rgba(0,0,0,1)] ring-1 ring-border-hi/50" />
 						</div>
-					</m.div>
+					</div>
 				</div>
 			</div>
 		</section>
