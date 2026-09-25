@@ -124,8 +124,42 @@ const nextConfig: NextConfig = {
 					},
 				],
 			},
-			{ source: "/api/:path*", headers: [{ key: "Cache-Control", value: "no-store, no-cache, must-revalidate" }] },
-			{ source: "/(.*)\\.(html|htm)", headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate, proxy-revalidate" }] },
+			{
+				source: "/api/:path*",
+				headers: [
+					{ key: "Cache-Control", value: "no-store, no-cache, must-revalidate" },
+				],
+			},
+			// Keep app/auth surfaces dynamic. These routes either vary by the
+			// session or render the heavy authenticated shell; caching them at
+			// the edge risks serving one user's response to another.
+			...["/chat/:path*", "/dashboard/:path*", "/settings/:path*", "/login/:path*", "/deposit/:path*", "/admin/:path*"].map(
+				(source) => ({
+					source,
+					headers: [
+						{
+							key: "Cache-Control",
+							value: "no-store, no-cache, must-revalidate",
+						},
+					],
+				}),
+			),
+			// Stable public marketing documents may be cached briefly at the CDN
+			// and revalidated in the background. Next still controls the RSC
+			// request/response protocol; this only sets the outer HTTP cache.
+			...["/", "/pricing/:path*", "/docs/:path*", "/models/:path*", "/getting-started", "/about", "/faq", "/glossary/:path*", "/privacy", "/terms", "/contact", "/changelog", "/status"].map(
+				(source) => ({
+					source,
+					headers: [
+						{
+							key: "Cache-Control",
+							value: isDev
+								? "no-cache, no-store, must-revalidate"
+								: "public, s-maxage=3600, stale-while-revalidate=86400",
+						},
+					],
+				}),
+			),
 		];
 	},
 

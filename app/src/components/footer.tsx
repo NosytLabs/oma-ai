@@ -244,7 +244,13 @@ export function Footer() {
 											<li key={link.label}>
 												<Link
 													href={link.href}
-													prefetch={false}
+													prefetch={
+														link.href === "/chat" ||
+														link.href === "/pricing" ||
+														link.href.startsWith("/docs")
+															? false
+															: undefined
+													}
 													aria-current={isCurrent ? "page" : undefined}
 													className={`group/link inline-flex items-center gap-2 rounded-sm px-1.5 py-1.5 -ml-1.5 text-[12px] transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
 														isCurrent

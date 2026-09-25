@@ -106,7 +106,10 @@ export function Hero() {
 							/>
 						</Link>
 
-						<Link href="/chat" className="btn-mono group w-full sm:w-auto">
+						<Link
+							href="/chat"
+							prefetch={false}
+							className="btn-mono group w-full sm:w-auto">
 							<Sparkles
 								className="h-3.5 w-3.5 text-text-muted transition-colors duration-200 ease-out group-hover:text-accent"
 								strokeWidth={1.75}
