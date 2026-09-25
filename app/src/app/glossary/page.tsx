@@ -4,6 +4,12 @@ import { ArrowLeft } from "lucide-react";
 import { InViewFade } from "@/components/motion/in-view-fade";
 import { BreadcrumbListJsonLd } from "@/components/json-ld";
 import { PageShell } from "@/app/_components/page-shell";
+import {
+	GLOSSARY_SLUGS,
+	TERMS,
+	slugifyTerm,
+	type GlossarySlug,
+} from "@/components/glossary-data";
 
 export const metadata: Metadata = {
 	title: "Glossary — AI & crypto terms, explained",
@@ -19,151 +25,17 @@ export const metadata: Metadata = {
 	robots: { index: true, follow: true },
 };
 
-interface Term {
-	term: string;
-	aka?: string;
-	def: string;
-}
-
-const TERMS: Term[] = [
-	{
-		term: "API",
-		def: "A way for programs to talk to each other. The OMA API lets your code send a message to an AI model and get an answer back, the same way a website's backend talks to its frontend.",
-	},
-	{
-		term: "API key",
-		def: "A secret code (it looks like oma_sk_...) that identifies you when your code calls the API. It's like a password for your credit balance — keep it private, and you can create or revoke keys anytime in the dashboard.",
-	},
-	{
-		term: "Token",
-		def: "A unit of text that AI models read and write. Roughly 1 token = ¾ of a word in English. Prices, speeds, and limits are all measured in tokens.",
-	},
-	{
-		term: "Context window",
-		def: "How much text a model can see at once — your whole conversation, pasted documents, and its answer. OMA offers models with up to 1M token windows: enough to read an entire book in one go.",
-	},
-	{
-		term: "Model",
-		def: "A trained AI 'brain' with specific strengths, speeds, and prices. OMA routes to a curated catalog of chat models from multiple upstream providers — frontier for hard problems, budget for everyday chat.",
-	},
-	{
-		term: "Prompt",
-		def: "The instructions or question you give to a model. A good prompt is clear and specific; that's the whole job of 'prompt engineering'.",
-	},
-	{
-		term: "Inference",
-		def: "The act of a model generating an answer (as opposed to training, which is how it learned). Every time you chat, the API runs one inference.",
-	},
-	{
-		term: "Streaming",
-		def: "Sending the answer word-by-word as it's generated, instead of waiting for the complete reply. Feels instant; standard in chat apps.",
-	},
-	{
-		term: "Provider",
-		def: "The company that actually runs the model hardware — e.g. the labs behind the models OMA routes to. OMA is the gateway in front of them all, so one API works across providers.",
-	},
-	{
-		term: "Gateway",
-		def: "A single front door to many models and providers. You call one API; the gateway picks the best provider, handles failures (circuit-breaker failover), and bills you once.",
-	},
-	{
-		term: "OpenAI-compatible",
-		def: "Speaking the same API language as OpenAI. Tools, SDKs, and tutorials written for OpenAI work with OMA by just changing the base URL to https://www.oma-ai.com/api/v1.",
-	},
-	{
-		term: "Embedding",
-		def: "Turning text into a list of numbers (a vector) that captures its meaning, so programs can compare, search, and cluster text by similarity. Used for search, recommendations, and memory. OMA doesn't currently expose an embeddings endpoint — this is here for context.",
-	},
-	{
-		term: "Temperature / top-p",
-		def: "Knobs that control randomness. Lower = more predictable and factual; higher = more creative. Top-p is an alternative way of dialing the same thing. OMA lets you tune both per request.",
-	},
-	{
-		term: "Latency",
-		def: "The delay before the model starts answering. Low latency = the first token arrives fast; throughput = how many tokens per second after that.",
-	},
-	{
-		term: "Rate limit",
-		def: "A cap on how many requests you can send in a time window, protecting the service (and your balance) from runaway loops. OMA enforces per-key limits; see /docs#rate-limits.",
-	},
-	{
-		term: "HTTP status 402",
-		def: "Payment Required — usually means your credit balance is too low for the request. On OMA, chat/API calls spend prepaid credits; they are not interrupted mid-request by an x402 challenge.",
-	},
-	{
-		term: "Credits",
-		def: "OMA's prepaid balance, denominated in credits. Deposit USDC (or use card checkout when Polar is enabled); each API request deducts its listed cost. Credits never expire while your account is active.",
-	},
-	{
-		term: "USDC",
-		def: "A stablecoin: a digital token that always equals 1 US dollar, issued by regulated companies. It lets money move automatically over blockchains.",
-	},
-	{
-		term: "Base",
-		def: "A fast, cheap Ethereum layer-2 blockchain built by Coinbase, where OMA settles USDC deposits and x402 settlements. Fees are pennies.",
-	},
-	{
-		term: "Wallet",
-		def: "Software that holds your crypto and proves ownership with signatures. Used on OMA for wallet sign-in (SIWE) and the x402 settlement flow.",
-	},
-	{
-		term: "SIWE",
-		def: "Sign-In With Ethereum — a standard that lets you sign in to a website using your wallet instead of an email and password. Optional on OMA; email magic link also works.",
-	},
-	{
-		term: "Magic link",
-		def: "Password-free sign-in: we email you a link, you click it, you're in. No password manager needed.",
-	},
-	{
-		term: "x402",
-		def: "An open HTTP payment standard OMA uses for agent USDC funding on Base: verify a signed EIP-3009 authorization, settle to credit your balance, then spend with an API key. See /docs#x402.",
-	},
-	{
-		term: "EIP-3009",
-		def: "The Ethereum standard OMA uses for x402 settlements: transferWithAuthorization lets a wallet sign a gasless USDC transfer — the payer pays no gas fee because the gateway covers it.",
-	},
-	{
-		term: "Gas (fee)",
-		def: "The small fee paid to a blockchain for processing a transaction. EIP-3009 transfers on OMA are gasless for you — the gateway pays the gas.",
-	},
-	{
-		term: "SDK",
-		def: "Software Development Kit — a ready-made library (Python, Node, etc.) so you don't hand-write HTTP calls. OpenAI's SDKs work with OMA by pointing them at our base URL.",
-	},
-	{
-		term: "MCP",
-		def: "Model Context Protocol — a standard way to give AI models access to tools and data (files, browsers, databases). OMA chat completions accept OpenAI-style tool calls so MCP-aware clients can route tool use through the same /v1/chat/completions endpoint.",
-	},
-	{
-		term: "A2A",
-		def: "Agent-to-Agent — an open protocol (now a W3C standard) for AI agents to discover and talk to each other. OMA publishes an A2A agent card at /.well-known/agent-card.json so agents can learn how to use it autonomously.",
-	},
-	{
-		term: "A2UI",
-		def: "Agent-to-User Interface — an open protocol for models to render interactive UI (buttons, forms, cards) inside chat apps. Enable UI mode in the OMA playground and ask for a form to see it live.",
-	},
-	{
-		term: "llms.txt",
-		def: "A simple text file at a site's root that tells AI tools (crawlers, agents) what the site is and where its docs live. OMA publishes one at /llms.txt.",
-	},
-	{
-		term: "Agent skill",
-		def: "A plain-text instruction file an AI agent can read to learn how to do something autonomously. OMA publishes /agent-skill.md so agents can create an account and start calling the API by themselves.",
-	},
-	{
-		term: "Zero data retention",
-		def: "OMA's privacy stance: your prompt and completion content are not logged or stored. Usage is metered for billing only.",
-	},
-];
 
 const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 export default function GlossaryPage() {
-	const byLetter = new Map<string, Term[]>();
-	for (const t of TERMS) {
-		const letter = t.term[0]!.toUpperCase();
+	const byLetter = new Map<string, { slug: GlossarySlug; term: string }[]>();
+	for (const slug of GLOSSARY_SLUGS) {
+		const entry = TERMS.find((item) => slugifyTerm(item.term) === slug);
+		if (!entry) continue;
+		const letter = entry.term[0]!.toUpperCase();
 		if (!byLetter.has(letter)) byLetter.set(letter, []);
-		byLetter.get(letter)!.push(t);
+		byLetter.get(letter)!.push({ slug, term: entry.term });
 	}
 	return (
 		<div className="relative bg-void text-text overflow-x-clip">
@@ -219,17 +91,15 @@ export default function GlossaryPage() {
 									>
 										{l}
 									</h2>
-									<dl className="space-y-4">
+									<ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
 										{items.map((t) => (
-											<div key={t.term} className="border-l-2 border-border pl-4">
-												<dt className="text-sm font-semibold text-text-bright">
+											<li key={t.term}>
+												<Link href={`/glossary/${t.slug}`} className="flex min-h-12 items-center border-l-2 border-border pl-4 text-sm font-semibold text-text-bright transition-colors duration-200 ease-out hover:border-accent hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
 													{t.term}
-													{t.aka && <span className="ml-2 text-xs font-mono text-text-muted">aka {t.aka}</span>}
-												</dt>
-												<dd className="mt-1 text-sm leading-relaxed text-text-secondary">{t.def}</dd>
-											</div>
+												</Link>
+											</li>
 										))}
-									</dl>
+									</ul>
 								</section>
 							</InViewFade>
 						);

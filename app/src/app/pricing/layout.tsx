@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { MotionProvider } from "@/lib/animation/MotionProvider";
 import { formatPricePerMillion, MODEL_COUNT, MODELS } from "@/lib/models-data";
 
 const MIN_INPUT = Math.min(
@@ -30,5 +31,5 @@ export default function PricingLayout({
 }: {
 	children: React.ReactNode;
 }) {
-	return children;
+	return <MotionProvider>{children}</MotionProvider>;
 }

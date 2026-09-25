@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { MotionProvider } from "@/lib/animation/MotionProvider";
 
 // models/ page is fully client; opt the whole segment out of static prerender.
 
@@ -39,5 +40,5 @@ export default function ModelsLayout({
 }: {
 	children: React.ReactNode;
 }) {
-	return children;
+	return <MotionProvider>{children}</MotionProvider>;
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { MotionProvider } from "@/lib/animation/MotionProvider";
 
 export const metadata: Metadata = {
 	title: "Chat Playground — free OMA-AI models",
@@ -35,5 +36,5 @@ export default function ChatLayout({
 }: {
 	children: React.ReactNode;
 }) {
-	return children;
+	return <MotionProvider>{children}</MotionProvider>;
 }

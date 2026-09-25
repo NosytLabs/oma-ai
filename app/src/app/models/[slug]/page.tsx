@@ -3,8 +3,7 @@ import { formatPrice } from "@/lib/model-utils";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import { DEFAULT_API_URL } from "@/lib/config";
-
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://oma-ai.com";
+import SITE_URL from "@/lib/site";
 
 import { MODELS } from "@/lib/models-data";
 import { StaticModelDetail } from "./_components/StaticModelDetail";
@@ -46,6 +45,54 @@ const fetchLiveModel = cache(
 function formatLivePrice(per1M: number | undefined): string {
 	if (typeof per1M !== "number" || !Number.isFinite(per1M)) return "—";
 	return formatPrice(per1M);
+}
+
+function ModelJsonLd({
+	name,
+	description,
+	price,
+	url,
+	available,
+}: {
+	name: string;
+	description: string;
+	price: number;
+	url: string;
+	available: boolean | null;
+}) {
+	const data = {
+		"@context": "https://schema.org",
+		"@type": "Product",
+		name,
+		description,
+		url,
+		offers: {
+			"@type": "Offer",
+			price: price.toString(),
+			priceCurrency: "USD",
+			description: "Input price per 1 million tokens",
+			...(available === true ? { availability: "https://schema.org/InStock" } : {}),
+		},
+	};
+
+	return (
+		<script
+			type="application/ld+json"
+			dangerouslySetInnerHTML={{
+				__html: JSON.stringify(data).replace(
+					/[<>&\u2028\u2029]/g,
+					(character) =>
+						({
+							"<": "\\u003c",
+							">": "\\u003e",
+							"&": "\\u0026",
+							"\u2028": "\\u2028",
+							"\u2029": "\\u2029",
+						})[character] ?? character,
+				),
+			}}
+		/>
+	);
 }
 
 /**
@@ -134,10 +181,37 @@ export default async function ModelDetailPage({
 	const { slug } = await params;
 	const staticModel = MODELS.find((m) => m.id === slug);
 	if (staticModel) {
-		return <StaticModelDetail model={staticModel} />;
+		const available = await fetchModelAvailability(slug);
+		return (
+			<>
+				<ModelJsonLd
+					name={staticModel.name}
+					description={staticModel.description}
+					price={staticModel.inputPricePer1M}
+					url={`${SITE_URL}/models/${staticModel.id}`}
+					available={available}
+				/>
+				<StaticModelDetail model={staticModel} />
+			</>
+		);
 	}
 
 	const live = await fetchLiveModel(slug);
 	if (!live) notFound();
-	return <LiveModelDetail slug={slug} live={live} />;
+	const available = await fetchModelAvailability(slug);
+	const inputPrice = livePricePer1M(live.pricing?.prompt);
+	return (
+		<>
+			{inputPrice !== undefined && (
+				<ModelJsonLd
+					name={liveDisplayName(slug)}
+					description={`${liveDisplayName(slug)} — served via the OMA gateway.`}
+					price={inputPrice}
+					url={`${SITE_URL}/models/${slug}`}
+					available={available}
+				/>
+			)}
+			<LiveModelDetail slug={slug} live={live} />
+		</>
+	);
 }

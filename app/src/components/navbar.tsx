@@ -1,7 +1,6 @@
 "use client";
 
 import { BorderBeam } from "border-beam";
-import { m, useReducedMotion } from "@/lib/framer-motion-client";
 import { Menu, Settings, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -9,7 +8,7 @@ import { useEffect, useRef, useState } from "react";
 import { OmaNavLockup } from "@/components/ui/oma-logo";
 import { GithubIcon } from "@/components/ui/brand-icons";
 import { useAuth } from "@/lib/hooks/useAuth";
-import { Magnetic, EASE_SPRING, springs } from "@/lib/animation";
+import { Magnetic } from "@/lib/animation";
 import { ApiStatus } from "./api-status";
 import {
 	isCurrentPath,
@@ -36,7 +35,6 @@ export function Navbar() {
 	const [mounted, setMounted] = useState(false);
 	const mobileToggleRef = useRef<HTMLButtonElement | null>(null);
 	const pathname = usePathname();
-	const prefersReduced = useReducedMotion();
 
 	// Close transient nav UI on every route change.
 	useEffect(() => {
@@ -131,42 +129,33 @@ export function Navbar() {
 								const Icon = link.icon;
 								const isActive = isCurrentPath(pathname ?? "/", link.href);
 								return (
-									<li key={link.href} className="relative">
-										<m.div
-											whileHover={prefersReduced ? undefined : { y: -1 }}
-											whileTap={prefersReduced ? undefined : { scale: 0.96 }}
-											transition={EASE_SPRING}
-											className="inline-block"
+									<li key={link.href} className="relative lift">
+										<Link
+											href={link.href}
+											prefetch={
+												["/chat", "/pricing", "/docs"].includes(link.href)
+													? false
+													: undefined
+											}
+											aria-current={isActive ? "page" : undefined}
+											className={`relative inline-flex h-11 items-center gap-1.5 rounded-sm px-3 text-[13px] transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+												isActive
+													? "text-accent"
+													: "text-text-secondary hover:text-text-bright"
+											}`}
 										>
-											<Link
-												href={link.href}
-												prefetch={
-													["/chat", "/pricing", "/docs"].includes(link.href)
-														? false
-														: undefined
-												}
-												aria-current={isActive ? "page" : undefined}
-												className={`relative inline-flex h-11 items-center gap-1.5 rounded-sm px-3 text-[13px] transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-													isActive
-														? "text-accent"
-														: "text-text-secondary hover:text-text-bright"
-												}`}
-											>
-												{isActive && (
-													<m.span
-														layoutId="nav-active"
-														aria-hidden="true"
-														className="absolute inset-0 rounded-sm bg-accent-dim"
-														transition={springs.tab}
-													/>
-												)}
-												<Icon
-													className="relative z-10 h-3 w-3 opacity-70"
+											{isActive && (
+												<span
 													aria-hidden="true"
+													className="absolute inset-0 rounded-sm bg-accent-dim"
 												/>
-												<span className="relative z-10">{link.label}</span>
-											</Link>
-										</m.div>
+											)}
+											<Icon
+												className="relative z-10 h-3 w-3 opacity-70"
+												aria-hidden="true"
+											/>
+											<span className="relative z-10">{link.label}</span>
+										</Link>
 									</li>
 								);
 							})}
@@ -181,28 +170,20 @@ export function Navbar() {
 							<ApiStatus />
 						</div>
 
-						<m.a
+						<a
 							href="https://github.com/NosytLabs"
 							target="_blank"
 							rel="noopener noreferrer"
 							aria-label="GitHub repository (opens in new tab)"
-							whileHover={prefersReduced ? undefined : { y: -1 }}
-							whileTap={prefersReduced ? undefined : { scale: 0.94 }}
-							transition={EASE_SPRING}
-							className="hidden h-11 w-11 items-center justify-center rounded-sm text-text-tertiary transition-colors duration-200 ease-out hover:bg-surface hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent lg:inline-flex"
+							className="lift hidden h-11 w-11 items-center justify-center rounded-sm text-text-tertiary transition-colors duration-200 ease-out hover:bg-surface hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent lg:inline-flex"
 						>
 							<GithubIcon className="h-4 w-4" />
-						</m.a>
+						</a>
 
 						<ThemeToggle />
 
 						{isAuthenticated && !isDemo && (
-							<m.div
-								whileHover={prefersReduced ? undefined : { y: -1 }}
-								whileTap={prefersReduced ? undefined : { scale: 0.94 }}
-								transition={EASE_SPRING}
-								className="inline-block"
-							>
+							<div className="lift inline-block">
 								<Link
 									href="/settings"
 									aria-label="Settings"
@@ -210,7 +191,7 @@ export function Navbar() {
 								>
 									<Settings className="h-4 w-4" aria-hidden="true" />
 								</Link>
-							</m.div>
+							</div>
 						)}
 
 						<span

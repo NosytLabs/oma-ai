@@ -24,12 +24,9 @@ import Link from "next/link";
 import {
 	Reveal,
 	RevealStagger,
-	childFadeUp,
 } from "@/app/_components/home/reveal";
 import { SectionHeader } from "@/app/_components/home/section-header";
 import { cn } from "@/components/ui/utils";
-import { m } from "@/lib/framer-motion-client";
-import { springs } from "@/lib/animation";
 import { MODEL_COUNT, MODELS, formatPricePerMillion } from "@/lib/models-data";
 
 // Cheapest catalog input rate — derived from the synced fallback catalog so
@@ -304,11 +301,9 @@ export function CapabilitiesGrid() {
 			const Icon = pillar.icon;
 			const a = ACCENT[pillar.accent];
 			return (
-				<m.div
+				<div
 					key={pillar.id}
-					variants={childFadeUp}
-					whileHover={{ y: -4 }}
-					transition={springs.card}
+					className="reveal-child lift"
 				>
 					<Link
 						href={pillar.href}
@@ -383,7 +378,7 @@ export function CapabilitiesGrid() {
 							<PillarVisual kind={pillar.visual} lineClass={a.visualLine} />
 						</div>
 					</Link>
-				</m.div>
+				</div>
 			);
 		})}
 	</RevealStagger>
@@ -395,12 +390,9 @@ export function CapabilitiesGrid() {
 	{SUPPORT.map((s) => {
 	const Icon = s.icon;
 	return (
-	<m.li
+	<li
 	key={s.id}
-	variants={childFadeUp}
-	whileHover={{ y: -4 }}
-	transition={springs.card}
-	className="h-full"
+	className="reveal-child lift h-full"
 	>
 						<Link
 							href={s.href}
@@ -426,7 +418,7 @@ export function CapabilitiesGrid() {
 	aria-hidden="true"
 	/>
 	</Link>
-	</m.li>
+	</li>
 	);
 	})}
 	</RevealStagger>

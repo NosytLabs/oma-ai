@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import PricingPageClient from "./_components/PricingPageClient";
+import Link from "next/link";
 
 // No model COUNT appears in this metadata, deliberately, and MODEL_COUNT is no
 // longer imported here. Availability is a live API fact: the table below marks
@@ -33,5 +34,14 @@ export const metadata: Metadata = {
 };
 
 export default function PricingPage() {
-	return <PricingPageClient />;
+	return (
+		<>
+			<PricingPageClient />
+			<nav aria-label="Pricing resources" className="container-page flex flex-wrap gap-x-5 gap-y-2 border-t border-border py-5 text-sm text-text-secondary">
+				<Link href="/models" className="hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">Compare models</Link>
+				<Link href="/getting-started" className="hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">New to OMA? Get started</Link>
+				<Link href="/docs" className="hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">Read the API docs</Link>
+			</nav>
+		</>
+	);
 }

@@ -4,9 +4,8 @@
 	* InViewFade — small client-side entrance animation for server components.
 	*
 	* Wraps any block with a fade-up reveal the first time it scrolls into
-	* view. Uses framer-motion's `useInView` (so reduced-motion users get an
-	* instant render with no transform), and exposes a `delay` prop for
-	* staging child sections.
+	* view. Uses a framer-free IntersectionObserver-based hook, and exposes a
+	* `delay` prop for staging child sections.
 	*
 	* Includes a short safety timeout: if IntersectionObserver doesn't fire
 	* quickly (SSR, headless, restricted containers), the content paints
@@ -22,10 +21,9 @@
 	* <InViewFade eager><ModelGrid /></InViewFade>
 	*/
 
-import { m, useInView, useReducedMotion } from "@/lib/framer-motion-client";
-import { springs } from "@/lib/animation";
+import { useRevealInView } from "@/lib/use-reveal-in-view";
+import { cn } from "@/components/ui/utils";
 import type { ReactNode } from "react";
-import { useEffect, useRef, useState } from "react";
 
 interface InViewFadeProps {
 	children: ReactNode;
@@ -39,22 +37,14 @@ interface InViewFadeProps {
 	 * pixel of intersection counts (above-fold content lights up immediately).
 	 */
 	amount?: number;
-	/** Vertical travel in px. Default 16. */
+	/** Vertical travel in px before reveal. Default 16. */
 	y?: number;
 	/**
 	 * Skip entrance animation and render at full opacity immediately.
 	 * Use for primary catalogs / above-the-fold grids.
 	 */
 	eager?: boolean;
-	/**
-	 * Use the Kinetics spring (card) curve for the entrance instead of the
-	 * fixed 0.5s ease-out — bouncier reveals for grids of cards.
-	 */
-	spring?: boolean;
 }
-
-/** Headless / slow-IO fallback before permanent blank (ms). */
-const IN_VIEW_FADE_SAFETY_MS = 250;
 
 export function InViewFade({
 	children,
@@ -64,44 +54,24 @@ export function InViewFade({
 	amount = 0,
 	y = 16,
 	eager = false,
-	spring = false,
 }: InViewFadeProps) {
-	const ref = useRef<HTMLDivElement>(null);
-	const inView = useInView(ref, {
-		once,
-		amount,
-		// Treat near-viewport content as visible so first paint isn't blank.
-		margin: "120px 0px 0px 0px",
-	});
-	const reduced = useReducedMotion();
-	const [fallbackVisible, setFallbackVisible] = useState(eager);
+	const { ref, show } = useRevealInView<HTMLDivElement>({ amount, once, ceilingMs: 250 });
 
-	// Safety: if IntersectionObserver hasn't fired soon, show anyway.
-	useEffect(() => {
-		if (eager || inView || reduced) return;
-		const timer = setTimeout(() => setFallbackVisible(true), IN_VIEW_FADE_SAFETY_MS);
-		return () => clearTimeout(timer);
-	}, [eager, inView, reduced]);
-
-	const shouldAnimate = eager || inView || fallbackVisible;
-
-	if (reduced || eager) {
-		return <div className={className}>{children}</div>;
+	if (eager || show) {
+		return <div ref={ref} className={className}>{children}</div>;
 	}
 
 	return (
-		<m.div
+		<div
 			ref={ref}
-			className={className}
-			initial={{ opacity: 0, y }}
-			animate={shouldAnimate ? { opacity: 1, y: 0 } : { opacity: 0, y }}
-transition={
-			spring
-				? { ...springs.card, delay }
-				: { duration: 0.5, ease: [0.16, 1, 0.3, 1], delay }
-		}
+			className={cn(className, "reveal-target")}
+			data-revealed={show}
+			style={{
+				["--reveal-delay" as string]: delay ? `${delay}s` : "0s",
+				["--reveal-y" as string]: `${y}px`,
+			}}
 		>
 			{children}
-		</m.div>
+		</div>
 	);
 }

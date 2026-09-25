@@ -45,7 +45,7 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 	const unavailable = model.available === false;
 
 	return (
-		<InViewFade key={model.id} delay={index * 0.05} spring eager>
+		<InViewFade key={model.id} delay={index * 0.05} eager>
 			<article className="group relative rounded-[var(--radius-xl)] border border-border bg-panel p-5 transition-[border-color,transform] duration-200 ease-out hover:border-accent/40 shadow-[var(--shadow-md)] active:scale-[0.97] h-full flex flex-col">
 				<div className="flex items-start justify-between gap-3">
 					<div className="min-w-0 flex-1 flex items-start gap-3">

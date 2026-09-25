@@ -18,12 +18,9 @@ import { Key, Rocket, Wallet, Terminal } from "lucide-react";
 import {
 	Reveal,
 	RevealStagger,
-	childFadeUp,
 } from "@/app/_components/home/reveal";
 import { SectionHeader } from "@/app/_components/home/section-header";
 import { cn } from "@/components/ui/utils";
-import { m } from "@/lib/framer-motion-client";
-import { springs } from "@/lib/animation";
 import type { LucideIcon } from "lucide-react";
 
 interface Step {
@@ -93,9 +90,9 @@ export function HowItWorks() {
 					amount={0.2}
 				>
 					{STEPS.map((step, idx) => (
-						<m.li key={step.n} variants={childFadeUp} className="relative">
+						<li key={step.n} className="reveal-child lift relative">
 							<StepCard step={step} isLast={idx === STEPS.length - 1} />
-						</m.li>
+						</li>
 					))}
 				</RevealStagger>
 			</div>
@@ -106,10 +103,8 @@ export function HowItWorks() {
 function StepCard({ step, isLast }: { step: Step; isLast: boolean }) {
 	const Icon = step.icon;
 	return (
-		<m.div
-			whileHover={{ y: -4 }}
-			transition={springs.card}
-			className="relative h-full rounded-[var(--radius-md)] border border-border bg-panel/60 p-6 flex flex-col gap-5 transition-[border-color,box-shadow] duration-200 ease-out hover:shadow-[0_12px_24px_-10px_rgba(0,0,0,1)] hover:bg-panel hover:border-accent/40"
+		<div
+			className="lift relative h-full rounded-[var(--radius-md)] border border-border bg-panel/60 p-6 flex flex-col gap-5 transition-[border-color,box-shadow] duration-200 ease-out hover:shadow-[0_12px_24px_-10px_rgba(0,0,0,1)] hover:bg-panel hover:border-accent/40"
 		>
 			<div className="flex items-center justify-between">
 				<span className="font-geometric tabular-nums text-5xl sm:text-6xl font-bold text-accent leading-none tracking-tight">
@@ -138,6 +133,6 @@ function StepCard({ step, isLast }: { step: Step; isLast: boolean }) {
 					aria-hidden="true"
 				/>
 			)}
-		</m.div>
+		</div>
 	);
 }

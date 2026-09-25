@@ -2,6 +2,7 @@
 export const dynamic = "force-dynamic";
 
 import type { Metadata } from "next";
+import { MotionProvider } from "@/lib/animation/MotionProvider";
 
 export const metadata: Metadata = {
 	title: "Deposit USDC credits",
@@ -30,5 +31,5 @@ export default function DepositLayout({
 }: {
 	children: React.ReactNode;
 }) {
-	return children;
+	return <MotionProvider>{children}</MotionProvider>;
 }
