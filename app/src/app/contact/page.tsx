@@ -74,15 +74,7 @@ export default function ContactPage() {
 					business day for outages, and typically within five for privacy
 					requests.
 					OMA AI / Open Model Access is operated by{" "}
-					<a
-						href="https://www.nosytlabs.com"
-						target="_blank"
-						rel="noopener noreferrer"
-						className="text-accent hover:underline underline-offset-2"
-					>
-						NosytLabs
-					</a>
-					.
+					NosytLabs.
 				</p>
 				</InViewFade>
 
