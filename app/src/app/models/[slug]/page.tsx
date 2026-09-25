@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { formatPrice } from "@/lib/model-utils";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import { DEFAULT_API_URL } from "@/lib/config";
@@ -58,10 +59,7 @@ function livePricePer1M(
 	return Number.isFinite(n) ? n * 1_000_000 : undefined;
 }
 
-function formatPrice(per1M: number): string {
-	if (per1M < 0.01) return `$${per1M.toFixed(3)}`;
-	return `$${per1M.toFixed(2)}`;
-}
+
 
 function formatLivePrice(per1M: number | undefined): string {
 	if (typeof per1M !== "number" || !Number.isFinite(per1M)) return "—";

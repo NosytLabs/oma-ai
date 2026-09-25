@@ -172,6 +172,17 @@ export interface LiveModelRaw {
 	pricing?: { prompt?: string; completion?: string };
 }
 
+/**
+ * Format a per-1M-token price for display: two decimals, three when it would
+ * otherwise render $0.00. Shared so every model-detail surface shows the same
+ * figure.
+ */
+export function formatPrice(per1M: number): string {
+	if (per1M < 0.01) return `$${per1M.toFixed(3)}`;
+	return `$${per1M.toFixed(2)}`;
+}
+
+/** Compact context-window label: 1M stays "1M", 128_000 becomes "128K". */
 function formatCtx(n: number): string {
 	if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(0)}M`;
 	if (n >= 1000) return `${Math.round(n / 1000)}K`;

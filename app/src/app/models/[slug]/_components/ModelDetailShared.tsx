@@ -1,11 +1,9 @@
 import Link from "next/link";
+import { formatPrice } from "@/lib/model-utils";
 import { TIER_LABELS } from "@/app/models/_lib/labels";
 import { MODELS, type Model } from "@/lib/models-data";
 
-function formatPrice(per1M: number): string {
-	if (per1M < 0.01) return `$${per1M.toFixed(3)}`;
-	return `$${per1M.toFixed(2)}`;
-}
+
 
 export function Stat({
 	label,

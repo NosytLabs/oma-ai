@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { formatPrice } from "@/lib/model-utils";
 import { Play } from "lucide-react";
 import {
 	CAPABILITY_ICONS,
@@ -15,10 +16,7 @@ import { playgroundHrefForModel } from "@/lib/playground-href";
 import { CopyableCode } from "@/components/copyable-code";
 import { Stat, RelatedModels } from "./ModelDetailShared";
 
-function formatPrice(per1M: number): string {
-	if (per1M < 0.01) return `$${per1M.toFixed(3)}`;
-	return `$${per1M.toFixed(2)}`;
-}
+
 
 function formatContextWithVisual(tokens: number | undefined | null): string {
 	// Context window is a TOKEN metric. An earlier "pages" label was an

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { formatPrice } from "@/lib/model-utils";
 import { Play } from "lucide-react";
 import {
 	CAPABILITY_ICONS,
@@ -47,10 +48,7 @@ function livePricePer1M(
 	return Number.isFinite(n) ? n * 1_000_000 : undefined;
 }
 
-function formatPrice(per1M: number): string {
-	if (per1M < 0.01) return `$${per1M.toFixed(3)}`;
-	return `$${per1M.toFixed(2)}`;
-}
+
 
 export function LiveModelDetail({
 	slug,
