@@ -13,6 +13,7 @@ export const metadata: Metadata = {
 		title: "Deposit USDC credits · OMA",
 		description:
 			"Fund your prepaid OMA AI balance with USDC on Base.",
+		url: "/deposit",
 		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA Deposit" }],
 	},
 	twitter: {

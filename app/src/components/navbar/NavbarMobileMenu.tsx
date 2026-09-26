@@ -179,7 +179,7 @@ export function NavbarMobileMenu({
 											{isCardActive && (
 												<span
 													className="h-1 w-1 rounded-full bg-accent"
-													aria-label="Current section"
+													aria-hidden="true"
 												/>
 											)}
 										</p>
@@ -233,7 +233,7 @@ export function NavbarMobileMenu({
 									{isAccountCardActive && (
 										<span
 											className="h-1 w-1 rounded-full bg-accent"
-											aria-label="Current section"
+											aria-hidden="true"
 										/>
 									)}
 								</p>

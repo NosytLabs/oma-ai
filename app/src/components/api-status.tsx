@@ -77,26 +77,26 @@ export function ApiStatus({ onRetry, showRetryButton = true }: ApiStatusProps) {
 	const getStatusInfo = () => {
 	switch (status) {
 	case "checking":
-	return {
-	icon: <RefreshCw className="h-3 w-3 animate-spin" />,
-	text: "Connecting...",
-	className: "text-text-muted",
-	dotClass: "bg-warning animate-pulse",
-	};
+		return {
+			icon: <RefreshCw className="h-3 w-3 animate-spin" aria-hidden="true" />,
+			text: "Connecting...",
+			className: "text-text-muted",
+			dotClass: "bg-warning animate-pulse",
+		};
 	case "online":
-	return {
-	icon: <Wifi className="h-3 w-3" />,
-	text: "API Online",
-	className: "text-success",
-	dotClass: "bg-success",
-	};
+		return {
+			icon: <Wifi className="h-3 w-3" aria-hidden="true" />,
+			text: "API Online",
+			className: "text-success",
+			dotClass: "bg-success",
+		};
 	case "offline":
-	return {
-	icon: <WifiOff className="h-3 w-3" />,
-	text: "Reconnecting…",
-	className: "text-warning",
-	dotClass: "bg-warning animate-pulse",
-	};
+		return {
+			icon: <WifiOff className="h-3 w-3" aria-hidden="true" />,
+			text: "Reconnecting…",
+			className: "text-warning",
+			dotClass: "bg-warning animate-pulse",
+		};
 	}
 	};
 
@@ -105,13 +105,11 @@ export function ApiStatus({ onRetry, showRetryButton = true }: ApiStatusProps) {
 	return (
 	<div className="flex items-center gap-2">
 	<div
-	className="flex items-center gap-1.5 rounded-full border border-border bg-surface/60 px-2.5 py-1"
-	role="status"
-	aria-live="polite"
-	aria-label={`${info.text}`}
-	title={`API status: ${info.text} — polls /api/health every 30s`}
+		className="flex items-center gap-1.5 rounded-full border border-border bg-surface/60 px-2.5 py-1"
+		role="status"
+		title={`API status: ${info.text} — polls /api/health every 30s`}
 	>
-	<span className={`relative flex h-2 w-2`}>
+		<span className={`relative flex h-2 w-2`} aria-hidden="true">
 	{status === "checking" && (
 	<span
 	className={`absolute inline-flex h-full w-full rounded-full ${info.dotClass} opacity-75`}
@@ -132,7 +130,7 @@ export function ApiStatus({ onRetry, showRetryButton = true }: ApiStatusProps) {
 	className="flex items-center gap-1 text-[11px] text-text-muted hover:text-text transition-colors duration-200 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 	aria-label="Retry connection"
 	>
-	<RefreshCw className="h-3 w-3" />
+	<RefreshCw className="h-3 w-3" aria-hidden="true" />
 	</button>
 	)}
 	</div>

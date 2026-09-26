@@ -116,9 +116,19 @@ export function Navbar() {
 						{!onPrimaryLink && (
 							<span
 								className="hidden xl:inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-[11px] text-text-muted tabular-nums sm:text-xs"
-								aria-label={`Current section: ${section}`}
 							>
-								<span className="text-text-tertiary">~/</span>
+								{/*
+									This carried `aria-label={`Current section: ${section}`}`.
+									aria-label only applies to elements with a role that
+									supports naming — on a plain <span> (role=generic) it is
+									discarded, so the label was announced by nobody while
+									still shadowing the element's real text content. The
+									visible "~/<section>" text already conveys the same thing,
+									so the label was both inert and redundant.
+								*/}
+								<span className="text-text-tertiary" aria-hidden="true">
+									~/
+								</span>
 								<span className="text-text-secondary">{section}</span>
 							</span>
 						)}

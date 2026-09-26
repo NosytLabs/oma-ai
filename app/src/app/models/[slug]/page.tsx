@@ -10,6 +10,7 @@ import { StaticModelDetail } from "./_components/StaticModelDetail";
 import { LiveModelDetail } from "./_components/LiveModelDetail";
 import { isModelAvailable } from "@/lib/model-availability";
 import { liveDisplayName, livePricePer1M } from "@/app/models/_lib/format";
+import { BreadcrumbListJsonLd } from "@/components/json-ld";
 
 type LiveModelDetail = {
 	id: string;
@@ -158,7 +159,7 @@ export async function generateMetadata({
 				url: `${SITE_URL}/models/${model.id}`,
 				images: [{ url: "/og-image.png", width: 1280, height: 720 }],
 			},
-			twitter: { card: "summary_large_image", title, description },
+			twitter: { card: "summary_large_image", title, description, images: ["/og-image.png"] },
 			alternates: { canonical: `${SITE_URL}/models/${model.id}` },
 		};
 	}
@@ -184,6 +185,13 @@ export default async function ModelDetailPage({
 		const available = await fetchModelAvailability(slug);
 		return (
 			<>
+				<BreadcrumbListJsonLd
+					items={[
+						{ name: "Home", url: "/" },
+						{ name: "Models", url: "/models" },
+						{ name: staticModel.name, url: `/models/${staticModel.id}` },
+					]}
+				/>
 				<ModelJsonLd
 					name={staticModel.name}
 					description={staticModel.description}
@@ -202,6 +210,13 @@ export default async function ModelDetailPage({
 	const inputPrice = livePricePer1M(live.pricing?.prompt);
 	return (
 		<>
+			<BreadcrumbListJsonLd
+				items={[
+					{ name: "Home", url: "/" },
+					{ name: "Models", url: "/models" },
+					{ name: liveDisplayName(slug), url: `/models/${slug}` },
+				]}
+			/>
 			{inputPrice !== undefined && (
 				<ModelJsonLd
 					name={liveDisplayName(slug)}

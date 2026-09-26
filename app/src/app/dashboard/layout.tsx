@@ -14,6 +14,7 @@ export const metadata: Metadata = {
 		title: "Dashboard · OMA",
 		description:
 			"Manage your API keys, view usage statistics, and deposit credits.",
+		url: "/dashboard",
 		images: [
 			{
 				url: "/og-image.png",

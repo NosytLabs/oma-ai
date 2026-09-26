@@ -20,6 +20,7 @@ export const metadata: Metadata = {
 	openGraph: {
 		title: "OMA · Open Model Access — AI inference, USDC on Base",
 		description: DESCRIPTION,
+		url: "/",
 		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA" }],
 	},
 	robots: { index: true, follow: true },

@@ -29,6 +29,7 @@ export const metadata: Metadata = {
 		title: "Privacy · OMA",
 		description:
 			"OMA minimizes stored data. OMA does not persist prompt or completion content; inference providers process request content transiently to generate responses.",
+		url: "/privacy",
 		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA Privacy" }],
 	},
 	twitter: {

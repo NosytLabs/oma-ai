@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { BreadcrumbListJsonLd } from "@/components/json-ld";
 
 // Defined once and reused below: without explicit openGraph/twitter blocks a
 // page only sets `title`/`description`, and both social cards then fall back
@@ -89,6 +90,16 @@ const ENTRIES: {
 export default function ChangelogPage() {
 	return (
 		<section className="page-shell">
+			{/*
+				Every other indexable marketing page in the app
+				(/about, /faq, /glossary, /contact, /docs, /getting-started,
+				/models, /pricing) emits a BreadcrumbList; /changelog is the
+				one that was missed, so it had no breadcrumb trail in the
+				search result despite being sitemapped at priority 0.5.
+			*/}
+			<BreadcrumbListJsonLd
+				items={[{ name: "Home", url: "/" }, { name: "Changelog", url: "/changelog" }]}
+			/>
 			<div className="container-page page-content mx-auto max-w-2xl">
 				<span className="section-eyebrow-caps">Changelog</span>
 				<h1 className="h1-page mt-4 text-text-bright">What&apos;s new on OMA.</h1>

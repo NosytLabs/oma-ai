@@ -225,7 +225,21 @@ export function Footer() {
 					>
 						{FOOTER_SECTIONS.map((section) => (
 							<div key={section.title} className="min-w-0">
-								<p className="mb-3 text-[10px] font-mono uppercase tracking-[0.18em] text-text-muted font-semibold">
+								{/*
+									These column titles were <p> elements. Inside a
+									<nav> landmark that gives assistive tech no structure to
+									navigate: a screen-reader user listing headings on the page
+									skipped the entire footer, and the six link groups read as
+									one undifferentiated list of ~30 links. They are visual
+									captions, not prose, so <h2 className="sr-only"> carries the
+									structural label while the styled <p> keeps the look —
+									no visual change, real heading outline.
+								*/}
+								<h2 className="sr-only">{section.title}</h2>
+								<p
+									aria-hidden="true"
+									className="mb-3 text-[10px] font-mono uppercase tracking-[0.18em] text-text-muted font-semibold"
+								>
 									{section.title}
 								</p>
 								<ul className="flex flex-col gap-1">
@@ -290,6 +304,7 @@ export function Footer() {
 								href="https://github.com/NosytLabs"
 								target="_blank"
 								rel="noopener noreferrer"
+								aria-label="OMA on GitHub (opens in a new tab)"
 								className="inline-flex min-h-6 items-center gap-1 hover:text-text transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void rounded-sm"
 							>
 								github <ArrowUpRight className="h-3 w-3" aria-hidden="true" />

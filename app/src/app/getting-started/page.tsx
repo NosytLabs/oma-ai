@@ -16,6 +16,7 @@ export const metadata: Metadata = {
 		title: "How to use OMA — 5-minute walkthrough",
 		description:
 			"No code? No crypto? No problem. Try AI in the free playground, then get your first API key in minutes.",
+		url: "/getting-started",
 		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "Getting started with OMA" }],
 	},
 	robots: { index: true, follow: true },

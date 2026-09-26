@@ -10,6 +10,7 @@ export const metadata: Metadata = {
 	openGraph: {
 		title: "API Documentation — OMA AI Gateway",
 		description: `OpenAI-compatible AI inference reference. ${MODEL_COUNT} models behind one endpoint. Wallet auth and x402 settlement on Base.`,
+		url: "/docs",
 		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA API Documentation" }],
 		type: "article",
 	},
@@ -17,6 +18,7 @@ export const metadata: Metadata = {
 		card: "summary_large_image",
 		title: "API Documentation — OMA AI Gateway",
 		description: `OpenAI-compatible AI inference reference. ${MODEL_COUNT} models behind one endpoint.`,
+		images: ["/og-image.png"],
 	},
 	robots: { index: true, follow: true },
 };

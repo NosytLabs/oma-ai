@@ -136,7 +136,14 @@ const nextConfig: NextConfig = {
 			// Stable public marketing documents may be cached briefly at the CDN
 			// and revalidated in the background. Next still controls the RSC
 			// request/response protocol; this only sets the outer HTTP cache.
-			...["/", "/pricing/:path*", "/docs/:path*", "/models/:path*", "/getting-started", "/about", "/faq", "/glossary/:path*", "/privacy", "/terms", "/contact", "/changelog", "/status"].map(
+			//
+			// /status is deliberately NOT in this list. It is a per-request
+			// liveness probe (`dynamic = "force-dynamic"` in app/src/app/status/
+			// page.tsx) — caching it here would re-freeze the health snapshot at
+			// the edge for an hour, which is the exact bug force-dynamic fixes at
+			// the origin. It now falls through to Next's own no-store handling
+			// for dynamic routes.
+			...["/", "/pricing/:path*", "/docs/:path*", "/models/:path*", "/getting-started", "/about", "/faq", "/glossary/:path*", "/privacy", "/terms", "/contact", "/changelog"].map(
 				(source) => ({
 					source,
 					headers: [

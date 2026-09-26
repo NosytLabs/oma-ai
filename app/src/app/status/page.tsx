@@ -1,6 +1,25 @@
 import type { Metadata } from "next";
 import { DEFAULT_API_URL } from "@/lib/config";
 import { CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { BreadcrumbListJsonLd } from "@/components/json-ld";
+
+// The page's entire purpose is to report gateway health *right now*. It reads
+// /health and /v1/models with `cache: "no-store"` and a hard 2.5s abort per
+// request, so it is inherently per-request — but Next still prerendered the
+// route as fully static without this export.
+//
+// Verified against a real `pnpm build`: the emitted
+// .next/server/app/status.html contained the build machine's frozen health
+// snapshot, including the h1 "Degraded — we're on it." and the row
+// "Inference gateway (API) — Unreachable", because a build host has no route
+// to the API. Every visitor and every crawler was served that stale snapshot,
+// and it is in the sitemap at priority 0.5 with changeFrequency "daily".
+//
+// force-dynamic makes the route render per request, which is what the copy
+// ("This page checks liveness the moment you load it") already promised.
+// The paired fix is in next.config.ts: /status must not sit in the
+// s-maxage=3600 CDN-cached list either, or the edge would re-freeze it.
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
 	title: "Status — live service health",
@@ -8,6 +27,20 @@ export const metadata: Metadata = {
 		"Live health of the OMA web app, inference gateway, and free website chat. Checked on each page load.",
 	alternates: { canonical: "/status" },
 	robots: { index: true, follow: true },
+	openGraph: {
+		title: "Status — live service health",
+		description:
+			"Live health of the OMA web app, inference gateway, and free website chat. Checked on each page load.",
+		url: "/status",
+		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA Status" }],
+	},
+	twitter: {
+		card: "summary_large_image",
+		title: "Status — live service health",
+		description:
+			"Live health of the OMA web app, inference gateway, and free website chat.",
+		images: ["/og-image.png"],
+	},
 };
 
 type ServiceState = {
@@ -114,6 +147,9 @@ export default async function StatusPage() {
 
 	return (
 		<section className="page-shell">
+			<BreadcrumbListJsonLd
+				items={[{ name: "Home", url: "/" }, { name: "Status", url: "/status" }]}
+			/>
 			<div className="container-page page-content mx-auto max-w-2xl">
 				<span className="section-eyebrow-caps">Live status</span>
 				<h1 className="h1-page mt-4 text-text-bright">
@@ -125,6 +161,16 @@ export default async function StatusPage() {
 					needed.
 				</p>
 
+				{/*
+					The per-service state was communicated by icon shape + color
+					alone: both the CheckCircle2 and the XCircle carry
+					aria-hidden="true", so a screen-reader user heard the service
+					name and a prose detail line with no explicit operational
+					state. `s.detail` happens to contain the word "Unreachable" or
+					"Healthy" today, but that is incidental to the sentence, not a
+					status signal. Add a visually-hidden state word so the state is
+					announced as a state.
+				*/}
 				<ul className="mt-10 flex flex-col gap-4">
 					{services.map((s) => (
 						<li
@@ -145,7 +191,10 @@ export default async function StatusPage() {
 								/>
 							)}
 							<div>
-								<p className="font-mono text-sm text-text-bright">{s.name}</p>
+								<p className="font-mono text-sm text-text-bright">
+									<span className="sr-only">{s.ok ? "Operational: " : "Outage: "}</span>
+									{s.name}
+								</p>
 								<p className="mt-1 text-sm text-text-secondary">{s.detail}</p>
 							</div>
 						</li>

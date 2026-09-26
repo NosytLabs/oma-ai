@@ -13,8 +13,8 @@ export const metadata: Metadata = {
 	alternates: { canonical: "/contact" },
 	openGraph: {
 		title: "Contact OMA",
-		description:
-			"Product support, privacy requests, and legal questions for the OMA AI gateway.",
+		description: "Product support, privacy requests, and legal questions for the OMA AI gateway.",
+		url: "/contact",
 		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "Contact OMA" }],
 	},
 	robots: { index: true, follow: true },

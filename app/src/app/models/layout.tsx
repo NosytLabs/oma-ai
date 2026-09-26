@@ -31,6 +31,7 @@ export const metadata: Metadata = {
 	openGraph: {
 		title: "AI Models Catalog — OMA",
 		description: DESCRIPTION,
+		url: "/models",
 		images: [
 			{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA Models" },
 		],
