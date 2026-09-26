@@ -1,75 +1,85 @@
 # Project status
 
-Last audit: 2026-09-23.
+Reviewed 2026-09-25.
 
-OMA-AI is a TypeScript monorepo (Next.js app + Hono API) with USDC deposits,
-optional Polar card checkout, and x402 verify/settle → credit balance → API spend.
+OMA is a TypeScript monorepo with a Next.js web application and a Hono API.
+It exposes an OpenAI-compatible inference gateway, prepaid credits, USDC
+settlement on Base, optional Polar card checkout, and x402 verify/settle
+workflows.
 
-## Current production state
+## Source of truth
 
-- **Web frontend:** `https://oma-ai.com` / `https://www.oma-ai.com` resolves and serves the OMA Next.js application.
-- **Vercel project:** `oma` has a READY production deployment from GitHub `main`, currently at commit `e30f6086141b1598f0400c48ecc9eb9323d037e3`.
-- **Verified source:** the newer `main` application state passed frozen install, full validation, app build, and server build in GitHub Actions run `35870621887` after fixing one unused test import.
-- **Deployment gap:** GitHub does not currently have a `VERCEL_TOKEN` secret, so the verified newer source could not be explicitly redeployed from Actions. Do not add or expose a token merely to make CI green.
-- **API DNS:** there is intentionally no `api.oma-ai.com` record. The public API is served from
-  `https://www.oma-ai.com/api/*` via the Next.js proxy, which forwards to the Neon Function.
-  Do not create DNS for `api.oma-ai.com`.
+- GitHub `main` is the only active branch.
+- Vercel production deploys the web application from `main`.
+- The backend runs separately on Neon and is reached by the Next.js `/api/*`
+  proxy.
+- `www.oma-ai.com` is the canonical public host. The apex redirects to it.
+- There is intentionally no `api.oma-ai.com` DNS dependency.
 
-A green frontend request is still not proof of end-to-end inference availability. Verify with a real
-chat completion against `/api/v1/chat/completions`.
+Do not pin a production commit or deployment ID in this document. Those values
+change frequently; GitHub `main` and the Vercel deployment view are the
+authoritative current state.
 
-## Local verify
+## Verification
 
+The repository root owns the full deterministic gate:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm validate
+```
+
+`pnpm validate` typechecks, lints, tests, and production-builds both the app
+and server. The GitHub **CI** workflow is manual-only for Actions cost control
+and runs the same validation path.
+
+Useful targeted commands:
+
+- `pnpm validate:app`
+- `pnpm validate:server`
 - `./scripts/dev/local-db-up.sh`
 - `./scripts/dev/start-dev.sh`
-- `pnpm validate`
-- `./scripts/ops/check-launch-env.sh` (against `.env.prod`)
+- `./scripts/ops/check-launch-env.sh`
 
-## Earn path
+A green web deployment does not prove an upstream model is healthy. Verify
+inference separately with the model catalog/status surface or a real
+`/api/v1/chat/completions` request when validating a release.
 
-1. Guest website chat (free OMA-AI models, daily cap)
-2. Magic link / SIWE wallet login
-3. USDC deposit on Base (when `USDC_DEPOSIT_ADDRESS` is set)
-4. x402 `/x402/verify` + authenticated `/x402/settle` → credits `credit_balances`
-5. API keys spend credits on `/v1/chat/completions` (conditional deduct; no silent floor-to-zero)
+## Deployment contract
 
-## Deployment paths
+### Web
 
-Verified 2026-09-24 against production, not inferred from config:
+Vercel serves the Next.js application and the public `/api/*` handlers.
+Authenticated proxy handlers translate the HttpOnly application session into
+the authorization expected by the backend. Do not replace that path with a
+blind rewrite.
 
-- **Frontend:** Vercel project `oma` → `https://www.oma-ai.com`. The apex
-  `oma-ai.com` 308-redirects to `www`, so **`www` is the canonical host**.
-- **Backend:** a **Neon compute endpoint** (`*.compute.<region>.aws.neon.tech`,
-  referenced by `NEXT_PUBLIC_API_URL`). Confirmed live: `/v1/models` and
-  `/health` both return 200.
-- **Database:** Neon Postgres via `DATABASE_URL` / `DATABASE_URL_UNPOOLED`.
-- **No `api.oma-ai.com` DNS exists and none is required.** The frontend serves
-  `/api/*` from App Router handlers under `app/api/**` (including a
-  catch-all) that proxy to the Neon endpoint. This is deliberately *not* a
-  `next.config` rewrite — a rewrite would skip the HttpOnly
-  session-cookie → `Authorization` translation and 401 every authenticated
-  call after a hard reload.
+### API and database
 
-### Where secrets live
+The Hono API and Postgres database are deployed on Neon. Backend-only secrets
+belong with that deployment; do not duplicate inference/signing secrets into
+Vercel merely to make frontend CI or previews green.
 
-The Vercel project carries only **five** variables, all frontend-scoped
-(`RESEND_API_KEY`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_API_URL`,
-`DATABASE_URL`, `DATABASE_URL_UNPOOLED`).
+### Self-host reference
 
-The API secrets — `BETTER_AUTH_SECRET`, `RECEIPT_HMAC_SECRET`,
-`ENCRYPTION_KEY`, `VENICE_API_KEY`, `FACILITATOR_PRIVATE_KEY` — are **not**
-in Vercel. They belong to the **Neon** deployment, because that is the
-process that actually runs the Hono server. Do not add them to Vercel; that
-project does not execute the API.
-
-`deploy/coolify/` is **unused**. It is retained only as a self-host
-reference and is not the production path. Anything asserting Coolify as the
-production host is stale.
-
-Do not point working frontend DNS at a new host as a cleanup step. Hosting changes require verifying environment variables, domains, health endpoints, and rollback paths first.
+`deploy/coolify/` and the Docker compose files are retained as self-hosting
+references. They are not the current production path. A hosting migration
+requires an explicit environment, DNS, health-check, and rollback review.
 
 ## Product truth
 
-- Credits never expire while the account is active.
-- x402 is verify → settle → credit → spend with API key (not a mid-request 402 on chat).
-- Card checkout is Setup required until Polar is configured.
+- Guest website chat has a daily free allowance on the OMA-AI chat models.
+- API-key traffic spends prepaid credits at the listed model rate.
+- Credits do not expire while the account is active.
+- x402 is verify → settle → credit balance → API spend; chat completions are
+  not interrupted by a mid-request payment challenge.
+- Card checkout exists only when Polar is configured.
+- OMA does not persist prompt/completion content itself; the upstream inference
+  provider still processes request content and its privacy/retention terms
+  matter.
+
+## Repository hygiene
+
+Completed one-off refactor plans are removed once their tests/code have landed.
+Current architectural decisions should live in the code, tests, README, or a
+durable runbook rather than accumulating dated plan files.
