@@ -136,7 +136,7 @@ function contentHash(s: string): string {
 	return (h >>> 0).toString(36);
 }
 
-function classifyMessage(content: string): Classification {
+export function classifyMessage(content: string): Classification {
 	// Hash the *full* content so a streaming message that grows into A2UI
 	// gets a fresh cache key on each token flush.
 	const key = `${content.length}:${contentHash(content)}`;
@@ -157,12 +157,64 @@ function classifyMessage(content: string): Classification {
 			result = { kind: "plain" };
 		}
 	} else {
-		result = { kind: "plain" };
+		// The A2UI envelope may arrive AFTER a prose preamble — e.g. when web
+		// search prepends a "N SOURCES" block to the model's reply. The model
+		// emits a valid `{ createSurface / updateComponents / ... }` envelope
+		// as the last JSON object in the message, but because the content does
+		// not START with `{`, the old logic bailed to plain text and dumped the
+		// whole JSON spec (escaped quotes included) as raw markdown. Detect an
+		// embedded envelope by scanning from the last top-level `{` object and
+		// re-parsing — so WEB + A2UI responses still render as interactive UI.
+		result = detectEmbeddedA2UI(trimmed);
 	}
 
 	classificationCache.set(key, result);
 	return result;
 }
+
+/**
+ * Search for an A2UI envelope embedded in text whose first characters are
+ * NOT a brace — e.g. a web-search "N SOURCES" preamble that the model's reply
+ * (a valid `{ createSurface / updateComponents / ... }` envelope) follows.
+ * Without this, such a message was classified "plain" and the whole JSON spec
+ * (escaped quotes included) dumped as raw markdown instead of an interactive
+ * UI. We collect every balanced top-level `{...}` object in the text plus
+ * JSONL lines, then test the LAST one first (models append the envelope last).
+ */
+function detectEmbeddedA2UI(text: string): Classification {
+	if (!text.includes("{")) return { kind: "plain" };
+
+	// Each balanced top-level JSON object, in document order, and line-JSONs.
+	const candidates: string[] = [];
+	let depth = 0;
+	let openAt = -1;
+	for (let i = 0; i < text.length; i++) {
+		const ch = text[i];
+		if (ch === "{") {
+			if (depth === 0) openAt = i;
+			depth++;
+		} else if (ch === "}") {
+			depth--;
+			if (depth === 0 && openAt >= 0) {
+				candidates.push(text.slice(openAt, i + 1));
+				openAt = -1;
+			}
+		}
+	}
+	for (const line of text.split("\n")) {
+		const t = line.trim();
+		if (t.startsWith("{") && t.endsWith("}")) candidates.push(t);
+	}
+
+	// Check the last candidate first (models append the envelope last).
+	for (let i = candidates.length - 1; i >= 0; i--) {
+		const parsed = safeJsonParse(candidates[i]);
+		if (parsed && isA2UI(parsed)) return { kind: "a2ui", payload: parsed };
+	}
+	if (isA2UI(text)) return { kind: "a2ui", payload: text };
+	return { kind: "plain" };
+}
+
 
 interface MessagesListProps {
 	scrollContainerRef: RefObject<HTMLDivElement | null>;

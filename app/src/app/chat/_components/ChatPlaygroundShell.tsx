@@ -151,7 +151,7 @@ function ShellContent({
 		authReady: isReady,
 	});
 	const scopedPromptKey = systemPromptStorageKey(user?.id ?? null);
-	const { balance, loading: balanceLoading } = useBalance();
+	const { balance, loading: balanceLoading, refresh: refreshBalance } = useBalance();
 	const balanceDollars = balanceToDollars(balance);
 	const LOW_BALANCE_THRESHOLD = 1;
 	// Only flag low balance after a real balance payload arrives — treating
@@ -273,8 +273,12 @@ function ShellContent({
 			}
 			if (!allowGuestSend()) return;
 			await sendMessage(prompt);
+			// Refresh the credit balance after a spend so the toolbar pill and
+			// the low-balance banner reflect the new total instead of the
+			// pre-send value (which staleTime would otherwise keep for 2 min).
+			void refreshBalance();
 		},
-		[allowGuestSend, isLowBalance, sendMessage, setError],
+		[allowGuestSend, isLowBalance, sendMessage, setError, refreshBalance],
 	);
 	const gatedSendRef = useRef(gatedSend);
 	useEffect(() => {
