@@ -28,6 +28,7 @@ export const metadata: Metadata = {
 	alternates: { canonical: "/status" },
 	robots: { index: true, follow: true },
 	openGraph: {
+		locale: "en_US",
 		title: "Status — live service health",
 		description:
 			"Live health of the OMA web app, inference gateway, and free website chat. Checked on each page load.",

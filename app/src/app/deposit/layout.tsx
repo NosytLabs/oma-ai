@@ -10,6 +10,7 @@ export const metadata: Metadata = {
 		"Fund your prepaid OMA AI balance with USDC on Base.",
 	alternates: { canonical: "/deposit" },
 	openGraph: {
+		locale: "en_US",
 		title: "Deposit USDC credits · OMA",
 		description:
 			"Fund your prepaid OMA AI balance with USDC on Base.",

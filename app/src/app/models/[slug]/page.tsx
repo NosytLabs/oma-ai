@@ -154,6 +154,7 @@ export async function generateMetadata({
 			description,
 			robots,
 			openGraph: {
+				locale: "en_US",
 				title,
 				description,
 				url: `${SITE_URL}/models/${model.id}`,

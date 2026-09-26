@@ -26,6 +26,7 @@ export const metadata: Metadata = {
 		"OMA minimizes stored data. OMA does not persist prompt or completion content; inference providers process request content transiently to generate responses.",
 	alternates: { canonical: "/privacy" },
 	openGraph: {
+		locale: "en_US",
 		title: "Privacy · OMA",
 		description:
 			"OMA minimizes stored data. OMA does not persist prompt or completion content; inference providers process request content transiently to generate responses.",

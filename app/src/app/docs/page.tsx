@@ -8,6 +8,7 @@ export const metadata: Metadata = {
 	description: `OpenAI-compatible AI inference reference. ${MODEL_COUNT} models, wallet auth, x402 settlement flows, and provider routing — all behind one endpoint.`,
 	alternates: { canonical: "/docs" },
 	openGraph: {
+		locale: "en_US",
 		title: "API Documentation — OMA AI Gateway",
 		description: `OpenAI-compatible AI inference reference. ${MODEL_COUNT} models behind one endpoint. Wallet auth and x402 settlement on Base.`,
 		url: "/docs",

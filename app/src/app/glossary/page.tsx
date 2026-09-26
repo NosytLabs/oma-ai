@@ -17,6 +17,7 @@ export const metadata: Metadata = {
 		"Every term you'll meet on OMA explained in plain language: token, context window, API key, USDC, Base, x402, streaming, embedding, and more.",
 	alternates: { canonical: "/glossary" },
 	openGraph: {
+		locale: "en_US",
 		title: "Glossary — AI & crypto terms, explained",
 		description:
 			"Token? Context window? USDC? x402? A jargon-free dictionary for the AI API world.",

@@ -24,6 +24,7 @@ export const metadata: Metadata = {
 		"OMA API usage rules, acceptable use policy, credit mechanics, and account termination. Pay by card or in USDC, no sales funnel.",
 	alternates: { canonical: "/terms" },
 	openGraph: {
+		locale: "en_US",
 		title: "Terms · OMA",
 		description:
 			"OMA API usage rules, acceptable use policy, credit mechanics, and account termination. Pay by card or in USDC, no sales funnel.",

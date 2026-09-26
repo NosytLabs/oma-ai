@@ -15,6 +15,7 @@ export const metadata: Metadata = {
 	description: DESCRIPTION,
 	alternates: { canonical: "/changelog" },
 	openGraph: {
+		locale: "en_US",
 		title: TITLE,
 		description: DESCRIPTION,
 		url: "/changelog",

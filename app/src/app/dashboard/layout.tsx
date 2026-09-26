@@ -11,6 +11,7 @@ export const metadata: Metadata = {
 	alternates: { canonical: "/dashboard" },
 	robots: { index: false, follow: false },
 	openGraph: {
+		locale: "en_US",
 		title: "Dashboard · OMA",
 		description:
 			"Manage your API keys, view usage statistics, and deposit credits.",

@@ -16,6 +16,7 @@ export const metadata: Metadata = {
 	],
 	alternates: { canonical: "/docs" },
 	openGraph: {
+		locale: "en_US",
 		title: "API Documentation — OMA",
 		description:
 			"OpenAI-compatible API reference: auth, chat, streaming, x402 payments, rate limits.",

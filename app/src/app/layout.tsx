@@ -82,8 +82,8 @@ export const metadata: Metadata = {
 	description:
 		"One gateway. Every model. No lock-in. OpenAI-compatible AI inference with wallet-based auth, USDC on Base, optional card checkout, and x402 settlement.",
 	openGraph: {
-		siteName: "OMA",
 		locale: "en_US",
+		siteName: "OMA",
 		title: "OMA · Open Model Access — AI inference, USDC on Base",
 		description:
 			"One gateway. Every model. No lock-in. OpenAI-compatible AI inference with wallet-based auth, USDC on Base, optional card checkout, and x402 settlement.",

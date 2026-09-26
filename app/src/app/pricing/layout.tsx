@@ -20,6 +20,7 @@ export const metadata: Metadata = {
 	],
 	alternates: { canonical: "/pricing" },
 	openGraph: {
+		locale: "en_US",
 		title: "Transparent AI API pricing — OMA",
 		description: `Pay per use with USDC on Base (card optional). ${MODEL_COUNT} models, no subscriptions, no hidden fees.`,
 		url: "/pricing",

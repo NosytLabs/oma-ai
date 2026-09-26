@@ -12,6 +12,7 @@ export const metadata: Metadata = {
 		"OMA is an OpenAI-compatible AI inference gateway with wallet auth, multi-provider routing, and USDC x402 settlement on Base. Built for agents and developers.",
 	alternates: { canonical: "/about" },
 	openGraph: {
+		locale: "en_US",
 		title: "About OMA — Open Model Access",
 		description:
 			"One gateway. Every model. Wallet auth and USDC x402 settlement — no lock-in.",

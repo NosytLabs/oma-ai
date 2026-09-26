@@ -12,6 +12,7 @@ export const metadata: Metadata = {
 		"Contact OMA AI for product support, privacy requests, and legal questions. Email support@nosytlabs.com.",
 	alternates: { canonical: "/contact" },
 	openGraph: {
+		locale: "en_US",
 		title: "Contact OMA",
 		description: "Product support, privacy requests, and legal questions for the OMA AI gateway.",
 		url: "/contact",

@@ -17,6 +17,7 @@ export const metadata: Metadata = {
 	description: DESCRIPTION,
 	alternates: { canonical: "/pricing" },
 	openGraph: {
+		locale: "en_US",
 		title: TITLE,
 		description: DESCRIPTION,
 		// Every other page supplies this; without it, links shared to

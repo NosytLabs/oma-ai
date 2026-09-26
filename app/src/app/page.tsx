@@ -18,6 +18,7 @@ export const metadata: Metadata = {
 	description: DESCRIPTION,
 	alternates: { canonical: "/" },
 	openGraph: {
+		locale: "en_US",
 		title: "OMA · Open Model Access — AI inference, USDC on Base",
 		description: DESCRIPTION,
 		url: "/",

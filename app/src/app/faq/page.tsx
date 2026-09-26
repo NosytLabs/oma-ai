@@ -12,6 +12,7 @@ export const metadata: Metadata = {
 		"Plain-language answers for first-time users and developers: accounts, API keys, USDC payments, x402, tokens, models, privacy, and how to start.",
 	alternates: { canonical: "/faq" },
 	openGraph: {
+		locale: "en_US",
 		title: "FAQ — OMA AI, explained simply",
 		description:
 			"Do I need a wallet? What is an API key? What is a token? Plain-language answers to the questions everyone asks.",

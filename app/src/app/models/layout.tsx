@@ -29,6 +29,7 @@ export const metadata: Metadata = {
 	],
 	alternates: { canonical: "/models" },
 	openGraph: {
+		locale: "en_US",
 		title: "AI Models Catalog — OMA",
 		description: DESCRIPTION,
 		url: "/models",

@@ -13,6 +13,7 @@ export const metadata: Metadata = {
 		"Use OMA without any prior AI or crypto experience: try the free chat, create an account, make an API key, add credits, and make your first API call.",
 	alternates: { canonical: "/getting-started" },
 	openGraph: {
+		locale: "en_US",
 		title: "How to use OMA — 5-minute walkthrough",
 		description:
 			"No code? No crypto? No problem. Try AI in the free playground, then get your first API key in minutes.",

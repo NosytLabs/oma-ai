@@ -11,6 +11,7 @@ export const metadata: Metadata = {
 	// is consistently described as public across all surfaces.
 	robots: { index: true, follow: true },
 	openGraph: {
+		locale: "en_US",
 		title: "OMA Chat Playground",
 		description:
 			"Try OMA-AI models free in the chat playground — no account required. Sign in for the full catalog.",
