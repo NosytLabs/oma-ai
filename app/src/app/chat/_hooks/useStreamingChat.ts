@@ -80,6 +80,12 @@ interface UseStreamingChatOptions {
 	setMessages: Dispatch<SetStateAction<Message[]>>;
 	setLoading: Dispatch<SetStateAction<boolean>>;
 	setError: Dispatch<SetStateAction<string | null>>;
+	/**
+	 * Compare-mode failures belong to the compare panel, not the primary
+	 * conversation's error banner (BUG-H). Kept separate so a dead side
+	 * stream can't occupy the main error slot above the composer.
+	 */
+	setCompareError: Dispatch<SetStateAction<string | null>>;
 	model: string;
 	systemPrompt: string;
 	compareMode: boolean;
@@ -127,6 +133,14 @@ export function useStreamingChat(
 ): UseStreamingChatResult {
 	const toast = useToast();
 	const abortRef = useRef<AbortController | null>(null);
+	// BUG-B: the parent rebuilds a fresh `opts` object every render, so any
+	// useCallback that closes over it keeps the FIRST render's values unless
+	// every field is listed as a dependency (impossible — the object identity
+	// changes, but fields like `model`/`history` can still be missed). A ref
+	// written during render gives every callback below the current options
+	// with no dependency churn.
+	const optsRef = useRef(opts);
+	optsRef.current = opts;
 	// BUG-E (audit 2026-09-01-userflow.md): when the request has been
 	// pending for >15s, show a soft hint so the user knows the spinner
 	// is doing something — without it, a 5-minute wait during upstream
@@ -173,7 +187,8 @@ export function useStreamingChat(
 			query: string,
 			setSearchingFn: (b: boolean) => void,
 		): Promise<{ results: SearchResult[]; contextMessage: Message | null }> => {
-			if (!opts.webSearchEnabled || !query.trim()) {
+			const live = optsRef.current;
+			if (!live.webSearchEnabled || !query.trim()) {
 				return { results: [], contextMessage: null };
 			}
 			setSearchingFn(true);
@@ -239,7 +254,9 @@ export function useStreamingChat(
 				setSearchingFn(false);
 			}
 		},
-		[opts.webSearchEnabled, toast],
+		// Live options come from `optsRef` (see BUG-B) — `toast` is the only
+		// real dependency.
+		[toast],
 	);
 
 	const streamChatCompletion = useCallback(
@@ -259,15 +276,18 @@ export function useStreamingChat(
 				searchResults,
 				signal,
 			} = params;
+			// BUG-B: read the CURRENT options, not the ones captured when
+			// this callback was memoized.
+			const live = optsRef.current;
 
 			let messagesToSend = sanitizeHistory(history);
 			if (searchContext) {
 				messagesToSend = [searchContext, ...messagesToSend];
 			}
-			if (opts.systemPrompt.trim()) {
+			if (live.systemPrompt.trim()) {
 				const sysMsg: Message = {
 					role: "system",
-					content: opts.systemPrompt.trim(),
+					content: live.systemPrompt.trim(),
 					timestamp: Date.now(),
 				};
 				messagesToSend = [sysMsg, ...messagesToSend];
@@ -286,7 +306,7 @@ export function useStreamingChat(
 					credentials: "include",
 					headers: {
 						"Content-Type": "application/json",
-						Accept: opts.stream ? "text/event-stream" : "application/json",
+						Accept: live.stream ? "text/event-stream" : "application/json",
 						"X-OMA-Source": "website", // Identify website chat for free tier
 					},
 					body: JSON.stringify({
@@ -298,14 +318,14 @@ export function useStreamingChat(
 							role: m.role,
 							content: m.content,
 						})),
-						temperature: opts.temperature,
-						top_p: opts.topP,
-						max_tokens: opts.maxTokens,
-						top_k: opts.topK,
-						frequency_penalty: opts.freqPenalty,
-						presence_penalty: opts.presPenalty,
-						stream: opts.stream,
-						...(opts.stream
+						temperature: live.temperature,
+						top_p: live.topP,
+						max_tokens: live.maxTokens,
+						top_k: live.topK,
+						frequency_penalty: live.freqPenalty,
+						presence_penalty: live.presPenalty,
+						stream: live.stream,
+						...(live.stream
 							? { stream_options: { include_usage: true } }
 							: {}),
 					}),
@@ -334,7 +354,7 @@ export function useStreamingChat(
 			// the user-facing Error for anything non-2xx.
 			await handleChatResponseStatus(response, {
 				freeModel: freeModelSelected,
-				onDailyQuota: opts.onDailyQuota,
+				onDailyQuota: live.onDailyQuota,
 			});
 
 			// Surface server failover (OpenRouter-style transparency).
@@ -352,12 +372,12 @@ export function useStreamingChat(
 				// likely a mid-stream read that recovered. Clear it so
 				// the user doesn't see "NETWORK ERROR" alongside their
 				// actual answer. (BUG-C, audit 2026-09-01-userflow.md)
-				opts.setError(null);
+				live.setError(null);
 			}
 
 			const startTime = Date.now();
 
-			if (opts.stream && response.body) {
+			if (live.stream && response.body) {
 				const reader = response.body.getReader();
 				let accumulated = "";
 				let accumulatedReasoning = "";
@@ -511,26 +531,16 @@ export function useStreamingChat(
 					return updated;
 				});
 			}
-		// "opts" is intentionally excluded: the parent rebuilds a new options
-		// object each render. List primitive fields + ensureChatKeyOnce only.
-		}, [
-			opts.systemPrompt,
-			opts.temperature,
-			opts.topP,
-			opts.maxTokens,
-			opts.topK,
-			opts.freqPenalty,
-			opts.presPenalty,
-			opts.stream,
-			opts.onDailyQuota,
-			ensureChatKeyOnce,
-		],
-	);
+		// BUG-B: every option is read live through `optsRef`, so the
+		// dependency list collapses to the stable helpers it captures.
+		}, [ensureChatKeyOnce]);
 
 	const sendMessage = useCallback(
 		async (overridePrompt?: string) => {
-			const promptText = (overridePrompt ?? opts.input).trim();
-			if (!promptText || opts.loading) return;
+			// BUG-B: everything below reads the live options object.
+			const live = optsRef.current;
+			const promptText = (overridePrompt ?? live.input).trim();
+			if (!promptText || live.loading) return;
 
 			// Fresh cookie-repair budget for this send (see ensureChatKeyOnce).
 			ensureKeyPromiseRef.current = null;
@@ -543,13 +553,16 @@ export function useStreamingChat(
 				inputTokens: estimateTokens(promptText),
 			};
 
-			opts.setMessages((prev) => [...prev, userMessage]);
-			opts.setInput("");
-			opts.setLoading(true);
-			opts.setError(null);
+			live.setMessages((prev) => [...prev, userMessage]);
+			live.setInput("");
+			live.setLoading(true);
+			live.setError(null);
+			// BUG-H: each send starts with a clean compare error slot so a
+			// previous compare failure doesn't linger on a new run.
+			live.setCompareError(null);
 			// BUG-E: start the stuck-loading hint timer. If the request is
 			// still in flight after 15s, surface a soft toast so the user
-			// doesn't think the page is hung. Cleared on response/finally.
+			// doesn't think the page is hung. Cleared in `finally`.
 			clearStuckTimer();
 			stuckTimerRef.current = setTimeout(() => {
 				toast.info("Server is taking longer than usual — retrying if needed");
@@ -561,12 +574,12 @@ export function useStreamingChat(
 				content: "",
 				timestamp: Date.now(),
 			};
-			opts.setMessages((prev) => [...prev, assistantMessage]);
+			live.setMessages((prev) => [...prev, assistantMessage]);
 
 			// Build compare side: add user message + empty assistant message so the
 			// panel mirrors the conversation shape.
-			if (opts.compareMode) {
-				opts.setCompareMessages((prev) => [
+			if (live.compareMode) {
+				live.setCompareMessages((prev) => [
 					...prev,
 					userMessage,
 					{
@@ -580,14 +593,14 @@ export function useStreamingChat(
 
 			const abortController = new AbortController();
 			abortRef.current = abortController;
-			opts.isNearBottomRef.current = true;
+			live.isNearBottomRef.current = true;
 
 			// Build history for streaming: refs already have previous messages,
 			// and we just appended user+assistant messages via functional updates.
 			// The refs will be updated after the next render, so we construct
 			// the history manually here to include the new messages.
 			const primaryHistory = [
-				...opts.messagesRef.current,
+				...live.messagesRef.current,
 				userMessage,
 				assistantMessage,
 			];
@@ -598,29 +611,29 @@ export function useStreamingChat(
 				// latency and backend load.
 				const searchResult = await fetchWebSearch(
 					promptText,
-					opts.setSearching,
+					live.setSearching,
 				);
 				const primarySearch = searchResult;
-				const compareSearch = opts.compareMode
+				const compareSearch = live.compareMode
 					? searchResult
 					: { results: [], contextMessage: null };
 
 				// Fire both streams in parallel. Use Promise.allSettled so one stream
 				// failing doesn't leave the other running as a zombie.
 				const primaryPromise = streamChatCompletion({
-					model: opts.model,
+					model: live.model,
 					history: primaryHistory,
-					setMessages: opts.setMessages,
+					setMessages: live.setMessages,
 					searchContext: primarySearch.contextMessage,
 					searchResults: primarySearch.results,
 					signal: abortController.signal,
 				});
 
-				const comparePromise = opts.compareMode
+				const comparePromise = live.compareMode
 					? streamChatCompletion({
-							model: opts.compareModel,
+							model: live.compareModel,
 							history: [
-								...opts.compareMessagesRef.current,
+								...live.compareMessagesRef.current,
 								userMessage,
 								{
 									id: newMessageId("compare"),
@@ -629,7 +642,7 @@ export function useStreamingChat(
 									timestamp: Date.now(),
 								},
 							],
-							setMessages: opts.setCompareMessages,
+							setMessages: live.setCompareMessages,
 							searchContext: compareSearch.contextMessage,
 							searchResults: compareSearch.results,
 							signal: abortController.signal,
@@ -650,17 +663,23 @@ export function useStreamingChat(
 					const err = compareResult.reason;
 					const message =
 						err instanceof Error ? err.message : "Compare model request failed";
-					opts.setError(`Compare: ${message}`);
-					opts.setCompareMessages((prev) => stripPendingAssistant(prev));
+					// BUG-H: the compare stream's failure belongs to the compare
+					// panel. Writing it into the primary `error` state parked an
+					// unrelated message in the main ChatErrorBanner above the
+					// composer while the primary stream was healthy.
+					live.setCompareError(
+						`${live.compareModel} failed — ${message}`,
+					);
+					live.setCompareMessages((prev) => stripPendingAssistant(prev));
 				}
 			} catch (err: unknown) {
 				const aborted =
 					abortController.signal.aborted ||
 					(err instanceof Error && err.name === "AbortError");
 				if (aborted) {
-					opts.setMessages((prev) => stripPendingAssistant(prev));
-					if (opts.compareMode) {
-						opts.setCompareMessages((prev) => stripPendingAssistant(prev));
+					live.setMessages((prev) => stripPendingAssistant(prev));
+					if (live.compareMode) {
+						live.setCompareMessages((prev) => stripPendingAssistant(prev));
 					}
 				} else {
 					// Network failures (backend down / CORS) surface as TypeError —
@@ -674,40 +693,29 @@ export function useStreamingChat(
 					} else {
 						message = "Unknown error";
 					}
-					opts.setError(message);
-					opts.setMessages((prev) => stripPendingAssistant(prev));
-					if (opts.compareMode) {
-						opts.setCompareMessages((prev) => stripPendingAssistant(prev));
+					live.setError(message);
+					live.setMessages((prev) => stripPendingAssistant(prev));
+					if (live.compareMode) {
+						live.setCompareMessages((prev) => stripPendingAssistant(prev));
 					}
 				}
 			} finally {
-				opts.setLoading(false);
+				// BUG-A: the streaming/abort state is reset on EVERY exit path
+				// (success, HTTP error, network error, abort, or a throw from
+				// web search). Previously `loading` was only cleared on the SSE
+				// "done" branch, so a fetch failure left the composer
+				// permanently disabled with the Stop button stuck on and no
+				// way to retry. Clearing the ref also means Stop can never
+				// abort a finished request.
+				if (abortRef.current === abortController) abortRef.current = null;
+				live.setLoading(false);
 				clearStuckTimer();
-				setTimeout(() => opts.inputRef.current?.focus(), 100);
+				setTimeout(() => live.inputRef.current?.focus(), 100);
 			}
-			// "opts" is intentionally excluded from deps: it's a fresh object on every
-			// render, so including it would cause infinite re-renders. sendMessage reads
-			// from refs (opts.*Ref) and the latest opts via closure — the useCallback
-			// identity changes only when the listed deps change.
-		}, [
-			opts.input,
-			opts.loading,
-			opts.model,
-			opts.compareMode,
-			opts.compareModel,
-			opts.compareMessagesRef,
-			opts.messagesRef,
-			opts.isNearBottomRef,
-			opts.inputRef,
-			opts.setInput,
-			opts.setMessages,
-			opts.setLoading,
-			opts.setError,
-			opts.setCompareMessages,
-			opts.setSearching,
-			fetchWebSearch,
-			streamChatCompletion,
-		],
+		},
+		// BUG-B: `opts` is read live via `optsRef`, so only the stable
+		// helpers this callback calls belong in the dependency list.
+		[clearStuckTimer, fetchWebSearch, streamChatCompletion],
 	);
 
 	return { sendMessage, abortRef };

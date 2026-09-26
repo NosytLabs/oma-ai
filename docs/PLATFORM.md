@@ -2,9 +2,11 @@
 
 This document describes the platform as implemented. It is not a roadmap or a list of planned features.
 
+For where each tier runs and how to deploy it, see [`DEPLOYMENT.md`](DEPLOYMENT.md).
+
 ## Public host and API entry point
 
-The canonical website host is `https://www.oma-ai.com`. The apex domain, `https://oma-ai.com`, redirects to the `www` host.
+The canonical website host is `https://www.oma-ai.com`. The apex domain, `https://oma-ai.com`, 308-redirects to the `www` host. There is no `api.oma-ai.com`; the API is same-origin under `/api/*`.
 
 Public SDK clients should use:
 

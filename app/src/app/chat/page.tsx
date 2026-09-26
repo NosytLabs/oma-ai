@@ -80,8 +80,20 @@ export default function ChatPage() {
 		// 1920. e2e/chat-viewport.spec.ts asserts the composer's metadata
 		// stays on screen at each of those widths, so a Navbar height change
 		// fails CI rather than silently clipping the composer.
+		//
+		// The resource links sit in normal flow as a `flex-none` row above the
+		// shell. They were `absolute right-3 top-2`, but nothing in the chain
+		// (this wrapper, `main`, the `flex.min-h-dvh` div in layout.tsx) is
+		// `position: relative`, so they resolved against the initial
+		// containing block and landed on top of the shell's own toolbar at
+		// every viewport width. In flow they occupy their own row instead,
+		// and because the wrapper height is fixed at `100dvh - 57px` the shell
+		// just gives up that row's height — the composer still lands on screen.
 		<div className="flex h-[calc(100dvh-57px)] min-h-0 flex-col overflow-hidden">
-		<nav aria-label="Chat resources" className="absolute right-3 top-2 z-20 flex gap-3 text-xs text-text-muted sm:right-5">
+			<nav
+				aria-label="Chat resources"
+				className="gutter-page flex flex-none flex-wrap items-center justify-end gap-x-3 gap-y-1 py-1 text-xs text-text-muted"
+			>
 			<Link href="/models" className="hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">Models</Link>
 			<Link href="/getting-started" className="hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">Getting started</Link>
 			<Link href="/faq" className="hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">FAQ</Link>

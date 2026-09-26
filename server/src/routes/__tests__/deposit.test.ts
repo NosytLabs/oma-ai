@@ -73,6 +73,22 @@ vi.mock("../../db/schema.js", () => ({
 	siteSettings: { cryptoPaymentsEnabled: "cryptoPaymentsEnabled" },
 }));
 
+// SECURITY (deposit Blocker): mock the challenge/signature proof gate so the
+// route tests control whether proof passes. This mirrors usage in production
+// where verifyDepositSignature does an on-chain recoverMessage.
+const mockChallenge = vi.hoisted(() => ({
+	issueDepositChallenge: vi.fn(() => ({
+		token: "test-token-value-abcdef1234567890",
+		nonce: "testnonce",
+		expiresAt: Date.now() + 300000,
+	})),
+	verifyDepositChallenge: vi.fn((_a: unknown) => ({ ok: true, payload: { userId: "user_1" } }) as
+		| { ok: true; payload: { userId: string } }
+		| { ok: false; reason: string }),
+	verifyDepositSignature: vi.fn(async () => true),
+}));
+vi.mock("../../lib/deposit-challenge.js", () => mockChallenge);
+
 import { depositRoutes } from "../deposit/index.js";
 import { auditLog } from "../../middleware/audit.js";
 
@@ -105,6 +121,8 @@ function mockSelectReturns(...rows: any[][]) {
 
 const validTxHash = "0x" + "a1".repeat(32);
 const validFromAddress = "0x" + "b2".repeat(20);
+const validChallengeToken = "test-token-value-abcdef1234567890";
+const validSignature = "0x" + "c3".repeat(65);
 
 beforeEach(() => {
 	vi.clearAllMocks();
@@ -207,6 +225,8 @@ describe("deposit routes (real handler)", () => {
 				amountUsd: 0.50, // $0.50 = 50 cents < min 100
 				txHash: validTxHash,
 				fromAddress: validFromAddress,
+				challengeToken: validChallengeToken,
+				signature: validSignature,
 			});
 			expect(res.status).toBe(400);
 			const data = await res.json();
@@ -220,6 +240,8 @@ describe("deposit routes (real handler)", () => {
 				amountUsd: 10, // $10 = 1000 cents > 500 max
 				txHash: validTxHash,
 				fromAddress: validFromAddress,
+				challengeToken: validChallengeToken,
+				signature: validSignature,
 			});
 			expect(res.status).toBe(400);
 			const data = await res.json();
@@ -238,11 +260,15 @@ describe("deposit routes (real handler)", () => {
 				amountUsd: 10,
 				txHash: validTxHash,
 				fromAddress: validFromAddress,
+				challengeToken: validChallengeToken,
+				signature: validSignature,
 			});
 			expect(res.status).toBe(200);
 			const data = await res.json();
 			expect(data.depositId).toBe("dep_abc");
 			expect(data.status).toBe("pending");
+			expect(mockChallenge.verifyDepositChallenge).toHaveBeenCalled();
+			expect(mockChallenge.verifyDepositSignature).toHaveBeenCalled();
 			expect(auditLog).toHaveBeenCalledWith(
 				expect.objectContaining({ action: "DEPOSIT_CREATED" }),
 			);
@@ -267,11 +293,52 @@ describe("deposit routes (real handler)", () => {
 				amountUsd: 10,
 				txHash: validTxHash,
 				fromAddress: validFromAddress,
+				challengeToken: validChallengeToken,
+				signature: validSignature,
 			});
 			expect(res.status).toBe(200);
 			const data = await res.json();
 			expect(data.depositId).toBe("dep_existing");
 			expect(data.message).toContain("already recorded");
+		});
+
+		it("rejects when wallet ownership proof fails (SECURITY: deposit Blocker)", async () => {
+			mockSelectReturns([{ cryptoPaymentsEnabled: true }]); // siteSettings
+			// Attacker submits a victim's txHash + victim's fromAddress but cannot
+			// prove they own the sending wallet — signature recovery fails.
+			mockChallenge.verifyDepositChallenge.mockReturnValueOnce({
+				ok: true,
+				payload: { userId: "user_1" },
+			});
+			mockChallenge.verifyDepositSignature.mockResolvedValueOnce(false);
+
+			const res = await depositReq("post", "/v1/deposit/usdc", {
+				amountUsd: 10,
+				txHash: validTxHash,
+				fromAddress: validFromAddress,
+				challengeToken: validChallengeToken,
+				signature: validSignature, // forged / from wrong wallet
+			});
+			expect(res.status).toBe(403);
+			expect(mockDb.insert).not.toHaveBeenCalled();
+		});
+
+		it("rejects when the challenge token is invalid/expired (SECURITY)", async () => {
+			mockSelectReturns([{ cryptoPaymentsEnabled: true }]);
+			mockChallenge.verifyDepositChallenge.mockReturnValueOnce({
+				ok: false,
+				reason: "expired",
+			});
+
+			const res = await depositReq("post", "/v1/deposit/usdc", {
+				amountUsd: 10,
+				txHash: validTxHash,
+				fromAddress: validFromAddress,
+				challengeToken: validChallengeToken,
+				signature: validSignature,
+			});
+			expect(res.status).toBe(403);
+			expect(mockDb.insert).not.toHaveBeenCalled();
 		});
 	});
 

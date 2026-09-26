@@ -22,7 +22,7 @@ import { Hono } from "hono";
 import type { Mock } from "vitest";
 
 // ── DB mock (chain pattern with error rejection) ─────────────
-const { chain, resetChain } = vi.hoisted(() => {
+const { chain, resetChain, setQueryResult } = vi.hoisted(() => {
 		type MockChain = Record<string, Mock> & {
 				_resultQueue: unknown[][];
 				then: (
@@ -220,6 +220,10 @@ describe("C2 — /x402/settle ignores body.amount, uses verified amount", () => 
 				// Step 2: attacker sends a settle with body.amount=999999 expecting it
 				// to be stored verbatim. The fix ignores body.amount and uses the
 				// verified amount (1.00) instead.
+				// Seed the authenticated user's DB evmAddress to the payment sender
+				// (payFrom) so the ownership gate passes — this test is about amount
+				// forgery by the legitimate payer, not cross-account theft.
+				setQueryResult([{ evmAddress: "0x" + "12".repeat(20) }]);
 				const settleRes = await app.request("/x402/settle", {
 						method: "POST",
 						headers: {
@@ -303,6 +307,44 @@ describe("C2 — /x402/settle ignores body.amount, uses verified amount", () => 
 				const txHashAscii = receiptStr; // already captured
 				expect(typeof txHashAscii).toBe("string");
 				expect(txHashAscii.length).toBe(64); // SHA-256 hex = 64 chars
+		});
+
+		it("rejects settle when the session wallet does not own the payment sender (cross-account theft)", async () => {
+				// Attacker A verifies a legitimate USDC payment from payer 0x12…20
+				// (payFrom). A does NOT settle it. Victim B (different wallet),
+				// who saw the public tx hash, calls /x402/settle to claim the
+				// credit for themselves. The ownership gate must reject with 403
+				// and NOT credit B.
+				const verifyRes = await app.request("/x402/verify", {
+						method: "POST",
+						headers: {
+								"Content-Type": "application/json",
+								"PAYMENT-SIGNATURE": makeV1PaymentSig("1.00", `0x${"dd".repeat(16)}`),
+						},
+				});
+				expect(verifyRes.status).toBe(200);
+				const verifyBody = (await verifyRes.json()) as { txHash: string };
+				const txHash = verifyBody.txHash;
+
+				// Victim B: DB evmAddress does NOT match the payer (0x12…20).
+				// Use a different address.
+				setQueryResult([{ evmAddress: "0x" + "99".repeat(20) }]);
+				const settleRes = await app.request("/x402/settle", {
+						method: "POST",
+						headers: {
+								"Content-Type": "application/json",
+								Authorization: "Bearer fake-jwt",
+						},
+						body: JSON.stringify({
+								txHash,
+								networkId: "base",
+								payee: TREASURY,
+						}),
+				});
+
+				expect(settleRes.status).toBe(403);
+				const body = (await settleRes.json()) as { error: { code: string } };
+				expect(body.error.code).toBe("x402_payer_mismatch");
 		});
 
 		it("returns 400 missing_verify when cache misses AND no PAYMENT-SIGNATURE header", async () => {
@@ -400,6 +442,9 @@ describe("C2 — /x402/settle ignores body.amount, uses verified amount", () => 
 				const txHash = verifyBody.txHash;
 
 				// Step 2: settle WITHOUT body.amount (modern client)
+				// Seed the authenticated user's DB evmAddress to the payment sender
+				// so the ownership gate passes (same legit-payer scenario as above).
+				setQueryResult([{ evmAddress: "0x" + "12".repeat(20) }]);
 				const settleRes = await app.request("/x402/settle", {
 						method: "POST",
 						headers: {

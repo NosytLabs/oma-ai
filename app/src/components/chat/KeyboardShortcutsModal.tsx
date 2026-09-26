@@ -79,7 +79,7 @@ export function KeyboardShortcutsModal({
 						exit={{ opacity: 0, scale: 0.98, y: 4 }}
 						transition={springs.soft}
 						onClick={(e) => e.stopPropagation()}
-						className="w-full max-w-md bg-[var(--color-void)] border border-[var(--color-border)] rounded-[var(--radius-xl)] shadow-2xl focus:outline-none overflow-hidden"
+						className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto overscroll-contain bg-[var(--color-void)] border border-[var(--color-border)] rounded-[var(--radius-xl)] shadow-2xl focus:outline-none"
 					>
 						<div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface)]/30">
 							<div className="flex items-center gap-2">

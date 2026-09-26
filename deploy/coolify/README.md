@@ -76,7 +76,7 @@ Do not overwrite `@` or `www` merely because this optional Coolify example exist
 
 ## 5. Earn-path smoke after deploy
 
-1. Sign in (magic link or SIWE) on `https://oma-ai.com/login`.
+1. Sign in (magic link or SIWE) on `https://www.oma-ai.com/login`.
 2. Create an API key on `/dashboard`.
 3. Deposit a small USDC amount on Base via `/deposit` (or settle via `/x402/*`).
 4. Call `POST https://www.oma-ai.com/api/v1/chat/completions` with the key.

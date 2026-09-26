@@ -216,8 +216,10 @@ export function PricingTable({
 				</div>
 			</div>
 
-			{/* Horizontal scroll wrapper with gradient hint */}
-			<div className="relative">
+			{/* Horizontal scroll wrapper with gradient hint. `min-w-0` matters:
+			    without it this block is a grid/flex item in some viewports and
+			    the `min-w-[36rem]` table widens the track instead of scrolling. */}
+			<div className="relative min-w-0 max-w-full">
 				{/* Right gradient hint for scrollable content */}
 				<div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[var(--color-surface)] to-transparent pointer-events-none z-10 hidden sm:block" />
 

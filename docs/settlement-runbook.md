@@ -32,7 +32,9 @@ Status: **CONFIGURED, NOT LIVE** — treasury wallet created + wired, settlement
 
 ## Deploy note (Vercel prod-branch bug)
 Project `productionBranch` is stuck on the retired `master` (API re-link 400s; needs manual dashboard re-link). Workaround that works:
-`vercel deploy --prod --yes` from `app/` (the project rootDir). Push-to-main does NOT auto-deploy.
+`vercel deploy --prod --yes` from the **repository root** (not `app/` — the CLI link `.vercel/` is at the root). Push-to-main does NOT auto-deploy.
+Canonical host is `https://www.oma-ai.com`; the apex 308-redirects to it.
+See [`DEPLOYMENT.md`](DEPLOYMENT.md) for the full deploy reference.
 
 ---
 
@@ -101,5 +103,6 @@ and accept the previous key BEFORE rotating. The access token is safe to rotate 
 ## Deploy note (Vercel)
 
 `productionBranch` is stuck on the retired `master`; push-to-main does NOT auto-deploy.
-Use `vercel deploy --prod --yes` from the repo root. API runs on **Neon**, not Vercel —
+Use `vercel deploy --prod --yes` from the **repository root**. API runs on **Neon**, not Vercel —
 a Vercel deploy ships the frontend only and will NOT pick up server-side changes.
+See [`DEPLOYMENT.md`](DEPLOYMENT.md) for the canonical deploy reference and host.

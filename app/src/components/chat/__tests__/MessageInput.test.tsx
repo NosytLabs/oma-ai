@@ -61,6 +61,69 @@ describe("MessageInput", () => {
 		expect(onSubmit).not.toHaveBeenCalled();
 	});
 
+	it("BUG-E: Enter during IME composition does not send", () => {
+		const onSubmit = vi.fn();
+		renderInput({ input: "\u65e5\u672c", onSubmit });
+		const textarea = screen.getByRole("textbox");
+		fireEvent.compositionStart(textarea);
+		fireEvent.keyDown(textarea, { key: "Enter", shiftKey: false });
+		expect(onSubmit).not.toHaveBeenCalled();
+		// Once composition ends, Enter sends again.
+		fireEvent.compositionEnd(textarea);
+		fireEvent.keyDown(textarea, { key: "Enter", shiftKey: false });
+		expect(onSubmit).toHaveBeenCalledTimes(1);
+	});
+
+	it("BUG-E: a native isComposing keydown (Safari) also does not send", () => {
+		const onSubmit = vi.fn();
+		renderInput({ input: "\u3042", onSubmit });
+		fireEvent.keyDown(screen.getByRole("textbox"), {
+			key: "Enter",
+			shiftKey: false,
+			isComposing: true,
+		});
+		expect(onSubmit).not.toHaveBeenCalled();
+	});
+
+	it("BUG-F: send is disabled while the selected model is unavailable", () => {
+		const onSubmit = vi.fn();
+		render(
+			<MessageInput
+				input="Hello"
+				setInput={noop}
+				onSubmit={onSubmit}
+				onStop={noop}
+				loading={false}
+				modelUnavailable
+			/>,
+		);
+		const send = screen.getByRole("button", { name: /send message/i });
+		expect(send).toBeDisabled();
+		expect(send.getAttribute("title")).toMatch(/not currently available/i);
+		fireEvent.keyDown(screen.getByRole("textbox"), { key: "Enter" });
+		expect(onSubmit).not.toHaveBeenCalled();
+	});
+
+	it("BUG-F: send is disabled when the balance-gate `disabled` is set", () => {
+		const onSubmit = vi.fn();
+		render(
+			<MessageInput
+				input="Hello"
+				setInput={noop}
+				onSubmit={onSubmit}
+				onStop={noop}
+				loading={false}
+				disabled
+				disabledReason="balance too low"
+			/>,
+		);
+		const send = screen.getByRole("button", { name: /send message/i });
+		expect(send).toBeDisabled();
+		expect(send).toHaveAttribute("title", "balance too low");
+		fireEvent.keyDown(screen.getByRole("textbox"), { key: "Enter" });
+		expect(onSubmit).not.toHaveBeenCalled();
+	});
+
 	it("disables the send button when input is empty or whitespace-only", () => {
 		const { rerender } = renderInput({ input: "" });
 		expect(

@@ -19,6 +19,13 @@ interface ModelComparePanelProps {
 	onSubmit: (prompt: string) => void;
 	loading: boolean;
 	compareMessages: Message[];
+	/**
+	 * Compare-stream failure. Rendered HERE rather than in the primary
+	 * ChatErrorBanner: a side stream dying must not take over the main
+	 * conversation's error slot above the composer (BUG-H).
+	 */
+	error?: string | null;
+	onDismissError?: () => void;
 }
 
 /**
@@ -36,6 +43,8 @@ export function ModelComparePanel({
 	onSubmit,
 	loading,
 	compareMessages,
+	error = null,
+	onDismissError,
 }: ModelComparePanelProps) {
 	const models = useSharedLiveModels();
 	const [localPrompt, setLocalPrompt] = useState(prompt);
@@ -63,7 +72,7 @@ export function ModelComparePanel({
 					animate={{ x: 0, opacity: 1 }}
 					exit={{ x: "100%", opacity: 0 }}
 					transition={springs.card}
-					className="fixed inset-y-0 right-0 w-full md:w-[480px] bg-void border-l border-border z-50 flex flex-col shadow-2xl"
+					className="fixed inset-y-0 right-0 z-50 flex w-full max-w-full flex-col border-l border-border bg-void shadow-2xl md:w-[480px]"
 					role="complementary"
 					aria-label="Model comparison panel"
 				>
@@ -94,6 +103,26 @@ export function ModelComparePanel({
 							compact
 						/>
 					</div>
+
+					{error && (
+						<div
+							role="alert"
+							data-testid="compare-error"
+							className="flex-none m-3 mb-0 flex items-start justify-between gap-3 border border-[var(--color-danger)]/40 bg-[color-mix(in_srgb,var(--color-danger)_12%,transparent)] px-3 py-2 text-[11px] font-mono text-[var(--color-danger)]"
+						>
+							<span className="min-w-0 break-words">{error}</span>
+							{onDismissError && (
+								<button
+									type="button"
+									onClick={onDismissError}
+									aria-label="Dismiss comparison error"
+									className="shrink-0 underline underline-offset-2 hover:opacity-80"
+								>
+									DISMISS
+								</button>
+							)}
+						</div>
+					)}
 
 					<div className="flex-1 overflow-y-auto p-3 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
 						{compareMessages.length === 0 ? (

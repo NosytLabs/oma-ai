@@ -40,7 +40,7 @@ export function PricingSection() {
 			/>
 
 			<div id="pricing-table" className="mb-6 rounded-[var(--radius-xl)] border border-border overflow-x-auto overscroll-x-contain scroll-mt-24">
-				<table className="w-full text-left text-sm" aria-label="Model pricing per million tokens">
+				<table className="w-full min-w-[30rem] text-left text-sm" aria-label="Model pricing per million tokens">
 					<thead>
 						<tr className="border-b border-border bg-panel">
 							<th className="px-4 py-3 font-medium text-text-muted">Type</th>

@@ -35,6 +35,7 @@ import {
 	getConnectedAccount,
 	hasWallet,
 	sendUsdcTransfer,
+	signDepositMessage,
 } from "@/lib/wallet";
 
 interface DepositInstructions {
@@ -68,8 +69,9 @@ type BroadcastDeposit = {
 	amountUsd: number;
 	txHash: string;
 	fromAddress: `0x${string}`;
+	challengeToken: string;
+	signature: string;
 };
-
 function shortAddr(a: string): string {
 	if (a.length <= 12) return a;
 	return `${a.slice(0, 6)}…${a.slice(-4)}`;
@@ -209,7 +211,26 @@ export function UnifiedDepositInterface({
 				from: connectedAddress,
 			});
 			txSent = true;
-			const pendingDeposit = { amountUsd: amount, txHash, fromAddress: connectedAddress };
+
+			// SECURITY: prove wallet ownership before registering the deposit.
+			// Mint a user-bound challenge, sign the canonical deposit message with
+			// the sending wallet, and submit both — the server verifies the
+			// recovered signer equals fromAddress.
+			setProcessingStep("Signing deposit proof…");
+			const challenge = await requestDepositChallenge(connectedAddress);
+			const signature = await signDepositMessage({
+				fromAddress: connectedAddress,
+				challengeToken: challenge.token,
+				depositAddress: instructions.depositAddress,
+			});
+
+			const pendingDeposit = {
+				amountUsd: amount,
+				txHash,
+				fromAddress: connectedAddress,
+				challengeToken: challenge.token,
+				signature,
+			};
 			setBroadcastDeposit(pendingDeposit);
 
 			setProcessingStep("Submitting deposit for verification…");
@@ -619,10 +640,21 @@ async function requestDepositStatus(): Promise<{ deposits: UserDeposit[] }> {
 	return request<{ deposits: UserDeposit[] }>("/v1/deposit/status");
 }
 
+async function requestDepositChallenge(
+	fromAddress: `0x${string}`,
+): Promise<{ token: string; nonce: string; expiresAt: number }> {
+	return request("/v1/deposit/usdc/challenge", {
+		method: "POST",
+		body: JSON.stringify({ fromAddress }),
+	});
+}
+
 async function submitDeposit(args: {
 	amountUsd: number;
 	txHash: string;
 	fromAddress: `0x${string}`;
+	challengeToken: string;
+	signature: string;
 }): Promise<{
 	depositId: string;
 	status: UserDeposit["status"];
@@ -637,6 +669,8 @@ async function submitDeposit(args: {
 			amountUsd: args.amountUsd,
 			txHash: args.txHash,
 			fromAddress: args.fromAddress,
+			challengeToken: args.challengeToken,
+			signature: args.signature,
 			network: "base",
 		}),
 	});

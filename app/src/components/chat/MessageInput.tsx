@@ -38,6 +38,12 @@ interface MessageInputProps {
 	disabled?: boolean;
 	/** Optional reason surfaced to the user when `disabled` is true. */
 	disabledReason?: string;
+	/**
+	 * Set when the selected model isn't in the currently available set
+	 * (BUG-F). Gates the send button and explains why, so a stale pick
+	 * can't burn a request on a model the server will reject.
+	 */
+	modelUnavailable?: boolean;
 	/** Web-search toggle rendered inside the composer tool rail. */
 	webSearchEnabled?: boolean;
 	setWebSearchEnabled?: (v: boolean) => void;
@@ -60,7 +66,8 @@ export const MessageInput = forwardRef<
 		loading,
 		textareaRef: externalTextareaRef,
 		disabled = false,
-	disabledReason,
+		disabledReason,
+		modelUnavailable = false,
 	webSearchEnabled = false,
 	setWebSearchEnabled,
 	uiMode = false,
@@ -70,6 +77,10 @@ export const MessageInput = forwardRef<
 	forwardedRef,
 ) {
 	const [focused, setFocused] = useState(false);
+	// BUG-E: IME composition flag. `compositionstart`/`compositionend` are
+	// the only reliable cross-browser signal for "an IME candidate window is
+	// open" — Enter there confirms the candidate, not the message.
+	const isComposingRef = useRef(false);
 	const [reduceMotion, setReduceMotion] = useState(false);
 	const localTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -91,15 +102,27 @@ export const MessageInput = forwardRef<
 		return () => cancelAnimationFrame(id);
 	}, []);
 
+	// BUG-E: Enter means different things depending on context.
+	//   * IME composition active → let the browser commit the candidate;
+	//     sending here swallowed the chosen characters and fired a send.
+	//   * Shift+Enter            → insert a newline (handled explicitly so
+	//     the behavior is intentional rather than a side effect of a
+	//     `!shiftKey` test).
+	//   * plain Enter            → send.
 	const handleKeyDown = useCallback(
 		(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-			if (e.key === "Enter" && !e.shiftKey) {
-				e.preventDefault();
-				if (disabled) return;
-				onSubmit();
-			}
+			if (e.key !== "Enter") return;
+			if (isComposingRef.current) return;
+			// Safari/Chrome also set isComposing on the native event; the ref
+			// alone misses the trailing keydown in some browsers.
+			if (e.nativeEvent?.isComposing) return;
+			if (e.shiftKey) return; // newline — let the textarea handle it
+			if (e.altKey || e.ctrlKey || e.metaKey) return;
+			e.preventDefault();
+			if (disabled || modelUnavailable || loading) return;
+			onSubmit();
 		},
-		[onSubmit, disabled],
+		[onSubmit, disabled, loading, modelUnavailable],
 	);
 
 	const setTextareaRef = useCallback(
@@ -114,7 +137,15 @@ export const MessageInput = forwardRef<
 	);
 
 	const hasInput = input.trim().length > 0;
-	const canSend = hasInput && !disabled;
+	// BUG-F: gating is not just "has text". Insufficient balance
+	// (`disabled`), a composer-level block, and an unavailable model all
+	// gate the send.
+	const canSend = hasInput && !disabled && !modelUnavailable && !loading;
+	const sendBlockedReason = modelUnavailable
+		? "Selected model is not currently available — pick another model"
+		: disabled
+			? (disabledReason ?? "Send disabled")
+			: undefined;
 
 	// Auto-resize with smooth height transition
 	const handleInput = useCallback((e: React.FormEvent<HTMLTextAreaElement>) => {
@@ -180,6 +211,12 @@ export const MessageInput = forwardRef<
 							value={input}
 							onChange={(e) => setInput(e.target.value)}
 							onKeyDown={handleKeyDown}
+						onCompositionStart={() => {
+							isComposingRef.current = true;
+						}}
+						onCompositionEnd={() => {
+							isComposingRef.current = false;
+						}}
 							onFocus={() => setFocused(true)}
 							onBlur={() => setFocused(false)}
 							placeholder="Message OMA…"
@@ -221,7 +258,7 @@ export const MessageInput = forwardRef<
 										type="button"
 										onClick={() => onSubmit()}
 										disabled={!canSend}
-										title={disabled ? disabledReason ?? "Send disabled" : undefined}
+										title={sendBlockedReason}
 										aria-label="Send message"
 										aria-describedby="message-hint"
 										whileTap={reduceMotion ? undefined : { scale: 0.95 }}

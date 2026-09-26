@@ -21,6 +21,7 @@ import {
 		createLogoutCookieHeader,
 } from "../auth/api-keys.js";
 import { auth } from "../auth.js";
+import { ADMIN_WALLET_ADDRESSES_SET } from "../config.js";
 import type { OmaEnv } from "../types.js";
 import { extractClientIpOrNull } from "../middleware/rate-limit/utils.js";
 
@@ -41,18 +42,29 @@ async function getSession(c: Context) {
 authRoutes.get("/user", async (c) => {
 		const session = await getSession(c);
 		if (!session?.user) {
-				return c.json(
-						{ error: { message: "Unauthorized", type: "authentication_error" } },
-						401,
-				);
+			return c.json(
+				{ error: { message: "Unauthorized", type: "authentication_error" } },
+				401,
+			);
 		}
+		// Compute admin status with the SAME rule as requireAdmin in
+		// middleware.ts (role === "admin" OR evmAddress in the configured
+		// admin-wallet allowlist). Exposed so the client gate can agree with
+		// the server instead of gate-blocking wallet-gated operators.
+		const isAdmin =
+			session.user.role === "admin" ||
+			(ADMIN_WALLET_ADDRESSES_SET.size > 0 &&
+				!!session.user.evmAddress &&
+				ADMIN_WALLET_ADDRESSES_SET.has(session.user.evmAddress.toLowerCase()));
 		return c.json({
-				id: session.user.id,
-				email: session.user.email,
-				name: session.user.name,
-				evmAddress: session.user.evmAddress ?? null,
-				isAnonymous: session.user.isAnonymous ?? false,
-				createdAt: session.user.createdAt,
+			id: session.user.id,
+			email: session.user.email,
+			name: session.user.name,
+			evmAddress: session.user.evmAddress ?? null,
+			isAnonymous: session.user.isAnonymous ?? false,
+			role: session.user.role ?? null,
+			isAdmin,
+			createdAt: session.user.createdAt,
 		});
 });
 

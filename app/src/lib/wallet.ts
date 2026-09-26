@@ -167,6 +167,39 @@ export async function ensureBaseChain(): Promise<void> {
 
 const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as const;
 
+/** Canonical deposit authorization message a wallet signs (must match server). */
+export function buildDepositSignMessage(args: {
+	fromAddress: string;
+	challengeToken: string;
+	depositAddress: string;
+}): string {
+	return [
+		"OMA-AI deposit authorization",
+		"",
+		`Sending wallet: ${args.fromAddress}`,
+		`Deposit to: ${args.depositAddress}`,
+		`Challenge: ${args.challengeToken}`,
+	].join("\n");
+}
+
+/** Sign the canonical deposit message with the connected wallet. */
+export async function signDepositMessage(args: {
+	fromAddress: `0x${string}`;
+	challengeToken: string;
+	depositAddress: string;
+}): Promise<string> {
+	const client = viemWalletClient();
+	const message = buildDepositSignMessage({
+		fromAddress: args.fromAddress,
+		challengeToken: args.challengeToken,
+		depositAddress: args.depositAddress,
+	});
+	return client.signMessage({
+		account: args.fromAddress,
+		message,
+	});
+}
+
 const USDC_TRANSFER_ABI = [
 	{
 		type: "function",

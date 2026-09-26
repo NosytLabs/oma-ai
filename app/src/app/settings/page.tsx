@@ -274,7 +274,7 @@ function SettingsPageContent() {
 				)}
 			</AnimatePresence>
 
-			<div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-[220px_1fr] lg:gap-8">
+			<div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-8">
 				<div className="relative min-w-0 lg:block">
 					{/* Mobile scroll-edge fades so users know to swipe. */}
 					<div
@@ -434,7 +434,7 @@ function SettingsFallback() {
 			<div className="space-y-3">
 				<div className="h-7 w-36 bg-surface animate-pulse" />
 				<div className="h-4 w-48 bg-surface animate-pulse" />
-				<div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[220px_1fr]">
+				<div className="mt-6 grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
 					<div className="flex gap-2 lg:flex-col">
 						<div className="h-12 w-full bg-surface animate-pulse rounded-[var(--radius-md)]" />
 						<div className="h-12 w-full bg-surface animate-pulse rounded-[var(--radius-md)]" />

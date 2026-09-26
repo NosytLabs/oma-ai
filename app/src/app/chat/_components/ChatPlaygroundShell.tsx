@@ -8,8 +8,10 @@ import {
 	useCallback,
 	useDeferredValue,
 	useEffect,
+	useMemo,
 	useRef,
 	useState,
+	type SetStateAction,
 } from "react";
 import type { Message } from "@/components/chat";
 import { balanceToDollars, useBalance } from "@/components/chat/useBalance";
@@ -36,7 +38,10 @@ import { useConversationShare } from "../_hooks/useConversationShare";
 import { useGuestQuota } from "../_hooks/useGuestQuota";
 import { usePlaygroundState } from "../_hooks/usePlaygroundState";
 import { useStreamingChat } from "../_hooks/useStreamingChat";
-import { LiveModelsProvider } from "@/components/chat/chat-message-shared";
+import {
+	LiveModelsProvider,
+	useSharedLiveModels,
+} from "@/components/chat/chat-message-shared";
 import { AuthPromptModal } from "@/components/chat/AuthPromptModal";
 import { exportChatHistory } from "@/lib/chat-export";
 import { ChatErrorBanner } from "./ChatErrorBanner";
@@ -44,6 +49,9 @@ import { ChatSettingsPanel } from "./ChatSettingsPanel";
 import { ChatSystemPromptPanel } from "./ChatSystemPromptPanel";
 import { MemoizedChatToolbar } from "./ChatToolbar";
 import { MessagesList } from "./MessagesList";
+
+/** localStorage key for the A2UI (UI mode) composer toggle. */
+const UI_MODE_STORAGE_KEY = "oma_chat_ui_mode";
 
 const LazyMessageInput = dynamic(
 	() =>
@@ -90,11 +98,45 @@ function ShellContent({
 }: ChatPlaygroundShellProps) {
 	const isChat = variant === "chat";
 
-	const [uiMode, setUiMode] = useState(false);
+	// BUG-D: A2UI uiMode was plain component state, so it reset to off on
+	// every reload and the user had to re-arm it each session. Persist the
+	// preference under a fixed key and restore it on mount. The lazy
+	// initializer guards SSR (no window) and the read is wrapped so private
+	// mode / corrupt storage can't break the page.
+	const [uiMode, setUiModeState] = useState<boolean>(() => {
+		if (typeof window === "undefined") return false;
+		try {
+			return localStorage.getItem(UI_MODE_STORAGE_KEY) === "1";
+		} catch {
+			return false;
+		}
+	});
+	const setUiMode = useCallback((v: SetStateAction<boolean>) => {
+		setUiModeState((prev) => {
+			const next = typeof v === "function" ? v(prev) : v;
+			try {
+				if (next) localStorage.setItem(UI_MODE_STORAGE_KEY, "1");
+				else localStorage.removeItem(UI_MODE_STORAGE_KEY);
+			} catch {
+				/* private mode */
+			}
+			return next;
+		});
+	}, []);
 
 	const toast = useToast();
 	const { isAuthenticated, isReady, user } = useAuth();
 	const scopedStorageKey = conversationStorageKey(user?.id ?? null);
+
+	// BUG-G: validate the model selection against the live availability set
+	// (retired providers / guest-tier gating). Memoized as a string so the
+	// usePlaygroundState validation effect only re-runs when the set
+	// actually changes.
+	const liveModels = useSharedLiveModels();
+	const availableModelIds = useMemo(
+		() => liveModels.map((m) => m.id).sort(),
+		[liveModels],
+	);
 
 	const {
 		model,
@@ -107,10 +149,14 @@ function ShellContent({
 		setLoading,
 		error,
 		setError,
+		compareError,
+		setCompareError,
 		paramsOpen,
 		setParamsOpen,
 		showAdvanced,
 		setShowAdvanced,
+		paramsError,
+		clearParamsError,
 		temperature,
 		setTemperature,
 		topP,
@@ -149,7 +195,12 @@ function ShellContent({
 		// auth resolves; the hook treats that as a guest read.
 		userId: user?.id ?? null,
 		authReady: isReady,
+		availableModelIds,
 	});
+	// BUG-G: a selection that isn't in the live set can't be sent.
+	const isModelUnavailable =
+		liveModels.length > 0 && !availableModelIds.includes(model);
+
 	const scopedPromptKey = systemPromptStorageKey(user?.id ?? null);
 	const { balance, loading: balanceLoading, refresh: refreshBalance } = useBalance();
 	const balanceDollars = balanceToDollars(balance);
@@ -236,6 +287,7 @@ function ShellContent({
 		setMessages,
 		setLoading,
 		setError,
+		setCompareError,
 		model,
 		systemPrompt: uiMode ? `${systemPrompt}${A2UI_SYSTEM_SUFFIX}` : systemPrompt,
 		compareMode,
@@ -271,6 +323,12 @@ function ShellContent({
 				setError("Your credit balance is too low for this model. Top up to continue.");
 				return;
 			}
+			if (isModelUnavailable) {
+				setError(
+					"The selected model is not currently available — pick another model.",
+				);
+				return;
+			}
 			if (!allowGuestSend()) return;
 			await sendMessage(prompt);
 			// Refresh the credit balance after a spend so the toolbar pill and
@@ -278,7 +336,14 @@ function ShellContent({
 			// pre-send value (which staleTime would otherwise keep for 2 min).
 			void refreshBalance();
 		},
-		[allowGuestSend, isLowBalance, sendMessage, setError, refreshBalance],
+		[
+			allowGuestSend,
+			isLowBalance,
+			isModelUnavailable,
+			sendMessage,
+			setError,
+			refreshBalance,
+		],
 	);
 	const gatedSendRef = useRef(gatedSend);
 	useEffect(() => {
@@ -304,6 +369,7 @@ function ShellContent({
 		setMessages([]);
 		setCompareMessages([]);
 		setError(null);
+		setCompareError(null);
 		try {
 			localStorage.removeItem(scopedStorageKey);
 			// WEB preference intentionally kept — users expect toggle to stick.
@@ -315,6 +381,7 @@ function ShellContent({
 	}, [
 		scopedStorageKey,
 		setError,
+		setCompareError,
 		setCompareMessages,
 		setMessages,
 		messages.length,
@@ -374,9 +441,16 @@ function ShellContent({
 		setMessages([]);
 		setCompareMessages([]);
 		setError(null);
+		setCompareError(null);
 		setConversationId(genConversationId());
 		setTimeout(() => inputRef.current?.focus(), 100);
-	}, [setMessages, setCompareMessages, setError, setConversationId]);
+	}, [
+		setMessages,
+		setCompareMessages,
+		setError,
+		setCompareError,
+		setConversationId,
+	]);
 
 	useChatShortcuts({
 		sendMessageRef: gatedSendRef,
@@ -388,6 +462,7 @@ function ShellContent({
 		setParamsOpen,
 		compareMode,
 		setCompareMode,
+		setSystemPromptOpen,
 		newConversation,
 	});
 
@@ -514,6 +589,8 @@ function ShellContent({
 									loading={loading}
 									textareaRef={inputRef}
 									disabled={isLowBalance}
+							disabledReason="Your credit balance is too low — top up to send"
+							modelUnavailable={isModelUnavailable}
 									webSearchEnabled={webSearchEnabled}
 									setWebSearchEnabled={
 										showComposerAdvancedTools ? setWebSearchEnabled : undefined
@@ -571,6 +648,8 @@ function ShellContent({
 					showAdvanced={showAdvanced}
 					setShowAdvanced={setShowAdvanced}
 					model={model}
+					saveError={paramsError}
+					onDismissSaveError={clearParamsError}
 				/>
 			</div>
 
@@ -594,6 +673,8 @@ function ShellContent({
 				}}
 				loading={loading}
 				compareMessages={compareMessages}
+				error={compareError}
+				onDismissError={() => setCompareError(null)}
 			/>
 
 			<AuthPromptModal

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { Hono } from "hono";
-import { polarRoutes } from "../polar.js";
+import { polarRoutes, isAllowedCheckoutOrigin } from "../polar.js";
 import crypto from "node:crypto";
 
 const mockConfig = vi.hoisted(() => ({
@@ -8,7 +8,9 @@ const mockConfig = vi.hoisted(() => ({
 	POLAR_HOBBY_PRODUCT_ID: "prod_hobby",
 	POLAR_BUILDER_PRODUCT_ID: "prod_builder",
 	POLAR_SCALE_PRODUCT_ID: "prod_scale",
-	PUBLIC_APP_URL: "http://localhost:3000"
+	PUBLIC_APP_URL: "http://localhost:3000",
+	PRIMARY_DOMAIN: "oma-ai.com",
+	NODE_ENV: "test"
 }));
 
 const mockDb = vi.hoisted(() => {
@@ -54,6 +56,7 @@ const mockEmitDepositMatched = vi.hoisted(() => vi.fn());
 
 vi.mock("../../config.js", () => ({
 	config: mockConfig,
+	isProductionEnv: mockConfig.NODE_ENV !== "test" ? true : false,
 }));
 
 vi.mock("../../db/client.js", () => ({
@@ -362,6 +365,31 @@ describe("polar routes", () => {
 			// GREATEST(balance - credits, 0) means a refund can never overdraw.
 			expect(mockDb.update).toHaveBeenCalled();
 			expect(mockDb.set).toHaveBeenCalled();
+		});
+	});
+
+	describe("checkout successUrl origin allow-list (open-redirect fix)", () => {
+		it("allows the app's own production origin (www + apex) always", () => {
+			// Prod app domains are honoured in every environment.
+			expect(isAllowedCheckoutOrigin("https://www.oma-ai.com/dashboard?deposit=success")).toBe(true);
+			expect(isAllowedCheckoutOrigin("https://oma-ai.com/dashboard?deposit=success")).toBe(true);
+		});
+
+		it("allows localhost success URLs only outside production (dev/test)", () => {
+			// Under NODE_ENV=test (the suite's env), isProductionEnv is false and
+			// localhost stays permitted for local checkout redirects. In a
+			// production run the same helper rejects localhost — see the guard in
+			// isAllowedCheckoutOrigin (`&& !isProductionEnv`).
+			expect(isAllowedCheckoutOrigin("http://localhost:3000/dashboard?deposit=success")).toBe(true);
+			expect(isAllowedCheckoutOrigin("http://localhost:3002/dashboard?deposit=success")).toBe(true);
+		});
+
+		it("rejects attacker-controlled origins (open-redirect closed)", () => {
+			expect(isAllowedCheckoutOrigin("https://evil.example.com/dashboard")).toBe(false);
+			expect(isAllowedCheckoutOrigin("https://www.oma-ai.com.evil.com/dashboard")).toBe(false);
+			expect(isAllowedCheckoutOrigin("https://oma-ai.com.attacker.io/phish")).toBe(false);
+			expect(isAllowedCheckoutOrigin("javascript:alert(1)")).toBe(false);
+			expect(isAllowedCheckoutOrigin("not-a-url")).toBe(false);
 		});
 	});
 });

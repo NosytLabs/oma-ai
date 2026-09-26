@@ -25,7 +25,7 @@ import { buildV2Challenge, buildXPaymentResponse, parseXPaymentHeader } from "./
 import type { OmaEnv } from "../types.js";
 import { sessionAuth } from "../auth/middleware.js";
 import { db } from "../db/client.js";
-import { creditBalances, deposits, settlements } from "../db/schema.js";
+import { creditBalances, deposits, settlements, user as userTable } from "../db/schema.js";
 import { eq, and } from "drizzle-orm";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { USDC_BASE } from "../constants.js";
@@ -333,20 +333,46 @@ x402Routes.post("/x402/settle", sessionAuth, async (c) => {
 		const cacheKey = getSettlementCacheKey(body.networkId, body.txHash);
 		const cached = settlementCache.get(cacheKey);
 		if (cached) {
-				try {
-						const result = await settleAndCredit(
-								userId,
-								body.txHash,
-								cached.amount,
-								cached.networkId,
-								expectedPayee,
+				// SECURITY gate (x402-ownership audit): bind the credit to the
+				// payment's actual sender. verifyPayment already enforced tx
+				// `from == payload.payFrom` on-chain; cacheVerifiedRecord now carries
+				// that payer. Without this check any authenticated session could call
+				// /settle with a verified-but-unsettled txHash and have the amount
+				// credited to their own balance (first-claimant-wins theft). Require
+				// the session user's DB evmAddress to equal the payment sender.
+				if (cached.payFrom) {
+					const [u] = await db
+						.select({ evmAddress: userTable.evmAddress })
+						.from(userTable)
+						.where(eq(userTable.id, userId))
+						.limit(1);
+					const sessionAddr = (u?.evmAddress ?? "").toLowerCase();
+					const senderAddr = cached.payFrom.toLowerCase();
+					if (!sessionAddr || sessionAddr !== senderAddr) {
+						logger.warn(
+							{ userId, txHash: body.txHash, senderAddr },
+							"[FACILITATOR] /x402/settle rejected: session wallet does not own the payment sender",
 						);
-						return c.json(result, result.settled ? 200 : 422);
+						return c.json(
+							{ error: { message: "Payment sender does not match the authenticated wallet", type: "payment_error", code: "x402_payer_mismatch" } },
+							403,
+						);
+					}
+				}
+				try {
+					const result = await settleAndCredit(
+						userId,
+						body.txHash,
+						cached.amount,
+						cached.networkId,
+						expectedPayee,
+					);
+					return c.json(result, result.settled ? 200 : 422);
 				} catch (err) {
 						const message = err instanceof Error ? err.message : "Failed to credit settlement";
 						return c.json(
-								{ error: { message, type: "payment_error", code: "x402_credit_failed" } },
-								message.includes("another account") ? 409 : 500,
+							{ error: { message, type: "payment_error", code: "x402_credit_failed" } },
+							message.includes("another account") ? 409 : 500,
 						);
 				}
 		}

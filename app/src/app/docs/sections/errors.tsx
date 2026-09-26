@@ -45,7 +45,7 @@ for attempt in range(5):
 			</div>
 
 			<div id="err-common" tabIndex={0} aria-label="API error codes table" className="mb-6 overflow-x-auto overscroll-x-contain rounded-[var(--radius-xl)] border border-border scroll-mt-24 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
-				<table className="w-full text-left text-sm" aria-label="API error codes">
+				<table className="w-full min-w-[24rem] text-left text-sm" aria-label="API error codes">
 					<thead>
 						<tr className="border-b border-border bg-panel">
 							<th className="px-4 py-3 font-medium text-text-muted">Code</th>

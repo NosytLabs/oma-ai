@@ -52,7 +52,7 @@ export function CreatedKeyModal({
 				exit={{ opacity: 0 }}
 			>
 				<m.div
-					className="w-full max-w-lg border border-accent/20 bg-void p-6"
+					className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto border border-accent/20 bg-void p-6"
 					initial={{ scale: 0.9, opacity: 0 }}
 					animate={{ scale: 1, opacity: 1 }}
 					exit={{ scale: 0.9, opacity: 0 }}

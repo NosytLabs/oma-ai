@@ -4,6 +4,12 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Message } from "@/components/chat";
+import {
+	CHAT_PARAMS_DEFAULTS,
+	readChatParams,
+	writeChatParams,
+	type ChatParams,
+} from "@/lib/chat-params-storage";
 import { MODELS } from "@/lib/models-data";
 import { FREE_DEFAULT_CHAT_MODEL } from "@/lib/model-utils";
 
@@ -56,6 +62,14 @@ export interface UsePlaygroundStateOptions {
 	 * unknown auth as guest and re-read once the id resolves.
 	 */
 	userId?: string | null;
+	/**
+	 * Ids of the models currently served (live availability set). When
+	 * provided, a selection that is no longer in this set — whether it came
+	 * from `?model=`, localStorage, or an earlier pick — falls back to
+	 * FREE_DEFAULT_CHAT_MODEL so a send never goes out with an unusable
+	 * model (BUG-G). Pass the live list; omit it to skip the check.
+	 */
+	availableModelIds?: string[];
 	/** When `true`, auth state has resolved — safe to read the userId-scoped
 	 *  bucket. Before this flips on, the hook always reads the guest bucket
 	 *  to avoid an `undefined`/`null` key smashing both. */
@@ -74,12 +88,22 @@ export interface PlaygroundState {
 	setLoading: Dispatch<SetStateAction<boolean>>;
 	error: string | null;
 	setError: Dispatch<SetStateAction<string | null>>;
+	/** Compare-panel errors. Kept out of `error` so an unrelated side
+	 *  stream can't take over the primary ChatErrorBanner (BUG-H). */
+	compareError: string | null;
+	setCompareError: Dispatch<SetStateAction<string | null>>;
 
 	// --- Settings panel + model params ---
 	paramsOpen: boolean;
 	setParamsOpen: Dispatch<SetStateAction<boolean>>;
 	showAdvanced: boolean;
 	setShowAdvanced: Dispatch<SetStateAction<boolean>>;
+	/**
+	 * Non-null when a parameter write failed; the optimistic change has
+	 * already been reverted (BUG-I). Cleared on the next successful save.
+	 */
+	paramsError: string | null;
+	clearParamsError: () => void;
 	temperature: number;
 	setTemperature: Dispatch<SetStateAction<number>>;
 	topP: number;
@@ -190,17 +214,118 @@ export function usePlaygroundState(
 	const [input, setInput] = useState<string>("");
 	const [loading, setLoading] = useState<boolean>(false);
 	const [error, setError] = useState<string | null>(null);
+	const [compareError, setCompareError] = useState<string | null>(null);
 
 	// --- Settings panel + model params ---
 	const [paramsOpen, setParamsOpen] = useState<boolean>(false);
 	const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
-	const [temperature, setTemperature] = useState<number>(0.7);
-	const [topP, setTopP] = useState<number>(1);
-	const [maxTokens, setMaxTokens] = useState<number>(2048);
-	const [topK, setTopK] = useState<number>(40);
-	const [freqPenalty, setFreqPenalty] = useState<number>(0);
-	const [presPenalty, setPresPenalty] = useState<number>(0);
-	const [stream, setStream] = useState<boolean>(true);
+
+	// BUG-I: parameters used to be pure component state. They now hydrate
+	// from localStorage and every change is written back; a failed write
+	// reverts the optimistic UI update and raises `paramsError` so the
+	// panel can say "not saved" instead of pretending the change stuck.
+	// The SSR pass and the first client render must agree, so the stored
+	// value is read in an effect (not a useState initializer).
+	const [chatParams, setChatParams] = useState<ChatParams>({
+		...CHAT_PARAMS_DEFAULTS,
+	});
+	const [paramsError, setParamsError] = useState<string | null>(null);
+
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+		const stored = readChatParams();
+		if (stored) setChatParams(stored);
+	}, []);
+
+	const updateParam = useCallback(
+		<K extends keyof ChatParams>(key: K, value: ChatParams[K]) => {
+			setParamsError(null);
+			setChatParams((prev) => {
+				const next = { ...prev, [key]: value };
+				if (writeChatParams(next)) return next;
+				// Revert to the last value we know is persisted, and tell
+				// the caller so the panel can show the failure.
+				setParamsError(
+					"Couldn't save this setting in your browser — change reverted",
+				);
+				return prev;
+			});
+		},
+		[],
+	);
+
+	const setTemperature = useCallback<Dispatch<SetStateAction<number>>>(
+		(next) =>
+			updateParam(
+				"temperature",
+				typeof next === "function"
+					? (next as (p: number) => number)(chatParams.temperature)
+					: next,
+			),
+		[updateParam, chatParams.temperature],
+	);
+	const setTopP = useCallback<Dispatch<SetStateAction<number>>>(
+		(next) =>
+			updateParam(
+				"topP",
+				typeof next === "function"
+					? (next as (p: number) => number)(chatParams.topP)
+					: next,
+			),
+		[updateParam, chatParams.topP],
+	);
+	const setMaxTokens = useCallback<Dispatch<SetStateAction<number>>>(
+		(next) =>
+			updateParam(
+				"maxTokens",
+				typeof next === "function"
+					? (next as (p: number) => number)(chatParams.maxTokens)
+					: next,
+			),
+		[updateParam, chatParams.maxTokens],
+	);
+	const setTopK = useCallback<Dispatch<SetStateAction<number>>>(
+		(next) =>
+			updateParam(
+				"topK",
+				typeof next === "function"
+					? (next as (p: number) => number)(chatParams.topK)
+					: next,
+			),
+		[updateParam, chatParams.topK],
+	);
+	const setFreqPenalty = useCallback<Dispatch<SetStateAction<number>>>(
+		(next) =>
+			updateParam(
+				"freqPenalty",
+				typeof next === "function"
+					? (next as (p: number) => number)(chatParams.freqPenalty)
+					: next,
+			),
+		[updateParam, chatParams.freqPenalty],
+	);
+	const setPresPenalty = useCallback<Dispatch<SetStateAction<number>>>(
+		(next) =>
+			updateParam(
+				"presPenalty",
+				typeof next === "function"
+					? (next as (p: number) => number)(chatParams.presPenalty)
+					: next,
+			),
+		[updateParam, chatParams.presPenalty],
+	);
+	const setStream = useCallback<Dispatch<SetStateAction<boolean>>>(
+		(next) =>
+			updateParam(
+				"stream",
+				typeof next === "function"
+					? (next as (p: boolean) => boolean)(chatParams.stream)
+					: next,
+			),
+		[updateParam, chatParams.stream],
+	);
+	const { temperature, topP, maxTokens, topK, freqPenalty, presPenalty, stream } =
+		chatParams;
 
 	// --- Web search (persist preference so WEB mode survives reloads) ---
 	const [webSearchEnabled, setWebSearchEnabledState] = useState<boolean>(() => {
@@ -261,6 +386,21 @@ export function usePlaygroundState(
 		// would clobber the user's in-flight selection with the stored one.
 	}, [options.authReady]);
 
+	// BUG-G: validate the resolved selection against the LIVE availability
+	// set. `isKnownModelId` only checks the static catalog, so a model the
+	// provider retired (or a guest-tier gated one) still passes and the
+	// next send would go out with a model the server rejects.
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+		const available = options.availableModelIds;
+		if (!available || available.length === 0) return;
+		if (available.includes(model)) return;
+		const fallback = available.includes(FREE_DEFAULT_CHAT_MODEL)
+			? FREE_DEFAULT_CHAT_MODEL
+			: available[0];
+		setModelRaw(fallback);
+	}, [options.availableModelIds, model]);
+
 	// Persist whenever the user explicitly picks a model. Gated by
 	// `userChangedModelRef` (NOT by a one-shot `isFirstWrite` ref) so
 	// React StrictMode's double-invoked effects don't write the initial
@@ -316,12 +456,16 @@ export function usePlaygroundState(
 		setLoading,
 		error,
 		setError,
+		compareError,
+		setCompareError,
 
 		// Settings panel + model params
 		paramsOpen,
 		setParamsOpen,
 		showAdvanced,
 		setShowAdvanced,
+		paramsError,
+		clearParamsError: () => setParamsError(null),
 		temperature,
 		setTemperature,
 		topP,

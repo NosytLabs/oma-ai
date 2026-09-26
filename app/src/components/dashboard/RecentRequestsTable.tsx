@@ -39,7 +39,7 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 					)}
 				</div>
 			</div>
-			<div className="overflow-x-auto flex-1">
+			<div className="min-w-0 max-w-full flex-1 overflow-x-auto overscroll-x-contain">
 				<table className="w-full min-w-[680px] text-left">
 					<thead>
 						<tr className="border-b border-border/50 bg-surface/20">

@@ -124,8 +124,8 @@ export function ModelUsageTable({ usage, loading }: ModelUsageTableProps) {
 					{totalCost.toFixed(2)} total cost
 				</p>
 			</div>
-			<div className="overflow-x-auto">
-				<table className="w-full text-left">
+			<div className="min-w-0 max-w-full overflow-x-auto overscroll-x-contain">
+						<table className="w-full min-w-[30rem] text-left">
 					<thead>
 						<tr className="border-b border-border/50 bg-surface/20">
 							<th

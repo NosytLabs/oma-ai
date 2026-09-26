@@ -23,6 +23,10 @@ export default function robots(): MetadataRoute.Robots {
 					"/deposit",
 					"/deposit/",
 					"/deposit/:path*",
+					// /status is a per-request force-dynamic liveness probe with
+					// no indexable content — keep it out of the crawl graph.
+					"/status",
+					"/status/:path*",
 					// /chat is the public free playground — indexable. Legacy
 					// `/image-generation`, `/video-generation`, `/create`,
 					// `/studio` paths are caught by the permanent-redirect map

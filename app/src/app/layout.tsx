@@ -64,6 +64,10 @@ export const viewport: Viewport = {
 	colorScheme: "dark",
 	width: "device-width",
 	initialScale: 1,
+	// Activate the safe-area (env(safe-area-inset-*)) padding defined in
+	// globals.css on notched iOS / gesture nav. Without `cover` the browser
+	// letterboxes the viewport and those insets are inert.
+	viewportFit: "cover",
 };
 
 export const metadata: Metadata = {

@@ -57,7 +57,13 @@ export function getPublicClient(): BasePublicClient {
 		const transports: ReturnType<typeof http>[] = [];
 		const seenUrls = new Set<string>();
 
-		if (config.CHAIN_RPC_URL) {
+		// Ignore a placeholder or obviously invalid CHAIN_RPC_URL. A literal
+		// `placeholder-url.quiknode.pro` (or any *placeholder*/*changeme* value)
+		// is unusable: keeping it as the ranked primary would make every x402
+		// on-chain call burn a failover round-trip against a dead host before
+		// falling through to the working public RPCs. Treat it as unset so the
+		// real fallback + free RPCs serve directly.
+		if (config.CHAIN_RPC_URL && !/placeholder|changeme/i.test(config.CHAIN_RPC_URL)) {
 				transports.push(http(config.CHAIN_RPC_URL));
 				seenUrls.add(config.CHAIN_RPC_URL);
 		}

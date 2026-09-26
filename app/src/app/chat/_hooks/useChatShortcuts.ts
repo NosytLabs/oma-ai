@@ -13,6 +13,13 @@ interface UseChatShortcutsOptions {
 	setParamsOpen: Dispatch<SetStateAction<boolean>>;
 	compareMode: boolean;
 	setCompareMode: Dispatch<SetStateAction<boolean>>;
+	/**
+	 * Toggles the system-prompt (Instructions) panel. Wired directly rather
+	 * than through a window CustomEvent — nothing ever listened for
+	 * `oma:toggle-system-prompt`, so Cmd/Ctrl+Shift+P was a dead shortcut
+	 * that swallowed the keystroke (BUG-C).
+	 */
+	setSystemPromptOpen: Dispatch<SetStateAction<boolean>>;
 	newConversation?: () => void;
 }
 
@@ -42,6 +49,7 @@ export function useChatShortcuts({
 	setParamsOpen,
 	compareMode,
 	setCompareMode,
+	setSystemPromptOpen,
 	newConversation,
 }: UseChatShortcutsOptions): void {
 	useEffect(() => {
@@ -91,8 +99,11 @@ export function useChatShortcuts({
 				e.key.toLowerCase() === "p"
 			) {
 				e.preventDefault();
-				// Dispatch a custom event the system-prompt panel listens to.
-				window.dispatchEvent(new CustomEvent("oma:toggle-system-prompt"));
+				// BUG-C: dispatch the real state update. The previous
+				// `window.dispatchEvent(new CustomEvent("oma:toggle-system-prompt"))`
+				// had no listener anywhere in the app, so the shortcut did
+				// nothing but eat the keystroke.
+				setSystemPromptOpen((v) => !v);
 				return;
 			}
 
@@ -134,6 +145,7 @@ export function useChatShortcuts({
 		setShortcutsOpen,
 		setParamsOpen,
 		setCompareMode,
+		setSystemPromptOpen,
 		newConversation,
 	]);
 }

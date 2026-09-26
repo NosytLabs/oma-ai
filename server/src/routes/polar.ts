@@ -38,7 +38,7 @@ import {
 		polarWebhookEvents,
 		siteSettings,
 } from "../db/schema.js";
-import { config } from "../config.js";
+import { config, isProductionEnv } from "../config.js";
 import { logger } from "../lib/logger.js";
 import { logPaymentEvent } from "../lib/payment-observability.js";
 import { errorResponse } from "../lib/error-response.js";
@@ -77,7 +77,45 @@ function getPolarClient(): Polar | null {
 const checkoutSchema = z.object({
 		plan: z.enum(["hobby", "builder", "scale"]),
 		successUrl: z.string().url().optional(),
-});
+	});
+
+/**
+ * Only accept a client-supplied `successUrl` whose origin belongs to this app
+ * (the Next.js frontend). A supplied value otherwise lets a merchant pass an
+ * arbitrary redirect target, which after a real payment would land the buyer
+ * on an attacker-controlled page (open-redirect / post-checkout phishing).
+ * Fixes the default-only origin used in the historical `localhost:3002`
+ * test checkouts. Any disallowed or nonexistent value falls back to the
+ * server-computed default below.
+ */
+export function isAllowedCheckoutOrigin(url: string): boolean {
+		try {
+				const u = new URL(url);
+				const origin = u.origin;
+				const host = u.hostname;
+				// Local app origins (dev / localhost) are permitted ONLY outside
+				// production, so the hosted checkout can redirect a dev buyer back
+				// to the local app. In production a localhost/127.0.0.1 success URL
+				// (e.g. supplied by a local proxy or a malicious origin) must never
+				// be honoured — fall through to the server-computed default.
+				if ((host === "localhost" || host === "127.0.0.1") && !isProductionEnv) return true;
+				// Production app domain(s): apex + www of PRIMARY_DOMAIN.
+				const pd = config.PRIMARY_DOMAIN;
+				if (pd && (host === pd || host === `www.${pd}`)) return true;
+				// PUBLIC_APP_URL, if it differs from the above.
+				const appOrigin = (() => {
+						try {
+								return new URL(config.PUBLIC_APP_URL).origin;
+						} catch {
+								return "";
+						}
+				})();
+				if (appOrigin && appOrigin === origin) return true;
+				return false;
+		} catch {
+				return false;
+		}
+}
 
 /**
 	* POST /v1/checkout
@@ -159,8 +197,9 @@ polarRoutes.post(
 				const session = await polar.checkouts.create({
 						products: [String(productId)],
 						successUrl:
-								parsed.data.successUrl ??
-								`${config.PUBLIC_APP_URL}/dashboard?checkout=success`,
+								parsed.data.successUrl && isAllowedCheckoutOrigin(parsed.data.successUrl)
+										? parsed.data.successUrl
+										: `${config.PUBLIC_APP_URL}/dashboard?checkout=success`,
 						metadata: { userId, plan: parsed.data.plan, credits: plan.credits },
 				});
 				return c.json({

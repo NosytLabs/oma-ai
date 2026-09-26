@@ -15,12 +15,29 @@
 import { copyToClipboard } from "@/lib/clipboard";
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
 import { useState, useId } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { useSharedLiveModels } from "./chat-message-shared";
 
-interface SettingsPanelProps {
+/**
+ * Prop contract for the model-parameters panel.
+ *
+ * This is the single source of truth for both the body
+ * (`app/src/components/chat/SettingsPanel.tsx`) and the responsive shell
+ * that lazy-loads it (`ChatSettingsPanel.tsx`). The shell EXTENDS this
+ * interface rather than re-declaring the same ~20 props with its own
+ * types: the two components share a name but not semantics, and a second
+ * declaration silently drifts (e.g. `Dispatch<SetStateAction<number>>`
+ * here vs `(t: number) => void` there) until the shell stops being a
+ * drop-in for the body.
+ *
+ * Setters are the narrow `(value) => void` form. A `useState` setter
+ * (`Dispatch<SetStateAction<T>>`) is assignable to it, so callers can keep
+ * passing raw state setters; the body only ever calls them with a
+ * concrete value and must not depend on the updater form.
+ */
+export interface SettingsPanelProps {
 	temperature: number;
 	setTemperature: (t: number) => void;
 	topP: number;
@@ -38,6 +55,13 @@ interface SettingsPanelProps {
 	showAdvanced: boolean;
 	setShowAdvanced: (s: boolean) => void;
 	model: string;
+	/**
+	 * Set when the last parameter write failed. The optimistic change has
+	 * already been reverted to the last persisted value; surfacing it stops
+	 * the panel from showing a setting the browser never stored (BUG-I).
+	 */
+	saveError?: string | null;
+	onDismissSaveError?: () => void;
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -304,12 +328,36 @@ export function SettingsPanel({
 	showAdvanced,
 	setShowAdvanced,
 	model,
+	saveError = null,
+	onDismissSaveError,
 }: SettingsPanelProps) {
 	const MODELS = useSharedLiveModels();
 	const selectedModel = MODELS.find((m) => m.id === model);
 
 	return (
 		<div className="space-y-5 font-mono text-sm">
+			{saveError && (
+				<div
+					role="alert"
+					data-testid="settings-save-error"
+					className="flex items-start justify-between gap-2 border border-[var(--color-danger)]/40 bg-[color-mix(in_srgb,var(--color-danger)_12%,transparent)] px-2.5 py-2 text-[10px] font-mono text-[var(--color-danger)]"
+				>
+					<span className="flex min-w-0 items-start gap-1.5">
+						<AlertTriangle className="mt-px h-3 w-3 shrink-0" aria-hidden="true" />
+						<span className="break-words">{saveError}</span>
+					</span>
+					{onDismissSaveError && (
+						<button
+							type="button"
+							onClick={onDismissSaveError}
+							className="shrink-0 underline underline-offset-2 hover:opacity-80"
+						>
+							DISMISS
+						</button>
+					)}
+				</div>
+			)}
+
 			{/* ─── Core Parameters ─── */}
 			<Slider
 				label="Temperature"

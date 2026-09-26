@@ -80,7 +80,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 		<ToastContext.Provider value={{ toast, success, error, info }}>
 			{children}
 			<div
-				className="fixed inset-x-3 bottom-3 z-[100] flex flex-col gap-3 sm:inset-x-auto sm:right-4 sm:bottom-4 sm:w-auto sm:max-w-[400px] pointer-events-none"
+				className="pointer-events-none fixed inset-x-3 bottom-3 z-[100] flex max-w-[calc(100vw-1.5rem)] flex-col gap-3 sm:inset-x-auto sm:bottom-4 sm:right-4 sm:w-auto sm:max-w-[400px]"
 				role="status"
 				aria-live="polite"
 				aria-label="Notifications"
@@ -179,7 +179,7 @@ function ToastItem({
 			onMouseLeave={() => setIsHovered(false)}
 			className={cn(
 				"relative flex items-start gap-3 rounded-[var(--radius-lg)] border px-4 py-3.5 backdrop-blur-md",
-				"min-w-[280px] max-w-[400px] overflow-hidden pointer-events-auto",
+				"w-full min-w-0 max-w-full overflow-hidden pointer-events-auto sm:min-w-[280px] sm:max-w-[400px]",
 				styles[toast.type],
 			)}
 		>

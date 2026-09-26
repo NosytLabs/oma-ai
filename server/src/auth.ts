@@ -25,7 +25,7 @@ import {
 import { verifyMessage, createPublicClient, http, getAddress } from "viem";
 import { mainnet } from "viem/chains";
 import { generateRandomString } from "better-auth/crypto";
-import { sql } from "drizzle-orm";
+import { sql, and, eq } from "drizzle-orm";
 import { db } from "./db/client.js";
 import * as schema from "./db/schema.js";
 import { creditBalances, creditGrants } from "./db/schema.js";
@@ -35,6 +35,37 @@ import { logger } from "./lib/logger.js";
 import { getRedisClient } from "./lib/redis-client.js";
 
 const RESEND_FROM = config.RESEND_FROM ?? "OMA-AI <noreply@oma-ai.com>";
+
+/**
+ * Backfill user.evmAddress from a successful wallet sign-in.
+ *
+ * better-auth's SIWE plugin binds the wallet to its own `walletAddress` model
+ * and an `account` row, but never writes the app-owned `evmAddress`
+ * additionalField (declared `input: false`, so clients can't set it either).
+ * Result: user.evmAddress stayed null forever, so the admin gate in
+ * middleware.ts (ADMIN_WALLET_ADDRESSES_SET.has(u.evmAddress)) could never
+ * match and every `useAuth().evmAddress` consumer rendered the null branch —
+ * a dead wallet/admin path.
+ *
+ * SIWE creates users with email `{address}@oma-ai.com` (emailDomainName);
+ * look the row up that way and write the checksummed address back. Runs on
+ * every successful sign-in; idempotent; never blocks sign-in on a DB blip
+ * (caller catches).
+ */
+export async function persistEvmAddress(address: string): Promise<void> {
+	const checksummed = getAddress(address) as string;
+	const walletEmail = `${checksummed.toLowerCase()}@oma-ai.com`;
+	await db
+		.update(schema.user)
+		.set({ evmAddress: checksummed })
+		.where(
+			and(
+				eq(schema.user.email, walletEmail),
+				// Don't clobber an existing non-wallet session's address.
+				sql`${schema.user.evmAddress} IS NULL OR ${schema.user.evmAddress} = ${checksummed}`,
+			),
+		);
+}
 
 // SECURITY (audit 1.2): per-email cooldown for magic-link + email-OTP sends.
 // Without this, the IP-level 40/min bucket lets an attacker flood any inbox
@@ -364,10 +395,17 @@ export function resolveTrustedOrigins(input: AuthOriginConfig): string[] {
 	}
 
 	// Local dev/preview ports, retained so local sign-in keeps working.
-	origins.add("http://localhost:3000");
-	origins.add("http://127.0.0.1:3000");
-	origins.add("http://localhost:3123");
-	origins.add("http://127.0.0.1:3123");
+	// SECURITY (audit): only add localhost when the environment is actually
+	// local (non-secure-cookie env = development/test). Trusting localhost in
+	// production/staging/preview means any process able to serve content on
+	// localhost — or a DNS-rebinding-style host — is a trusted origin for
+	// magic-link, OTP and SIWE endpoints on the live site.
+	if (!isProd) {
+		origins.add("http://localhost:3000");
+		origins.add("http://127.0.0.1:3000");
+		origins.add("http://localhost:3123");
+		origins.add("http://127.0.0.1:3123");
+	}
 
 	return [...origins];
 }
@@ -547,17 +585,35 @@ user: {
 								return generateRandomString(32, "a-z", "A-Z", "0-9");
 						},
 						verifyMessage: async ({ message, signature, address }: { message: string; signature: string; address: string }) => {
-								try {
-										const valid = await verifyMessage({
-												address: getAddress(address) as `0x${string}`,
-												message,
-												signature: signature as `0x${string}`,
-										});
-										return !!valid;
-								} catch (err) {
-										logger.warn({ err, address }, "[siwe] verifyMessage failed");
-										return false;
+							try {
+								const valid = await verifyMessage({
+									address: getAddress(address) as `0x${string}`,
+									message,
+									signature: signature as `0x${string}`,
+								});
+								if (valid) {
+									// Persist the verifying wallet onto user.evmAddress so the
+									// admin gate (middleware.ts checks ADMIN_WALLET_ADDRESSES_SET
+									// against user.evmAddress) and /user can see it. The SIWE
+									// plugin binds the wallet to a `walletAddress` model row but
+									// never writes the app-owned evmAddress additionalField, so
+									// it stayed null forever and wallet-based admin gating was a
+									// dead path. SIWE users are created with email
+									// `{address}@oma-ai.com` — look the user up that way and
+									// backfill the address. Idempotent + safe: runs on every
+									// successful wallet sign-in.
+									await persistEvmAddress(address).catch((err) => {
+										logger.warn(
+											{ err, address: getAddress(address) },
+											"[siwe] failed to persist evmAddress",
+										);
+									});
 								}
+								return !!valid;
+							} catch (err) {
+								logger.warn({ err, address }, "[siwe] verifyMessage failed");
+								return false;
+							}
 						},
 						ensLookup: async ({ walletAddress }: { walletAddress: string }) => {
 								try {
@@ -585,7 +641,15 @@ user: {
 				// Email OTP — passwordless sign-in, email verification, and password reset.
 				// Uses the same Resend API key as magicLink for sending OTP emails.
 				emailOTP({
-						async sendVerificationOTP({ email, otp, type }) {
+					// SECURITY (audit): mirror magicLink's `storeToken: "hashed"`.
+					// The emailOTP plugin default is `storeOTP: "plain"` (verified in
+					// node_modules/better-auth/dist/plugins/email-otp/index.mjs:16),
+					// which persists OTP codes verbatim in the verification table.
+					// A read-only DB leak (backup, replica, SQLi) would hand an
+					// attacker every live OTP / reset code. Store a digest instead
+					// so the stored value can never be replayed.
+					storeOTP: "hashed",
+					async sendVerificationOTP({ email, otp, type }) {
 								const cooldown = await checkEmailSendCooldown(email, "otp");
 								if (!cooldown.ok) {
 										throw new Error(

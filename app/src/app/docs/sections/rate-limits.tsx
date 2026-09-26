@@ -17,7 +17,7 @@ export function RateLimitsSection() {
 			/>
 
 			<div id="rl-limits" className="mb-6 overflow-x-auto overscroll-x-contain rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] scroll-mt-24">
-				<table className="w-full text-left text-sm" aria-label="Default rate limits">
+				<table className="w-full min-w-[24rem] text-left text-sm" aria-label="Default rate limits">
 					<thead>
 						<tr className="border-b border-border bg-panel">
 							<th className="px-4 py-3 font-medium text-text-muted">Limit</th>

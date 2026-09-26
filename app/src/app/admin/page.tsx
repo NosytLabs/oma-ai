@@ -535,8 +535,8 @@ function UsersSection() {
 			) : items.length === 0 ? (
 				<p className="text-xs text-text-muted">No users found.</p>
 			) : (
-				<div className="overflow-x-auto">
-					<table className="w-full text-left text-xs">
+				<div className="min-w-0 max-w-full overflow-x-auto overscroll-x-contain">
+					<table className="w-full min-w-[26rem] text-left text-xs">
 						<thead className="text-[10px] font-mono uppercase tracking-widest text-text-muted">
 							<tr>
 								<th className="py-1.5 pr-3">Email</th>
@@ -693,7 +693,7 @@ function AdminActionDialog({
 			aria-modal="true"
 			aria-labelledby="admin-action-title"
 		>
-			<div ref={panelRef} tabIndex={-1} className="w-full max-w-md rounded-[var(--radius-lg)] border border-border bg-panel p-5 shadow-xl">
+			<div ref={panelRef} tabIndex={-1} className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-[var(--radius-lg)] border border-border bg-panel p-5 shadow-xl">
 				<h3
 					id="admin-action-title"
 					className="text-sm font-semibold text-text-bright"

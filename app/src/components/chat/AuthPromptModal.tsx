@@ -61,7 +61,7 @@ export function AuthPromptModal({
 						animate={{ opacity: 1, scale: 1, y: 0 }}
 						exit={{ opacity: 0, scale: 0.98, y: 4 }}
 						transition={springs.soft}
-						className="relative w-full max-w-sm mx-4 border border-[var(--color-border)] rounded-[var(--radius-xl)] bg-[var(--color-surface-elevated)] p-6 shadow-2xl"
+						className="relative mx-4 max-h-[calc(100dvh-2rem)] w-full max-w-sm overflow-y-auto overscroll-contain border border-[var(--color-border)] rounded-[var(--radius-xl)] bg-[var(--color-surface-elevated)] p-6 shadow-2xl"
 						onClick={(e) => e.stopPropagation()}
 					>
 						{/* Close button */}

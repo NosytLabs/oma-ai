@@ -28,6 +28,11 @@ import { auditLog } from "../../middleware/audit.js";
 import { config } from "../../config.js";
 import { logger } from "../../lib/logger.js";
 import { USDC_BASE } from "../../constants.js";
+import {
+	issueDepositChallenge,
+	verifyDepositChallenge,
+	verifyDepositSignature,
+} from "../../lib/deposit-challenge.js";
 
 // Chain id for Base mainnet.
 const USDC_BASE_CHAIN_ID = 8453;
@@ -108,6 +113,47 @@ depositRoutes.get("/v1/deposit/usdc", sessionOrBearerAuth, async (c) => {
 		});
 });
 
+// ─── POST /v1/deposit/usdc/challenge ────────────────────────────────────────
+// Issues a short-lived, user-bound challenge token the depositor's wallet must
+// sign. Prevents the deposit Blocker: gates every pending deposit on a
+// cryptographic proof that the caller controls the sending wallet.
+
+depositRoutes.post(
+	"/v1/deposit/usdc/challenge",
+	rateLimit({ windowMs: 60_000, maxRequests: 30 }),
+	sessionOrBearerAuth,
+	async (c) => {
+		const userId = c.get("userId");
+		const body = await c.req.json().catch(() => null);
+		const parsed = challengeSchema.safeParse(body);
+		if (!parsed.success) {
+			return c.json(
+				{
+					error: {
+						message: "Invalid request",
+						type: "invalid_request_error",
+						issues: parsed.error.flatten(),
+					},
+				},
+				400,
+			);
+		}
+		const { fromAddress } = parsed.data;
+		const issued = issueDepositChallenge({ userId, fromAddress });
+		await auditLog({
+			userId,
+			action: "DEPOSIT_CREATED",
+			resource: "deposits",
+			metadata: { stage: "challenge_issued", fromAddress },
+		});
+		return c.json({
+			token: issued.token,
+			nonce: issued.nonce,
+			expiresAt: issued.expiresAt,
+		});
+	},
+);
+
 // ─── POST /v1/deposit/usdc ───────────────────────────────────────────────────
 // Records a pending deposit. The watcher (server/src/jobs/) flips
 // status to `completed` after on-chain confirmation. Balance is NOT
@@ -119,6 +165,17 @@ const submitSchema = z.object({
 		network: z.enum(["base"]).default("base"),
 		// Sending wallet address. The watcher verifies the on-chain sender
 		// matches this so credits can't be claimed for someone else's transfer.
+		fromAddress: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
+		// SECURITY (deposit Blocker): proof-of-ownership. The client must first
+		// obtain a user-bound challenge token (POST /v1/deposit/usdc/challenge)
+		// and then sign the canonical deposit message with the sending wallet.
+		// The signature's recovered signer must equal fromAddress — cryptographically
+		// proving the caller controls the wallet that sends the funds.
+		challengeToken: z.string().min(20),
+		signature: z.string().min(2),
+});
+
+const challengeSchema = z.object({
 		fromAddress: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
 });
 
@@ -173,8 +230,76 @@ depositRoutes.post(
 								400,
 						);
 				}
-				const { amountUsd, txHash, network, fromAddress } = parsed.data;
+				const { amountUsd, txHash, network, fromAddress, challengeToken, signature } =
+					parsed.data;
 				const amountCents = Math.round(amountUsd * 100);
+
+				// SECURITY (deposit Blocker): the pending deposit must be backed by
+				// (1) a valid, unexpired challenge token bound to this user + wallet,
+				// and (2) a wallet signature over the canonical deposit message that
+				// recovers to fromAddress. Without this, an attacker could submit a
+				// victim's broadcast txHash + the victim's real fromAddress under
+				// their OWN account and claim the credits.
+				const challengeCheck = verifyDepositChallenge({
+					token: challengeToken,
+					userId,
+					fromAddress,
+				});
+				if (!challengeCheck.ok) {
+					logger.warn(
+						{ userId, reason: challengeCheck.reason, fromAddress },
+						"[deposit] challenge rejected",
+					);
+					await auditLog({
+						userId,
+						action: "DEPOSIT_FAILED",
+						resource: "deposits",
+						metadata: { reason: `challenge:${challengeCheck.reason}`, fromAddress },
+					});
+					return c.json(
+						{
+							error: {
+								message: "Deposit proof expired or invalid. Please retry.",
+								type: "invalid_request_error",
+							},
+						},
+						403,
+					);
+				}
+				const proofOk = await verifyDepositSignature({
+					fromAddress,
+					depositAddress: config.USDC_DEPOSIT_ADDRESS,
+					challengeToken,
+					signature,
+				});
+				if (!proofOk) {
+					logger.warn(
+						{ userId, fromAddress },
+						"[deposit] signature proof failed — wallet ownership not established",
+					);
+					await auditLog({
+						userId,
+						action: "DEPOSIT_FAILED",
+						resource: "deposits",
+						metadata: { reason: "signature:ownership", fromAddress },
+					});
+					return c.json(
+						{
+							error: {
+								message:
+									"Signature does not match the sending wallet. Verify you're signing with the wallet that sent the USDC.",
+								type: "invalid_request_error",
+							},
+						},
+						403,
+					);
+				}
+				await auditLog({
+					userId,
+					action: "DEPOSIT_CREATED",
+					resource: "deposits",
+					metadata: { stage: "proof_verified", fromAddress, txHash },
+				});
 				if (amountCents < config.USDC_DEPOSIT_MIN_CENTS) {
 						return c.json(
 								{

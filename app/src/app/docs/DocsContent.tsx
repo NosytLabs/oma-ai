@@ -44,10 +44,14 @@ function Sidebar({ activeId }: { activeId: string }) {
 
 	return (
 		<>
+			{/* bottom-24, not bottom-6: the toast stack is `fixed bottom-3`
+			    (mobile) / `bottom-4` (sm+) at z-100 — the same z-index as this
+			    button — so at bottom-6 the two boxes sat on top of each other
+			    on every viewport below lg. Lifting the button clears the stack. */}
 			<button
 				type="button"
 				onClick={() => setMobileOpen(!mobileOpen)}
-				className="fixed bottom-6 right-6 z-[100] flex h-14 w-14 items-center justify-center rounded-full bg-accent text-void shadow-[0_0_20px_var(--color-accent-glow)] lg:hidden active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"
+				className="fixed bottom-24 right-6 z-[100] flex h-14 w-14 items-center justify-center rounded-full bg-accent text-void shadow-[0_0_20px_var(--color-accent-glow)] lg:hidden active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"
 				aria-label={
 					mobileOpen ? "Close navigation menu" : "Open navigation menu"
 				}

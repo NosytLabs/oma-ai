@@ -53,10 +53,14 @@ export function AuthNotice() {
 	};
 
 	return (
+		// Anchored below the 57px sticky Navbar (which is z-50) instead of on
+		// top of it: at every width the notice used to cover the brand mark
+		// and nav links for its full 8s life. `max-w-[92vw]` keeps the box off
+		// the viewport edges at 320px.
 		<div
 			role="status"
 			aria-live="polite"
-			className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 max-w-[92vw] px-4 py-3 border border-warning bg-void text-text-bright text-[12.5px] font-mono tracking-wide"
+			className="fixed top-[4.5rem] left-1/2 z-[60] flex max-w-[92vw] -translate-x-1/2 items-center gap-3 border border-warning bg-void px-4 py-3 text-[12.5px] font-mono tracking-wide text-text-bright"
 			style={{ boxShadow: "0 0 24px var(--color-warning-dim)" }}
 		>
 			<ShieldAlert

@@ -202,7 +202,7 @@ function ApiKeyManagerComponent({
 		aria-describedby="revoke-dialog-description"
 		className="fixed inset-0 z-50 flex items-center justify-center bg-overlay/80 backdrop-blur-md"
 		>
-		<div className="mx-4 w-full max-w-md rounded-[var(--radius-lg)] border border-border bg-panel p-6 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.8)] scale-100 animate-in fade-in zoom-in-95 duration-200">
+		<div className="mx-4 max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-[var(--radius-lg)] border border-border bg-panel p-6 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.8)] scale-100 animate-in fade-in zoom-in-95 duration-200">
 		<h3
 		id="revoke-dialog-title"
 		className="mb-2 text-lg font-bold text-error flex items-center gap-2"

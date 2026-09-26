@@ -1,6 +1,6 @@
 # OMA-AI
 
-[![Website](https://img.shields.io/badge/website-oma--ai.com-0d1117?style=flat&labelColor=0d1117&color=46d39a)](https://oma-ai.com)
+[![Website](https://img.shields.io/badge/website-www.oma--ai.com-0d1117?style=flat&labelColor=0d1117&color=46d39a)](https://www.oma-ai.com)
 [![Version](https://img.shields.io/badge/version-2.1.0-0d1117?style=flat&labelColor=0d1117&color=46d39a)](#)
 [![License](https://img.shields.io/badge/license-MIT-0d1117?style=flat&labelColor=0d1117&color=46d39a)](#)
 [![Status](https://img.shields.io/badge/status-active_development-0d1117?style=flat&labelColor=0d1117&color=46d39a)](#)
@@ -198,7 +198,9 @@ docker build -t oma-app -f app/Dockerfile .
 docker build -t oma-server -f server/Dockerfile .
 ```
 
-For end-to-end self-hosting on Coolify (or any Docker Compose host), including the Caddy reverse proxy, environment checklist, and Polar webhook setup, see [`deploy/coolify/README.md`](deploy/coolify/README.md).
+For end-to-end self-hosting on Coolify (or any Docker Compose host), including the Caddy reverse proxy, environment checklist, and Polar webhook setup, see [`deploy/coolify/README.md`](deploy/coolify/README.md). **That path is unused in production** — see [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+
+The production frontend is the Vercel project `oma` (Root Directory `app`, CLI link at the repo root), serving `https://www.oma-ai.com`. Deploy it with `vercel deploy --prod --yes` from the **repository root**.
 
 For the production backend running as a Neon Function, the infra-as-code manifest lives in `server/neon.ts`. From the repo root, preview and deploy with:
 
@@ -237,7 +239,11 @@ Always run `pnpm validate` locally before opening a pull request.
 | `/faq` · `/glossary` | Educational guides |
 
 - **Agent docs:** `/llms.txt` (machine-readable site index), `/agent-skill.md` (autonomous setup instructions)
-- **OpenAPI:** `https://api.oma-ai.com/openapi.json` (also `/v1/openapi.json`)
+- **OpenAPI:** `https://www.oma-ai.com/api/v1/openapi.json`
+
+> `www.oma-ai.com` is the canonical host; the apex `oma-ai.com` 308-redirects to it.
+> There is no `api.oma-ai.com` — the API is same-origin under `/api/*`. See
+> [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for the canonical deployment reference.
 
 ---
 

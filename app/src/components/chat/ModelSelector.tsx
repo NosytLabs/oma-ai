@@ -171,10 +171,17 @@ export function ModelSelector({
 		setHighlightedIndex(Math.max(0, filtered.findIndex((item) => item.id === model)));
 	}, [filtered, model]);
 
+	// BUG-G: a saved id goes stale in two ways — it disappears from the
+	// static catalog, or it is still in the catalog but is not in the
+	// currently AVAILABLE (live) set (provider down / guest-tier gated).
+	// Either way the picker renders an empty selection and the next send
+	// goes out with an unusable model. Flag it instead of silently showing
+	// "SELECT MODEL"; ChatPlaygroundShell falls back to the free default.
 	const selectedModel = useMemo(
 		() => MODELS.find((m) => m.id === model),
 		[model, MODELS],
 	);
+	const isStaleSelection = !selectedModel;
 	const selectedName = selectedModel
 		? displayName(selectedModel.id, selectedModel.name)
 		: null;
@@ -220,10 +227,18 @@ export function ModelSelector({
 					<span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--color-accent)] shadow-[0_0_8px_var(--color-accent-glow)]" />
 				</span>
 				<span
-					title={selectedName ?? undefined}
-					className="min-w-0 flex-1 truncate text-left font-mono text-[11px] font-bold uppercase tracking-wider text-text-bright sm:text-[12px]"
+					title={
+						isStaleSelection
+							? `${model || "No model"} is not currently available — pick another model`
+							: (selectedName ?? undefined)
+					}
+					data-stale={isStaleSelection ? "true" : undefined}
+					className={`min-w-0 flex-1 truncate text-left font-mono text-[11px] font-bold uppercase tracking-wider sm:text-[12px] ${
+						isStaleSelection ? "text-[var(--color-warning)]" : "text-text-bright"
+					}`}
 				>
-					{selectedShortName || "SELECT MODEL"}
+					{selectedShortName ||
+						(isStaleSelection ? "MODEL UNAVAILABLE" : "SELECT MODEL")}
 				</span>
 				<ChevronDown
 					className={`
@@ -277,6 +292,15 @@ export function ModelSelector({
 	"
 									/>
 								</div>
+								{/* BUG-G: summary counts the AVAILABLE (filtered) set,
+								    not the static catalog length. */}
+								<p
+									className="mt-1.5 text-[10px] font-mono uppercase tracking-wider text-text-muted"
+									data-testid="model-count-summary"
+								>
+									{filtered.length === 1 ? "1 model" : `${filtered.length} models`}
+									{isAuthenticated ? " available" : " available to you"}
+								</p>
 								{isAuthenticated ? (
 									<div className="flex gap-1 mt-2 flex-wrap">
 									{(

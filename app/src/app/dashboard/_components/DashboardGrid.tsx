@@ -381,7 +381,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 									</WidgetErrorBoundary>
 								</div>
 
-								<div className="mb-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+								<div className="mb-8 grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-2">
 									<WidgetErrorBoundary title="Model usage">
 										<LazyModelUsageTable usage={usage} loading={loading} />
 									</WidgetErrorBoundary>

@@ -51,11 +51,18 @@ export interface PaymentResponse {
 }
 
 export interface SettlementRecord {
-		txHash: string;
-		amount: string;
-		networkId: string;
-		payee: string;
-		settledAt: number;
+	txHash: string;
+	amount: string;
+	networkId: string;
+	payee: string;
+	// SECURITY (x402-ownership audit): the on-chain sender of the verified
+	// payment. `/x402/verify` already enforces tx `from == payload.payFrom`
+	// (verify.ts), but discards the payer after the check. Carrying it here
+	// lets `/x402/settle` bind the credit to the session user who owns that
+	// sender (via evmAddress), closing the hole where any session could
+	// claim a verified-but-unsettled payment.
+	payFrom?: string;
+	settledAt: number;
 		// receipt is optional on a *cached verified record* written by
 		// /x402/verify. The full settlement (with receipt) is written by
 		// settlePayment/settlePaymentAsync. This makes the cache state

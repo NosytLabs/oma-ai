@@ -90,6 +90,7 @@ export function cacheVerifiedRecord(
 						amount: result.amount ?? payload.amount,
 						networkId: result.networkId ?? payload.networkId,
 						payee: payload.payee,
+						payFrom: payload.payFrom,
 						settledAt: Date.now(),
 				};
 				atomicCacheSet(getSettlementCacheKey(payload.networkId, result.txHash), record);
