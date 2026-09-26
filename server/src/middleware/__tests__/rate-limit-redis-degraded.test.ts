@@ -102,7 +102,7 @@ describe("rate limiting while Redis is unavailable", () => {
 		const c = ctx();
 		await mw(c, async () => {});
 		expect((c as unknown as { headers: Record<string, string> }).headers["X-RateLimit-Policy"]).toBe(
-			"degraded-memory",
+			"limiter",
 		);
 	});
 

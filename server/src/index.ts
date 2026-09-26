@@ -206,6 +206,17 @@ const corsOptions = {
 // browser would report an opaque network error instead of payload_too_large.
 app.use("*", cors(corsOptions));
 
+// SECURITY: only appear credentialed to allowlisted origins. Hono emits
+// `Access-Control-Allow-Credentials: true` unconditionally; combined with a
+// future wildcard ACAO fallback that would allow any site to make credentialed
+// requests. Strip the header whenever no ACAO was granted for this request.
+app.use("*", async (c, next) => {
+	await next();
+	if (!c.res.headers.get("Access-Control-Allow-Origin")) {
+		c.res.headers.delete("Access-Control-Allow-Credentials");
+	}
+});
+
 // SECURITY: without an explicit body limit, any route that calls
 // c.req.json()/text()/arrayBuffer() will buffer an arbitrarily large
 // request into memory first. A single oversized POST to /v1/chat/completions

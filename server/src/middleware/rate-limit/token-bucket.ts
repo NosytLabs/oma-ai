@@ -88,7 +88,7 @@ export function tokenBucket(options: TokenBucketOptions = {}) {
 						c.header("X-RateLimit-Limit", String(FALLBACK_BURST_LIMIT));
 						c.header("X-RateLimit-Remaining", String(fallback.remaining));
 						c.header("X-RateLimit-Reset", String(resetTime));
-						c.header("X-RateLimit-Policy", "fail-closed-conservative");
+						c.header("X-RateLimit-Policy", "limiter");
 						c.header("Retry-After", String(Math.ceil(fallback.resetMs / 1000)));
 						
 						if (!fallback.allowed) {
@@ -118,7 +118,7 @@ export function tokenBucket(options: TokenBucketOptions = {}) {
 						c.header("X-RateLimit-Limit", String(limit));
 						c.header("X-RateLimit-Remaining", String(Math.max(remaining, 0)));
 						c.header("X-RateLimit-Reset", String(resetTime));
-						c.header("X-RateLimit-Policy", "token-bucket");
+						c.header("X-RateLimit-Policy", "limiter");
 
 						if (checkRpm) {
 								const rpmKey = `${rateLimitKey}:rpm`;
@@ -172,7 +172,7 @@ export function tokenBucket(options: TokenBucketOptions = {}) {
 						await next();
 				} catch (err) {
 						logger.error({ err }, "CRITICAL: Rate limit check failed -- failing CLOSED");
-						c.header("X-RateLimit-Policy", "fail-closed-error");
+						c.header("X-RateLimit-Policy", "limiter");
 						return c.json(
 								{ error: { message: "Rate limiting temporarily unavailable", type: "rate_limit_error", code: "rate_limit_unavailable" } },
 								503
@@ -218,7 +218,7 @@ export function modelRateLimit(options: TokenBucketOptions = {}) {
 						c.header("X-RateLimit-Limit", String(FALLBACK_BURST_LIMIT));
 						c.header("X-RateLimit-Remaining", String(fallback.remaining));
 						c.header("X-RateLimit-Reset", String(resetTime));
-						c.header("X-RateLimit-Policy", "fail-closed-conservative");
+						c.header("X-RateLimit-Policy", "limiter");
 						c.header("Retry-After", String(Math.ceil(fallback.resetMs / 1000)));
 						
 						if (!fallback.allowed) {
@@ -273,7 +273,7 @@ export function modelRateLimit(options: TokenBucketOptions = {}) {
 						await next();
 				} catch (err) {
 						logger.error({ err }, "CRITICAL: Model rate limit check failed -- failing CLOSED");
-						c.header("X-RateLimit-Policy", "fail-closed-error");
+						c.header("X-RateLimit-Policy", "limiter");
 						return c.json(
 								{ error: { message: "Rate limiting temporarily unavailable", type: "rate_limit_error", code: "rate_limit_unavailable" } },
 								503

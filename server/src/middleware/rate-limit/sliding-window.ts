@@ -104,7 +104,7 @@ export function rateLimit(options: RateLimitOptions) {
 									degradedWarned = true;
 								}
 							const fb = checkFallbackLimit(rateLimitKey);
-							c.header("X-RateLimit-Policy", "degraded-memory");
+							c.header("X-RateLimit-Policy", "limiter");
 							c.header("X-RateLimit-Remaining", String(fb.remaining));
 							if (!fb.allowed) {
 								c.header("Retry-After", String(Math.ceil(fb.resetMs / 1000)));
@@ -119,7 +119,7 @@ export function rateLimit(options: RateLimitOptions) {
 						c.header("X-RateLimit-Limit", String(maxRequests));
 						c.header("X-RateLimit-Remaining", "0");
 						c.header("X-RateLimit-Reset", String(Math.ceil(Date.now() / 1000) + 60));
-						c.header("X-RateLimit-Policy", "fail-closed");
+						c.header("X-RateLimit-Policy", "limiter");
 						c.header("Retry-After", "60");
 						return c.json(
 								{ error: { message: "Service temporarily unavailable. Please try again later.", type: "rate_limit_error", code: "service_unavailable" } },
@@ -152,7 +152,7 @@ export function rateLimit(options: RateLimitOptions) {
 						// Same reasoning as the unavailable branch above: a Redis
 						// error must not silently remove the cap.
 						const fb = checkFallbackLimit(rateLimitKey);
-						c.header("X-RateLimit-Policy", "degraded-memory");
+						c.header("X-RateLimit-Policy", "limiter");
 						if (!fb.allowed) {
 							c.header("Retry-After", String(Math.ceil(fb.resetMs / 1000)));
 							return c.json(
@@ -165,7 +165,7 @@ export function rateLimit(options: RateLimitOptions) {
 						logger.error({ err }, "Redis operation failed -- failing CLOSED for auth route");
 						c.header("X-RateLimit-Limit", String(maxRequests));
 						c.header("X-RateLimit-Remaining", "0");
-						c.header("X-RateLimit-Policy", "fail-closed-error");
+						c.header("X-RateLimit-Policy", "limiter");
 						c.header("Retry-After", "60");
 						return c.json(
 								{ error: { message: "Service temporarily unavailable. Please try again later.", type: "rate_limit_error", code: "service_unavailable" } },

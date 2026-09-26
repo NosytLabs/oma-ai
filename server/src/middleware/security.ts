@@ -19,6 +19,13 @@ export async function securityHeaders(c: Context, next: Next) {
 		// (which never execute browser scripts anyway) can still serve JSON.
 		"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; connect-src 'self' https:",
 	);
+	// Defense-in-depth for direct (non-proxied) API responses: the Next proxy
+	// already sets these, but direct hits to the API base bypass it.
+	c.header("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
+	c.header("X-Content-Type-Options", "nosniff");
+	c.header("X-Frame-Options", "DENY");
+	c.header("Referrer-Policy", "no-referrer");
+	c.header("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
 	c.header("X-XSS-Protection", "0");
 	await next();
 }
