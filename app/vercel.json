@@ -1,4 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "ignoreCommand": "case \"${VERCEL_GIT_PREVIOUS_SHA:-}\" in \"\"|*[!0-9a-fA-F]*) exit 1;; esac; if git diff --quiet \"$VERCEL_GIT_PREVIOUS_SHA\" HEAD -- ':(top)app/**' ':(top)package.json' ':(top)pnpm-lock.yaml' ':(top)pnpm-workspace.yaml' ':(top).npmrc' ':(top).nvmrc'; then exit 0; else exit 1; fi"
+  "ignoreCommand": "node scripts/vercel-ignore.mjs"
 }
