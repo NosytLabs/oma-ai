@@ -137,6 +137,41 @@ console.error = (...args: unknown[]) => {
 };
 
 /**
+ * Polyfill IntersectionObserver for jsdom.
+ *
+ * jsdom does not implement IntersectionObserver, but the site's framer-free
+ * scroll-reveal (src/lib/use-reveal-in-view.ts) instantiates one on every
+ * Reveal / InViewFade / ModelCard mount — so any test that renders those
+ * crashed with "IntersectionObserver is not defined". The reveal hook is
+ * deliberately safe under a no-op observer: it never waits on a callback, it
+ * force-reveals after a 1500ms ceiling regardless of intersection state, so a
+ * mock that simply records calls (and never fires the callback) lets content
+ * still reach its final visible state in tests.
+ *
+ * Previously a near-identical class was copy-pasted into models/page.test.tsx
+ * and pricing/page.test.tsx; the single copy below lives in the shared setup
+ * so every suite gets it and the drift-prone duplicates can be removed.
+ */
+if (typeof globalThis.IntersectionObserver === "undefined") {
+	class MockIntersectionObserver implements IntersectionObserver {
+		readonly root = null;
+		readonly rootMargin = "";
+		readonly thresholds = [];
+
+		observe = vi.fn();
+		unobserve = vi.fn();
+		disconnect = vi.fn();
+		takeRecords = vi.fn(() => []);
+
+		constructor(
+			private callback: IntersectionObserverCallback,
+			private options?: IntersectionObserverInit,
+		) {}
+	}
+	vi.stubGlobal("IntersectionObserver", MockIntersectionObserver);
+}
+
+/**
  * jsdom's HTMLCanvasElement.getContext prints a "Not implemented" warning
  * on every call and returns null. Components null-guard the result, so a
  * stub that returns null preserves behavior while silencing the noise.

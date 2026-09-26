@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import ModelsPage from "./page";
 
@@ -8,24 +8,6 @@ vi.mock("next/navigation", () => ({
 	useSearchParams: () => new URLSearchParams(),
 	usePathname: () => "/models",
 }));
-
-const originalIntersectionObserver = global.IntersectionObserver;
-
-class MockIntersectionObserver {
-	observe = vi.fn();
-	unobserve = vi.fn();
-	disconnect = vi.fn();
-}
-
-beforeEach(() => {
-	global.IntersectionObserver =
-		MockIntersectionObserver as unknown as typeof IntersectionObserver;
-});
-
-afterEach(() => {
-	global.IntersectionObserver = originalIntersectionObserver;
-	vi.restoreAllMocks();
-});
 
 describe("ModelsPage", () => {
 	it("renders the models page heading", async () => {

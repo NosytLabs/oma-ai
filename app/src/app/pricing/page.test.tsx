@@ -1,24 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import PricingPage from "./page";
-
-const originalIntersectionObserver = global.IntersectionObserver;
-
-class MockIntersectionObserver {
-	observe = vi.fn();
-	unobserve = vi.fn();
-	disconnect = vi.fn();
-}
-
-beforeEach(() => {
-	global.IntersectionObserver =
-		MockIntersectionObserver as unknown as typeof IntersectionObserver;
-});
-
-afterEach(() => {
-	global.IntersectionObserver = originalIntersectionObserver;
-	vi.restoreAllMocks();
-});
 
 describe("PricingPage", () => {
 	it("renders the pricing page heading", () => {
