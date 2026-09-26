@@ -29,12 +29,12 @@ describe("sitemap.ts - Next.js MetadataRoute.Sitemap", () => {
 		}
 	});
 
-	it("every entry has changeFrequency and priority; lastModified intentionally omitted", async () => {
+	it("every entry has changeFrequency and priority", async () => {
 		const result = await sitemap();
 		for (const entry of result) {
-			// lastModified is deliberately omitted (see the sitemap.ts comment:
-			// deploy-date freshness would mark unchanged pages as freshly edited
-			// on every release, and we only publish source-owned semantic dates).
+			// lastModified is intentionally omitted — see sitemap.ts. Using the
+			// deploy date makes unchanged pages look freshly edited every
+			// release and produces noisy freshness signals.
 			expect(entry.lastModified).toBeUndefined();
 			expect([
 				"always",

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, afterEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 
 const MODELS = [
 	{ id: "minimax-m2-7" },
@@ -9,53 +9,70 @@ const MODELS = [
 
 vi.mock("@/lib/models-data", () => ({ MODELS }));
 
+const originalFetch = global.fetch;
+
 async function load() {
 	const mod = await import("../sitemap");
 	return mod.default;
 }
 
 /**
- * The sitemap deliberately does NOT filter model pages by live availability.
+ * The sitemap is a STATIC, build-time catalog by design.
  *
- * An earlier revision made the sitemap fetch /v1/models and drop URLs for any
- * model not currently accepting requests. That was reverted by design (see the
- * comment at the top of sitemap.ts): a temporary provider key rotation,
- * rate-limit or outage would yank dozens of useful catalog pages out of the
- * crawl graph at once, and a build-time network blip would drop them from a
- * release entirely. Model availability is still reported live on the model
- * detail pages, llms.txt, agent-card.json and /docs — but the crawl graph
- * itself stays stable. These tests lock in that current, intended behavior.
+ * It used to fetch live availability and drop dark models, which meant the
+ * crawl graph changed whenever a provider blipped — and a network failure at
+ * build time silently published either the whole catalog or none of it. The
+ * current contract (see the comment block in sitemap.ts) is: every model in
+ * MODELS is always listed, because the model pages are real catalog pages that
+ * are `noindex`ed individually when the model is unavailable.
+ *
+ * These tests therefore pin the static contract, and assert that the sitemap
+ * makes NO network call at all — the property that makes it deterministic.
  */
-describe("sitemap model coverage", () => {
+describe("sitemap model catalog", () => {
+	beforeEach(() => {
+		process.env.NEXT_PUBLIC_APP_URL = "https://www.oma-ai.com";
+		// Any fetch here is a bug: the sitemap must be build-time pure.
+		global.fetch = vi.fn(async () => {
+			throw new Error("sitemap must not perform network I/O");
+		}) as unknown as typeof fetch;
+	});
 	afterEach(() => {
-		vi.unstubAllEnvs();
+		global.fetch = originalFetch;
 		vi.resetModules();
 	});
 
-	it("lists every catalog model regardless of availability", async () => {
-		const sitemap = await (await load())();
-		const urls = sitemap.map((e) => e.url);
-		for (const id of MODELS.map((m) => m.id)) {
-			expect(urls).toContain(`https://www.oma-ai.com/models/${id}`);
+	it("lists every model in the catalog regardless of runtime availability", async () => {
+		const sitemapFn = await load();
+		const urls = (await sitemapFn()).map((e) => e.url);
+		for (const m of MODELS) {
+			expect(urls).toContain(`https://www.oma-ai.com/models/${m.id}`);
 		}
 	});
 
-	it("keeps the core marketing pages alongside the model pages", async () => {
-		const urls = (await (await load())()).map((e) => e.url);
+	it("performs no network I/O, so a provider outage cannot alter the crawl graph", async () => {
+		const sitemapFn = await load();
+		sitemapFn();
+		expect(global.fetch).not.toHaveBeenCalled();
+	});
+
+	it("keeps the core marketing pages", async () => {
+		const sitemapFn = await load();
+		const urls = (await sitemapFn()).map((e) => e.url);
 		for (const p of ["/", "/models", "/pricing", "/docs", "/chat", "/getting-started"]) {
 			expect(urls).toContain(p === "/" ? "https://www.oma-ai.com" : `https://www.oma-ai.com${p}`);
 		}
 	});
 
-	it("advertises the canonical www host", async () => {
-		const urls = (await (await load())()).map((e) => e.url);
-		expect(urls.every((u) => u.startsWith("https://www.oma-ai.com"))).toBe(true);
+	it("never emits duplicate URLs", async () => {
+		const sitemapFn = await load();
+		const urls = (await sitemapFn()).map((e) => e.url);
+		expect(new Set(urls).size).toBe(urls.length);
 	});
 
-	it("is a pure function of the curated registry and never touches the network", async () => {
-		const fn = vi.fn();
-		global.fetch = fn as unknown as typeof fetch;
-		await (await load())();
-		expect(fn).not.toHaveBeenCalled();
+	it("advertises the canonical www host", async () => {
+		const sitemapFn = await load();
+		const urls = (await sitemapFn()).map((e) => e.url);
+		expect(urls.every((u) => u.startsWith("https://www.oma-ai.com"))).toBe(true);
 	});
 });

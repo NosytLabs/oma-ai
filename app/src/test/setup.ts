@@ -122,6 +122,74 @@ if (typeof window !== "undefined" && !window.matchMedia) {
 	});
 }
 
+/**
+ * jsdom implements neither IntersectionObserver nor ResizeObserver. Anything
+ * that reveals on scroll constructs one inside an effect, so the missing
+ * global throws at mount and takes the whole test file down rather than
+ * degrading. Stub them the way matchMedia is stubbed above.
+ *
+ * The observer must be a real class — `vi.fn()` is not constructible, and
+ * `new IntersectionObserver(...)` throws "is not a constructor". It reports
+ * targets as intersecting on `observe()` so content gated on visibility
+ * renders in tests instead of staying stuck at opacity-0.
+ */
+class MockIntersectionObserver implements IntersectionObserver {
+	readonly root: Element | null = null;
+	readonly rootMargin: string = "";
+	readonly scrollMargin: string = "";
+	readonly thresholds: ReadonlyArray<number> = [];
+	private readonly callback: IntersectionObserverCallback;
+	constructor(callback: IntersectionObserverCallback, options?: IntersectionObserverInit) {
+		this.callback = callback;
+		this.root = (options?.root as Element | null) ?? null;
+		this.rootMargin = options?.rootMargin ?? "";
+	}
+	observe(target: Element): void {
+		this.callback(
+			[
+				{
+					target,
+					isIntersecting: true,
+					intersectionRatio: 1,
+				} as IntersectionObserverEntry,
+			],
+			this,
+		);
+	}
+	unobserve(): void {}
+	disconnect(): void {}
+	takeRecords(): IntersectionObserverEntry[] {
+		return [];
+	}
+}
+
+if (typeof globalThis.IntersectionObserver === "undefined") {
+	vi.stubGlobal("IntersectionObserver", MockIntersectionObserver);
+}
+if (typeof window !== "undefined" && !window.IntersectionObserver) {
+	Object.defineProperty(window, "IntersectionObserver", {
+		writable: true,
+		configurable: true,
+		value: MockIntersectionObserver,
+	});
+}
+
+class MockResizeObserver implements ResizeObserver {
+	disconnect(): void {}
+	observe(): void {}
+	unobserve(): void {}
+}
+if (typeof globalThis.ResizeObserver === "undefined") {
+	vi.stubGlobal("ResizeObserver", MockResizeObserver);
+}
+if (typeof window !== "undefined" && !window.ResizeObserver) {
+	Object.defineProperty(window, "ResizeObserver", {
+		writable: true,
+		configurable: true,
+		value: MockResizeObserver,
+	});
+}
+
 // Suppress framer-motion React.Fragment className warnings in jsdom
 // This is a known compatibility issue in jsdom - framer-motion v12 internally
 // renders as Fragment during testing, which triggers this harmless warning
@@ -135,41 +203,6 @@ console.error = (...args: unknown[]) => {
 	}
 	originalError(...args);
 };
-
-/**
- * Polyfill IntersectionObserver for jsdom.
- *
- * jsdom does not implement IntersectionObserver, but the site's framer-free
- * scroll-reveal (src/lib/use-reveal-in-view.ts) instantiates one on every
- * Reveal / InViewFade / ModelCard mount — so any test that renders those
- * crashed with "IntersectionObserver is not defined". The reveal hook is
- * deliberately safe under a no-op observer: it never waits on a callback, it
- * force-reveals after a 1500ms ceiling regardless of intersection state, so a
- * mock that simply records calls (and never fires the callback) lets content
- * still reach its final visible state in tests.
- *
- * Previously a near-identical class was copy-pasted into models/page.test.tsx
- * and pricing/page.test.tsx; the single copy below lives in the shared setup
- * so every suite gets it and the drift-prone duplicates can be removed.
- */
-if (typeof globalThis.IntersectionObserver === "undefined") {
-	class MockIntersectionObserver implements IntersectionObserver {
-		readonly root = null;
-		readonly rootMargin = "";
-		readonly thresholds = [];
-
-		observe = vi.fn();
-		unobserve = vi.fn();
-		disconnect = vi.fn();
-		takeRecords = vi.fn(() => []);
-
-		constructor(
-			private callback: IntersectionObserverCallback,
-			private options?: IntersectionObserverInit,
-		) {}
-	}
-	vi.stubGlobal("IntersectionObserver", MockIntersectionObserver);
-}
 
 /**
  * jsdom's HTMLCanvasElement.getContext prints a "Not implemented" warning
