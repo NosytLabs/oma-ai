@@ -263,6 +263,45 @@ export async function verifyPayment(
 	// never extend an authorization's life. Bounding a cache hit by the
 	// signed validity window keeps that retry behaviour while capping reuse
 	// at the window the payer actually signed.
+	// Sanity-bound the envelope's window by the SIGNED authorization. The
+	// payload fields are client-authored; on the v1 path the cached record
+	// (24h TTL) must not outlive the window the payer actually signed.
+	// If payload.validBefore exceeds the signed window, the pre-cache expiry
+	// check below would otherwise trust the attacker-controlled value.
+	let signedAuth: unknown = null;
+	if (authorization) {
+		try {
+			signedAuth = JSON.parse(authorization);
+		} catch {
+			// Opaque authorization = legacy receipt path; no signed window to bind.
+		}
+	}
+	if (
+		signedAuth &&
+		typeof signedAuth === "object" &&
+		isEip3009Authorization(signedAuth)
+	) {
+		try {
+			const a = signedAuth as { validBefore: string | number; validAfter: string | number };
+			const signedBefore = BigInt(a.validBefore);
+			if (
+				payload.validBefore === undefined ||
+				BigInt(payload.validBefore) > signedBefore
+			) {
+				payload.validBefore = Number(signedBefore);
+			}
+			const signedAfter = BigInt(a.validAfter);
+			if (
+				payload.validAfter === undefined ||
+				BigInt(payload.validAfter) < signedAfter
+			) {
+				payload.validAfter = Number(signedAfter);
+			}
+		} catch {
+			// Non-numeric signed window — verifyEip3009Payment rejects it later.
+		}
+	}
+
 	const now = Math.floor(Date.now() / 1000);
 	if (payload.validBefore && now > payload.validBefore) {
 		return { valid: false, error: "Payment authorization expired" };

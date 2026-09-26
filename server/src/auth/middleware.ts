@@ -29,7 +29,7 @@ import {
 import { auth } from "../auth.js";
 import type { OmaEnv } from "../types.js";
 import type { ApiKey } from "../db/schema.js";
-import { config, ADMIN_WALLET_ADDRESSES_SET } from "../config.js";
+import { config, isProductionEnv, ADMIN_WALLET_ADDRESSES_SET } from "../config.js";
 import { extractClientIp } from "../middleware/rate-limit/utils.js";
 import { logger } from "../lib/logger.js";
 import { eq } from "drizzle-orm";
@@ -53,8 +53,10 @@ function isValidEthereumAddress(address: string): boolean {
 }
 
 export function initAuth(): void {
-		const validProductionEnvironments = ["production", "staging", "preview"];
-		if (!validProductionEnvironments.includes(config.NODE_ENV)) return;
+		// Reuse the canonical production-env list (includes "prod") rather than
+		// a hand-rolled subset — a narrower list skipped admin-address validation
+		// on "prod"-named deployments.
+		if (!isProductionEnv) return;
 		if (!config.ADMIN_WALLET_ADDRESSES) return;
 
 		const addresses = config.ADMIN_WALLET_ADDRESSES.split(",")

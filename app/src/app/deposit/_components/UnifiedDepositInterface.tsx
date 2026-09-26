@@ -218,10 +218,14 @@ export function UnifiedDepositInterface({
 			// recovered signer equals fromAddress.
 			setProcessingStep("Signing deposit proof…");
 			const challenge = await requestDepositChallenge(connectedAddress);
+			// Sign AFTER the tx is broadcast so the proof binds the real txHash
+			// and the declared amount, not just the addresses (replay guard).
 			const signature = await signDepositMessage({
 				fromAddress: connectedAddress,
 				challengeToken: challenge.token,
 				depositAddress: instructions.depositAddress,
+				txHash,
+				amountUsd: amount,
 			});
 
 			const pendingDeposit = {

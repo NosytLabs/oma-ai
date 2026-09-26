@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { getAddress, verifyMessage } from "viem";
 import { config } from "../config.js";
 
@@ -15,7 +15,8 @@ import { config } from "../config.js";
  * themselves.
  *
  * The fix is cryptographic ownership proof: the depositor must sign a message
- * that BINDS (fromAddress, depositAddress, txHash, amount, nonce). The wallet
+ * that BINDS (fromAddress, depositAddress, nonce) and, when a tx has been
+ * broadcast, its txHash and declared amount (see buildDepositSignMessage). The wallet
  * signature is only possible for someone holding that wallet's private key, so
  * the recovered signer must equal fromAddress. The nonce is minted by this
  * module and bound to the authenticated userId via an HMAC tag, so the signed
@@ -59,12 +60,9 @@ function hmac(data: string): Buffer {
 	return createHmac("sha256", DERIVED_KEY).update(data).digest();
 }
 
-/** Generate a random nonce. */
+/** Generate a random nonce from a CSPRNG (never Math.random). */
 export function generateNonce(): string {
-	return createHmac("sha256", `${Date.now()}:${Math.random()}:${config.ENCRYPTION_KEY}`)
-		.update(Math.random().toString())
-		.digest("hex")
-		.slice(0, 32);
+	return randomBytes(16).toString("hex");
 }
 
 /**
@@ -158,14 +156,24 @@ export function buildDepositSignMessage(args: {
 	fromAddress: string;
 	challengeToken: string;
 	depositAddress: string;
+	/** Optional on-chain tx hash this authorization is bound to. */
+	txHash?: string;
+	/** Optional declared USD amount this authorization is bound to. */
+	amountUsd?: number | string;
 }): string {
-	return [
+	const lines = [
 		"OMA-AI deposit authorization",
 		"",
 		`Sending wallet: ${args.fromAddress}`,
 		`Deposit to: ${args.depositAddress}`,
 		`Challenge: ${args.challengeToken}`,
-	].join("\n");
+	];
+	// SECURITY: binding the tx (and declared amount) into the signed message
+	// prevents a captured signature from being replayed against a different
+	// txHash or amount for the same wallet within the challenge TTL.
+	if (args.txHash) lines.push(`Transaction: ${args.txHash}`);
+	if (args.amountUsd !== undefined) lines.push(`Amount USD: ${args.amountUsd}`);
+	return lines.join("\n");
 }
 
 /**
@@ -179,12 +187,16 @@ export async function verifyDepositSignature(args: {
 	depositAddress: string;
 	challengeToken: string;
 	signature: string;
+	txHash?: string;
+	amountUsd?: number | string;
 }): Promise<boolean> {
 	try {
 		const message = buildDepositSignMessage({
 			fromAddress: args.fromAddress,
 			challengeToken: args.challengeToken,
 			depositAddress: args.depositAddress,
+			txHash: args.txHash,
+			amountUsd: args.amountUsd,
 		});
 		const recovered = await verifyMessage({
 			address: getAddress(args.fromAddress) as `0x${string}`,

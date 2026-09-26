@@ -271,6 +271,8 @@ depositRoutes.post(
 					depositAddress: config.USDC_DEPOSIT_ADDRESS,
 					challengeToken,
 					signature,
+					txHash,
+					amountUsd,
 				});
 				if (!proofOk) {
 					logger.warn(

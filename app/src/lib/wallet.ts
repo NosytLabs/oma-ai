@@ -172,14 +172,21 @@ export function buildDepositSignMessage(args: {
 	fromAddress: string;
 	challengeToken: string;
 	depositAddress: string;
+	/** Optional on-chain tx hash this authorization is bound to. */
+	txHash?: string;
+	/** Optional declared USD amount this authorization is bound to. */
+	amountUsd?: number | string;
 }): string {
-	return [
+	const lines = [
 		"OMA-AI deposit authorization",
 		"",
 		`Sending wallet: ${args.fromAddress}`,
 		`Deposit to: ${args.depositAddress}`,
 		`Challenge: ${args.challengeToken}`,
-	].join("\n");
+	];
+	if (args.txHash) lines.push(`Transaction: ${args.txHash}`);
+	if (args.amountUsd !== undefined) lines.push(`Amount USD: ${args.amountUsd}`);
+	return lines.join("\n");
 }
 
 /** Sign the canonical deposit message with the connected wallet. */
@@ -187,12 +194,16 @@ export async function signDepositMessage(args: {
 	fromAddress: `0x${string}`;
 	challengeToken: string;
 	depositAddress: string;
+	txHash?: string;
+	amountUsd?: number | string;
 }): Promise<string> {
 	const client = viemWalletClient();
 	const message = buildDepositSignMessage({
 		fromAddress: args.fromAddress,
 		challengeToken: args.challengeToken,
 		depositAddress: args.depositAddress,
+		txHash: args.txHash,
+		amountUsd: args.amountUsd,
 	});
 	return client.signMessage({
 		account: args.fromAddress,

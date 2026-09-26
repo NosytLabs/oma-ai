@@ -384,6 +384,51 @@ x402Routes.post("/x402/settle", sessionAuth, async (c) => {
 				.where(and(eq(settlements.txHash, body.txHash), eq(settlements.networkId, body.networkId)))
 				.limit(1);
 		if (existingSettlement.length > 0) {
+				// SECURITY gate (x402-ownership audit, DB-repopulate path): the
+				// settlements table has no payer column, so recover the sender from
+				// the crediting deposit row (stored by creditSettledPayment). If the
+				// payment has not yet been credited, fall back to an on-chain check —
+				// the tx's actual `from` — which is the ground truth the caller must
+				// own. Without this gate a session claiming credits after cache
+				// eviction/restart could assert ownership of someone else's payment
+				// (first-claimant-wins theft, same as the cached-path gate above).
+				const depositRow = await db
+						.select({ fromAddress: deposits.fromAddress })
+						.from(deposits)
+						.where(eq(deposits.txHash, body.txHash))
+						.limit(1);
+				let senderAddr = (depositRow[0]?.fromAddress ?? "").toLowerCase();
+				if (!senderAddr) {
+						try {
+								const { getPublicClient } = await import("../lib/rpc-client.js");
+								const publicClient = getPublicClient();
+								const tx = await publicClient.getTransaction({
+										hash: body.txHash as `0x${string}`,
+								});
+								senderAddr = (tx?.from ?? "").toLowerCase();
+						} catch (chainErr) {
+								logger.warn(
+										{ err: chainErr, txHash: body.txHash },
+										"[FACILITATOR] /x402/settle could not recover payer from chain",
+								);
+						}
+				}
+				const [u] = await db
+						.select({ evmAddress: userTable.evmAddress })
+						.from(userTable)
+						.where(eq(userTable.id, userId))
+						.limit(1);
+				const sessionAddr = (u?.evmAddress ?? "").toLowerCase();
+				if (!sessionAddr || !senderAddr || sessionAddr !== senderAddr) {
+						logger.warn(
+								{ userId, txHash: body.txHash, senderAddr },
+								"[FACILITATOR] /x402/settle rejected (db path): session wallet does not own the payment sender",
+						);
+						return c.json(
+								{ error: { message: "Payment sender does not match the authenticated wallet", type: "payment_error", code: "x402_payer_mismatch" } },
+								403,
+						);
+				}
 				// Repopulate the cache and credit if this settle has not yet
 				// been applied to a user balance (idempotent via deposits.tx_hash).
 				atomicCacheSet(cacheKey, {
@@ -391,6 +436,7 @@ x402Routes.post("/x402/settle", sessionAuth, async (c) => {
 						amount: existingSettlement[0].amount,
 						networkId: existingSettlement[0].networkId,
 						payee: existingSettlement[0].payee,
+						payFrom: senderAddr,
 						settledAt: existingSettlement[0].settledAt.getTime(),
 						receipt: existingSettlement[0].receipt,
 				});
