@@ -40,7 +40,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
 		...GLOSSARY_SLUGS.map((slug) => entry(`/glossary/${slug}`, 0.5, "monthly")),
 		entry("/about", 0.6, "monthly"),
 		entry("/contact", 0.4, "yearly"),
-		entry("/status", 0.5, "daily"),
 		entry("/changelog", 0.5, "weekly"),
 		entry("/privacy", 0.25, "yearly"),
 		entry("/terms", 0.25, "yearly"),
