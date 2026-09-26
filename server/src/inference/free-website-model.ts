@@ -2,11 +2,24 @@
  * Models that may be used without credits on the public website chat.
  *
  * ONLY OpenBroker/Gonka-hosted models can be free — they have no upstream
- * cost. Verified live against api.openbroker.gonka.gg/v1/models, which
- * exposes exactly 3 serving models: MiniMaxAI/MiniMax-M2.7,
- * deepseek-ai/DeepSeek-V4-Flash-0731, and zai-org/GLM-5.3-Flash (curated
- * as `minimax-m2-7`, `deepseek-v4-flash-0731-openbroker`, and
- * `zai-org-glm-5-3`). A real OPENBROKER_API_KEY is configured.
+ * cost. A real OPENBROKER_API_KEY is configured.
+ *
+ * 2026-09-26 re-verification — the free pool is now ONE model deep.
+ * api.openbroker.gonka.gg/v1/models still lists three ids, but only
+ * deepseek-ai/DeepSeek-V4-Flash-0731 actually serves inference.
+ * minimax-m2-7 and zai-org-glm-5-3 both return a fast, sticky 503
+ * "temporarily unavailable" (8/8 across 4s-spaced retries — not congestion,
+ * not 429 rate limiting) and produced 0.000 GNK across a 300-request usage
+ * window at 60-67% failure. Both are marked `upstream: undefined` in
+ * models.ts, which is the non-routable marker buildFallbackChain filters on.
+ *
+ * CONSEQUENCE: guest chat has a single free backend. If OpenBroker drops
+ * DeepSeek, the free path fails — but it fails FAST and cleanly: the router
+ * gives freeOnly 1 retry, then throws ProviderError ("Inference provider
+ * temporarily unavailable"). No hang, no empty-200, no quota burn. There is no
+ * second free provider because `freeOnly` exists precisely to keep paid
+ * Venice models out of the guest path; adding one would break that promise.
+ * Treat OpenBroker availability as a guest-chat dependency.
  *
  * NOTE: API-token callers (Authorization: Bearer oma_sk_*) ALWAYS pay
  * real credits, including for these models. Free usage is restricted to
