@@ -406,11 +406,30 @@ const VENICE_MODELS: ModelDef[] = [
 // Z.ai's published list price because OpenBroker's model endpoint exposes ids
 // but not price fields. Re-verify the upstream catalog and price source before
 // changing this list.
+//
+// 2026-09-26 re-verification: the catalog rotated again. Kimi-K2.6 and
+// Qwen3-235B are gone; DeepSeek V4 Flash and GLM-5.3 Flash are the additions.
+// Of the three, ONLY DeepSeek actually serves inference — M2.7 and GLM-5.3
+// return a fast sticky 503. Those two are marked `upstream: undefined` (the
+// non-routable marker) with the evidence inline, so the free fallback chain
+// stops burning quota on them. DeepSeek remains the sole openbroker route and
+// is the default free website-chat model.
 const OMA_AI_MODELS: ModelDef[] = [
 	{
 			id: "minimax-m2-7",
 			provider: "oma-ai",
-			upstream: "openbroker",
+			// NOT ROUTABLE — 2026-09-26. OpenBroker lists this id in /v1/models
+			// but POST /v1/chat/completions returns a fast, sticky
+			// 503 {"message":"model ... is temporarily unavailable"} (8/8 across
+			// 4s-spaced retries — not congestion, not 429 rate limiting).
+			// Across a 300-request usage window it burned 15 requests at 60%
+			// failure and produced 0.000 GNK, because failed rows settle at
+			// zero cost: pure quota and latency, no output.
+			//
+			// Dropping `upstream` is what makes a ModelDef non-routable
+			// (see buildFallbackChain). Re-enable only after a live POST
+			// returns 200 with real content — not just a 200 with empty body.
+			upstream: undefined,
 			omaAiId: "MiniMaxAI/MiniMax-M2.7",
 			surplusId: "minimax-m2.7",
 			inputPricePer1M: 0.30,
@@ -459,7 +478,13 @@ const OMA_AI_MODELS: ModelDef[] = [
 			// other OMA-AI resale entries.
 			id: "zai-org-glm-5-3",
 			provider: "oma-ai",
-			upstream: "openbroker",
+			// NOT ROUTABLE — 2026-09-26. Same failure as minimax-m2-7 above:
+			// listed in OpenBroker's /v1/models, but inference returns a fast,
+			// sticky 503 "temporarily unavailable" (8/8, 4s-spaced). 27 requests
+			// at 66.7% failure, 0.000 GNK produced. gonka-tool-proxy already
+			// injects thinking-disabled params for this model, so the 503 is
+			// upstream capacity, not a local serialization problem.
+			upstream: undefined,
 			omaAiId: "zai-org/GLM-5.3-Flash",
 			surplusId: "zai-org/glm-5.3-flash",
 			inputPricePer1M: 0.15,
