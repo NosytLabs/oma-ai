@@ -259,7 +259,25 @@ chatRoutes.post(
 				// after the provider returns, but this avoids serving obviously unpaid
 				// requests and gives the client a useful 402 response.
 				if (userId && !isFreeWebsiteChat) {
-								await assertSufficientBalance(userId, getModelPricing(model), promptTokens, max_tokens);
+								// AUDIT 2026-09-27 / B-13 (P3): routeRequestWithFallback may
+								// serve the request with a fallback model, not the requested
+								// one. Preflight against the priciest candidate across the
+								// requested model + client fallbacks so the 402 gate is not
+								// misleading. The atomic conditional UPDATE in
+								// deductCreditsIfSufficient remains the authoritative guard.
+								const candidates = [model, ...(clientModels ?? [])];
+								let worstPricing = getModelPricing(model);
+								for (const cand of candidates) {
+										const p = getModelPricing(cand);
+										if (!p) continue;
+										if (
+												p.inputPer1M + 3 * p.outputPer1M >
+												worstPricing.inputPer1M + 3 * worstPricing.outputPer1M
+										) {
+												worstPricing = p;
+										}
+								}
+								await assertSufficientBalance(userId, worstPricing, promptTokens, max_tokens);
 						}
 
 						const { response: upstreamResp, actualModelId } = await routeRequestWithFallback({
