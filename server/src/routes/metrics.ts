@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { OmaEnv } from "../types.js";
 import type { Context } from "hono";
+import { sessionOrBearerAuth, requireAdmin } from "../auth/middleware.js";
 
 export const metricsRoutes = new Hono<OmaEnv>();
 
@@ -87,7 +88,12 @@ export function getMetricsSnapshot(): MetricsSnapshot {
 		return { totalRequests, totalErrors, routes };
 }
 
-metricsRoutes.get("/metrics", (c) => {
+// AUDIT 2026-09-27 / admin-dash #3+4: /metrics used to be world-reachable
+// and unauthenticated, exposing the full route inventory + traffic volume
+// (information disclosure). Gate it behind the same admin gate as
+// /v1/ops/snapshot; automated scrapers must authenticate with a bearer
+// token of an admin user.
+metricsRoutes.get("/metrics", sessionOrBearerAuth, requireAdmin(), (c) => {
 		const lines: string[] = [];
 		for (const [key, count] of Object.entries(counters)) {
 				lines.push(`# HELP http_requests_total Total HTTP requests`);

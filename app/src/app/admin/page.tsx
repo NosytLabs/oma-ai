@@ -421,6 +421,7 @@ type AdminDialog =
 
 function UsersSection() {
 	const toast = useToast();
+	const { isReady, isAdmin } = useAuth();
 	const [q, setQ] = useState("");
 	const [debouncedQ, setDebouncedQ] = useState("");
 	const [cursor, setCursor] = useState<string | null>(null);
@@ -447,6 +448,10 @@ function UsersSection() {
 			return (await res.json()) as { items: AdminUser[]; nextCursor: string | null };
 		},
 		staleTime: 30_000,
+		// AUDIT 2026-09-27 / admin-dash minor: keep query parity with the
+		// snapshot/models queries — don't fire the users list until the
+		// admin gate is actually satisfied.
+		enabled: isReady && isAdmin,
 	});
 
 	useEffect(() => {

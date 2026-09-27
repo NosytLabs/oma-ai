@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { withRateLimit } from "@/lib/rate-limit-middleware";
+import { generalLimiter } from "@/lib/rate-limiter";
 
 /**
 	* POST /api/support
@@ -43,7 +45,7 @@ function ticketId(): string {
 	return `sup_${ts}_${rnd}`;
 }
 
-export async function POST(request: Request): Promise<NextResponse> {
+async function supportPost(request: Request): Promise<NextResponse> {
 	let body: SupportPayload;
 	try {
 		body = (await request.json()) as SupportPayload;
@@ -152,3 +154,10 @@ export async function POST(request: Request): Promise<NextResponse> {
 		{ status: 202 },
 	);
 }
+
+// AUDIT 2026-09-27 / admin-dash #4: per-IP limiter (100 req / 15 min, shared
+// generalLimiter) so a Redis outage stays fail-closed for this relay.
+export const POST = withRateLimit(supportPost, {
+	limiter: generalLimiter,
+	route: "/api/support",
+});
