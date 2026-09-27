@@ -15,17 +15,28 @@ import { isModelAvailable } from "@/lib/model-availability";
  * Only zero-upstream-cost OpenBroker models qualify as free in /chat.
  */
 export const FREE_CHAT_MODEL_IDS = new Set<string>([
+	"zai-org-glm-5-3",
 	"minimax-m2-7",
 	"deepseek-v4-flash-0731-openbroker",
 ]);
 
 /**
  * Default free website-chat model. Backed by OMA-AI's Gonka.AI upstream
- * (DeepSeek V4 Flash) — see catalog entry in models.ts.
+ * (GLM-5.3 Flash) — see catalog entry in models.ts.
+ *
+ * 2026-09-27: switched the default away from DeepSeek V4 Flash, whose
+ * OpenBroker vLLM backend is loop-degenerating (it repeats the first
+ * answer token forever, e.g. "PONG PONG PONG…" to finish_reason=length).
+ * GLM-5.3 verified clean on the same probe (finish_reason=stop, "PONG").
+ * DeepSeek stays selectable in case the backend recovers.
  */
-export const FREE_DEFAULT_CHAT_MODEL = "deepseek-v4-flash-0731-openbroker";
+export const FREE_DEFAULT_CHAT_MODEL = "zai-org-glm-5-3";
 
 export const FREE_TIER_LABELS: Record<string, { label: string; tooltip: string }> = {
+	"zai-org-glm-5-3": {
+		label: "Free",
+		tooltip: "GLM-5.3 Flash — OMA-AI. Free in website chat; API calls billed.",
+	},
 	"minimax-m2-7": {
 		label: "Free",
 		tooltip: "MiniMax M2.7 — OMA-AI. Free in website chat; API calls billed.",

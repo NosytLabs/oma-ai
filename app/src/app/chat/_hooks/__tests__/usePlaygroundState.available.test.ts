@@ -20,7 +20,7 @@ vi.mock("next/navigation", () => ({
 const { usePlaygroundState } = await import("../usePlaygroundState");
 const { FREE_DEFAULT_CHAT_MODEL } = await import("@/lib/model-utils");
 
-const AVAILABLE = ["deepseek-v4-flash-0731-openbroker", "mistral-small-2603"];
+const AVAILABLE = ["zai-org-glm-5-3", "mistral-small-2603"];
 
 beforeEach(() => {
 	localStorage.clear();

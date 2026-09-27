@@ -9,7 +9,7 @@ import {
 
 describe("isFreeChatModel (guest website chat)", () => {
 	it("defaults free chat to an allowlisted catalog id", () => {
-		expect(FREE_DEFAULT_CHAT_MODEL).toBe("deepseek-v4-flash-0731-openbroker");
+		expect(FREE_DEFAULT_CHAT_MODEL).toBe("zai-org-glm-5-3");
 		expect(FREE_CHAT_MODEL_IDS.has(FREE_DEFAULT_CHAT_MODEL)).toBe(true);
 	});
 

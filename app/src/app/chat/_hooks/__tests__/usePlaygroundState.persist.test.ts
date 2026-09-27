@@ -18,6 +18,7 @@
  */
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { FREE_DEFAULT_CHAT_MODEL } from "@/lib/model-utils";
 
 type RouterMock = { replace: ReturnType<typeof vi.fn>; push: ReturnType<typeof vi.fn> };
 type SearchParams = URLSearchParams;
@@ -49,7 +50,7 @@ afterEach(() => {
 describe("usePlaygroundState — model persistence", () => {
 	it("starts from the static default when no URL or storage entry exists", () => {
 		const { result } = renderHook(() => usePlaygroundState({ authReady: true }));
-		expect(result.current.model).toBe("deepseek-v4-flash-0731-openbroker");
+		expect(result.current.model).toBe(FREE_DEFAULT_CHAT_MODEL);
 	});
 
 	it("restores the saved model after a reload (localStorage read)", async () => {
@@ -141,6 +142,6 @@ describe("usePlaygroundState — model persistence", () => {
 		const { result } = renderHook(() => usePlaygroundState({ authReady: true }));
 		await act(async () => {});
 		// Falls back to the static default rather than boot a 404 model.
-		expect(result.current.model).toBe("deepseek-v4-flash-0731-openbroker");
+		expect(result.current.model).toBe(FREE_DEFAULT_CHAT_MODEL);
 	});
 });

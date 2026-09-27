@@ -18,6 +18,7 @@ describe("free-tier copy accuracy", () => {
 			[
 				"deepseek-v4-flash-0731-openbroker",
 				"minimax-m2-7",
+				"zai-org-glm-5-3",
 			].sort(),
 		);
 		expect(FREE_CHAT_MODEL_IDS.has(FREE_DEFAULT_CHAT_MODEL)).toBe(true);
