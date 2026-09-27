@@ -32,7 +32,7 @@ function ModalityExample({ title, code }: { title: string; code: string }) {
 									setTimeout(() => setCopied(false), 2000);
 								});
 							}}
-							className="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity duration-200 ease-out p-1 text-text-muted hover:text-accent"
+							className="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity duration-200 ease-out p-1 min-h-6 min-w-6 inline-flex items-center justify-center text-text-muted hover:text-accent"
 							aria-label={copied ? "Copied" : "Copy code"}
 						>
 							{copied ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}

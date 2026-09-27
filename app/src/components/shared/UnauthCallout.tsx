@@ -38,7 +38,6 @@ export function UnauthCallout({ variant, evmAddress }: UnauthCalloutProps) {
 
 	return (
 		<div className="flex min-h-full flex-col items-center justify-center gap-6 px-4 py-16">
-			<h2 className="sr-only">{heading}</h2>
 			<m.div
 				className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-[var(--radius-md)] border border-accent/20 bg-accent/10"
 				whileHover={{ scale: 1.05 }}
