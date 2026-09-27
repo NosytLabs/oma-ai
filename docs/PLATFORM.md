@@ -65,6 +65,10 @@ Polar is the merchant of record for card checkout. Card details are entered on P
 
 Card checkout is available only when the Polar configuration is complete and the card rail is enabled. If it is unavailable, `POST /api/v1/checkout` returns an error and the deposit UI reports the live rail status.
 
+| Endpoint | Auth | Purpose |
+|---|---|---|
+| `POST /api/v1/checkout` | Session cookie | Create a Polar checkout session for a credit pack; the card rail for real revenue. Callbacks arrive at `POST /webhooks/polar`. |
+
 ### USDC on Base
 
 Users can fund the same internal balance with USDC on Base mainnet. Direct deposits are confirmed against the configured Base treasury address and credited after on-chain confirmation.

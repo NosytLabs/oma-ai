@@ -2,7 +2,7 @@ import { chromium } from 'playwright';
 import { mkdirSync } from 'fs';
 
 const BASE = process.env.BASE_URL || `http://localhost:${process.env.PORT || 3000}`;
-const DIR = '/tmp/oma-audit';
+const DIR = process.env.DIR || `${process.env.TMPDIR || process.env.TEMP || '/tmp'}/oma-audit`;
 const PAGES = [
   { name: 'home', path: '/' },
   { name: 'models', path: '/models' },

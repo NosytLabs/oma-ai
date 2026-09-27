@@ -27,7 +27,23 @@ POST https://www.oma-ai.com/api/v1/messages
 GET  https://www.oma-ai.com/api/v1/openapi.json
 POST https://www.oma-ai.com/x402/verify
 POST https://www.oma-ai.com/x402/settle
+GET  https://www.oma-ai.com/api/v1/search
+GET  https://www.oma-ai.com/api/v1/usage
+GET  https://www.oma-ai.com/api/v1/usage/today
+GET  https://www.oma-ai.com/api/v1/balance
+GET  https://www.oma-ai.com/api/v1/keys
+POST https://www.oma-ai.com/api/v1/keys (session cookie)
+DELETE https://www.oma-ai.com/api/v1/keys/{id} (session cookie)
+GET  https://www.oma-ai.com/api/v1/credits/balance
+POST https://www.oma-ai.com/api/v1/deposit/usdc
+GET  https://www.oma-ai.com/api/v1/deposit/status
+GET  https://www.oma-ai.com/api/v1/site-settings
+POST https://www.oma-ai.com/api/v1/checkout (session cookie)
+GET  https://www.oma-ai.com/api/v1/privacy
 ```
+
+The app's in-product `/docs` page documents these endpoints with request and
+response shapes; this list is the summary of what the live OpenAPI serves.
 
 ## What runs where
 
