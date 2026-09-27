@@ -33,11 +33,14 @@ describe("getRateLimitKey", () => {
 		});
 
 		it("keys free guests by IP, not shared oma-ai-guest id", () => {
+				// AUDIT 2026-09-27 / B-7: without TRUSTED_PROXY_IPS the IP headers
+				// are not trustworthy, so guest keying falls back to "unknown" —
+				// the shared bucket still excludes the synthetic guest id.
 				const key = getRateLimitKey(
 						makeCtx({ userId: "oma-ai-guest", ip: "198.51.100.4" }) as never,
 						"tb",
 				);
-				expect(key).toBe("tb:ip:198.51.100.4");
+				expect(key).toBe("tb:ip:unknown");
 				expect(key).not.toContain("oma-ai-guest");
 		});
 

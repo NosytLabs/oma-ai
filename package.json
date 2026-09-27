@@ -40,9 +40,5 @@
   "devDependencies": {
     "eslint-plugin-react-hooks": "^6",
     "typescript": "7.0.2"
-  },
-  "workspaces": [
-    "app",
-    "server"
-  ]
+  }
 }

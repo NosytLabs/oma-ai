@@ -90,13 +90,15 @@ describe("H2 — extractClientIp ignores x-forwarded-for when TRUSTED_PROXY_IPS 
 				return app.request("/_extract", { headers });
 		}
 
-		it("returns x-real-ip when present and no trusted proxies", async () => {
+		it("ignores x-real-ip when no trusted proxies are configured", async () => {
 				const res = await buildCtx({
 						"x-forwarded-for": "1.2.3.4",
 						"x-real-ip": "5.6.7.8",
 				});
 				const body = (await res.json()) as { ip: string };
-				expect(body.ip).toBe("5.6.7.8");
+				// Spoofed X-Real-IP must not mint a fresh bucket; the test harness
+				// has no socket so the fallback is "unknown".
+				expect(body.ip).toBe("unknown");
 		});
 
 		it("returns 'unknown' when only x-forwarded-for is sent and no trusted proxies", async () => {
@@ -160,7 +162,7 @@ describe("H2 — extractClientIp ignores x-forwarded-for when TRUSTED_PROXY_IPS 
 				expect(extractClientIp(c as never)).toBe("127.0.0.1");
 		});
 
-		it("prefers x-real-ip over the socket peer when both exist", () => {
+		it("ignores spoofed x-real-ip even when the socket peer is available", () => {
 				const c = {
 						req: {
 								header: (name: string) =>
@@ -176,6 +178,6 @@ describe("H2 — extractClientIp ignores x-forwarded-for when TRUSTED_PROXY_IPS 
 								},
 						},
 				};
-				expect(extractClientIp(c as never)).toBe("198.51.100.9");
+				expect(extractClientIp(c as never)).toBe("203.0.113.50");
 		});
 });

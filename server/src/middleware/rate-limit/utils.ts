@@ -118,16 +118,13 @@ export function extractClientIp(c: Context<OmaEnv>): string {
 	}
 
 	// H2 — when TRUSTED_PROXY_IPS is empty (the production-safe
-		// default), REFUSE to read x-forwarded-for entirely. Without this guard,
-		// an attacker sends 1000 requests with `x-forwarded-for: <random>` and
-		// bypasses the IP-based rate-limit bucket (each request lands in a
-		// different bucket). Operators who deploy behind a reverse proxy MUST set
-		// TRUSTED_PROXY_IPS to the proxy's egress IPs to enable header parsing.
+		// default), REFUSE to read x-forwarded-for/x-real-ip entirely. These
+		// headers are equally client-spoofable; trusting x-real-ip here let an
+		// attacker rotate buckets per request and defeat the 20/day free tier
+		// (audit 2026-09-27 / B-7). Direct TCP peer is the only truth we have;
+		// operators behind a reverse proxy MUST set TRUSTED_PROXY_IPS.
 		if (TRUSTED_PROXIES.size === 0) {
-				// Prefer proxy-set x-real-ip, then the real TCP peer, then "unknown".
-				// Collapsing all direct traffic to "unknown" made every guest share one
-				// free-tier daily bucket (local dev + any direct-to-Node deploy).
-				return xRealIp || socketRemoteAddress(c) || "unknown";
+				return socketRemoteAddress(c) || "unknown";
 		}
 
 		const xForwardedFor = c.req.header("x-forwarded-for");

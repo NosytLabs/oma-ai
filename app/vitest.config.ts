@@ -23,13 +23,8 @@ export default defineConfig({
 				return false;
 			}
 		},
-		coverage: {
-			provider: "v8",
-			reporter: ["text", "lcov", "json-summary"],
-			include: ["src/**/*.{ts,tsx}"],
-			exclude: ["src/**/*.test.{ts,tsx}", "src/**/*.d.ts", "src/test/**"],
-		},
 	},
+
 	resolve: {
 		alias: {
 			"@": path.resolve(import.meta.dirname, "./src"),

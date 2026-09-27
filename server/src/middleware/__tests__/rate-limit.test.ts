@@ -216,6 +216,10 @@ describe('rate-limit middleware', () => {
 				})
 
 				it('should use IP for rate limit key when no apiKey or userId', async () => {
+						// AUDIT 2026-09-27 / B-7: with no trusted proxies configured (the
+						// test default), x-forwarded-for/x-real-ip are NOT trusted — the
+						// key must fall back to the TCP peer / "unknown" bucket, not the
+						// spoofable headers.
 						mockRedisClient.eval.mockResolvedValue([1, 50, 0])
 						mockContext.get = vi.fn().mockReturnValue(null)
 						;(mockContext.req as any).header = vi.fn().mockImplementation((name: string) => {
@@ -229,7 +233,7 @@ describe('rate-limit middleware', () => {
 
 						expect(mockRedisClient.eval).toHaveBeenCalledWith(
 								expect.any(String),
-								["tb:ip:1.2.3.4"],
+								["tb:ip:unknown"],
 								[expect.any(String), expect.any(String), expect.any(String)],
 						)
 				})
