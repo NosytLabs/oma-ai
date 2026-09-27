@@ -98,19 +98,46 @@ export function createStreamingProxy(
 								const out = rewriteSseModelField(complete, recordArgs.model);
 								controller.enqueue(encoder.encode(out));
 								} catch (err) {
-										logger.warn({ err }, "[proxy] stream read failed");
-										upstreamStatus = "error";
-										controller.error(err);
-										try {
-												await reader.cancel();
-										} catch (cancelErr) {
-												logger.warn({ err: cancelErr }, "[proxy] reader cancel failed");
-										}
+									logger.warn({ err }, "[proxy] stream read failed");
+									upstreamStatus = "error";
+									controller.error(err);
+									// SECURITY (audit 2026-09-27 / P0): record usage for the tokens
+									// already streamed before the read error. Without this the
+									// consumed upstream tokens are never billed — a client can
+									// force a read error and walk away with free tokens.
+									try {
+										await recordUsage({
+											...recordArgs,
+											promptTokens: finalPromptTokens ?? recordArgs.promptTokens,
+											outputTokens: finalOutputTokens ?? outputTokens,
+											status: "error",
+										});
+									} catch (recErr) {
+										logger.warn({ err: recErr }, "[proxy] recordUsage on read-error failed");
+									}
+									try {
+										await reader.cancel();
+									} catch (cancelErr) {
+										logger.warn({ err: cancelErr }, "[proxy] reader cancel failed");
+									}
 								}
-				},
-				cancel() {
-						reader.cancel().catch(() => {});
-				},
+								},
+								async cancel() {
+								reader.cancel().catch(() => {});
+								// SECURITY (audit 2026-09-27 / P0): a client can read most of a
+								// completion then abort before done. Bill the tokens streamed so far
+								// instead of letting the disconnect absorb the cost.
+								try {
+								await recordUsage({
+									...recordArgs,
+									promptTokens: finalPromptTokens ?? recordArgs.promptTokens,
+									outputTokens: finalOutputTokens ?? outputTokens,
+									status: "aborted",
+								});
+								} catch (recErr) {
+								logger.warn({ err: recErr }, "[proxy] recordUsage on client-abort failed");
+								}
+								},
 		});
 }
 

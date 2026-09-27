@@ -22,6 +22,7 @@
 	*             default). OpenAI-compatible. Used as the cost-effective tier for
 	*             large-context / tool-use requests.
 	*/
+import { createHash } from "node:crypto";
 import { Hono } from "hono";
 import { z } from "zod";
 import { and, eq } from "drizzle-orm";
@@ -196,11 +197,16 @@ chatRoutes.post(
 				// a request with that key from the same user, replay the cached
 				// response (saves the upstream call, prevents double-billing).
 				const idempotencyKey =
-						c.req.header("Idempotency-Key")?.trim() ||
-						(body as { idempotency_key?: string } | undefined)?.idempotency_key;
+					c.req.header("Idempotency-Key")?.trim() ||
+					(body as { idempotency_key?: string } | undefined)?.idempotency_key;
+				// SECURITY (audit 2026-09-27 / P2): hash, don't truncate. The old
+				// slice(0,200) let two long keys sharing a ~163-char prefix collide
+				// on the same requestId — the cache-hit branch then replayed the
+				// OTHER request's usage. A cryptographic digest is collision-free
+				// for input lengths we accept and fits comfortably in the column.
 				const requestId = idempotencyKey
-						? `idem-${userId}-${idempotencyKey}`.slice(0, 200)
-						: `chatcmpl-${crypto.randomUUID()}`;
+					? `idem-${userId}-${createHash("sha256").update(idempotencyKey).digest("hex").slice(0, 64)}`
+					: `chatcmpl-${crypto.randomUUID()}`;
 
 				try {
 						if (idempotencyKey && userId) {

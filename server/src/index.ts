@@ -399,11 +399,19 @@ const authMutationLimit = rateLimit({
 // SDKs and curl rather than browsers) is unaffected — a machine client sends
 // no Origin and a blanket rule would reject it.
 //
-// These are the routes guarded only by `sessionAuth`, i.e. the ones a forged
-// cross-site request could ride a victim's cookie into:
+// These are the cookie-authenticated mutation routes a forged cross-site
+// request could ride a victim's cookie into:
 //   POST   /v1/keys, /v1/keys/install
 //   DELETE /v1/keys/:id, /v1/history, /sessions, /sessions/:id
 // Reads (GET /user, /sessions, /v1/keys) are deliberately not gated.
+//
+// SECURITY (audit 2026-09-27 / P1): the earlier list claimed "routes guarded
+// only by sessionAuth" and missed the money + admin mutations that also
+// authenticate by cookie — DELETE /account, POST /v1/deposit/usdc(+/challenge),
+// POST /v1/checkout, and every POST /v1/admin/*. SameSite=Lax blocks some
+// cross-site POSTs but not sibling-origin or widened-cookie-domain CSRF
+// (origin-guard's own docstring says Lax is not a sufficient long-term control),
+// so the Origin/Referer guard belongs on all of these too.
 const csrfOriginGuard = originGuard();
 for (const p of [
 	"/v1/keys",
@@ -411,6 +419,11 @@ for (const p of [
 	"/v1/history",
 	"/sessions",
 	"/sessions/*",
+	"/account",
+	"/v1/deposit/usdc",
+	"/v1/deposit/usdc/*",
+	"/v1/checkout",
+	"/v1/admin/*",
 ]) {
 	app.use(p, csrfOriginGuard);
 }

@@ -19,6 +19,7 @@ import {
 		flattenMessageContent,
 		routeRequestWithFallback,
 } from "../../inference/proxy.js";
+import { recordUsage, type RecordUsageArgs } from "../../inference/billing.js";
 import { logger } from "../../lib/logger.js";
 
 /** Anthropic Messages API request schema */
@@ -129,6 +130,7 @@ function createAnthropicStream(
 		upstreamResp: Response,
 		modelId: string,
 		requestId: string,
+		billing?: Omit<RecordUsageArgs, "status" | "outputTokens"> & { outputTokensEstimate?: number },
 ): ReadableStream<Uint8Array> {
 		if (!upstreamResp.body) {
 				throw new ProviderError("Upstream stream empty", 502);
@@ -138,6 +140,23 @@ function createAnthropicStream(
 		const encoder = new TextEncoder();
 		let messageStarted = false;
 		let contentBlockStarted = false;
+		// AUDIT 2026-09-27 / B-1: bill the stream when it finishes or is cancelled.
+		let outputTokens = 0;
+		let finalPromptTokens: number | null = null;
+		let finalOutputTokens: number | null = null;
+		const emitUsage = async (status: "completed" | "aborted" | "error") => {
+				if (!billing) return;
+				try {
+						await recordUsage({
+								...billing,
+								promptTokens: finalPromptTokens ?? billing.promptTokens,
+								outputTokens: finalOutputTokens ?? Math.max(outputTokens, billing.outputTokensEstimate ?? 0),
+								status,
+							});
+				} catch (err) {
+						logger.warn({ err }, "[anthropic-stream] recordUsage failed");
+				}
+		};
 
 		return new ReadableStream<Uint8Array>({
 				async pull(controller) {
@@ -166,6 +185,7 @@ function createAnthropicStream(
 												// Emit message_stop
 												controller.enqueue(encoder.encode(`event: message_stop\ndata: ${JSON.stringify({ type: "message_stop" })}\n\n`));
 										}
+										await emitUsage("completed");
 										controller.close();
 										return;
 								}
@@ -186,6 +206,8 @@ function createAnthropicStream(
 												continue;
 										}
 
+										if (obj.usage?.completion_tokens) finalOutputTokens = obj.usage.completion_tokens;
+										if (obj.usage?.prompt_tokens) finalPromptTokens = obj.usage.prompt_tokens;
 										const choice = obj.choices?.[0];
 										const delta = choice?.delta;
 
@@ -228,6 +250,7 @@ function createAnthropicStream(
 										// Text deltas (content or reasoning_content)
 										const textDelta = delta?.content ?? delta?.reasoning_content;
 										if (typeof textDelta === "string" && textDelta.length > 0) {
+												outputTokens += estimateTokens(textDelta);
 												controller.enqueue(
 														encoder.encode(
 																`event: content_block_delta\ndata: ${JSON.stringify({
@@ -270,8 +293,12 @@ function createAnthropicStream(
 								}
 						}
 				},
-				cancel() {
+				async cancel() {
+						// AUDIT 2026-09-27 / B-1 + B-5: a client can abort before done.
+						// Bill the streamed-up-to tokens rather than letting the disconnect
+						// absorb upstream cost.
 						reader.cancel().catch(() => {});
+						await emitUsage("aborted");
 				},
 		});
 }
@@ -348,7 +375,14 @@ anthropicRoutes.post(
 								c.header("Content-Type", "text/event-stream");
 								c.header("Cache-Control", "no-cache, no-transform");
 								c.header("X-Accel-Buffering", "no");
-								const anthropicStream = createAnthropicStream(upstreamResp, actualModelId, requestId);
+								const anthropicStream = createAnthropicStream(upstreamResp, actualModelId, requestId, {
+								userId,
+								model: actualModelId,
+								provider: actualModelDef.provider as "venice" | "oma-ai" | "litellm",
+								promptTokens,
+								pricing: actualPricing,
+								requestId,
+							});
 								return c.body(anthropicStream, 200);
 						}
 

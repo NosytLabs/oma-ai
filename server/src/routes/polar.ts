@@ -403,10 +403,31 @@ export async function polarWebhookHandler(c: Context<OmaEnv>) {
 								await markEventProcessedTx(tx, eventId);
 						});
 				} else {
-						logger.warn(
-								{ type: event.type, hasUserId: !!userId, hasCredits: !!credits, plan },
-								"[polar] order.paid missing userId or credits; check product/metadata",
-						);
+					logger.error(
+						{ type: event.type, hasUserId: !!userId, hasCredits: !!credits, plan, eventId },
+						"[polar] order.paid missing userId or credits; returning 5xx so Polar retries",
+					);
+					// SECURITY (audit 2026-09-27 / P0): returning 200 here told Polar
+					// "handled" while the customer paid real money and got nothing —
+					// the webhook row stayed processed=0 with no repair path.
+					// Returning 5xx makes Polar retry until the payload is correct.
+					logPaymentEvent({
+						kind: "polar",
+						outcome: "rejected",
+						userId: userId ?? undefined,
+						amountCents: credits ?? undefined,
+						signature: eventId,
+						latencyMs: Date.now() - startedAt,
+					});
+					return c.json(
+						{
+							error: {
+								message: "order.paid missing userId or credits — not processed",
+								code: "missing_credit_target",
+							},
+						},
+						500,
+					);
 				}
 		} else if (event.type === "order.refunded") {
 				if (userId && credits) {
@@ -431,7 +452,43 @@ export async function polarWebhookHandler(c: Context<OmaEnv>) {
 								event.data?.status === "trialing" ||
 								event.type === "subscription.active"
 						) {
+								// SECURITY (audit 2026-09-27 / P0): Polar re-delivers
+								// created/active/updated for the SAME billing period with
+								// DIFFERENT event ids. Event-id idempotency alone let one
+								// monthly period mint credits three times. Insert a
+								// synthetic period row (unique polarEventId) inside the
+								// credit tx; if it already exists, this period was
+								// credited and we must not credit again.
+								const d = event.data as Record<string, unknown> | undefined;
+								const periodStartRaw =
+										(d?.current_period_start ?? d?.ended_at ?? d?.created_at) as
+												| string
+												| number
+												| undefined;
+								const periodStart = String(
+										periodStartRaw ??
+												eventId,
+								);
+								const periodKey = `period-credit-${periodStart}`;
 								await processInTransaction(eventId, async (tx) => {
+										const claimed = await tx
+												.insert(polarWebhookEvents)
+												.values({
+													polarEventId: `${userId}:${periodKey}`,
+													eventType: `${event.type}:period`,
+													payload: JSON.stringify({ userId, period: periodStart }),
+													processed: 1,
+												})
+												.onConflictDoNothing()
+												.returning({ id: polarWebhookEvents.id });
+										if (claimed.length === 0) {
+												logger.warn(
+														{ userId, periodStart, eventId },
+														"[polar] subscription period already credited; skipping duplicate grant",
+												);
+												await markEventProcessedTx(tx, eventId);
+												return;
+										}
 										await creditUserTx(tx, userId, credits as number, event.type);
 										await markEventProcessedTx(tx, eventId);
 								});

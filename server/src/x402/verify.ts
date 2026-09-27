@@ -303,10 +303,15 @@ export async function verifyPayment(
 	}
 
 	const now = Math.floor(Date.now() / 1000);
-	if (payload.validBefore && now > payload.validBefore) {
+	// SECURITY (audit 2026-09-27 / P0): use explicit !== undefined, not truthiness.
+	// `payload.validBefore = 0` is falsy, so the old `&&` skipped the expiry check
+	// entirely — the signed-window clamp above (286-292) only LOWERS validBefore
+	// when 0 < signedBefore; 0 stays 0 and the replay cache at 313 then returns
+	// valid:true with no nonce consumption and no window check.
+	if (payload.validBefore !== undefined && now > payload.validBefore) {
 		return { valid: false, error: "Payment authorization expired" };
 	}
-	if (payload.validAfter && now < payload.validAfter) {
+	if (payload.validAfter !== undefined && now < payload.validAfter) {
 		return { valid: false, error: "Payment authorization not yet valid" };
 	}
 

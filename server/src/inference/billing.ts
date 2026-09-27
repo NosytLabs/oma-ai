@@ -19,7 +19,7 @@ export interface RecordUsageArgs {
 		outputTokens: number;
 		pricing: ReturnType<typeof getModelPricing>;
 		requestId: string;
-		status: "completed" | "error";
+		status: "completed" | "error" | "aborted";
 		/** Skip credit deduction for free website chat */
 		skipBilling?: boolean;
 		/** API key row id when the caller authenticated with Bearer oma_sk_*.

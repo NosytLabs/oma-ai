@@ -141,25 +141,34 @@ adminRoutes.post(
 								return c.json({ error: { message: "User not found" } }, 404);
 						}
 
+						// SECURITY (audit 2026-09-27 / P2): floor deducts at 0 and book the
+						// deduction into totalUsedCents so /v1/export/summary and the
+						// ledger agree. The refund path already does both (polar.ts).
 						await db
-								.insert(creditBalances)
-								.values({
-										userId,
-										balanceCents: deltaCents.toString(),
-										totalDepositedCents: deltaCents > 0 ? deltaCents.toString() : "0",
-										totalUsedCents: "0",
-								})
-								.onConflictDoUpdate({
-										target: creditBalances.userId,
-										set: {
-												balanceCents: sql`${creditBalances.balanceCents}::numeric + ${deltaCents}::numeric`,
-												totalDepositedCents:
-														deltaCents > 0
-																? sql`${creditBalances.totalDepositedCents}::numeric + ${deltaCents}::numeric`
-																: sql`${creditBalances.totalDepositedCents}::numeric`,
-												lastActivityAt: sql`NOW()`,
-										},
-								});
+							.insert(creditBalances)
+							.values({
+								userId,
+								balanceCents: Math.max(deltaCents, 0).toString(),
+								totalDepositedCents: deltaCents > 0 ? deltaCents.toString() : "0",
+								totalUsedCents: deltaCents < 0 ? (-deltaCents).toString() : "0",
+							})
+							.onConflictDoUpdate({
+								target: creditBalances.userId,
+								set: {
+									// GREATEST floor: a deduction on a small balance clamps at 0
+									// instead of leaving the ledger negative.
+									balanceCents: sql`GREATEST(${creditBalances.balanceCents}::numeric + ${deltaCents}::numeric, 0)`,
+									totalDepositedCents:
+										deltaCents > 0
+											? sql`${creditBalances.totalDepositedCents}::numeric + ${deltaCents}::numeric`
+											: sql`${creditBalances.totalDepositedCents}::numeric`,
+									totalUsedCents:
+										deltaCents < 0
+											? sql`${creditBalances.totalUsedCents}::numeric + ${-deltaCents}::numeric`
+											: sql`${creditBalances.totalUsedCents}::numeric`,
+									lastActivityAt: sql`NOW()`,
+								},
+							});
 
 						await auditLog({
 								userId: adminId,

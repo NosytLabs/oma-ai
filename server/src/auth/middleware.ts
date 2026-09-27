@@ -324,45 +324,54 @@ export async function sessionOrBearerAuth(
 }
 
 export async function optionalAuth(c: Context<OmaEnv>, next: Next) {
-		const authHeader = c.req.header("Authorization");
-		if (authHeader && authHeader.startsWith("Bearer ")) {
-				const rawKey = authHeader.slice(7);
-				let apiKey: ApiKey | null;
-				try {
-						apiKey = (await singleflight(`apikey:${rawKey}`, () =>
-								validateApiKey(rawKey!),
-						)) as ApiKey | null;
-				} catch {
-						await next();
-						return;
-				}
-				if (apiKey) {
-						if (
-								apiKey.ipAllowlist &&
-								Array.isArray(apiKey.ipAllowlist) &&
-								apiKey.ipAllowlist.length > 0
-						) {
-								const clientIp = extractClientIp(c);
-								if (!isIpAllowedByList(clientIp, apiKey.ipAllowlist)) {
-										await next();
-										return;
-								}
-						}
-						c.set("apiKey", apiKey);
-						c.set("userId", apiKey.userId);
-				}
-				return next();
+	const authHeader = c.req.header("Authorization");
+	if (authHeader && authHeader.startsWith("Bearer ")) {
+		const rawKey = authHeader.slice(7);
+		let apiKey: ApiKey | null;
+		try {
+			apiKey = (await singleflight(`apikey:${rawKey}`, () =>
+				validateApiKey(rawKey!),
+			)) as ApiKey | null;
+		} catch {
+			await next();
+			return;
 		}
-		// No Bearer — check for session cookie
-		const headers = new Headers();
-		for (const [k, v] of c.req.raw.headers) headers.set(k, v);
-		const session = await auth.api.getSession({ headers });
-		if (session?.user) {
-				c.set("userId", session.user.id);
-				c.set("session", session.session);
-				c.set("user", session.user);
+		if (apiKey) {
+			// SECURITY (audit 2026-09-27 / P1): suspension check here too. Without
+			// it, an admin-suspended user keeps full chat access via Bearer on the
+			// optional-auth routes (POST /v1/chat/completions, /v1/usage/today).
+			const suspended = await rejectIfSuspended(c, apiKey.userId, "bearer");
+			if (suspended) return suspended;
+			if (
+				apiKey.ipAllowlist &&
+				Array.isArray(apiKey.ipAllowlist) &&
+				apiKey.ipAllowlist.length > 0
+			) {
+				const clientIp = extractClientIp(c);
+				if (!isIpAllowedByList(clientIp, apiKey.ipAllowlist)) {
+					await next();
+					return;
+				}
+			}
+			c.set("apiKey", apiKey);
+			c.set("userId", apiKey.userId);
 		}
-		await next();
+		return next();
+	}
+	// No Bearer — check for session cookie
+	const headers = new Headers();
+	for (const [k, v] of c.req.raw.headers) headers.set(k, v);
+	const session = await auth.api.getSession({ headers });
+	if (session?.user) {
+		// SECURITY (audit 2026-09-27 / P1): same suspension gate for the
+		// cookie/session path of optionalAuth.
+		const suspended = await rejectIfSuspended(c, session.user.id, "session");
+		if (suspended) return suspended;
+		c.set("userId", session.user.id);
+		c.set("session", session.session);
+		c.set("user", session.user);
+	}
+	await next();
 }
 
 export function requireAdmin() {
