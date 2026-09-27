@@ -92,11 +92,10 @@ describe("buildFallbackChain", () => {
 		expect(chain[0]).toBe("deepseek-v4-flash-0731-openbroker");
 		expect(chain).not.toContain("llama-3.3-70b");
 		expect(chain).not.toContain("gpt-4o");
-		// minimax-m2-7 is listed by OpenBroker but returns 503 on inference
-		// (verified 2026-09-26, 8/8). It is marked `upstream: undefined`,
-		// which is the non-routable marker, so it must not reach a guest's
-		// fallback chain — routing to it burns quota and returns nothing.
-		expect(chain).not.toContain("minimax-m2-7");
+		// minimax-m2-7 was non-routable on 2026-09-26 (sticky 503) and is
+		// re-enabled 2026-09-27 after live POSTs returned
+		// finish_reason=stop — it is openbroker, so freeOnly keeps it.
+		expect(chain).toContain("minimax-m2-7");
 		for (const id of chain) {
 			const m = getModelById(id);
 			expect(m?.upstream, `${id} must be Gonka/openbroker for free chat`).toBe(

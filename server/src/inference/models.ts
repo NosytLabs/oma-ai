@@ -407,13 +407,11 @@ const VENICE_MODELS: ModelDef[] = [
 // but not price fields. Re-verify the upstream catalog and price source before
 // changing this list.
 //
-// 2026-09-26 re-verification: the catalog rotated again. Kimi-K2.6 and
-// Qwen3-235B are gone; DeepSeek V4 Flash and GLM-5.3 Flash are the additions.
-// Of the three, ONLY DeepSeek actually serves inference — M2.7 and GLM-5.3
-// return a fast sticky 503. Those two are marked `upstream: undefined` (the
-// non-routable marker) with the evidence inline, so the free fallback chain
-// stops burning quota on them. DeepSeek remains the sole openbroker route and
-// is the default free website-chat model.
+// 2026-09-26 check: M2.7 and GLM-5.3 were dead (sticky 503) and were marked
+// non-routable. 2026-09-27 re-verification: BOTH recovered — live POSTs return
+// finish_reason=stop with real content. Both re-enabled; all three openbroker
+// models now routable. Free default stays GLM-5.3 (see free-website-model.ts
+// history for the DeepSeek loop-degeneration note).
 const OMA_AI_MODELS: ModelDef[] = [
 	{
 			id: "minimax-m2-7",
@@ -427,9 +425,9 @@ const OMA_AI_MODELS: ModelDef[] = [
 			// zero cost: pure quota and latency, no output.
 			//
 			// Dropping `upstream` is what makes a ModelDef non-routable
-			// (see buildFallbackChain). Re-enable only after a live POST
-			// returns 200 with real content — not just a 200 with empty body.
-			upstream: undefined,
+			// (see buildFallbackChain). RE-ENABLED 2026-09-27: live POST
+			// returns 200 with finish_reason=stop and real content.
+			upstream: "openbroker",
 			omaAiId: "MiniMaxAI/MiniMax-M2.7",
 			surplusId: "minimax-m2.7",
 			inputPricePer1M: 0.30,
@@ -482,9 +480,10 @@ const OMA_AI_MODELS: ModelDef[] = [
 			// listed in OpenBroker's /v1/models, but inference returns a fast,
 			// sticky 503 "temporarily unavailable" (8/8, 4s-spaced). 27 requests
 			// at 66.7% failure, 0.000 GNK produced. gonka-tool-proxy already
-			// injects thinking-disabled params for this model, so the 503 is
-			// upstream capacity, not a local serialization problem.
-			upstream: undefined,
+			// injects thinking-disabled params for this model, so the 503 was
+			// upstream capacity. RE-ENABLED 2026-09-27: 3x live POST all
+			// finish_reason=stop with "PONG" — upstream capacity recovered.
+			upstream: "openbroker",
 			omaAiId: "zai-org/GLM-5.3-Flash",
 			surplusId: "zai-org/glm-5.3-flash",
 			inputPricePer1M: 0.15,

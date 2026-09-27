@@ -154,10 +154,13 @@ chatRoutes.post(
 					"http://localhost:3000",
 					"http://127.0.0.1:3000",
 				].filter(Boolean) as string[];
-				// Exact match or path-prefix match only. A bare `startsWith(allowed)`
-				// would also accept attacker-controlled origins like
-				// `http://localhost:3000.evil.com`, letting them dodge auth/billing
-				// and take the anonymous free-chat path for any free-tier model.
+					// Exact match or path-prefix match only. A bare `startsWith(allowed)`
+					// would also accept attacker-controlled origins like
+					// `http://localhost:3000.evil.com`, letting them dodge auth/billing
+					// and take the anonymous free-chat path for any free-tier model.
+					// NOTE: local QA on scratch ports (e.g. :3108) and Vercel
+					// previews legitimately serve the site on other origins —
+					// whitelist those via PUBLIC_APP_URL, not hardcoded here.
 				const originOk = allowedOrigins.some(
 					(allowed) => origin === allowed || origin.startsWith(`${allowed}/`),
 				);
