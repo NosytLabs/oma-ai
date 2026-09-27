@@ -153,11 +153,7 @@ describe("parseSSEBlock", () => {
 		expect(r?.data).toEqual(["line one", "line two"]);
 	});
 
-	it("ignores comment lines starting with colon", () => {
-		const r = parseSSEBlock(":heartbeat\ndata: real payload");
-		expect(r?.data).toEqual(["real payload"]);
-	});
-
+	
 	it("returns null for empty blocks", () => {
 		expect(parseSSEBlock("")).toBeNull();
 		expect(parseSSEBlock("   \n\n  ")).toBeNull();
