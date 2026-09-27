@@ -18,7 +18,11 @@ import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 
-const SRC = join(process.cwd(), "src");
+// AUDIT 2026-09-27 / T-8: process.cwd() depends on where vitest is invoked
+// from; a run from the repo root silently scanned nothing and passed
+// vacuously. Anchor to this file instead.
+const SRC = join(import.meta.dirname, "..", "..", "src");
+
 
 /** Every .ts file under src, excluding tests. */
 function sourceFiles(dir: string = SRC): string[] {

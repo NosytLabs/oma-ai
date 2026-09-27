@@ -6,7 +6,8 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { FREE_CHAT_MODEL_IDS, FREE_DEFAULT_CHAT_MODEL } from "@/lib/model-utils";
 
-const appRoot = resolve(process.cwd(), "src");
+// AUDIT 2026-09-27 / T-8: anchor to this file, not process.cwd().
+const appRoot = resolve(import.meta.dirname, "..", "..");
 
 function readApp(rel: string): string {
 	return readFileSync(resolve(appRoot, rel), "utf8");

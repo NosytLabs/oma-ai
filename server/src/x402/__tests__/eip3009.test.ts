@@ -430,17 +430,6 @@ describe('EIP-3009 V1 verify path', () => {
 		})
 })
 
-// ── Direct unit tests for isEip3009Authorization type guard ──
-describe('EIP-3009 isEip3009Authorization type guard', () => {
-		// We can't import the internal helper directly, but we can exercise it via
-		// the dispatcher. If a tuple shape is missing a field, the verify path
-		// returns the "missing required EIP-3009 fields" error — which proves the
-		// type guard rejected it. (Already covered above.)
-		it('accepts a fully-shaped EIP-3009 tuple (covered by happy-path test)', () => {
-				expect(true).toBe(true)
-		})
-})
-
 // ── Audit fix tests (round 3) ──────────────────────────────────────────
 //
 // Covers three Round 3 fixes:

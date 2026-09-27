@@ -15,7 +15,8 @@ import { USDC_BASE, USDC_DECIMALS } from "../constants.js";
  *
  * Test files are exempt: they legitimately assert on literal addresses.
  */
-const SERVER_SRC = join(process.cwd(), "src");
+// AUDIT 2026-09-27 / T-8: anchor to this file, not process.cwd().
+const SERVER_SRC = join(import.meta.dirname, "..", "..", "src");
 const CANONICAL = join(SERVER_SRC, "constants.ts");
 
 function walk(dir: string, acc: string[] = []): string[] {

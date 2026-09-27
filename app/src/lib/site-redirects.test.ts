@@ -8,7 +8,8 @@ import {
 import sitemap from "@/app/sitemap";
 import manifest from "@/app/manifest";
 
-const publicDir = join(process.cwd(), "public");
+// AUDIT 2026-09-27 / T-8: anchor to this file, not process.cwd().
+const publicDir = join(import.meta.dirname, "..", "..", "public");
 
 describe("SITE_REDIRECTS (shipped next.config source)", () => {
 	it("covers every removed public path with a permanent-style mapping", () => {
@@ -124,7 +125,7 @@ describe("brand assets on disk (public/)", () => {
 
 describe("shared page-shell layout contract", () => {
 	it("does not contain the retired desktop sidebar offset", () => {
-		const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
+		const css = readFileSync(join(import.meta.dirname, "..", "app", "globals.css"), "utf8");
 		expect(css).toContain(".page-shell {");
 		expect(css).not.toMatch(/\.page-shell[\s\S]{0,220}padding-left:\s*18rem/);
 	});

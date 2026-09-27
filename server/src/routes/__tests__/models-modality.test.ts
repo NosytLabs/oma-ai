@@ -70,14 +70,13 @@ describe("/v1/models — modality field (R6)", () => {
 				expect(chatModels[0].modality).toBe("chat");
 		});
 
-		it("includes image models with modality=image and credits_per_generation", async () => {
-				// R7 removed image/video models from server catalog.
-				expect(true).toBe(true);
-		});
-
-		it("includes video models with modality=video and credits_per_generation", async () => {
-				// R7 removed image/video models from server catalog.
-				expect(true).toBe(true);
+		it("catalog carries no image/video models after R7 removal", async () => {
+				const res = await app.request("/v1/models");
+				const body = await res.json();
+				const removed = body.data.filter((m: { modality: string }) =>
+						m.modality === "image" || m.modality === "video",
+				);
+				expect(removed).toEqual([]);
 		});
 
 		it("single-model lookup includes modality (GET /v1/models/:id)", async () => {
