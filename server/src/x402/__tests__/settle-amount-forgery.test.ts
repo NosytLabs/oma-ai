@@ -20,70 +20,120 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Hono } from "hono";
 import type { Mock } from "vitest";
+import { encodeAbiParameters, encodeEventTopics, parseAbiItem } from "viem";
+
+const { mockGetReceipt } = vi.hoisted(() => ({ mockGetReceipt: vi.fn() }));
+vi.mock("../../lib/rpc-client.js", () => ({ getPublicClient: () => ({ getTransactionReceipt: mockGetReceipt }) }));
 
 // ── DB mock (chain pattern with error rejection) ─────────────
 const { chain, resetChain, setQueryResult } = vi.hoisted(() => {
-		type MockChain = Record<string, Mock> & {
-				_resultQueue: unknown[][];
-				then: (
-						onfulfilled: (value: unknown[]) => unknown,
-						onrejected?: (reason: unknown) => unknown,
-				) => Promise<unknown>;
-		};
+	type MockChain = Record<string, Mock> & {
+		_resultQueue: unknown[][];
+		then: (
+			onfulfilled: (value: unknown[]) => unknown,
+			onrejected?: (reason: unknown) => unknown,
+		) => Promise<unknown>;
+	};
 
-		const ch: MockChain = { _resultQueue: [] } as unknown as MockChain;
-		const METHODS = [
-				"select",
-				"from",
-				"where",
-				"limit",
-				"insert",
-				"values",
-				"returning",
-				"update",
-				"set",
-				"onConflictDoUpdate",
-		];
+	const ch: MockChain = { _resultQueue: [] } as unknown as MockChain;
+	const METHODS = [
+		"select",
+		"from",
+		"where",
+		"limit",
+		// payment-credit takes a SELECT ... FOR UPDATE row lock, and claims the
+		// payment with ON CONFLICT DO NOTHING. Both are part of the chain now.
+		"for",
+		"insert",
+		"values",
+		"returning",
+		"update",
+		"set",
+		"onConflictDoUpdate",
+		"onConflictDoNothing",
+	];
 
+	for (const m of METHODS) {
+		ch[m] = vi.fn();
+	}
+
+	// The durable-credit path inserts a payment_credit_claims row and reads it
+	// back with RETURNING. If that comes back empty, payment-credit concludes
+	// the claim was lost and fails the whole settlement with
+	// "Payment credit claim could not be read". Positional queue entries cannot
+	// express that reliably, because the credit path's read order depends on
+	// which branches it takes. So track the table and answer that one
+	// specifically; everything else still comes from the queue.
+	let _table = "";
+	function tableName(t: unknown): string {
+		if (!t || typeof t !== "object") return "";
+		for (const s of Object.getOwnPropertySymbols(t)) {
+			if ((s.description || "").includes("drizzle:Name")) return String((t as never)[s]);
+		}
+		return String((t as { name?: string }).name ?? "");
+	}
+	const trackFrom = (t: unknown) => {
+		_table = "from:" + tableName(t);
+		return ch;
+	};
+	const trackInsert = (t: unknown) => {
+		_table = "insert:" + tableName(t);
+		return ch;
+	};
+	const CLAIM_ROW = {
+		networkId: "base",
+		txHash: "0x0",
+		creditedUserId: "user_test",
+		creditedCents: "0",
+	};
+
+	// settle → credit path uses db.transaction(async (tx) => …).
+	// Reuse the same chain as the transactional client.
+	ch.transaction = vi.fn(async (fn: (tx: MockChain) => unknown) => fn(ch));
+	ch.from.mockImplementation(trackFrom);
+	ch.insert.mockImplementation(trackInsert);
+
+	Object.defineProperty(ch, "then", {
+		value: function (
+			this: MockChain,
+			onfulfilled: (value: unknown[]) => unknown,
+			onrejected?: (reason: unknown) => unknown,
+		) {
+			const popped =
+				this._resultQueue.length > 0 ? this._resultQueue.shift()! : [];
+			const result =
+				_table === "insert:payment_credit_claims" && popped.length === 0
+					? [CLAIM_ROW]
+					: popped;
+			if (result instanceof Error) {
+				return Promise.reject(result).then(onfulfilled, onrejected);
+			}
+			return Promise.resolve(result).then(onfulfilled, onrejected);
+		},
+		writable: true,
+		configurable: true,
+	});
+
+	function reset() {
 		for (const m of METHODS) {
-				ch[m] = vi.fn();
+			;(ch[m] as Mock).mockReturnValue(ch);
 		}
-
-		Object.defineProperty(ch, "then", {
-				value: function (
-						this: MockChain,
-						onfulfilled: (value: unknown[]) => unknown,
-						onrejected?: (reason: unknown) => unknown,
-				) {
-						const result =
-								this._resultQueue.length > 0 ? this._resultQueue.shift()! : [];
-						if (result instanceof Error) {
-								return Promise.reject(result).then(onfulfilled, onrejected);
-						}
-						return Promise.resolve(result).then(onfulfilled, onrejected);
-				},
-				writable: true,
-				configurable: true,
-		});
-
-		// settle → credit path uses db.transaction(async (tx) => …).
-		// Reuse the same chain as the transactional client.
 		ch.transaction = vi.fn(async (fn: (tx: MockChain) => unknown) => fn(ch));
+		// mockReturnValue above replaced the implementations, so the table
+		// tracking has to be re-armed or _table goes stale between tests.
+		ch.from.mockImplementation(trackFrom);
+		ch.insert.mockImplementation(trackInsert);
+		_table = "";
+		ch._resultQueue = [];
+	}
 
-		function reset() {
-				for (const m of METHODS) {
-						;(ch[m] as Mock).mockReturnValue(ch);
-				}
-				ch.transaction = vi.fn(async (fn: (tx: MockChain) => unknown) => fn(ch));
-				ch._resultQueue = [];
-		}
+	function setQueryResult(result: unknown[]) {
+		ch._resultQueue.push(result);
+	}
 
-		function setQueryResult(result: unknown[]) {
-				ch._resultQueue.push(result);
-		}
-
-		return { chain: ch, resetChain: reset, setQueryResult };
+	return { chain: ch, resetChain: reset, setQueryResult };
 });
+
 
 vi.mock("../../db/client.js", () => ({ db: chain, getDb: () => chain }));
 
@@ -196,6 +246,38 @@ describe("C2 — /x402/settle ignores body.amount, uses verified amount", () => 
 				mockRedis.set.mockResolvedValue("OK");
 				mockRedis.get.mockResolvedValue(null);
 				mockRedis.del.mockResolvedValue(1);
+				mockGetReceipt.mockRejectedValue(new Error("Transaction not found"));
+		});
+
+		it("accepts a base64 current-v2 funding envelope through the public verify route", async () => {
+			const now = Math.floor(Date.now() / 1000);
+			const envelope = { x402Version: 2, accepted: { scheme: "exact", network: "eip155:8453", asset: USDC_BASE, amount: "1000000", payTo: TREASURY }, payload: { signature: `0x${"ab".repeat(65)}`, authorization: { from: "0x" + "12".repeat(20), to: TREASURY, value: "1000000", validAfter: String(now - 60), validBefore: String(now + 300), nonce: `0x${"78".repeat(32)}` } } };
+			const res = await app.request("/x402/verify", { method: "POST", headers: { "PAYMENT-SIGNATURE": Buffer.from(JSON.stringify(envelope)).toString("base64") } });
+			expect(res.status).toBe(200);
+			expect(await res.json()).toMatchObject({ valid: true, amount: "1", networkId: "base" });
+		});
+
+		it("recovers a confirmed relayed payment after serverless cache loss and preserves fractional cents", async () => {
+			const payer = `0x${"12".repeat(20)}` as const;
+			const event = parseAbiItem("event Transfer(address indexed from, address indexed to, uint256 value)");
+			mockGetReceipt.mockResolvedValue({ status: "success", logs: [{ address: USDC_BASE, topics: encodeEventTopics({ abi: [event], eventName: "Transfer", args: { from: payer, to: TREASURY as `0x${string}` } }), data: encodeAbiParameters([{ type: "uint256" }], [1234567n]) }] });
+			const txHash = `0x${"67".repeat(32)}`;
+			setQueryResult([]); // No durable settlement yet.
+			setQueryResult([{ evmAddress: payer }]);
+			const res = await app.request("/x402/settle", { method: "POST", headers: { Authorization: "Bearer test", "Content-Type": "application/json" }, body: JSON.stringify({ txHash, networkId: "eip155:8453", amount: "999999" }) });
+			expect(res.status).toBe(200);
+			expect(await res.json()).toMatchObject({ settled: true, creditedCents: 123.4567 });
+			expect(chain.values).toHaveBeenCalledWith(expect.objectContaining({ txHash, fromAddress: payer, amountUsd: "1.234567", creditsIssued: "123.4567" }));
+			expect(JSON.parse(Buffer.from(res.headers.get("PAYMENT-RESPONSE")!, "base64").toString())).toMatchObject({ success: true, payer, transaction: txHash });
+			// The settlement cache must retain the payer for every retry.
+			setQueryResult([{ evmAddress: `0x${"99".repeat(20)}` }]);
+			const stolen = await app.request("/x402/settle", { method: "POST", headers: { Authorization: "Bearer other", "Content-Type": "application/json" }, body: JSON.stringify({ txHash, networkId: "base" }) });
+			expect(stolen.status).toBe(403);
+		});
+
+		it.each([null, [], { txHash: 12, networkId: "base" }, { txHash: `0x${"11".repeat(32)}`, networkId: "eip155:1" }])("rejects malformed settlement bodies without 500", async (body) => {
+			const res = await app.request("/x402/settle", { method: "POST", headers: { Authorization: "Bearer test", "Content-Type": "application/json" }, body: JSON.stringify(body) });
+			expect(res.status).toBe(400);
 		});
 
 		it("settles with the amount from the prior /x402/verify cache, not body.amount", async () => {
@@ -238,7 +320,6 @@ describe("C2 — /x402/settle ignores body.amount, uses verified amount", () => 
 								payee: TREASURY,
 						}),
 				});
-
 				expect(settleRes.status).toBe(200);
 				const settleBody = (await settleRes.json()) as { settled: boolean };
 				expect(settleBody.settled).toBe(true);
@@ -469,4 +550,3 @@ describe("C2 — /x402/settle ignores body.amount, uses verified amount", () => 
 				expect(receipt).toBe(myReceipt);
 		});
 });
-

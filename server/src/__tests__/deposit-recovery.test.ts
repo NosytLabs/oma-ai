@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { db } from "../db/client.js";
+import { creditBalances, deposits, paymentCreditClaims } from "../db/schema.js";
 
 vi.mock("viem", async () => {
 		const actual = await vi.importActual("viem");
@@ -13,6 +14,34 @@ vi.mock("viem", async () => {
 				base: { id: 8453, name: "Base" },
 		};
 });
+
+// Crediting now runs several SELECTs across different tables inside one
+// transaction (deposit-recovery probes `deposits`, then payment-credit probes
+// `paymentCreditClaims`, `deposits` again under a row lock, and
+// `paymentCreditPolicy`). A single queued return value cannot serve those, so
+// the mock dispatches on the table handed to .from(). It also exposes .for(),
+// because payment-credit takes a SELECT ... FOR UPDATE row lock.
+const selectRows = new Map<unknown, unknown[]>();
+function setSelectRows(table: unknown, rows: unknown[]) {
+	selectRows.set(table, rows);
+}
+function makeSelect() {
+	const chain: Record<string, unknown> = {};
+	let table: unknown;
+	const settle = () => {
+		const rows = selectRows.get(table) ?? [];
+		const thenable: Promise<unknown[]> & { for: unknown } = Promise.resolve(rows) as never;
+		thenable.for = vi.fn(() => Promise.resolve(rows));
+		return thenable;
+	};
+	chain.from = vi.fn((t: unknown) => {
+		table = t;
+		return chain;
+	});
+	chain.where = vi.fn(() => chain);
+	chain.limit = vi.fn(settle);
+	return chain;
+}
 
 vi.mock("../db/client.js", () => ({
 		db: {
@@ -37,6 +66,11 @@ vi.mock("../config.js", () => ({
 		config: {
 				USDC_DEPOSIT_ADDRESS: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
 				CHAIN_RPC_URL: "https://mainnet.base.org",
+				// Unit tests must not reach the chain. The credit path only skips its
+				// on-chain receipt/block verification when the facilitator is in mock
+				// mode, so the config double has to say so explicitly.
+				FACILITATOR_MODE: "mock",
+				NODE_ENV: "test",
 		},
 }));
 
@@ -55,16 +89,22 @@ describe("deposit-recovery lib", () => {
 				// values from prior tests are dropped; clearAllMocks keeps them and
 				// every test after the first consumed a stale value (queue shift bug).
 				vi.resetAllMocks();
-				vi.mocked(db.select as any).mockReturnValue({
-						from: vi.fn().mockReturnThis(),
-						where: vi.fn().mockReturnThis(),
-						limit: vi.fn().mockResolvedValue([]),
-				});
+				selectRows.clear();
+				setSelectRows(deposits, []);
+				vi.mocked(db.select as any).mockImplementation(() => makeSelect());
 
 				vi.mocked(db.insert as any).mockReturnValue({
 						values: vi.fn().mockReturnThis(),
 						returning: vi.fn().mockResolvedValue([{ id: "dep_123", userId: "usr_abc12345" }]),
 						onConflictDoUpdate: vi.fn().mockResolvedValue({}),
+						// payment-credit claims a payment with ON CONFLICT DO NOTHING, so the
+						// insert double has to answer that branch too. Returning one row means
+						// this worker won the claim, which is the path these tests assert.
+						onConflictDoNothing: vi.fn().mockReturnValue({
+							returning: vi.fn().mockResolvedValue([
+								{ networkId: "base", txHash: "0xabc", creditedUserId: "usr_abc12345", creditedCents: "10" },
+							]),
+						}),
 				});
 
 				vi.mocked(db.update as any).mockReturnValue({
@@ -104,11 +144,7 @@ describe("deposit-recovery lib", () => {
 				});
 
 				it("skips transfer with no recorded deposit (wallet-only flow)", async () => {
-						vi.mocked(db.select as any).mockReturnValueOnce({
-								from: vi.fn().mockReturnThis(),
-								where: vi.fn().mockReturnThis(),
-								limit: vi.fn().mockResolvedValueOnce([]),
-						});
+						setSelectRows(deposits, []);
 
 						await depositRecovery.processTransfer(mockClient as any, {
 								transactionHash: "0xabc",
@@ -123,18 +159,14 @@ describe("deposit-recovery lib", () => {
 				});
 
 		it("marks existing pending deposit as completed and credits balance", async () => {
-						vi.mocked(db.select as any).mockReturnValueOnce({
-								from: vi.fn().mockReturnThis(),
-								where: vi.fn().mockReturnThis(),
-								limit: vi.fn().mockResolvedValueOnce([{
+						setSelectRows(deposits, [{
 										id: "dep_123",
 										userId: "usr_abc12345",
 										txHash: "0xabc",
 										amountUsd: "1.00",
 										status: "pending",
 										fromAddress: "0xfrom",
-								}]),
-						});
+								}]);
 
 						await depositRecovery.processTransfer(mockClient as any, {
 								transactionHash: "0xabc",
@@ -142,7 +174,10 @@ describe("deposit-recovery lib", () => {
 						}, "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913");
 
 						expect(db.update).toHaveBeenCalled();
-						expect(db.insert).toHaveBeenCalledTimes(1);
+						// Two rows now, not one: the durable claim that makes crediting
+					// idempotent, and the balance upsert it credits.
+					expect(db.insert).toHaveBeenCalledWith(paymentCreditClaims);
+					expect(db.insert).toHaveBeenCalledWith(creditBalances);
 						expect(logger.info).toHaveBeenCalledWith(
 								expect.objectContaining({ depositId: "dep_123" }),
 								"[deposit-recovery] marked pending deposit as completed and credited balance",
@@ -150,18 +185,14 @@ describe("deposit-recovery lib", () => {
 				});
 
 				it("marks pending deposit as completed even without fromAddress (legacy rows)", async () => {
-						vi.mocked(db.select as any).mockReturnValueOnce({
-								from: vi.fn().mockReturnThis(),
-								where: vi.fn().mockReturnThis(),
-								limit: vi.fn().mockResolvedValueOnce([{
+						setSelectRows(deposits, [{
 										id: "dep_nomemo",
 										userId: "usr_real_user_id",
 										txHash: "0xabc_nomemo",
 										amountUsd: "5.00",
 										status: "pending",
 										fromAddress: null,
-								}]),
-						});
+								}]);
 
 						await depositRecovery.processTransfer(mockClient as any, {
 								transactionHash: "0xabc_nomemo",
@@ -169,7 +200,10 @@ describe("deposit-recovery lib", () => {
 						}, "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913");
 
 						expect(db.update).toHaveBeenCalled();
-						expect(db.insert).toHaveBeenCalledTimes(1);
+						// Two rows now, not one: the durable claim that makes crediting
+					// idempotent, and the balance upsert it credits.
+					expect(db.insert).toHaveBeenCalledWith(paymentCreditClaims);
+					expect(db.insert).toHaveBeenCalledWith(creditBalances);
 						expect(logger.info).toHaveBeenCalledWith(
 								expect.objectContaining({ depositId: "dep_nomemo" }),
 								"[deposit-recovery] marked pending deposit as completed and credited balance",
@@ -177,18 +211,14 @@ describe("deposit-recovery lib", () => {
 				});
 
 				it("skips already completed deposit", async () => {
-						vi.mocked(db.select as any).mockReturnValueOnce({
-								from: vi.fn().mockReturnThis(),
-								where: vi.fn().mockReturnThis(),
-								limit: vi.fn().mockResolvedValueOnce([{
+						setSelectRows(deposits, [{
 										id: "dep_123",
 										userId: "usr_abc12345",
 										txHash: "0xabc",
 										amountUsd: "1.00",
 										status: "completed",
 										fromAddress: "0xfrom",
-								}]),
-						});
+								}]);
 
 						await depositRecovery.processTransfer(mockClient as any, {
 								transactionHash: "0xabc",
@@ -203,14 +233,16 @@ describe("deposit-recovery lib", () => {
 				});
 
 				it("blocks concurrent completion when another worker already claimed the deposit", async () => {
-						vi.mocked(db.select as any).mockReturnValueOnce({
-								from: vi.fn().mockReturnThis(),
-								where: vi.fn().mockReturnThis(),
-								limit: vi.fn().mockResolvedValueOnce([{
+						setSelectRows(deposits, [{
 										id: "dep_123", userId: "usr_abc12345", txHash: "0xabc",
 										amountUsd: "1.00", status: "pending", fromAddress: "0xfrom",
-								}]),
-						});
+								}]);
+						// Another worker already holds the claim. Under the durable-credit
+						// design that is a payment_credit_claims row, so payment-credit short
+						// circuits through previouslyCredited() and never inserts a new claim.
+						setSelectRows(paymentCreditClaims, [
+							{ networkId: "base", txHash: "0xabc", creditedUserId: "usr_abc12345", creditedCents: "10" },
+						]);
 						vi.mocked(db.update as any).mockReturnValueOnce({
 								set: vi.fn().mockReturnThis(),
 								where: vi.fn().mockReturnThis(),
@@ -226,18 +258,14 @@ describe("deposit-recovery lib", () => {
 				});
 
 				it("fails deposit when on-chain sender does not match recorded fromAddress", async () => {
-						vi.mocked(db.select as any).mockReturnValueOnce({
-								from: vi.fn().mockReturnThis(),
-								where: vi.fn().mockReturnThis(),
-								limit: vi.fn().mockResolvedValueOnce([{
+						setSelectRows(deposits, [{
 										id: "dep_123",
 										userId: "usr_abc12345",
 										txHash: "0xabc",
 										amountUsd: "1.00",
 										status: "pending",
 										fromAddress: "0xrealowner",
-								}]),
-						});
+								}]);
 
 						await depositRecovery.processTransfer(mockClient as any, {
 								transactionHash: "0xabc",
@@ -253,18 +281,14 @@ describe("deposit-recovery lib", () => {
 		});
 
 		it("rejects a deposit when the declared amount exceeds the verified transfer", async () => {
-			vi.mocked(db.select as any).mockReturnValueOnce({
-				from: vi.fn().mockReturnThis(),
-				where: vi.fn().mockReturnThis(),
-				limit: vi.fn().mockResolvedValueOnce([{
+			setSelectRows(deposits, [{
 					id: "dep_123",
 					userId: "usr_abc12345",
 					txHash: "0xabc",
 					amountUsd: "10.00",
 					status: "pending",
 					fromAddress: "0xfrom",
-				}]),
-			});
+				}]);
 
 			await depositRecovery.processTransfer(mockClient as any, {
 				transactionHash: "0xabc",
@@ -294,11 +318,7 @@ describe("deposit-recovery lib", () => {
 								{ transactionHash: "0xabc", args: { from: "0xfrom", to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", value: 1_000_000n } },
 						]);
 
-						vi.mocked(db.select as any).mockReturnValue({
-								from: vi.fn().mockReturnThis(),
-								where: vi.fn().mockReturnThis(),
-								limit: vi.fn().mockResolvedValue([]),
-						});
+						setSelectRows(deposits, []);
 
 						const result = await depositRecovery.runRecoveryIteration(mockClient as any, "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", 500n);
 
