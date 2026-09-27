@@ -158,9 +158,9 @@ export const ModelFiltersSidebar: React.FC<ModelFiltersSidebarProps> = ({
 			modality lands in the catalog. */}
 		<div className={`${moreOpen ? "block" : "hidden"} space-y-4 lg:block`}>
 		<div className={allInputModalities.length > 1 ? undefined : "hidden"}>
-				<h2 className="font-mono text-xs uppercase tracking-widest text-text mb-2">
+				<p className="font-mono text-xs uppercase tracking-widest text-text mb-2">
 					Input Modalities
-				</h2>
+				</p>
 				<div className="flex flex-wrap gap-2">
 					{allInputModalities.map((mod) => (
 						<button
@@ -186,9 +186,9 @@ export const ModelFiltersSidebar: React.FC<ModelFiltersSidebarProps> = ({
 
 		{/* Output Modalities — same single-option rule as inputs. */}
 		<div className={allOutputModalities.length > 1 ? undefined : "hidden"}>
-				<h2 className="font-mono text-xs uppercase tracking-widest text-text mb-2">
+				<p className="font-mono text-xs uppercase tracking-widest text-text mb-2">
 					Output Modalities
-				</h2>
+				</p>
 				<div className="flex flex-wrap gap-2">
 					{allOutputModalities.map((mod) => (
 						<button
@@ -214,9 +214,9 @@ export const ModelFiltersSidebar: React.FC<ModelFiltersSidebarProps> = ({
 
 			{/* Capabilities */}
 			<div>
-				<h2 className="font-mono text-xs uppercase tracking-widest text-text mb-2">
+				<p className="font-mono text-xs uppercase tracking-widest text-text mb-2">
 					Capabilities
-				</h2>
+				</p>
 				<div className="flex flex-wrap gap-2">
 					{allCapabilities.map((cap) => (
 						<button
@@ -242,9 +242,9 @@ export const ModelFiltersSidebar: React.FC<ModelFiltersSidebarProps> = ({
 
 			{/* Context Range Slider */}
 			<div>
-				<h2 className="font-mono text-xs uppercase tracking-widest text-text mb-2">
+				<p className="font-mono text-xs uppercase tracking-widest text-text mb-2">
 				Context Window
-			</h2>
+			</p>
 			<div className="space-y-2">
 				<div className="flex justify-between text-xs text-text-muted">
 					<span>{contextRange[0] <= 0 ? "Any" : formatContextRange(contextRange[0])}</span>
@@ -299,9 +299,9 @@ export const ModelFiltersSidebar: React.FC<ModelFiltersSidebarProps> = ({
 
 			{/* Price Range Slider */}
 			<div>
-				<h2 className="font-mono text-xs uppercase tracking-widest text-text mb-2">
+				<p className="font-mono text-xs uppercase tracking-widest text-text mb-2">
 					Price (per 1M tokens)
-				</h2>
+				</p>
 				<div className="space-y-2">
 					<div className="flex justify-between text-xs text-text-muted">
 						<span>{formatPriceRange(priceRange[0])}</span>

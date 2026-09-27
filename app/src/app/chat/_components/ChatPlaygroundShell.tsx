@@ -557,7 +557,11 @@ function ShellContent({
 							void sendMessageRef.current(formatA2UIAction(event));
 						}}
 						isAuthenticated={isAuthenticated}
-					/>
+						onPickPrompt={(prompt) => {
+							setInput(prompt);
+							inputRef.current?.focus();
+						}}
+						/>
 
 					{/* Text composer — chat surface is text-only */}
 					{isChat && (

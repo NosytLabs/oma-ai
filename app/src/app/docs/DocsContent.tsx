@@ -176,66 +176,73 @@ export function DocsContent() {
 								<span className="opacity-50">/</span>
 								<span className="text-text">docs</span>
 							</nav>
-							<div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-								<div className="min-w-0">
-									<span className="section-eyebrow-caps">API reference</span>
-									<h1 className="display-headline mt-4 text-text-bright">
-										API Docs
-									</h1>
-									<p className="page-intro max-w-2xl">
-										OpenAI-compatible inference with wallet auth and x402
-										credit billing. One endpoint, one key, every curated model.
-									</p>
-								</div>
-							<div className="flex flex-col gap-3 lg:min-w-[21rem] lg:items-end">
-								<DocsSearch />
-								<div className="meta-strip justify-start lg:justify-end lg:flex-nowrap lg:whitespace-nowrap">
-										<span>OpenAI-compatible</span>
-										<span>{MODEL_COUNT} models</span>
-										<span>x402 on Base</span>
-									</div>
-								</div>
+						{/* The two hero columns measured 502x193 against 336x70 - the search
+						    column carried 123px less content but `lg:items-start` pinned both
+						    to the top edge, so the short one floated with all that height as
+						    dead space beneath it. `lg:items-center` pairs them on a shared
+						    optical centre; min-width steps 21rem -> 22rem to give the search
+						    field room to breathe; the meta-strip keeps its nowrap so the
+						    three facts stay on one line. */}
+					<div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+						<div className="min-w-0">
+							<span className="section-eyebrow-caps">API reference</span>
+							<h1 className="display-headline mt-4 text-text-bright">
+								API Docs
+							</h1>
+							<p className="page-intro max-w-2xl">
+								OpenAI-compatible inference with wallet auth and x402
+								credit billing. One endpoint, one key, every curated model.
+							</p>
+						</div>
+						<div className="flex flex-col gap-3 lg:min-w-[22rem] lg:items-center lg:justify-end">
+							<DocsSearch />
+							<div className="meta-strip justify-start lg:justify-end lg:flex-nowrap lg:whitespace-nowrap">
+								<span>OpenAI-compatible</span>
+								<span>{MODEL_COUNT} models</span>
+								<span>x402 on Base</span>
 							</div>
-							<div className="mt-8 flex flex-wrap items-center gap-3">
-								<Link
-									href="/login"
-									className="btn-mono btn-primary group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"
-								>
-									<span>Get API key</span>
-									<ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
-								</Link>
-								<Link
-									href="#quickstart"
-									className="btn-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"
-								>
-									Quick Start
-								</Link>
-								<Link
-									href="/pricing"
-									className="btn-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"
-								>
-									View Pricing
-								</Link>
-							</div>
+						</div>
+					</div>
+					<div className="mt-8 flex flex-wrap items-center gap-3">
+						<Link
+							href="/login"
+							className="btn-mono btn-primary group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"
+							>
+							<span>Get API key</span>
+							<ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+							</Link>
+						<Link
+							href="#quickstart"
+							className="btn-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"
+							>
+							Quick Start
+							</Link>
+						<Link
+							href="/pricing"
+							className="btn-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"
+							>
+							View Pricing
+							</Link>
+						</div>
 						</div>
 
-						<div className="space-y-16">
-							<QuickStartSection />
-							<AuthenticationSection />
-							<IntegrationsSection />
-							<EndpointsSection />
-							<AvailableModelsSection />
-							<ProviderRoutingSection />
-							<StreamingSection />
-							<RateLimitsSection />
-							<PricingSection />
-							<X402Section />
-							<SDKsSection />
-							<ErrorsSection />
-						</div>
+					<div className="space-y-16">
+						<QuickStartSection />
+						<AuthenticationSection />
+						<IntegrationsSection />
+						<EndpointsSection />
+						<AvailableModelsSection />
+						<ProviderRoutingSection />
+						<StreamingSection />
+						<RateLimitsSection />
+						<PricingSection />
+						<X402Section />
+						<SDKsSection />
+						<ErrorsSection />
 					</div>
 				</div>
 			</div>
 		</div>
-	);
+	</div>
+);
 }

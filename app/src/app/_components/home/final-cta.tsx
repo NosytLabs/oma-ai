@@ -36,9 +36,16 @@ export function FinalCTA() {
 	<div className="flex flex-col items-center justify-center text-center max-w-3xl mx-auto gap-8">
 	<div className="flex flex-col gap-5 items-center">
 	<span className="section-eyebrow-caps">Get started</span>
+	{/* .section-headline, was .display-headline: the closing CTA
+	    is an <h2>, and .display-headline is the h1 scale
+	    (clamp to 4.75rem -> 72px here). It was the only
+	    h2 on / rendering at 72px against three siblings at
+	    40px, so the h2 level carried two steps of the type
+	    scale. The eyebrow above it already marks it as a
+	    section, which is what .section-headline styles. */}
 	<h2
-	id="final-cta-headline"
-	className="display-headline text-text-bright"
+		id="final-cta-headline"
+		className="section-headline text-text-bright"
 	>
 	Build with OMA.
 	<br />

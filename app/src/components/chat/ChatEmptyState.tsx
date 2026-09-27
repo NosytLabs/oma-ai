@@ -7,9 +7,23 @@ import { Coins } from "lucide-react";
 interface EmptyStateProps {
 	/** Hide guest-quota marketing when the user is signed in. */
 	signedIn?: boolean;
+	/** Seeds the composer with a starter prompt. Omit to render read-only. */
+	onPickPrompt?: (prompt: string) => void;
 }
 
-export function ChatEmptyState({ signedIn = false }: EmptyStateProps) {
+/**
+ * Starter prompts double as the empty state's layout ballast. This surface
+ * previously reserved 58-62vh around a short welcome block, leaving a large
+ * void between the model selector and the composer; these fill it with
+ * something a visitor can act on instead of empty space.
+ */
+const STARTER_PROMPTS = [
+	"Explain the difference between tokens and credits.",
+	"Write a Python script that calls the OMA chat completions API.",
+	"Summarise what x402 settlement does and when to use it.",
+] as const;
+
+export function ChatEmptyState({ signedIn = false, onPickPrompt }: EmptyStateProps) {
 
 	return (
 		<div className="flex flex-col items-center justify-start py-4 text-center md:py-6">
@@ -42,6 +56,27 @@ export function ChatEmptyState({ signedIn = false }: EmptyStateProps) {
 					? "Start with a question below. Credits unlock the full catalog."
 					: "Start with a question below. Guests get free messages on OMA-AI budget models."}
 			</m.p>
+
+			{onPickPrompt && (
+				<m.ul
+					initial={{ opacity: 0 }}
+					animate={{ opacity: 1 }}
+					transition={{ delay: 0.2, ...springs.soft }}
+					className="mb-6 grid w-full max-w-2xl list-none grid-cols-1 gap-2 p-0 sm:grid-cols-3"
+				>
+					{STARTER_PROMPTS.map((prompt) => (
+						<li key={prompt} className="min-w-0">
+							<button
+								type="button"
+								onClick={() => onPickPrompt(prompt)}
+								className="flex h-full min-h-11 w-full items-center justify-center rounded-[var(--radius-lg)] border border-border bg-surface/60 px-3 py-2 text-left text-xs leading-relaxed text-text-secondary transition-colors duration-200 ease-out hover:border-accent/40 hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+							>
+								{prompt}
+							</button>
+						</li>
+					))}
+				</m.ul>
+			)}
 
 			{!signedIn && (
 			<m.div

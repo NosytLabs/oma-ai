@@ -322,7 +322,12 @@ export function PricingTable({
 													</span>
 												)}
 												</div>
-											<span className="ml-7 mt-0.5 hidden max-w-[200px] truncate font-mono text-xs text-text-secondary sm:block">
+											{/* mt-1 (4px), was mt-0.5 (2px): 2px is off the
+									    4/8/12/16/24/32/48 spacing scale and
+									    landed here on all 21 catalog rows as a
+									    2px gap between the model name and its
+									    id. */}
+									<span className="ml-7 mt-1 hidden max-w-[200px] truncate font-mono text-xs text-text-secondary sm:block">
 												{mm.id}
 											</span>
 										</td>

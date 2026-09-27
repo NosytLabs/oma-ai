@@ -53,9 +53,14 @@ describe("PricingPage", () => {
 
 	it("renders credits and billing disclaimer section", () => {
 		render(<PricingPage />);
+		// "Billing notes" is a mono caption <p> above the notes list, not an
+		// h2-headline — it was demoted from <h2>/<h3> so the page's heading
+		// levels each stay on one type family (visual-audit fix). Assert the
+		// caption text and the note copy it captions.
+		expect(screen.getByText(/Billing notes/i)).toBeInTheDocument();
 		expect(
-			screen.getByRole("heading", { name: /Billing/i }),
-		).toBeInTheDocument();
+			screen.getAllByText(/1 credit = \$0\.01/i).length,
+		).toBeGreaterThan(0);
 	});
 
 	it("renders CTA buttons linking to deposit and models", async () => {

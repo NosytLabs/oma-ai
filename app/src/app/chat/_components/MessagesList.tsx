@@ -231,6 +231,12 @@ interface MessagesListProps {
 	onA2UIAction?: (event: A2UIActionEvent) => void;
 	/** Signed-in users skip guest marketing (welcome + example dump). */
 	isAuthenticated?: boolean;
+	/**
+	 * Seeds the composer when a starter prompt is clicked. Threaded in from
+	 * the shell (which owns the input state) rather than imported, so the
+	 * empty state stays a pure presentational component.
+	 */
+	onPickPrompt?: (prompt: string) => void;
 }
 
 export function MessagesList({
@@ -245,6 +251,7 @@ export function MessagesList({
 	onRegenerate,
 	onA2UIAction,
 	isAuthenticated = false,
+	onPickPrompt,
 }: MessagesListProps) {
 	return (
 		<div
@@ -259,14 +266,25 @@ export function MessagesList({
 			<div className="max-w-4xl mx-auto relative z-0 min-h-full">
 				{deferredMessages.length === 0 ? (
 					<div className="pb-8">
+						{/*
+						  The empty state reserved min-h-[58vh]/md:min-h-[62vh]
+						  around ~250px of content, so at 1440x900 the
+						  scroll area held a 558px box whose text sat
+						  between 166px of padding above and 142px below
+						  — a ~300px void between the model selector and
+						  the composer. The starter prompts below fill
+						  that space with something useful, so the box
+						  only needs to clear the composer rather than
+						  claim a fixed share of the viewport.
+						*/}
 						<div
 							className={
 								isAuthenticated
 									? "pt-8 md:pt-16"
-									: "flex min-h-[58vh] flex-col justify-center pt-6 md:min-h-[62vh]"
+									: "flex flex-col justify-center pt-6 md:pt-10"
 							}
 						>
-							<ChatEmptyState signedIn={isAuthenticated} />
+							<ChatEmptyState signedIn={isAuthenticated} onPickPrompt={onPickPrompt} />
 						</div>
 					</div>
 				) : (

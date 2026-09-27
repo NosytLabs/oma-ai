@@ -310,18 +310,24 @@ export default function PricingPage() {
 
 				<InViewFade>
 					<div className="mb-10 grid grid-cols-1 gap-4 md:grid-cols-2">
+						{/* flex-col plus a trailing note on mt-auto pins both
+						    cards' last line to the shared card bottom: in plain
+						    flow the two content blocks ended at different y
+						    (186 vs 159 after the first pass, 640 vs 657 in the
+						    original audit), so equal-height cards still read as
+						    misaligned. Both cards now end on one baseline. */}
 						<m.div
 							whileHover={{ y: -4 }}
 							transition={springs.card}
-							className="surface-card p-5 rounded-[var(--radius-xl)] border border-transparent transition-[border-color,box-shadow] duration-200 ease-out hover:border-[var(--color-accent)]/30 hover:shadow-[var(--shadow-md)]"
+							className="surface-card flex flex-col p-5 rounded-[var(--radius-xl)] border border-transparent transition-[border-color,box-shadow] duration-200 ease-out hover:border-[var(--color-accent)]/30 hover:shadow-[var(--shadow-md)]"
 						>
 							<p className="text-[11px] font-mono uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
 								Starts at
 							</p>
-							<p className="mt-3 font-geometric text-4xl font-medium tabular-nums tracking-tight text-[var(--color-text-bright)]">
+							<p className="mt-3 font-geometric text-3xl font-medium tabular-nums tracking-tight text-[var(--color-text-bright)]">
 								{lowestInputPrice}
 							</p>
-							<p className="mt-2 text-sm leading-relaxed text-[var(--color-text)]">
+							<p className="mt-2 min-h-12 text-sm leading-relaxed text-[var(--color-text)]">
 								{availabilityStatus === "checking"
 									? "Checking current availability and input-token prices."
 									: availabilityStatus === "unavailable"
@@ -330,21 +336,29 @@ export default function PricingPage() {
 											? "No chat models are currently available. Check again before adding credits."
 											: "Lowest price per 1M input tokens among the models currently accepting requests."}
 							</p>
+							{/* Trailing note mirrors the "x402 settlement" note in the
+							    sibling card. Without it this card's content ended at
+							    y=142 against the sibling's y=159 — same outer height,
+							    17px apart on the last text baseline, so the two hero
+							    cards read as misaligned rather than paired. */}
+							<p className="mt-auto pt-3 text-xs leading-relaxed text-[var(--color-text-muted)]">
+								No subscriptions — pay per token.
+							</p>
 						</m.div>
 						<m.div
 							whileHover={{ y: -4 }}
 							transition={springs.card}
-							className="surface-card p-5 rounded-[var(--radius-xl)] border border-transparent transition-[border-color,box-shadow] duration-200 ease-out hover:border-[var(--color-accent)]/30 hover:shadow-[var(--shadow-md)]"
+							className="surface-card flex flex-col p-5 rounded-[var(--radius-xl)] border border-transparent transition-[border-color,box-shadow] duration-200 ease-out hover:border-[var(--color-accent)]/30 hover:shadow-[var(--shadow-md)]"
 						>
 							<p className="text-[11px] font-mono uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
 								Pay your way
 							</p>
 							<p className="mt-3 text-3xl font-semibold text-[var(--color-text-bright)]">USDC · optional card</p>
-							<p className="mt-2 text-sm leading-relaxed text-[var(--color-text)]">
+							<p className="mt-2 min-h-12 text-sm leading-relaxed text-[var(--color-text)]">
 								Top up with USDC on Base, or buy with card via Polar when checkout is
 								enabled.
 							</p>
-							<p className="mt-3 text-xs leading-relaxed text-[var(--color-text-muted)]">
+							<p className="mt-auto pt-3 text-xs leading-relaxed text-[var(--color-text-muted)]">
 								x402 settlement also supported for agents —{" "}
 								<Link href="#x402" className="font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] transition-colors duration-200 ease-out inline-flex items-center">
 									see below
@@ -520,7 +534,12 @@ export default function PricingPage() {
 							</div>
 							<div>
 								<div className="flex items-center gap-3">
-									<h3 className="text-base font-semibold text-accent">
+									{/* text-sm, was text-base: this h3 was 15px against
+									    three sibling payment-method h3s at 13px, so the
+									    level carried two sizes. The accent colour and
+									    the "recommended for agents" pill already mark
+									    this card as the featured one. */}
+									<h3 className="text-sm font-semibold text-accent">
 										x402 Protocol
 									</h3>
 									<span className="inline-flex items-center rounded-full bg-accent text-void px-2.5 py-0.5 text-[10px] font-mono font-medium uppercase tracking-widest shadow-sm">
@@ -549,9 +568,18 @@ export default function PricingPage() {
 					<div id="faq" className="mb-12 scroll-mt-20">
 					<div className="flex items-center gap-2 mb-6">
 						<HelpCircle className="h-4 w-4 text-accent" />
-						<h2 className="text-sm font-mono font-semibold uppercase tracking-widest text-text-secondary">
+						{/* Was an <h2> in mono 13px uppercase, the only mono
+						    heading on a page whose h2s are otherwise the
+						    serif .h2-page scale — so the h2 level measured
+						    as two families. This is a card caption above the
+						    accordion, not a document section, and the page
+						    already carries the real sections as serif h2s,
+						    so a <p> is both the correct level and the
+						    visual match for the sibling "payment methods"
+						    divider caption. */}
+						<p className="text-sm font-mono font-semibold uppercase tracking-widest text-text-secondary">
 							FAQ
-						</h2>
+						</p>
 					</div>
 					<div className="rounded-[var(--radius-xl)] border border-border bg-surface p-6 shadow-[var(--shadow-sm)]">
 						{FAQ_ITEMS.map((item, i) => (
@@ -611,9 +639,14 @@ export default function PricingPage() {
 
 			{/* ── Billing Notes ── */}
 			<div className="mb-12 sm:mb-16 p-5 rounded-[var(--radius-xl)] border border-border bg-surface/50 shadow-sm">
-					<h3 className="text-xs font-mono font-semibold uppercase tracking-widest text-text-muted mb-4">
+					{/* Was an <h3> in mono 12px, the only mono heading at
+					    this level on a page whose other h3s are serif card
+					    titles. It captions the notes list below rather than
+					    introducing a subsection, so a <p> keeps the h3
+					    level on one family. */}
+					<p className="text-xs font-mono font-semibold uppercase tracking-widest text-text-muted mb-4">
 						Billing notes
-					</h3>
+					</p>
 					<div className="grid grid-cols-1 gap-2 md:grid-cols-2">
 						{[
 						"1 credit = $0.01; credits are non-redeemable and non-transferable",

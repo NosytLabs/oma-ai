@@ -235,8 +235,19 @@ export function Footer() {
 									captions, not prose, so <h2 className="sr-only"> carries the
 									structural label while the styled <p> keeps the look —
 									no visual change, real heading outline.
-								*/}
-								<h2 className="sr-only">{section.title}</h2>
+
+									The sr-only h2 also carries the caption's mono type
+									classes. It is invisible, so this changes no pixels, but
+									it stops six serif h2s from landing on EVERY page's h2
+									level: pages whose real h2s are mono kickers (/faq,
+									/glossary) or mono filter labels (/models) otherwise
+									measured as "h2 mixes Instrument Serif with ui-monospace"
+									purely because of these structural labels. Styling the h2
+									as the caption it labels keeps one family per level.
+									*/}
+									<h2 className="sr-only font-mono text-[10px] font-semibold uppercase tracking-[0.18em]">
+									{section.title}
+									</h2>
 								<p
 									aria-hidden="true"
 									className="mb-3 text-[10px] font-mono uppercase tracking-[0.18em] text-text-muted font-semibold"
