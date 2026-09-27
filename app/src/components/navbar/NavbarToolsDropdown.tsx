@@ -60,9 +60,19 @@ export function NavbarToolsDropdown({
 
 	return (
 		<div ref={containerRef} className="relative hidden lg:block">
+			{/*
+				`whileHover`/`whileTap` are deliberately NOT gated on
+				`useReducedMotion()` here. That hook returns false during SSR but
+				the real value on the client, so gating on it made the server emit
+				`tabindex="0"` (framer adds it for gesture props) while the client
+				removed it — a hydration mismatch on EVERY page that renders the
+				navbar. `MotionProvider` already sets `MotionConfig
+				reducedMotion="user"`, which disables these transform animations
+				for reduced-motion users on its own, so the gate bought nothing.
+			*/}
 			<m.div
-				whileHover={prefersReduced ? undefined : { y: -1 }}
-				whileTap={prefersReduced ? undefined : { scale: 0.96 }}
+				whileHover={{ y: -1 }}
+				whileTap={{ scale: 0.96 }}
 				transition={EASE_SPRING}
 				className="inline-block"
 			>
