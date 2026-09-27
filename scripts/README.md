@@ -22,6 +22,7 @@ Tooling for local development and operations.
 
 ```bash
 ./scripts/ops/start-prod.sh                   # docker compose prod up (or down|logs)
+./scripts/ops/check-launch-env.sh             # preflight: verify required prod env vars are set
 ```
 
 ## Root monorepo

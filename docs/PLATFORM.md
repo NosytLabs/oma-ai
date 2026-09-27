@@ -143,7 +143,7 @@ Production requires durable Postgres and Redis-compatible rate-limit state, real
 - `PRIMARY_DOMAIN=www.oma-ai.com`
 - `BETTER_AUTH_URL=https://www.oma-ai.com`
 - `BETTER_AUTH_SECRET`: unique high-entropy secret, shared with the frontend deployment that verifies sessions.
-- `ENCRYPTION_KEY`: unique production encryption secret, at least 40 characters.
+- `ENCRYPTION_KEY`: unique production encryption secret, at least 32 characters (enforced by config validation).
 - `RESEND_API_KEY` and `RESEND_FROM`: required for production magic-link email.
 - `ADMIN_WALLET_ADDRESSES`: comma-separated admin addresses, if admin access is enabled.
 
