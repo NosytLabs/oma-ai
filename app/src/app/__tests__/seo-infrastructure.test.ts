@@ -51,22 +51,16 @@ describe("sitemap.ts - Next.js MetadataRoute.Sitemap", () => {
 		}
 	});
 
-	it("includes critical public marketing pages", async () => {
+	it("includes critical public marketing pages (canonical list lives in sitemap-availability.test.ts)", async () => {
+		// AUDIT 2026-09-27 / T-6: hard-coded URL list duplicated
+		// sitemap-availability's constant-driven check. Keep a single canary
+		// assertion here; the exhaustive list is asserted once, over the
+		// exported constant, in sitemap-availability.test.ts.
 		const result = await sitemap();
 		const urls = result.map((e) => e.url.replace(/^https:\/\/(www\.)?oma-ai\.com/, "") || "/");
-		for (const required of [
-			"/",
-			"/pricing",
-			"/docs",
-			"/models",
-			"/chat",
-			"/about",
-			"/contact",
-			"/getting-started",
-		]) {
-			expect(urls).toContain(required);
-		}
-	});
+		expect(urls).toContain("/");
+		expect(urls).toContain("/pricing");
+});
 
 	it("excludes auth-gated product surfaces", async () => {
 		const result = await sitemap();

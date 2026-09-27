@@ -98,19 +98,13 @@ describe("brand assets on disk (public/)", () => {
 		expect(existsSync(join(publicDir, rel))).toBe(true);
 	});
 
-	it("favicon.svg encodes void + accent and open-gateway mark geometry", () => {
+	it("favicon.svg uses the void + accent brand tokens", () => {
+		// AUDIT 2026-09-27 / T-3: trimmed SVG geometry pinning (dasharray,
+		// path/fill-count regexes) — it broke on any mark redraw without
+		// catching a real defect. Brand tokens are the actual contract.
 		const svg = readFileSync(join(publicDir, "favicon.svg"), "utf8");
 		expect(svg).toContain("#07090a");
 		expect(svg).toContain("#46d39a");
-		// Open ring (stroked circle with dash gap at 3 o'clock)
-		expect(svg).toMatch(/stroke-dasharray/i);
-		// Terminal chevron (path) pointing through the gap
-		expect(svg).toMatch(/<path\b/i);
-		// Signal / LED dots at the ring gap
-		const accentFills = svg.match(/fill="#46d39a"/g) ?? [];
-		expect(accentFills.length).toBeGreaterThanOrEqual(1);
-		expect(svg).toMatch(/circle[^>]+fill="#46d39a"/);
-		expect(svg).toContain("#6ee7b7");
 	});
 
 	it("lockup SVGs use the same brand hex tokens and canonical tagline", () => {
@@ -127,7 +121,7 @@ describe("shared page-shell layout contract", () => {
 	it("does not contain the retired desktop sidebar offset", () => {
 		const css = readFileSync(join(import.meta.dirname, "..", "app", "globals.css"), "utf8");
 		expect(css).toContain(".page-shell {");
-		expect(css).not.toMatch(/\.page-shell[\s\S]{0,220}padding-left:\s*18rem/);
+		expect(css).not.toMatch(/\.page-shell[^}]*padding-left:\s*18rem/);
 	});
 });
 

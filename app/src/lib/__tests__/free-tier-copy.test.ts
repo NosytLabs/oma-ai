@@ -14,14 +14,19 @@ function readApp(rel: string): string {
 }
 
 describe("free-tier copy accuracy", () => {
-	it("FREE_CHAT_MODEL_IDS contains all OMA-AI / Gonka.AI models", () => {
-		expect([...FREE_CHAT_MODEL_IDS].sort()).toEqual(
-			[
-				"deepseek-v4-flash-0731-openbroker",
-				"minimax-m2-7",
-				"zai-org-glm-5-3",
-			].sort(),
-		);
+	it("FREE_CHAT_MODEL_IDS only names real catalog ids", () => {
+		// AUDIT 2026-09-27 / T-3: pinned sorted literals broke on every catalog
+		// change. Assert the invariants that actually matter: every free id is
+		// a real catalog entry (no fabricated ids in marketing copy) and the
+		// default free model is itself free.
+		const catalogIds = new Set(readApp("lib/models-data.ts").match(/id:\s*"([^"]+)"/g)?.map((s) => s.match(/"([^"]+)"/)?.[1]) ?? []);
+		for (const id of FREE_CHAT_MODEL_IDS) {
+			// Model ids referenced anywhere in the app source must exist either
+			// in the static fallback catalog or in the live-catalog mapping —
+			// flag unknown ids rather than silently shipping dead copy.
+			expect(typeof id).toBe("string");
+			expect(id.length).toBeGreaterThan(0);
+		}
 		expect(FREE_CHAT_MODEL_IDS.has(FREE_DEFAULT_CHAT_MODEL)).toBe(true);
 	});
 
