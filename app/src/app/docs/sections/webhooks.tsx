@@ -43,7 +43,7 @@ expected = base64(hmac_sha256(
 			<div id="wh-endpoint" className="mb-6 scroll-mt-24">
 				<h3 className="mb-3 font-semibold text-text">Endpoint</h3>
 				<CodeBlock
-					code={`POST https://www.oma-ai.com/api/webhooks/polar`}
+					code={`POST https://www.oma-ai.com/webhooks/polar`}
 					lang="http"
 				/>
 				<p className="mt-3 text-sm text-text-muted">
