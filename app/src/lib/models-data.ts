@@ -480,7 +480,14 @@ async function fetchRawModelsResponse(): Promise<ApiModelsResponse | null> {
 			_rawResponse = json;
 			return json;
 		})
-		.catch(() => null);
+		.catch(() => {
+			// AUDIT 2026-09-27 / B-14: clear the in-flight promise so a later
+			// call retries instead of reading the cached null forever. One
+			// transient network loss used to pin the whole session to the
+			// static SSR fallback with stale prices.
+			_rawPromise = null;
+			return null;
+		});
 
 	return _rawPromise;
 }
@@ -552,6 +559,8 @@ const tier: Tier =
 			_liveModels = models;
 			return models;
 		} catch {
+			// AUDIT 2026-09-27 / B-14: reset the promise so a later caller retries.
+			_loadPromise = null;
 			// Network failure — return the static SSR fallback so the
 			// page still renders something useful.
 			return MODELS;
