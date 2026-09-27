@@ -21,7 +21,7 @@ OMA-AI (**Open Model Access**) is a single API endpoint that fronts multiple AI 
 | Anthropic-compatible apps | Drop-in `/v1/messages` endpoint |
 | Multi-model routing | Automatic failover across providers (static peer map + hidden Surplus retry) |
 | Agent billing | x402 USDC verify/settle → credits + optional Polar card |
-| Privacy | Prompts not used for training; usage is metered for billing |
+| Privacy | OMA does not persist prompt or completion content; upstream policies depend on provider and model |
 
 One OpenAI-compatible endpoint for a curated catalog. Venice-routed models include a 25% platform fee; OMA-AI/OpenBroker prices already include margin. Guest chat is free with a daily cap.
 
@@ -58,7 +58,7 @@ Budget-friendly, sign-in-free chat via OMA-AI models with a generous daily limit
 
 | Layer | Technology |
 |-------|-----------|
-| **Frontend** | Next.js 15, React 19, Tailwind CSS v4 |
+| **Frontend** | Next.js 16, React 19, Tailwind CSS v4 |
 | **Backend** | Hono (Node), TypeScript |
 | **Database** | PostgreSQL (Neon-ready) + Drizzle ORM |
 | **Cache / Queue** | Redis |
@@ -71,7 +71,7 @@ Budget-friendly, sign-in-free chat via OMA-AI models with a generous daily limit
 
 ## Quick Start
 
-Get OMA-AI running locally in under 2 minutes.
+Run the frontend and API locally with PostgreSQL and Redis.
 
 ### Prerequisites
 
@@ -127,11 +127,23 @@ Runs type checking, linting, and tests across `app/` and `server/`.
 
 ---
 
+## Documentation
+
+| Reference | Source of truth |
+|-----------|-----------------|
+| [Platform](docs/PLATFORM.md) | Billing, authentication, funding rails, and operator configuration |
+| [Deployment](docs/DEPLOYMENT.md) | Production topology and deployment procedures |
+| [Brand](BRAND.md) | Visual tokens, typography, navigation, and product language |
+| [Settlement runbook](docs/settlement-runbook.md) | Payment recovery and settlement operations |
+| [Public docs](https://www.oma-ai.com/docs) | Customer quickstart, API usage, and integrations |
+
+Keep implementation details in these references and link to them from summaries so parallel copies do not drift.
+
 ## Project Structure
 
 ```
 oma-ai/
-├── app/                    # Next.js 15 frontend
+├── app/                    # Next.js 16 frontend
 │   ├── src/
 │   │   ├── app/           # App Router pages
 │   │   ├── components/    # Shared React components
@@ -165,31 +177,9 @@ oma-ai/
 
 ### Payments & Treasury
 
-```text
-                  ┌──────────────────────┐
-                  │    User Deposits     │
-                  └──────────┬───────────┘
-                             │
-           ┌─────────────────┼─────────────────┐
-           ▼                 │                 ▼
-  ┌─────────────────┐       │       ┌─────────────────┐
-  │  x402 / Gasless │       │       │  USDC on Base   │
-  │  Micropayments  │       │       │  (Direct EOA)   │
-  └────────┬────────┘       │       └────────┬────────┘
-           │                 │               │
-           └─────────────────┼───────────────┘
-                             ▼
-                ┌───────────────────────────┐
-                │ Deposit Recovery Watcher  │
-                └──────────────────────────┘
-                           ▼
-                ┌───────────────────────────┐
-                │    Credit User Account    │
-                └───────────────────────────┘
-```
+OMA uses one prepaid credit ledger in Postgres. Customers fund it with direct USDC deposits on Base, card checkout when available, or authenticated x402 settlement. Successful API requests deduct their cost from that balance; website chat has a separate daily free allowance.
 
-- **USDC direct deposits (Base):** a watcher daemon verifies Transfer logs to the treasury and credits balances.
-- **x402 funding:** EIP-3009 USDC envelopes verified at `/x402/verify` and settled by a self-hosted facilitator (viem + `CHAIN_RPC_URL`); QuickNode serves only as the Base RPC provider. Spend with an API key.
+For the authoritative billing model, supported payment flows, authentication boundaries, and required configuration, see [`docs/PLATFORM.md`](docs/PLATFORM.md). Operational recovery procedures live in [`docs/settlement-runbook.md`](docs/settlement-runbook.md).
 
 ### Production Docker Builds
 
@@ -200,16 +190,7 @@ docker build -t oma-server -f server/Dockerfile .
 
 For end-to-end self-hosting on Coolify (or any Docker Compose host), including the Caddy reverse proxy, environment checklist, and Polar webhook setup, see [`deploy/coolify/README.md`](deploy/coolify/README.md). **That path is unused in production** — see [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 
-The production frontend is the Vercel project `oma` (Root Directory `app`, CLI link at the repo root), serving `https://www.oma-ai.com`. Deploy it with `vercel deploy --prod --yes` from the **repository root**.
-
-For the production backend running as a Neon Function, the infra-as-code manifest lives in `server/neon.ts`. From the repo root, preview and deploy with:
-
-```bash
-neon config plan --config server/neon.ts            # preview changes (no apply)
-neon deploy --config server/neon.ts --update-existing
-```
-
-(`NEON_API_KEY` must be exported.) The manifest registers the `omaapi` function plus the `oma-deposit-recovery` scheduled trigger.
+Production uses Vercel for the frontend and a Neon Function for the API. A frontend deployment does not deploy backend changes. Follow [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for the current targets, repository-root commands, environment-preservation rules, and verification steps.
 
 ---
 
@@ -233,7 +214,7 @@ Always run `pnpm validate` locally before opening a pull request.
 | `/` | Landing page — product value, primary CTAs |
 | `/models` | Curated model catalog + pricing |
 | `/chat` | Interactive chat playground (text + multimodal input) |
-| `/pricing` · `/deposit` | Plans + credit / USDC funding |
+| `/pricing` · `/deposit` | Per-model rates + prepaid credit funding |
 | `/docs` · `/getting-started` | API docs + developer quickstart |
 | `/dashboard` · `/settings` | API keys, usage analytics, preferences |
 | `/faq` · `/glossary` | Educational guides |

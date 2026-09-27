@@ -66,6 +66,16 @@ function clearDemoSessionCookie(): void {
 }
 
 export async function signOut(options: SignOutOptions = {}): Promise<void> {
+	const { callbackURL, disableRedirect, ...requestOptions } = options;
+	const result = await rawSignOut(requestOptions as Parameters<typeof rawSignOut>[0]);
+	if (result.error) {
+		throw new Error(result.error.message ?? "Failed to sign out");
+	}
 	clearDemoSessionCookie();
-	await rawSignOut(options as Parameters<typeof rawSignOut>[0]);
+	if (callbackURL && !disableRedirect && typeof window !== "undefined") {
+		const destination = new URL(callbackURL, window.location.origin);
+		if (destination.origin === window.location.origin) {
+			window.location.assign(`${destination.pathname}${destination.search}${destination.hash}`);
+		}
+	}
 }

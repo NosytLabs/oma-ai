@@ -25,25 +25,25 @@ expected = base64(hmac_sha256(
 				id="webhooks"
 				icon={<Radio className="h-5 w-5" />}
 				title="Webhooks"
-				subtitle="Receive signed Polar payment events for one-time credit-pack orders."
+				subtitle="Operator reference: OMA receives signed Polar events for credit-pack orders."
 			/>
 
 			<div id="wh-what" className="mb-6 scroll-mt-24">
 				<h3 className="mb-3 font-semibold text-text">When to use them</h3>
 				<p className="mb-3 text-sm text-text-muted">
-					OMA sends signed webhook events when a one-time order or subscription
-					changes state. The most common are{" "}
+					Polar sends signed webhook events to OMA when a one-time credit-pack order
+					changes state. OMA processes{" "}
 					<code className="font-mono text-accent">order.paid</code> (user was
 					crediting their balance) and{" "}
 					<code className="font-mono text-accent">order.refunded</code>. Events
-					are delivered to the endpoint you configure on the dashboard.
+					are delivered to the OMA endpoint configured in the operator’s Polar dashboard. Customers do not need to configure webhooks to buy credits.
 				</p>
 			</div>
 
 			<div id="wh-endpoint" className="mb-6 scroll-mt-24">
 				<h3 className="mb-3 font-semibold text-text">Endpoint</h3>
 				<CodeBlock
-					code={`POST /webhooks/polar   # (also served at /api/webhook/polar)`}
+					code={`POST https://www.oma-ai.com/api/webhooks/polar`}
 					lang="http"
 				/>
 				<p className="mt-3 text-sm text-text-muted">
@@ -71,8 +71,8 @@ expected = base64(hmac_sha256(
 				<h3 className="mb-3 font-semibold text-text">Supported events</h3>
 				<ul className="space-y-2 text-sm text-text-muted">
 					<li>
-						<code className="font-mono text-accent">order.paid</code> — credits{" "}
-						credits to the user&apos;s balance (per the plan purchased).
+						<code className="font-mono text-accent">order.paid</code> — adds the purchased{" "}
+						credits to the user&apos;s balance.
 					</li>
 					<li>
 						<code className="font-mono text-accent">order.refunded</code> — drains
@@ -84,7 +84,7 @@ expected = base64(hmac_sha256(
 				</div>
 				<p className="mt-3 text-sm text-text-muted">
 					Events are idempotent — OMA deduplicates by{" "}
-					<code className="font-mono text-accent">event.id</code>, so retried
+					<code className="font-mono text-accent">webhook-id</code>, so retried
 					deliveries never double-credit.
 				</p>
 			</div>

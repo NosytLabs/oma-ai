@@ -102,7 +102,7 @@ export function SessionsSection({
 								type="button"
 								onClick={handleRevokeOthers}
 								disabled={revokingOthers}
-								className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-danger/30 bg-danger/10 px-3 py-1.5 text-xs font-semibold text-danger transition-[background-color,border-color,color,transform] duration-200 hover:border-danger/50 active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger"
+								className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-error/30 bg-error/10 px-3 py-1.5 text-xs font-semibold text-error transition-[background-color,border-color,color,transform] duration-200 hover:border-error/50 active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error"
 							>
 								{revokingOthers ? (
 									<Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
@@ -125,7 +125,7 @@ export function SessionsSection({
 						type="button"
 						onClick={() => setConfirmRevokeOthers(true)}
 						disabled={revokingOthers}
-						className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-danger/30 bg-danger/10 px-3 py-1.5 text-xs font-semibold text-danger transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:border-danger/50 hover:bg-danger/20 active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger"
+						className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-error/30 bg-error/10 px-3 py-1.5 text-xs font-semibold text-error transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:border-error/50 hover:bg-error/20 active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error"
 					>
 						<Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
 						{`Sign out ${otherSessions.length} other device${otherSessions.length === 1 ? "" : "s"}`}

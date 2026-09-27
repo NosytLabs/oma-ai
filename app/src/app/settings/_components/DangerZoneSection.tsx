@@ -10,6 +10,7 @@ import { AnimatePresence, m } from "@/lib/framer-motion-client";
 interface DangerZoneSectionProps {
 	onDeleteAccount: () => Promise<void>;
 	deleting: boolean;
+	readOnly?: boolean;
 }
 
 /**
@@ -19,6 +20,7 @@ interface DangerZoneSectionProps {
 export function DangerZoneSection({
 	onDeleteAccount,
 	deleting,
+	readOnly = false,
 }: DangerZoneSectionProps) {
 	const toast = useToast();
 	const queryClient = useQueryClient();
@@ -26,14 +28,16 @@ export function DangerZoneSection({
 		queryKey: ["balance"],
 		queryFn: () => api.balance.get(),
 		staleTime: 30_000,
+		enabled: !readOnly,
 	});
-	const balanceDollars = Number(balanceQuery.data?.balanceCents ?? 0) / 100;
+	const balanceDollars = readOnly ? Number.NaN : Number(balanceQuery.data?.balanceCents ?? Number.NaN) / 100;
 	const [showConfirm, setShowConfirm] = useState(false);
 	const [confirmText, setConfirmText] = useState("");
 	const [clearing, setClearing] = useState(false);
 	const [showClearConfirm, setShowClearConfirm] = useState(false);
 
 	const handleClearHistory = async () => {
+		if (readOnly || clearing) return;
 		setClearing(true);
 		try {
 			const res = await api.auth.clearHistory();
@@ -57,7 +61,7 @@ export function DangerZoneSection({
 	};
 
 	const handleConfirmDelete = async () => {
-		if (confirmText !== "DELETE" || deleting) return;
+		if (readOnly || confirmText !== "DELETE" || deleting) return;
 		await onDeleteAccount();
 	};
 
@@ -104,7 +108,8 @@ export function DangerZoneSection({
 									exit={{ opacity: 0 }}
 									whileTap={{ scale: 0.98 }}
 									onClick={() => setShowClearConfirm(true)}
-									className="mt-4 inline-flex min-h-11 items-center gap-1.5 rounded-[var(--radius-md)] border border-border bg-surface px-4 py-2 text-xs font-semibold text-text-secondary transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:border-accent/40 hover:bg-surface-elevated hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+									disabled={readOnly}
+									className="disabled:cursor-not-allowed disabled:opacity-40 mt-4 inline-flex min-h-11 items-center gap-1.5 rounded-[var(--radius-md)] border border-border bg-surface px-4 py-2 text-xs font-semibold text-text-secondary transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:border-accent/40 hover:bg-surface-elevated hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 								>
 									<History className="h-3.5 w-3.5" aria-hidden="true" />
 									Clear usage history
@@ -135,7 +140,7 @@ export function DangerZoneSection({
 										<button
 											type="button"
 											onClick={handleClearHistory}
-											disabled={clearing}
+											disabled={readOnly || clearing}
 											className="inline-flex items-center justify-center gap-2 rounded-[var(--radius-md)] border border-accent bg-accent/10 px-4 py-2 text-xs font-semibold text-accent transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-accent/20 active:scale-[0.97] disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 										>
 											{clearing ? (
@@ -156,7 +161,7 @@ export function DangerZoneSection({
 										<button
 											type="button"
 											onClick={() => setShowClearConfirm(false)}
-											disabled={clearing}
+											disabled={readOnly || clearing}
 											className="rounded-[var(--radius-md)] border border-border bg-surface px-4 py-2 text-xs font-semibold text-text-primary transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-surface-elevated active:scale-[0.97] disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 										>
 											Cancel
@@ -170,11 +175,11 @@ export function DangerZoneSection({
 			</div>
 
 			{/* Delete account */}
-			<div className="mt-6 rounded-[var(--radius-md)] border border-danger/30 bg-danger/5 p-5 transition-colors duration-200 ease-out hover:border-danger/50 hover:bg-danger/10">
+			<div className="mt-6 rounded-[var(--radius-md)] border border-error/30 bg-error/5 p-5 transition-colors duration-200 ease-out hover:border-error/50 hover:bg-error/10">
 				<div className="flex items-start gap-4">
-					<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)] border border-danger/30 bg-danger/10">
+					<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)] border border-error/30 bg-error/10">
 						<AlertTriangle
-							className="h-5 w-5 text-danger"
+							className="h-5 w-5 text-error"
 							aria-hidden="true"
 						/>
 					</div>
@@ -202,7 +207,8 @@ export function DangerZoneSection({
 									exit={{ opacity: 0 }}
 									whileTap={{ scale: 0.98 }}
 									onClick={() => setShowConfirm(true)}
-									className="mt-4 inline-flex min-h-11 items-center gap-1.5 rounded-[var(--radius-md)] border border-danger/40 bg-danger/10 px-4 py-2 text-xs font-semibold text-danger transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-danger/20 hover:border-danger/60 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger"
+									disabled={readOnly}
+									className="disabled:cursor-not-allowed disabled:opacity-40 mt-4 inline-flex min-h-11 items-center gap-1.5 rounded-[var(--radius-md)] border border-error/40 bg-error/10 px-4 py-2 text-xs font-semibold text-error transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-error/20 hover:border-error/60 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error"
 								>
 									<Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
 									Delete account
@@ -244,13 +250,13 @@ export function DangerZoneSection({
 										autoComplete="off"
 										autoFocus
 										className="mb-4 w-full rounded-[var(--radius-md)] border border-error/30 bg-void px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-error focus:outline-none focus:ring-2 focus:ring-error/50 transition-shadow"
-										disabled={deleting}
+										disabled={readOnly || deleting}
 									/>
 									<div className="flex flex-wrap gap-3">
 										<button
 											type="button"
 											onClick={handleConfirmDelete}
-											disabled={deleting || confirmText !== "DELETE"}
+											disabled={readOnly || deleting || confirmText !== "DELETE"}
 											className="inline-flex items-center justify-center gap-2 rounded-[var(--radius-md)] border border-error bg-error px-4 py-2 text-xs font-semibold text-text-inverse disabled:cursor-not-allowed disabled:opacity-40 transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-error/90 active:scale-[0.97]"
 										>
 											{deleting ? (
@@ -274,7 +280,7 @@ export function DangerZoneSection({
 												setShowConfirm(false);
 												setConfirmText("");
 											}}
-											disabled={deleting}
+											disabled={readOnly || deleting}
 											className="rounded-[var(--radius-md)] border border-border bg-surface px-4 py-2 text-xs font-semibold text-text-primary transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-surface-elevated active:scale-[0.97] disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border)]"
 										>
 											Cancel

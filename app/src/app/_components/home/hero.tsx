@@ -11,7 +11,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { LiveRequestCard } from "./LiveRequestCard";
 import { models as modelsApi } from "@/lib/api/resources";
-import { isModelAvailable } from "@/lib/model-availability";
+import { isAvailableChatModel } from "./catalog-availability";
 
 /**
  * Live count of models actually accepting requests.
@@ -19,9 +19,8 @@ import { isModelAvailable } from "@/lib/model-availability";
  * The hero previously interpolated MODEL_COUNT, a hardcoded static fallback
  * that does not know which providers are dark. It rendered "20 models" while
  * the catalog reported 2 available — a 10x overstatement in the first
- * sentence of the page. Falls back to the static number only until the
- * catalog resolves, so SSR still has something truthful-ish to paint, and
- * never renders a zero or a stale claim once live data arrives.
+ * sentence of the page. Omits the number until
+ * the catalog resolves so static rendering cannot overstate availability.
  */
 function useLiveModelCount(): number | null {
 	const [count, setCount] = useState<number | null>(null);
@@ -31,11 +30,11 @@ function useLiveModelCount(): number | null {
 			.list()
 			.then((res) => {
 				if (cancelled) return;
-				const live = (res.data ?? []).filter(isModelAvailable).length;
-				setCount(live > 0 ? live : null);
+				const live = (res.data ?? []).filter(isAvailableChatModel).length;
+				setCount(live);
 			})
 			.catch(() => {
-				/* keep the static fallback; the API may be briefly down */
+				/* Omit the count while availability is unknown. */
 			});
 		return () => {
 			cancelled = true;
@@ -48,7 +47,7 @@ export function Hero() {
 	const liveCount = useLiveModelCount();
 	// Until the catalog resolves, omit the number entirely rather than
 	// assert a static count we cannot currently stand behind.
-	const scale = liveCount ? `${liveCount} live models` : "a live model catalog";
+	const scale = liveCount === null ? "a curated model catalog" : `${liveCount} live ${liveCount === 1 ? "model" : "models"}`;
 
 	return (
 		<section className="relative overflow-hidden">
@@ -63,7 +62,7 @@ export function Hero() {
 			<div className="container-page relative z-10 min-w-0 pb-10 pt-10 sm:pb-12 sm:pt-12 lg:pb-16 lg:pt-16">
 				<div className="mx-auto flex w-full max-w-5xl flex-col items-center text-center">
 					<div className="mb-5 flex items-center justify-center">
-						<span className="section-eyebrow-caps">Gateway online · OpenAI-compatible</span>
+						<span className="section-eyebrow-caps">Open model access · OpenAI-compatible</span>
 					</div>
 
 					<h1 className="h1-hero max-w-4xl text-balance text-text-bright">

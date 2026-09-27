@@ -1,108 +1,71 @@
-# OMA-AI Settlement Activation Runbook (Base/USDC/x402)
+# Settlement operations: Base USDC, x402, and card credits
 
-Status: **CONFIGURED, NOT LIVE** — treasury wallet created + wired, settlement still `mock`.
+This runbook describes the implemented recovery procedure. It does not assert the current live payment-rail status, wallet balance, vendor plan, or deployment configuration. Check live readiness and payment settings before a funding test.
 
-## Treasury wallet (dedicated, self-custodied, generated with viem)
-- **Address:** `0x3144293aACC1c26Eb803591151D775ed89eefcfE` (Base mainnet, chain `8453`)
-- Wired in `server/.env` (gitignored, never committed):
-  - `TREASURY_BASE_ADDRESS=0x3144293aACC1c26Eb803591151D775ed89eefcfE`
-  - `USDC_DEPOSIT_ADDRESS=0x3144293aACC1c26Eb803591151D775ed89eefcfE`
-  - `FACILITATOR_PRIVATE_KEY=<0x…>` (derives the address above — verified cryptographically)
-- **Authoritative store:** the Bitwarden entry. `server/.env` holds a local copy for the running
-  process only. If the two ever disagree, treat Bitwarden as correct and re-export from it.
+- [`PLATFORM.md`](PLATFORM.md) is the source of truth for billing, authentication, funding rails, and required configuration.
+- [`DEPLOYMENT.md`](DEPLOYMENT.md) is the source of truth for production targets, branches, deployment commands, and verification. The frontend and API deploy separately.
+- [Public x402 documentation](https://www.oma-ai.com/docs#x402) contains the customer request sequence.
 
-## To go LIVE (2 steps, in order)
-1. **Fund the wallet on Base:**
-   - a small USDC seed (enough for the first deposits you expect) — **Base USDC**: `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`
-   - **~$2 of ETH on Base** for settlement gas (~$0.0001/tx → more than enough).
-   - Verify balances on basescan.org for `0x3144293aACC1c26Eb803591151D775ed89eefcfE`.
-2. **Flip the mode** in `server/.env` (and the Neon Function's env for prod):
-   - `FACILITATOR_MODE=mock` → `FACILITATOR_MODE=live`
-   - Redeploy. The code now **reports real x402 readiness** and refuses `mock` in a production `NODE_ENV`.
+## x402 prerequisites
 
-## Do NOT change
-- `X402_FACILITATOR_PROVIDER=coinbase-cdp` — the code **deliberately rejects `quicknode`** as an unsafe settlement delegate (QuickNode is not a hosted settlement service for this merchant).
-- QuickNode IS already used correctly as the **Base RPC provider** (`QUICKNODE_RPC_URL` → `CHAIN_RPC_URL`, free tier, $0).
+Confirm the API environment has the production configuration described in PLATFORM: a real treasury, Base RPC access, a facilitator signing key, receipt-signing secrets, Postgres, and durable replay/rate-limit storage. Production and staging reject mock settlement. Keep secrets in the deployment's secret store; do not copy a local development environment over the live function configuration.
 
-## Cost profile (lowest cost path)
-- Self-hosted `coinbase-cdp` settlement (EIP-3009 broadcast via viem + QuickNode RPC) — **$0 facilitator fees**.
-- Base settlement gas ≈ **$0.0001/tx**.
-- QuickNode free tier = up to **10M credits/month, $0**.
-- Vercel: 1 production deployment (Hobby minimum) after the 11→1 prune.
+The facilitator needs Base ETH for transaction gas. The **payer wallet** needs the USDC being transferred. Read current balances and network gas conditions rather than relying on a fixed seed amount or historical cost estimate. QuickNode can provide Base RPC; it is not a substitute for the configured settlement implementation.
 
-## Deploy note (Vercel prod-branch bug)
-Project `productionBranch` is stuck on the retired `master` (API re-link 400s; needs manual dashboard re-link). Workaround that works:
-`vercel deploy --prod --yes` from the **repository root** (not `app/` — the CLI link `.vercel/` is at the root). Push-to-main does NOT auto-deploy.
-Canonical host is `https://www.oma-ai.com`; the apex 308-redirects to it.
-See [`DEPLOYMENT.md`](DEPLOYMENT.md) for the full deploy reference.
+Before sending funds, establish a SIWE session with the paying wallet. Read the treasury from authenticated `GET https://www.oma-ai.com/api/v1/deposit/usdc` and compare it with the intended recipient. Do not use a treasury address copied from an old runbook.
 
----
+## The two funding operations
 
-# Polar (card checkout) — verified state & constraints
+| Operation | Effect | Authentication |
+|-----------|--------|----------------|
+| `POST https://www.oma-ai.com/x402/verify` | Validates the signed authorization, broadcasts the USDC transfer, and waits for confirmation | Signed payment envelope |
+| `POST https://www.oma-ai.com/x402/settle` | Records settlement and credits the confirmed transfer to the payer's account | SIWE session cookie; linked wallet must equal the USDC payer |
 
-Checked live against Polar MCP on 2026-09-24, org `16ba0e5c-ea67-47ab-a54b-10a62851d95a`.
+**Verification moves funds. It is not a dry run.** Signing an authorization locally does not itself transfer USDC, but submitting it to verify can. Settlement does not send a second transfer. API keys authenticate subsequent inference, not settlement.
 
-## Products (all `one_time`, non-recurring, public)
+The preferred payment header is `PAYMENT-SIGNATURE: <base64 JSON>`, using v2 `x402Version: 2`, `accepted` requirements, and `payload.signature` plus the EIP-3009 authorization. The accepted asset, treasury, and atomic amount must match the signed authorization. Legacy raw-JSON OMA envelopes and the older `X-PAYMENT` header are still accepted.
 
-| Plan | Product ID | Price | Credits |
-|---|---|---|---|
-| Hobby | `4c1e6343-0e85-411c-b5e1-16d03aaed33d` | $10 | 1,000 |
-| Builder | `7dade4d9-78d7-4163-a530-b35d95f9b457` | $50 | 5,000 |
-| Scale | `da4cb123-d1a1-48d6-b97c-9c6023f8a81f` | $250 | 25,000 |
+## Confirmed payment with missing credits
 
-1 credit = $0.01, matching `creditsPerCent: 1` in `server/src/routes/deposit/index.ts`.
-Also in this org: 7 ARCHIVED legacy products (`proxyresell*`, `cheapai*`, `datavalid*`) from
-earlier brands. Not wired to OMA. Leave archived.
+1. Preserve the `txHash`, network, expected treasury, payer wallet, and intended amount. Do not log private keys, session cookies, or signed payment envelopes.
+2. Check the Base transaction receipt. Require a successful receipt and the expected USDC Transfer log to the configured treasury. A broadcast hash alone is not confirmation.
+3. Read the USDC payer from the Transfer log's `from`, **not the transaction's top-level sender**. EIP-3009 transactions are relayed, so the transaction sender is the facilitator.
+4. Confirm that the signed-in account's linked wallet matches that USDC payer. If it does not, use the correct wallet session. Do not change an account's wallet or assign the deposit to a different user to make it pass.
+5. Retry `POST /x402/settle` with the same `{ txHash, networkId: "base" }` and that payer's session cookie. Do not supply an amount and do not sign another payment solely because crediting is pending.
+6. Check for `settled: true`, a signed receipt string, and `creditedCents`, then verify the account balance and deposit record. A retry may report the same credited amount; it does not mean the balance was credited a second time.
 
-## Do NOT attach a metered price
+Settlement recovers after a cold start from the confirmed USDC receipt when the in-memory verification record is gone. It also checks existing settlement and deposit records. Crediting is transactional and idempotent by transaction hash, and the same payment cannot be credited to another account. Fractional credits are preserved: 1 USDC equals 100 credits, including sub-cent amounts.
 
-Polar docs: "Metered prices are only applicable to Subscription Products."
-All three products are `type=one_time`, so a metered price cannot be attached. Polar's own
-Credits guidance: "To avoid any overage charges, don't create any Metered price on your product."
+Receipt recovery accepts a single unambiguous positive USDC transfer to the configured treasury. Do not guess payer ownership or aggregate ambiguous multi-transfer receipts; investigate those records before taking any manual action.
 
-Architecture: Polar collects payment and is merchant of record. **Our Postgres credit ledger
-is the authoritative spendable balance.** Polar meters are reporting-only.
+## Pending, failed, or uncertain verification
 
-## Benefits are empty on all three products
+- A timeout can return `valid: false` with a `txHash`. Save it and inspect the chain receipt before creating another authorization. Once confirmed successfully, settle that same hash.
+- If no hash was returned, reconcile the payer's wallet activity and signed authorization nonce before authorizing another payment. A client timeout alone does not prove that no transfer occurred.
+- A reverted receipt does not establish payment. Investigate the failure before making a new authorization.
+- `x402_payer_mismatch` (403) means the session wallet cannot claim that transfer. Use the paying wallet's session.
+- `x402_verify_required` (400) means the server has no accepted confirmed payment evidence for that hash. Check the hash, chain, USDC asset, recipient, and confirmation.
+- `x402_credit_failed` after confirmed payment means crediting needs a retry or operator investigation. Preserve the hash and retry settlement; do not collect another payment.
 
-`benefits: []` on Hobby/Builder/Scale. Polar grants no entitlement via a benefit today.
-Our own `order.*` webhook path issues credits, so checkout still functions. If we later want
-Polar to be the entitlement authority, Polar recommends a **Feature Flag benefit** for tier
-gating (purpose-built, supports key-value metadata) rather than a custom benefit.
-Unconfirmed: whether a Credits benefit behaves correctly on a one-time product — verify in
-the Polar dashboard before relying on it.
+Ordinary chat uses the prepaid balance with an API key. An insufficient-credit 402 on inference is not a request to attach a payment signature to the chat call. Fund separately, then retry inference.
 
-## Cost Insights is available but NOT automatic
+## Card checkout and webhook reconciliation
 
-Requires per-request `_cost` annotation via the Event Ingestion API:
-`metadata._cost = { amount, currency }`. Gotchas: `amount` is in **cents, not dollars**, and
-**only USD is supported**. Sub-cent precision is retained, so token-level costs aren't rounded.
-Polar lists "AI/LLM Applications" as a first-class use case.
+Polar collects one-time card payments and sends signed order events to the API. OMA's Postgres ledger remains the authoritative spendable balance; the platform does not require Polar usage meters or recurring subscriptions.
 
-## Rate limits
+For product IDs and secrets, use the live API configuration and the operator requirements in PLATFORM. Confirm that the configured products are the intended one-time credit packs, that the card rail is available, and that the webhook reaches the API deployment. Do not put backend Polar secrets on the frontend solely to make checkout appear configured.
 
-Production **500 req/min** per org/customer or OAuth2 client; sandbox 100 req/min. Exceeding
-returns `429` with `Retry-After`. Batch ingestion is available (`inserted` / `duplicates` in
-the response). **No documented separate per-batch event-count limit** — unconfirmed.
+When a paid order has not produced credits:
 
-**Important:** Polar attributes events to billing periods by *when Polar received them*, not
-the supplied `timestamp`. Late events land in the current cycle. Another reason not to treat
-a Polar meter as a real-time balance.
+1. Compare the Polar order and webhook delivery with the OMA account and deposit/credit records.
+2. Inspect webhook verification and processing errors. Confirm that the deployed secret and product mapping match the live webhook and order.
+3. Use the supported webhook retry/redelivery workflow and verify the ledger result. Check for an existing credit before any manual adjustment.
+4. Keep order IDs, transaction hashes, and account IDs in the operational incident record; exclude secrets and payment-card details.
 
-## Still required to complete checkout
+Before rotating a webhook secret, verify the provider's retry behavior and the deployed verifier's key support, then plan the cutover and reconciliation of pending events. Do not assume the verifier supports multiple secrets or that historical deliveries will be re-signed automatically.
 
-1. `POLAR_ACCESS_TOKEN` — org-scoped OAT. Server-side only. `vercel env add POLAR_ACCESS_TOKEN production`
-2. `POLAR_WEBHOOK_SECRET` — Dashboard → Settings → Developers → Webhooks (shown once)
+## Deployment and completion checks
 
-### Rotating the webhook secret is a one-way door
+Follow the canonical DEPLOYMENT reference for current production branch and release procedures. A frontend deploy does not ship API settlement changes. Do not rely on historical branch bugs, mock-mode snapshots, vendor rate limits, or cost estimates as current operational facts.
 
-If the server verifies signatures against a single key, rotating it invalidates every
-signature ever issued and historical payments silently stop reconciling. Add a `kid` keyring
-and accept the previous key BEFORE rotating. The access token is safe to rotate freely.
-
-## Deploy note (Vercel)
-
-`productionBranch` is stuck on the retired `master`; push-to-main does NOT auto-deploy.
-Use `vercel deploy --prod --yes` from the **repository root**. API runs on **Neon**, not Vercel —
-a Vercel deploy ships the frontend only and will NOT pick up server-side changes.
-See [`DEPLOYMENT.md`](DEPLOYMENT.md) for the canonical deploy reference and host.
+After releasing API changes, check native readiness (including Postgres and Redis), public proxy responses, and live payment-rail status. A malformed verification request is a safe transport check; a real signed authorization is a funds-moving operation. Treat a payment test as complete only after its chain outcome and resulting credit entry are reconciled.

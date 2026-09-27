@@ -42,6 +42,7 @@ interface XPaymentV2 {
 		x402Version: number;
 		scheme: string;
 		network: string;
+		accepted?: { scheme: string; network: string; asset: string; payTo: string; amount: string };
 		payload: {
 				signature: string;
 				authorization: {
@@ -73,30 +74,48 @@ export function parseXPaymentHeader(headerValue: string): PaymentSignature {
 		} catch {
 				throw new Error("X-PAYMENT header does not decode to valid JSON");
 		}
+		if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+			throw new Error("PAYMENT-SIGNATURE must contain a JSON object");
+		}
 		if (parsed.x402Version !== 2) {
 				throw new Error(`Unsupported x402Version in X-PAYMENT: ${parsed.x402Version} (expected 2)`);
 		}
-		if (parsed.scheme !== "exact") {
-				throw new Error(`Unsupported scheme in X-PAYMENT: ${parsed.scheme} (expected "exact")`);
+		// Current v2 clients put the selected requirements in `accepted`.
+		// Keep the older flat envelope readable during client migration.
+		const requirements = parsed.accepted ?? parsed;
+		if (requirements.scheme !== "exact") {
+				throw new Error(`Unsupported scheme in X-PAYMENT: ${requirements.scheme} (expected "exact")`);
 		}
-		const internalNetwork = CAIP2_TO_INTERNAL[parsed.network];
+		const internalNetwork = CAIP2_TO_INTERNAL[requirements.network];
 		if (!internalNetwork) {
-				throw new Error(`Unsupported network in X-PAYMENT: ${parsed.network} (expected ${CAIP2_BASE_MAINNET})`);
+				throw new Error(`Unsupported network in X-PAYMENT: ${requirements.network} (expected ${CAIP2_BASE_MAINNET})`);
 		}
 		const auth = parsed.payload?.authorization;
 		const signature = parsed.payload?.signature;
-		if (!signature || !auth?.from || !auth?.to || !auth?.value || auth?.nonce === undefined) {
+		if (typeof signature !== "string" || !/^0x[\da-f]{130}$/i.test(signature) || !auth || typeof auth.from !== "string" || typeof auth.to !== "string" || !/^0x[\da-f]{40}$/i.test(auth.from) || !/^0x[\da-f]{40}$/i.test(auth.to) || typeof auth.nonce !== "string" || !/^0x[\da-f]{64}$/i.test(auth.nonce)) {
 				throw new Error("X-PAYMENT payload must include signature and a full EIP-3009 authorization tuple");
+		}
+		for (const time of [auth.validAfter, auth.validBefore]) {
+			if ((typeof time !== "string" && typeof time !== "number") || !/^\d+$/.test(String(time)) || !Number.isSafeInteger(Number(time))) {
+				throw new Error("Authorization time bounds must be non-negative integer seconds");
+			}
 		}
 
 		let valueAtomic: bigint;
 		try {
+				if (typeof auth.value !== "string" || !/^\d+$/.test(auth.value)) throw new Error("Invalid atomic value");
 				valueAtomic = BigInt(auth.value);
 		} catch {
 				throw new Error("X-PAYMENT authorization.value must be an integer string of atomic USDC units");
 		}
 		if (valueAtomic <= 0n) {
 				throw new Error("X-PAYMENT authorization.value must be positive");
+		}
+		if (parsed.accepted) {
+			const offer = parsed.accepted;
+			if (typeof offer.asset !== "string" || offer.asset.toLowerCase() !== USDC_BASE.toLowerCase()) throw new Error("Unsupported accepted asset: expected USDC on Base");
+			if (typeof offer.payTo !== "string" || offer.payTo.toLowerCase() !== auth.to.toLowerCase()) throw new Error("Accepted payTo does not match authorization recipient");
+			if (typeof offer.amount !== "string" || !/^\d+$/.test(offer.amount) || BigInt(offer.amount) !== valueAtomic) throw new Error("Accepted amount does not match authorization value");
 		}
 		const amountDecimal = atomicToDecimal(valueAtomic);
 
@@ -127,6 +146,20 @@ export function parseXPaymentHeader(headerValue: string): PaymentSignature {
 						nonce: auth.nonce,
 				},
 		};
+}
+
+/** Same decoder for the public funding endpoints and payment middleware. */
+export function parsePaymentSignatureHeader(headerValue: string): PaymentSignature {
+	if (!headerValue.trimStart().startsWith("{")) return parseXPaymentHeader(headerValue);
+	const parsed = JSON.parse(headerValue) as PaymentSignature;
+	if (!parsed || typeof parsed !== "object" || typeof parsed.signature !== "string" || !parsed.payload || typeof parsed.payload !== "object") {
+		throw new Error("PAYMENT-SIGNATURE must include signature and payload");
+	}
+	for (const field of ["scheme", "networkId", "asset", "amount", "payee", "payFrom"] as const) {
+		if (typeof parsed.payload[field] !== "string" || !parsed.payload[field]) throw new Error(`PAYMENT-SIGNATURE payload must include ${field}`);
+	}
+	if (typeof parsed.authorization !== "string") throw new Error("PAYMENT-SIGNATURE must include authorization");
+	return parsed;
 }
 
 /**
@@ -175,6 +208,7 @@ export function buildV2Challenge(params: {
 		return {
 				x402Version: 2,
 				error: "Payment required",
+				resource: params.bazaar?.resource ?? { url: params.resource, description: params.description ?? `Payment required for ${params.resource}`, mimeType: "application/json" },
 				accepts: [
 						{
 								scheme: "exact",

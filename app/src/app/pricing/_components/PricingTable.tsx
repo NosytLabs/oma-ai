@@ -4,10 +4,11 @@ import { useMemo, useState } from "react";
 import { ArrowUpDown, ChevronDown, Search } from "lucide-react";
 import { ModelLogo } from "@/components/ui/model-logo";
 import { fmtPrice } from "../_lib/pricing-utils";
-import type { PricedModel, Category } from "../_lib/pricing-utils";
+import type { PricedModel, Category, AvailabilityStatus } from "../_lib/pricing-utils";
 
 interface PricingTableProps {
 	models: PricedModel[];
+	availabilityStatus?: AvailabilityStatus;
 	category: Category;
 	setCategory: (cat: Category) => void;
 	categories: { key: Category; label: string }[];
@@ -19,6 +20,7 @@ type SortOrder = "asc" | "desc";
 
 export function PricingTable({
 	models,
+	availabilityStatus = "live",
 	category,
 	setCategory,
 	categories,
@@ -307,9 +309,13 @@ export function PricingTable({
 												    or a placeholder, so the model 503s. This is the
 												    page where visitors commit to buying, so say so
 												    instead of quoting a price for a dead model. */}
-												{mm.available === false && (
+												{availabilityStatus !== "live" ? (
+													<span className="shrink-0 rounded-[var(--radius-sm)] border border-border px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider text-text-muted">
+														{availabilityStatus === "checking" ? "Checking" : "Unverified"}
+													</span>
+												) : mm.available === false && (
 													<span
-														title="This model's provider key is not configured yet, so requests currently fail. Price shown is for when it comes online."
+														title="This model is currently unavailable. The listed price applies when it is available."
 														className="shrink-0 rounded-[var(--radius-sm)] border border-amber/30 bg-amber/10 px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider text-amber"
 													>
 														Unavailable
@@ -343,7 +349,7 @@ export function PricingTable({
 										    a line through "128K" reads as a typo, not as unavailable. */}
 										<td
 											className={`px-4 py-3 text-right font-mono tabular-nums text-sm font-medium ${
-												mm.available === false
+												availabilityStatus !== "live" ? "text-text-muted" : mm.available === false
 													? "text-text-muted line-through"
 													: "text-[var(--color-accent)]"
 											}`}
@@ -352,7 +358,7 @@ export function PricingTable({
 										</td>
 										<td
 											className={`px-4 py-3 text-right font-mono tabular-nums text-sm font-medium ${
-												mm.available === false
+												availabilityStatus !== "live" ? "text-text-muted" : mm.available === false
 													? "text-text-muted line-through"
 													: "text-text-secondary"
 											}`}
@@ -361,7 +367,7 @@ export function PricingTable({
 										</td>
 										<td
 											className={`px-4 py-3 text-right text-xs font-mono tabular-nums ${
-												mm.available === false
+												availabilityStatus !== "live" || mm.available === false
 													? "text-text-muted"
 													: "text-text-secondary"
 											}`}

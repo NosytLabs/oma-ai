@@ -18,6 +18,7 @@ import { CREDIT_PLANS } from "@/lib/credit-utils";
 import {
 	toPricedModel,
 	type Category,
+	type AvailabilityStatus,
 } from "../_lib/pricing-utils";
 import {
 	BreadcrumbListJsonLd,
@@ -109,8 +110,8 @@ const POLAR_TIERS: Array<{
 			badge: "Recommended",
 		},
 		Scale: {
-			description: "The best value per credit for high-volume workloads.",
-			badge: "Best value",
+			description: "For high-volume workloads and larger prepaid balances.",
+			badge: "High volume",
 		},
 	};
 	// Note: 1 credit = $0.01, so a pack is NOT "credits at 1:1 USD" —
@@ -143,7 +144,7 @@ const FAQ_ITEMS = [
 	},
 	{
 		q: "Is there a free tier?",
-		a: "Yes — the 3 OMA-AI models are free in browser website chat only: 20 messages/day anonymous, 100/day signed in. API-key calls always spend credits, even on those models. New sign-ups also get $1.00 in trial credit.",
+		a: "Eligible models can be used free in website chat, subject to availability and daily limits. API-key calls use credits. Any signup credit depends on the current offer and is shown in your account.",
 	},
 	{
 		q: "What is x402?",
@@ -201,6 +202,7 @@ export default function PricingPage() {
 	const [category, setCategory] = useState<Category>("all");
 	const [openFaq, setOpenFaq] = useState<number | null>(null);
 	const [models, setModels] = useState<Model[]>(MODELS);
+	const [availabilityStatus, setAvailabilityStatus] = useState<AvailabilityStatus>("checking");
 	const [siteSettings, setSiteSettings] = useState<SitePaymentSettings | null>(
 		null,
 	);
@@ -209,10 +211,14 @@ export default function PricingPage() {
 		let cancelled = false;
 		loadModels()
 			.then((live) => {
-				if (!cancelled) setModels(live);
+				if (!cancelled) {
+					setModels(live);
+					// The loader returns this exact reference when the API fails.
+					setAvailabilityStatus(live === MODELS ? "unavailable" : "live");
+				}
 			})
 			.catch(() => {
-				// keep static fallback
+				if (!cancelled) setAvailabilityStatus("unavailable");
 			});
 		fetch("/api/v1/site-settings", { credentials: "same-origin" })
 			.then((r) => (r.ok ? r.json() : null))
@@ -232,7 +238,7 @@ export default function PricingPage() {
 	const cardRail = railByKey(siteSettings, "card");
 	const cardActionable = cardRail.actionable;
 
-	const pricedModels = useMemo(() => models.map(toPricedModel), [models]);
+	const pricedModels = useMemo(() => models.filter((model) => model.modality === "chat").map(toPricedModel), [models]);
 
 	// One availability projection feeds both the headline count and the entry
 	// price, so the two can never disagree and the catalog is not scanned (and
@@ -243,6 +249,7 @@ export default function PricingPage() {
 	// listed right below it as UNAVAILABLE, while the cheapest usable model was
 	// $0.50.
 	const { modelCount, lowestInputPrice } = useMemo(() => {
+		if (availabilityStatus !== "live") return { modelCount: 0, lowestInputPrice: "—" };
 		const available = selectAvailableModels(pricedModels);
 		if (available.length === 0) {
 			return { modelCount: 0, lowestInputPrice: "—" };
@@ -253,7 +260,7 @@ export default function PricingPage() {
 				Math.min(...available.map((m) => m.inputPer1M)),
 			),
 		};
-	}, [pricedModels]);
+	}, [pricedModels, availabilityStatus]);
 
 	return (
 		<div className="relative overflow-x-clip bg-void">
@@ -291,7 +298,11 @@ export default function PricingPage() {
 						25% platform fee; OMA-AI models are priced at 2x Gonka wholesale.
 					</p>
 					<div className="meta-strip">
-							<span>{modelCount} available models</span>
+						<span role="status">
+							{availabilityStatus === "live"
+								? `${modelCount} available ${modelCount === 1 ? "model" : "models"}`
+								: availabilityStatus === "checking" ? "Checking model availability" : "Live availability unavailable"}
+						</span>
 						<span>Usage-based billing</span>
 						<span>USDC · x402 · optional card</span>
 					</div>
@@ -311,8 +322,13 @@ export default function PricingPage() {
 								{lowestInputPrice}
 							</p>
 							<p className="mt-2 text-sm leading-relaxed text-[var(--color-text)]">
-								Lowest price per 1M input tokens among the models currently
-								accepting requests.
+								{availabilityStatus === "checking"
+									? "Checking current availability and input-token prices."
+									: availabilityStatus === "unavailable"
+										? "We could not confirm current availability. Catalog prices below are for reference."
+										: modelCount === 0
+											? "No chat models are currently available. Check again before adding credits."
+											: "Lowest price per 1M input tokens among the models currently accepting requests."}
 							</p>
 						</m.div>
 						<m.div
@@ -354,6 +370,7 @@ export default function PricingPage() {
 						</div>
 						<PricingTable
 							models={pricedModels}
+							availabilityStatus={availabilityStatus}
 							category={category}
 							setCategory={setCategory}
 							categories={CATEGORIES}
@@ -373,7 +390,7 @@ export default function PricingPage() {
 							</div>
 							<p className="max-w-md text-sm leading-relaxed text-text-secondary sm:text-right">
 								{cardActionable
-									? "Choose a credit pack instead of managing a monthly subscription or per-token invoice. Every pack is 1:1 USD."
+									? "Choose a prepaid credit pack. Every pack uses the same rate: 1 credit = $0.01 USD."
 									: "Deposit USDC on Base at 1:1 USD, or use x402 settle for agents. Card checkout shows Setup required until Polar is enabled."}
 							</p>
 						</div>
@@ -512,7 +529,7 @@ export default function PricingPage() {
 								</div>
 								<p className="mt-2 text-sm text-text-secondary leading-relaxed">
 									Native x402 support lets applications fund with USDC on Base
-									without a card. Verify once, spend with an API key.
+									without a card. Verify and settle USDC to add credits, then spend with an API key.
 									<Link
 										href="/docs#x402"
 										className="ml-2 font-medium text-accent hover:text-accent-hover transition-colors duration-200 ease-out inline-flex items-center"

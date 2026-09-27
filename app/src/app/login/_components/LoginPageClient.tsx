@@ -59,7 +59,7 @@ type Method = "magic" | "wallet";
 	*/
 export function safeLoginNext(raw: string | null | undefined): string {
 	if (!raw) return "/dashboard";
-	if (!raw.startsWith("/") || raw.startsWith("//")) return "/dashboard";
+	if (!raw.startsWith("/") || raw.startsWith("//") || /[\\\u0000-\u001f\u007f]/.test(raw)) return "/dashboard";
 	return raw;
 }
 
@@ -149,6 +149,7 @@ function LoginInner() {
 		async (e: FormEvent<HTMLFormElement>) => {
 			e.preventDefault();
 			setError(null);
+			setMagicSent(false);
 			if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
 				setError("Enter a valid email address");
 				return;
@@ -158,10 +159,13 @@ function LoginInner() {
 				const absoluteCallback = next.startsWith("/")
 					? `${window.location.origin}${next}`
 					: next;
-				await signIn.magicLink({
+				const result = await signIn.magicLink({
 					email,
 					callbackURL: absoluteCallback,
 				});
+				if (result.error) {
+					throw new Error(result.error.message ?? "Failed to send magic link");
+				}
 				setMagicSent(true);
 				toast.success(`Magic link sent to ${email}`);
 			} catch (err) {

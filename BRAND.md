@@ -2,7 +2,7 @@
 
 Brand guidelines for **OMA AI** (**Open Model Access**): visual identity, brand voice, design tokens, and user-experience standards.
 
-- **Primary Domain:** `oma-ai.com`
+- **Primary Domain:** `www.oma-ai.com` (the apex redirects here)
 - **Slogan:** *"One gateway. Every model. No lock-in."*
 - **Developer Tagline:** *"OpenAI-compatible inference for builders."*
 
@@ -82,9 +82,9 @@ Before a production deployment, ensure the following core assets are correctly v
 > Route prompts across private, open-source, and commercial models through one OpenAI-compatible API.
 
 ### 2. Privacy & Sovereign Execution
-> *"Private AI inference powered by Venice. Zero data retention on prompt content."*
+> *"OMA does not persist prompt or completion content. Provider policies depend on the selected model."*
 >
-> Deploy as a self-hosted instance for ultimate control. Leverage secure magic-link or cryptographic SIWE authentications, alongside free daily guest chats on OMA-AI models.
+> Self-host for control over your deployment. Use passwordless email or SIWE wallet sign-in, with a free daily browser-chat allowance on eligible OMA-AI models. Do not extend an OMA storage promise into a universal claim about upstream training or retention.
 
 ### 3. Decentralized Payments
 > *"Crypto-friendly credits. Pay with crypto, build with one API."*
@@ -102,7 +102,7 @@ Our positioning is centered around **sovereignty, privacy, and low-friction util
 | OMA is... | OMA is NOT... |
 | :--- | :--- |
 | A high-performance, private AI inference gateway | An anonymous or untraceable tool for illicit activities |
-| A secure gateway with zero prompt data retention | A tool designed to bypass regulatory protocols |
+| A gateway that does not persist prompt or completion content | A tool designed to bypass regulatory protocols |
 | An active integration hub serving a curated catalog via one OpenAI-compatible endpoint | An unbounded, noisy, unvetted AI model marketplace |
 | A crypto-native builder utility supporting USDC and `x402` | An underground dark-web platform |
 
@@ -111,7 +111,7 @@ Our positioning is centered around **sovereignty, privacy, and low-friction util
 | Category | Recommended Wording | Reason |
 | :--- | :--- | :--- |
 | **Authentication** | Low-friction signup · Cryptographic SIWE sign-in · Wallet-based auth | Professional, secure, and developer-aligned. |
-| **Privacy** | Privacy-first · Private inference · Zero data retention · Self-hosted control | Focuses on professional-grade data ownership and security. |
+| **Privacy** | Privacy-first · No OMA prompt logging · Provider-specific policies · Self-hosted control | Focuses on professional-grade data ownership and security. |
 | **Developer UX** | Developer-first · OpenAI-compatible API · Extensively documented API | Highlights seamless developer integration and compatibility. |
 | **Payments** | Crypto-friendly credits · USDC on Base deposits · Pay-as-you-go billing | Clear, accurate description of blockchain-based credits. |
 | **Infrastructure**| Self-hosted deployment · Multi-provider routing · Circuit-breaker failover | Emphasizes system resilience and architectural control. |
@@ -122,7 +122,7 @@ Our positioning is centered around **sovereignty, privacy, and low-friction util
 | :--- | :--- | :--- |
 | **No KYC** | Heavy regulatory compliance flag | *"Low-friction signup"* or *"Wallet-based auth"* |
 | **Anonymous** | Implies absolute untraceability and evasion | *"Private"* or *"Privacy-first"* |
-| **Untraceable** | Factually inaccurate and introduces legal liability | *"No data retention"* or *"Self-hosted option"* |
+| **Untraceable** | Factually inaccurate and introduces legal liability | *"No OMA prompt logging"* or *"Self-hosted option"* |
 | **Dark / Underground** | Associates the product with illicit black markets | *"Self-hosted"* or *"Crypto-native"* |
 | **Cheap** | Cheapens and devalues the technology stack | *"Cost-effective"* or *"Competitive pricing"* |
 | **Bypass** | Implies security circumvention or unauthorized access | *"Skip"* or *"Avoid unnecessary friction"* |
@@ -135,7 +135,8 @@ Our positioning is centered around **sovereignty, privacy, and low-friction util
 
 | Role | Typography Font Family | Character / Tone |
 | :--- | :--- | :--- |
-| **Display & Headers**| *Instrument Serif* | Editorial, polished |
+| **Marketing display headings** | *Instrument Serif* | Editorial, polished |
+| **Account and workspace headings** | *Geist Sans* (`h1-utility`) | Clear, functional |
 | **Body Text** | *Geist Sans* | Legible, modern |
 | **Monospace / Code** | *Geist Mono* | Structured, technical, precise |
 
@@ -168,7 +169,7 @@ the base `.btn-mono` slab with a modifier class:
 - **Global Navigation:** Stick header fixed at `h-14` featuring standard backdrop-blur glass filters upon scroll.
 - **Primary Pages:** Models · Chat · Pricing · Docs.
 - **Tools Dropdown** (secondary, off the primary path): Buy credits · API Reference · Agents & IDEs · Get started · FAQ.
-- **Account Panel** (signed-in): Dashboard · Settings · Buy credits · Sign out.
+- **Account Panel** (signed-in, desktop and mobile): Dashboard · API keys · Buy credits · Settings · Sign out.
 - **Account Panel** (signed-out): single "Get API key" CTA → `/login`.
 - **Mobile Menu:** Hamburger at `<lg` opens a full-screen menu grouping Primary + Tools + Account.
 - **Theme Dropdown:** emerald (default) · amber · mono · synth.
@@ -184,4 +185,14 @@ the base `.btn-mono` slab with a modifier class:
 2. **Alternative Methods:** Users can fall back to standard email magic-links. *(Future iterations reserve a 16-digit account-number protocol)*.
 3. **Agent Integration:** Programmable agents fund via x402 verify/settle (EIP-3009 USDC on Base), then spend with an API key against the credited balance.
 
-**Session Storage:** Upon successful validation, the system establishes a highly secure `HttpOnly` cookie labeled `oma_session` containing the required client metadata. All subsequent frontend API requests are proxied via standard `/api/*` structures, passing the validated session to the Hono backend under standard `Authorization: Bearer <token>` schemas.
+**Session Storage:** Better Auth manages the website session using `HttpOnly` cookies with the `oma` prefix, `SameSite=Lax`, and secure cookies on HTTPS deployments. The frontend forwards cookies through the same-origin `/api/auth/*` and `/api/*` proxies. It does not convert browser sessions into API-key bearer tokens. Programmable API clients use separate dashboard-issued `oma_sk_...` keys.
+
+## Documentation Boundaries
+
+This file owns design and product language. [`docs/PLATFORM.md`](docs/PLATFORM.md) owns platform behavior and operator configuration; [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) owns production topology. Keep operational instructions there and link to them here.
+
+- Use shared CSS color tokens; destructive actions use `error`, while the primary action uses the current `accent`.
+- Display live availability only from live catalog data. The size of the fallback catalog is not a live model count.
+- Label simulated request and response animations as illustrations. Do not imply a live request or a free API call.
+- Describe payment choices in customer terms: USDC on Base, card checkout when available, and x402 funding. Operator configuration belongs in platform documentation.
+- Settings previews preserve `demo=1` across navigation and keep account actions and preferences read-only.

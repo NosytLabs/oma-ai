@@ -101,7 +101,7 @@ function ModelsPageInner() {
 						</p>
 						<p className="mt-4 font-mono text-xs uppercase tracking-[0.18em] text-text-muted">
 							{totalModels} models in the catalog
-							{availableCount > 0 && (
+							{availableCount !== null && (
 								<>
 									{" "}
 									·{" "}
@@ -109,9 +109,9 @@ function ModelsPageInner() {
 									requests now
 								</>
 							)}
-							{isLoadingModels && (
+							{availableCount === null && (
 								<span className="ml-2 text-text-tertiary normal-case tracking-normal">
-									· loading full catalog…
+									· {isLoadingModels ? "checking live availability…" : "live availability unavailable"}
 								</span>
 							)}
 							{visibleModels < totalModels && (
@@ -265,7 +265,7 @@ function ModelsPageInner() {
 													</span>
 												</div>
 
-												<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
+												<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 													{group.models.map((model, i) => (
 														<ModelCard key={model.id} model={model} index={i} />
 													))}

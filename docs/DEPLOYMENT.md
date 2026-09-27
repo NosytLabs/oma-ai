@@ -41,10 +41,9 @@ A Vercel deploy ships the **frontend only**. It does not pick up server-side
 changes — those require a Neon deploy (see below).
 
 The browser reaches the API same-origin at `https://www.oma-ai.com/api/*`,
-which App Router handlers under `app/api/**` proxy to the Neon endpoint. This
-is deliberately not a `next.config` rewrite: a rewrite would skip the
-HttpOnly session-cookie → `Authorization` translation and 401 every
-authenticated call after a hard reload.
+which App Router handlers under `app/api/**` proxy to the Neon endpoint.
+These handlers preserve Better Auth session cookies and authenticate the
+Vercel-to-Neon hop; they do not translate session cookies into bearer tokens.
 
 ## Frontend deploy (Vercel)
 
@@ -54,47 +53,90 @@ vercel deploy --prod --yes
 
 **Run it from the repository root** (`oma-ai/`), not from `app/`.
 
-The two are easy to confuse, and conflating them is the most common deploy
-mistake here:
+The Vercel project's Root Directory is `app`. This dashboard setting
+tells Vercel where the app lives inside the repository; the CLI still runs
+from the repository root. The verified project is:
 
-- The Vercel **project's** Root Directory is `app`. That is a *dashboard
-  setting* telling Vercel where the app lives inside the repo; Vercel applies
-  it itself during the build.
-- The Vercel **CLI link** (`.vercel/`) is committed at the *repository root*.
-  The CLI resolves the link by walking up from the working directory, so it
-  must be invoked from the root. Running it from `app/` finds no link and
-  prompts to create a new project.
+| Setting | Value |
+|---------|-------|
+| Team | `nosyt` / `team_7479lZJaz8NSWNiFZKgx3hpW` |
+| Project | `oma` / `prj_MxWsqxnOm8814KKkNzYo4oscjjOi` |
+| Git repository | `NosytLabs/oma-ai` |
+| Production branch | `main` |
+| Root Directory | `app` |
+| Node.js | `24.x` |
 
-`app/vercel.json` does not exist, and neither does `app/.vercel`. Root
-Directory is a project setting only — there is no in-repo file that sets it.
+The CLI link in `.vercel/project.json` is local configuration and may be
+absent in a fresh checkout. If absent, link the **existing** project from
+the repository root before deploying:
+
+```bash
+vercel link --project oma --scope nosyt --yes
+```
+
+Do not create another project or run the deployment from `app/`.
 
 Verify a deploy actually went to production (a green local build is not
 proof):
 
 ```bash
-vercel ls oma
+vercel inspect https://www.oma-ai.com --scope nosyt
 curl -fsS -o /dev/null -w "%{http_code}\n" https://www.oma-ai.com/
 ```
 
-`productionBranch` has historically been stuck on the retired `master`, so
-push-to-`main` has not always auto-deployed. If a push does not produce a
-deployment, run the command above. Re-linking the production branch is a
-manual dashboard action and needs a token that is deliberately not in CI —
-do not add `VERCEL_TOKEN` merely to make a check green.
+The Git integration is configured to deploy pushes to `main`. Check the
+deployment serving `www.oma-ai.com`, including its commit and `READY` status:
+a newer canceled deployment does not replace the live deployment. If a push
+does not produce a ready deployment, inspect its build status before using
+the explicit production deploy command above. Do not add `VERCEL_TOKEN`
+merely to make a check green.
 
 ## Backend deploy (Neon)
 
-The API is a Neon Function, not a Vercel serverless function. The
-infrastructure-as-code manifest is `server/neon.ts`, from the repository
-root:
+The API is a Neon Function, not a Vercel serverless function. The verified
+target is project `empty-bar-94645349` (`oma-ai-prod`), branch
+`br-sweet-rain-b40o54xa` (`main`), function `omaapi`, runtime `nodejs24`.
+
+For a code-only release, deploy the tested entry point with an explicit
+project and branch. This preserves the existing function environment:
+
+```bash
+npx --yes neon@6.2.3 functions deploy omaapi \
+  --src server/src/index.ts \
+  --project-id empty-bar-94645349 \
+  --branch br-sweet-rain-b40o54xa --wait
+```
+
+Run from the repository root with `NEON_API_KEY` exported. Omit `--env` for
+a code-only release. Existing environment variables carry over; a supplied
+`--env KEY=value` updates that key, while `--env KEY=` deletes it. Do not
+substitute a development `.env` for the live configuration.
+
+The infrastructure-as-code manifest is `server/neon.ts`. Use it when
+intentionally reconciling the declared function configuration or triggers,
+with the required production values available in the deployment environment:
 
 ```bash
 neon config plan --config server/neon.ts            # preview, no apply
 neon deploy --config server/neon.ts --update-existing
 ```
 
-`NEON_API_KEY` must be exported. The manifest registers the `omaapi` function
-plus the `oma-deposit-recovery` scheduled trigger.
+The manifest registers `omaapi` plus the `oma-deposit-recovery` and
+`oma-settlement-dlq` scheduled triggers. Both run every minute. A code-only
+function deploy leaves these existing triggers in place.
+
+After deploying, confirm that the current and active function deployments
+are both completed, then verify the API's dependencies:
+
+```bash
+npx --yes neon@6.2.3 functions get omaapi \
+  --project-id empty-bar-94645349 --branch br-sweet-rain-b40o54xa
+curl -fsS https://br-sweet-rain-b40o54xa-omaapi.compute.c-6.us-east-2.aws.neon.tech/ready
+```
+
+`https://www.oma-ai.com/api/health` checks the web tier only. The native API
+`/ready` probe checks Postgres and Redis; require a successful readiness
+response as well as a successful frontend health response.
 
 ## DNS
 

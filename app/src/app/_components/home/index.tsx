@@ -12,7 +12,6 @@ import { Hero } from "@/app/_components/home/hero";
 import { HowItWorks } from "@/app/_components/home/how-it-works";
 import { StatsStrip } from "@/app/_components/home/stats-strip";
 import { TrustStrip } from "@/app/_components/home/trust-strip";
-import { MODEL_COUNT } from "@/lib/models-data";
 
 export function HomeView() {
 	return (
@@ -30,7 +29,7 @@ export function HomeView() {
 
 			<CapabilitiesGrid />
 			<HowItWorks />
-			<CodeExample modelCount={MODEL_COUNT} />
+			<CodeExample />
 			<FinalCTA />
 		</div>
 	);

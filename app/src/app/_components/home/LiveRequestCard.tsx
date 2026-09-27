@@ -3,7 +3,7 @@
 /**
 	* Hero · LiveRequestCard
 	*
-	* Drop-in for the static og-image in the hero. Renders a real, animated
+	* Drop-in for the static og-image in the hero. Renders an illustrative, animated
 	* terminal that types a curl → /v1/chat/completions request, then streams
 	* a token-by-token reply, then resets and picks the next model. Pure CSS +
 	* requestAnimationFrame — no third-party deps. Honors prefers-reduced-motion.
@@ -20,8 +20,6 @@ interface DemoRound {
 	modelLabel: string;
 	prompt: string;
 	reply: string;
-	/** Gonka-network free list — controls the billing chip shown on settle. */
-	free?: boolean;
 }
 
 const ROUNDS: DemoRound[] = [
@@ -30,20 +28,19 @@ const ROUNDS: DemoRound[] = [
 	modelLabel: "Claude Opus 5",
 	prompt: "Summarize OMA in one sentence.",
 	reply:
-	"One gateway for every OMA model. Buy credits by card, deposit USDC, or settle USDC via x402.",
+	"One gateway for the OMA catalog. Fund credits with USDC, or card checkout when available.",
 	},
 	{
 	model: "deepseek-v4-flash-0731-openbroker",
 	modelLabel: "DeepSeek V4 Flash",
 	prompt: "How do I pay without a card?",
 	reply: "Deposit USDC on Base, or settle USDC via x402 to credit your balance.",
-	free: true,
 	},
 	{
 	model: "llama-3.3-70b",
 	modelLabel: "Llama 3.3 70B",
 	prompt: "What's the cheapest chat model?",
-	reply: "OMA budget tier, from $0.15 per 1M input tokens. x402 ready.",
+	reply: "Check the live model catalog for current prices and availability.",
 	},
 ];
 
@@ -64,8 +61,8 @@ export function LiveRequestCard({ className }: { className?: string }) {
 	const round = ROUNDS[roundIdx];
 
 	// Build the static request lines that always render in full.
-	const requestHeader = `POST /v1/chat/completions HTTP/1.1
-Host: www.oma-ai.com/api
+	const requestHeader = `POST /api/v1/chat/completions HTTP/1.1
+Host: www.oma-ai.com
 Authorization: Bearer $OMA_KEY
 Content-Type: application/json`;
 	const requestBody = `{
@@ -135,7 +132,7 @@ Content-Type: application/json`;
 
 	return (
 	<div
-	aria-label={`Live OMA API request demo · ${round.modelLabel}`}
+	aria-label={`Illustrative OMA API request · ${round.modelLabel}`}
 	className={cn(
 	"relative overflow-hidden rounded-[var(--radius-xl)] border border-border-hi",
 	"bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-surface-elevated)_94%,transparent),var(--color-panel))]",
@@ -191,10 +188,10 @@ Content-Type: application/json`;
 			)}
 	>
 			{isSettled
-	 ? `demo replay · ${round.modelLabel}`
+	 ? "example · complete"
 	 : isStreaming
-	   ? "streaming…"
-	   : "sending…"}
+	   ? "example · streaming"
+	   : "example · sending"}
 	</span>
 	</div>
 
@@ -216,7 +213,7 @@ Content-Type: application/json`;
 	return (
 	<span key={idx} className="block">
 	<span className="text-text-muted">Host:</span>{" "}
-	<span className="text-info">www.oma-ai.com/api</span>
+	<span className="text-info">www.oma-ai.com</span>
 	</span>
 	);
 	if (line.startsWith("Authorization:"))
@@ -257,6 +254,9 @@ Content-Type: application/json`;
 	<div className="h-px flex-1 bg-border" />
 	</div>
 
+	<p className="px-4 pt-2 text-[11px] text-text-muted">
+	Illustrative request and response. Check the catalog for live availability.
+	</p>
 	{/* Response */}
 	<div className="px-4 pb-4 pt-2 font-mono text-[12px] leading-relaxed sm:text-[12.5px]">
 	<div className="flex items-baseline gap-2">
@@ -277,15 +277,9 @@ Content-Type: application/json`;
 	<span className="rounded-full border border-border bg-surface px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-text-muted">
 	model · {round.modelLabel}
 	</span>
-	{round.free ? (
 	<span className="rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-accent">
-	free · oma-ai
+	API usage · prepaid credits
 	</span>
-	) : (
-	<span className="rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-accent">
-	metered · credits
-	</span>
-	)}
 	</div>
 	)}
 	</div>

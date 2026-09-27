@@ -10,13 +10,15 @@ import { SettingsCard } from "./SettingsCard";
 
 interface PrivacySectionProps {
 	user: BetterAuthUser | null;
+	readOnly?: boolean;
 }
 
-export function PrivacySection({ user }: PrivacySectionProps) {
+export function PrivacySection({ user, readOnly = false }: PrivacySectionProps) {
 	const toast = useToast();
 	const [downloading, setDownloading] = useState(false);
 
 	const handleDownload = async () => {
+		if (readOnly || downloading) return;
 		setDownloading(true);
 		try {
 			const blob = await api.exportData.accountBundle();
@@ -61,8 +63,8 @@ export function PrivacySection({ user }: PrivacySectionProps) {
 				<button
 					type="button"
 					onClick={handleDownload}
-					disabled={downloading}
-					className="btn-mono flex items-center gap-2"
+					disabled={readOnly || downloading}
+					className="btn-mono btn-secondary flex items-center gap-2 disabled:cursor-not-allowed disabled:opacity-40"
 				>
 					{downloading ? (
 						<Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />

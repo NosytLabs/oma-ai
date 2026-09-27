@@ -78,23 +78,6 @@ const nextConfig: NextConfig = {
 		return SITE_REDIRECTS.map((r) => ({ ...r, permanent: true as const }));
 	},
 
-	async rewrites() {
-		// NOTE: Do NOT rewrite `/api/*` to the Hono backend. App Router handlers
-		// under `app/api/**` (incl. catch-all) translate the HttpOnly session
-		// cookie into `Authorization: Bearer` before proxying. A rewrite would
-		// skip that and 401 every authenticated call after hard reload.
-		const apiRewriteDestination = (() => {
-			const url = process.env.NEXT_PUBLIC_API_URL;
-			return url?.trim() ? url : "http://127.0.0.1:3001";
-		})();
-		return [
-			// The facilitator serves /x402/verify + /x402/settle (NO /v1 prefix) —
-			// the old /v1/x402 destination 404'd the payment endpoint advertised
-			// in .well-known/agent-card.json.
-			{ source: "/x402/:path*", destination: `${apiRewriteDestination}/x402/:path*` },
-		];
-	},
-
 	async headers() {
 		// Dev-mode static chunks must NOT be cached forever: without this,
 		// the browser keeps running stale JS after a code change (breaks

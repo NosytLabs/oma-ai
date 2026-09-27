@@ -163,7 +163,7 @@ export function NavbarUserMenu({ evmAddress, email, onSignOut }: NavbarUserMenuP
 							onClick={() => setOpen(false)}
 						>
 							<Zap className="h-3 w-3" aria-hidden="true" />
-							<span>add credits</span>
+							<span>buy credits</span>
 						</Link>
 						<Link
 							href="/settings"
@@ -202,8 +202,7 @@ export function NavbarUserMenu({ evmAddress, email, onSignOut }: NavbarUserMenuP
 									id="user-disconnect-body"
 									className="mt-1 text-[10px] leading-relaxed text-text-secondary"
 								>
-								You&apos;ll need to sign in again with the same method
-								(magic link, guest, or wallet).
+								Sign in again with your email or wallet to return to your account.
 								</p>
 								<div className="mt-2 grid grid-cols-2 gap-1">
 									<button

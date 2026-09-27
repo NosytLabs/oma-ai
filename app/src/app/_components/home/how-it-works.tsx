@@ -49,7 +49,7 @@ const STEPS: Step[] = [
 		n: "03",
 		title: "Fund credits or use x402",
 		description:
-			"Deposit USDC on Base, use card checkout when Polar is enabled, or settle USDC via x402 to credit the same balance.",
+			"Deposit USDC on Base, use card checkout when available, or settle USDC via x402 to credit the same balance.",
 		icon: Rocket,
 	},
 	{

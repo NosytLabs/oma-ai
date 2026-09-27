@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { buildAuthEndpoint, resolveAuthBackend } from '@/lib/auth-proxy';
 import { applyTrustedProxyHeaders } from '@/lib/api/proxy-headers';
+import { proxyResponse } from '@/lib/api/proxy-response';
 
 /**
 	* Proxy for Better Auth — handles all /api/auth/* requests, forwarding to the real backend.
@@ -71,26 +72,7 @@ async function proxyToAuth(req: NextRequest, { params }: { params: Promise<{ pat
 						redirect: 'manual',
 				});
 
-				// Forward status + headers, but strip transfer-encoding metadata:
-				// the backend gzips via hono/compress, and undici auto-decompresses
-				// the body — forwarding `content-encoding: gzip` makes the browser
-				// try to gunzip already-plain bytes (ERR_CONTENT_DECODING_FAILED).
-				const proxyHeaders = new Headers(resp.headers);
-				for (const h of ["content-encoding", "content-length", "transfer-encoding"]) {
-						proxyHeaders.delete(h);
-				}
-				const proxyRes = new NextResponse(resp.body, {
-						status: resp.status,
-						headers: proxyHeaders,
-				});
-
-				// Set cookies from auth backend
-				const setCookieHeader = resp.headers.get('set-cookie');
-				if (setCookieHeader) {
-						proxyRes.headers.set('set-cookie', setCookieHeader);
-				}
-
-				return proxyRes;
+				return proxyResponse(resp);
 		} catch (e: unknown) {
 				const errorMsg = e instanceof Error ? e.message : String(e);
 				return NextResponse.json(

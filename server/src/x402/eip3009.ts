@@ -552,7 +552,8 @@ export async function verifyEip3009Payment(
 										{ err: submitErr, from: auth.from, to: auth.to },
 										"[FACILITATOR] EIP-3009 submit failed despite configured FACILITATOR_PRIVATE_KEY",
 								);
-								return { valid: false, error: `EIP-3009 submit failed: ${submitErr instanceof Error ? submitErr.message : String(submitErr)}` };
+								const pendingHash = (submitErr as { txHash?: string }).txHash;
+								return { valid: false, ...(pendingHash ? { txHash: pendingHash, networkId: payload.networkId } : {}), error: `EIP-3009 submit failed: ${submitErr instanceof Error ? submitErr.message : String(submitErr)}` };
 						}
 				} else {
 						txHash = syntheticEip3009TxHash(auth, sigHex);

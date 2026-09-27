@@ -4,7 +4,7 @@ import { Check, Copy } from "lucide-react";
 import { type ReactNode, useId, useState } from "react";
 import { copyToClipboard } from "@/lib/clipboard";
 import { useRevealInView } from "@/lib/use-reveal-in-view";
-import { MODEL_COUNT, MODELS } from "@/lib/models-data";
+import { MODEL_COUNT, MODELS, formatPricePerMillion } from "@/lib/models-data";
 import { SyntaxHighlighter } from "../_components/SyntaxHighlighter";
 
 export { MODEL_COUNT, MODELS };
@@ -100,7 +100,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 		anchor: "ep-chat",
 		title: "Chat Completions",
 		desc: "OpenAI-compatible multi-turn chat. The endpoint you will hit 95% of the time. Supports SSE streaming.",
-		auth: "Bearer token (API key) or PAYMENT-SIGNATURE (x402)",
+		auth: "Bearer token (API key); requests spend prepaid credits",
 		body: {
 			model:
 				'string (required). Any model id from /v1/models, e.g. "llama-3.3-70b"',
@@ -174,7 +174,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 		path: "/v1/models",
 		anchor: "ep-models",
 		title: "List Models",
-		desc: "Returns every model currently routable (chat completions). No auth required. Cached for 1h.",
+		desc: "Returns the curated catalog, including currently unavailable models. Check the available flag before calling a model. No auth required.",
 		auth: "None",
 		response: `{
 	"object": "list",
@@ -448,12 +448,14 @@ export const ENDPOINTS: EndpointInfo[] = [
 		path: "/x402/verify",
 		anchor: "ep-x402-verify",
 		title: "x402 Payment Verify",
-		desc: "Verifies an x402 USDC payment signed with the PAYMENT-SIGNATURE header (EIP-3009 transfer + signature payload). Returns 200 when valid, 422 otherwise. Follow with authenticated /x402/settle to credit the balance.",
+		desc: "Validates the signed EIP-3009 authorization, broadcasts the USDC transfer, and waits for on-chain confirmation. This moves funds; it is not a dry run. Send a base64 v2 envelope in PAYMENT-SIGNATURE (legacy raw JSON also accepted). Follow with /x402/settle to credit the payer account.",
 		auth: "PAYMENT-SIGNATURE header (x402)",
 		body: undefined,
 		response: `{
 	"valid": true,
-	"receipt": { "txHash": "0x…", "amount": "…", "networkId": "8453" }
+	"txHash": "0x…",
+	"amount": "1",
+	"networkId": "base"
 }`,
 	},
 	{
@@ -461,10 +463,13 @@ export const ENDPOINTS: EndpointInfo[] = [
 		path: "/x402/settle",
 		anchor: "ep-x402-settle",
 		title: "x402 Payment Settle",
-		desc: "Credits the authenticated user's balance for a previously-verified x402 USDC payment. Requires a session API key. Call this after a successful /x402/verify. Amount is derived server-side from the verified payment — never from the request body. Idempotent across retries.",
-		auth: "Bearer token (API key) or session cookie",
-		body: undefined,
-		response: `{ "settled": true, "receipt": { "txHash": "0x…", "amount": "…", "networkId": "8453" } }`,
+		desc: "Credits a confirmed USDC transfer to the SIWE session whose linked wallet is the payer. API keys are not accepted here. Amount and payer come from verified payment evidence; recovery can read the confirmed USDC Transfer log after a restart. Retries with the same hash are idempotent, including fractional credits.",
+		auth: "SIWE session cookie for the USDC payer wallet",
+		body: {
+			txHash: "string (required). Confirmed transaction hash returned by verification",
+			networkId: 'string (required). "base" or "eip155:8453"',
+		},
+		response: `{ "settled": true, "receipt": "<signed receipt>", "creditedCents": 100 }`,
 	},
 ];
 
@@ -545,10 +550,7 @@ export const QUICK_START_STEPS = [
 /* ==================== HELPERS ==================== */
 
 export function fmt(n: number): string {
-	if (n <= 0) return "$0.00";
-	// Round UP to the nearest $0.05 — standardized billing increments.
-	const rounded = Math.ceil(n * 20) / 20;
-	return `$${rounded.toFixed(2)}`;
+	return formatPricePerMillion(n);
 }
 
 function CopyButton({ text, id }: { text: string; id: string }) {

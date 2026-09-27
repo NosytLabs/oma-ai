@@ -23,7 +23,8 @@ import { resolveSiweDomain } from "./siwe-domain";
  * address, or chain ID" and wallet sign-in never created an account.
  *
  * `window.location.host` is the single source of truth for what the user is
- * looking at, and the server accepts both apex and www. The logic lives in
+ * looking at; production redirects the apex to the server's canonical www
+ * host before sign-in. The logic lives in
  * `./siwe-domain` so it is unit-testable without rendering this component.
  */
 const SIWE_DOMAIN = resolveSiweDomain();

@@ -11,7 +11,7 @@ import { SettingsCard } from "./SettingsCard";
 	* Mirrors the ThemeToggle chip but laid out as a full settings card
 	* with labels, hints, and a live preview swatch.
 	*/
-export function AppearanceSection() {
+export function AppearanceSection({ readOnly = false }: { readOnly?: boolean }) {
 	const { theme, setTheme, accent } = useTheme();
 	const themeRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 	const [soundOn, setSoundOn] = useState(() => {
@@ -19,10 +19,12 @@ export function AppearanceSection() {
 		return isSoundEnabled();
 	});
 	const selectTheme = (next: Theme) => {
+		if (readOnly) return;
 		setTheme(next);
 		requestAnimationFrame(() => themeRefs.current[next]?.focus());
 	};
 	const handleSoundToggle = (checked: boolean) => {
+		if (readOnly) return;
 		setSoundEnabled(checked);
 		setSoundOn(checked);
 	};
@@ -80,11 +82,12 @@ export function AppearanceSection() {
 							<button
 								type="button"
 								role="radio"
+								disabled={readOnly}
 								ref={(element) => { themeRefs.current[t.id] = element; }}
 								aria-checked={isActive}
 								tabIndex={isActive ? 0 : -1}
 								onClick={() => selectTheme(t.id as Theme)}
-								className={`group flex w-full min-w-0 items-center gap-4 rounded-[var(--radius-lg)] border px-4 py-3.5 text-left transition-[border-color,background-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+								className={`disabled:cursor-not-allowed disabled:opacity-60 group flex w-full min-w-0 items-center gap-4 rounded-[var(--radius-lg)] border px-4 py-3.5 text-left transition-[border-color,background-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
 									isActive
 										? "border-accent/50 bg-accent/10 shadow-[0_0_20px_-5px_var(--color-accent-glow)]"
 										: "border-border bg-surface/50 hover:border-accent/30 hover:bg-surface"
@@ -134,6 +137,7 @@ export function AppearanceSection() {
 						type="checkbox"
 						className="peer sr-only"
 						checked={soundOn}
+						disabled={readOnly}
 						onChange={(e) => handleSoundToggle(e.target.checked)}
 						aria-label="Toggle subtle success and failure sound cues"
 					/>

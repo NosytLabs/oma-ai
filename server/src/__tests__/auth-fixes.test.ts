@@ -4,6 +4,8 @@
 	* (audit fix #4) — verifies a single grant per email survives user deletion.
 	*/
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { BetterAuthOptions } from "better-auth";
+import { getCookies } from "better-auth/cookies";
 
 // ── Hoisted mock fixtures ──────────────────────────────────────────
 const mockRedis = vi.hoisted(() => ({
@@ -49,7 +51,9 @@ vi.mock("../config.js", () => ({
 		config: {
 				FREE_SIGNUP_CENTS: 100,
 				RESEND_API_KEY: undefined,
-				NODE_ENV: "test",
+				NODE_ENV: "production",
+				PRIMARY_DOMAIN: "www.oma-ai.com",
+				PUBLIC_APP_URL: "http://127.0.0.1:3000",
 				BETTER_AUTH_SECRET: "test-secret-at-least-32-chars-long!",
 				POLAR_ACCESS_TOKEN: "test",
 				POLAR_SERVER: "production",
@@ -66,11 +70,16 @@ vi.mock("../lib/logger.js", () => ({
 		},
 }));
 
+
+const capturedAuth = vi.hoisted(() => ({ options: undefined as BetterAuthOptions | undefined }));
 vi.mock("better-auth", () => ({
-		betterAuth: vi.fn(() => ({
+		betterAuth: vi.fn((options: BetterAuthOptions) => {
+			capturedAuth.options = options;
+			return {
 				handler: vi.fn(),
 				api: { getSession: vi.fn() },
-		})),
+			};
+		}),
 }));
 
 vi.mock("better-auth/adapters/drizzle", () => ({
@@ -197,6 +206,26 @@ describe("auth.ts boots with the audit-fix surface", () => {
 });
 
 describe("auth plugin security configuration", () => {
+	it("issues cookies for the canonical site even with a stale public app URL", () => {
+		const cookies = getCookies(capturedAuth.options!);
+		expect(cookies.sessionToken.attributes.domain).toBe("www.oma-ai.com");
+		expect(cookies.sessionToken.attributes.secure).toBe(true);
+	});
+	it("does not double-prefix a PRIMARY_DOMAIN that already includes www", () => {
+		const input = { PRIMARY_DOMAIN: "https://WWW.oma-ai.com/", PUBLIC_APP_URL: "http://localhost:3000", NODE_ENV: "production" };
+		expect(resolveAuthBaseURL(input)).toBe("https://www.oma-ai.com");
+		expect(resolveTrustedOrigins(input)).toEqual(expect.arrayContaining(["https://oma-ai.com", "https://www.oma-ai.com"]));
+		expect(resolveTrustedOrigins(input)).not.toContain("https://www.www.oma-ai.com");
+	});
+
+	it("does not trust stale localhost URLs in a deployed environment", () => {
+		const input = { PRIMARY_DOMAIN: "www.oma-ai.com", PUBLIC_APP_URL: "http://localhost:3000", NODE_ENV: "production" };
+		expect(resolveTrustedOrigins(input)).not.toContain("http://localhost:3000");
+	});
+
+	it("keeps preview subdomains intact when selecting a callback host", () => {
+		expect(resolveAuthBaseURL({ PRIMARY_DOMAIN: "preview.example.org", PUBLIC_APP_URL: "https://preview.example.org", NODE_ENV: "preview" })).toBe("https://preview.example.org");
+	});
 		it("stores magic-link tokens hashed, not in plaintext", () => {
 			// better-auth's magicLink plugin defaults storeToken to "plain",
 			// persisting the sign-in token verbatim. That turns any read-only
