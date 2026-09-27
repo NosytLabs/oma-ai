@@ -15,6 +15,8 @@
 	* `auth.api.getSession({ headers })`.
 	*/
 import { betterAuth } from "better-auth";
+import { createAuthMiddleware } from "better-auth/api";
+import { setSessionCookie } from "better-auth/cookies";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import {
 	magicLink,
@@ -25,7 +27,7 @@ import {
 import { verifyMessage, createPublicClient, http, getAddress } from "viem";
 import { mainnet } from "viem/chains";
 import { generateRandomString } from "better-auth/crypto";
-import { sql, and, eq } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { db } from "./db/client.js";
 import * as schema from "./db/schema.js";
 import { creditBalances, creditGrants } from "./db/schema.js";
@@ -35,37 +37,6 @@ import { logger } from "./lib/logger.js";
 import { getRedisClient } from "./lib/redis-client.js";
 
 const RESEND_FROM = config.RESEND_FROM ?? "OMA-AI <noreply@oma-ai.com>";
-
-/**
- * Backfill user.evmAddress from a successful wallet sign-in.
- *
- * better-auth's SIWE plugin binds the wallet to its own `walletAddress` model
- * and an `account` row, but never writes the app-owned `evmAddress`
- * additionalField (declared `input: false`, so clients can't set it either).
- * Result: user.evmAddress stayed null forever, so the admin gate in
- * middleware.ts (ADMIN_WALLET_ADDRESSES_SET.has(u.evmAddress)) could never
- * match and every `useAuth().evmAddress` consumer rendered the null branch —
- * a dead wallet/admin path.
- *
- * SIWE creates users with email `{address}@oma-ai.com` (emailDomainName);
- * look the row up that way and write the checksummed address back. Runs on
- * every successful sign-in; idempotent; never blocks sign-in on a DB blip
- * (caller catches).
- */
-export async function persistEvmAddress(address: string): Promise<void> {
-	const checksummed = getAddress(address) as string;
-	const walletEmail = `${checksummed.toLowerCase()}@oma-ai.com`;
-	await db
-		.update(schema.user)
-		.set({ evmAddress: checksummed })
-		.where(
-			and(
-				eq(schema.user.email, walletEmail),
-				// Don't clobber an existing non-wallet session's address.
-				sql`${schema.user.evmAddress} IS NULL OR ${schema.user.evmAddress} = ${checksummed}`,
-			),
-		);
-}
 
 // SECURITY (audit 1.2): per-email cooldown for magic-link + email-OTP sends.
 // Without this, the IP-level 40/min bucket lets an attacker flood any inbox
@@ -308,42 +279,6 @@ export function shouldUseSecureCookies(nodeEnv: string | undefined): boolean {
 
 const isSecureCookieEnv = shouldUseSecureCookies(config.NODE_ENV);
 
-// The SIWE `domain` must equal the host the browser signs in from —
-// better-auth rejects the message when they differ ("...does not match
-// the expected nonce, domain, address, or chain ID"). In production that
-// is the canonical www host; in dev the browser is on localhost, so
-// derive the host from PUBLIC_APP_URL (http://localhost:3000) instead of
-// demanding the production domain on a local origin.
-//
-// IMPORTANT: better-auth's siwe plugin accepts a SINGLE `domain: string`
-// (see SIWEPluginOptions in @better-auth/siwe), so there is no supported
-// way to allow-list both apex and www here. We therefore normalise to the
-// canonical www host rather than trusting PRIMARY_DOMAIN verbatim: the
-// apex 308-redirects to www, so a real browser is ALWAYS on www, and the
-// client signs window.location.host. Deriving the apex here would reject
-// every genuine wallet sign-in.
-//
-// An earlier attempt returned an array of allowed domains from this
-// function; that could never be passed to the plugin and silently left
-// the mismatch in place.
-function resolveSiweDomain(): string {
-	if (isSecureCookieEnv) {
-		const primary = (config.PRIMARY_DOMAIN ?? "oma-ai.com").trim();
-		// Only the apex/www pair needs canonicalising — that is the pair the
-		// site actually serves. Any other host (a preview deployment, a
-		// custom domain) is trusted exactly as configured.
-		return primary === "oma-ai.com" ? "www.oma-ai.com" : primary;
-	}
-	try {
-		const host = new URL(config.PUBLIC_APP_URL ?? "http://localhost:3000").host;
-		if (host) return host;
-	} catch {
-		// fall through to localhost default below
-	}
-	return "localhost:3000";
-}
-
-
 /** Environment fields the origin resolvers read. */
 export interface AuthOriginConfig {
 	BETTER_AUTH_URL?: string | undefined;
@@ -360,7 +295,13 @@ export interface AuthOriginConfig {
  * copies had already drifted (only one of them treated `::1` as local).
  */
 function normalizePrimaryDomain(raw: string | undefined): string {
-	return (raw ?? "").trim().replace(/^https?:\/\//i, "").replace(/\/.*$/, "").replace(/:\d+$/, "").toLowerCase();
+	if (!raw?.trim()) return "";
+	try {
+		const value = raw.trim();
+		return new URL(/^https?:\/\//i.test(value) ? value : `https://${value}`).hostname.toLowerCase();
+	} catch {
+		return "";
+	}
 }
 
 /** True when a normalized domain refers to the local machine, not a site. */
@@ -386,12 +327,22 @@ export function resolveTrustedOrigins(input: AuthOriginConfig): string[] {
 	const origins = new Set<string>();
 
 	// The configured app origin (dev/preview/staging deployments).
-	if (input.PUBLIC_APP_URL) origins.add(input.PUBLIC_APP_URL);
+	if (input.PUBLIC_APP_URL) {
+		try {
+			const appUrl = new URL(input.PUBLIC_APP_URL);
+			if (["http:", "https:"].includes(appUrl.protocol) && (!isProd || !isLocalDomain(appUrl.hostname))) {
+				origins.add(appUrl.origin);
+			}
+		} catch {
+			// Ignore malformed optional app URLs; PRIMARY_DOMAIN remains canonical.
+		}
+	}
 
 	const domain = normalizePrimaryDomain(input.PRIMARY_DOMAIN);
 	if (isProd && !isLocalDomain(domain)) {
-		origins.add(`https://${domain}`);
-		origins.add(`https://www.${domain}`);
+		const apex = domain.replace(/^www\./, "");
+		origins.add(`https://${apex}`);
+		origins.add(`https://www.${apex}`);
 	}
 
 	// Local dev/preview ports, retained so local sign-in keeps working.
@@ -416,25 +367,59 @@ export function resolveTrustedOrigins(input: AuthOriginConfig): string[] {
  *
  * Must resolve to the SAME canonical origin as resolveTrustedOrigins: if the
  * two disagree, a link can be accepted for sending yet emailed pointing
- * somewhere unusable. In a non-local environment the canonical www origin wins;
- * configured values remain the fallback for dev/preview/staging.
+ * somewhere unusable. In a deployed environment PRIMARY_DOMAIN wins, with
+ * OMA's apex normalized to www; explicit custom and preview hosts stay intact.
  */
 export function resolveAuthBaseURL(input: AuthOriginConfig): string {
 	const isProd = shouldUseSecureCookies(input.NODE_ENV);
 	const domain = normalizePrimaryDomain(input.PRIMARY_DOMAIN);
-	if (isProd && !isLocalDomain(domain)) return `https://www.${domain}`;
+	if (isProd && !isLocalDomain(domain)) {
+		// Only OMA's apex redirects to www. Keep explicit preview/custom hosts.
+		return `https://${domain === "oma-ai.com" ? "www.oma-ai.com" : domain}`;
+	}
 	return input.BETTER_AUTH_URL ?? input.PUBLIC_APP_URL ?? "http://localhost:3000";
 }
 
+const authBaseURL = resolveAuthBaseURL(config);
+const authHostname = new URL(authBaseURL).hostname;
+
 export const auth = betterAuth({
-	baseURL: resolveAuthBaseURL({
-		BETTER_AUTH_URL: config.BETTER_AUTH_URL,
-		PUBLIC_APP_URL: config.PUBLIC_APP_URL,
-		PRIMARY_DOMAIN: config.PRIMARY_DOMAIN,
-		NODE_ENV: config.NODE_ENV,
-	}),
+	baseURL: authBaseURL,
 	secret: config.BETTER_AUTH_SECRET,
 	database: drizzleAdapter(db, { provider: "pg", schema }),
+
+	// SIWE creates the user and wallet binding only AFTER verifyMessage returns.
+	// Bind the application profile to that completed identity, never an email
+	// guessed from a request address (email ownership does not prove a wallet).
+	hooks: {
+		after: createAuthMiddleware(async (ctx) => {
+			if (ctx.path !== "/siwe/verify") return;
+			const result = ctx.context.returned as {
+				success?: boolean;
+				user?: { id: string; walletAddress: string; chainId: number };
+			} | undefined;
+			const session = ctx.context.newSession;
+			if (!result?.success || !result.user || !session || result.user.id !== session.user.id) return;
+			try {
+				const address = getAddress(result.user.walletAddress);
+				const binding = await ctx.context.adapter.findOne<{ userId: string }>({
+					model: "walletAddress",
+					where: [
+						{ field: "userId", value: session.user.id },
+						{ field: "address", value: address },
+						{ field: "chainId", value: result.user.chainId },
+					],
+				});
+				if (!binding || (session.user.evmAddress && session.user.evmAddress !== address)) return;
+				const user = await ctx.context.internalAdapter.updateUser(session.user.id, { evmAddress: address });
+				// The endpoint has already cached the pre-update user. Replace it so
+				// the very first get-session sees the verified wallet.
+				await setSessionCookie(ctx, { session: session.session, user });
+			} catch (err) {
+				logger.warn({ err, userId: session.user.id }, "[siwe] failed to persist verified wallet profile");
+			}
+		}),
+	},
 
 	databaseHooks: {
 		// SECURITY (audit 1.3 / CRITICAL): Record the free-trial grant
@@ -525,11 +510,11 @@ user: {
 						secure: isSecureCookieEnv,
 						path: "/",
 				},
-				...(isSecureCookieEnv && config.PUBLIC_APP_URL?.includes(".")
+				...(isSecureCookieEnv && !isLocalDomain(authHostname)
 						? {
 										crossSubDomainCookies: {
 												enabled: true,
-												domain: config.PUBLIC_APP_URL.replace(/^https?:\/\//, "").split("/")[0],
+												domain: authHostname,
 										},
 								}
 						: {}),
@@ -575,7 +560,7 @@ user: {
 				}),
 
 			siwe({
-					domain: resolveSiweDomain(),
+					domain: new URL(authBaseURL).host,
 					emailDomainName: "oma-ai.com",
 						// Wallet-only signups don't need an email. The wallet address is
 						// already a strong identity signal; we attach it to the user row
@@ -591,24 +576,6 @@ user: {
 									message,
 									signature: signature as `0x${string}`,
 								});
-								if (valid) {
-									// Persist the verifying wallet onto user.evmAddress so the
-									// admin gate (middleware.ts checks ADMIN_WALLET_ADDRESSES_SET
-									// against user.evmAddress) and /user can see it. The SIWE
-									// plugin binds the wallet to a `walletAddress` model row but
-									// never writes the app-owned evmAddress additionalField, so
-									// it stayed null forever and wallet-based admin gating was a
-									// dead path. SIWE users are created with email
-									// `{address}@oma-ai.com` — look the user up that way and
-									// backfill the address. Idempotent + safe: runs on every
-									// successful wallet sign-in.
-									await persistEvmAddress(address).catch((err) => {
-										logger.warn(
-											{ err, address: getAddress(address) },
-											"[siwe] failed to persist evmAddress",
-										);
-									});
-								}
 								return !!valid;
 							} catch (err) {
 								logger.warn({ err, address }, "[siwe] verifyMessage failed");
@@ -709,4 +676,3 @@ user: {
 
 		],
 });
-

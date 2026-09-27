@@ -1,9 +1,10 @@
 import { parseAbi, getAddress, formatUnits } from "viem";
 import { db } from "../db/client.js";
-import { creditBalances, deposits } from "../db/schema.js";
-import { eq, and, sql } from "drizzle-orm";
+import { deposits } from "../db/schema.js";
+import { eq, sql } from "drizzle-orm";
 import { logger } from "../lib/logger.js";
 import { logPaymentEvent } from "./payment-observability.js";
+import { creditConfirmedUsdcPayment } from "./payment-credit.js";
 
 import { USDC_BASE, USDC_DECIMALS } from "../constants.js";
 const MIN_DEPOSIT_CENTS = 100;
@@ -32,7 +33,7 @@ export async function processTransfer(
 		depositAddress: string,
 ): Promise<void> {
 		const { transactionHash, args } = event;
-		const txHash = transactionHash;
+		const txHash = transactionHash.toLowerCase();
 		const startedAt = Date.now();
 
 		if (args.to.toLowerCase() !== depositAddress.toLowerCase()) return;
@@ -50,7 +51,7 @@ export async function processTransfer(
 		const [existingDeposit] = await db
 				.select()
 				.from(deposits)
-				.where(eq(deposits.txHash, txHash))
+				.where(sql`lower(${deposits.txHash}) = ${txHash}`)
 				.limit(1);
 
 		const userId = existingDeposit?.userId ?? null;
@@ -126,57 +127,15 @@ export async function processTransfer(
 				return;
 			}
 
-		await db.transaction(async (tx) => {
-				const claimed = await tx
-						.update(deposits)
-						.set({
-						status: "completed",
-						completedAt: new Date(),
-						creditsIssued: (verifiedAmountCents / 100).toFixed(2),
-						})
-						.where(and(eq(deposits.id, existingDeposit.id), eq(deposits.status, "pending")))
-						.returning({ id: deposits.id });
-				if (claimed.length === 0) {
-						logPaymentEvent({
-								kind: "usdc_deposit",
-								outcome: "double_spend_blocked",
-								userId,
-							amountCents: verifiedAmountCents,
-								signature: txHash,
-								latencyMs: Date.now() - startedAt,
-						});
-						return;
-				}
-
-				await tx
-						.insert(creditBalances)
-						.values({
-					userId,
-					balanceCents: verifiedAmountCents.toString(),
-					totalDepositedCents: verifiedAmountCents.toString(),
-								totalUsedCents: "0",
-								lastActivityAt: new Date(),
-						})
-						.onConflictDoUpdate({
-								target: creditBalances.userId,
-								set: {
-					balanceCents: sql`${creditBalances.balanceCents} + ${verifiedAmountCents}`,
-					totalDepositedCents: sql`${creditBalances.totalDepositedCents} + ${verifiedAmountCents}`,
-										lastActivityAt: new Date(),
-										updatedAt: new Date(),
-								},
-						});
-
-				logPaymentEvent({
-						kind: "usdc_deposit",
-						outcome: "settled",
-						userId,
-					amountCents: verifiedAmountCents,
-						signature: txHash,
-						latencyMs: Date.now() - startedAt,
-				});
-				logger.info({ txHash, userId, depositId: existingDeposit.id, amountUsdCents: verifiedAmountCents }, "[deposit-recovery] marked pending deposit as completed and credited balance");
-				});
+		const credit = await creditConfirmedUsdcPayment({
+			userId, txHash, amountUsd: formatUnits(args.value, USDC_DECIMALS),
+			payFrom: args.from, depositAddress,
+		});
+		logPaymentEvent({
+			kind: "usdc_deposit", outcome: credit.alreadyCredited ? "double_spend_blocked" : "settled",
+			userId, amountCents: credit.creditedCents, signature: txHash, latencyMs: Date.now() - startedAt,
+		});
+		logger.info({ txHash, userId, depositId: existingDeposit.id, amountUsdCents: credit.creditedCents }, "[deposit-recovery] marked pending deposit as completed and credited balance");
 				return;
 		}
 }

@@ -334,6 +334,24 @@ export const deposits = pgTable(
 		],
 );
 
+/** Once-only chain credits survive user/deposit deletion. Never add a user FK. */
+export const paymentCreditClaims = pgTable("payment_credit_claims", {
+	networkId: text("network_id").notNull(),
+	txHash: text("tx_hash").notNull(),
+	creditedUserId: text("credited_user_id").notNull(),
+	creditedCents: numeric("credited_cents", { precision: 18, scale: 8 }).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+	uniqueIndex("payment_credit_claims_network_tx_unique").on(t.networkId, t.txHash),
+	check("payment_credit_claims_canonical", sql`${t.networkId} = 'base' AND ${t.txHash} = lower(${t.txHash})`),
+]);
+
+/** Payments predating durable claims need reconciliation if their history is gone. */
+export const paymentCreditPolicy = pgTable("payment_credit_policy", {
+	networkId: text("network_id").primaryKey(),
+	recoveryNotBefore: timestamp("recovery_not_before", { withTimezone: true }).notNull(),
+});
+
 export const creditBalances = pgTable("credit_balances", {
 		userId: text("user_id")
 				.references(() => user.id, { onDelete: "cascade" })

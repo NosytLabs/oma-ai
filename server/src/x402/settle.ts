@@ -91,6 +91,7 @@ export async function settlePaymentAsync(
 								amount: existingDb[0].amount,
 								networkId: existingDb[0].networkId,
 								payee: existingDb[0].payee,
+								payFrom: settlementCache.get(cacheKey)?.payFrom,
 								settledAt: existingDb[0].settledAt.getTime(),
 								receipt: existingDb[0].receipt,
 						};
@@ -129,6 +130,7 @@ export async function settlePaymentAsync(
 										amount,
 										networkId,
 										payee,
+										payFrom: settlementCache.get(cacheKey)?.payFrom,
 										settledAt,
 										receipt,
 								};
@@ -243,6 +245,7 @@ export function settlePayment(
 				amount,
 				networkId,
 				payee,
+				payFrom: existing?.payFrom,
 				settledAt,
 				receipt,
 		};

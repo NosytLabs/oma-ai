@@ -1,5 +1,6 @@
 import { Redis } from "@upstash/redis";
 import { config } from "../config.js";
+import { logger } from "./logger.js";
 
 // Serverless/HTTP Redis client backed by Upstash (@upstash/redis). Works on
 // Neon Functions (serverless, connectionless) and locally (no Docker/Redis
@@ -15,81 +16,104 @@ import { config } from "../config.js";
 // surface below.
 
 let redisReady = false;
-let connectionFailed = false;
-let connectionAttempted = false;
+let failedAttempts = 0;
+let nextRetryAt = 0;
+let generation = 0;
+let lastFailureStatus = "disconnected";
+
+const RETRY_BASE_MS = 1_000;
+const RETRY_MAX_MS = 30_000;
 
 let redis: Redis | null = null;
-let pingPromise: Promise<boolean> | null = null;
+type HealthResult = { status: string; latency?: number };
+let pingPromise: Promise<HealthResult> | null = null;
 
-function resolveRedisInstance(): Redis | null {
+function resolveRedisInstance(): Redis {
 	if (!redis) {
 		const restUrl = config.UPSTASH_REDIS_REST_URL ?? config.REDIS_URL;
 		const restToken = config.UPSTASH_REDIS_REST_TOKEN ?? config.REDIS_TOKEN;
-		if (!restUrl || !restToken) return null;
-
-		try {
-			redis = new Redis({ url: restUrl, token: restToken });
-		} catch {
-			connectionFailed = true;
-			return null;
-		}
+		if (!restUrl || !restToken) throw new Error("Redis credentials missing");
+		redis = new Redis({ url: restUrl, token: restToken });
 	}
 	return redis;
 }
 
-async function verifyConnection(): Promise<boolean> {
-	if (redisReady) return true;
+// Never log the SDK error itself: its message may contain URLs, credentials,
+// or command arguments. Emit only a fixed category and a numeric HTTP status.
+function failureDetails(error: unknown): { reason: string; status?: number } {
+	const record = error && typeof error === "object"
+		? error as { message?: unknown; status?: unknown; statusCode?: unknown; cause?: unknown }
+		: {};
+	const message = typeof record.message === "string" ? record.message.toLowerCase() : "";
+	const rawStatus = record.status ?? record.statusCode;
+	const status = typeof rawStatus === "number" && Number.isInteger(rawStatus)
+		&& rawStatus >= 400 && rawStatus <= 599 ? rawStatus : undefined;
+	let reason = "unknown";
+	if (message === "redis credentials missing") reason = "missing_configuration";
+	else if (status === 401 || status === 403 || /unauthorized|forbidden|wrongpass|invalid token/.test(message)) reason = "authentication";
+	else if (status === 429 || /rate.?limit|quota|too many requests/.test(message)) reason = "rate_limit";
+	else if (/timeout|timed out|abort/.test(message)) reason = "timeout";
+	else if (/invalid.*url|url.*invalid|https.*url/.test(message)) reason = "invalid_configuration";
+	else if (status && status >= 500) reason = "upstream_error";
+	else if (/fetch failed|network|econn|enotfound|unable to connect/.test(message)) reason = "network";
+	return { reason, ...(status === undefined ? {} : { status }) };
+}
+
+async function verifyConnection(force = false): Promise<HealthResult> {
 	if (pingPromise) return pingPromise;
-	if (!connectionAttempted) {
-		connectionAttempted = true;
-		pingPromise = (async () => {
-			const client = resolveRedisInstance();
-			if (!client) {
-				connectionFailed = true;
-				return false;
-			}
-			try {
-				await client.ping();
-				redisReady = true;
-				return true;
-			} catch {
-				connectionFailed = true;
-				return false;
-			} finally {
-				pingPromise = null;
-			}
-		})();
+	if (redisReady && !force) return { status: "ok" };
+	if (Date.now() < nextRetryAt) return { status: lastFailureStatus };
+	const attemptGeneration = generation;
+	const attempt = Promise.resolve().then(async (): Promise<HealthResult> => {
+		const start = Date.now();
+		try {
+			await resolveRedisInstance().ping();
+			if (generation !== attemptGeneration) return { status: "disconnected" };
+			const recovered = failedAttempts > 0;
+			redisReady = true;
+			failedAttempts = 0;
+			nextRetryAt = 0;
+			if (recovered) logger.info("[redis] connection recovered");
+			return { status: "ok", latency: Date.now() - start };
+		} catch (error) {
+			if (generation !== attemptGeneration) return { status: "disconnected" };
+			redisReady = false;
+			failedAttempts = Math.min(failedAttempts + 1, 6);
+			const retryAfterMs = Math.min(RETRY_BASE_MS * 2 ** (failedAttempts - 1), RETRY_MAX_MS);
+			nextRetryAt = Date.now() + retryAfterMs;
+			lastFailureStatus = redis ? "error" : "disconnected";
+			logger.warn({ ...failureDetails(error), retryAfterMs }, "[redis] connection check failed");
+			return { status: lastFailureStatus };
+		}
+	});
+	pingPromise = attempt;
+	try {
+		return await attempt;
+	} finally {
+		if (pingPromise === attempt) pingPromise = null;
 	}
-	return pingPromise ?? false;
 }
 
 export async function getRedisClient(): Promise<Redis | null> {
-	if (connectionFailed) return null;
-	const client = resolveRedisInstance();
-	if (!client) return null;
-	// Fire-and-forget readiness verification — upstash is connectionless.
-	void verifyConnection();
-	return client;
+	// Share one probe during startup/recovery; healthy requests reuse the client.
+	const health = await verifyConnection();
+	return health.status === "ok" ? redis : null;
 }
 
 export async function closeRedisClient(): Promise<void> {
+	generation += 1;
 	redis = null;
 	redisReady = false;
+	failedAttempts = 0;
+	nextRetryAt = 0;
+	lastFailureStatus = "disconnected";
+	pingPromise = null;
 }
 
 export function isRedisReady(): boolean {
 	return redisReady;
 }
 
-export async function redisHealthCheck(): Promise<{ status: string; latency?: number }> {
-	const client = resolveRedisInstance();
-	if (!client) return { status: "disconnected" };
-	try {
-		const start = Date.now();
-		await client.ping();
-		redisReady = true;
-		return { status: "ok", latency: Date.now() - start };
-	} catch {
-		return { status: "error" };
-	}
+export async function redisHealthCheck(): Promise<HealthResult> {
+	return verifyConnection(true);
 }

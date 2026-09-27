@@ -19,13 +19,12 @@
 
 import { Hono } from "hono";
 import type { Context, Next, MiddlewareHandler } from "hono";
-import { sql } from "drizzle-orm";
 import { config, isProductionEnv } from "../config.js";
-import { buildV2Challenge, buildXPaymentResponse, parseXPaymentHeader } from "./v2.js";
+import { buildV2Challenge, buildXPaymentResponse, parsePaymentSignatureHeader, parseXPaymentHeader } from "./v2.js";
 import type { OmaEnv } from "../types.js";
 import { sessionAuth } from "../auth/middleware.js";
 import { db } from "../db/client.js";
-import { creditBalances, deposits, settlements, user as userTable } from "../db/schema.js";
+import { deposits, settlements, user as userTable } from "../db/schema.js";
 import { eq, and } from "drizzle-orm";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { USDC_BASE } from "../constants.js";
@@ -43,6 +42,9 @@ import {
 } from "./settlement-cache.js";
 import { settlePaymentAsync } from "./settle.js";
 import { SERVER_TREASURY } from "./treasury.js";
+import { readTreasuryTransfer } from "./funding-recovery.js";
+import { getPublicClient } from "../lib/rpc-client.js";
+import { creditConfirmedUsdcPayment } from "../lib/payment-credit.js";
 import { verifyPayment } from "./verify.js";
 import {
 		PAYMENT_WINDOW_SECONDS,
@@ -61,70 +63,17 @@ async function creditSettledPayment(
 		userId: string,
 		txHash: string,
 		amountUsd: string,
+		payFrom: string,
 ): Promise<{ creditedCents: number; alreadyCredited: boolean }> {
-		const atomic = parseUsdcAtomic(amountUsd);
-		// USDC has 6 decimals; 1 credit = $0.01 = 10_000 atomic units.
-		const creditedCents = Number(atomic / 10_000n);
-		if (creditedCents <= 0) {
-				throw new Error("x402 settlement amount too small to credit");
-		}
-		const amountUsdFixed = (creditedCents / 100).toFixed(8);
-
-		return await db.transaction(async (tx) => {
-				const existing = await tx
-						.select({ id: deposits.id, userId: deposits.userId })
-						.from(deposits)
-						.where(eq(deposits.txHash, txHash))
-						.limit(1);
-
-				if (existing.length > 0) {
-						if (existing[0].userId !== userId) {
-								throw new Error("x402 settlement already credited to another account");
-						}
-						return { creditedCents, alreadyCredited: true };
-				}
-
-				await tx.insert(deposits).values({
-						userId,
-						type: "usdc_direct",
-						amountUsd: amountUsdFixed,
-						creditsIssued: creditedCents.toFixed(8),
-						txHash,
-						depositAddress: SERVER_TREASURY || config.TREASURY_BASE_ADDRESS || null,
-						status: "completed",
-						completedAt: new Date(),
-				});
-
-				await tx
-						.insert(creditBalances)
-						.values({
-								userId,
-								balanceCents: creditedCents.toString(),
-								totalDepositedCents: creditedCents.toString(),
-								totalUsedCents: "0",
-								lastActivityAt: new Date(),
-						})
-						.onConflictDoUpdate({
-								target: creditBalances.userId,
-								set: {
-										balanceCents: sql`${creditBalances.balanceCents}::numeric + ${creditedCents}`,
-										totalDepositedCents: sql`${creditBalances.totalDepositedCents}::numeric + ${creditedCents}`,
-										lastActivityAt: new Date(),
-										updatedAt: new Date(),
-								},
-						});
-
-				logPaymentEvent({
-						kind: "x402",
-						outcome: "settled",
-						userId,
-						amountCents: creditedCents,
-						signature: txHash,
-						latencyMs: 0,
-				});
-
-				return { creditedCents, alreadyCredited: false };
+		const result = await creditConfirmedUsdcPayment({
+			userId, txHash, amountUsd, payFrom,
+			depositAddress: SERVER_TREASURY || config.TREASURY_BASE_ADDRESS || "",
 		});
+		if (!result.alreadyCredited) logPaymentEvent({
+			kind: "x402", outcome: "settled", userId,
+			amountCents: result.creditedCents, signature: txHash, latencyMs: 0,
+		});
+		return result;
 }
 
 async function settleAndCredit(
@@ -133,11 +82,12 @@ async function settleAndCredit(
 		amount: string,
 		networkId: string,
 		payee: string,
+		payFrom: string,
 ): Promise<SettlementResponse & { creditedCents?: number }> {
 		const result = await settlePaymentAsync(txHash, amount, networkId, payee);
 		if (!result.settled) return result;
 		try {
-				const credit = await creditSettledPayment(userId, txHash, amount);
+				const credit = await creditSettledPayment(userId, txHash, amount, payFrom);
 				return { ...result, creditedCents: credit.creditedCents };
 		} catch (err) {
 				logger.error({ err, userId, txHash }, "[FACILITATOR] settle succeeded but credit failed");
@@ -183,7 +133,7 @@ function paymentError(
 export const x402Routes = new Hono<OmaEnv>();
 
 x402Routes.post("/x402/verify", rateLimit({ windowMs: 60_000, maxRequests: 10 }), async (c) => {
-		const headerVal = c.req.header("PAYMENT-SIGNATURE");
+		const headerVal = c.req.header("PAYMENT-SIGNATURE") ?? c.req.header("X-PAYMENT");
 		if (!headerVal) {
 				return c.json(
 						{ error: { message: "Missing PAYMENT-SIGNATURE header", type: "payment_error" } },
@@ -193,10 +143,10 @@ x402Routes.post("/x402/verify", rateLimit({ windowMs: 60_000, maxRequests: 10 })
 
 		let paymentSig: PaymentSignature;
 		try {
-				paymentSig = JSON.parse(headerVal) as PaymentSignature;
-		} catch {
+				paymentSig = parsePaymentSignatureHeader(headerVal);
+		} catch (error) {
 				return c.json(
-						{ error: { message: "Invalid PAYMENT-SIGNATURE: must be valid JSON", type: "payment_error" } },
+						{ error: { message: error instanceof Error ? error.message : "Invalid PAYMENT-SIGNATURE", type: "payment_error" } },
 						400,
 				);
 		}
@@ -276,7 +226,7 @@ x402Routes.post("/x402/settle", sessionAuth, async (c) => {
 				);
 		}
 
-		if (!body.txHash || !body.networkId) {
+		if (!body || typeof body !== "object" || typeof body.txHash !== "string" || typeof body.networkId !== "string" || (body.payee !== undefined && typeof body.payee !== "string")) {
 				return c.json(
 						{ error: { message: "txHash and networkId are required (amount is derived from verified cache, not the body)", type: "payment_error" } },
 						400,
@@ -286,6 +236,9 @@ x402Routes.post("/x402/settle", sessionAuth, async (c) => {
 		if (!/^0x[a-fA-F0-9]{64}$/.test(body.txHash)) {
 				return c.json({ error: { message: "Invalid txHash format", type: "validation_error" } }, 400);
 		}
+		if (!["base", "eip155:8453"].includes(body.networkId)) return c.json(paymentError("unsupported_network", "Only Base mainnet is supported", false), 400);
+		body.networkId = "base";
+		body.txHash = body.txHash.toLowerCase();
 
 		// Pin payee to the configured merchant address; never trust user-supplied
 		// recipients. The x402 spec requires the merchant to receive the payment.
@@ -317,7 +270,7 @@ x402Routes.post("/x402/settle", sessionAuth, async (c) => {
 		const paymentHeader = c.req.header("PAYMENT-SIGNATURE");
 		if (paymentHeader) {
 				try {
-						JSON.parse(paymentHeader);
+						parsePaymentSignatureHeader(paymentHeader);
 				} catch {
 						return c.json(
 								{ error: { message: "Invalid PAYMENT-SIGNATURE header: must be valid JSON", type: "payment_error" } },
@@ -340,14 +293,14 @@ x402Routes.post("/x402/settle", sessionAuth, async (c) => {
 				// /settle with a verified-but-unsettled txHash and have the amount
 				// credited to their own balance (first-claimant-wins theft). Require
 				// the session user's DB evmAddress to equal the payment sender.
-				if (cached.payFrom) {
+				{
 					const [u] = await db
 						.select({ evmAddress: userTable.evmAddress })
 						.from(userTable)
 						.where(eq(userTable.id, userId))
 						.limit(1);
 					const sessionAddr = (u?.evmAddress ?? "").toLowerCase();
-					const senderAddr = cached.payFrom.toLowerCase();
+					const senderAddr = cached.payFrom?.toLowerCase() ?? "";
 					if (!sessionAddr || sessionAddr !== senderAddr) {
 						logger.warn(
 							{ userId, txHash: body.txHash, senderAddr },
@@ -366,7 +319,9 @@ x402Routes.post("/x402/settle", sessionAuth, async (c) => {
 						cached.amount,
 						cached.networkId,
 						expectedPayee,
+						cached.payFrom!,
 					);
+					if (result.settled) c.header("PAYMENT-RESPONSE", buildXPaymentResponse({ txHash: body.txHash, payer: cached.payFrom }));
 					return c.json(result, result.settled ? 200 : 422);
 				} catch (err) {
 						const message = err instanceof Error ? err.message : "Failed to credit settlement";
@@ -400,12 +355,11 @@ x402Routes.post("/x402/settle", sessionAuth, async (c) => {
 				let senderAddr = (depositRow[0]?.fromAddress ?? "").toLowerCase();
 				if (!senderAddr) {
 						try {
-								const { getPublicClient } = await import("../lib/rpc-client.js");
-								const publicClient = getPublicClient();
-								const tx = await publicClient.getTransaction({
+								const receipt = await getPublicClient().getTransactionReceipt({
 										hash: body.txHash as `0x${string}`,
 								});
-								senderAddr = (tx?.from ?? "").toLowerCase();
+								const transfer = readTreasuryTransfer(receipt, expectedPayee);
+								if (transfer && parseUsdcAtomic(transfer.amount) === parseUsdcAtomic(existingSettlement[0].amount)) senderAddr = transfer.payFrom;
 						} catch (chainErr) {
 								logger.warn(
 										{ err: chainErr, txHash: body.txHash },
@@ -445,7 +399,9 @@ x402Routes.post("/x402/settle", sessionAuth, async (c) => {
 								userId,
 								existingSettlement[0].txHash,
 								existingSettlement[0].amount,
+								senderAddr,
 						);
+						c.header("PAYMENT-RESPONSE", buildXPaymentResponse({ txHash: body.txHash, payer: senderAddr }));
 						return c.json(
 								{
 										settled: true,
@@ -463,7 +419,28 @@ x402Routes.post("/x402/settle", sessionAuth, async (c) => {
 				}
 		}
 
-		// No record anywhere — client must call /x402/verify first.
+		// A serverless restart can lose the verified cache after funds moved.
+		// Recover only from a confirmed USDC transfer to our treasury, bound to
+		// the authenticated payer. No caller-supplied amount is used.
+		let recovered: ReturnType<typeof readTreasuryTransfer> = null;
+		try {
+			recovered = readTreasuryTransfer(await getPublicClient().getTransactionReceipt({ hash: body.txHash as `0x${string}` }), expectedPayee);
+		} catch { /* Unknown or unconfirmed transaction: require verification below. */ }
+		if (recovered) {
+			const [u] = await db.select({ evmAddress: userTable.evmAddress }).from(userTable).where(eq(userTable.id, userId)).limit(1);
+			if (!u?.evmAddress || u.evmAddress.toLowerCase() !== recovered.payFrom) return c.json(paymentError("x402_payer_mismatch", "Payment sender does not match the authenticated wallet", false), 403);
+			atomicCacheSet(cacheKey, { txHash: body.txHash, amount: recovered.amount, networkId: "base", payee: expectedPayee, payFrom: recovered.payFrom, settledAt: 0 });
+			try {
+				const result = await settleAndCredit(userId, body.txHash, recovered.amount, "base", expectedPayee, recovered.payFrom);
+				if (result.settled) c.header("PAYMENT-RESPONSE", buildXPaymentResponse({ txHash: body.txHash, payer: recovered.payFrom }));
+				return c.json(result, result.settled ? 200 : 422);
+			} catch (err) {
+				logger.error({ err, txHash: body.txHash }, "[FACILITATOR] recovered payment credit failed");
+				return c.json(paymentError("x402_credit_failed", "Payment confirmed but credit is pending. Retry settlement with the same transaction hash.", true), 500);
+			}
+		}
+
+		// No confirmed payment evidence.
 		return c.json(
 				{
 						error: {
@@ -643,7 +620,7 @@ export function paymentMiddleware(
 								bazaar: middlewareConfig.bazaar?.[path],
 						});
 
-						c.header("PAYMENT-REQUIRED", JSON.stringify(paymentRequired));
+						c.header("PAYMENT-REQUIRED", Buffer.from(JSON.stringify(v2Challenge)).toString("base64"));
 						// Spec-shaped v2 body (x402Version/accepts) with the legacy v1
 						// error envelope folded in so both client generations can parse it.
 						return c.json(
@@ -675,9 +652,7 @@ export function paymentMiddleware(
 						// base64-encoded v2 JSON. Sniff the first character to tell them apart.
 						const raw = (paymentHeader as string).trim();
 						try {
-								paymentSig = raw.startsWith("{")
-										? (JSON.parse(raw) as PaymentSignature)
-										: parseXPaymentHeader(raw);
+								paymentSig = parsePaymentSignatureHeader(raw);
 						} catch (err) {
 								return c.json(
 										{ error: { message: err instanceof Error ? err.message : "Invalid PAYMENT-SIGNATURE header", type: "payment_error" } },

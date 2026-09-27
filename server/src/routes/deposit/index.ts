@@ -230,8 +230,9 @@ depositRoutes.post(
 								400,
 						);
 				}
-				const { amountUsd, txHash, network, fromAddress, challengeToken, signature } =
+				const { amountUsd, txHash: submittedTxHash, network, fromAddress, challengeToken, signature } =
 					parsed.data;
+				const txHash = submittedTxHash.toLowerCase();
 				const amountCents = Math.round(amountUsd * 100);
 
 				// SECURITY (deposit Blocker): the pending deposit must be backed by

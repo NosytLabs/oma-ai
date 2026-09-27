@@ -86,7 +86,8 @@ const { recoverTypedDataAddressMock, callMock, writeContractMock, privateKeyToAc
 	receiptMock: vi.fn(async () => ({ status: 'success' })),
 	privateKeyToAccountMock: vi.fn(() => ({ address: '0xFac1l1tat0r00000000000000000000000000000' })),
 }))
-vi.mock('viem', () => ({
+vi.mock('viem', async () => ({
+		...await vi.importActual('viem'),
 		createPublicClient: vi.fn(() => ({ call: callMock })),
 		createWalletClient: vi.fn(() => ({ writeContract: writeContractMock })),
 		http: vi.fn(),

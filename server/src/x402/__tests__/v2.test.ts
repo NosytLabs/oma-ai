@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { USDC_BASE } from "../../constants.js";
 import {
 		atomicToDecimal,
 		buildV2Challenge,
@@ -39,6 +40,21 @@ describe("atomicToDecimal", () => {
 });
 
 describe("parseXPaymentHeader", () => {
+		const accepted = { scheme: "exact", network: CAIP2_BASE_MAINNET, amount: AUTH.value, asset: USDC_BASE, payTo: AUTH.to, maxTimeoutSeconds: 300, extra: { name: "USD Coin", version: "2" } };
+		it("accepts the current SDK v2 shape with requirements under accepted", () => {
+			const encoded = encodeXPayment({ scheme: undefined, network: undefined, accepted, resource: { url: "https://www.oma-ai.com/x402/verify" } });
+			expect(parseXPaymentHeader(encoded).payload).toMatchObject({ amount: "0.1", payFrom: AUTH.from, payee: AUTH.to, networkId: "base" });
+		});
+		it.each([
+			{ ...accepted, asset: "0x" + "00".repeat(20) },
+			{ ...accepted, payTo: AUTH.from },
+			{ ...accepted, amount: "999999" },
+		])("rejects accepted requirements that disagree with the signed transfer", (offer) => {
+			expect(() => parseXPaymentHeader(encodeXPayment({ accepted: offer }))).toThrow();
+		});
+		it.each([null, [], "hello", 3])("rejects non-object JSON with a useful error", (value) => {
+			expect(() => parseXPaymentHeader(Buffer.from(JSON.stringify(value)).toString("base64"))).toThrow(/object/);
+		});
 		it("maps a valid v2 envelope to the internal PaymentSignature shape", () => {
 				const sig = parseXPaymentHeader(encodeXPayment());
 				expect(sig.x402Version).toBe("2");
@@ -98,13 +114,13 @@ describe("buildV2Challenge", () => {
 				expect(offer.maxTimeoutSeconds).toBe(300);
 		});
 
-		it("omits resource/extensions when no bazaar descriptor is given", () => {
+		it("always includes the v2 resource, without optional extensions", () => {
 				const challenge = buildV2Challenge({
 						priceUsd: "0.10",
 						payTo: AUTH.to,
 						resource: "/v1/chat/completions",
 				});
-				expect(challenge.resource).toBeUndefined();
+				expect(challenge.resource).toMatchObject({ url: "/v1/chat/completions", mimeType: "application/json" });
 				expect(challenge.extensions).toBeUndefined();
 		});
 
