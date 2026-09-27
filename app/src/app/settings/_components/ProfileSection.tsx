@@ -1,7 +1,7 @@
 "use client";
 
 import { Calendar, Check, Copy, Fingerprint, Loader2, Mail, Shield, UserRound, Wallet } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { authClient } from "@/lib/auth-client";
 import type { BetterAuthUser } from "@/lib/hooks/useAuth";
@@ -11,6 +11,7 @@ import { SettingsCard } from "./SettingsCard";
 interface ProfileSectionProps {
 	user: BetterAuthUser | null;
 	evmAddress?: string | null;
+	readOnly?: boolean;
 }
 
 function authMethodLabel(
@@ -24,21 +25,30 @@ function authMethodLabel(
 	return "Not set";
 }
 
-export function ProfileSection({ user, evmAddress }: ProfileSectionProps) {
+export function ProfileSection({ user, evmAddress, readOnly = false }: ProfileSectionProps) {
 	const toast = useToast();
 	const linkedWallet = evmAddress ?? user?.evmAddress ?? null;
 	const [copied, setCopied] = useState(false);
 	const [displayName, setDisplayName] = useState(user?.name ?? "");
+	const [savedName, setSavedName] = useState(user?.name ?? "");
 	const [savingName, setSavingName] = useState(false);
-	const nameDirty = displayName.trim() !== (user?.name ?? "").trim();
+	const nameDirty = displayName.trim() !== savedName.trim();
+
+	useEffect(() => {
+		const next = user?.name ?? "";
+		setDisplayName(next);
+		setSavedName(next);
+	}, [user?.id, user?.name]);
 
 	const handleSaveName = async () => {
 		const next = displayName.trim();
-		if (!next || next.length > 64 || savingName) return;
+		if (readOnly || !nameDirty || !next || next.length > 64 || savingName) return;
 		setSavingName(true);
 		try {
 			const { error } = await authClient.updateUser({ name: next });
 			if (error) throw new Error(error.message || "Could not update name");
+			setDisplayName(next);
+			setSavedName(next);
 			toast.success("Display name saved");
 		} catch (e) {
 			toast.error(e instanceof Error ? e.message : "Could not update name");
@@ -86,12 +96,13 @@ export function ProfileSection({ user, evmAddress }: ProfileSectionProps) {
 			<SettingsCard
 				icon={<UserRound className="h-4 w-4" aria-hidden="true" />}
 				title="Display name"
-				description="Shown on receipts, exports, and the operator console. 1–64 characters."
+				description="Your account display name. 1–64 characters."
 			>
 				<div className="flex flex-col gap-2 sm:flex-row">
 					<input
 						type="text"
 						value={displayName}
+						disabled={readOnly || savingName}
 						onChange={(e) => setDisplayName(e.target.value.slice(0, 64))}
 						onKeyDown={(e) => {
 							if (e.key === "Enter") void handleSaveName();
@@ -100,12 +111,12 @@ export function ProfileSection({ user, evmAddress }: ProfileSectionProps) {
 						autoComplete="nickname"
 						aria-label="Display name"
 						placeholder="Your name"
-						className="min-h-11 w-full rounded-[var(--radius-md)] border border-border bg-void px-3 text-sm text-text-bright placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/40"
+						className="min-h-11 w-full rounded-[var(--radius-md)] border border-border bg-void px-3 text-sm text-text-bright placeholder:text-text-muted disabled:cursor-not-allowed disabled:opacity-60 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/40"
 					/>
 					<button
 						type="button"
 						onClick={() => void handleSaveName()}
-						disabled={!nameDirty || displayName.trim().length === 0 || savingName}
+						disabled={readOnly || !nameDirty || displayName.trim().length === 0 || savingName}
 						className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-[var(--radius-md)] border border-accent/40 bg-accent px-4 text-xs font-semibold text-void transition-[background-color,transform,opacity] duration-200 ease-out hover:bg-accent-bright active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40"
 					>
 						{savingName ? (
@@ -154,7 +165,7 @@ export function ProfileSection({ user, evmAddress }: ProfileSectionProps) {
 					title="Email"
 					description={user.emailVerified ? "Verified magic-link address" : "Sign-in email"}
 				>
-					<div className="min-w-0 shrink-0 rounded-[var(--radius-md)] border border-border bg-surface px-3 py-1.5 font-mono text-[11px] text-text-bright">
+					<div className="min-w-0 break-all rounded-[var(--radius-md)] border border-border bg-surface px-3 py-1.5 font-mono text-[11px] text-text-bright">
 						{user.email}
 					</div>
 				</SettingsCard>

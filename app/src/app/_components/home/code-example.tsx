@@ -2,39 +2,47 @@
 
 /**
 	* CodeExample — section 5 of the homepage.
-	* Full-width terminal showing a real fetch call with USDC payment.
+	* Full-width terminal showing an OpenAI SDK call billed to prepaid credits.
 	*/
 
 import { Copy, Terminal } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Reveal } from "@/app/_components/home/reveal";
 import { SectionHeader } from "@/app/_components/home/section-header";
 import { cn } from "@/components/ui/utils";
 
-export interface CodeExampleProps {
-	modelCount: number;
-}
+import { loadRawModelEntries } from "@/lib/models-data";
+import { isAvailableChatModel } from "./catalog-availability";
 
-function buildExampleCode(modelCount: number) {
+function buildExampleCode(modelId: string) {
 	return `import { OpenAI } from "openai";
 
 const client = new OpenAI({
-	apiKey: process.env.OPENAI_KEY, // one key for every model
+	apiKey: process.env.OMA_API_KEY, // create a key in your OMA dashboard
 	baseURL: "https://www.oma-ai.com/api/v1",
 });
 
 const response = await client.chat.completions.create({
-	model: "llama-3.3-70b", // or any of ${modelCount}+ models
+	model: ${JSON.stringify(modelId)}, // check live availability at /models
 	messages: [
 	{ role: "system", content: "You are concise." },
 	{ role: "user", content: "Ship a minimal RAG agent in 3 lines." }
 	],
 });
 
-	// → billed in USDC, settled on Base, no subscription`;
+	// → charged to your prepaid OMA credits, no subscription`;
 }
 
-export function CodeExample({ modelCount }: CodeExampleProps) {
+export function CodeExample() {
+	const [modelId, setModelId] = useState("YOUR_AVAILABLE_MODEL_ID");
+	useEffect(() => {
+		let active = true;
+		void loadRawModelEntries().then((entries) => {
+			const model = entries.find(isAvailableChatModel);
+			if (active && model) setModelId(model.id);
+		}).catch(() => { /* Keep the explicit placeholder when availability is unknown. */ });
+		return () => { active = false; };
+	}, []);
 	return (
 		<section
 			aria-labelledby="code-example-headline"
@@ -60,7 +68,7 @@ export function CodeExample({ modelCount }: CodeExampleProps) {
 				</Reveal>
 
 				<Reveal className="mt-12">
-					<TerminalExample code={buildExampleCode(modelCount)} />
+					<TerminalExample code={buildExampleCode(modelId)} />
 				</Reveal>
 			</div>
 		</section>

@@ -2,7 +2,7 @@
 
 This document describes the platform as implemented. It is not a roadmap or a list of planned features.
 
-For where each tier runs and how to deploy it, see [`DEPLOYMENT.md`](DEPLOYMENT.md).
+For where each tier runs and how to deploy it, see [`DEPLOYMENT.md`](DEPLOYMENT.md). This is the source of truth for platform behavior and configuration; [`../BRAND.md`](../BRAND.md) owns visual and messaging guidance, and [`../README.md`](../README.md) is the repository entry point.
 
 ## Public host and API entry point
 
@@ -71,12 +71,17 @@ Users can fund the same internal balance with USDC on Base mainnet. Direct depos
 
 Agents can use the x402 funding flow:
 
-1. Sign an EIP-3009 USDC `transferWithAuthorization` for the configured treasury.
-2. Call `POST /x402/verify` with the signed envelope in `PAYMENT-SIGNATURE`.
-3. Call `POST /x402/settle` from an authenticated OMA session.
-4. Use an API key against the credited balance.
+1. Establish a SIWE website session with the wallet that will pay. Its linked EVM address must equal the USDC payer; an API key or email-only session cannot claim the payment.
+2. Read the current treasury address from `GET /api/v1/deposit/usdc`. Sign an EIP-3009 USDC `transferWithAuthorization` for that treasury and the intended amount.
+3. Call `POST /x402/verify` with the signed envelope in `PAYMENT-SIGNATURE`. **This endpoint broadcasts the transfer and waits for on-chain confirmation. It is not a dry run.** The facilitator pays gas. Save the returned `txHash`, `amount`, and `networkId`.
+4. Call `POST /x402/settle` with `{ txHash, networkId }` and the same payer's session cookie. Settlement credits the account balance; it does not initiate another transfer.
+5. Use an API key from that account against the credited balance. Ordinary chat inference does not issue a mid-request x402 challenge.
 
-Verification does not itself spend or credit an inference request. Settlement is idempotent, and the amount is derived from the verified payment.
+The standard v2 header is base64-encoded JSON with `x402Version: 2`, `accepted: { scheme: "exact", network: "eip155:8453", asset, amount, payTo }`, and `payload: { signature, authorization }`. Authorization contains `from`, `to`, `value`, `validAfter`, `validBefore`, and `nonce`. The accepted amount and authorization value are integer strings in atomic USDC units (6 decimals) and must match; the accepted recipient must match the signed recipient. The treasury and Base USDC contract are server-pinned. Legacy raw-JSON OMA envelopes and the older base64 `X-PAYMENT` header remain supported.
+
+A successful verify response returns top-level `{ valid: true, txHash, amount, networkId }`, with `amount` in decimal USDC. A successful settle response returns `{ settled: true, receipt, creditedCents }`; `receipt` is a signed string, and `PAYMENT-RESPONSE` is a base64 summary. Settlement accepts network `base` or `eip155:8453`, derives amounts from payment evidence, and preserves fractional credits.
+
+Crediting is idempotent by transaction hash. If the verification cache is lost after a server restart, settlement can recover a confirmed transfer from Base USDC Transfer logs and bind its payer to the session wallet. The transaction's gas payer is the facilitator and must not be confused with the USDC sender. If funds moved but crediting failed, retry settlement with the same hash and payer session. A verification timeout can return a hash with `valid: false`; reconcile its chain receipt before authorizing another payment. See [`settlement-runbook.md`](settlement-runbook.md) for recovery procedures.
 
 ## Why there are zero Polar meters
 
@@ -94,13 +99,21 @@ Programmatic API calls use an API key:
 Authorization: Bearer oma_sk_...
 ```
 
-Website sessions support email magic-link authentication and SIWE wallet authentication. Session cookies are accepted by authenticated account and funding endpoints. API keys and sessions are distinct from payment settlement: x402 verification uses the signed `PAYMENT-SIGNATURE`, while x402 settlement also requires an authenticated OMA identity.
+Website sessions support email magic-link authentication and SIWE wallet authentication. Better Auth owns the `oma`-prefixed `HttpOnly` session cookies, with `SameSite=Lax` and secure cookies on HTTPS deployments. Browser requests forward those cookies through the same-origin proxies; browser sessions are not API-key bearer tokens. Session cookies are accepted by authenticated account and funding endpoints. API keys and sessions are distinct from payment settlement: x402 verification uses the signed `PAYMENT-SIGNATURE`, while x402 settlement requires a SIWE session whose linked wallet matches the USDC payer; API keys do not authenticate settlement.
 
 The OpenAPI document is served at:
 
 ```text
 https://www.oma-ai.com/api/v1/openapi.json
 ```
+
+## Privacy and availability
+
+OMA does not persist prompt or completion content. It stores account, billing, and usage metadata required to operate the service. Upstream providers handle inference content according to their own policies, which can differ by provider and model; do not interpret the gateway's storage policy as a universal no-training or no-retention promise.
+
+The live model endpoint is the source of truth for current availability and prices. The bundled catalog is a fallback reference and must not be presented as a count of callable models. Website examples and animated request illustrations do not establish live availability.
+
+Settings opened with `?demo=1` are read-only previews, including when the visitor has a real session. The preview must preserve that flag while navigating, avoid fetching private account data, and disable profile changes, exports, session actions, preference changes, history clearing, and deletion.
 
 ## Required operator configuration
 

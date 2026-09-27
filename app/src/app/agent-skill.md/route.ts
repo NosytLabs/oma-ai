@@ -1,166 +1,145 @@
-/**
- * /agent-skill.md — autonomous setup instructions for AI agents.
- *
- * Referenced by /.well-known/agent-card.json (discovery.discovery.agentSkill)
- * and /llms.txt (Agent resources section). Plain Markdown so any agent
- * framework (Claude Code, Hermes, OpenCode, LangChain, Vercel AI SDK) can
- * read it directly without a JSON parser.
- *
- * Returns the canonical "how to use OMA" recipe:
- *   1. Discover models via /v1/models
- *   2. Authenticate (free: magic-link, paid: SIWE + USDC, programmatic: API key)
- *   3. Call /v1/chat/completions (OpenAI-compatible) or /v1/messages (Anthropic-compatible)
- *   4. Fund via x402 verify/settle (credits a balance), then spend with an API key
- *
- * URLs are resolved from env at request time so staging/preview
- * deployments advertise the right host instead of leaking prod URLs.
- */
-import { DEFAULT_API_URL } from "@/lib/config";
-import { MODEL_COUNT } from "@/lib/models-data";
-
+/** Public agent setup guide. Keep URLs on the canonical public proxy. */
 export const dynamic = "force-static";
 export const revalidate = 3600;
 
-function resolveSiteUrl(): string {
-	return (
-		process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") || "https://oma-ai.com"
-	);
-}
+const BODY = `# OMA AI — Agent Setup
 
-export function GET(): Response {
-	const siteUrl = resolveSiteUrl();
-	const apiUrl =
-		DEFAULT_API_URL?.replace(/\/+$/, "") || "https://www.oma-ai.com/api";
+> OpenAI-compatible inference with prepaid credits. Discover current model availability before making requests. Browser chat has a separate daily free allowance on eligible models.
 
-	const BODY = `# OMA AI — Agent Skill
+## Public endpoints
 
-> Drop-in OpenAI-compatible AI gateway with USDC credits on Base. Website free tier on 3 OMA-AI models; API keys for programmatic use. ${MODEL_COUNT} curated chat models. Use this skill to add OMA to your agent's toolbelt.
-
-## What is OMA?
-
-OMA-AI is a single OpenAI-compatible API endpoint that routes requests across curated AI model providers (Venice, OpenBroker/Gonka.AI). It handles:
-
-- **OpenAI-compatible API** — drop-in replacement for any OpenAI SDK.
-- **Anthropic-compatible API** — same models via \`/v1/messages\` for Anthropic SDK users.
-- **Three auth modes**:
-  1. **Magic-link email** — humans, free tier, no payment needed.
-  2. **SIWE (Sign-In with Ethereum)** — wallet-bound sessions, pay with USDC.
-  3. **API key** — machine-to-machine, \`oma_sk_...\` format, credit-billed.
-- **x402 settlement** — agents sign an EIP-3009 \`transferWithAuthorization\` envelope, verify + settle to credit a balance, then spend with an API key. Facilitator pays gas.
-
-## Quick start
-
-### 1. Discover models
-
-\`\`\`bash
-curl ${apiUrl}/v1/models
-\`\`\`
-
-Returns the live catalog with IDs, capabilities, and pricing.
-
-### 2. Free website chat (browser only — OpenBroker models)
-
-Unauthenticated free usage is for the website \`/chat\` surface with
-\`deepseek-v4-flash-0731-openbroker\` or \`minimax-m2-7\`. Direct API calls
-without a key return 401; use an API key for programmatic access.
-
-\`\`\`bash
-# Authenticated paid example (any catalog model):
-curl -X POST ${apiUrl}/v1/chat/completions \\
-  -H "Authorization: Bearer $OMA_API_KEY" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "model": "deepseek-v4-flash-0731-openbroker",
-    "messages": [{"role": "user", "content": "Say hi in one short sentence."}],
-    "max_tokens": 64
-  }'
-\`\`\`
-
-### 3. Make an authenticated request with an API key
-
-\`\`\`bash
-curl -X POST ${apiUrl}/v1/chat/completions \\
-  -H "Authorization: Bearer $OMA_API_KEY" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "model": "llama-3.3-70b",
-    "messages": [{"role": "user", "content": "Summarize the last 24h of AI news."}],
-    "stream": true
-  }'
-\`\`\`
-
-### 4. Fund with x402 (verify → settle → spend)
-
-\`\`\`bash
-# Step 1: Verify an EIP-3009 USDC authorization (PAYMENT-SIGNATURE header)
-curl -X POST ${apiUrl}/x402/verify \\
-  -H "Content-Type: application/json" \\
-  -H "PAYMENT-SIGNATURE: <signed envelope>"
-
-# Step 2: Settle from an authenticated OMA session to credit the balance
-curl -X POST ${apiUrl}/x402/settle \\
-  -H "Content-Type: application/json" \\
-  -H "Cookie: <session>" \\
-  -d '{"txHash":"0x...","networkId":"base"}'
-
-# Step 3: Spend with an API key as usual
-curl -X POST ${apiUrl}/v1/chat/completions \\
-  -H "Authorization: Bearer $OMA_API_KEY" \\
-  -H "Content-Type: application/json" \\
-  -d '{"model": "llama-3.3-70b", "messages": [{"role": "user", "content": "Hi"}]}'
-\`\`\`
-
-## Endpoints
+Use \`https://www.oma-ai.com/api/v1\` as the SDK base URL. The public website proxies the API; agents should not use internal backend hosts. x402 funding uses \`https://www.oma-ai.com/x402/*\`, outside \`/api/v1\`.
 
 | Endpoint | Purpose |
 |----------|---------|
-| \`POST ${apiUrl}/v1/chat/completions\` | OpenAI-compatible chat |
-| \`POST ${apiUrl}/v1/messages\` | Anthropic-compatible chat |
-| \`GET  ${apiUrl}/v1/models\` | Live model catalog |
-| \`POST ${apiUrl}/x402/verify\` | Verify a signed payment envelope |
-| \`POST ${apiUrl}/x402/settle\` | Settle a verified payment on-chain |
-| \`GET  ${siteUrl}/.well-known/agent-card.json\` | A2A Agent Card (machine-readable discovery) |
-| \`GET  ${siteUrl}/llms.txt\` | llms.txt index for crawlers |
-| \`GET  ${siteUrl}/docs\` | Full API reference |
+| \`GET https://www.oma-ai.com/api/v1/models\` | Catalog, availability, and prices |
+| \`POST https://www.oma-ai.com/api/v1/chat/completions\` | OpenAI-compatible inference |
+| \`POST https://www.oma-ai.com/api/v1/messages\` | Anthropic-compatible inference |
+| \`POST https://www.oma-ai.com/x402/verify\` | Validate and broadcast a signed USDC transfer, then wait for confirmation |
+| \`POST https://www.oma-ai.com/x402/settle\` | Credit the confirmed payment to the authenticated payer's account |
 
-## Auth
+## 1. Sign in and create an API key
 
-- **Free tier (no auth)**: 20 requests/day on free models via the website chat. No signup.
-- **Magic-link**: \`POST ${siteUrl}/api/auth/sign-in/magic-link\` with your email → check inbox → click link → session cookie issued.
-- **SIWE (wallet)**: \`POST ${siteUrl}/api/auth/sign-in/siwe\` with a signed EIP-4361 message → session cookie issued.
-- **API key**: Sign in once, then create an API key from the dashboard. Use \`Authorization: Bearer oma_sk_...\`.
+Use [sign in](https://www.oma-ai.com/login) with email or an EVM wallet, then create an \`oma_sk_...\` key in the [dashboard](https://www.oma-ai.com/dashboard?tab=api-keys). Send the key as \`Authorization: Bearer $OMA_API_KEY\` for programmatic inference.
 
-## Rate limits
+Website sessions and API keys are separate credentials. x402 settlement requires a SIWE wallet session whose linked wallet is the USDC payer. An API key or email-only session cannot claim that payment.
 
-- Anonymous: 20 req/day on free models (website chat only)
-- Authenticated (free tier): 100 req/day on free models
-- API key: per-key bucket, see \`/docs#rate-limits\`
+## 2. Select an available chat model
 
-## Error codes
+The following shell examples require \`curl\` and \`jq\`. They select from the live catalog instead of relying on a hardcoded model ID.
 
-| Code | Meaning |
-|------|---------|
-| 401 | Missing or invalid auth |
-| 402 | Payment required (x402 challenge issued — sign + retry with PAYMENT-SIGNATURE) |
-| 429 | Rate limit hit |
-| 502 | All upstream providers failed (gateway fell through circuit breakers) |
-| 503 | Maintenance window |
+\`\`\`bash
+set -e
+OMA_MODEL_ID=$(curl -fsS https://www.oma-ai.com/api/v1/models | \\
+  jq -er '[.data[] | select(.available != false and (.modality // "chat") == "chat")][0].id // error("No available chat model")')
+\`\`\`
 
-## Network details (x402)
+Review the chosen model's prices and capabilities in the [catalog](https://www.oma-ai.com/models). Availability can change between discovery and a request.
 
-- **Network**: Base mainnet (eip155:8453)
-- **Asset**: USDC (\`0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\`)
-- **Scheme**: EIP-3009 \`transferWithAuthorization\`
-- **Gas**: paid by gateway (agent signs only)
+## 3. Fund the prepaid balance and call the API
 
-## More info
+Use USDC on Base or card checkout when available at [Buy credits](https://www.oma-ai.com/deposit). All API-key inference uses prepaid credits, including models with a free allowance in browser chat.
 
-- Full docs: ${siteUrl}/docs
-- Pricing: ${siteUrl}/pricing
-- Models: ${siteUrl}/models
-- GitHub: https://github.com/NosytLabs
+\`\`\`bash
+jq -n --arg model "$OMA_MODEL_ID" '{
+  model: $model,
+  messages: [{role: "user", content: "Say hi in one short sentence."}],
+  max_tokens: 64
+}' | curl --fail-with-body https://www.oma-ai.com/api/v1/chat/completions \\
+  -H "Authorization: Bearer $OMA_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  --data-binary @-
+\`\`\`
+
+Ordinary chat requests do not issue a mid-request x402 challenge. A 402 for insufficient credits means fund the balance, then retry with the API key; do not attach a payment signature to the inference request.
+
+## 4. Optional x402 funding: transfer, credit, spend
+
+OMA supports USDC on Base mainnet (\`eip155:8453\`), contract \`0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\`. Read the current treasury address from authenticated \`GET https://www.oma-ai.com/api/v1/deposit/usdc\` before signing. Sign in with the same wallet that owns the USDC before starting the transfer.
+
+Prepare an EIP-712 \`TransferWithAuthorization\` signature over the EIP-3009 authorization tuple. The USDC domain is \`name: "USD Coin"\`, \`version: "2"\`, \`chainId: 8453\`, and the USDC contract above as \`verifyingContract\`. The tuple has \`from\`, \`to\`, \`value\`, \`validAfter\`, \`validBefore\`, and a fresh 32-byte \`nonce\`. \`value\` is in atomic USDC units (6 decimals); times are Unix seconds. The payer signs, and the facilitator broadcasts and pays transaction gas.
+
+Send a base64-encoded JSON v2 envelope in \`PAYMENT-SIGNATURE\`:
+
+\`\`\`json
+{
+  "x402Version": 2,
+  "accepted": {
+    "scheme": "exact",
+    "network": "eip155:8453",
+    "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "amount": "1000000",
+    "payTo": "<configured treasury address>"
+  },
+  "payload": {
+    "signature": "<0x-prefixed 65-byte signature>",
+    "authorization": {
+      "from": "<payer wallet address>",
+      "to": "<same configured treasury address>",
+      "value": "1000000",
+      "validAfter": "<Unix seconds>",
+      "validBefore": "<Unix seconds>",
+      "nonce": "<0x-prefixed 32-byte random nonce>"
+    }
+  }
+}
+\`\`\`
+
+This illustrative amount is 1 USDC. Replace all placeholders and choose the intended funding amount before signing. The accepted asset, recipient, and atomic amount must match the signed authorization. Legacy OMA raw-JSON \`PAYMENT-SIGNATURE\` envelopes and the older base64 \`X-PAYMENT\` header remain supported.
+
+**Calling \`/x402/verify\` broadcasts the transfer and waits for confirmation. It is not a dry run.** Signing locally does not itself transfer funds. A successful verification returns top-level \`valid\`, \`txHash\`, \`amount\`, and \`networkId\`; it has not yet credited the OMA balance.
+
+\`\`\`bash
+# PAYMENT_SIGNATURE is the base64-encoded signed envelope above.
+# OMA_SESSION_COOKIE is an existing SIWE session for the paying wallet.
+set -e
+curl --fail-with-body -X POST https://www.oma-ai.com/x402/verify \\
+  -H "PAYMENT-SIGNATURE: $PAYMENT_SIGNATURE" \\
+  -H "Content-Type: application/json" > verification.json
+jq -e '.valid == true' verification.json > /dev/null
+
+# Use the returned hash and network; do not supply an amount.
+jq '{txHash, networkId}' verification.json | \\
+  curl --fail-with-body https://www.oma-ai.com/x402/settle \\
+    -H "Content-Type: application/json" \\
+    --cookie "$OMA_SESSION_COOKIE" \\
+    --data-binary @-
+\`\`\`
+
+A successful settlement returns \`settled: true\`, a signed receipt string, and \`creditedCents\`; the \`PAYMENT-RESPONSE\` header contains a base64 receipt summary. One credit is one US cent, and fractional credits are preserved. Spend from the balance with the API key from that account.
+
+### Recovery and retries
+
+Save the transaction hash as soon as it is returned. If verification reports a pending/unconfirmed transaction with a \`txHash\`, check its Base receipt before signing another payment. Once the transfer succeeds, retry \`/x402/settle\` with the same hash and the same payer's session. Crediting is idempotent and recovers from the confirmed USDC Transfer log after a server restart; it does not depend only on an in-memory verification cache. A different account cannot claim the payment.
+
+If a transfer succeeded but credits are pending, retry settlement rather than making a second transfer. If no transaction hash was returned, reconcile the signed authorization's nonce and wallet activity before authorizing another payment. Keep private keys, session cookies, and signed envelopes out of logs and source control.
+
+## Errors and limits
+
+| Code | Action |
+|------|--------|
+| 400 | Check request format, network, asset, and payment fields |
+| 401 | Provide the credential required by that endpoint |
+| 402 | Inference balance is insufficient; fund credits and retry |
+| 403 | Check authorization; x402 payer must match the session wallet |
+| 409 | Payment was already credited to another account |
+| 422 | Payment verification or settlement failed; inspect the response and any returned transaction hash |
+| 429 | Wait for the indicated retry interval |
+| 500 | For confirmed payments with pending credit, retry settlement with the same hash |
+| 502 / 503 | Upstream or service unavailable; consult live status |
+
+Browser guest chat and signed-in free chat have daily allowances. API-key limits are separate. Read [rate limits](https://www.oma-ai.com/docs#rate-limits) and live usage responses for current limits.
+
+## References
+
+- [API and x402 docs](https://www.oma-ai.com/docs#x402)
+- [Pricing](https://www.oma-ai.com/pricing)
+- [Model catalog](https://www.oma-ai.com/models)
+- [Agent discovery](https://www.oma-ai.com/.well-known/agent-card.json)
+- [Machine-readable site index](https://www.oma-ai.com/llms.txt)
 `;
 
+export function GET(): Response {
 	return new Response(BODY, {
 		headers: {
 			"Content-Type": "text/markdown; charset=utf-8",

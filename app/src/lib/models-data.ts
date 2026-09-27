@@ -820,13 +820,13 @@ const FALLBACK_CATALOG: RawCatalog = {
 export const MODELS: Model[] = catalogFromRaw(FALLBACK_CATALOG);
 
 export function formatPricePerMillion(pricePer1M: number): string {
+	if (!Number.isFinite(pricePer1M)) return "—";
 	if (pricePer1M <= 0) return "$0.00";
-	// Round UP to the nearest $0.05 so every displayed price lands on a
-	// standardized billing increment (never awkward figures like $0.6125).
-	// Catalog prices are already $0.05 multiples; the ceil keeps it true
-	// even if an upstream raw rate ever slips into the list.
-	const rounded = Math.ceil(pricePer1M * 20) / 20;
-	return `$${rounded.toFixed(2)}`;
+	// Preserve catalog rates instead of inventing a higher billing increment.
+	return `$${pricePer1M.toLocaleString("en-US", {
+		minimumFractionDigits: 2,
+		maximumFractionDigits: 6,
+	})}`;
 }
 
 export function getModelsByTier(models: Model[]): Record<Tier, Model[]> {

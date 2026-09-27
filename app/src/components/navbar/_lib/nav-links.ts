@@ -43,7 +43,7 @@ export const toolsLinks: NavItem[] = [
 		href: "/deposit",
 		label: "Buy credits",
 		icon: Coins,
-		desc: "USDC on Base · card when enabled",
+		desc: "USDC on Base · card when available",
 	},
 	{
 		href: "/docs#endpoints",
@@ -80,7 +80,7 @@ export const mobileGroups: NavGroup[] = [
 	},
 	{
 		title: "tools",
-		caption: "compare · learn · ops",
+		caption: "fund · integrate · learn",
 		links: toolsLinks,
 	},
 ];

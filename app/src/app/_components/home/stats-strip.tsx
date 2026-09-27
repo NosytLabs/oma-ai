@@ -7,9 +7,9 @@
 
 import { useEffect, useState } from "react";
 import { Reveal } from "@/app/_components/home/reveal";
+import { isAvailableChatModel } from "./catalog-availability";
 import {
 	formatPricePerMillion,
-	MODEL_COUNT,
 	MODELS,
 	loadRawModelEntries,
 } from "@/lib/models-data";
@@ -32,15 +32,7 @@ const MIN_INPUT_PRICE = Math.min(
 export function countLiveModels(
 	entries: readonly { modality?: string; category?: string; available?: boolean }[],
 ): number {
-	return entries.filter((e) => {
-		if (e.available === false) return false;
-		const m = (e.modality ?? "").toLowerCase();
-		if (m) return m === "chat";
-		const c = (e.category ?? "").toLowerCase();
-		return (
-			c === "budget" || c === "mid" || c === "premium" || c === "frontier"
-		);
-	}).length;
+	return entries.filter(isAvailableChatModel).length;
 }
 
 function useLiveModelCount() {
@@ -58,10 +50,10 @@ function useLiveModelCount() {
 				// `MODEL_COUNT` claim. Unavailable entries are excluded by
 				// countLiveModels so the stat reports what can be called.
 				const chatCount = countLiveModels(entries);
-				setCount(chatCount > 0 ? chatCount : entries.length);
+				setCount(chatCount);
 			})
 			.catch(() => {
-				/* backend down — keep null → fall back to MODEL_COUNT */
+				/* Availability unknown — keep the placeholder instead of claiming the catalog is live. */
 			});
 		return () => {
 			alive = false;
@@ -74,8 +66,8 @@ const STATS: { label: string; value: string; hint: string; live?: boolean }[] =
 	[
 	{
 		label: "Models live",
-		value: `${MODEL_COUNT}`,
-		hint: "curated · Venice + OMA-AI",
+		value: "—",
+		hint: "checking live availability",
 		live: true,
 	},
 	{

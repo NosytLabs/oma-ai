@@ -74,7 +74,7 @@ const METHODS: {
 		label: "Card",
 		icon: Banknote,
 		tag: "Visa · Mastercard",
-		desc: "Card via Polar when enabled — no wallet needed.",
+		desc: "Card checkout when available — no wallet needed.",
 		rail: "card",
 	},
 	{
@@ -82,7 +82,7 @@ const METHODS: {
 		label: "x402",
 		icon: Zap,
 		tag: "Agent settle",
-		desc: "Verify and settle USDC to credit your balance, then spend with an API key.",
+		desc: "Transfer USDC with a signed authorization, then credit the paying wallet’s account.",
 		rail: "x402",
 	},
 ];
@@ -96,10 +96,10 @@ function PaymentMethodsInfo({
 		name: r.label,
 		desc:
 			r.key === "usdc"
-				? "Pay with your wallet — USDC sent directly to the Base treasury. Instant credit once confirmed."
+				? "Pay with your wallet — USDC sent directly to the Base treasury. Credits apply after confirmation."
 				: r.key === "card"
 					? "Visa, Mastercard, Apple Pay via Polar. No wallet, no USDC required."
-					: "Agents verify and settle USDC on Base to credit the same balance, then spend with an API key.",
+					: "Agents authorize a USDC transfer on Base, then claim credits with the paying wallet’s session.",
 		badge: r.badge,
 		reason: r.reason,
 	}));
@@ -192,11 +192,11 @@ function X402Info() {
 							x402 — agent USDC settlement
 						</h3>
 						<p className="mt-1 text-[12px] leading-relaxed text-text-secondary">
-							Agents fund with no card and no signup dance. The client signs
-							a USDC authorization on Base, POSTs it as a PAYMENT-SIGNATURE
-							to /x402/verify, then settles from an authenticated session.
-							Credits land on settlement; the agent spends with an API key.
-							Gas is paid by the facilitator.
+							Sign in with the wallet that will pay. Your agent signs a USDC
+							authorization on Base; verification broadcasts the transfer and
+							waits for confirmation. Settlement then credits that wallet’s
+							OMA account. API requests spend from those prepaid credits.
+							The facilitator pays transaction gas.
 						</p>
 					</div>
 				</div>

@@ -40,7 +40,8 @@ interface NavbarMobileMenuProps {
 // not part of the primary nav.
 const ACCOUNT_LINKS_AUTH: { href: string; label: string; icon: typeof Key }[] = [
 	{ href: "/dashboard", label: "dashboard", icon: LayoutDashboard },
-	{ href: "/deposit", label: "add credits", icon: Zap },
+	{ href: "/dashboard?tab=api-keys", label: "api keys", icon: Key },
+	{ href: "/deposit", label: "buy credits", icon: Zap },
 	{ href: "/settings", label: "settings", icon: Settings },
 ];
 
@@ -265,7 +266,7 @@ export function NavbarMobileMenu({
 								<button
 									type="button"
 									onClick={() => setConfirmDisconnect(true)}
-									className="mt-2 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-sm border border-red/30 px-3 py-2 text-sm font-medium text-red/80 transition-[color,border-color,background-color,transform] duration-200 ease-out hover:border-red/50 hover:bg-red/10 hover:text-red active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red"
+									className="mt-2 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-sm border border-error/30 px-3 py-2 text-sm font-medium text-error/80 transition-[color,border-color,background-color,transform] duration-200 ease-out hover:border-error/50 hover:bg-error/10 hover:text-error active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error"
 								>
 									<LogOut className="h-4 w-4" aria-hidden="true" />
 									<span>Sign out</span>
@@ -276,11 +277,11 @@ export function NavbarMobileMenu({
 									role="alertdialog"
 									aria-labelledby="mobile-disconnect-title"
 									aria-describedby="mobile-disconnect-body"
-									className="mt-2 rounded-sm border border-red/40 bg-red/5 p-3"
+									className="mt-2 rounded-sm border border-error/40 bg-error/5 p-3"
 								>
 									<p
 										id="mobile-disconnect-title"
-										className="text-xs font-semibold text-red"
+										className="text-xs font-semibold text-error"
 									>
 										Sign out?
 									</p>
@@ -304,7 +305,7 @@ export function NavbarMobileMenu({
 											type="button"
 											onClick={handleConfirmDisconnect}
 											disabled={disconnecting}
-											className="min-h-[44px] rounded-sm border border-red/40 bg-red/10 px-3 py-2 text-xs font-semibold text-red transition-colors duration-200 ease-out hover:bg-red/20 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red active:scale-[0.97]"
+											className="min-h-[44px] rounded-sm border border-error/40 bg-error/10 px-3 py-2 text-xs font-semibold text-error transition-colors duration-200 ease-out hover:bg-error/20 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error active:scale-[0.97]"
 										>
 											{disconnecting ? "Signing out…" : "Sign out"}
 										</button>

@@ -1,6 +1,7 @@
-import type { Model } from "@/lib/models-data";
+import { formatPricePerMillion, type Model } from "@/lib/models-data";
 
 export type Category = "all" | "frontier" | "premium" | "mid" | "budget";
+export type AvailabilityStatus = "checking" | "live" | "unavailable";
 
 export interface PricedModel {
 	id: string;
@@ -37,15 +38,8 @@ export function toPricedModel(model: Model): PricedModel {
 	};
 }
 
-/**
-	* Format a USD-per-1M price for display. Rounds to the nearest $0.05
-	* so we never show awkward 4-decimal figures like $0.6125. Below the
-	* rounding floor we just show the floor so the table stays visually
-	* balanced.
-	*/
+/** Use the same actual per-token rates as the model catalog. */
 export function fmtPrice(value: number): string {
 	if (value <= 0) return "Free";
-	if (value < 0.05) return "$0.05";
-	const rounded = Math.ceil(value * 20) / 20;
-	return `$${rounded.toFixed(2)}`;
+	return formatPricePerMillion(value);
 }

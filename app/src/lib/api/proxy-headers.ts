@@ -40,6 +40,7 @@ export function applyTrustedProxyHeaders(headers: ProxyHeaderSink): void {
 	for (const name of CLIENT_FORWARDING_HEADERS) {
 		headers.delete(name);
 	}
+	headers.delete(PROXY_SECRET_HEADER);
 	const proxySecret = process.env.INTERNAL_PROXY_SECRET;
 	if (proxySecret) {
 		headers.set(PROXY_SECRET_HEADER, proxySecret);

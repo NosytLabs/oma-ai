@@ -85,6 +85,12 @@ function parseSettingsTab(raw: string | null | undefined): SettingsTab | null {
 	return null;
 }
 
+function tabHref(pathname: string, tab: string, searchParams: URLSearchParams | { toString(): string } | null) {
+	const params = new URLSearchParams(searchParams?.toString());
+	params.set("tab", tab);
+	return `${pathname}?${params.toString()}`;
+}
+
 function SettingsPageContent() {
 	const { isAuthenticated, isDemo, isReady, evmAddress, signOut, user } =
 		useAuth();
@@ -95,9 +101,9 @@ function SettingsPageContent() {
 
 	const [error, setError] = useState<string | null>(null);
 	const sessionsQuery = useQuery({
-		queryKey: ["sessions"],
+		queryKey: ["sessions", isDemoView ? "demo" : user?.id],
 		queryFn: () => api.auth.listSessions(),
-		enabled: hasRealSession,
+		enabled: hasRealSession && !isDemoView,
 		staleTime: 60_000,
 	});
 	const sessions = sessionsQuery.data?.sessions ?? [];
@@ -129,11 +135,11 @@ function SettingsPageContent() {
 	useEffect(() => {
 		const raw = searchParams?.get("tab") ?? null;
 		if (raw === "api-keys" || raw === "keys") {
-			router.replace("/dashboard?tab=api-keys");
+			router.replace(tabHref("/dashboard", "api-keys", searchParams));
 			return;
 		}
 		if (raw === "privacy") {
-			router.replace("/settings?tab=danger", { scroll: false });
+			router.replace(tabHref("/settings", "danger", searchParams), { scroll: false });
 		}
 		const hash =
 			typeof window !== "undefined"
@@ -153,6 +159,7 @@ function SettingsPageContent() {
 	}, [sessionsQuery.error]);
 
 	const handleLogout = async () => {
+		if (isDemoView || !hasRealSession) return;
 		setDeleting(false);
 		try {
 			await signOut({ callbackURL: "/" });
@@ -162,6 +169,7 @@ function SettingsPageContent() {
 	};
 
 	const handleDeleteAccount = async () => {
+		if (isDemoView || !hasRealSession) return;
 		setDeleting(true);
 		try {
 			await api.auth.deleteAccount();
@@ -178,6 +186,7 @@ function SettingsPageContent() {
 	};
 
 	const handleRevokeSession = async (id: string) => {
+		if (isDemoView || !hasRealSession) return;
 		try {
 			await api.auth.revokeSession(id);
 			await sessionsQuery.refetch();
@@ -187,6 +196,7 @@ function SettingsPageContent() {
 	};
 
 	const handleRevokeOtherSessions = async () => {
+		if (isDemoView || !hasRealSession) return;
 		try {
 			await api.auth.revokeOtherSessions();
 			await sessionsQuery.refetch();
@@ -226,10 +236,10 @@ function SettingsPageContent() {
 						Demo tour · preview settings (read-only)
 					</span>
 					<Link
-						href="/login?next=/settings"
+						href={hasRealSession ? "/settings" : "/login?next=/settings"}
 						className="shrink-0 rounded-[var(--radius-sm)] bg-accent px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-void hover:bg-accent-bright"
 					>
-						Sign in for real settings
+						{hasRealSession ? "Exit demo" : "Sign in for real settings"}
 					</Link>
 				</div>
 			)}
@@ -304,7 +314,7 @@ function SettingsPageContent() {
 							const next = TABS[nextIdx];
 							if (!next) return;
 							setActiveTab(next.id);
-							router.replace(`/settings?tab=${next.id}`, { scroll: false });
+							router.replace(tabHref("/settings", next.id, searchParams), { scroll: false });
 							document.getElementById(`tab-${next.id}`)?.focus();
 						}}
 						className="flex w-full min-w-0 flex-row gap-1 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:w-auto lg:flex-col lg:overflow-visible lg:pb-0"
@@ -324,7 +334,7 @@ function SettingsPageContent() {
 									tabIndex={isActive ? 0 : -1}
 									onClick={() => {
 										setActiveTab(tab.id);
-										router.replace(`/settings?tab=${tab.id}`, { scroll: false });
+										router.replace(tabHref("/settings", tab.id, searchParams), { scroll: false });
 									}}
 								className={`group flex min-w-[4.5rem] flex-col items-center justify-center gap-0.5 rounded-[var(--radius-md)] border px-2 py-2 text-center text-[11px] transition-[border-color,background-color,color,transform] duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.97] sm:min-w-0 sm:text-xs lg:w-full lg:flex-row lg:items-center lg:justify-start lg:gap-3 lg:px-3 lg:py-2.5 lg:text-left lg:text-sm ${
 									isDanger
@@ -399,9 +409,9 @@ function SettingsPageContent() {
 								transition={springs.tab}
 							>
 								{activeTab === "profile" && (
-									<ProfileSection user={displayUser} evmAddress={isDemoView ? "0x1234...5678" : evmAddress} />
+									<ProfileSection readOnly={isDemoView} user={displayUser} evmAddress={isDemoView ? "0x1234...5678" : evmAddress} />
 								)}
-								{activeTab === "appearance" && <AppearanceSection />}
+								{activeTab === "appearance" && <AppearanceSection readOnly={isDemoView} />}
 								{activeTab === "sessions" && (
 									<SessionsSection
 										sessions={isDemoView ? [{ id: "demo-session", userAgent: "Chrome on macOS", createdAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 86400000).toISOString(), ipAddress: "127.0.0.1", isCurrent: true }] : sessions}
@@ -412,8 +422,9 @@ function SettingsPageContent() {
 								)}
 								{activeTab === "danger" && (
 									<div className="space-y-6">
-										<PrivacySection user={displayUser} />
+										<PrivacySection user={displayUser} readOnly={isDemoView} />
 										<DangerZoneSection
+											readOnly={isDemoView}
 											onDeleteAccount={handleDeleteAccount}
 											deleting={deleting}
 										/>

@@ -7,6 +7,7 @@ import { InViewFade } from "@/components/motion/in-view-fade";
 import { ModelLogo } from "@/components/ui/model-logo";
 import {
 	MODALITY_LABELS,
+	formatPricePerMillion,
 	type Model,
 	PROVIDER_COLORS,
 } from "@/lib/models-data";
@@ -47,7 +48,7 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 	return (
 		<InViewFade key={model.id} delay={index * 0.05} eager>
 			<article className="group relative rounded-[var(--radius-xl)] border border-border bg-panel p-5 transition-[border-color,transform] duration-200 ease-out hover:border-accent/40 shadow-[var(--shadow-md)] active:scale-[0.97] h-full flex flex-col">
-				<div className="flex items-start justify-between gap-3">
+				<div className="mb-4 flex flex-col gap-3">
 					<div className="min-w-0 flex-1 flex items-start gap-3">
 						<ModelLogo
 							modelId={model.id}
@@ -59,16 +60,16 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 								href={`/models/${model.id}`}
 								className="flex min-h-6 items-center rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel"
 							>
-								<p className="text-[15px] font-semibold tracking-tight text-text-bright line-clamp-2 leading-tight transition-colors group-hover:text-accent">
+								<p className="text-[15px] font-semibold tracking-tight text-text-bright break-words leading-snug transition-colors group-hover:text-accent">
 									{model.name ?? "Unknown"}
 								</p>
 							</Link>
-							<p className="text-[11px] text-text-muted mt-1.5 font-mono truncate">
+							<p className="text-[11px] text-text-muted mt-1.5 font-mono break-all">
 								{model.id}
 							</p>
 						</div>
 					</div>
-					<div className="flex flex-col items-end gap-2 shrink-0">
+					<div className="flex flex-wrap items-center gap-2">
 						{model.provider && (
 							<span
 								className={`px-2.5 py-1 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider border ${providerStyle.bg} ${providerStyle.text} ${providerStyle.border}`}
@@ -83,7 +84,7 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 						)}
 						{unavailable && (
 							<span
-								title="This model's provider key is not configured yet, so requests currently fail. Pricing shown is for when it comes online."
+								title="This model is currently unavailable. Prices are listed for reference; check availability before sending a request."
 								className="px-2.5 py-1 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider border border-amber/30 bg-amber/10 text-amber"
 							>
 								Unavailable
@@ -152,7 +153,7 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 				</div>
 				)}
 
-				<div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between text-xs">
+				<div className="mt-auto pt-4 border-t border-border/50 flex flex-wrap items-center justify-between gap-2 text-xs">
 					<span className="text-[11px] text-text-secondary font-mono tabular-nums">
 						{model.contextLength && model.contextLength !== "0"
 							? `${model.contextLength} ctx`
@@ -185,12 +186,7 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 									}
 									aria-hidden="true"
 								>
-									$
-									{typeof model.inputPricePer1M === "number"
-										? model.inputPricePer1M < 0.01
-											? model.inputPricePer1M.toFixed(4)
-											: model.inputPricePer1M.toFixed(2)
-										: "—"}
+									{typeof model.inputPricePer1M === "number" ? formatPricePerMillion(model.inputPricePer1M) : "—"}
 								</span>
 								<span className="text-text-muted" aria-hidden="true">
 									&middot;
@@ -199,12 +195,7 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 									className={unavailable ? "text-text-muted" : "text-text-secondary"}
 									aria-hidden="true"
 								>
-									$
-									{typeof model.outputPricePer1M === "number"
-										? model.outputPricePer1M < 0.01
-											? model.outputPricePer1M.toFixed(4)
-											: model.outputPricePer1M.toFixed(2)
-										: "—"}
+									{typeof model.outputPricePer1M === "number" ? formatPricePerMillion(model.outputPricePer1M) : "—"}
 								</span>
 							</>
 						)}
@@ -213,10 +204,10 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 				<span className="sr-only">
 					{isNonChat && typeof model.pricePerUnit === "number"
 						? `Price ${model.pricePerUnit.toFixed(model.pricePerUnit < 0.1 ? 4 : 3)}${model.priceUnit ?? ""}`
-						: `Input $${typeof model.inputPricePer1M === "number" ? model.inputPricePer1M.toFixed(model.inputPricePer1M < 0.01 ? 4 : 2) : "?"} per 1M tokens, output $${typeof model.outputPricePer1M === "number" ? model.outputPricePer1M.toFixed(model.outputPricePer1M < 0.01 ? 4 : 2) : "?"} per 1M tokens`}
+						: `Input ${typeof model.inputPricePer1M === "number" ? formatPricePerMillion(model.inputPricePer1M) : "?"} per 1M tokens, output ${typeof model.outputPricePer1M === "number" ? formatPricePerMillion(model.outputPricePer1M) : "?"} per 1M tokens`}
 				</span>
 				{unavailable ? (
-					<p className="text-[11px] font-mono font-semibold uppercase tracking-wider text-text-muted">
+					<p className="mt-3 text-[11px] font-mono font-semibold uppercase tracking-wider text-text-muted">
 						Temporarily offline
 					</p>
 				) : (

@@ -27,7 +27,7 @@ import {
 } from "@/app/_components/home/reveal";
 import { SectionHeader } from "@/app/_components/home/section-header";
 import { cn } from "@/components/ui/utils";
-import { MODEL_COUNT, MODELS, formatPricePerMillion } from "@/lib/models-data";
+import { MODELS, formatPricePerMillion } from "@/lib/models-data";
 
 // Cheapest catalog input rate — derived from the synced fallback catalog so
 // the marketing "from" figure always matches the real price list.
@@ -54,13 +54,13 @@ const PILLARS: Pillar[] = [
 	eyebrow: "Pay with credits",
 	title: "Prepaid credits",
 	description:
-	"Deposit USDC on Base, or use card checkout when the operator enables Polar. Spend against any model at listed rates. No subscription lock-in.",
+	"Fund your balance with USDC on Base or card checkout when available. Use those credits across available models at listed rates. No subscription lock-in.",
 	icon: Banknote,
 	href: "/pricing",
 	cta: "View pricing",
 	accent: "emerald",
 	highlights: [
-	"USDC · optional card checkout",
+	"USDC · card when available",
 	"Usage-based spend",
 	"No monthly minimum",
 	],
@@ -106,7 +106,7 @@ const SUPPORT = [
 	id: "routing",
 	icon: Zap,
 	title: "Live routing + failover",
-	body: `Circuit-breaker failover across ${MODEL_COUNT} curated models.`,
+	body: "Circuit-breaker protection and fallback routes across the curated catalog.",
 	href: "/docs#endpoints",
 	},
 	{
@@ -120,7 +120,7 @@ const SUPPORT = [
 	id: "polar-info",
 	icon: CreditCard,
 	title: "Polar card checkout",
-	body: "When enabled, checkout is hosted by Polar and card details never touch OMA.",
+	body: "Card checkout, when available, is hosted by Polar. Card details never touch OMA.",
 	href: "/pricing",
 	},
 ] as const;
@@ -187,7 +187,7 @@ function CardMockup({ lineClass }: { lineClass: string }) {
 	<span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
 	+ $25 · settled
 	</span>
-	<span className="font-mono text-[10px] text-accent">1:1 USD</span>
+	<span className="font-mono text-[10px] text-accent">1 credit = 1¢</span>
 	</div>
 	</div>
 	</div>

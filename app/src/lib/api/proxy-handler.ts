@@ -34,6 +34,7 @@ export async function proxy(req: NextRequest) {
 		const res = await fetch(url, {
 			method: req.method,
 			headers,
+			redirect: "manual",
 			body: ["GET", "HEAD"].includes(req.method) ? undefined : req.body,
 			duplex: "half",
 			signal: AbortSignal.timeout(120_000),

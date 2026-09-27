@@ -5,8 +5,8 @@
   "private": true,
   "scripts": {
     "build": "next build --webpack",
-    "analyze": "ANALYZE=true next build",
-    "dev": "next dev",
+    "analyze": "ANALYZE=true next build --webpack",
+    "dev": "next dev --webpack",
     "lint": "eslint",
     "start": "next start",
     "test": "vitest run",

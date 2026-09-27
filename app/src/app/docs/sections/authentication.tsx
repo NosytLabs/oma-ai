@@ -37,7 +37,7 @@ func main() {
 				id="authentication"
 				icon={<Key className="h-5 w-5" />}
 				title="Authentication"
-				subtitle="Paid models and the public API need a Bearer API key (or wallet session). Free OMA-AI website chat does not."
+				subtitle="Programmatic inference uses a Bearer API key. Website accounts use email or wallet sessions; eligible free website chat also works without sign-in."
 			/>
 
 			<div
@@ -48,17 +48,11 @@ func main() {
 					Free OMA-AI models (website chat)
 				</h3>
 			<p className="text-sm text-text-muted mb-2">
-				The 3 OMA-AI models
-				(<code className="text-accent font-mono text-xs">provider: oma-ai</code>
-				) — <code className="text-accent font-mono text-xs">deepseek-v4-flash-0731-openbroker</code>{" "}
-				and{" "}
-				<code className="text-accent font-mono text-xs">minimax-m2-7</code> and{" "}
-				<code className="text-accent font-mono text-xs">zai-org-glm-5-3</code> — can be
-				used on <code className="text-accent font-mono text-xs">/chat</code>{" "}
-				without sign-in, API key, or wallet (20 msgs/day anonymous, 100/day signed-in). Top up credits to unlock the entire Venice catalog, unlimited concurrency, and dedicated throughput.
+				Eligible OMA-AI models can be used on <code className="text-accent font-mono text-xs">/chat</code>{" "}
+				without an API key or wallet (20 msgs/day anonymous, 100/day signed-in), subject to live model availability. The chat model selector shows the current free options. Prepaid credits cover paid requests; rate limits still apply.
 			</p>
 			<p className="text-sm text-text-muted">
-				API-key calls (<code className="text-accent font-mono text-xs">Authorization: Bearer oma_sk_…</code>) always spend credits — even on the 3 free website-chat models. Free usage applies to browser website chat only, never to programmatic API traffic.
+				API-key calls (<code className="text-accent font-mono text-xs">Authorization: Bearer oma_sk_…</code>) always spend credits, including models eligible for free website chat. Free usage applies to browser website chat only, never to programmatic API traffic.
 			</p>
 			</div>
 
@@ -116,7 +110,7 @@ func main() {
 					<ol className="list-decimal list-inside space-y-1.5 text-sm text-text-muted">
 						<li>Enter your email address on the login page</li>
 						<li>Click the link sent to your inbox within 5 minutes</li>
-						<li>Your API key is generated automatically on first sign-in</li>
+						<li>Create an API key in the dashboard and save it when shown</li>
 						<li>Credits can be added via USDC on Base (card when Polar is enabled)</li>
 					</ol>
 				</div>
@@ -137,7 +131,7 @@ func main() {
 					<ol className="list-decimal list-inside space-y-1.5 text-sm text-text-muted">
 						<li>Click &quot;Connect Wallet&quot; on the login page</li>
 						<li>Sign a SIWE message with your wallet (no gas cost)</li>
-						<li>Your API key is generated automatically on first sign-in</li>
+						<li>Create an API key in the dashboard and save it when shown</li>
 						<li>Use the key with any OpenAI-compatible SDK</li>
 					</ol>
 				</div>

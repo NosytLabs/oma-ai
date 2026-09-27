@@ -117,10 +117,11 @@ export function useModelFilters() {
 	useEffect(() => {
 		let cancelled = false;
 		loadModels().then((models) => {
-			if (!cancelled) {
-				setLiveModels(models);
-				setIsLoadingModels(false);
-			}
+			if (!cancelled) setLiveModels(models);
+		}).catch(() => {
+			// Keep the fallback catalog, without claiming its models are live.
+		}).finally(() => {
+			if (!cancelled) setIsLoadingModels(false);
 		});
 		return () => {
 			cancelled = true;
@@ -308,12 +309,13 @@ export function useModelFilters() {
 
 	const totalModels = safeModels.length;
 	const visibleModels = filtered.length;
-	// How many are actually accepting requests. Uses the canonical availability
-	// rule so this headline can never disagree with /pricing, the sitemap or
-	// the docs — they all read the same predicate now.
+	// loadModels returns the exact MODELS reference on a network failure.
+	// That fallback describes the catalog, not current route availability.
 	const availableCount = useMemo(
-		() => selectAvailableModels(safeModels).length,
-		[safeModels],
+		() => liveModels !== null && liveModels !== MODELS
+			? selectAvailableModels(liveModels).length
+			: null,
+		[liveModels],
 	);
 
 	const handleSearch = (value: string) => {

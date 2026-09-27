@@ -28,6 +28,9 @@ describe("auth-client (Better Auth browser surface)", () => {
 });
 
 describe("safeLoginNext open-redirect guard (shipped login page)", () => {
+	it.each(["/\\evil.com", "/\t/evil.com", "/\n/evil.com", "/\r/evil.com"])("rejects browser-normalized external paths: %s", (path) => {
+		expect(safeLoginNext(path)).toBe("/dashboard");
+	});
 	it("accepts same-origin relative paths only", () => {
 		expect(safeLoginNext(null)).toBe("/dashboard");
 		expect(safeLoginNext(undefined)).toBe("/dashboard");
