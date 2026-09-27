@@ -48,11 +48,11 @@ function hostMatches(origin: string, allowed: string): boolean {
 	} catch {
 		return false;
 	}
-	// SECURITY (audit 2026-09-27 / P2): compare protocol as well as host.
-	// Without this an http:// origin satisfies an https:// allowlist entry —
-	// a protocol downgrade. The apex/www allowance stays: those are the same
-	// site by definition of the redirect.
-	if (o.protocol !== a.protocol && !(o.protocol === "http:" && o.port === "")) {
+	// SECURITY (audit 2026-09-27 / P2): compare protocol strictly as well as
+	// host. Without this an http:// origin satisfies an https:// allowlist
+	// entry — a protocol downgrade. The apex/www allowance stays: those are
+	// the same site by definition of the 308 redirect.
+	if (o.protocol !== a.protocol) {
 		return false;
 	}
 	const strip = (h: string) => h.replace(/^www\./, "");
