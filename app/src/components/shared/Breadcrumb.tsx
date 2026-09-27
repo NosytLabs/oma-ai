@@ -29,7 +29,7 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
 		>
 			<Link
 				href="/"
-				className="hover:text-[var(--color-accent)] transition-colors duration-200 ease-out"
+				className="inline-flex h-6 w-6 items-center justify-center -m-1 hover:text-[var(--color-accent)] transition-colors duration-200 ease-out"
 				aria-label="Home"
 			>
 				<Home className="h-3.5 w-3.5" />
@@ -40,7 +40,7 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
 					{i < items.length - 1 && item.href ? (
 						<Link
 							href={item.href}
-							className="hover:text-[var(--color-accent)] transition-colors duration-200 ease-out"
+							className="inline-flex min-h-6 items-center -my-1 hover:text-[var(--color-accent)] transition-colors duration-200 ease-out"
 						>
 							{item.label}
 						</Link>

@@ -70,7 +70,7 @@ const PAYMENT_METHODS = [
 	{
 		icon: CreditCard,
 		title: "Card checkout · when enabled",
-		desc: "Where the operator has enabled Polar, buy credits by card without a wallet.",
+		desc: "Where card checkout is available, buy credits by card without a wallet.",
 		tag: "Optional",
 		tagStyle: "bg-accent-dim text-accent border border-accent/30",
 	},
@@ -140,7 +140,7 @@ const FAQ_ITEMS = [
 	},
 	{
 		q: "What payment methods are accepted?",
-		a: "USDC direct on Base at 1:1 USD, plus x402 verify/settle to credit your balance for agent workflows. Card checkout through Polar is available only when the operator has configured and enabled it; the credits page shows its live status.",
+		a: "USDC direct on Base at 1:1 USD, plus x402 verify/settle to credit your balance for agent workflows. Card checkout is offered as an optional rail; the credits page always shows which rails are live right now.",
 	},
 	{
 		q: "Is there a free tier?",

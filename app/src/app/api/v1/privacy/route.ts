@@ -28,8 +28,8 @@ const PRIVACY_MANIFEST = {
 				"email (optional — required for magic-link + OTP, derived for SIWE-only)",
 				"wallet_address (lowercased EVM address; populated when SIWE is used)",
 				"user_id (Better Auth UUID, primary key)",
-				"suspended (boolean + reason; set by operators for policy violations)",
-				"role (default 'user'; 'admin' for operators)",
+				"suspended (boolean + reason; set by OMA for policy violations)",
+				"role (default 'user'; 'admin' for OMA staff)",
 			],
 			retention:
 				"Until the user requests deletion via DELETE /account. The user row + linked creditBalances + sessions are removed in a single transaction.",

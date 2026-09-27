@@ -373,7 +373,13 @@
 
 	.page-shell {
 		position: relative;
-		min-height: calc(100dvh - 3.5rem);
+		/* Cap the shell at ~70dvh instead of the full viewport: pages
+		   whose content is shorter than the viewport (login, deposit,
+		   status, model detail) were stretching `min-height: 100dvh-3.5rem`
+		   which produced a ~480px dead band between the last content block
+		   and the footer. 70dvh keeps short pages breathing without
+		   manufacturing a void; tall pages are unaffected (min-height only). */
+		min-height: min(70dvh, calc(100dvh - 3.5rem));
 		padding-left: 0;
 		padding-right: 0;
 	}

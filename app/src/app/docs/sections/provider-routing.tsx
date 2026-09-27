@@ -85,8 +85,8 @@ export function ProviderRoutingSection() {
 			</div>
 
 			<p className="mt-4 text-xs leading-relaxed text-text-muted">
-				A deployment may optionally enable an internal compatible fallback for
-				mapped models. If a primary provider fails and that fallback is used,
+				A mapped model may also have a compatible fallback provider configured.
+				If a primary provider fails and that fallback is used,
 				request content must be forwarded to the inference service that actually
 				handles the retry. The public model id and listed customer price do not
 				change. See <a href="/privacy" className="text-accent underline underline-offset-2">Privacy</a> for data-flow details.

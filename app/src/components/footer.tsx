@@ -137,8 +137,11 @@ export function Footer() {
 		OPERATIONS,
 	];
 
-	// Viewport-locked app surfaces — a footer below them creates a
-	// black strip and extra scroll (composer / dashboards fall off-screen).
+	// Viewport-locked app surfaces only — the chat composer, dashboards,
+	// admin and settings shells. /login KEEPS the footer: it is a public
+	// conversion route and previously rendered with no legal/nav links at
+	// all (footer null ⇒ no Terms/Privacy on the sign-in path). The
+	// footer's own 480px stack below the login card is intentional.
 	if (
 		pathname === "/chat" ||
 		pathname.startsWith("/chat/") ||
@@ -147,9 +150,7 @@ export function Footer() {
 		pathname === "/settings" ||
 		pathname.startsWith("/settings/") ||
 		pathname === "/admin" ||
-		pathname.startsWith("/admin/") ||
-		pathname === "/login" ||
-		pathname.startsWith("/login/")
+		pathname.startsWith("/admin/")
 	) {
 		return null;
 	}

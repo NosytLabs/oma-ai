@@ -89,7 +89,7 @@ const response = await client.chat.completions.create({
 				<nav aria-label="Breadcrumb" className="mb-6 text-xs text-text-muted">
 					<Link
 						href="/models"
-						className="hover:text-accent transition-colors duration-200 ease-out"
+						className="inline-flex min-h-6 items-center -my-1 hover:text-accent transition-colors duration-200 ease-out"
 					>
 						← All models
 					</Link>

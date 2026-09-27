@@ -65,7 +65,7 @@ const ENTRIES: {
 	{
 		date: "2026-09-05",
 		title: "Free website chat fixed for guests",
-		body: "A non-standard parameter in our internal failover hints was rejected by the upstream inference network, which made free-tier chat stream empty replies for signed-out visitors. Failover hints are now stripped at the provider boundary — guests get real responses again.",
+		body: "A non-standard parameter in our provider-failover hints was rejected by the upstream inference network, which made free-tier chat stream empty replies for signed-out visitors. Failover hints are now stripped at the provider boundary — guests get real responses again.",
 		tags: ["fix", "chat"],
 	},
 	{

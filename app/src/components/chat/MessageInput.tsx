@@ -342,7 +342,7 @@ export const MessageInput = forwardRef<
 
 						<p
 							id="message-hint"
-							className="hidden select-none truncate font-mono text-[10px] tracking-wide text-text-muted/70 sm:inline"
+							className="hidden select-none truncate font-mono text-[10px] tracking-wide text-text-muted sm:inline"
 						>
 							Enter ↵ send · Shift+Enter newline
 						</p>

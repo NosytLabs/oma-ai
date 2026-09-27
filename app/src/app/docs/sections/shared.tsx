@@ -261,7 +261,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 		path: "/v1/checkout",
 		anchor: "ep-checkout",
 		title: "Polar Checkout",
-		desc: "Creates a Polar hosted-checkout session for Hobby ($10/1000cr), Builder ($50/5000cr), or Scale ($250/25000cr). Available only when the operator has configured and enabled Polar; otherwise returns 503. Polar's webhook credits the user on order.paid.",
+		desc: "Creates a Polar hosted-checkout session for Hobby ($10/1000cr), Builder ($50/5000cr), or Scale ($250/25000cr). Available when card checkout is enabled; otherwise returns 503. The account is credited automatically once the payment is confirmed.",
 		auth: "Bearer token (API key)",
 		body: {
 			plan: 'string (required). "hobby" | "builder" | "scale"',
