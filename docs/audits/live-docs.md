@@ -61,7 +61,7 @@ Status: OPEN
 Fix: one clarifying clause that example ships 100, doc shows 0 disabled.
 Status: OPEN
 
-### [D-12] BRAND.md:46 says og-image.webp; actual file is og-image.png.
+### [D-12] BRAND.md:46 says og-image.png; actual file is og-image.png.
 Fix: update BRAND.md.
 Status: OPEN
 

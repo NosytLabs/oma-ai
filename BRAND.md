@@ -43,7 +43,7 @@ Our browser favicon features a transparent background with a hairline void keyli
 | **Lockup Logo** | `app/public/logos/oma-logo.svg` | Formal horizontal logo lockup with wordmark |
 | **Wordmark Alias** | `app/public/logos/oma-wordmark.svg` | Same lockup as `oma-logo.svg` (stable URL for external consumers) |
 | **Apple Touch Icon** | `app/public/apple-touch-icon.png` | iOS home-screen icon featuring a solid void background |
-| **Open Graph Card** | `app/public/og-image.webp` | 1280×720 branding image (includes slogan, no raw hex codes) |
+| **Open Graph Card** | `app/public/og-image.png` | 1280×720 branding image (includes slogan, no raw hex codes) |
 | **Marketing kit** | `app/public/logos/brand-kit/` | Promo/lockup rasters only — not a second copy of live vectors |
 
 > **Raster Editing Note:** Derive raster outputs from the existing icon SVG/PNG sources. Do not freeform-regenerate SVG structures. Render and deploy sized PNG outputs directly to their correct public directories.
@@ -56,7 +56,7 @@ Before a production deployment, ensure the following core assets are correctly v
 - [ ] `apple-touch-icon.png` is optimized for high-density mobile displays.
 - [ ] `logos/oma-icon-192.png` and `logos/oma-icon-512.png` are declared in the PWA manifest.
 - [ ] `logos/oma-logo.svg` is used for official marketing collaterals.
-- [ ] `og-image.webp` contains our accurate slogan (no technical color codes).
+- [ ] `og-image.png` contains our accurate slogan (no technical color codes).
 - [ ] `oma-logo.tsx` correctly handles current CSS theme tokens.
 
 ---

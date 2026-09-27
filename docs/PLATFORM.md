@@ -119,12 +119,17 @@ Settings opened with `?demo=1` are read-only previews, including when the visito
 
 Production requires durable Postgres and Redis-compatible rate-limit state, real authentication secrets, real Base addresses and RPC configuration, and valid inference-provider credentials. At minimum, set the following for each deployed server environment.
 
+### Inference providers
+
+- `LITELLM_API_KEY` and `LITELLM_API_URL`: NVIDIA upstream access via LiteLLM, used by the provider-route fallback path.
+
 ### Core and data stores
 
 - `DATABASE_URL`: Neon Postgres connection string. This is the authoritative credit-ledger store.
 - `REDIS_URL` or the Upstash REST pair `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`: rate-limit and daily-counter state.
 - `CONNECTION_POOL_SIZE`: pool size appropriate for the deployed runtime.
 - `TRUSTED_PROXY_IPS`: comma-separated reverse-proxy egress IPs allowed to supply trusted client IPs.
+- `INTERNAL_PROXY_SECRET`: shared secret between the Vercel frontend proxy handlers (`app/api/**`) and the Neon API. The frontend forwards it on every proxied hop; the server rejects unauthenticated proxied traffic. Required, live-billing safety relevant.
 
 ### Public URLs, CORS, and authentication
 
@@ -187,7 +192,7 @@ The three product IDs must point to the one-time Hobby, Builder, and Scale credi
 
 ### Optional service configuration
 
-- `FREE_SIGNUP_CENTS`: new-account trial credit amount; `0` disables it.
+- `FREE_SIGNUP_CENTS`: new-account trial credit amount; `0` disables it. The tracked .env.example ships `100`; set `0` to disable.
 - `DEFAULT_KEY_EXPIRY_DAYS`: API-key lifetime; `0` means keys do not expire by default.
 - `MODELS_CONFIG_PATH` and `MODEL_OVERRIDES_PATH`: optional server catalog and runtime override files.
 - `OTEL_EXPORTER_OTLP_ENDPOINT` and `OTEL_SERVICE_NAME`: optional observability settings.

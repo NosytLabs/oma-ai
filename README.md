@@ -158,8 +158,9 @@ oma-ai/
 ├── scripts/
 │   ├── dev/               # Local dev helpers (DB, Chrome debug)
 │   └── ops/               # Prod launch helpers
-├── deploy/                 # Coolify / Docker Compose snippets
-├── docker-compose*.yml     # Local / production compose
+├── deploy/                 # Release status + self-host notes (Coolify/Compose unused in prod)
+├── docker-compose*.yml     # Self-host compose (NOT the production path — see docs/DEPLOYMENT.md)
+├── server/neon.ts          # Neon IaC manifest (functions, cron, schema)
 ├── BRAND.md               # Design tokens, voice, logo rules
 ├── SECURITY.md            # Security policy
 └── README.md

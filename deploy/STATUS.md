@@ -50,9 +50,11 @@ inference separately with the model catalog/status surface or a real
 ### Web
 
 Vercel serves the Next.js application and the public `/api/*` handlers.
-Authenticated proxy handlers translate the HttpOnly application session into
-the authorization expected by the backend. Do not replace that path with a
-blind rewrite.
+App Router handlers under `app/api/**` proxy same-origin `/api/*` traffic to
+the Neon endpoint via INTERNAL_PROXY_SECRET. They forward method, headers, body
+and cookies verbatim and authenticate the Vercel-to-Neon hop; they do NOT
+translate Better Auth session cookies into bearer tokens. Do not replace that
+path with a blind rewrite.
 
 ### API and database
 

@@ -7,7 +7,7 @@ const PAGES = [
   { name: 'home', path: '/' },
   { name: 'models', path: '/models' },
   { name: 'models-detail-claude', path: '/models/claude-opus-5' },
-  { name: 'models-detail-kimi', path: '/models/kimi-k2-6' },
+  { name: 'models-detail-kimi', path: '/models/kimi-k3' },
   { name: 'pricing', path: '/pricing' },
   { name: 'chat', path: '/chat' },
   { name: 'dashboard', path: '/dashboard' },
