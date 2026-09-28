@@ -38,7 +38,7 @@ export function AppearanceSection({ readOnly = false }: { readOnly?: boolean }) 
 				<div>
 					<h2
 						id="settings-appearance-heading"
-						className="text-lg font-semibold text-text-bright"
+						className="font-sans text-lg font-semibold text-text-bright"
 					>
 						Appearance
 					</h2>

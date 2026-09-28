@@ -41,7 +41,7 @@ export function PrivacySection({ user, readOnly = false }: PrivacySectionProps) 
 	return (
 		<div>
 			<div className="mb-4">
-				<h2 className="text-lg font-semibold text-text-bright">
+				<h2 className="font-sans text-lg font-semibold text-text-bright">
 					Privacy &amp; data
 				</h2>
 				<p className="mt-1 text-sm text-text-muted">

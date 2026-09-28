@@ -24,29 +24,26 @@ Brand guidelines for **OMA AI** (**Open Model Access**): visual identity, brand 
 
 ### The Logo Mark
 
-The OMA AI Logo represents an **open gateway aperture**:
-- A broken emerald ring opened at the 3 o'clock position (signifying *open access*).
-- A terminal-style prompt chevron (`>`) pointing outward through the opening.
-- A live signal dot floating inside the gap (symbolizing *token emission*).
+The OMA mark is a **folded O/M loop**: two rounded peaks meet above an open center, with a continuous lower loop. It pairs with an uppercase `OMA` wordmark. The symbol was developed from a new generated logo concept and refined into deterministic vector geometry for small-screen use.
 
-Our browser favicon features a transparent background with a hairline void keyline to ensure visibility on both light and dark browser tabs. Badges sit on a solid void terminal plate.
+`app/src/lib/brand-mark.json` is the geometry source shared by the inline React mark and the complete asset generator. Inline marks inherit the user's accent theme; downloadable assets use emerald. Browser and app icons sit on a solid void plate for contrast. The maskable PWA icon has its own padded safe-zone export.
 
 ### Logo & Asset Registry
 
 | Asset | Project Path | Description |
 | :--- | :--- | :--- |
 | **UI Component** | `app/src/components/ui/oma-logo.tsx` | Pure vector React component for inline rendering |
-| **Vector Favicon** | `app/public/favicon.svg` | Transparent, multi-tab safe browser favicon |
-| **Master Icon Badge** | `app/public/logos/oma-icon.svg` | Master void badge SVG (the source for raster conversions) |
+| **Vector Favicon** | `app/public/favicon.svg` | Void-backed browser favicon |
+| **Master Icon Badge** | `app/public/logos/oma-icon.svg` | Generated void badge SVG |
 | **Raster Favicons** | `app/public/favicon-16x16.png`, `favicon-32x32.png` | Standard browser tab fallback graphics |
-| **App Icons** | `app/public/logos/oma-icon-192.png`, `oma-icon-512.png` | Manifest assets generated directly from `oma-icon.svg` |
+| **App Icons** | `app/public/logos/oma-icon-192.png`, `oma-icon-512.png` | Manifest assets generated from shared geometry |
 | **Lockup Logo** | `app/public/logos/oma-logo.svg` | Formal horizontal logo lockup with wordmark |
 | **Wordmark Alias** | `app/public/logos/oma-wordmark.svg` | Same lockup as `oma-logo.svg` (stable URL for external consumers) |
 | **Apple Touch Icon** | `app/public/apple-touch-icon.png` | iOS home-screen icon featuring a solid void background |
 | **Open Graph Card** | `app/public/og-image.png` | 1280×720 branding image (includes slogan, no raw hex codes) |
 | **Marketing kit** | `app/public/logos/brand-kit/` | Promo/lockup rasters only — not a second copy of live vectors |
 
-> **Raster Editing Note:** Derive raster outputs from the existing icon SVG/PNG sources. Do not freeform-regenerate SVG structures. Render and deploy sized PNG outputs directly to their correct public directories.
+> Run `pnpm --filter app brand:generate` after editing the shared geometry. The script regenerates SVGs, PNGs, a real multi-resolution ICO, app icons, social cards and the marketing kit using Sharp. Do not maintain separate hand-edited copies of the mark.
 
 ### Brand Kit Checklist
 
@@ -63,7 +60,7 @@ Before a production deployment, ensure the following core assets are correctly v
 
 ## Typography & Nomenclature
 
-- **Wordmark Style:** Lowercase `oma` using sans-serif typography with tight letter-tracking.
+- **Wordmark Style:** Uppercase `OMA` using semibold sans-serif typography with light letter spacing.
 - **Tagline Text:** Monospace typography rendering `OPEN MODEL ACCESS`.
 - **Accent Themes:** The dark "void" background is fixed globally. Users can switch their primary **Accent Color** via the `ThemeToggle`:
   - `emerald` (Default brand color)
@@ -166,12 +163,12 @@ the base `.btn-mono` slab with a modifier class:
 
 ### Navigation Hierarchy
 
-- **Global Navigation:** Stick header fixed at `h-14` featuring standard backdrop-blur glass filters upon scroll.
+- **Global Navigation:** A 56px sticky header with the logo, primary destinations, Tools, theme picker and account control. No GitHub button, availability badge or animated brand border.
 - **Primary Pages:** Models · Chat · Pricing · Docs.
-- **Tools Dropdown** (secondary, off the primary path): Buy credits · API Reference · Agents & IDEs · Get started · FAQ.
+- **Tools Dropdown** (secondary, off the primary path): Buy credits · API reference · Agents & IDEs · Get started · FAQ. Buy credits is shown once in mobile navigation, under Account for signed-in visitors.
 - **Account Panel** (signed-in, desktop and mobile): Dashboard · API keys · Buy credits · Settings · Sign out.
-- **Account Panel** (signed-out): single "Get API key" CTA → `/login`.
-- **Mobile Menu:** Hamburger at `<lg` opens a full-screen menu grouping Primary + Tools + Account.
+- **Account Panel** (signed-out): single "Sign in" CTA → `/login`.
+- **Mobile Menu:** Hamburger at `<lg` opens a full-screen menu grouping Explore + Tools + Account.
 - **Theme Dropdown:** emerald (default) · amber · mono · synth.
 - **Admin:** `/admin` route is operator-gated (server check on `user.role === 'admin'`). Not surfaced anywhere in `primaryLinks`, `toolsLinks`, or footer columns. Admins only land there by typing the URL.
 - **Legacy Redirects:** All `/swap` actions permanently route to `/deposit`.

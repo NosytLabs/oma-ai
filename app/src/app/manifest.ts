@@ -41,7 +41,7 @@ export default function manifest(): MetadataRoute.Manifest {
 				purpose: "any",
 			},
 			{
-				src: "/logos/oma-icon-512.png",
+				src: "/logos/oma-icon-maskable-512.png",
 				sizes: "512x512",
 				type: "image/png",
 				purpose: "maskable",

@@ -216,23 +216,20 @@ describe("Footer", () => {
 		expect(screen.getByText(/^oma$/i)).toBeInTheDocument();
 	});
 
-	it("renders GitHub link", () => {
+	it("omits GitHub from shared navigation", () => {
 		renderWithQueryClient(<Footer />);
-		const githubLinks = screen.getAllByRole("link", {
-			name: /github/i,
-		});
-		expect(githubLinks.length).toBeGreaterThan(0);
-		expect(githubLinks[0]).toHaveAttribute("href", "https://github.com/NosytLabs");
+		expect(screen.queryByRole("link", { name: /github/i })).not.toBeInTheDocument();
+		expect(screen.getByRole("link", { name: "Status" })).toHaveAttribute("href", "/status");
 	});
 
 	it("uses the product's Base capitalization", () => {
 		renderWithQueryClient(<Footer />);
-		expect(screen.getByText(/Base mainnet/i)).toBeInTheDocument();
+		expect(screen.getByText(/USDC on Base/)).toBeInTheDocument();
 	});
 
-	it("renders copyright line with year + license", () => {
+	it("renders the current copyright year and owner", () => {
 		renderWithQueryClient(<Footer />);
-		expect(screen.getAllByText(/2026/).length).toBeGreaterThan(0);
-		expect(screen.getAllByText(/MIT/i).length).toBeGreaterThan(0);
+		expect(screen.getByText(String(new Date().getFullYear()))).toBeInTheDocument();
+		expect(screen.getByText(/OMA by NosytLabs/)).toBeInTheDocument();
 	});
 });

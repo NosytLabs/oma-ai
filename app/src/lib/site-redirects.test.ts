@@ -77,7 +77,7 @@ describe("sitemap excludes removed marketing routes", () => {
 describe("brand assets on disk (public/)", () => {
 	// The tab favicon + apple touch icon are served from static files in
 	// `public/` (declared in `src/app/layout.tsx` metadata.icons). SVG + PNG
-	// cover every modern browser; `app/favicon.ico` is the legacy /favicon.ico
+	// cover every modern browser; `public/favicon.ico` is the legacy /favicon.ico
 	// fallback for older crawlers.
 	const required = [
 		"favicon.svg",
@@ -92,10 +92,26 @@ describe("brand assets on disk (public/)", () => {
 		"logos/oma-icon-192.png",
 		"logos/oma-icon-512.png",
 		"logos/oma-icon-1024.png",
+		"logos/oma-icon-maskable-512.png",
 	];
 
 	it.each(required)("exists: %s", (rel) => {
 		expect(existsSync(join(publicDir, rel))).toBe(true);
+	});
+
+	it("ships a real multi-resolution ICO with valid image payloads", () => {
+		const ico = readFileSync(join(publicDir, "favicon.ico"));
+		expect(ico.readUInt16LE(0)).toBe(0);
+		expect(ico.readUInt16LE(2)).toBe(1);
+		const count = ico.readUInt16LE(4);
+		expect(count).toBeGreaterThan(1);
+		for (let index = 0; index < count; index++) {
+			const entry = 6 + index * 16;
+			const size = ico.readUInt32LE(entry + 8);
+			const offset = ico.readUInt32LE(entry + 12);
+			expect(offset + size).toBeLessThanOrEqual(ico.length);
+			expect(ico.subarray(offset, offset + 8)).toEqual(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+		}
 	});
 
 	it("favicon.svg uses the void + accent brand tokens", () => {

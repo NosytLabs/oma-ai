@@ -5,6 +5,7 @@ import type React from "react";
 import { MessageSquare } from "lucide-react";
 import { InViewFade } from "@/components/motion/in-view-fade";
 import { ModelLogo } from "@/components/ui/model-logo";
+import { playgroundHrefForModel } from "@/lib/playground-href";
 import {
 	MODALITY_LABELS,
 	formatPricePerMillion,
@@ -212,7 +213,7 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 					</p>
 				) : (
 					<div className="mt-3">
-						<Link href={`/chat?model=${model.id}`} className="inline-flex min-h-6 items-center gap-1.5 rounded-sm text-[11px] font-mono font-semibold uppercase tracking-wider text-accent/70 hover:text-accent transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel">
+						<Link href={playgroundHrefForModel(model.id)} className="inline-flex min-h-6 items-center gap-1.5 rounded-sm text-[11px] font-mono font-semibold uppercase tracking-wider text-accent/70 hover:text-accent transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel">
 							<MessageSquare className="h-3 w-3" aria-hidden="true" />
 							Try in chat
 						</Link>

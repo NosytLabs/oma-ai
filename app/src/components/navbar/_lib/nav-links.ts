@@ -7,6 +7,9 @@ import {
 	FileText,
 	type LucideIcon,
 	Network,
+	KeyRound,
+	LayoutDashboard,
+	Settings,
 	Tag,
 	Terminal,
 } from "lucide-react";
@@ -20,7 +23,6 @@ export interface NavItem {
 
 export interface NavGroup {
 	title: string;
-	caption: string;
 	links: NavItem[];
 }
 
@@ -47,7 +49,7 @@ export const toolsLinks: NavItem[] = [
 	},
 	{
 		href: "/docs#endpoints",
-		label: "API Reference",
+		label: "API reference",
 		icon: Network,
 		desc: "Every endpoint, live",
 	},
@@ -74,27 +76,27 @@ export const toolsLinks: NavItem[] = [
 /** Group definitions for the mobile menu cards. */
 export const mobileGroups: NavGroup[] = [
 	{
-		title: "product",
-		caption: "core surfaces",
+		title: "Explore",
 		links: primaryLinks,
 	},
 	{
-		title: "tools",
-		caption: "fund · integrate · learn",
+		title: "Tools",
 		links: toolsLinks,
 	},
 ];
 
-/** Mobile-menu "account" card links. Treated as active when the current
- *  pathname is any of these (used to highlight the card outline). */
-/** Mobile account card — only true account surfaces (not docs). */
-export const accountHrefs = [
-	"/dashboard",
-	"/deposit",
-	"/settings",
-	"/admin",
-	"/login",
-] as const;
+/** Account destinations shared by desktop, mobile, and the footer. */
+export const accountLinks: NavItem[] = [
+	{ href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+	{ href: "/dashboard?tab=api-keys", label: "API keys", icon: KeyRound },
+	{ href: "/deposit", label: "Buy credits", icon: Coins },
+	{ href: "/settings", label: "Settings", icon: Settings },
+];
+
+/** A pathname cannot identify a specific fragment or query tab. */
+export function isCurrentNavLink(pathname: string, href: string): boolean {
+	return !/[?#]/.test(href) && isCurrentPath(pathname, href);
+}
 
 export function isCurrentPath(pathname: string, href: string): boolean {
 	const currentPath = pathname.split(/[?#]/, 1)[0] || "/";

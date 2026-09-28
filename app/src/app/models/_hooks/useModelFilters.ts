@@ -100,7 +100,6 @@ export function useModelFilters() {
 	);
 	const [sortBy, setSortBy] = useState<SortKey>((urlSort as SortKey) || "name");
 	const [copied, setCopied] = useState(false);
-	const [sortOpen, setSortOpen] = useState(false);
 	const [isLoadingModels, setIsLoadingModels] = useState(true);
 	const [liveModels, setLiveModels] = useState<Model[] | null>(null);
 
@@ -336,7 +335,6 @@ export function useModelFilters() {
 	const handleSort = (key: SortKey) => {
 		setSortBy(key);
 		setParam("sort", key === "name" ? null : key);
-		setSortOpen(false);
 	};
 
 	const handleCopy = async () => {
@@ -376,8 +374,6 @@ export function useModelFilters() {
 		selectedProvider,
 		sortBy,
 		copied,
-		sortOpen,
-		setSortOpen,
 		isLoadingModels,
 		inputModalities,
 		setInputModalities,

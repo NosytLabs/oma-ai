@@ -1,187 +1,60 @@
 "use client";
 
-import { AnimatePresence, m, useReducedMotion } from "@/lib/framer-motion-client";
-import { springs } from "@/lib/animation";
-import { ChevronDown, Wand2 } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef } from "react";
-import { EASE_SPRING, EASE_SPRING_SOFT } from "@/lib/animation";
-import { useClickOutside } from "./_hooks/useClickOutside";
-import {
-	isCurrentPath,
-	primaryLinks,
-	toolsLinks,
-} from "./_lib/nav-links";
+import { useNavDisclosure } from "./_hooks/useNavDisclosure";
+import { isCurrentNavLink, primaryLinks, toolsLinks } from "./_lib/nav-links";
 
 interface NavbarToolsDropdownProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 }
 
-/**
- * Tools dropdown (desktop only). Click-outside closes via `useClickOutside`.
- * Escape closes AND restores focus to the toggle button (same contract as
- * `NavbarUserMenu`) via a separate keydown effect so `useClickOutside`
- * stays single-purpose.
- */
-export function NavbarToolsDropdown({
-	open,
-	onOpenChange,
-}: NavbarToolsDropdownProps) {
-	const containerRef = useRef<HTMLDivElement | null>(null);
-	const toggleRef = useRef<HTMLButtonElement | null>(null);
-	const pathname = usePathname();
-	const prefersReduced = useReducedMotion();
-	// Only show "tools" as active when a primary link is NOT already
-	// representing the same path. Without this, /docs (a primary link)
-	// AND /docs#endpoints (a tool) both light up the navbar at once,
-	// which reads as two competing active states.
-	const onPrimaryLink = primaryLinks.some((l) =>
-		isCurrentPath(pathname ?? "/", l.href),
-	);
-	const isToolsActive = !onPrimaryLink &&
-		toolsLinks.some((l) => isCurrentPath(pathname ?? "/", l.href));
-
-	useClickOutside(containerRef, open, () => onOpenChange(false));
-
-	useEffect(() => {
-		if (!open) return;
-		function onKey(e: KeyboardEvent) {
-			if (e.key === "Escape") {
-				e.preventDefault();
-				onOpenChange(false);
-				toggleRef.current?.focus();
-			}
-		}
-		document.addEventListener("keydown", onKey);
-		return () => document.removeEventListener("keydown", onKey);
-	}, [open, onOpenChange]);
+export function NavbarToolsDropdown({ open, onOpenChange }: NavbarToolsDropdownProps) {
+	const pathname = usePathname() ?? "/";
+	const { containerRef, toggleRef, panelRef, onKeyDown, onBlur } = useNavDisclosure(open, onOpenChange);
+	const isToolsActive = !primaryLinks.some((link) => isCurrentNavLink(pathname, link.href)) &&
+		toolsLinks.some((link) => isCurrentNavLink(pathname, link.href));
 
 	return (
-		<div ref={containerRef} className="relative hidden lg:block">
-			{/*
-				`whileHover`/`whileTap` are deliberately NOT gated on
-				`useReducedMotion()` here. That hook returns false during SSR but
-				the real value on the client, so gating on it made the server emit
-				`tabindex="0"` (framer adds it for gesture props) while the client
-				removed it — a hydration mismatch on EVERY page that renders the
-				navbar. `MotionProvider` already sets `MotionConfig
-				reducedMotion="user"`, which disables these transform animations
-				for reduced-motion users on its own, so the gate bought nothing.
-			*/}
-			<m.div
-				whileHover={{ y: -1 }}
-				whileTap={{ scale: 0.96 }}
-				transition={EASE_SPRING}
-				className="inline-block"
+		<div ref={containerRef} onKeyDown={onKeyDown} onBlur={onBlur} className="relative hidden lg:block">
+			<button
+				ref={toggleRef}
+				type="button"
+				onClick={() => onOpenChange(!open)}
+				aria-expanded={open}
+				aria-controls="tools-menu"
+				aria-label="Tools menu"
+				className={`inline-flex h-11 items-center gap-1.5 rounded-sm px-3 text-[13px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+					isToolsActive || open ? "bg-accent-dim text-accent" : "text-text-secondary hover:bg-surface hover:text-text-bright"
+				}`}
 			>
-				<button
-					ref={toggleRef}
-					type="button"
-					onClick={() => onOpenChange(!open)}
-					aria-haspopup="menu"
-					aria-expanded={open}
-					aria-controls="tools-menu"
-					aria-label="Tools menu"
-					className={`relative inline-flex h-11 items-center gap-2 rounded-sm px-3 text-sm transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-						isToolsActive
-							? "text-accent"
-							: "text-text-secondary hover:text-text-bright"
-					}`}
-				>
-					{isToolsActive && !open && (
-						<m.span
-							layoutId="nav-active-tools"
-							aria-hidden="true"
-							className="absolute inset-0 rounded-sm bg-accent-dim"
-							transition={EASE_SPRING_SOFT}
-						/>
-					)}
-					<Wand2
-						className="relative z-10 h-3 w-3 opacity-70"
-						aria-hidden="true"
-					/>
-					<span className="relative z-10">Tools</span>
-					<ChevronDown
-						className={`relative z-10 h-3 w-3 opacity-60 transition-transform duration-200 ${
-							open ? "rotate-180" : ""
-						}`}
-						aria-hidden="true"
-					/>
-				</button>
-			</m.div>
-
-			<AnimatePresence>
-				{open && (
-					<m.div
-						key="tools-menu"
-						id="tools-menu"
-						role="menu"
-						initial={
-							prefersReduced
-								? { opacity: 0 }
-								: { opacity: 0, y: -6, scale: 0.97 }
-						}
-						animate={
-							prefersReduced ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }
-						}
-						exit={
-							prefersReduced
-								? { opacity: 0 }
-								: { opacity: 0, y: -6, scale: 0.97 }
-						}
-						transition={springs.soft}
-						style={{ transformOrigin: "top left" }}
-						className="absolute left-0 top-full mt-2 w-72 rounded-sm border border-border bg-void/95 backdrop-blur-md p-2 shadow-2xl shadow-overlay font-mono z-[60]"
-					>
-						<p className="px-3 pt-2 pb-1 text-[11px] uppercase tracking-widest text-text-tertiary">
-							tools
-						</p>
-						<ul className="space-y-1">
-							{toolsLinks.map((link) => {
-								const Icon = link.icon;
-								const isActive = isCurrentPath(pathname ?? "/", link.href);
-								return (
-									<li key={link.href} role="none">
-										<Link
-											href={link.href}
-											role="menuitem"
-											aria-label={`${link.label} — ${link.desc}`}
-											onClick={() => onOpenChange(false)}
-											aria-current={isActive ? "page" : undefined}
-											className={`group/item flex min-h-11 items-start gap-3 rounded-sm px-3 py-2 transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-												isActive
-													? "bg-accent-dim text-accent"
-													: "text-text-secondary hover:bg-surface hover:text-text-bright"
-											}`}
-										>
-											<Icon
-												className={`mt-0.5 h-4 w-4 shrink-0 ${
-													isActive
-														? "text-accent"
-														: "text-text-muted group-hover/item:text-accent"
-												}`}
-												aria-hidden="true"
-											/>
-											<span className="flex min-w-0 flex-col">
-												<span className="text-xs leading-tight">
-													{link.label}
-												</span>
-												{link.desc && (
-													<span className="text-[11px] text-text-muted leading-tight mt-1">
-														{link.desc}
-													</span>
-												)}
-											</span>
-										</Link>
-									</li>
-								);
-							})}
-						</ul>
-					</m.div>
-				)}
-			</AnimatePresence>
+				Tools
+				<ChevronDown className={`h-3 w-3 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true" />
+			</button>
+			{open && (
+				<div ref={panelRef} id="tools-menu" className="absolute left-0 top-full z-[60] mt-2 w-72 rounded-md border border-border bg-void p-2 shadow-xl shadow-overlay">
+					<ul className="space-y-1">
+						{toolsLinks.map((link) => {
+							const Icon = link.icon;
+							const isActive = isCurrentNavLink(pathname, link.href);
+							return (
+								<li key={link.href}>
+									<Link href={link.href} prefetch={false} onClick={() => onOpenChange(false)} aria-current={isActive ? "page" : undefined}
+										className={`flex min-h-11 items-start gap-3 rounded-sm px-3 py-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${isActive ? "bg-accent-dim text-accent" : "text-text-secondary hover:bg-surface hover:text-text-bright"}`}>
+										<Icon className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+										<span>
+											<span className="block text-xs">{link.label}</span>
+											<span className="mt-1 block text-[11px] leading-relaxed text-text-muted">{link.desc}</span>
+										</span>
+									</Link>
+								</li>
+							);
+						})}
+					</ul>
+				</div>
+			)}
 		</div>
 	);
 }

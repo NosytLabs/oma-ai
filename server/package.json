@@ -14,7 +14,8 @@
     "db:seed-test-auth": "node --env-file=.env scripts/seed-test-auth.mjs",
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:auth:integration": "node scripts/test-auth-integration.mjs"
   },
   "dependencies": {
     "@hono/node-server": "^2.0.12",

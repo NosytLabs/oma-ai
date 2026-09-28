@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { formatPrice } from "@/lib/model-utils";
 import { TIER_LABELS } from "@/app/models/_lib/labels";
 import { MODELS, type Model } from "@/lib/models-data";
 
@@ -15,11 +14,11 @@ export function Stat({
 	unit: string;
 }) {
 	return (
-		<div className="rounded-[var(--radius-lg)] border border-border/50 bg-surface p-5 transition-colors duration-200 hover:border-accent/30">
-			<div className="font-mono text-[10px] uppercase tracking-widest text-text-muted mb-2">
+		<div className="min-w-0 rounded-[var(--radius-xl)] border border-border bg-panel p-5 sm:p-6">
+			<div className="text-xs text-text-muted mb-3">
 				{label}
 			</div>
-			<div className="font-geometric text-[1.875rem] font-medium tabular-nums tracking-tight text-text-bright leading-none">
+			<div className="break-words font-geometric text-2xl font-medium tabular-nums tracking-tight text-text-bright leading-tight sm:text-3xl">
 				{value}
 			</div>
 			<div className="text-xs text-text-muted mt-2">{unit}</div>
@@ -54,8 +53,7 @@ export function RelatedModels({ current }: { current: Model }) {
 								{m.name}
 							</div>
 							<div className="text-xs text-text-muted mt-1 font-mono tabular-nums">
-								{m.provider} · {formatPrice(m.inputPricePer1M)}/M in ·{" "}
-								{formatPrice(m.outputPricePer1M)}/M out
+								{m.provider} · {m.contextLength} context
 							</div>
 						</Link>
 					</li>
