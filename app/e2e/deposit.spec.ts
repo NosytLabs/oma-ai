@@ -25,13 +25,10 @@ test.describe("Deposit Page Userflow", () => {
     expect(overflow).toBeLessThanOrEqual(0);
   });
 
-  test("shows deposit-related content (address, amount, or auth prompt)", async ({ page }) => {
+  test("shows the deposit page heading", async ({ page }) => {
     await page.goto("/deposit");
-    // The page should show either a deposit address, amount input, or auth prompt
-    const relevantContent = page
-      .getByText(/deposit|USDC|address|sign in/i)
-      .or(page.locator("input[type='number'], [data-testid*='deposit']"))
-      .first();
-    await expect(relevantContent).toBeVisible({ timeout: 10000 });
+    // Scope to page content; the mobile-only navbar sign-in label is hidden
+    // on desktop and is not evidence that the deposit page rendered.
+    await expect(page.getByRole("heading", { name: "Deposit Credits", level: 1 })).toBeVisible();
   });
 });

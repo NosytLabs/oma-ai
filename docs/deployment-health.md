@@ -21,3 +21,16 @@ Before releasing changes, run `pnpm install --frozen-lockfile`, then
 verification. Existing Vercel Git integration publishes the frontend; no
 additional GitHub deployment credential or one-shot deployment workflow is
 needed for that path.
+
+The full CI repair also makes Playwright build/start its own frontend on a
+fresh runner. Previously every browser navigation failed with connection
+refused because no server was started. Its CI reporter prints test failures
+directly instead of leaving only an HTML report on the runner.
+Responsive checks wait for rendered page content instead of background
+requests becoming idle. The deposit check targets its visible page heading,
+not hidden mobile navigation text.
+
+The storage quota regression now intercepts `setItem` on its actual method
+owner: jsdom's Storage proxy needs a prototype spy, whereas the Node 26
+in-memory fallback has an own method. This fixes the Node 24-only test failure
+without changing application storage behavior.

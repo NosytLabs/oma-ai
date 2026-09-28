@@ -13,8 +13,6 @@ async function assertNoHorizontalOverflow(page: Page) {
   expect(overflow, "page must not overflow horizontally").toBeLessThanOrEqual(0);
 }
 
-const AUTH_GATED = new Set(["/dashboard", "/settings", "/deposit", "/admin"]);
-
 const PAGES = [
   "/",
   "/models",
@@ -41,15 +39,17 @@ for (const vp of VIEWPORTS) {
 
     for (const path of PAGES) {
       test(`${vp.name} · ${path} has no horizontal overflow`, async ({ page }) => {
-        const waitUntil = (path === "/chat" || AUTH_GATED.has(path)) ? "load" : "networkidle";
-        await page.goto(path, { waitUntil });
+        // Background health/catalog requests need not become idle for the
+        // rendered layout to be ready, including with an unavailable API.
+        await page.goto(path, { waitUntil: "load" });
+        await expect(page.locator("main")).toBeVisible();
         await page.waitForTimeout(1200);
         await assertNoHorizontalOverflow(page);
       });
     }
 
     test(`${vp.name} · navbar hamburger opens & closes mobile menu`, async ({ page }) => {
-      await page.goto("/", { waitUntil: "networkidle" });
+      await page.goto("/", { waitUntil: "load" });
       const toggle = page.locator('button[aria-controls="mobile-menu"]');
       if (!(await toggle.isVisible().catch(() => false))) return; // desktop: no hamburger
       await toggle.click();
@@ -64,7 +64,7 @@ for (const vp of VIEWPORTS) {
     });
 
     test(`${vp.name} · navbar links visible only at desktop sizes`, async ({ page }) => {
-      await page.goto("/", { waitUntil: "networkidle" });
+      await page.goto("/", { waitUntil: "load" });
       const desktopLink = page.locator("header ul li a[href='/models']").first();
       if (vp.width >= 1024) {
         await expect(page.locator("header a[href='/models']").first()).toBeVisible();
@@ -76,7 +76,7 @@ for (const vp of VIEWPORTS) {
     });
 
     test(`${vp.name} · theme toggle cycles through themes`, async ({ page }) => {
-      await page.goto("/", { waitUntil: "networkidle" });
+      await page.goto("/", { waitUntil: "load" });
       const toggle = page.locator('button[data-theme-toggle]');
       await expect(toggle).toBeVisible();
       await toggle.click();
@@ -94,7 +94,7 @@ for (const vp of VIEWPORTS) {
 
 test.describe("desktop-only navbar interactions", () => {
   test("tools dropdown opens with all tools", async ({ page }) => {
-    await page.goto("/", { waitUntil: "networkidle" });
+    await page.goto("/", { waitUntil: "load" });
     const toolsBtn = page.locator('button[aria-label="Tools menu"]');
     await expect(toolsBtn).toBeVisible();
     await toolsBtn.click();
@@ -108,7 +108,7 @@ test.describe("desktop-only navbar interactions", () => {
   });
 
   test("tools dropdown closes on outside click", async ({ page }) => {
-    await page.goto("/", { waitUntil: "networkidle" });
+    await page.goto("/", { waitUntil: "load" });
     await page.locator('button[aria-label="Tools menu"]').click();
     await expect(page.locator("#tools-menu")).toBeVisible();
     await page.mouse.click(10, 400);
@@ -116,7 +116,7 @@ test.describe("desktop-only navbar interactions", () => {
   });
 
   test("models page renders brand logos for every card", async ({ page }) => {
-    await page.goto("/models", { waitUntil: "networkidle" });
+    await page.goto("/models", { waitUntil: "load" });
     await page.waitForTimeout(1500);
     const broken = await page.evaluate(() => {
       return Array.from(document.querySelectorAll("img.model-logo-svg")).filter(
@@ -127,7 +127,7 @@ test.describe("desktop-only navbar interactions", () => {
   });
 
   test("docs page renders code blocks without overflow", async ({ page }) => {
-    await page.goto("/docs", { waitUntil: "networkidle" });
+    await page.goto("/docs", { waitUntil: "load" });
     const overflows = await page.evaluate(() => {
       return Array.from(document.querySelectorAll("pre")).filter((pre) => {
         const r = pre.getBoundingClientRect();
