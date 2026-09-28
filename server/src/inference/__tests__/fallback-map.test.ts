@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { FALLBACK_MAP, buildFallbackChain } from "../fallback.js";
 import { getModelById } from "../models.js";
+import { isFreeWebsiteModel } from "../free-website-model.js";
 
 /**
 	* Inference router FALLBACK_MAP must only reference models that exist
@@ -68,6 +69,40 @@ describe("FALLBACK_MAP (inference router)", () => {
 });
 
 describe("buildFallbackChain", () => {
+	it.each<[string, string[]]>([
+		["minimax-m2-7", ["minimax-m2-7", "zai-org-glm-5-3"]],
+		["zai-org-glm-5-3", ["zai-org-glm-5-3", "minimax-m2-7"]],
+		[
+			"deepseek-v4-flash-0731-openbroker",
+			["deepseek-v4-flash-0731-openbroker", "zai-org-glm-5-3", "minimax-m2-7"],
+		],
+	])("keeps %s free and skips unhealthy automatic peers even with stale client hints", (primary, expected) => {
+		const chain = buildFallbackChain(primary, [
+			"deepseek-v4-flash-0731-openbroker",
+			"llama-3.3-70b",
+			"minimax-m2-7",
+			"zai-org-glm-5-3",
+			primary,
+			"not-a-real-model",
+		], true);
+		expect(chain).toEqual(expected);
+		expect(chain.slice(1)).not.toContain(primary);
+		expect(chain.slice(1)).not.toContain("deepseek-v4-flash-0731-openbroker");
+		for (const id of chain) {
+			expect(isFreeWebsiteModel(id)).toBe(true);
+			expect(getModelById(id)?.upstream).toBe("openbroker");
+		}
+	});
+
+	it("provides the preferred free peer when a client sends no fallback hints", () => {
+		expect(buildFallbackChain("minimax-m2-7", [], true)).toEqual([
+			"minimax-m2-7", "zai-org-glm-5-3",
+		]);
+		expect(buildFallbackChain("zai-org-glm-5-3", [], true)).toEqual([
+			"zai-org-glm-5-3", "minimax-m2-7",
+		]);
+	});
+
 	it("orders primary → client models[] → server map and dedupes", () => {
 		const chain = buildFallbackChain(
 			"deepseek-v4-flash-0731-openbroker",

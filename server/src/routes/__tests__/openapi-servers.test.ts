@@ -57,6 +57,13 @@ describe("getOpenApiServers", () => {
 });
 
 describe("getPublicOpenApiSpec", () => {
+	it("documents the canonical model capability list", () => {
+		expect(getPublicOpenApiSpec().components.schemas.Model.properties.capabilities).toMatchObject({
+			type: "array",
+			items: { type: "string" },
+		});
+	});
+
 	it("excludes admin and operational endpoints", () => {
 		const paths = getPublicOpenApiSpec().paths;
 		for (const path of [
