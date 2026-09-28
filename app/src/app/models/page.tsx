@@ -98,13 +98,12 @@ function ModelsPageInner() {
 								<>
 									{" "}
 									·{" "}
-									<span className="text-accent">{availableCount}</span> accepting
-									requests now
+									<span className="text-accent">{availableCount}</span> enabled
 								</>
 							)}
 							{availableCount === null && (
 								<span className="ml-2 text-text-tertiary normal-case tracking-normal">
-									· {isLoadingModels ? "checking live availability…" : "live availability unavailable"}
+									· {isLoadingModels ? "loading live catalog…" : "live catalog unavailable"}
 								</span>
 							)}
 							{visibleModels < totalModels && (
