@@ -1,0 +1,49 @@
+name: Deployment lockfile
+
+# Fast install-contract check; the full app/server/browser CI stays manual.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - package.json
+      - app/package.json
+      - server/package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - .npmrc
+      - .nvmrc
+      - .github/workflows/lockfile.yml
+  pull_request:
+    paths:
+      - package.json
+      - app/package.json
+      - server/package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - .npmrc
+      - .nvmrc
+      - .github/workflows/lockfile.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deployment-lockfile-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lockfile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - run: npm install --global pnpm@9.15.9
+      - name: Validate the same frozen lockfile contract used by Vercel
+        run: pnpm install --lockfile-only --frozen-lockfile --ignore-scripts
