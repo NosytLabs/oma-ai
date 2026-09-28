@@ -1,7 +1,10 @@
 # `app/e2e/`
 
-Playwright specs (`*.spec.ts`) that drive real Chromium against the
-running dev stack (`http://localhost:3000` + `:3001`).
+Playwright specs (`*.spec.ts`) that drive real Chromium against the frontend
+at `http://localhost:3000`. Playwright builds and starts the frontend when
+needed, and always owns a fresh server in CI. It can reuse a running local
+dev server outside CI. The automatic test server points at a local backend
+on port 3001; the UI suite also exercises unavailable-backend behavior.
 
 Visual audits live in `scripts/dev/screenshot-audit.mjs` (19 routes,
 desktop + mobile) and capture to `/tmp/oma-audit/`. When Resend is
@@ -11,12 +14,13 @@ verification flows.
 ## Running
 
 ```bash
-# Make sure both servers are up:
-./scripts/dev/start-dev.sh
-
-# Then from app/:
+# From app/ (starts the frontend automatically):
 cd app
-npx playwright test
+pnpm test:e2e
+
+# Optional: start the local backend/dev stack first for manual integration
+# exploration. Never point automated payment/sign-in tests at live accounts.
+# ./scripts/dev/start-dev.sh
 
 # Visual audit (all public routes, desktop + mobile):
 node ../scripts/dev/screenshot-audit.mjs

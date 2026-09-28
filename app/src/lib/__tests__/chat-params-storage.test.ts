@@ -38,7 +38,13 @@ describe("chat-params-storage", () => {
 	});
 
 	it("returns false (so the caller can revert) when the write throws", () => {
-		vi.spyOn(window.localStorage, "setItem").mockImplementation(() => {
+		// jsdom Storage is a named-property proxy: assigning an instance
+		// method can become a stored key instead of replacing setItem. Node
+		// 24 uses that implementation; the Node 26 fallback is a plain object.
+		const storage = window.localStorage;
+		const prototype = Object.getPrototypeOf(storage);
+		const methodOwner = typeof prototype.setItem === "function" ? prototype : storage;
+		vi.spyOn(methodOwner, "setItem").mockImplementation(() => {
 			throw new Error("QuotaExceededError");
 		});
 		expect(writeChatParams(CHAT_PARAMS_DEFAULTS)).toBe(false);
