@@ -2,6 +2,17 @@ import "@testing-library/jest-dom";
 import { vi } from "vitest";
 import React from "react";
 
+// Hermetic tests: force NODE_ENV=test so a leaked `NODE_ENV=production` from
+// the shell (e.g. deploy tooling) can't flip react/react-dom into their
+// production builds during tests. In the prod build `react` 19.3 does not
+// export `act`, so @testing-library/react falls over with "React.act is not
+// a function" and every RTL test fails. Also drop deploy-only env that would
+// trigger server-style environment guards.
+(process.env as Record<string, string | undefined>).NODE_ENV = "test";
+delete (process.env as Record<string, string | undefined>).NEON_FUNCTION;
+delete (process.env as Record<string, string | undefined>).ALLOW_DEV_MODE_DEPLOY;
+delete (process.env as Record<string, string | undefined>).FACILITATOR_MODE;
+
 /**
  * Node 22+/26 installs a host `localStorage` getter that returns `undefined`
  * unless `--localstorage-file` is set. That shadows jsdom's Storage and breaks

@@ -21,6 +21,22 @@ delete process.env.VENICE_API_KEY;
 delete process.env.OPENAI_API_KEY;
 delete process.env.ANTHROPIC_API_KEY;
 
+// x402 facilitator/tests: pin to mock mode so a shell/.env export of
+// FACILITATOR_MODE=live (production-adjacent dev machines) doesn't make
+// treasury.ts throw FATAL "SERVER_TREASURY is empty in live mode" at import,
+// breaking the whole suite. Tests for live/fail-closed behavior override
+// this explicitly via vi.stubEnv().
+process.env.FACILITATOR_MODE = 'mock';
+delete process.env.TREASURY_BASE_ADDRESS;
+
+// Tests never run as a deployed Neon Function. If NEON_FUNCTION=1 is leaked
+// from the shell (e.g. from `neonctl config apply`/deploy tooling), the
+// config.ts deployed-function guard throws "must run with NODE_ENV=production"
+// and takes the whole suite down. Clear deploy-only env so the local test
+// process can't be mistaken for a live function.
+delete process.env.NEON_FUNCTION;
+delete process.env.ALLOW_DEV_MODE_DEPLOY;
+
 // Required by config.ts validation. Tests that need different values
 // override these per-file via vi.stubEnv().
 if (!process.env.DATABASE_URL) {

@@ -26,6 +26,7 @@ describe("free-tier copy accuracy", () => {
 			// flag unknown ids rather than silently shipping dead copy.
 			expect(typeof id).toBe("string");
 			expect(id.length).toBeGreaterThan(0);
+			expect(catalogIds.has(id)).toBe(true);
 		}
 		expect(FREE_CHAT_MODEL_IDS.has(FREE_DEFAULT_CHAT_MODEL)).toBe(true);
 	});
