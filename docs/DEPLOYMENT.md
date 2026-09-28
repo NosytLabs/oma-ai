@@ -4,7 +4,8 @@ Canonical deployment facts for OMA-AI. Other docs link here rather than
 restating them — this file is the single source of truth so a deploy
 instruction can't drift between documents.
 
-Last verified against live infrastructure: 2026-09-26.
+Last verified against live infrastructure: 2026-09-28. Current dependency
+outages and verification limits are recorded in [deployment health](deployment-health.md).
 
 ## Canonical host
 
