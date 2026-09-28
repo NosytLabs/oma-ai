@@ -97,6 +97,11 @@ const spec = {
 					context_length: { type: "integer" },
 					supports_streaming: { type: "boolean" },
 					supports_tools: { type: "boolean" },
+					capabilities: {
+						type: "array",
+						items: { type: "string" },
+						description: "Capabilities from the active model catalog, such as chat, reasoning, coding, tools, and vision.",
+					},
 					pricing: {
 						type: "object",
 						required: ["prompt", "completion"],

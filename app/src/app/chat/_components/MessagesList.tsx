@@ -14,7 +14,7 @@ import { ChevronDown } from "lucide-react";
 import type { RefObject } from "react";
 import type { Message } from "@/components/chat";
 import { A2UIRenderer, isA2UI, type A2UIActionEvent } from "@/components/chat/A2UIRenderer";
-import { ChatEmptyState } from "@/components/chat/ChatEmptyState";
+import { ChatEmptyState, type EmptyStateProps } from "@/components/chat/ChatEmptyState";
 import { ChatMessageed } from "@/components/chat/ChatMessage";
 
 /** Safe JSON parse that returns null on failure or non-object input. */
@@ -231,6 +231,7 @@ interface MessagesListProps {
 	onA2UIAction?: (event: A2UIActionEvent) => void;
 	/** Signed-in users skip guest marketing (welcome + example dump). */
 	isAuthenticated?: boolean;
+	emptyStateProps?: Omit<EmptyStateProps, "signedIn" | "onPickPrompt">;
 	/**
 	 * Seeds the composer when a starter prompt is clicked. Threaded in from
 	 * the shell (which owns the input state) rather than imported, so the
@@ -251,6 +252,7 @@ export function MessagesList({
 	onRegenerate,
 	onA2UIAction,
 	isAuthenticated = false,
+	emptyStateProps,
 	onPickPrompt,
 }: MessagesListProps) {
 	return (
@@ -284,7 +286,7 @@ export function MessagesList({
 									: "flex flex-col justify-center pt-6 md:pt-10"
 							}
 						>
-							<ChatEmptyState signedIn={isAuthenticated} onPickPrompt={onPickPrompt} />
+							<ChatEmptyState {...emptyStateProps} signedIn={isAuthenticated} onPickPrompt={onPickPrompt} />
 						</div>
 					</div>
 				) : (

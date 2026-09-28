@@ -79,6 +79,8 @@ export interface UsePlaygroundStateOptions {
 export interface PlaygroundState {
 	// --- Core chat ---
 	model: string;
+	/** Initial URL/storage model hydration has finished for the current auth readiness. */
+	modelHydrated: boolean;
 	setModel: Dispatch<SetStateAction<string>>;
 	messages: Message[];
 	setMessages: Dispatch<SetStateAction<Message[]>>;
@@ -189,6 +191,7 @@ export function usePlaygroundState(
 
 	// --- Core chat ---
 	const [model, setModelRaw] = useState<string>(initialModel);
+	const [modelHydratedForAuth, setModelHydratedForAuth] = useState<boolean | null>(null);
 	// Track the last userId we persisted under. The effect below moves the
 	// stored value into a new bucket on sign-in / sign-out so a guest's
 	// saved model doesn't leak into a signed-in session (and vice versa).
@@ -382,6 +385,7 @@ export function usePlaygroundState(
 				setModelRaw(stored);
 			}
 		}
+		setModelHydratedForAuth(Boolean(options.authReady));
 		// Intentionally one-shot on mount — re-running when `model` changes
 		// would clobber the user's in-flight selection with the stored one.
 	}, [options.authReady]);
@@ -447,6 +451,7 @@ export function usePlaygroundState(
 	return {
 		// Core chat
 		model,
+		modelHydrated: modelHydratedForAuth === Boolean(options.authReady),
 		setModel,
 		messages,
 		setMessages,

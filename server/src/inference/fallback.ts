@@ -4,6 +4,14 @@
  * import pure helpers without loading the full provider/billing stack.
  */
 import { getModelById } from "./models.js";
+import { isFreeWebsiteModel } from "./free-website-model.js";
+
+const PREFERRED_FREE_FALLBACKS = ["zai-org-glm-5-3", "minimax-m2-7"];
+// 2026-09-28: a raw guest SSE probe confirmed repeated answer deltas through
+// finish_reason=length. Keep explicit selection available, but do not turn a
+// failed free request into a known low-quality reply through automatic failover.
+// Remove this exclusion only after a live completion confirms recovery.
+const DEGRADED_FREE_FALLBACKS = new Set(["deepseek-v4-flash-0731-openbroker"]);
 
 export const FALLBACK_MAP: Record<string, string[]> = {
 	// Frontier
@@ -62,10 +70,12 @@ export const FALLBACK_MAP: Record<string, string[]> = {
 };
 
 /**
- * Build the ordered model chain: primary → client `models[]` → server map.
- * Dedupes and drops ids missing from the catalog. When `freeOnly` is set
- * (anonymous Gonka website chat), only Gonka Network openbroker-upstream
- * peers are allowed — Venice-routed OMA-AI resale is never attempted
+ * Build the paid model chain: primary → client `models[]` → server map.
+ * Free website chat prefers the healthy free peers before client hints, and
+ * excludes known degraded peers unless they are explicitly requested primary.
+ * Dedupes and drops ids missing from the catalog. When `freeOnly` is set,
+ * only allowlisted Gonka Network openbroker-upstream peers are allowed —
+ * Venice-routed OMA-AI resale is never attempted
  * because it costs money. (Pre-2026-08-17 this also blocked Zyloo-routed
  * OMA-AI resale; Zyloo has since been removed entirely.)
  */
@@ -75,7 +85,10 @@ export function buildFallbackChain(
 	freeOnly = false,
 ): string[] {
 	const serverPeers = FALLBACK_MAP[primary] ?? [];
-	const ordered = [primary, ...clientFallbacks, ...serverPeers];
+	const preferredFreePeers = freeOnly && isFreeWebsiteModel(primary)
+		? PREFERRED_FREE_FALLBACKS
+		: [];
+	const ordered = [primary, ...preferredFreePeers, ...clientFallbacks, ...serverPeers];
 	const seen = new Set<string>();
 	const chain: string[] = [];
 	for (const id of ordered) {
@@ -84,7 +97,11 @@ export function buildFallbackChain(
 		if (!def) continue;
 		// Keep the requested primary even if it is Venice — failover
 		// peers after it must still be Gonka/openbroker on the free path.
-		if (freeOnly && id !== primary && def.upstream !== "openbroker") continue;
+		if (freeOnly && id !== primary && (
+			def.upstream !== "openbroker" ||
+			!isFreeWebsiteModel(id) ||
+			DEGRADED_FREE_FALLBACKS.has(id)
+		)) continue;
 		seen.add(id);
 		chain.push(id);
 	}

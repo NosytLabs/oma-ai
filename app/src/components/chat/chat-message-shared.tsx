@@ -85,6 +85,9 @@ export interface ModelOption {
 	inputPer1M: number;
 	outputPer1M: number;
 	ctx: string;
+	available?: boolean;
+	/** Only true when both prices were present and valid in the live response. */
+	pricingAvailable?: boolean;
 }
 
 export type TierFilter =
@@ -144,7 +147,14 @@ function fetchLiveModels(): Promise<ModelOption[]> {
 					(m): m is LiveModelRaw =>
 						isLiveModelRaw(m) && (m as LiveModelRaw).modality !== "video",
 				)
-				.map(mapLiveModel);
+				.map((model) => ({
+					...mapLiveModel(model),
+					pricingAvailable: [model.pricing?.prompt, model.pricing?.completion].every(
+						(price) =>
+							(typeof price === "number" || (typeof price === "string" && price.trim() !== "")) &&
+							Number.isFinite(Number(price)) && Number(price) >= 0,
+					),
+				}));
 			return mapped;
 		})
 		.finally(() => {
@@ -154,67 +164,64 @@ function fetchLiveModels(): Promise<ModelOption[]> {
 	return promise;
 }
 
-// shared `["models"]` key so dashboard / settings / chat all
-// invalidate the same cache. Returns the active ModelOption[]; falls back
-// to FALLBACK_MODELS while the first request is in flight or on error.
-export function useLiveModels(enabled = true): ModelOption[] {
-	const [models, setModels] = useState<ModelOption[]>(() =>
-		liveModelsCache && liveModelsCache.v === LIVE_MODELS_CACHE_VERSION && Date.now() - liveModelsCache.ts < LIVE_MODELS_TTL_MS
-			? liveModelsCache.data
-			: FALLBACK_MODELS,
-	);
+export interface LiveModelCatalog {
+	models: ModelOption[];
+	status: "loading" | "live" | "fallback";
+}
 
+function currentCatalog(): LiveModelCatalog {
+	if (liveModelsCache && liveModelsCache.v === LIVE_MODELS_CACHE_VERSION && Date.now() - liveModelsCache.ts < LIVE_MODELS_TTL_MS) {
+		return { models: liveModelsCache.data, status: "live" };
+	}
+	return { models: FALLBACK_MODELS, status: "loading" };
+}
+
+/** Keep fallback names usable without presenting their prices as live quotes. */
+function useLiveModelCatalog(enabled = true): LiveModelCatalog {
+	const [catalog, setCatalog] = useState<LiveModelCatalog>(currentCatalog);
 	useEffect(() => {
 		if (!enabled) return;
-		if (liveModelsCache && liveModelsCache.v === LIVE_MODELS_CACHE_VERSION && Date.now() - liveModelsCache.ts < LIVE_MODELS_TTL_MS)
+		const cached = currentCatalog();
+		if (cached.status === "live") {
+			setCatalog(cached);
 			return;
+		}
 		let cancelled = false;
 		fetchLiveModels()
 			.then((mapped) => {
-				if (cancelled || mapped.length === 0) return;
-				liveModelsCache = { data: mapped, ts: Date.now(), v: LIVE_MODELS_CACHE_VERSION };
-				setModels(mapped);
+				if (mapped.length > 0) {
+					liveModelsCache = { data: mapped, ts: Date.now(), v: LIVE_MODELS_CACHE_VERSION };
+				}
+				if (cancelled) return;
+				setCatalog(mapped.length > 0
+					? { models: mapped, status: "live" }
+					: { models: FALLBACK_MODELS, status: "fallback" });
 			})
 			.catch(() => {
-				/* keep fallback on error */
+				if (!cancelled) setCatalog({ models: FALLBACK_MODELS, status: "fallback" });
 			});
-		return () => {
-			cancelled = true;
-		};
+		return () => { cancelled = true; };
 	}, [enabled]);
-
-	return models;
+	return catalog;
 }
 
-/**
-	* LiveModelsContext — shares a single useLiveModels fetch across all consumers.
-	* Wrap the component tree (or a subtree) with <LiveModelsProvider> to avoid
-	* duplicate fetches on every render of ModelSelector, CostEstimate, etc.
-	*/
-const LiveModelsContext = createContext<ModelOption[] | null>(null);
-
-interface LiveModelsProviderProps {
-	children: React.ReactNode;
+export function useLiveModels(enabled = true): ModelOption[] {
+	return useLiveModelCatalog(enabled).models;
 }
 
-export function LiveModelsProvider({ children }: LiveModelsProviderProps) {
-	const models = useLiveModels();
-	return (
-		<LiveModelsContext.Provider value={models}>
-			{children}
-		</LiveModelsContext.Provider>
-	);
+const LiveModelsContext = createContext<LiveModelCatalog | null>(null);
+
+export function LiveModelsProvider({ children }: { children: React.ReactNode }) {
+	const catalog = useLiveModelCatalog();
+	return <LiveModelsContext.Provider value={catalog}>{children}</LiveModelsContext.Provider>;
 }
 
-/**
-	* Hook to consume shared live models. Must be used within a LiveModelsProvider.
-	* Falls back to the standalone useLiveModels() if no provider is present
-	* (useful for components that might render outside the provider).
-	*/
-export function useSharedLiveModels(): ModelOption[] {
+export function useSharedLiveModelCatalog(): LiveModelCatalog {
 	const context = useContext(LiveModelsContext);
-	// Always call the hook to satisfy rules-of-hooks; the effect is a no-op
-	// (no duplicate fetch) when a provider is present.
-	const fallback = useLiveModels(context === null);
-	return context !== null ? context : fallback;
+	const fallback = useLiveModelCatalog(context === null);
+	return context ?? fallback;
+}
+
+export function useSharedLiveModels(): ModelOption[] {
+	return useSharedLiveModelCatalog().models;
 }

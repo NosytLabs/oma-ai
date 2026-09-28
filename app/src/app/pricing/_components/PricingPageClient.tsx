@@ -300,8 +300,8 @@ export default function PricingPage() {
 					<div className="meta-strip">
 						<span role="status">
 							{availabilityStatus === "live"
-								? `${modelCount} available ${modelCount === 1 ? "model" : "models"}`
-								: availabilityStatus === "checking" ? "Checking model availability" : "Live availability unavailable"}
+								? `${modelCount} enabled ${modelCount === 1 ? "model" : "models"}`
+								: availabilityStatus === "checking" ? "Loading model catalog" : "Live catalog unavailable"}
 						</span>
 						<span>Usage-based billing</span>
 						<span>USDC · x402 · optional card</span>
@@ -329,12 +329,12 @@ export default function PricingPage() {
 							</p>
 							<p className="mt-2 min-h-12 text-sm leading-relaxed text-[var(--color-text)]">
 								{availabilityStatus === "checking"
-									? "Checking current availability and input-token prices."
+									? "Loading current models and input-token prices."
 									: availabilityStatus === "unavailable"
-										? "We could not confirm current availability. Catalog prices below are for reference."
+										? "We could not load the live catalog. Prices below are for reference."
 										: modelCount === 0
-											? "No chat models are currently available. Check again before adding credits."
-											: "Lowest price per 1M input tokens among the models currently accepting requests."}
+											? "No chat models are currently enabled. Check again before adding credits."
+											: "Lowest price per 1M input tokens among enabled models. Provider availability can vary."}
 							</p>
 							{/* Trailing note mirrors the "x402 settlement" note in the
 							    sibling card. Without it this card's content ended at

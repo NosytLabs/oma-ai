@@ -83,3 +83,77 @@ describe("static OMA model routing ids", () => {
 		expect(deepseek?.modelId).toBe("deepseek-ai/DeepSeek-V4-Flash-0731");
 	});
 });
+
+describe("live model capabilities", () => {
+	beforeEach(() => {
+		vi.restoreAllMocks();
+		vi.resetModules();
+	});
+
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
+	async function loadEntry(fields: Record<string, unknown>) {
+		vi.spyOn(global, "fetch").mockResolvedValue(new Response(JSON.stringify({
+			object: "list",
+			data: [{ ...LIVE.data[0], ...fields }],
+		}), { status: 200 }));
+		const { loadModels } = await import("./models-data");
+		return (await loadModels())[0];
+	}
+
+	it("keeps canonical reasoning, coding, vision, and agent capabilities after loading", async () => {
+		const model = await loadEntry({
+			id: "gemini-3-6-flash",
+			capabilities: ["chat", "reasoning", "coding", "tools", "vision"],
+			supports_tools: true,
+		});
+		expect(model.capabilities).toEqual(["chat", "reasoning", "coding", "vision", "agents"]);
+		expect(model.inputPricePer1M).toBe(1.5);
+		expect(model.outputPricePer1M).toBe(6);
+	});
+
+	it("preserves direct fast and multimodal capability declarations", async () => {
+		const model = await loadEntry({ capabilities: ["chat", "fast", "multimodal"] });
+		expect(model.capabilities).toEqual(["chat", "multimodal", "fast"]);
+	});
+
+	it("lets canonical metadata replace stale curated and legacy capabilities", async () => {
+		const model = await loadEntry({
+			id: "claude-opus-5",
+			capabilities: ["chat"],
+			supported_parameters: ["tools", "reasoning"],
+		});
+		expect(model.capabilities).toEqual(["chat"]);
+	});
+
+	it("treats an empty canonical list as authoritative", async () => {
+		const model = await loadEntry({ id: "claude-opus-5", capabilities: [] });
+		expect(model.capabilities).toEqual([]);
+	});
+
+	it.each([
+		{ capabilities: ["chat", "tools"] },
+		{ supported_parameters: ["tools"] },
+		{ id: "claude-opus-5" },
+	])("honors explicit false tool support over other signals: %j", async (metadata) => {
+		const model = await loadEntry({ ...metadata, supports_tools: false });
+		expect(model.capabilities).not.toContain("agents");
+	});
+
+	it("retains curated capabilities for a known model served by an older API", async () => {
+		const model = await loadEntry({ id: "claude-opus-5", supports_tools: true });
+		expect(model.capabilities).toEqual(["chat", "reasoning", "coding", "agents"]);
+	});
+
+	it("uses supported parameters and the tool flag for an unknown legacy model", async () => {
+		const model = await loadEntry({ supported_parameters: ["reasoning_effort"], supports_tools: true });
+		expect(model.capabilities).toEqual(["chat", "reasoning", "agents"]);
+	});
+
+	it("does not assume tools or reasoning for an unknown model with no metadata", async () => {
+		const model = await loadEntry({});
+		expect(model.capabilities).toEqual(["chat"]);
+	});
+});

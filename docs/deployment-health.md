@@ -34,3 +34,30 @@ The storage quota regression now intercepts `setItem` on its actual method
 owner: jsdom's Storage proxy needs a prototype spy, whereas the Node 26
 in-memory fallback has an own method. This fixes the Node 24-only test failure
 without changing application storage behavior.
+
+## September 28 service checks
+
+The frontend and API are separate health signals. A Ready Vercel deployment
+and API `/health` response do not prove that Redis or inference providers
+are healthy. The API `/ready` still reports degraded Redis: its configured
+Upstash hostname does not resolve. Restoring service requires the matching
+production URL/token pair; do not substitute the development environment.
+The bounded authentication fallback preserves each route's configured
+request budget while that dependency is unavailable.
+
+At 05:28 UTC, a real website request received provider HTTP 503 responses for
+both `MiniMaxAI/MiniMax-M2.7` and `zai-org/GLM-5.3-Flash`. Both identifiers are
+present in the upstream's public `/v1/models` catalog. This is evidence of
+provider unavailability, not a reason to invent different model IDs or route
+free requests to a paid provider.
+
+A separate raw response check showed repetitive text from the free DeepSeek
+route. Automatic free failover excludes that peer until a live completion
+confirms recovery; explicit selection is retained. GLM and MiniMax remain
+the automatic free peers, and unavailable-provider errors remain visible
+when neither can serve a request.
+
+Model API `available` flags reflect configured routes, not synthetic
+inference health probes. Public counts use **enabled models**, and both
+model endpoints expose the catalog's canonical `capabilities` array so list
+and detail pages do not disagree after loading live data.

@@ -180,7 +180,7 @@ export interface LiveModelRaw {
 	available?: boolean;
 	/** Modality bucket — "chat", "image", "video", etc. */
 	modality?: string;
-	pricing?: { prompt?: string; completion?: string };
+	pricing?: { prompt?: string | number; completion?: string | number };
 }
 
 /**
@@ -226,10 +226,10 @@ export function mapLiveModel(m: LiveModelRaw): ModelOption {
 		provider,
 		available: isModelAvailable(m),
 		inputPer1M: m.pricing?.prompt
-			? parseFloat(m.pricing.prompt)
+			? Number(m.pricing.prompt)
 			: 0,
 		outputPer1M: m.pricing?.completion
-			? parseFloat(m.pricing.completion)
+			? Number(m.pricing.completion)
 			: 0,
 		ctx: m.context_length ? formatCtx(m.context_length) : "128K",
 	};

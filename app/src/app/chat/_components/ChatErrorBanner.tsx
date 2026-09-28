@@ -26,13 +26,16 @@ import {
 	X,
 } from "lucide-react";
 import Link from "next/link";
+import { saveChatDraftForSignIn } from "@/lib/chat-signin-draft";
 import { usePathname } from "next/navigation";
+import { buildLoginHref } from "@/lib/login-href";
 import { useCallback, useEffect, useState } from "react";
 
 interface ChatErrorBannerProps {
 	error: string | null;
 	onDismiss: () => void;
 	onRetry?: () => void;
+	loginHref?: string;
 }
 
 interface ErrorClassification {
@@ -52,25 +55,29 @@ function classifyError(
 ): ErrorClassification {
 	const lower = error.toLowerCase();
 
-	// Rate limit errors must be checked BEFORE auth — the daily-limit error
-	// string contains "Sign in for 100 requests/day" which would otherwise
-	// be misclassified as an auth failure.
+	// A provider outage is distinct from the visitor's connection or quota.
+	// Generic service failures do not identify their cause, so do not guess.
 	if (
 		lower.includes("temporarily unavailable") ||
 		lower.includes("503") ||
 		lower.includes("service_unavailable")
 	) {
+		const providerUnavailable = lower.includes("provider") || lower.includes("model");
 		return {
-			type: "network",
-			label: "GATEWAY UNAVAILABLE",
-			suggestion:
-				"The inference gateway is temporarily unavailable. Retry in a moment — this is usually a rate-limit or Redis blip, not your prompt.",
+			type: providerUnavailable ? "model" : "network",
+			label: providerUnavailable ? "PROVIDER UNAVAILABLE" : "GATEWAY UNAVAILABLE",
+			suggestion: providerUnavailable
+				? "The model provider is temporarily unavailable. Try again later or choose another model."
+				: "The service is temporarily unavailable. Please try again in a moment.",
 			action: onRetry
 				? { label: "Retry", onClick: onRetry }
 				: undefined,
 		};
 	}
 
+	// Rate limit errors must be checked BEFORE auth — the daily-limit error
+	// string contains "Sign in for 100 requests/day" which would otherwise
+	// be misclassified as an auth failure.
 	if (
 		lower.includes("daily") ||
 		lower.includes("rate limit") ||
@@ -125,7 +132,7 @@ function classifyError(
 			type: "auth",
 			label: "AUTH REQUIRED",
 			suggestion:
-				"Sign in with your wallet or magic link — chat also needs an API key (created in the dashboard)",
+				"Sign in with your wallet or email link to continue. Paid models use your account credits.",
 		};
 	}
 
@@ -245,6 +252,7 @@ export function ChatErrorBanner({
 	error,
 	onDismiss,
 	onRetry,
+	loginHref: returnToLogin,
 }: ChatErrorBannerProps) {
 	const pathname = usePathname();
 	const [retrying, setRetrying] = useState(false);
@@ -254,9 +262,7 @@ export function ChatErrorBanner({
 	const styles = classification ? TYPE_STYLES[classification.type] : null;
 	const Icon = classification ? TYPE_ICONS[classification.type] : AlertCircle;
 
-	const loginHref = pathname
-		? `/login?next=${encodeURIComponent(pathname)}`
-		: "/login";
+	const loginHref = returnToLogin ?? buildLoginHref(pathname ?? "/chat");
 
 	// Auto-countdown only for transient per-minute rate limits (not daily quota).
 	useEffect(() => {
@@ -327,7 +333,7 @@ export function ChatErrorBanner({
 						{/* Auth CTA */}
 						{classification.type === "auth" && (
 							<Link
-								href={loginHref}
+								href={loginHref} onClick={() => saveChatDraftForSignIn()}
 								prefetch={false}
 								className="
 	inline-flex items-center gap-1 px-3 py-1.5
@@ -336,24 +342,6 @@ export function ChatErrorBanner({
 	"
 							>
 								Sign In
-								<ArrowRight className="w-3 h-3" />
-							</Link>
-						)}
-
-						{/* API key CTA — a 401 also fires for signed-in users who
-						 haven't created an API key yet (chat auths with the
-						 oma_api_key cookie, not the session JWT). */}
-						{classification.type === "auth" && (
-							<Link
-								href="/dashboard?tab=api-keys"
-								prefetch={false}
-								className="
-	inline-flex items-center gap-1 px-3 py-1.5
-	border border-current text-[10px] font-bold uppercase tracking-wider
-	hover:bg-surface-elevated/50 transition-[background-color,transform] duration-200 ease-out active:scale-[0.97] focus-ring min-h-[32px]
-	"
-							>
-								Create API Key
 								<ArrowRight className="w-3 h-3" />
 							</Link>
 						)}
@@ -380,7 +368,7 @@ export function ChatErrorBanner({
 							classification.action?.href === "/login" && (
 								<>
 									<Link
-										href={loginHref}
+										href={loginHref} onClick={() => saveChatDraftForSignIn()}
 										prefetch={false}
 										className="
 	inline-flex items-center gap-1 px-3 py-1.5

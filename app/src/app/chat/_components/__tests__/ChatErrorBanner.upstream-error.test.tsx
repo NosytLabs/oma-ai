@@ -6,7 +6,7 @@
  * V4 Flash upstream was at capacity and the user saw their message + nothing
  * else).
  */
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ChatErrorBanner } from "../ChatErrorBanner";
 
@@ -15,6 +15,27 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("ChatErrorBanner upstream timeout", () => {
+	it.each([
+		"Inference provider temporarily unavailable",
+		"Model MiniMaxAI/MiniMax-M2.7 is temporarily unavailable",
+	])("identifies provider unavailability honestly: %s", (error) => {
+		const onRetry = vi.fn();
+		render(<ChatErrorBanner error={error} onDismiss={vi.fn()} onRetry={onRetry} />);
+		expect(screen.getByText("PROVIDER UNAVAILABLE")).toBeInTheDocument();
+		expect(screen.getByText(/try again later or choose another model/i)).toBeInTheDocument();
+		expect(screen.queryByText(/redis|rate-limit or/i)).not.toBeInTheDocument();
+		fireEvent.click(screen.getByRole("button", { name: /try again/i }));
+		expect(onRetry).toHaveBeenCalledOnce();
+	});
+
+	it("does not invent a cause for an unspecified service outage", () => {
+		render(
+			<ChatErrorBanner error="HTTP 503: Service Unavailable" onDismiss={vi.fn()} onRetry={vi.fn()} />,
+		);
+		expect(screen.getByText("GATEWAY UNAVAILABLE")).toBeInTheDocument();
+		expect(screen.queryByText(/redis|rate-limit or/i)).not.toBeInTheDocument();
+	});
+
 	it("renders a network banner with Retry for 504 upstream timeout", () => {
 		render(
 			<ChatErrorBanner

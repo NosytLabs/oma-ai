@@ -24,6 +24,15 @@ vi.mock("../../inference/models.js", () => ({
 						contextWindow: 1000000,
 						supportsStreaming: true,
 						capabilities: ["chat", "reasoning", "coding", "tools"]
+				},
+				{
+						id: "chat-only",
+						provider: "venice",
+						displayName: "Chat Only",
+						category: "budget",
+						contextWindow: 128000,
+						supportsStreaming: true,
+						capabilities: ["chat"]
 				}
 		]),
 		providerAvailable: vi.fn().mockReturnValue(true)
@@ -96,5 +105,21 @@ describe("/v1/models — modality field (R6)", () => {
 				expect(res.status).toBe(404);
 				const body = await res.json();
 				expect(body.error?.type).toBe("not_found");
+		});
+
+		it("exposes the canonical capabilities consistently in list and detail responses", async () => {
+				const body = await (await app.request("/v1/models")).json();
+				const expected = [
+						{ id: "claude-opus-5", capabilities: ["chat", "reasoning", "coding", "tools"], supports_tools: true },
+						{ id: "chat-only", capabilities: ["chat"], supports_tools: false },
+				];
+				for (const model of expected) {
+						const listed = body.data.find((entry: { id: string }) => entry.id === model.id);
+						expect(listed).toMatchObject(model);
+						const detail = await (await app.request(`/v1/models/${model.id}`)).json();
+						expect(detail).toMatchObject(model);
+						expect(detail.pricing).toEqual({ prompt: 7.5, completion: 37.5 });
+						expect(listed.pricing).toEqual(detail.pricing);
+				}
 		});
 });

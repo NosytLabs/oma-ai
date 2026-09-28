@@ -2,9 +2,18 @@
 
 import { m } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";
+import Link from "next/link";
+import { saveChatDraftForSignIn } from "@/lib/chat-signin-draft";
+import { GUEST_DAILY_LIMIT_DEFAULT } from "@/lib/guest-daily-quota";
 import { Coins } from "lucide-react";
 
-interface EmptyStateProps {
+export interface EmptyStateProps {
+	modelName?: string;
+	guestAccess?: "free" | "sign-in" | "unknown";
+	dailyLimit?: number;
+	loginHref?: string;
+	onChooseFreeModel?: () => void;
+	freeModelName?: string;
 	/** Hide guest-quota marketing when the user is signed in. */
 	signedIn?: boolean;
 	/** Seeds the composer with a starter prompt. Omit to render read-only. */
@@ -23,7 +32,16 @@ const STARTER_PROMPTS = [
 	"Summarise what x402 settlement does and when to use it.",
 ] as const;
 
-export function ChatEmptyState({ signedIn = false, onPickPrompt }: EmptyStateProps) {
+export function ChatEmptyState({
+	signedIn = false,
+	onPickPrompt,
+	modelName,
+	guestAccess = "unknown",
+	dailyLimit = GUEST_DAILY_LIMIT_DEFAULT,
+	loginHref = "/login",
+	onChooseFreeModel,
+	freeModelName,
+}: EmptyStateProps) {
 
 	return (
 		<div className="flex flex-col items-center justify-start py-4 text-center md:py-6">
@@ -44,7 +62,7 @@ export function ChatEmptyState({ signedIn = false, onPickPrompt }: EmptyStatePro
 				transition={{ delay: 0.08, ...springs.soft }}
 				className="mb-1.5 text-xl font-mono tracking-tight text-text-bright sm:text-2xl"
 			>
-				{signedIn ? "Chat with any model" : "Chat free on OMA-AI models"}
+				{modelName ? `Chat with ${modelName}` : "Start a conversation"}
 			</m.h2>
 			<m.p
 				initial={{ y: 12, opacity: 0 }}
@@ -53,9 +71,22 @@ export function ChatEmptyState({ signedIn = false, onPickPrompt }: EmptyStatePro
 				className="mb-5 max-w-md text-sm leading-relaxed text-text-secondary"
 			>
 				{signedIn
-					? "Start with a question below. Credits unlock the full catalog."
-					: "Start with a question below. Guests get free messages on OMA-AI budget models."}
+					? "Start with a question below."
+					: guestAccess === "sign-in"
+						? `This model requires sign-in and credits.${onChooseFreeModel ? " Sign in to continue, or choose a free model." : ""}`
+						: guestAccess === "free"
+							? "Start with a question below. This model is free in website chat."
+							: "Start with a question below. Current pricing is shown when available."}
 			</m.p>
+
+			{!signedIn && guestAccess === "sign-in" && (
+				<div className="mb-5 flex flex-wrap justify-center gap-2">
+					<Link href={loginHref} onClick={() => saveChatDraftForSignIn()} className="inline-flex min-h-11 items-center rounded-[var(--radius-lg)] bg-accent px-4 py-2 text-sm font-semibold text-[var(--color-accent-fg)] hover:bg-accent-hover focus-ring">Sign in to use this model</Link>
+					{onChooseFreeModel && (
+						<button type="button" onClick={onChooseFreeModel} className="min-h-11 rounded-[var(--radius-lg)] border border-border px-4 py-2 text-sm text-text-secondary hover:text-text-bright focus-ring">Try {freeModelName ?? "a model"} free</button>
+					)}
+				</div>
+			)}
 
 			{onPickPrompt && (
 				<m.ul
@@ -78,7 +109,7 @@ export function ChatEmptyState({ signedIn = false, onPickPrompt }: EmptyStatePro
 				</m.ul>
 			)}
 
-			{!signedIn && (
+			{!signedIn && guestAccess === "free" && (
 			<m.div
 				initial={{ opacity: 0 }}
 				animate={{ opacity: 1 }}
@@ -86,7 +117,7 @@ export function ChatEmptyState({ signedIn = false, onPickPrompt }: EmptyStatePro
 				className="mt-4 flex items-center gap-2 text-[11px] font-mono text-text-muted uppercase tracking-wider"
 			>
 				<Coins className="h-3.5 w-3.5 text-[var(--color-accent)] opacity-80" aria-hidden="true" />
-				Free tier: 20 requests/day · no card needed
+				Free tier: {dailyLimit} requests/day · no card needed
 			</m.div>
 			)}
 		</div>
