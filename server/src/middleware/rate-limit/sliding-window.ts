@@ -3,7 +3,7 @@ import { getRedisClient, isRedisReady } from "../../lib/redis-client.js";
 import { RPM_LIMIT_SCRIPT } from "./lua-scripts.js";
 import { extractClientIp, type RateLimitResult, type RedisEvalResult } from "./utils.js";
 import { logger } from "../../lib/logger.js";
-import { checkFallbackLimit } from "./memory-store.js";
+import { checkMemoryCounter } from "./memory-store.js";
 
 // RPM limiter using sliding window
 export async function checkRpmLimit(
@@ -103,9 +103,13 @@ export function rateLimit(options: RateLimitOptions) {
 									);
 									degradedWarned = true;
 								}
-							const fb = checkFallbackLimit(rateLimitKey);
-							c.header("X-RateLimit-Policy", "limiter");
+							// Preserve this route's budget. The emergency inference cap
+							// of 5/min breaks ordinary auth and session refresh flows.
+							const fb = checkMemoryCounter(rateLimitKey, maxRequests, windowMs);
+							c.header("X-RateLimit-Policy", "degraded-memory");
+							c.header("X-RateLimit-Limit", String(maxRequests));
 							c.header("X-RateLimit-Remaining", String(fb.remaining));
+							c.header("X-RateLimit-Reset", String(Math.ceil((Date.now() + fb.resetMs) / 1000)));
 							if (!fb.allowed) {
 								c.header("Retry-After", String(Math.ceil(fb.resetMs / 1000)));
 								return c.json(
@@ -151,8 +155,11 @@ export function rateLimit(options: RateLimitOptions) {
 					if (!failClosed) {
 						// Same reasoning as the unavailable branch above: a Redis
 						// error must not silently remove the cap.
-						const fb = checkFallbackLimit(rateLimitKey);
-						c.header("X-RateLimit-Policy", "limiter");
+						const fb = checkMemoryCounter(rateLimitKey, maxRequests, windowMs);
+						c.header("X-RateLimit-Policy", "degraded-memory");
+						c.header("X-RateLimit-Limit", String(maxRequests));
+						c.header("X-RateLimit-Remaining", String(fb.remaining));
+						c.header("X-RateLimit-Reset", String(Math.ceil((Date.now() + fb.resetMs) / 1000)));
 						if (!fb.allowed) {
 							c.header("Retry-After", String(Math.ceil(fb.resetMs / 1000)));
 							return c.json(

@@ -47,12 +47,15 @@ try {
 		);
 
 		const token = crypto.randomBytes(24).toString("base64url");
+		// Match the magicLink plugin's storeToken: "hashed" setting. The raw
+		// token belongs only in the one-time URL, never in the verification row.
+		const tokenHash = crypto.createHash("sha256").update(token).digest("base64url");
 		await pool.query(
 			`INSERT INTO verification (id, identifier, value, expires_at, created_at, updated_at)
 			 VALUES ($1, $2, $3, $4, NOW(), NOW())`,
 			[
 				crypto.randomBytes(16).toString("hex"),
-				token,
+				tokenHash,
 				JSON.stringify({ email: identity.email, name: identity.name }),
 				new Date(Date.now() + 10 * 60 * 1000),
 			],

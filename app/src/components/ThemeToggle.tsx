@@ -5,7 +5,7 @@
 	*/
 
 import { Check, Palette } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
 	THEME_ACCENTS,
@@ -18,7 +18,8 @@ export function ThemeToggle() {
 	const { theme, setTheme } = useTheme();
 	const [open, setOpen] = useState(false);
 	const [mounted, setMounted] = useState(false);
-	const [menuPos, setMenuPos] = useState({ top: 0, right: 8 });
+	const [menuPos, setMenuPos] = useState({ top: 0, left: 8 });
+	const initialFocus = useRef<"first" | "last" | "selected">("selected");
 	const containerRef = useRef<HTMLDivElement | null>(null);
 	const toggleRef = useRef<HTMLButtonElement | null>(null);
 	const menuRef = useRef<HTMLDivElement | null>(null);
@@ -36,7 +37,7 @@ export function ThemeToggle() {
 			if (!rect) return;
 			setMenuPos({
 				top: rect.bottom + 8,
-				right: Math.max(8, window.innerWidth - rect.right),
+				left: Math.min(Math.max(8, rect.right - 240), Math.max(8, window.innerWidth - 248)),
 			});
 		};
 		place();
@@ -56,19 +57,55 @@ export function ThemeToggle() {
 			}
 			setOpen(false);
 		}
-		function onKey(e: KeyboardEvent) {
-			if (e.key === "Escape") {
-				setOpen(false);
-				toggleRef.current?.focus();
-			}
+		function onFocus(event: FocusEvent) {
+			const target = event.target as Node;
+			if (!containerRef.current?.contains(target) && !menuRef.current?.contains(target)) setOpen(false);
 		}
-		document.addEventListener("mousedown", onDocClick);
-		document.addEventListener("keydown", onKey);
+		document.addEventListener("pointerdown", onDocClick);
+		document.addEventListener("focusin", onFocus);
 		return () => {
-			document.removeEventListener("mousedown", onDocClick);
-			document.removeEventListener("keydown", onKey);
+			document.removeEventListener("pointerdown", onDocClick);
+			document.removeEventListener("focusin", onFocus);
 		};
 	}, [open]);
+
+	useEffect(() => {
+		if (!open) return;
+		const items = menuRef.current?.querySelectorAll<HTMLButtonElement>("button");
+		const selected = menuRef.current?.querySelector<HTMLButtonElement>('[aria-checked="true"]');
+		const target = initialFocus.current === "last" ? items?.[items.length - 1]
+			: initialFocus.current === "first" ? items?.[0] : selected ?? items?.[0];
+		target?.focus();
+	}, [open]);
+
+	function onMenuKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+		if (event.key === "Escape" || event.key === "Tab") {
+			if (event.key === "Escape") {
+				event.preventDefault();
+				event.stopPropagation();
+			}
+			setOpen(false);
+			toggleRef.current?.focus();
+			return;
+		}
+		const items = Array.from(menuRef.current?.querySelectorAll<HTMLButtonElement>("button") ?? []);
+		const current = items.indexOf(document.activeElement as HTMLButtonElement);
+		let next: number;
+		switch (event.key) {
+			case "ArrowDown": next = (current + 1) % items.length; break;
+			case "ArrowUp": next = (current - 1 + items.length) % items.length; break;
+			case "Home": next = 0; break;
+			case "End": next = items.length - 1; break;
+			default: {
+				if (event.key.length !== 1 || event.ctrlKey || event.metaKey || event.altKey) return;
+				next = items.findIndex((item, index) => index > current && item.getAttribute("aria-label")?.toLowerCase().startsWith(event.key.toLowerCase()));
+				if (next < 0) next = items.findIndex((item) => item.getAttribute("aria-label")?.toLowerCase().startsWith(event.key.toLowerCase()));
+				if (next < 0) return;
+			}
+		}
+		event.preventDefault();
+		items[next]?.focus();
+	}
 
 	const menu = open ? (
 				<div
@@ -76,13 +113,14 @@ export function ThemeToggle() {
 					id="theme-menu"
 					role="menu"
 					aria-label="Choose theme"
-					style={{ top: menuPos.top, right: menuPos.right }}
+					style={{ top: menuPos.top, left: menuPos.left }}
+					onKeyDown={onMenuKeyDown}
 					className="fixed z-[80] w-60 max-w-[calc(100vw-1rem)] rounded-[var(--radius-lg)] border border-border-hi bg-void/95 backdrop-blur-md p-2 shadow-2xl font-mono"
 				>
 					<p className="px-3 pt-2 pb-1.5 text-[10px] uppercase tracking-[0.18em] text-text-tertiary">
 						Accent theme
 					</p>
-					<ul className="space-y-0.5">
+					<ul className="space-y-0.5" role="none">
 						{THEME_LIST.map((t) => {
 							const isActive = t.id === theme;
 							const swatchColor = THEME_ACCENTS[t.id as Theme];
@@ -91,6 +129,7 @@ export function ThemeToggle() {
 									<button
 										type="button"
 										role="menuitemradio"
+										tabIndex={-1}
 										aria-checked={isActive}
 										aria-label={t.name}
 										onClick={() => {
@@ -98,7 +137,7 @@ export function ThemeToggle() {
 											setOpen(false);
 											toggleRef.current?.focus();
 										}}
-										className={`group flex w-full items-center gap-3 rounded-[var(--radius-md)] px-2.5 py-2 text-left transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+										className={`group flex min-h-11 w-full items-center gap-3 rounded-[var(--radius-md)] px-2.5 py-2 text-left transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
 											isActive
 												? "bg-accent-dim text-accent"
 												: "text-text-secondary hover:bg-surface hover:text-text-bright"
@@ -144,7 +183,16 @@ export function ThemeToggle() {
 			<button
 				ref={toggleRef}
 				type="button"
-				onClick={() => setOpen((o) => !o)}
+				onClick={() => {
+					initialFocus.current = "selected";
+					setOpen((value) => !value);
+				}}
+				onKeyDown={(event) => {
+					if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+					event.preventDefault();
+					initialFocus.current = event.key === "ArrowUp" ? "last" : "first";
+					setOpen(true);
+				}}
 				aria-haspopup="menu"
 				aria-expanded={open}
 				aria-controls="theme-menu"

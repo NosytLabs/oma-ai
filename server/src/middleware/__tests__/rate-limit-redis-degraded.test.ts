@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getRedisClient, isRedisReady, checkFallbackLimit, logger } = vi.hoisted(() => ({
+const { getRedisClient, isRedisReady, checkMemoryCounter, logger } = vi.hoisted(() => ({
 	getRedisClient: vi.fn(),
 	isRedisReady: vi.fn(),
-	checkFallbackLimit: vi.fn(),
+	checkMemoryCounter: vi.fn(),
 	logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
 }));
 
@@ -11,7 +11,7 @@ vi.mock("../../lib/redis-client.js", () => ({
 	getRedisClient,
 	isRedisReady,
 }));
-vi.mock("../rate-limit/memory-store.js", () => ({ checkFallbackLimit, FALLBACK_BURST_LIMIT: 5 }));
+vi.mock("../rate-limit/memory-store.js", () => ({ checkMemoryCounter }));
 vi.mock("../../lib/logger.js", () => ({ logger }));
 
 import { rateLimit } from "../rate-limit/sliding-window.js";
@@ -51,7 +51,7 @@ describe("rate limiting while Redis is unavailable", () => {
 	beforeEach(() => {
 		getRedisClient.mockReset();
 		isRedisReady.mockReset();
-		checkFallbackLimit.mockReset();
+		checkMemoryCounter.mockReset();
 		logger.warn.mockReset();
 	});
 
@@ -63,7 +63,7 @@ describe("rate limiting while Redis is unavailable", () => {
 		const mw = run(true);
 		let allowed = 0;
 		let limited = 0;
-		checkFallbackLimit.mockReturnValue({ allowed: false, remaining: 0, resetMs: 30_000 });
+		checkMemoryCounter.mockReturnValue({ allowed: false, remaining: 0, resetMs: 30_000 });
 
 		for (let i = 0; i < 5; i++) {
 			// Hono's Next resolves void; capture the short-circuit from the
@@ -88,27 +88,28 @@ describe("rate limiting while Redis is unavailable", () => {
 
 	it("allows requests through while the fallback budget lasts", async () => {
 		const mw = run(true);
-		checkFallbackLimit.mockReturnValue({ allowed: true, remaining: 4, resetMs: 30_000 });
+		checkMemoryCounter.mockReturnValue({ allowed: true, remaining: 4, resetMs: 30_000 });
 		let handled = false;
 		await mw(ctx(), async () => {
 			handled = true;
 		});
 		expect(handled).toBe(true);
+		expect(checkMemoryCounter).toHaveBeenCalledWith("auth:ip:unknown", 40, 60_000);
 	});
 
 	it("labels the degraded policy in a response header", async () => {
 		const mw = run(true);
-		checkFallbackLimit.mockReturnValue({ allowed: true, remaining: 4, resetMs: 30_000 });
+		checkMemoryCounter.mockReturnValue({ allowed: true, remaining: 4, resetMs: 30_000 });
 		const c = ctx();
 		await mw(c, async () => {});
 		expect((c as unknown as { headers: Record<string, string> }).headers["X-RateLimit-Policy"]).toBe(
-			"limiter",
+			"degraded-memory",
 		);
 	});
 
 	it("warns once that limiting is degraded", async () => {
 		const mw = run(true);
-		checkFallbackLimit.mockReturnValue({ allowed: true, remaining: 4, resetMs: 30_000 });
+		checkMemoryCounter.mockReturnValue({ allowed: true, remaining: 4, resetMs: 30_000 });
 		await mw(ctx(), async () => {});
 		expect(logger.warn).toHaveBeenCalled();
 	});
@@ -128,6 +129,6 @@ describe("rate limiting while Redis is unavailable", () => {
 			reached = true;
 		});
 		expect(reached, "request should reach the handler with Redis up").toBe(true);
-		expect(checkFallbackLimit).not.toHaveBeenCalled();
+		expect(checkMemoryCounter).not.toHaveBeenCalled();
 	});
 });

@@ -85,7 +85,7 @@ export function SessionsSection({
 		<div>
 			<div className="mb-4 flex flex-wrap items-end justify-between gap-3">
 				<div>
-					<h2 className="text-lg font-semibold text-text-bright">
+					<h2 className="font-sans text-lg font-semibold text-text-bright">
 						Active sessions
 					</h2>
 					<p className="mt-1 text-sm text-text-muted">

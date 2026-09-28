@@ -68,7 +68,7 @@ export function DangerZoneSection({
 	return (
 		<div>
 			<div className="mb-4">
-				<h2 className="text-lg font-semibold text-error">
+				<h2 className="font-sans text-lg font-semibold text-error">
 					Danger zone
 				</h2>
 				<p className="mt-1 text-sm text-text-muted">

@@ -1,8 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { generateMetadata } from "../[slug]/page";
 
-vi.mock("../[slug]/_components/StaticModelDetail", () => ({ StaticModelDetail: () => null }));
-vi.mock("../[slug]/_components/LiveModelDetail", () => ({ LiveModelDetail: () => null }));
+vi.mock("../[slug]/_components/ModelDetail", () => ({ ModelDetail: () => null }));
 
 afterEach(() => vi.unstubAllGlobals());
 

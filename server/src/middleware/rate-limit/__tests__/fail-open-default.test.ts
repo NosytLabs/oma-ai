@@ -43,7 +43,7 @@ describe("rate limiter default is fail-open", () => {
 	it("still enforces a bound when degraded, rather than skipping the limit", () => {
 		// A fail-open that simply calls next() would be unbounded — that was
 		// the original problem this option was introduced to avoid.
-		expect(src).toMatch(/checkFallbackLimit\(rateLimitKey\)/);
+		expect(src).toMatch(/checkMemoryCounter\(rateLimitKey, maxRequests, windowMs\)/);
 		expect(src).toMatch(/X-RateLimit-Policy/);
 		expect(src).toMatch(/rate_limit_exceeded/);
 	});

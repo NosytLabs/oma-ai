@@ -91,7 +91,7 @@ export const metadata: Metadata = {
 		url: SITE_URL,
 		images: [
 			{
-				url: "/og-image.png",
+				url: "/og-image.png?v=20260928",
 				width: 1280,
 				height: 720,
 				alt: "OMA — One gateway. Every model.",
@@ -103,15 +103,15 @@ export const metadata: Metadata = {
 	// Twitter falls back to each page's og:title/og:description when absent.
 	twitter: {
 		card: "summary_large_image",
-		images: ["/og-image.png"],
+		images: ["/og-image.png?v=20260928"],
 	},
 	icons: {
 		icon: [
-			{ url: "/favicon.svg", type: "image/svg+xml" },
-			{ url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
-			{ url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+			{ url: "/favicon.svg?v=20260928", type: "image/svg+xml" },
+			{ url: "/favicon-32x32.png?v=20260928", sizes: "32x32", type: "image/png" },
+			{ url: "/favicon-16x16.png?v=20260928", sizes: "16x16", type: "image/png" },
 		],
-		apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+		apple: [{ url: "/apple-touch-icon.png?v=20260928", sizes: "180x180", type: "image/png" }],
 	},
 	manifest: "/manifest.webmanifest",
 	applicationName: "OMA AI",

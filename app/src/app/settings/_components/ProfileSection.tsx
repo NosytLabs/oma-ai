@@ -87,7 +87,7 @@ export function ProfileSection({ user, evmAddress, readOnly = false }: ProfileSe
 	return (
 		<div>
 			<div className="mb-1">
-				<h2 className="text-lg font-semibold text-text-bright">Profile</h2>
+				<h2 className="font-sans text-lg font-semibold text-text-bright">Profile</h2>
 				<p className="mt-1 text-sm text-text-muted">
 					Your account details and authentication method.
 				</p>

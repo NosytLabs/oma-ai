@@ -3,7 +3,6 @@
 import {
 	Brain,
 	Check,
-	ChevronDown,
 	Link2,
 	Search,
 	Sparkles,
@@ -16,12 +15,10 @@ import { Suspense, useMemo } from "react";
 import { BreadcrumbListJsonLd } from "@/components/json-ld";
 import { InViewFade } from "@/components/motion/in-view-fade";
 import { Breadcrumb } from "@/components/shared/Breadcrumb";
-import { springs } from "@/lib/animation";
-import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { MODELS, TIER_COLORS, TIER_ORDER } from "@/lib/models-data";
 import { ModelCard } from "./_components/ModelCard";
 import { ModelFiltersSidebar } from "./_components/ModelFiltersSidebar";
-import { SORT_OPTIONS, useModelFilters } from "./_hooks/useModelFilters";
+import { SORT_OPTIONS, useModelFilters, type SortKey } from "./_hooks/useModelFilters";
 
 const TIER_ICONS: Record<string, React.ReactNode> = {
 	budget: <Zap className="h-4 w-4" />,
@@ -38,8 +35,6 @@ function ModelsPageInner() {
 		selectedProvider,
 		sortBy,
 		copied,
-		sortOpen,
-		setSortOpen,
 		isLoadingModels,
 		inputModalities,
 		setInputModalities,
@@ -94,10 +89,8 @@ function ModelsPageInner() {
 							Every model, one&nbsp;catalog.
 						</h1>
 						<p className="page-intro max-w-2xl">
-							Curated chat models from Venice and OMA-AI, all reachable
-							through one OpenAI-compatible endpoint. Filter by tier,
-							provider, capabilities, or context window to find what you
-							need.
+							Compare chat models, token prices, and context windows.
+							Choose a model to explore its capabilities or try it in chat.
 						</p>
 						<p className="mt-4 font-mono text-xs uppercase tracking-[0.18em] text-text-muted">
 							{totalModels} models in the catalog
@@ -159,58 +152,21 @@ function ModelsPageInner() {
 						/>
 					</div>
 
-					{/* Sort Dropdown */}
-					<div className="relative">
-						<button
-							type="button"
-							onClick={() => setSortOpen(!sortOpen)}
-							className="flex items-center gap-2 rounded-[var(--radius-xl)] border border-border bg-panel px-4 py-3 text-sm text-text-secondary hover:border-accent transition-[color,transform,border-color] duration-200 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-							aria-haspopup="listbox"
-							aria-expanded={sortOpen}
+					<div className="flex items-center gap-3 rounded-[var(--radius-xl)] border border-border bg-panel px-4">
+						<label htmlFor="models-sort" className="text-sm text-text-muted">Sort by</label>
+						<select
+							id="models-sort"
+							value={sortBy}
+							onChange={(event) => handleSort(event.target.value as SortKey)}
+							className="min-h-12 flex-1 bg-panel py-3 pr-2 text-sm text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 						>
-							<span className="text-text-muted">Sort:</span>
-							<span className="text-text-bright">
-								{SORT_OPTIONS.find((o) => o.value === sortBy)?.label}
-							</span>
-							<ChevronDown className="h-3.5 w-3.5 text-text-muted" />
-						</button>
-						<AnimatePresence>
-							{sortOpen && (
-								<m.div
-									initial={{ opacity: 0, scale: 0.95 }}
-									animate={{ opacity: 1, scale: 1 }}
-									exit={{ opacity: 0, scale: 0.95 }}
-									transition={springs.soft}
-									className="absolute right-0 mt-1 z-50 w-48 rounded-[var(--radius-xl)] border border-border bg-panel shadow-xl origin-top-right"
-									role="listbox"
-								>
-									{SORT_OPTIONS.map((opt) => (
-										<button
-											type="button"
-											key={opt.value}
-											onClick={() => handleSort(opt.value)}
-											className={`w-full text-left px-4 py-2.5 text-sm flex items-center justify-between transition-colors duration-200 ease-out ${
-												sortBy === opt.value
-													? "text-accent bg-surface"
-													: "text-text-secondary hover:bg-surface hover:text-text-bright"
-											}`}
-											role="option"
-											aria-selected={sortBy === opt.value}
-										>
-											{opt.label}
-											{sortBy === opt.value && (
-												<Check className="h-3.5 w-3.5" />
-											)}
-										</button>
-									))}
-								</m.div>
-							)}
-						</AnimatePresence>
+							{SORT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+						</select>
 					</div>
 				</div>
 
 				{/* Advanced Filters Sidebar */}
-				<div className="grid gap-6 mb-8 lg:grid-cols-12">
+				<div className="grid items-start gap-6 mb-8 lg:grid-cols-12">
 					<div className="lg:col-span-3">
 						<ModelFiltersSidebar
 							TIER_ORDER={TIER_ORDER}
@@ -237,7 +193,7 @@ function ModelsPageInner() {
 					</div>
 
 					{/* Model Grid */}
-					<div className="lg:col-span-9">
+					<div className="min-w-0 lg:col-span-9">
 						{groupedModels.length > 0 ? (
 							<div className="space-y-10">
 								{groupedModels.map((group) => {
