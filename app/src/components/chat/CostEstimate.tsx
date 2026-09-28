@@ -2,8 +2,7 @@
 
 import { Coins, MessageSquare } from "lucide-react";
 import { estimateTokens } from "@/lib/text";
-import { usdToCredits } from "@/lib/credit-utils";
-import { useSharedLiveModels } from "./chat-message-shared";
+import { useSharedLiveModelCatalog } from "./chat-message-shared";
 
 interface CostEstimateProps {
 	inputText: string;
@@ -14,6 +13,8 @@ interface CostEstimateProps {
 	 * instead of a stale 1500-token assumption.
 	 */
 	maxTokens?: number;
+	/** Guest and session-authenticated website requests on verified free models are not billed at API rates. */
+	freeWebsiteChat?: boolean;
 }
 
 /* Lives in its own file (extracted from MessageInput.tsx) so chat/page.tsx
@@ -25,36 +26,29 @@ export function CostEstimate({
 	inputText,
 	model,
 	maxTokens,
+	freeWebsiteChat = false,
 }: CostEstimateProps) {
-	const MODELS = useSharedLiveModels();
-	const selectedModel = MODELS.find((m) => m.id === model);
-	// Fallback rate when the model isn't in the live catalog (e.g. a stale
-	// ?model=invalid-model URL): use a generic $1 per 1M tokens instead of
-	// silently dropping the cost pill — the token count still shows, so
-	// dropping the cost would leave a confusing partial estimate.
-	const inputPer1M = selectedModel?.inputPer1M ?? 1;
-	const outputPer1M = selectedModel?.outputPer1M ?? 1;
-
+	const { models, status } = useSharedLiveModelCatalog();
+	const selectedModel = models.find((m) => m.id === model);
 	const inputTokens = estimateTokens(inputText);
-	// Credit math: 1 credit = $0.01 (1 cent). The server deducts
-	// `balanceCents` for every request, so USD costs from the catalog
-	// (which are in dollars) need to be multiplied by 100 to express
-	// them in credits. This matches the  tier math: $10 buys
-	// 1,000 credits (100 credits per dollar). Display 4 decimals so
-	// sub-cent micro-costs on the cheapest models still show.
-	const inputCostUsd = (inputTokens / 1_000_000) * inputPer1M;
-	// Estimate the output leg against the user's actual max_tokens setting.
-	// Fall back to 1500 when the playground hasn't initialized yet (defensive —
-	// the page always passes maxTokens, so this is a hot-load edge case).
 	const outputBudget = maxTokens ?? 1500;
-	const estimatedOutputCostUsd = (outputBudget / 1_000_000) * outputPer1M;
-	const totalCostUsd = inputCostUsd + estimatedOutputCostUsd;
-
-	const inputCredits = usdToCredits(inputCostUsd).toFixed(4);
-	const estimatedOutputCredits = usdToCredits(estimatedOutputCostUsd).toFixed(4);
-	// Visible value: 2 decimals so it doesn't read as "$0.0000" for free models.
-	// 4-decimal precision stays in the tooltip so power users can still see it.
-	const visibleCredits = usdToCredits(totalCostUsd).toFixed(2);
+	const hasPricing = status === "live" && selectedModel &&
+		selectedModel.pricingAvailable === true &&
+		[selectedModel.inputPer1M, selectedModel.outputPer1M].every((rate) => Number.isFinite(rate) && rate >= 0);
+	let label = status === "loading" ? "Loading pricing…" : "Pricing unavailable";
+	let title = "A live price is required to estimate this request.";
+	if (status === "live" && freeWebsiteChat) {
+		label = "Free chat";
+		title = "Website chat on this model is free. API requests are billed separately.";
+	} else if (hasPricing) {
+		// Preserve fractional credits. The deposit helper rounds down to whole
+		// credits, which understated 7.50 as 7.00 and small charges as zero.
+		const inputCredits = inputTokens * selectedModel.inputPer1M / 10_000;
+		const outputCredits = outputBudget * selectedModel.outputPer1M / 10_000;
+		const totalCredits = inputCredits + outputCredits;
+		label = `${totalCredits > 0 && totalCredits < 0.01 ? "<0.01" : totalCredits.toFixed(2)} cr EST`;
+		title = `Draft: ${inputCredits.toFixed(4)} cr · Reply budget: ${outputCredits.toFixed(4)} cr (${outputBudget.toLocaleString()} tokens max) · Excludes conversation history and system instructions · 1 credit = $0.01`;
+	}
 
 	return (
 		<div className="flex items-center gap-3 text-[11.5px] font-mono text-text-muted uppercase tracking-wider">
@@ -65,11 +59,11 @@ export function CostEstimate({
 			<div className="flex items-center gap-1.5 text-text-muted">
 				<Coins className="w-3 h-3 text-[var(--color-success)]" />
 				<span
-					title={`In: ${inputCredits} cr · Out: ~${estimatedOutputCredits} cr (${(outputBudget / 1000).toFixed(1)}k TK est) · 1 credit = $0.01`}
+					title={title}
 					role="status"
 					aria-live="polite"
 				>
-					{totalCostUsd === 0 ? "FREE" : `${visibleCredits} cr EST`}
+					{label}
 				</span>
 			</div>
 		</div>

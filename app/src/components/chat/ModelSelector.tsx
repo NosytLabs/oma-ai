@@ -14,6 +14,9 @@
 
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import Link from "next/link";
+import { saveChatDraftForSignIn } from "@/lib/chat-signin-draft";
+import { buildLoginHref } from "@/lib/login-href";
+import { playgroundHrefForModel } from "@/lib/playground-href";
 import { ChevronDown, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -346,7 +349,8 @@ export function ModelSelector({
 									</div>
 								) : unavailableModelCount > 0 ? (
 									<Link
-										href="/login"
+										href={buildLoginHref(playgroundHrefForModel(model))}
+										onClick={() => saveChatDraftForSignIn()}
 										className="mt-2 flex items-center justify-between rounded-[var(--radius-md)] border border-accent/20 bg-accent/5 px-2.5 py-2 text-xs text-text-secondary transition-colors hover:border-accent/40 hover:bg-accent/10"
 									>
 										<span>Sign in to browse all models</span>

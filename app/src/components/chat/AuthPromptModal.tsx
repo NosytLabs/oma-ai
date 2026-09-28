@@ -10,7 +10,8 @@ import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";
 import { Lock, X, Zap } from "lucide-react";
 import Link from "next/link";
-import { MODEL_COUNT } from "@/lib/models-data";
+import { useDialog } from "@/lib/use-dialog";
+import { GUEST_DAILY_LIMIT_DEFAULT } from "@/lib/guest-daily-quota";
 
 interface AuthPromptModalProps {
 	open: boolean;
@@ -19,18 +20,22 @@ interface AuthPromptModalProps {
 	reason?: "paid-model" | "message-limit";
 	/** Name of the model they tried to select (for paid-model reason) */
 	modelName?: string;
+	loginHref?: string;
+	onSignIn?: () => void;
+	freeModelName?: string;
+	onChooseFreeModel?: () => void;
+	dailyLimit?: number;
 }
 
 const reasons = {
 	"paid-model": {
 		title: "Sign in to access this model",
 		body: (name: string) =>
-			`${name} is a premium model. Create a free account to unlock the full catalog — ${MODEL_COUNT} curated chat models.`,
+			`${name} requires sign-in and credits. Your draft is still in the composer.`,
 	},
 	"message-limit": {
 		title: "Free messages used up",
-		body: () =>
-			`You've used your 20 free messages for today. Create a free account to keep chatting — plus API access to ${MODEL_COUNT} curated models.`,
+		body: () => "You've used today's guest allowance. Sign in to see your account's available options, or return when the daily allowance resets.",
 	},
 };
 
@@ -39,8 +44,14 @@ export function AuthPromptModal({
 	onClose,
 	reason = "message-limit",
 	modelName,
+	loginHref = "/login",
+	onSignIn,
+	freeModelName,
+	onChooseFreeModel,
+	dailyLimit = GUEST_DAILY_LIMIT_DEFAULT,
 }: AuthPromptModalProps) {
 	const r = reasons[reason];
+	const { panelRef } = useDialog({ open, onClose });
 
 	return (
 		<AnimatePresence>
@@ -57,6 +68,8 @@ export function AuthPromptModal({
 					aria-label={r.title}
 				>
 					<m.div
+						ref={panelRef}
+						tabIndex={-1}
 						initial={{ opacity: 0, scale: 0.98, y: 4 }}
 						animate={{ opacity: 1, scale: 1, y: 0 }}
 						exit={{ opacity: 0, scale: 0.98, y: 4 }}
@@ -94,11 +107,15 @@ export function AuthPromptModal({
 						{/* CTAs */}
 						<div className="flex flex-col gap-2">
 							<Link
-								href="/login"
+								href={loginHref}
+								onClick={onSignIn}
 								className="flex items-center justify-center gap-2 w-full rounded-[var(--radius-lg)] px-4 py-2.5 bg-[var(--color-accent)] text-[var(--color-accent-fg)] text-sm font-semibold hover:bg-[var(--color-accent-hover)] transition-[background-color,transform] active:scale-[0.97]"
 							>
-								Create Free Account
+								Sign in to continue
 							</Link>
+							{onChooseFreeModel && (
+								<button type="button" onClick={onChooseFreeModel} className="min-h-11 w-full rounded-[var(--radius-lg)] border border-border px-4 py-2 text-sm text-text-primary hover:bg-surface focus-ring">Try {freeModelName ?? "a model"} free</button>
+							)}
 							<button
 								type="button"
 								onClick={onClose}
@@ -109,9 +126,7 @@ export function AuthPromptModal({
 						</div>
 
 						{/* Footer note */}
-						<p className="mt-4 text-center text-[11px] text-text-muted/60">
-							Free tier: 20 messages/day · No credit card required
-						</p>
+						{reason === "message-limit" && <p className="mt-4 text-center text-[11px] text-text-muted/60">Guest allowance: {dailyLimit} messages/day</p>}
 					</m.div>
 				</m.div>
 			)}

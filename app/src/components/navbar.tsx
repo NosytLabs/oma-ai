@@ -2,8 +2,9 @@
 
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
+import { getActiveChatSignInModel, saveChatDraftForSignIn, subscribeChatSignInModel } from "@/lib/chat-signin-draft";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { OmaNavLockup } from "@/components/ui/oma-logo";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { buildLoginHref } from "@/lib/login-href";
@@ -28,7 +29,11 @@ function NavbarContent({ search }: { search: string }) {
 	const [toolsOpen, setToolsOpen] = useState(false);
 	const mobileToggleRef = useRef<HTMLButtonElement>(null);
 	const pathname = usePathname() ?? "/";
-	const loginHref = buildLoginHref(`${pathname}${search ? `?${search}` : ""}`);
+	const chatModel = useSyncExternalStore(subscribeChatSignInModel, getActiveChatSignInModel, () => null);
+	const returnParams = new URLSearchParams(search);
+	if (pathname === "/chat" && chatModel) returnParams.set("model", chatModel);
+	const returnSearch = returnParams.toString();
+	const loginHref = buildLoginHref(`${pathname}${returnSearch ? `?${returnSearch}` : ""}`);
 	const isConnected = isAuthenticated && !isDemo;
 
 	useEffect(() => {
@@ -77,7 +82,7 @@ function NavbarContent({ search }: { search: string }) {
 					) : isConnected ? (
 						<NavbarUserMenu evmAddress={evmAddress} email={user?.email ?? null} onSignOut={() => signOut({ callbackURL: "/" })} />
 					) : (
-						<Link href={loginHref} aria-label="Sign in or create an account" className="btn-mono btn-primary inline-flex px-3 text-xs sm:px-4">Sign in</Link>
+						<Link href={loginHref} onClick={() => saveChatDraftForSignIn()} aria-label="Sign in or create an account" className="btn-mono btn-primary inline-flex px-3 text-xs sm:px-4">Sign in</Link>
 					)}
 					<button ref={mobileToggleRef} type="button" onClick={() => setMobileOpen(!mobileOpen)}
 						className="inline-flex h-11 w-11 items-center justify-center rounded-sm text-text-secondary transition-colors hover:bg-surface hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent lg:hidden"

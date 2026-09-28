@@ -52,7 +52,7 @@ describe("ModelSelector", () => {
 		).not.toBeInTheDocument();
 		expect(
 			screen.getByRole("link", { name: /sign in to browse all models/i }),
-		).toHaveAttribute("href", "/login");
+		).toHaveAttribute("href", "/login?next=%2Fchat%3Fmodel%3Ddeepseek-v4-flash-0731-openbroker");
 	});
 
 	it("BUG-G: the count summary reflects the AVAILABLE set, not the catalog", () => {

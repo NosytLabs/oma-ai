@@ -2,6 +2,7 @@
 
 import { LogIn, X } from "lucide-react";
 import Link from "next/link";
+import { saveChatDraftForSignIn } from "@/lib/chat-signin-draft";
 import { usePathname } from "next/navigation";
 import { type RefObject, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -57,7 +58,7 @@ export function NavbarMobileMenu({ open, onOpenChange, toggleRef, isConnected, l
 							{group.links.map((link) => {
 								const Icon = link.icon;
 								const active = isCurrentNavLink(pathname, link.href);
-								return <li key={link.href}><Link href={link.href} prefetch={false} onClick={() => onOpenChange(false)} aria-current={active ? "page" : undefined}
+								return <li key={link.href}><Link href={link.href} prefetch={false} onClick={() => { if (link.href === loginHref) saveChatDraftForSignIn(); onOpenChange(false); }} aria-current={active ? "page" : undefined}
 									className={`flex min-h-11 items-center gap-3 rounded-sm px-3 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${active ? "bg-accent-dim text-accent" : "text-text-secondary hover:bg-surface hover:text-text-bright"}`}>
 									<Icon className="h-4 w-4 shrink-0" aria-hidden="true" /><span>{link.label}</span>
 								</Link></li>;

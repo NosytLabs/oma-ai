@@ -26,11 +26,14 @@ import {
 	systemPromptStorageKey,
 } from "@/lib/chat-storage";
 import {
+	displayName,
+	isFreeChatModel,
+	FREE_DEFAULT_CHAT_MODEL,
 } from "@/lib/model-utils";
-import {
-	freeLeftLabel,
-	GUEST_DAILY_LIMIT_DEFAULT,
-} from "@/lib/guest-daily-quota";
+import { consumeChatSignInDraft, registerChatSignInDraft, saveChatDraftForSignIn } from "@/lib/chat-signin-draft";
+import { buildLoginHref } from "@/lib/login-href";
+import { playgroundHrefForModel } from "@/lib/playground-href";
+import { GUEST_DAILY_LIMIT_DEFAULT } from "@/lib/guest-daily-quota";
 import { useChatPersistence } from "../_hooks/useChatPersistence";
 import { useChatScroll } from "../_hooks/useChatScroll";
 import { useChatShortcuts } from "../_hooks/useChatShortcuts";
@@ -40,7 +43,7 @@ import { usePlaygroundState } from "../_hooks/usePlaygroundState";
 import { useStreamingChat } from "../_hooks/useStreamingChat";
 import {
 	LiveModelsProvider,
-	useSharedLiveModels,
+	useSharedLiveModelCatalog,
 } from "@/components/chat/chat-message-shared";
 import { AuthPromptModal } from "@/components/chat/AuthPromptModal";
 import { exportChatHistory } from "@/lib/chat-export";
@@ -125,21 +128,21 @@ function ShellContent({
 	}, []);
 
 	const toast = useToast();
-	const { isAuthenticated, isReady, user } = useAuth();
+	const { isAuthenticated: hasSession, isDemo, isReady, user } = useAuth();
+	const isAuthenticated = hasSession && !isDemo;
 	const scopedStorageKey = conversationStorageKey(user?.id ?? null);
 
-	// BUG-G: validate the model selection against the live availability set
-	// (retired providers / guest-tier gating). Memoized as a string so the
-	// usePlaygroundState validation effect only re-runs when the set
-	// actually changes.
-	const liveModels = useSharedLiveModels();
+	// Only validate availability after the live catalog resolves; a static
+	// fallback must not replace a valid deep-linked model during loading.
+	const { models: liveModels, status: catalogStatus } = useSharedLiveModelCatalog();
 	const availableModelIds = useMemo(
-		() => liveModels.map((m) => m.id).sort(),
+		() => liveModels.filter((m) => m.available !== false).map((m) => m.id).sort(),
 		[liveModels],
 	);
 
 	const {
 		model,
+		modelHydrated,
 		setModel,
 		messages,
 		setMessages,
@@ -195,11 +198,49 @@ function ShellContent({
 		// auth resolves; the hook treats that as a guest read.
 		userId: user?.id ?? null,
 		authReady: isReady,
-		availableModelIds,
+		availableModelIds: catalogStatus === "live" ? availableModelIds : undefined,
 	});
+	const checkedSignInDraft = useRef(false);
+	const restoredDraftOwner = useRef<string | null | undefined>(undefined);
+	useEffect(() => {
+		if (!isReady || !modelHydrated) return;
+		const userId = user?.id ?? null;
+		if (!checkedSignInDraft.current) {
+			checkedSignInDraft.current = true;
+			const draft = consumeChatSignInDraft(model, userId);
+			if (draft !== null) {
+				setInput((current) => current || draft);
+				restoredDraftOwner.current = userId;
+			}
+		} else if (restoredDraftOwner.current === null && userId !== null) {
+			// Auth readiness can time out before the sign-in session resolves.
+			// Let the guest handoff adopt its first resolved account once.
+			restoredDraftOwner.current = userId;
+		} else if (restoredDraftOwner.current !== undefined && restoredDraftOwner.current !== userId) {
+			// A restored draft belongs to the account that received the handoff.
+			setInput("");
+			restoredDraftOwner.current = undefined;
+		}
+	}, [isReady, modelHydrated, model, user?.id, setInput]);
+	useEffect(() => registerChatSignInDraft(() => ({ model, input, userId: user?.id ?? null })), [model, input, user?.id]);
+
 	// BUG-G: a selection that isn't in the live set can't be sent.
 	const isModelUnavailable =
-		liveModels.length > 0 && !availableModelIds.includes(model);
+		catalogStatus === "live" && !availableModelIds.includes(model);
+	const selectedModel = liveModels.find((item) => item.id === model);
+	const modelName = selectedModel?.name ?? displayName(model);
+	const freeModelSelected = isFreeChatModel(model);
+	const guestNeedsSignIn = isReady && !isAuthenticated && !freeModelSelected;
+	const verifiedFreeSelection =
+		catalogStatus === "live" && !isModelUnavailable && freeModelSelected;
+	const guestAccess = guestNeedsSignIn
+		? "sign-in"
+		: verifiedFreeSelection && isReady ? "free" : "unknown";
+	const freeAlternative = catalogStatus === "live"
+		? liveModels.find((item) => item.id === FREE_DEFAULT_CHAT_MODEL && item.available !== false)
+			?? liveModels.find((item) => isFreeChatModel(item.id) && item.available !== false)
+		: undefined;
+	const loginHref = buildLoginHref(playgroundHrefForModel(model));
 
 	const scopedPromptKey = systemPromptStorageKey(user?.id ?? null);
 	const { balance, loading: balanceLoading, refresh: refreshBalance } = useBalance();
@@ -210,15 +251,25 @@ function ShellContent({
 	const isLowBalance =
 		isChat &&
 		isAuthenticated &&
+		(!freeModelSelected || (compareMode && !isFreeChatModel(compareModel))) &&
 		balance != null &&
 		!balanceLoading &&
 		balanceDollars < LOW_BALANCE_THRESHOLD;
 
 	// ─── Auth prompt modal (guest gating) ───
 	const [authPromptOpen, setAuthPromptOpen] = useState(false);
-	const [authPromptReason, setAuthPromptReason] = useState<"message-limit">(
+	const [authPromptReason, setAuthPromptReason] = useState<"paid-model" | "message-limit">(
 		"message-limit",
 	);
+
+	const [authPromptModel, setAuthPromptModel] = useState(model);
+	const chooseFreeModel = useCallback(() => {
+		if (!freeAlternative) return;
+		if (!freeModelSelected) setModel(freeAlternative.id);
+		if (compareMode && !isFreeChatModel(compareModel)) setCompareModel(freeAlternative.id);
+		setAuthPromptOpen(false);
+		setError(null);
+	}, [freeAlternative, freeModelSelected, setModel, compareMode, compareModel, setCompareModel, setError]);
 
 	// ─── Guest free-tier quota (server is source of truth) ───
 	const handleQuotaExhausted = useCallback(() => {
@@ -307,44 +358,36 @@ function ShellContent({
 		onDailyQuota,
 	});
 
-	// Keep sendMessageRef in sync for shortcuts + compare panel
-	const sendMessageRef = useRef<(prompt?: string) => Promise<void>>(
-		async () => {},
-	);
-	useEffect(() => {
-		sendMessageRef.current = sendMessage;
-	}, [sendMessage]);
+	// Check access before the streaming hook clears the composer or appends history.
+	const checkSendAccess = useCallback(() => {
+		if (!isReady) return false;
+		if (isModelUnavailable) {
+			setError("The selected model is not currently available — pick another model.");
+			return false;
+		}
+		const paidModel = !isFreeChatModel(model) ? model
+			: compareMode && !isFreeChatModel(compareModel) ? compareModel : null;
+		if (!isAuthenticated && paidModel) {
+			setAuthPromptModel(paidModel);
+			setAuthPromptReason("paid-model");
+			setAuthPromptOpen(true);
+			return false;
+		}
+		if (isLowBalance) {
+			setError("Your credit balance is too low for this model. Top up to continue.");
+			return false;
+		}
+		return allowGuestSend();
+	}, [isReady, isModelUnavailable, setError, model, compareMode, compareModel, isAuthenticated, isLowBalance, allowGuestSend]);
+	const gatedSend = useCallback(async (prompt?: string) => {
+		if (!checkSendAccess()) {
+			if (prompt) setInput(prompt);
+			return;
+		}
+		await sendMessage(prompt);
+		void refreshBalance();
+	}, [checkSendAccess, setInput, sendMessage, refreshBalance]);
 
-	// Gated send: block only when remaining is known-zero (server/cache).
-	// Successful quota updates come from response headers / 429 body.
-	const gatedSend = useCallback(
-		async (prompt?: string) => {
-			if (isLowBalance) {
-				setError("Your credit balance is too low for this model. Top up to continue.");
-				return;
-			}
-			if (isModelUnavailable) {
-				setError(
-					"The selected model is not currently available — pick another model.",
-				);
-				return;
-			}
-			if (!allowGuestSend()) return;
-			await sendMessage(prompt);
-			// Refresh the credit balance after a spend so the toolbar pill and
-			// the low-balance banner reflect the new total instead of the
-			// pre-send value (which staleTime would otherwise keep for 2 min).
-			void refreshBalance();
-		},
-		[
-			allowGuestSend,
-			isLowBalance,
-			isModelUnavailable,
-			sendMessage,
-			setError,
-			refreshBalance,
-		],
-	);
 	const gatedSendRef = useRef(gatedSend);
 	useEffect(() => {
 		gatedSendRef.current = gatedSend;
@@ -404,7 +447,7 @@ function ShellContent({
 	 * then re-sends the user prompt so history stays consistent.
 	 */
 	const handleRegenerate = useCallback(() => {
-		if (loading) return;
+		if (loading || !checkSendAccess()) return;
 		const current = messagesRef.current;
 		const lastAss = current.findLast((m) => m.role === "assistant");
 		if (!lastAss) {
@@ -421,7 +464,7 @@ function ShellContent({
 		setMessages(truncated);
 		messagesRef.current = truncated;
 		void gatedSendRef.current(pairUser.content);
-	}, [loading, setMessages]);
+	}, [loading, setMessages, checkSendAccess]);
 
 	const exportConversation = useCallback((format: "json" | "txt" | "md" = "json") => {
 		try {
@@ -554,9 +597,17 @@ function ShellContent({
 						handleCopy={handleCopy}
 						onRegenerate={handleRegenerate}
 						onA2UIAction={(event) => {
-							void sendMessageRef.current(formatA2UIAction(event));
+							void gatedSendRef.current(formatA2UIAction(event));
 						}}
 						isAuthenticated={isAuthenticated}
+						emptyStateProps={{
+							modelName,
+							guestAccess,
+							dailyLimit: guestQuota?.limit ?? GUEST_DAILY_LIMIT_DEFAULT,
+							loginHref,
+							freeModelName: freeAlternative?.name,
+							onChooseFreeModel: freeAlternative ? chooseFreeModel : undefined,
+						}}
 						onPickPrompt={(prompt) => {
 							setInput(prompt);
 							inputRef.current?.focus();
@@ -574,6 +625,7 @@ function ShellContent({
 							<div className="max-w-4xl mx-auto">
 								<ChatErrorBanner
 									error={error}
+									loginHref={loginHref}
 									onDismiss={() => setError(null)}
 									onRetry={() => {
 										setError(null);
@@ -592,9 +644,9 @@ function ShellContent({
 									onStop={stopGeneration}
 									loading={loading}
 									textareaRef={inputRef}
-									disabled={isLowBalance}
-							disabledReason="Your credit balance is too low — top up to send"
-							modelUnavailable={isModelUnavailable}
+									disabled={!isReady || isLowBalance}
+										disabledReason={!isReady ? "Checking your session…" : "Your credit balance is too low — top up to send"}
+									modelUnavailable={isModelUnavailable}
 									webSearchEnabled={webSearchEnabled}
 									setWebSearchEnabled={
 										showComposerAdvancedTools ? setWebSearchEnabled : undefined
@@ -606,12 +658,12 @@ function ShellContent({
 
 								<div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-1 sm:mt-2.5 sm:px-2">
 									<p className="text-[11px] text-text-muted/80 tracking-wide font-mono min-w-0 break-words select-none">
-										{!isAuthenticated && (
+										{isReady && !isAuthenticated && verifiedFreeSelection && (
 											<span className="text-accent/80 font-semibold">
-												{freeLeftLabel(guestQuota, GUEST_DAILY_LIMIT_DEFAULT)} free
-												left
+												{guestQuota ? `${guestQuota.remaining} free left` : "Free daily allowance"}
 											</span>
 										)}
+										{guestNeedsSignIn && <Link href={loginHref} onClick={() => saveChatDraftForSignIn()} className="text-accent hover:underline">Sign in to use {modelName}</Link>}
 										{isLowBalance && (
 											<Link
 												href="/deposit"
@@ -625,6 +677,7 @@ function ShellContent({
 										inputText={input}
 										model={model}
 										maxTokens={maxTokens}
+										freeWebsiteChat={isReady && verifiedFreeSelection}
 									/>
 								</div>
 							</div>
@@ -685,6 +738,12 @@ function ShellContent({
 				open={authPromptOpen}
 				onClose={() => setAuthPromptOpen(false)}
 				reason={authPromptReason}
+				modelName={liveModels.find((item) => item.id === authPromptModel)?.name ?? displayName(authPromptModel)}
+				onSignIn={() => saveChatDraftForSignIn(authPromptReason === "paid-model" ? authPromptModel : model)}
+				loginHref={buildLoginHref(playgroundHrefForModel(authPromptReason === "paid-model" ? authPromptModel : model))}
+				freeModelName={freeAlternative?.name}
+				onChooseFreeModel={authPromptReason === "paid-model" && freeAlternative ? chooseFreeModel : undefined}
+				dailyLimit={guestQuota?.limit ?? GUEST_DAILY_LIMIT_DEFAULT}
 			/>
 		</div>
 	);
