@@ -10,26 +10,16 @@
 	* blockquote summary, then sections introduced by `## <Title>` with
 	* a markdown list of links under each.
 	*
-	* URLs are resolved from env at request time so staging / preview
+	* URLs are resolved from env when generated so staging / preview
 	* deployments advertise the right host instead of leaking prod URLs.
 	*/
-import { DEFAULT_API_URL } from "@/lib/config";
-import { MODEL_COUNT } from "@/lib/models-data";
-import { isModelAvailable } from "@/lib/model-availability";
+import SITE_URL from "@/lib/site";
 
 export const dynamic = "force-static";
 export const revalidate = 3600;
 
-function resolveSiteUrl(): string {
-	return (
-		process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") || "https://www.oma-ai.com"
-	);
-}
-
-export async function GET(): Promise<Response> {
-	const siteUrl = resolveSiteUrl();
-	const apiUrl =
-		DEFAULT_API_URL?.replace(/\/+$/, "") || "https://www.oma-ai.com/api";
+export function GET(): Response {
+	const siteUrl = SITE_URL;
 
 	// NEXT_PUBLIC_API_URL points at the Neon function's own hostname, which is
 	// infrastructure, not the public API. Advertising it in llms.txt hands
@@ -38,32 +28,9 @@ export async function GET(): Promise<Response> {
 	// public API is the same-origin proxy: <site>/api.
 	const publicApiUrl = `${siteUrl}/api`;
 
-	// MODEL_COUNT is a compile-time constant (20) that overstates what is
-	// actually callable. llms.txt is the primary discovery surface for LLM
-	// crawlers, so quoting the static number here advertises models an agent
-	// will get a 503 trying to call. Resolve the live count, and only fall
-	// back to the static value if the catalog is unreachable.
-	let modelCount = MODEL_COUNT;
-	try {
-		const res = await fetch(`${apiUrl}/v1/models`, {
-			signal: AbortSignal.timeout(4_000),
-			next: { revalidate: 900 },
-		});
-		if (res.ok) {
-			const body = (await res.json()) as { data?: unknown };
-			const rows = Array.isArray(body?.data) ? body.data : [];
-			const live = rows.filter((row) =>
-				isModelAvailable(row as { available?: boolean }),
-			);
-			if (live.length > 0) modelCount = live.length;
-		}
-	} catch {
-		/* catalog unreachable — keep the static fallback */
-	}
-
 	const BODY = `# OMA AI — Open Model Access
 
-> One gateway. Every model. No lock-in. OpenAI-compatible multi-provider AI inference with ${modelCount} curated chat models, x402 USDC settlement on Base, and privacy-first routing.
+> One gateway. Every model. No lock-in. OpenAI-compatible inference across a curated model catalog, prepaid credits, and x402 USDC funding on Base. Check the live catalog for current availability, capabilities, and prices.
 
 ## Docs
 
@@ -95,7 +62,7 @@ export async function GET(): Promise<Response> {
 - [Agent skill (autonomous setup instructions)](${siteUrl}/agent-skill.md)
 - [A2A agent card](${siteUrl}/.well-known/agent-card.json)
 - [OpenAPI spec](${publicApiUrl}/v1/openapi)
-- [Model catalog](${publicApiUrl}/v1/models)
+- [Model catalog](${publicApiUrl}/v1/models): live availability and prices; an unavailable model remains listed for reference.
 - [GitHub](https://github.com/NosytLabs)
 `;
 

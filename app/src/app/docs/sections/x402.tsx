@@ -71,7 +71,7 @@ export function X402Section() {
       <div id="x402-flow" className="scroll-mt-24">
         <h3 className="font-display text-lg font-semibold text-text">How funding works</h3>
         <ol className="mt-3 space-y-3 text-sm text-text-muted">
-          <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-accent" />Sign in via SIWE with the USDC payer wallet. Read the current treasury from /api/v1/deposit/usdc, then sign the intended amount and a fresh nonce.</li>
+          <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-accent" />Sign in via SIWE with the USDC payer wallet. GET /x402/info returns the current payTo treasury, network, and asset without moving funds. Use those fields, your intended amount, and a fresh nonce when signing; the direct-deposit address may differ.</li>
           <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-accent" />POST the signed envelope to /x402/verify. The facilitator pays gas and transfers the authorized USDC; save the returned transaction hash.</li>
           <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-accent" />POST the hash and network to /x402/settle with the paying wallet’s session cookie. This credits the confirmed payment once, preserving fractional credits. An API key does not authenticate this endpoint.</li>
           <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-accent" />Use the account’s API key for inference against the prepaid balance. Ordinary chat requests do not issue a mid-request x402 challenge.</li>

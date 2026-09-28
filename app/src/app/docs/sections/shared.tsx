@@ -310,7 +310,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 		path: "/v1/deposit/usdc",
 		anchor: "ep-deposit-submit",
 		title: "Record USDC Deposit",
-		desc: "Records a pending USDC deposit after you send funds to the treasury address from /v1/deposit/usdc (GET). The on-chain watcher credits your balance once the transfer confirms (typically <60s on Base).",
+		desc: "Records a pending USDC deposit after you send funds to the deposit address from /v1/deposit/usdc (GET). The on-chain watcher credits your balance once the transfer confirms.",
 		auth: "Bearer token (API key)",
 		body: {
 			amountUsd: "number (required). USD amount, up to $10,000",
@@ -442,6 +442,25 @@ export const ENDPOINTS: EndpointInfo[] = [
 		auth: "Bearer token (API key) or session cookie",
 		body: undefined,
 		response: `{ "success": true, "id": "key_…" }`,
+	},
+	{
+		method: "GET",
+		path: "/x402/info",
+		anchor: "ep-x402-info",
+		title: "x402 Funding Information",
+		desc: "Returns the current x402 treasury, Base network, USDC asset, and signing-domain information. This public discovery call does not move funds. Use payTo as the signed recipient; the direct-deposit address may differ. Choose the funding amount before signing.",
+		auth: "None",
+		body: undefined,
+		response: `{
+	"x402Version": 2,
+	"scheme": "exact",
+	"network": "eip155:8453",
+	"asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+	"decimals": 6,
+	"payTo": "<configured treasury address>",
+	"maxTimeoutSeconds": 300,
+	"extra": { "name": "USD Coin", "version": "2" }
+}`,
 	},
 	{
 		method: "POST",

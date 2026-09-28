@@ -63,6 +63,10 @@ export function getOpenApiServers(
 	return [{ url: publicApiUrl, description: "Production" }];
 }
 
+const publicServers = getOpenApiServers(config.PUBLIC_API_URL, config.PORT, config.PUBLIC_APP_URL);
+// The website exposes funding at the origin root, outside its /api SDK base.
+const fundingServers = publicServers.map(({ url, description }) => ({ url: new URL(url).origin, description }));
+
 const spec = {
 	openapi: "3.1.0",
 	info: {
@@ -71,14 +75,15 @@ const spec = {
 		description:
 			"OpenAI-compatible inference gateway. Routes to Venice (premium) and OMA-AI / Gonka.AI (decentralized). USDC on Base for credit top-ups; x402 verify/settle for agent USDC funding.",
 	},
-	servers: getOpenApiServers(
-		config.PUBLIC_API_URL,
-		config.PORT,
-		config.PUBLIC_APP_URL,
-	),
+	servers: publicServers,
 	components: {
 		securitySchemes: {
 			BearerAuth: { type: "http", scheme: "bearer" },
+			SessionCookie: {
+				type: "apiKey", in: "cookie",
+				name: ["development", "test"].includes(config.NODE_ENV) ? "oma.session_token" : "__Secure-oma.session_token",
+				description: "Better Auth session established by SIWE with the wallet that paid. API keys do not authenticate settlement.",
+			},
 		},
 		schemas: {
 			Model: {
@@ -443,28 +448,72 @@ const spec = {
 				},
 			},
 		},
-		"/x402/verify": {
-			post: {
-				summary: "Verify an EIP-3009 PAYMENT-SIGNATURE envelope (no settlement)",
-				description:
-					"Strict amount checks (no zero, no overpayment), payee pinned to SERVER_TREASURY, EIP-2 low-S signature mandate. Rate-limited at 10/min/IP.",
+		"/x402/info": {
+			servers: fundingServers,
+			get: {
+				summary: "Discover the current x402 funding recipient and signing information",
+				description: "Read payTo, network, and asset before signing; the direct-deposit address may differ. Choose the funding amount yourself. This request does not move funds.",
 				security: [],
 				responses: {
-					"200": { description: "Verified (cached for downstream settle)" },
-					"400": { description: "Invalid signature / amount / payee" },
-					"402": { description: "Payment required (insufficient or malformed)" },
+					"200": { description: "Current funding configuration", content: { "application/json": { schema: {
+						type: "object",
+						required: ["x402Version", "scheme", "network", "asset", "decimals", "payTo", "maxTimeoutSeconds", "extra"],
+						properties: {
+							x402Version: { type: "integer", enum: [2] },
+							scheme: { type: "string", enum: ["exact"] },
+							network: { type: "string", enum: ["eip155:8453"] },
+							asset: { type: "string", description: "USDC contract on Base" },
+							decimals: { type: "integer", enum: [6] },
+							payTo: { type: "string", description: "Configured x402 treasury address" },
+							maxTimeoutSeconds: { type: "integer" },
+							extra: { type: "object", properties: { name: { type: "string" }, version: { type: "string" } } },
+						},
+					} } } },
+					"503": { description: "Funding recipient is not configured" },
+				},
+			},
+		},
+		"/x402/verify": {
+			servers: fundingServers,
+			post: {
+				summary: "Verify and broadcast an EIP-3009 USDC transfer",
+				description: "Moves the authorized USDC to the pinned treasury and waits for on-chain confirmation; this is not a dry run. The facilitator pays gas. Save the returned txHash, then call /x402/settle with the payer wallet's SIWE session to credit the account. Rate-limited at 10/min/IP.",
+				security: [],
+				parameters: [{
+					in: "header", name: "PAYMENT-SIGNATURE", required: true,
+					schema: { type: "string" },
+					description: "Base64-encoded x402 v2 envelope containing accepted requirements and the signed EIP-3009 authorization.",
+				}],
+				responses: {
+					"200": { description: "Confirmed payment: valid, txHash, amount (decimal USDC), and networkId" },
+					"400": { description: "Missing or malformed payment envelope, unsupported chain/asset, or incorrect recipient" },
+					"422": { description: "Verification or transfer did not succeed; inspect transaction status before authorizing another payment" },
+					"429": { description: "Verification rate limit exceeded" },
+					"500": { description: "Funding service failure" },
 				},
 			},
 		},
 		"/x402/settle": {
+			servers: fundingServers,
 			post: {
-				summary: "Settle a previously-verified payment (writes USDC tx on Base)",
-				description:
-					"Session-auth required. Idempotent — concurrent calls collapse into a single DB write + on-chain settlement.",
+				summary: "Credit a confirmed USDC payment to the authenticated payer",
+				description: "Does not initiate another transfer. Requires a SIWE session for the payment sender; an API key is not accepted. Uses the confirmed amount, never a caller-supplied amount. Retries for the same account and transaction credit once; confirmed payments can be recovered after a server restart.",
+				security: [{ SessionCookie: [] }],
+				requestBody: { required: true, content: { "application/json": { schema: {
+					type: "object", required: ["txHash", "networkId"],
+					properties: {
+						txHash: { type: "string", pattern: "^0x[a-fA-F0-9]{64}$" },
+						networkId: { type: "string", enum: ["base", "eip155:8453"] },
+					},
+				} } } },
 				responses: {
-					"200": { description: "Receipt payload (signed)" },
-					"401": { description: "Not authenticated" },
-					"402": { description: "No verified payment" },
+					"200": { description: "Signed settlement receipt and creditedCents" },
+					"400": { description: "Malformed request or no confirmed payment evidence" },
+					"401": { description: "No valid session" },
+					"403": { description: "Session wallet does not own the payment, or account is suspended" },
+					"409": { description: "Non-retryable payment_already_credited or payment_reconciliation_required conflict; contact support when reconciliation is required" },
+					"422": { description: "Settlement rejected" },
+					"500": { description: "Credit application failed; retry settlement with the same transaction hash" },
 				},
 			},
 		},

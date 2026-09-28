@@ -44,7 +44,7 @@ const STEPS = [
 			<>
 				Head to <Link href="/login" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">login</Link>. Choose{" "}
 				<strong className="text-text-bright"> email magic link</strong> (simplest — we email you a secure sign-in link, no password to remember)
-				or <strong className="text-text-bright">connect wallet</strong> if you already use web3 apps. Signing in gives you the full curated catalog, saved conversations, and higher rate limits.
+				or <strong className="text-text-bright">connect wallet</strong> if you already use web3 apps. Signing in increases your free chat allowance and lets you create API keys and fund credits for paid models. Conversations are saved in this browser.
 			</>
 		),
 	},
@@ -64,7 +64,7 @@ const STEPS = [
 		title: "Add a little credit",
 		body: (
 			<>
-				Go to <Link href="/deposit" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">Deposit Credits</Link>. Send USDC on Base, or use card checkout when Polar is enabled. Credits never expire, and a simple $10 deposit gives you enough tokens to handle thousands of requests.
+				Go to <Link href="/deposit" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">Buy credits</Link> to see the available funding methods and deposit limits. Use USDC on Base or card checkout when available. Credits never expire while your account is active; how far they go depends on the model and the length of each request and response.
 				<br /><br />
 				<strong>Autonomous Agent option:</strong> If you are writing software agents, you can use our <Link href="/docs#x402" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">x402 settlement flow</Link> to verify and settle USDC into credits, then spend with an API key.
 			</>
@@ -75,7 +75,7 @@ const STEPS = [
 		title: "Make your first API call",
 		body: (
 			<>
-				You&apos;re done! OMA acts as a drop-in replacement for OpenAI&apos;s API. In any app, library, or script where you currently use OpenAI, just swap the base URL to <code className="font-mono text-accent">https://www.oma-ai.com/api/v1</code>, drop in your new API key, and specify any model from our <Link href="/models" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">catalog</Link> (like <code className="font-mono text-text-bright">openai-gpt-56-sol</code> or <code className="font-mono text-text-bright">claude-opus-5</code>). Try the one-line examples below, or jump to the <Link href="/docs#quickstart" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">developer quickstart</Link>.
+				In an app, library, or script that supports OpenAI-compatible chat completions, set the base URL to <code className="font-mono text-accent">https://www.oma-ai.com/api/v1</code>, use your new API key, and choose an available model from our <Link href="/models" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">catalog</Link>. Check its capabilities before using tools or image inputs. Try the examples below, or jump to the <Link href="/docs#quickstart" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">developer quickstart</Link>.
 			</>
 		),
 	},
@@ -165,12 +165,12 @@ export default function GettingStartedPage() {
 					</h2>
 					<p className="mt-2 text-sm text-text-secondary">
 						One request, copy-paste. Set <code className="font-mono text-accent">OMA_KEY</code> to your
-						key first.
+						key first and check that the example model is available in the catalog.
 					</p>
 					<div className="mt-4">
 						<CopyableCode code={SAMPLE_CODE} aria-label="Quick start curl example" />
 					</div>
-					<p className="mt-4 text-sm text-text-secondary">Or with the OpenAI Python SDK (works as-is):</p>
+					<p className="mt-4 text-sm text-text-secondary">Or install the OpenAI Python SDK with <code className="font-mono text-accent">pip install openai</code> and run:</p>
 					<div className="mt-2">
 						<CopyableCode code={SAMPLE_PY} aria-label="OpenAI Python SDK example" />
 					</div>
@@ -199,7 +199,7 @@ export default function GettingStartedPage() {
 
 				<div className="mt-10 flex flex-wrap items-center gap-2 text-xs font-mono text-text-muted">
 					<Wallet className="h-3.5 w-3.5" aria-hidden="true" />
-					<span>No wallet needed for email sign-in · USDC always available · card &amp; x402 optional when enabled</span>
+					<span>No wallet needed for email sign-in · Buy credits shows current funding availability</span>
 				</div>
 			</PageShell>
 		</div>

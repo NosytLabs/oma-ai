@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getOpenApiServers, getPublicOpenApiSpec } from "../openapi.js";
+import { getOpenApiServers, getPublicOpenApiSpec, openapiRoutes } from "../openapi.js";
 
 describe("getOpenApiServers", () => {
 	it("does not label a local endpoint as production or duplicate it", () => {
@@ -69,5 +69,39 @@ describe("getPublicOpenApiSpec", () => {
 		]) {
 			expect(paths).not.toHaveProperty(path);
 		}
+	});
+});
+
+
+describe("x402 OpenAPI funding contract", () => {
+	it("publishes discovery and signed-transfer headers without bearer auth", async () => {
+		const response = await openapiRoutes.request("/openapi.json");
+		const document = await response.json();
+		const info = document.paths["/x402/info"];
+		expect(info).toBeDefined();
+		expect(info.get.security).toEqual([]);
+		expect(info.get.responses).toHaveProperty("503");
+		const verify = document.paths["/x402/verify"];
+		expect(verify.post.security).toEqual([]);
+		expect(verify.post.parameters).toContainEqual(expect.objectContaining({
+			in: "header", name: "PAYMENT-SIGNATURE", required: true,
+		}));
+		expect(verify.post.responses).toHaveProperty("422");
+		for (const path of ["/x402/info", "/x402/verify", "/x402/settle"]) {
+			const server = document.paths[path].servers[0].url;
+			expect(new URL(server).pathname).toBe("/");
+		}
+	});
+
+	it("requires the payer's session cookie and exposes permanent settlement conflicts", async () => {
+		const response = await openapiRoutes.request("/openapi.json");
+		const document = await response.json();
+		const settle = document.paths["/x402/settle"].post;
+		expect(settle.security).toEqual([{ SessionCookie: [] }]);
+		expect(document.components.securitySchemes.SessionCookie).toMatchObject({ type: "apiKey", in: "cookie" });
+		expect(settle.requestBody.content["application/json"].schema.required).toEqual(["txHash", "networkId"]);
+		expect(settle.responses).toHaveProperty("409");
+		expect(settle.responses).toHaveProperty("403");
+		expect(settle.responses).not.toHaveProperty("402");
 	});
 });

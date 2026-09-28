@@ -28,7 +28,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 		items: [
 			{
 				q: "Can I use OMA inside Claude Code, OpenCode, or Cursor?",
-				a: `Yes. Because OMA is OpenAI-compatible, most agent CLIs and IDEs accept a custom base URL and an OMA API key. Point the tool at /docs#integrations and set the base URL to https://www.oma-ai.com/api/v1 with your oma_sk_... key, then pick any catalog model. OpenCode, Claude Code, Cursor, and Continue are covered step-by-step in the docs.`,
+				a: `Yes. Use the tool-specific setup at /docs#integrations with your oma_sk_... key, then choose an available catalog model. OpenAI-compatible tools use https://www.oma-ai.com/api/v1; the Claude Code guide uses OMA's Anthropic-compatible endpoint. OpenCode, Claude Code, Cursor, and Continue are covered in the docs.`,
 			},
 			{
 				q: "How do I migrate an app that already uses OpenAI?",
@@ -78,7 +78,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "Is there a free tier?",
-				a: "Yes. Website chat is free on the three OMA-AI models — no account needed for guests (a small daily message cap), and more messages per day once you sign in. New sign-ups also get a small amount of trial credit. API-key calls always spend credits, even on those models; the free tier lives in the browser chat, not the API. See /pricing for limits.",
+				a: "Yes. Website chat has a daily free allowance on eligible OMA-AI models, subject to availability, with more messages once you sign in. Any signup credit depends on the current offer and is shown in your account. API-key calls always spend credits, even on those models; the free tier lives in browser chat. See /pricing for limits.",
 			},
 		],
 	},
@@ -116,7 +116,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "What is USDC? What is Base?",
-				a: "USDC is a stablecoin — a digital dollar that stays worth $1. Base is a fast, cheap blockchain network built by Coinbase where OMA settles payments. Think of it as an automatic, code-friendly payment rail instead of a credit card.",
+				a: "USDC is a U.S.-dollar-denominated stablecoin issued by Circle. It aims to track $1, though its market price can vary. Base is the blockchain network where OMA accepts USDC payments. See /glossary for more detail.",
 			},
 			{
 				q: "What is x402?",
@@ -124,7 +124,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "How much does it cost?",
-				a: `A typical chat answer costs a fraction of a cent. Budget models start at $0.15 per million tokens of input, and no model has a subscription or monthly fee — you only pay for what you use. See /pricing for the full breakdown.`,
+				a: "API cost depends on the selected model and the number of input and output tokens. Rates are quoted per million tokens, with no subscription or monthly fee. Website chat has a separate daily free allowance on eligible models. See /pricing for current rates and limits.",
 			},
 			{
 				q: "What happens when I run out of credits?",
@@ -178,7 +178,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "Can my AI agent use OMA?",
-				a: `Yes, and it can even set itself up: point it at /agent-skill.md (a plain-text instruction file) and it can create an account, make a key, and verify with a test request — including the x402 settlement flow. OMA also publishes an A2A agent card at /.well-known/agent-card.json and a machine-readable /llms.txt.`,
+				a: "Yes. /agent-skill.md explains how to sign in, create an API key, discover available models, and make a request. It also documents optional x402 funding, which requires the payer's wallet session and moves real funds. OMA publishes an agent card at /.well-known/agent-card.json and a machine-readable index at /llms.txt.",
 			},
 			{
 				q: "What happens when a model provider is down?",
@@ -190,7 +190,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "How do I troubleshoot x402 errors?",
-				a: "Common x402 issues: 1) Wrong network: ensure you are on Base. 2) Insufficient USDC allowance: you must approve the EIP-3009 transfer. 3) Signature mismatch: verify you are signing the exact payload returned by the API (no extra fields or trailing spaces). 4) Stale nonce: if you parallelize requests, handle nonces carefully.",
+				a: "Check the Base network, USDC balance, current treasury recipient, signature fields, validity window, and a fresh nonce. EIP-3009 uses a signed transfer authorization; a separate token approval is not required. Settlement needs a SIWE session for the same wallet that paid. If a transaction hash was returned, check it before authorizing another transfer. See /docs#x402 for the full flow.",
 			},
 		],
 	},

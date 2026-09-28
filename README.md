@@ -19,7 +19,7 @@ OMA-AI (**Open Model Access**) is a single API endpoint that fronts multiple AI 
 |------|-----------------|
 | OpenAI-compatible apps | Drop-in `/v1/chat/completions` endpoint |
 | Anthropic-compatible apps | Drop-in `/v1/messages` endpoint |
-| Multi-model routing | Automatic failover across providers (static peer map + hidden Surplus retry) |
+| Multi-model routing | Circuit breakers and configured fallback routes for mapped models |
 | Agent billing | x402 USDC verify/settle → credits + optional Polar card |
 | Privacy | OMA does not persist prompt or completion content; upstream policies depend on provider and model |
 
@@ -33,10 +33,10 @@ One OpenAI-compatible endpoint for a curated catalog. Venice-routed models inclu
 Passwordless onboarding with magic-link email sign-in or SIWE (Sign-In with Ethereum) wallet authentication. Get an API key in seconds—no credit card required for the free tier.
 
 ### 💳 x402 USDC Crypto Billing
-Agent-native USDC funding powered by EIP-3009. Agents sign the payment envelope, verify at `/x402/verify`, and spend with an API key — same listed prices in USDC on Base. No subscriptions, no minimums.
+Agent-native USDC funding powered by EIP-3009. Agents sign the payment envelope, call `/x402/verify` to broadcast the transfer, then `/x402/settle` with the payer's SIWE session to credit the account. Inference spends those prepaid credits through an API key. No subscriptions; funding methods have their own deposit limits.
 
 ### 🛡️ Fallback Routing & Circuit Breakers
-Built-in health checks and automatic provider failover. If one upstream goes down, OMA-AI routes traffic to the next available model so your app stays up.
+Built-in health checks and circuit breakers stop repeated calls to unhealthy routes. Models with a configured fallback can retry on that route; otherwise the request returns an upstream or unavailable error. OMA does not silently substitute an arbitrary model.
 
 ### 📊 Developer Dashboard
 Manage API keys, monitor real-time usage and spend, inspect request logs, and configure model preferences—all from a polished, real-time dashboard.
@@ -123,7 +123,7 @@ This boots local Postgres 16 + Redis, creates the `oma` role/database, and print
 pnpm validate
 ```
 
-Runs type checking, linting, and tests across `app/` and `server/`.
+Runs type checking, linting, tests, and production builds across `app/` and `server/`.
 
 ---
 
@@ -199,7 +199,7 @@ Production uses Vercel for the frontend and a Neon Function for the API. A front
 
 | Command | Scope |
 |---------|-------|
-| `pnpm validate` | Full CI gate: typecheck + lint + test (app + server) |
+| `pnpm validate` | Full CI gate: typecheck + lint + test + build (app + server) |
 | `pnpm validate:app` | Frontend only |
 | `pnpm validate:server` | Backend only |
 | `pnpm validate:test` | All unit / integration tests across the app and server Vitest suites |

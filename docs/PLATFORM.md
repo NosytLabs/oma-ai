@@ -31,6 +31,7 @@ The model catalog is available without authentication at `GET https://www.oma-ai
 The x402 funding endpoints are not under `/api/v1`. Through the website's same-origin proxy they are:
 
 ```text
+GET https://www.oma-ai.com/x402/info
 POST https://www.oma-ai.com/x402/verify
 POST https://www.oma-ai.com/x402/settle
 ```
@@ -76,7 +77,7 @@ Users can fund the same internal balance with USDC on Base mainnet. Direct depos
 Agents can use the x402 funding flow:
 
 1. Establish a SIWE website session with the wallet that will pay. Its linked EVM address must equal the USDC payer; an API key or email-only session cannot claim the payment.
-2. Read the current treasury address from `GET /api/v1/deposit/usdc`. Sign an EIP-3009 USDC `transferWithAuthorization` for that treasury and the intended amount.
+2. Read `GET /x402/info`, a public discovery endpoint that returns the current `payTo` treasury, network, USDC asset, and signing-domain information without moving funds. Use those fields for an EIP-3009 USDC `transferWithAuthorization` and choose the intended amount. Do not substitute the direct-deposit address returned by `/api/v1/deposit/usdc`; it can differ from the x402 treasury.
 3. Call `POST /x402/verify` with the signed envelope in `PAYMENT-SIGNATURE`. **This endpoint broadcasts the transfer and waits for on-chain confirmation. It is not a dry run.** The facilitator pays gas. Save the returned `txHash`, `amount`, and `networkId`.
 4. Call `POST /x402/settle` with `{ txHash, networkId }` and the same payer's session cookie. Settlement credits the account balance; it does not initiate another transfer.
 5. Use an API key from that account against the credited balance. Ordinary chat inference does not issue a mid-request x402 challenge.

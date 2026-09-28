@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DEFAULT_API_URL } from "@/lib/config";
 import { CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 import { BreadcrumbListJsonLd } from "@/components/json-ld";
+import { FREE_DEFAULT_CHAT_MODEL } from "@/lib/model-utils";
 
 // The page's entire purpose is to report gateway health *right now*. It reads
 // /health and /v1/models with `cache: "no-store"` and a hard 2.5s abort per
@@ -50,7 +51,7 @@ type ServiceState = {
 	detail: string;
 };
 
-async function fetchJson(url: string, ms = 2500): Promise<Record<string, unknown> | null> {
+async function fetchJson(url: string, acceptUnavailable = false, ms = 2500): Promise<Record<string, unknown> | null> {
 	// A backend pointing at localhost is never reachable from a serverless
 	// host (there is no local API process), and waiting on it can blow the
 	// function's execution budget and 500 this page. Short-circuit to a clean
@@ -66,7 +67,7 @@ async function fetchJson(url: string, ms = 2500): Promise<Record<string, unknown
 			// within ms and never 500 the page for a slow/unreachable backend.
 			signal: AbortSignal.timeout(ms),
 		});
-		if (!r.ok) return null;
+		if (!r.ok && !(acceptUnavailable && r.status === 503)) return null;
 		return (await r.json()) as Record<string, unknown> | null;
 	} catch {
 		return null;
@@ -85,9 +86,10 @@ export default async function StatusPage() {
 	// NEXT_PUBLIC_API_URL here, so this page cannot drift from the route
 	// handlers (a double slash or a divergent fallback would 404).
 	const apiBase = DEFAULT_API_URL;
-	const [backendJson, modelsJson] = await Promise.all([
+	const [backendJson, modelsJson, readinessJson] = await Promise.all([
 		fetchJson(`${apiBase}/health`),
 		fetchJson(`${apiBase}/v1/models`),
+		fetchJson(`${apiBase}/ready`, true),
 	]);
 	const apiVersion =
 		typeof backendJson?.version === "string" ? backendJson.version : null;
@@ -98,6 +100,20 @@ export default async function StatusPage() {
 			backendJson !== null
 				? `Healthy${apiVersion ? ` — v${apiVersion}` : ""}`
 				: "Unreachable — chat, key management, and billing may fail. Retry in a moment.",
+	};
+	const checks = readinessJson?.checks as Record<string, { ok?: boolean }> | undefined;
+	const failedDependencies = [
+		checks?.database?.ok === false ? "Database" : null,
+		checks?.redis?.ok === false ? "Shared cache" : null,
+	].filter(Boolean);
+	const dependencies: ServiceState = {
+		name: "Gateway dependencies",
+		ok: readinessJson?.status === "ready",
+		detail: readinessJson?.status === "ready"
+			? "Database and shared cache are ready."
+			: failedDependencies.length > 0
+				? `${failedDependencies.join(" and ")} unavailable — some requests may be affected.`
+				: "Readiness could not be confirmed.",
 	};
 
 	type ModelStatus = {
@@ -130,20 +146,20 @@ export default async function StatusPage() {
 	};
 
 	const freeChatModel = modelRows.find(
-		(model) => model.id === "deepseek-v4-flash-0731-openbroker",
+		(model) => model.id === FREE_DEFAULT_CHAT_MODEL,
 	);
 	const chatAvailable = api.ok && freeChatModel?.available === true;
 	const chat: ServiceState = {
 		name: "Free website chat",
 		ok: chatAvailable,
 		detail: chatAvailable
-			? "Available — the default free model is ready."
+			? "The default free model is listed as available. Live responses may use a fallback."
 			: api.ok
 				? "Paused — the default free model is not currently available."
 				: "Paused while the gateway is unreachable.",
 	};
 
-	const services = [web, api, providers, chat];
+	const services = [web, api, dependencies, providers, chat];
 	const allOk = services.every((s) => s.ok);
 
 	return (
@@ -154,11 +170,11 @@ export default async function StatusPage() {
 			<div className="container-page page-content mx-auto max-w-2xl">
 				<span className="section-eyebrow-caps">Live status</span>
 				<h1 className="h1-page mt-4 text-text-bright">
-					{allOk ? "All systems normal." : "Degraded — we're on it."}
+					{allOk ? "All systems normal." : "Some services are degraded."}
 				</h1>
 				<p className="page-intro">
 					Live health of the services behind OMA. This page checks
-					liveness the moment you load it. Refresh to re-check. No account
+					liveness and dependency readiness when you load it. Refresh to re-check. No account
 					needed.
 				</p>
 
@@ -193,7 +209,7 @@ export default async function StatusPage() {
 							)}
 							<div>
 								<p className="font-mono text-sm text-text-bright">
-									<span className="sr-only">{s.ok ? "Operational: " : "Outage: "}</span>
+									<span className="sr-only">{s.ok ? "Operational: " : "Degraded: "}</span>
 									{s.name}
 								</p>
 								<p className="mt-1 text-sm text-text-secondary">{s.detail}</p>
@@ -204,8 +220,8 @@ export default async function StatusPage() {
 
 				<p className="mt-8 text-xs text-text-muted flex items-center gap-2">
 					<AlertCircle className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" />
-					Health includes gateway reachability and advertised model-provider
-					availability. Individual upstreams can still have transient capacity issues.
+					Health includes gateway reachability, dependency readiness, and advertised
+					model availability. This check does not send inference requests; upstreams can still have capacity issues.
 				</p>
 			</div>
 		</section>

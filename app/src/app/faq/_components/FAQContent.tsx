@@ -9,32 +9,40 @@ type FAQItem = { q: string; a: string };
 type FAQGroup = { heading: string; items: FAQItem[] };
 
 const FAQ_LINK_ROUTES = new Set([
+	"/.well-known/agent-card.json",
+	"/agent-skill.md",
 	"/chat",
 	"/contact",
 	"/deposit",
 	"/docs",
+	"/docs#endpoints",
+	"/docs#integrations",
+	"/docs#rate-limits",
 	"/docs#x402",
 	"/docs#quickstart",
 	"/getting-started",
 	"/glossary",
+	"/llms.txt",
 	"/models",
 	"/pricing",
 	"/privacy",
+	"/status",
 ]);
 
 const PATH_TOKEN_RE =
-	/(\/[a-z0-9-]+(?:\.[a-z0-9-]+)?(?:#[a-z0-9-]+)?(?:\/[a-z0-9-]+(?:\.[a-z0-9-]+)?)*)/g;
+	/((?:https:\/\/www\.oma-ai\.com)?\/\.?[a-z0-9-]+(?:\.[a-z0-9-]+)*(?:\/[a-z0-9-]+(?:\.[a-z0-9-]+)*)*(?:#[a-z0-9-]+)?)/g;
 
 function AnswerText({ text }: { text: string }) {
 	return (
 		<>
 			{text.split(PATH_TOKEN_RE).map((part, i) => {
-				if (!part.startsWith("/")) return part;
+				if (!part.startsWith("/") && !part.startsWith("https://")) return part;
 				if (FAQ_LINK_ROUTES.has(part)) {
 					return (
 						<Link
 							key={i}
 							href={part}
+							prefetch={false}
 							className="text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent"
 						>
 							{part}
@@ -59,7 +67,7 @@ export function FAQContent({ groups }: { groups: FAQGroup[] }) {
 
 	const filtered = useMemo(() => {
 		if (!query.trim()) return groups;
-		const q = query.toLowerCase();
+		const q = query.trim().toLowerCase();
 		return groups
 			.map((g) => ({
 				...g,
@@ -90,10 +98,10 @@ export function FAQContent({ groups }: { groups: FAQGroup[] }) {
 					<button
 						type="button"
 						onClick={() => setQuery("")}
-						className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-bright transition-colors"
+						className="absolute right-1 top-1/2 flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center text-text-muted hover:text-text-bright transition-colors"
 						aria-label="Clear search"
 					>
-						<X className="h-4 w-4" />
+						<X className="h-4 w-4" aria-hidden="true" />
 					</button>
 				)}
 			</div>

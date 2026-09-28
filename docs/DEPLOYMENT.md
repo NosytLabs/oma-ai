@@ -113,6 +113,21 @@ The API is a Neon Function, not a Vercel serverless function. The verified
 target is project `empty-bar-94645349` (`oma-ai-prod`), branch
 `br-sweet-rain-b40o54xa` (`main`), function `omaapi`, runtime `nodejs24`.
 
+Apply pending database migrations before deploying API code that uses new
+tables or columns. Set `DATABASE_URL` securely to this branch's unpooled
+production connection, then run the existing migration command:
+
+```bash
+pnpm --filter oma-server db:migrate
+```
+
+The migrator applies pending files from `server/src/db/migrations` in a
+transaction and records them in `drizzle.__drizzle_migrations`. Verify the
+expected journal entry and schema after it completes. A successful
+`/ready` database check only proves connectivity; it does not prove that
+migrations were applied. Do not deploy code requiring a migration that
+failed or was skipped.
+
 For a code-only release, deploy the tested entry point with an explicit
 project and branch. This preserves the existing function environment:
 

@@ -65,18 +65,22 @@ export default function GlossaryPage() {
 				</p>
 
 				<nav aria-label="Glossary letters" className="mt-8 flex flex-wrap gap-1.5">
-					{LETTERS.split("").map((l) => (
+					{LETTERS.split("").map((l) => byLetter.has(l) ? (
 						<a
 							key={l}
 							href={`#${l.toLowerCase()}`}
-							className={`inline-flex h-11 w-11 items-center justify-center rounded-[var(--radius-sm)] border text-xs font-mono transition-colors duration-200 ease-out ${
-								byLetter.has(l)
-									? "border-accent/40 text-accent hover:bg-accent/10"
-									: "border-border text-text-muted/40 pointer-events-none"
-							}`}
+							className="inline-flex h-11 w-11 items-center justify-center rounded-[var(--radius-sm)] border border-accent/40 text-xs font-mono text-accent transition-colors duration-200 ease-out hover:bg-accent/10"
 						>
 							{l}
 						</a>
+					) : (
+						<span
+							key={l}
+							aria-hidden="true"
+							className="inline-flex h-11 w-11 items-center justify-center rounded-[var(--radius-sm)] border border-border text-xs font-mono text-text-muted/40"
+						>
+							{l}
+						</span>
 					))}
 				</nav>
 
