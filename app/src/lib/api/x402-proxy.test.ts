@@ -1,13 +1,23 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
-import { POST } from "@/app/x402/[...path]/route";
+import { GET, POST } from "@/app/x402/[...path]/route";
 
 vi.mock("@/lib/config", () => ({ DEFAULT_API_URL: "https://backend.example" }));
 
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 
 describe("public payment proxy", () => {
+	it("makes authoritative funding discovery available through the public site", async () => {
+		const funding = { network: "eip155:8453", payTo: "0x123" };
+		const fetchMock = vi.fn().mockResolvedValue(Response.json(funding));
+		vi.stubGlobal("fetch", fetchMock);
+		const response = await GET(new NextRequest("https://www.oma-ai.com/x402/info"));
+		expect(String(fetchMock.mock.calls[0][0])).toBe("https://backend.example/x402/info");
+		expect(fetchMock.mock.calls[0][1].method).toBe("GET");
+		expect(await response.json()).toEqual(funding);
+	});
+
 	it("forwards the session and payment envelope using the server's trust secret", async () => {
 		vi.stubEnv("INTERNAL_PROXY_SECRET", "server-secret");
 		const fetchMock = vi.fn().mockResolvedValue(new Response('{"settled":true}', {

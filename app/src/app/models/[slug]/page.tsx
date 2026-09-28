@@ -136,16 +136,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
 	const { slug } = await params;
 	const model = MODELS.find((m) => m.id === slug);
-	// A model whose upstream credential is missing still renders (the page is
-	// useful and the provider may return), but it must not be INDEXED: a
-	// crawler that ranks it sends the visitor to a model that errors. The
-	// sitemap already omits these; this closes the discovery paths that do
-	// not go through the sitemap — internal links, old indexed URLs, referrers.
-	const available = await fetchModelAvailability(slug);
-	const robots =
-		available === false
-			? { index: false, follow: true }
-			: { index: true, follow: true };
+	// Match the stable sitemap policy: catalog pages remain useful reference
+	// material during temporary provider outages. Runtime availability must
+	// not deindex a page or persist a stale noindex flag after recovery.
+	const robots = { index: true, follow: true };
 	if (model) {
 		const title = `${model.name} · ${model.provider}`;
 		const description = `${model.description} ${formatPrice(model.inputPricePer1M)}/M input, ${formatPrice(model.outputPricePer1M)}/M output, ${model.contextLength} context.`;

@@ -88,49 +88,45 @@ async function grantFreeTrialOnce(email: string, cents: number, userId: string):
 	if (cents <= 0) return false;
 	const normalized = email.trim().toLowerCase();
 	try {
-		// The Neon HTTP driver (@neondatabase/serverless) does NOT support
-		// db.transaction() ("No transactions support in neon-http driver").
-		// The free-trial grant previously used a transaction here, which
-		// threw on Neon and silently dropped the credit on every signup
-		// (FREE_SIGNUP_CENTS was configured but never applied). We now insert
-		// sequentially; the one-shot-per-email guarantee is enforced by the
-		// UNIQUE index on credit_grants(email_normalized, grant_type), so we
-		// only credit the balance when a grant row was newly created.
-		const inserted = await db
-			.insert(creditGrants)
-			.values({
-				emailNormalized: normalized,
-				userId,
-				grantType: "free_signup",
-				cents: cents.toString(),
-			})
-			.onConflictDoNothing({
-				target: [creditGrants.emailNormalized, creditGrants.grantType],
-			})
-			.returning({ id: creditGrants.id });
+		// Both production drivers support transactions. Keep the durable grant
+		// and balance together so a failed credit cannot consume the trial.
+		return await db.transaction(async (tx) => {
+			const inserted = await tx
+				.insert(creditGrants)
+				.values({
+					emailNormalized: normalized,
+					userId,
+					grantType: "free_signup",
+					cents: cents.toString(),
+				})
+				.onConflictDoNothing({
+					target: [creditGrants.emailNormalized, creditGrants.grantType],
+				})
+				.returning({ id: creditGrants.id });
 
-		if (inserted.length === 0) {
-			// Already granted for this email — do nothing.
-			return false;
-		}
+			if (inserted.length === 0) {
+				// Already granted for this email — do nothing.
+				return false;
+			}
 
-		await db
-			.insert(creditBalances)
-			.values({
-				userId,
-				balanceCents: cents.toString(),
-				totalDepositedCents: cents.toString(),
-				totalUsedCents: "0",
-			})
-			.onConflictDoUpdate({
-				target: creditBalances.userId,
-				set: {
-					balanceCents: sql`${creditBalances.balanceCents}::numeric + ${cents}::numeric`,
-					totalDepositedCents: sql`${creditBalances.totalDepositedCents}::numeric + ${cents}::numeric`,
-					lastActivityAt: sql`NOW()`,
-				},
-			});
-		return true;
+			await tx
+				.insert(creditBalances)
+				.values({
+					userId,
+					balanceCents: cents.toString(),
+					totalDepositedCents: cents.toString(),
+					totalUsedCents: "0",
+				})
+				.onConflictDoUpdate({
+					target: creditBalances.userId,
+					set: {
+						balanceCents: sql`${creditBalances.balanceCents}::numeric + ${cents}::numeric`,
+						totalDepositedCents: sql`${creditBalances.totalDepositedCents}::numeric + ${cents}::numeric`,
+						lastActivityAt: sql`NOW()`,
+					},
+				});
+			return true;
+		});
 	} catch (err) {
 		logger.warn(
 			{ err, email: normalized },
@@ -460,10 +456,10 @@ user: {
 		session: {
 				expiresIn: 60 * 60 * 24 * 7, // 7 days
 				updateAge: 60 * 60 * 24, // refresh once per day
-				cookieCache: {
-						enabled: true,
-						maxAge: 60,
-				},
+				// Settings can revoke sessions and delete accounts at any time.
+				// Always consult the session store so a copied cookie cannot remain
+				// authenticated after revocation (including Better Auth endpoints).
+				cookieCache: { enabled: false },
 		},
 
 		emailAndPassword: {

@@ -3,7 +3,7 @@
 import { BookOpen, Terminal } from "lucide-react";
 import { useEffect, useState } from "react";
 import { loadModels } from "@/lib/models-data";
-import { AnimatedSection, CodeBlock, fmt, MODELS, MODEL_COUNT, SectionHeading } from "./shared";
+import { AnimatedSection, CodeBlock, fmt, MODELS, SectionHeading } from "./shared";
 import { isModelAvailable } from "@/lib/model-availability";
 
 export function AvailableModelsSection() {
@@ -66,7 +66,7 @@ export function AvailableModelsSection() {
 				title="Available Models"
 				subtitle={
 					availableCount === models.length
-						? `${MODEL_COUNT} curated chat models across four tiers, plus web search in the playground.`
+						? `${models.length} curated chat models across four tiers, plus web search in the playground. Check the live catalog before making a request.`
 						: `${availableCount} of ${models.length} curated chat models are accepting requests right now. The rest are listed for reference and are marked below.`
 				}
 			/>
@@ -79,7 +79,7 @@ export function AvailableModelsSection() {
 					</div>
 					<p className="text-sm text-text-muted">
 						Text and reasoning models from Venice (frontier/premium/mid/budget)
-						and OMA-AI (MiniMax M2.7, DeepSeek V4 Flash).
+						and OMA-AI (MiniMax M2.7, DeepSeek V4 Flash, GLM-5.3 Flash).
 					</p>
 				</div>
 				<div className="rounded-[var(--radius-xl)] border border-border bg-panel p-4 shadow-[var(--shadow-md)] transition-transform duration-200 ease-out hover:border-accent/40 active:scale-[0.97]">

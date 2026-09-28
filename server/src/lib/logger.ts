@@ -1,4 +1,4 @@
-import pino, { type Logger } from 'pino';
+import pino, { type DestinationStream, type Logger } from 'pino';
 import { config } from '../config.js';
 
 // IMPORTANT: logger.ts and config.ts have a circular dependency (config
@@ -43,9 +43,36 @@ const initialLevel = process.env.LOG_LEVEL ?? (isDevelopment ? 'debug' : 'info')
 // bundler) cannot resolve as a runtime target ("unable to determine transport
 // target for pino-pretty" -> function fails to load). It is a dev-only
 // convenience for a local console. On Neon Functions (NEON_FUNCTION=1) always
-// emit plain JSON logs instead, which is what Neon's log tail expects anyway.
+// emit plain JSON logs instead. Neon captures console methods and uses them
+// to set severity; Pino's default file-descriptor writes can bypass that hook.
 const useJsonOnly = process.env.NEON_FUNCTION === '1';
 const usePretty = isDevelopment && !useJsonOnly;
+
+const neonConsoleDestination: DestinationStream = {
+		write(line) {
+				// Pino has already serialized the record (including Error values).
+				// Send the full JSON line so structured diagnostic fields survive.
+				const record = JSON.parse(line) as { level?: string };
+				const output = line.trimEnd();
+				switch (record.level) {
+						case 'fatal':
+						case 'error':
+								console.error(output);
+								break;
+						case 'warn':
+								console.warn(output);
+								break;
+						case 'trace':
+						case 'debug':
+								// eslint-disable-next-line no-console -- Neon assigns severity from the console method.
+								console.debug(output);
+								break;
+						default:
+								// eslint-disable-next-line no-console -- Neon assigns severity from the console method.
+								console.info(output);
+				}
+		},
+};
 
 export const logger: Logger = pino({
 		level: initialLevel,
@@ -70,7 +97,7 @@ export const logger: Logger = pino({
 						timestamp: new Date().toISOString(),
 				};
 		},
-});
+}, useJsonOnly ? neonConsoleDestination : undefined);
 
 // Re-export for callers that need to inspect resolved config (e.g., a
 // runtime health check). Avoids leaking the lazy proxy.

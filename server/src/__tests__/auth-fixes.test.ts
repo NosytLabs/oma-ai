@@ -17,7 +17,7 @@ const mockGetRedisClient = vi.hoisted(() =>
 		vi.fn().mockResolvedValue(mockRedis),
 );
 
-vi.mock("../src/lib/redis-client.js", () => ({
+vi.mock("../lib/redis-client.js", () => ({
 		getRedisClient: mockGetRedisClient,
 }));
 
@@ -27,23 +27,10 @@ mockRedis.set.mockResolvedValue("OK");
 mockRedis.ttl.mockResolvedValue(42);
 mockGetRedisClient.mockResolvedValue(mockRedis);
 
-const mockDb = vi.hoisted(() => {
-		const returningMock = vi.fn().mockReturnThis();
-		const onConflictDoNothingMock = vi.fn(() => ({ returning: returningMock }));
-		const valuesMock = vi.fn(() => ({ onConflictDoNothing: onConflictDoNothingMock }));
-		const insertMock = vi.fn(() => ({ values: valuesMock }));
-		const txMock = {
-				insert: insertMock,
-		};
-		return {
-				insert: insertMock,
-				values: valuesMock,
-				onConflictDoNothing: onConflictDoNothingMock,
-				transaction: vi.fn(async (fn: (tx: typeof txMock) => Promise<void>) =>
-						fn(txMock),
-				),
-		};
-});
+const mockDb = vi.hoisted(() => ({
+	insert: vi.fn(),
+	transaction: vi.fn(),
+}));
 
 vi.mock("../db/client.js", () => ({ db: mockDb }));
 
@@ -155,46 +142,55 @@ describe("per-email send cooldown (audit fix #6)", () => {
 		});
 });
 
-describe("free-trial credit via creditGrants (audit fix #4)", () => {
-	it("grants through a direct db.insert chain (no db.transaction — Neon HTTP driver has none)", async () => {
-		// The Neon HTTP driver does not support db.transaction(), so the
-		// helper must insert sequentially: creditGrants first (idempotent via
-		// its UNIQUE index), then creditBalances only when a grant row is new.
-		// Exercise the exact insert chain the helper builds to prove the
-		// sequential shape works without a transaction wrapper.
-		const returning = vi.fn((..._a: unknown[]) =>
-			Promise.resolve([{ id: "grant_1" }]),
-		);
-		const onConflictDoNothing = vi.fn((..._a: unknown[]) => ({ returning }));
-		const values = vi.fn((..._a: unknown[]) => ({ onConflictDoNothing }));
-		const insert = vi.fn((_rec: unknown) => ({ values }));
-		const chain = insert({});
-		expect(typeof chain.values).toBe("function");
-		const granted = await chain
-			.values({})
-			.onConflictDoNothing({ target: ["emailNormalized", "grantType"] })
-			.returning({ id: "id" });
-		expect(granted).toHaveLength(1);
-		// The balance upsert path (onConflictDoUpdate) is reachable without
-		// a transaction wrapper too.
-		const onConflictDoUpdate = vi.fn((..._a: unknown[]) => ({}));
-		const balValues = vi.fn((..._a: unknown[]) => ({ onConflictDoUpdate }));
-		expect(typeof balValues().onConflictDoUpdate).toBe("function");
+describe("free-trial credit via the real signup hook", () => {
+	async function createUser(email = "user@example.org", id = "usr_trial") {
+		const hook = capturedAuth.options!.databaseHooks!.user!.create!.after!;
+		await hook({ id, email, emailVerified: true, name: "Test", createdAt: new Date(), updatedAt: new Date() }, null);
+	}
+
+	function fakeLedger(failBalance = false) {
+		const state = { grants: new Set<string>(), balance: 0 };
+		const insert = (_table: unknown) => ({
+			values: (value: { emailNormalized?: string; balanceCents?: string }) => ({
+				onConflictDoNothing: () => ({ returning: async () => {
+					const key = value.emailNormalized!;
+					if (state.grants.has(key)) return [];
+					state.grants.add(key);
+					return [{ id: "grant_1" }];
+				} }),
+				onConflictDoUpdate: async () => {
+					if (failBalance) throw new Error("balance write failed");
+					state.balance += Number(value.balanceCents);
+				},
+			}),
+		});
+		mockDb.insert.mockImplementation(insert);
+		mockDb.transaction.mockImplementation(async (run: (tx: { insert: typeof insert }) => Promise<unknown>) => {
+			const grants = new Set(state.grants);
+			const balance = state.balance;
+			try { return await run({ insert }); }
+			catch (error) {
+				state.grants = grants;
+				state.balance = balance;
+				throw error;
+			}
+		});
+		return state;
+	}
+
+	it("credits once per normalized email, including after the user is recreated", async () => {
+		const ledger = fakeLedger();
+		await createUser(" User@Example.org ");
+		await createUser("user@example.org", "usr_recreated");
+		expect(ledger.grants).toEqual(new Set(["user@example.org"]));
+		expect(ledger.balance).toBe(100);
 	});
 
-	it("returns empty from grant insert when the creditGrants row already exists (one-shot per email)", async () => {
-		// On re-signup, the unique index on (emailNormalized, grantType)
-		// trips onConflictDoNothing and the chain returns empty — the helper
-		// short-circuits and does NOT credit the balance a second time.
-		const returning = vi.fn((..._a: unknown[]) => Promise.resolve([]));
-		const onConflictDoNothing = vi.fn((..._a: unknown[]) => ({ returning }));
-		const values = vi.fn((..._a: unknown[]) => ({ onConflictDoNothing }));
-		const insert = vi.fn((_rec: unknown) => ({ values }));
-		const result = await insert({})
-			.values({})
-			.onConflictDoNothing({ target: ["emailNormalized", "grantType"] })
-			.returning({ id: "id" });
-		expect(result).toHaveLength(0);
+	it("does not consume the one-shot trial if the balance write fails", async () => {
+		const ledger = fakeLedger(true);
+		await createUser();
+		expect(ledger.grants.size).toBe(0);
+		expect(ledger.balance).toBe(0);
 	});
 });
 
@@ -310,4 +306,30 @@ describe("auth plugin security configuration", () => {
 			expect(typeof domain).toBe("string");
 			expect((domain as string).length).toBeGreaterThan(0);
 		});
+});
+
+
+describe("session revocation with the production cookie policy", () => {
+	it("rejects a replayed session immediately after it is signed out", async () => {
+		const { betterAuth } = await vi.importActual<typeof import("better-auth")>("better-auth");
+		const { memoryAdapter } = await import("better-auth/adapters/memory");
+		const localAuth = betterAuth({
+			baseURL: "https://www.oma-ai.com",
+			secret: "isolated-auth-regression-secret-16bac4e8-294d-4733-80ff",
+			database: memoryAdapter({ user: [], session: [], account: [], verification: [] }),
+			emailAndPassword: { enabled: true },
+			session: capturedAuth.options!.session,
+			advanced: capturedAuth.options!.advanced,
+		});
+		const response = await localAuth.api.signUpEmail({
+			body: { name: "Test", email: "revoke@example.org", password: "memory-only-test-password" },
+			asResponse: true,
+		});
+		expect(response.status).toBe(200);
+		const cookie = response.headers.getSetCookie().map(value => value.split(";")[0]).join("; ");
+		const headers = new Headers({ cookie, origin: "https://www.oma-ai.com" });
+		expect((await localAuth.api.getSession({ headers }))?.user.email).toBe("revoke@example.org");
+		await localAuth.api.signOut({ headers });
+		expect(await localAuth.api.getSession({ headers })).toBeNull();
+	});
 });

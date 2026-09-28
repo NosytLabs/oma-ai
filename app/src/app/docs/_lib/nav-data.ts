@@ -115,6 +115,7 @@ export const NAV_ITEMS: NavItem[] = [
 			{ id: "ep-keys-list", label: "List API keys" },
 			{ id: "ep-keys-create", label: "Create API key" },
 			{ id: "ep-keys-revoke", label: "Revoke API key" },
+			{ id: "ep-x402-info", label: "x402 funding information" },
 			{ id: "ep-x402-verify", label: "x402 verify" },
 			{ id: "ep-x402-settle", label: "x402 settle" },
 		],
