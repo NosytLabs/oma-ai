@@ -23,8 +23,8 @@ async function load() {
  * crawl graph changed whenever a provider blipped — and a network failure at
  * build time silently published either the whole catalog or none of it. The
  * current contract (see the comment block in sitemap.ts) is: every model in
- * MODELS is always listed, because the model pages are real catalog pages that
- * are `noindex`ed individually when the model is unavailable.
+ * MODELS is always listed, because the model pages are useful reference pages
+ * and remain indexable while a provider is temporarily unavailable.
  *
  * These tests therefore pin the static contract, and assert that the sitemap
  * makes NO network call at all — the property that makes it deterministic.

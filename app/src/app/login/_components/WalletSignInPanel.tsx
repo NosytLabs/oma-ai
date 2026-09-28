@@ -32,7 +32,6 @@ const SIWE_DOMAIN = resolveSiweDomain();
 
 interface WalletSignInPanelProps {
 	next: string;
-	offline: boolean;
 	submitting: boolean;
 	setSubmitting: (submitting: boolean) => void;
 	onError: (err: unknown, fallback: string) => void;
@@ -42,7 +41,6 @@ interface WalletSignInPanelProps {
 
 export default function WalletSignInPanel({
 	next,
-	offline,
 	submitting,
 	setSubmitting,
 	onError,
@@ -105,7 +103,7 @@ export default function WalletSignInPanel({
 			<button
 				type="button"
 				onClick={() => void handleSiwe()}
-				disabled={submitting || offline}
+				disabled={submitting}
 				className="btn-primary min-h-12 w-full rounded-[var(--radius-lg)] disabled:cursor-not-allowed disabled:opacity-50"
 			>
 				{submitting ? (

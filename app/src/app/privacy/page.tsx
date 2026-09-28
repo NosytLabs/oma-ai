@@ -192,7 +192,7 @@ export default function PrivacyPage() {
 								</h1>
 
 								{/* Plain English summary */}
-								<div className="mt-6 rounded-[var(--radius-xl)] border border-accent/20 bg-accent/5 p-5 sm:p-6">
+								<div id="subject" className="mt-6 scroll-mt-24 rounded-[var(--radius-xl)] border border-accent/20 bg-accent/5 p-5 sm:p-6">
 									<p className="text-[11px] font-semibold uppercase tracking-wide text-accent mb-2">
 										The short version
 									</p>

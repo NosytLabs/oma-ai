@@ -111,4 +111,30 @@ describe("Redis dependency recovery", () => {
 		expect(output).not.toContain("redis.example.test");
 		expect(output).not.toContain("secret-data");
 	});
+
+	it("keeps the allowlisted transport code from a fetch cause without its hostname", async () => {
+		mocks.ping.mockRejectedValueOnce(new Error("fetch failed", {
+			cause: Object.assign(new Error("getaddrinfo ENOTFOUND private-host.example.test"), {
+				code: "ENOTFOUND",
+				hostname: "private-host.example.test",
+			}),
+		}));
+		await getRedisClient();
+		expect(mocks.warn).toHaveBeenCalledWith(
+			{ reason: "network", code: "ENOTFOUND", retryAfterMs: 1_000 },
+			"[redis] connection check failed",
+		);
+		expect(JSON.stringify(mocks.warn.mock.calls)).not.toContain("private-host.example.test");
+	});
+
+	it("drops arbitrary codes and messages from a nested error", async () => {
+		mocks.ping.mockRejectedValueOnce(new Error("fetch failed", {
+			cause: { code: "private-test-token", message: "secret-data" },
+		}));
+		await getRedisClient();
+		expect(mocks.warn).toHaveBeenCalledWith(
+			{ reason: "network", retryAfterMs: 1_000 },
+			"[redis] connection check failed",
+		);
+	});
 });

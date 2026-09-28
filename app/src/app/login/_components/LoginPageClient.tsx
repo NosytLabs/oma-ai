@@ -109,7 +109,7 @@ function LoginInner() {
 	const { status: apiStatus } = useApiHealth();
 	const { isAuthenticated, isDemo, isReady } = useAuth();
 	const [mounted, setMounted] = useState(false);
-	const offline = mounted && apiStatus === "offline";
+	const connectionInterrupted = mounted && apiStatus === "offline";
 
 	// Already signed in — don't show the form, go where they were headed.
 	useEffect(() => {
@@ -199,7 +199,7 @@ function LoginInner() {
 						</p>
 
 						<div>
-							{offline && (
+							{connectionInterrupted && (
 								<div
 									role="alert"
 									aria-live="assertive"
@@ -210,10 +210,10 @@ function LoginInner() {
 										aria-hidden="true"
 									/>
 									<div className="text-xs text-text-primary">
-										<p className="font-semibold">API is offline</p>
+										<p className="font-semibold">Connection interrupted</p>
 										<p className="text-text-muted">
-											Sign-in is temporarily unavailable. Retrying
-											automatically.
+											We could not confirm the website connection. You can
+											still try signing in.
 										</p>
 									</div>
 								</div>
@@ -299,7 +299,7 @@ function LoginInner() {
 									/>
 									<button
 										type="submit"
-										disabled={submitting || offline}
+										disabled={submitting}
 										className="btn-primary min-h-12 w-full justify-center disabled:cursor-not-allowed disabled:opacity-50"
 									>
 										{submitting ? (
@@ -331,7 +331,6 @@ function LoginInner() {
 								>
 									<LazyWalletSignInPanel
 										next={next}
-										offline={offline}
 										submitting={submitting}
 										setSubmitting={setSubmitting}
 										onError={handleError}

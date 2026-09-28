@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { MODEL_COUNT } from "@/lib/models-data";
-import { isModelAvailable } from "@/lib/model-availability";
+import SITE_URL from "@/lib/site";
 
 export const dynamic = "force-static";
 export const revalidate = 3600;
@@ -15,55 +14,14 @@ export const revalidate = 3600;
 	* the card is self-describing for the x402 settlement + credit spend flow.
 	*/
 const USDC_BASE_MAINNET = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
-const FALLBACK_TREASURY = "0x8581784D3E598cCa3482375CFF2409Ac9DD8c402";
 
-/**
- * Prefer the live catalog count over the static MODEL_COUNT fallback.
- *
- * MODEL_COUNT is a compile-time constant (20) and overstates what is
- * actually callable, so any crawler-facing surface that prints it
- * advertises models a customer cannot call. This route is read by AI
- * agents, so it gets the real number. Falls back to the static value
- * only if the catalog is unreachable.
- */
-async function liveModelCount(): Promise<number> {
-	try {
-		const base = (
-			process.env.PUBLIC_API_URL ||
-			process.env.NEXT_PUBLIC_PUBLIC_API_URL ||
-			"https://www.oma-ai.com/api"
-		).replace(/\/+$/, "");
-		const res = await fetch(`${base}/v1/models`, {
-			signal: AbortSignal.timeout(4_000),
-			next: { revalidate: 900 },
-		});
-		if (!res.ok) return MODEL_COUNT;
-		const body = (await res.json()) as { data?: unknown };
-		const rows = Array.isArray(body?.data) ? body.data : [];
-		const live = rows.filter((m) => {
-			const model = m as { available?: boolean };
-			return isModelAvailable(model ?? {});
-		});
-		return live.length > 0 ? live.length : MODEL_COUNT;
-	} catch {
-		return MODEL_COUNT;
-	}
-}
-
-export async function GET() {
-	const MODEL_COUNT_LIVE = await liveModelCount();
-	const MODEL_COUNT_LABEL_LIVE = `${MODEL_COUNT_LIVE}`;
-	const payee = process.env.TREASURY_BASE_ADDRESS || FALLBACK_TREASURY;
-	const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://www.oma-ai.com").replace(/\/+$/, "");
-	const apiUrl = (
-		process.env.PUBLIC_API_URL ||
-		process.env.NEXT_PUBLIC_PUBLIC_API_URL ||
-		"https://www.oma-ai.com/api"
-	).replace(/\/+$/, "");
+export function GET() {
+	const appUrl = SITE_URL;
+	const apiUrl = `${appUrl}/api`;
 
 	const agentCard = {
 		name: "OMA AI Gateway",
-		description: `Permissionless AI inference across ${MODEL_COUNT_LABEL_LIVE} models. Buy credits with card, deposit USDC on Base, or settle USDC via x402 then spend with an API key. OpenAI-compatible endpoint, privacy-first routing, A2UI-ready responses.`,
+		description: "OpenAI-compatible inference across a curated model catalog. Check live model availability and prices before requesting inference. Fund prepaid credits with USDC on Base, x402, or card checkout when available, then spend with an API key.",
 		url: `${appUrl}/.well-known/agent-card.json`,
 		version: "2.1.0",
 		documentation: `${appUrl}/docs`,
@@ -91,7 +49,7 @@ export async function GET() {
 			{
 				id: "chat-completions",
 				name: "Chat Completions",
-				description: `OpenAI-compatible chat across ${MODEL_COUNT_LABEL_LIVE} models: frontier, premium, mid, and budget tiers. Streaming + tool/function calling + system prompts + JSON mode + multimodal input.`,
+				description: "OpenAI-compatible chat across frontier, premium, mid, and budget tiers. Availability, tool calling, JSON mode, and image-input support depend on the selected model; check the live catalog.",
 				tags: [
 					"openai-compatible",
 					"chat",
@@ -122,7 +80,7 @@ export async function GET() {
 			{
 				id: "x402-settlement",
 				name: "x402 Agent Settlement (USDC funding)",
-				description: "Agents fund with USDC on Base via EIP-3009: verify with PAYMENT-SIGNATURE, settle from an authenticated session to credit a balance, then spend with an API key. Facilitator pays gas.",
+				description: "Read the current recipient from GET /x402/info before signing. POST /x402/verify with PAYMENT-SIGNATURE broadcasts the EIP-3009 USDC transfer. Settle with the payer wallet's SIWE session to credit the balance, then spend with an API key. The facilitator pays gas.",
 				tags: [
 					"x402",
 					"agentic-billing",
@@ -134,7 +92,7 @@ export async function GET() {
 				],
 				inputModes: ["text"],
 				outputModes: ["text", "application/a2ui+json"],
-				endpoint: `${apiUrl}/x402/verify`,
+				endpoint: `${appUrl}/x402/verify`,
 				payment: {
 					protocol: "x402",
 					version: 2,
@@ -142,7 +100,7 @@ export async function GET() {
 					caip2: "eip155:8453",
 					asset: "USDC",
 					assetAddress: USDC_BASE_MAINNET,
-					payee,
+					discovery: `${appUrl}/x402/info`,
 					scheme: "exact",
 					description:
 						"Gasless EIP-3009 transferWithAuthorization. The agent signs the payment; the gateway pays gas and settles on-chain.",
@@ -165,7 +123,7 @@ export async function GET() {
 			caip2: "eip155:8453",
 			asset: "USDC",
 			assetAddress: USDC_BASE_MAINNET,
-			payee,
+			discovery: `${appUrl}/x402/info`,
 			scheme: "exact",
 			endpoint: "/x402/verify",
 			settlement: "/x402/settle",
@@ -180,6 +138,7 @@ export async function GET() {
 			agentSkill: `${appUrl}/agent-skill.md`,
 			openapi: `${apiUrl}/v1/openapi`,
 			models: `${apiUrl}/v1/models`,
+			paymentInfo: `${appUrl}/x402/info`,
 		},
 		contact: "support@nosytlabs.com",
 		license: "MIT",

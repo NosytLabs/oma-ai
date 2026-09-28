@@ -137,9 +137,10 @@ export default function AboutPage() {
 						<p>
 							You pay from a prepaid credit balance. Top up with a card when
 							Polar checkout is enabled, deposit USDC directly on Base to the
-							treasury, or settle per-request via x402 (EIP-3009) — an agent
-							signs the payment envelope, OMA verifies it, and spends with an
-							API key. There are no subscriptions and no minimums.
+							deposit address, or fund the balance via x402 (EIP-3009). An agent
+							signs a payment authorization, OMA verifies and broadcasts the transfer,
+							then settlement credits the account for API-key spending. There are
+							no subscriptions; funding methods have their own deposit limits.
 						</p>
 						<p>
 							Auth is passwordless by default: magic-link email or SIWE with

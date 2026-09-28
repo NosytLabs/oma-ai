@@ -23,6 +23,11 @@ let lastFailureStatus = "disconnected";
 
 const RETRY_BASE_MS = 1_000;
 const RETRY_MAX_MS = 30_000;
+const NETWORK_ERROR_CODES = new Set([
+	"ENOTFOUND", "EAI_AGAIN", "ECONNREFUSED", "ECONNRESET", "ETIMEDOUT",
+	"UND_ERR_CONNECT_TIMEOUT", "UND_ERR_HEADERS_TIMEOUT", "UND_ERR_BODY_TIMEOUT", "UND_ERR_SOCKET",
+	"CERT_HAS_EXPIRED", "UNABLE_TO_VERIFY_LEAF_SIGNATURE", "ERR_TLS_CERT_ALTNAME_INVALID",
+]);
 
 let redis: Redis | null = null;
 type HealthResult = { status: string; latency?: number };
@@ -39,11 +44,16 @@ function resolveRedisInstance(): Redis {
 }
 
 // Never log the SDK error itself: its message may contain URLs, credentials,
-// or command arguments. Emit only a fixed category and a numeric HTTP status.
-function failureDetails(error: unknown): { reason: string; status?: number } {
+// or command arguments. Emit only a fixed category, numeric HTTP status,
+// and allowlisted transport code (Node fetch errors put this in cause.code).
+function failureDetails(error: unknown): { reason: string; status?: number; code?: string } {
 	const record = error && typeof error === "object"
-		? error as { message?: unknown; status?: unknown; statusCode?: unknown; cause?: unknown }
+		? error as { message?: unknown; status?: unknown; statusCode?: unknown; code?: unknown; cause?: unknown }
 		: {};
+	const cause = record.cause && typeof record.cause === "object"
+		? record.cause as { code?: unknown } : {};
+	const rawCode = record.code ?? cause.code;
+	const code = typeof rawCode === "string" && NETWORK_ERROR_CODES.has(rawCode) ? rawCode : undefined;
 	const message = typeof record.message === "string" ? record.message.toLowerCase() : "";
 	const rawStatus = record.status ?? record.statusCode;
 	const status = typeof rawStatus === "number" && Number.isInteger(rawStatus)
@@ -56,7 +66,7 @@ function failureDetails(error: unknown): { reason: string; status?: number } {
 	else if (/invalid.*url|url.*invalid|https.*url/.test(message)) reason = "invalid_configuration";
 	else if (status && status >= 500) reason = "upstream_error";
 	else if (/fetch failed|network|econn|enotfound|unable to connect/.test(message)) reason = "network";
-	return { reason, ...(status === undefined ? {} : { status }) };
+	return { reason, ...(status === undefined ? {} : { status }), ...(code === undefined ? {} : { code }) };
 }
 
 async function verifyConnection(force = false): Promise<HealthResult> {

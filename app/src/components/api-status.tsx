@@ -1,8 +1,8 @@
 "use client";
 
 /**
-	* Shared `/api/health` poll for both the navbar status chip and the login
-	* page's "API is offline" banner.
+	* Shared frontend-liveness poll for the navbar status chip and connection
+	* feedback. It measures website reachability, not inference/API readiness.
 	*
 	* Single source of truth:
 	* - One query key: `["health", "ready-v2"]`.
@@ -10,9 +10,9 @@
 	* "offline".
 	* - Exposes a stable `refresh()` callback so consumers can re-poll after
 	* a "Retry" click.
-	* - While the API is offline the poll backs off exponentially
+	* - While the website is unreachable the poll backs off exponentially
 	* (5s → 10s → 20s → 40s → 60s cap) instead of hammering a dead
-	* backend on a fixed cadence. A successful check resets the backoff
+	* endpoint on a fixed cadence. A successful check resets the backoff
 	* and returns to the steady 30s poll. No per-attempt console logging.
 	*/
 
@@ -79,14 +79,14 @@ export function ApiStatus({ onRetry, showRetryButton = true }: ApiStatusProps) {
 	case "checking":
 		return {
 			icon: <RefreshCw className="h-3 w-3 animate-spin" aria-hidden="true" />,
-			text: "Connecting...",
+			text: "Checking site…",
 			className: "text-text-muted",
 			dotClass: "bg-warning animate-pulse",
 		};
 	case "online":
 		return {
 			icon: <Wifi className="h-3 w-3" aria-hidden="true" />,
-			text: "API Online",
+			text: "Site online",
 			className: "text-success",
 			dotClass: "bg-success",
 		};
@@ -107,7 +107,7 @@ export function ApiStatus({ onRetry, showRetryButton = true }: ApiStatusProps) {
 	<div
 		className="flex items-center gap-1.5 rounded-full border border-border bg-surface/60 px-2.5 py-1"
 		role="status"
-		title={`API status: ${info.text} — polls /api/health every 30s`}
+		title={`Website connection: ${info.text}. Visit Live status for API availability.`}
 	>
 		<span className={`relative flex h-2 w-2`} aria-hidden="true">
 	{status === "checking" && (

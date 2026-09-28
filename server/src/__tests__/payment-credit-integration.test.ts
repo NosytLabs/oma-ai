@@ -92,7 +92,9 @@ describe.skipIf(!fixture.url)("durable credit claims (Postgres)", () => {
 		await query(`delete from "user" where id = 'original'`);
 		await addUser("replacement");
 		settlementCache.clear();
-		expect((await settle("replacement")).status).toBe(409);
+		const replay = await settle("replacement");
+		expect(replay.status).toBe(409);
+		expect(await replay.json()).toMatchObject({ error: { code: "payment_already_credited", retryable: false } });
 		expect(await balance("replacement")).toBe(0);
 	});
 
@@ -104,7 +106,9 @@ describe.skipIf(!fixture.url)("durable credit claims (Postgres)", () => {
 		expect(await balance("original")).toBeGreaterThan(0);
 		await query(`delete from "user" where id = 'original'`);
 		await addUser("replacement");
-		expect((await settle("replacement")).status).toBe(409);
+		const replay = await settle("replacement");
+		expect(replay.status).toBe(409);
+		expect(await replay.json()).toMatchObject({ error: { code: "payment_already_credited", retryable: false } });
 		expect(await balance("replacement")).toBe(0);
 	});
 
@@ -126,7 +130,15 @@ describe.skipIf(!fixture.url)("durable credit claims (Postgres)", () => {
 		fixture.blockTime = 1n;
 		const response = await settle("original");
 		expect(response.status).toBe(409);
-		expect(await response.text()).toMatch(/reconciliation/i);
+		expect(await response.json()).toMatchObject({ error: { code: "payment_reconciliation_required", retryable: false } });
+		// Retry through the warm cache and persisted settlement paths; neither
+		// may disguise this permanent conflict as a retryable service failure.
+		for (const clearCache of [false, true]) {
+			if (clearCache) settlementCache.clear();
+			const retry = await settle("original");
+			expect(retry.status).toBe(409);
+			expect(await retry.json()).toMatchObject({ error: { code: "payment_reconciliation_required", retryable: false } });
+		}
 		expect(await balance("original")).toBe(0);
 	});
 });

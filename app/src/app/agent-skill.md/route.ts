@@ -15,6 +15,7 @@ Use \`https://www.oma-ai.com/api/v1\` as the SDK base URL. The public website pr
 | \`GET https://www.oma-ai.com/api/v1/models\` | Catalog, availability, and prices |
 | \`POST https://www.oma-ai.com/api/v1/chat/completions\` | OpenAI-compatible inference |
 | \`POST https://www.oma-ai.com/api/v1/messages\` | Anthropic-compatible inference |
+| \`GET https://www.oma-ai.com/x402/info\` | Current x402 treasury, network, and USDC asset; no authentication required |
 | \`POST https://www.oma-ai.com/x402/verify\` | Validate and broadcast a signed USDC transfer, then wait for confirmation |
 | \`POST https://www.oma-ai.com/x402/settle\` | Credit the confirmed payment to the authenticated payer's account |
 
@@ -55,7 +56,7 @@ Ordinary chat requests do not issue a mid-request x402 challenge. A 402 for insu
 
 ## 4. Optional x402 funding: transfer, credit, spend
 
-OMA supports USDC on Base mainnet (\`eip155:8453\`), contract \`0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\`. Read the current treasury address from authenticated \`GET https://www.oma-ai.com/api/v1/deposit/usdc\` before signing. Sign in with the same wallet that owns the USDC before starting the transfer.
+OMA supports USDC on Base mainnet (\`eip155:8453\`), contract \`0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\`. Read \`GET https://www.oma-ai.com/x402/info\` before signing and use its \`payTo\`, \`network\`, and \`asset\`. This public discovery call does not move funds; do not substitute the direct-deposit address or a recipient copied from an old guide. Choose the funding amount yourself. Sign in with the same wallet that owns the USDC before starting the transfer.
 
 Prepare an EIP-712 \`TransferWithAuthorization\` signature over the EIP-3009 authorization tuple. The USDC domain is \`name: "USD Coin"\`, \`version: "2"\`, \`chainId: 8453\`, and the USDC contract above as \`verifyingContract\`. The tuple has \`from\`, \`to\`, \`value\`, \`validAfter\`, \`validBefore\`, and a fresh 32-byte \`nonce\`. \`value\` is in atomic USDC units (6 decimals); times are Unix seconds. The payer signs, and the facilitator broadcasts and pays transaction gas.
 

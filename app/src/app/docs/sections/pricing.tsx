@@ -92,7 +92,7 @@ export function PricingSection() {
 					<div className="flex items-start gap-2">
 						<CheckCircle2 className="h-4 w-4 text-accent mt-0.5" />
 						<span className="text-sm text-text-muted">
-							No minimums or subscriptions
+							No subscriptions. Funding methods have their own deposit limits.
 						</span>
 					</div>
 					<div className="flex items-start gap-2">
