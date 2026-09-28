@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useTransition } from "react";
 import { copyToClipboard } from "@/lib/clipboard";
 
@@ -9,7 +9,6 @@ import { copyToClipboard } from "@/lib/clipboard";
 	* Supports tier, provider, search, and sort params.
 	*/
 export function useUrlFilters() {
-	const router = useRouter();
 	const pathname = usePathname();
 	const searchParams = useSearchParams();
 	const [isPending, startTransition] = useTransition();
@@ -19,23 +18,25 @@ export function useUrlFilters() {
 	const search = searchParams?.get("q") || "";
 	const sort = searchParams?.get("sort") || "name";
 
-	const setParam = useCallback(
-		(key: string, value: string | null) => {
+	const setParams = useCallback(
+		(updates: Record<string, string | null>) => {
 			startTransition(() => {
-				const params = new URLSearchParams(searchParams?.toString() ?? "");
-				if (value === null || value === "") {
-					params.delete(key);
-				} else {
-					params.set(key, value);
+				// Native history updates are synchronous and integrate with Next's
+				// useSearchParams. Consecutive changes cannot overwrite each other.
+				const params = new URLSearchParams(window.location.search);
+				for (const [key, value] of Object.entries(updates)) {
+					if (value === null || value === "") params.delete(key);
+					else params.set(key, value);
 				}
 				const qs = params.toString();
 				// Reset to the CURRENT route, not a hard-coded one — this hook is
 				// shared and must not silently redirect future consumers to /models.
-				router.replace(qs ? `?${qs}` : (pathname ?? "/"), { scroll: false });
+				window.history.replaceState(null, "", `${pathname ?? "/"}${qs ? `?${qs}` : ""}${window.location.hash}`);
 			});
 		},
-		[router, pathname, searchParams, startTransition],
+		[pathname, startTransition],
 	);
+	const setParam = useCallback((key: string, value: string | null) => setParams({ [key]: value }), [setParams]);
 
 	const copyFilterUrl = useCallback(async () => {
 		return copyToClipboard(window.location.href);
@@ -47,6 +48,8 @@ export function useUrlFilters() {
 		search,
 		sort,
 		setParam,
+		setParams,
+		params: searchParams,
 		copyFilterUrl,
 		isPending,
 	};

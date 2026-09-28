@@ -120,6 +120,8 @@ function ModelsPageInner() {
 
 					{/* Copy Filter URL */}
 					{hasFilters && (
+						<div className="flex shrink-0 flex-wrap items-center gap-2 sm:pt-1">
+						<button type="button" onClick={resetFilters} className="btn-mono btn-outline">Clear filters</button>
 						<button
 							type="button"
 							onClick={handleCopy}
@@ -132,6 +134,7 @@ function ModelsPageInner() {
 							)}
 							{copied ? "Copied!" : "Share Filters"}
 						</button>
+						</div>
 					)}
 				</div>
 
@@ -242,7 +245,7 @@ function ModelsPageInner() {
 									onClick={resetFilters}
 									className="mt-4 text-sm text-accent hover:underline"
 								>
-									Clear filters
+									Show all models
 								</button>
 							</div>
 						)}

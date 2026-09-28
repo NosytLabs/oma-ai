@@ -245,20 +245,52 @@ export function deriveCapabilities(
 	const capSet = new Set((serverCaps ?? []).map((c) => c.toLowerCase()));
 	const haystack = `${id} ${displayName} ${description ?? ""}`.toLowerCase();
 
-	if (capSet.has("chat") || serverCaps === undefined || serverCaps.length === 0) {
-		out.add("chat");
+	for (const capability of ["chat", "reasoning", "coding", "multimodal", "vision", "fast", "uncensored", "agents", "math"] as const) {
+		if (capSet.has(capability)) out.add(capability);
 	}
-	if (capSet.has("reasoning")) out.add("reasoning");
-	if (capSet.has("vision")) out.add("vision");
 	if (capSet.has("video-input") || capSet.has("audio-input"))
 		out.add("multimodal");
-	if (capSet.has("tools") || capSet.has("function-calling")) out.add("agents");
+	if (capSet.has("tools") || capSet.has("function-calling") || capSet.has("function_calling")) out.add("agents");
 
-	if (/uncensored|heretic/.test(haystack)) out.add("uncensored");
-	if (/(?:^|[-_/])coder(?:[-_/]|$)|codex/.test(id.toLowerCase()))
-		out.add("coding");
+	if (serverCaps === undefined) {
+		out.add("chat");
+		if (/uncensored|heretic/.test(haystack)) out.add("uncensored");
+		if (/(?:^|[-_/])coder(?:[-_/]|$)|codex/.test(id.toLowerCase()))
+			out.add("coding");
+	}
 
 	return [...out];
+}
+
+export interface ModelCapabilityMetadata {
+	capabilities?: string[];
+	supported_parameters?: string[];
+	supports_tools?: boolean;
+}
+
+/** Share capability precedence between catalog cards and model details. */
+export function resolveModelCapabilities(
+	live: ModelCapabilityMetadata,
+	fallback: readonly Capability[] = ["chat"],
+): Capability[] {
+	const capabilities = new Set<Capability>(
+		live.capabilities !== undefined
+			? deriveCapabilities("", "", undefined, live.capabilities)
+			: fallback,
+	);
+	// Older APIs advertise supported parameters, not a complete capability
+	// list. Keep curated facts they cannot express and add explicit signals.
+	if (live.capabilities === undefined && live.supported_parameters) {
+		const parameters = live.supported_parameters.map((parameter) =>
+			parameter === "reasoning_effort" ? "reasoning" : parameter,
+		);
+		for (const capability of deriveCapabilities("", "", undefined, parameters)) {
+			capabilities.add(capability);
+		}
+	}
+	if (live.supports_tools === true) capabilities.add("agents");
+	if (live.supports_tools === false) capabilities.delete("agents");
+	return [...capabilities];
 }
 
 function deriveDescription(
@@ -397,13 +429,8 @@ function catalogFromRaw(catalog: RawCatalog): Model[] {
 // Lazy client loader
 // ---------------------------------------------------------------------------
 
-	/**
-	 * Interface matching the OpenAI-style models returned by GET /v1/models.
-	 * The live API returns the curated chat catalog (20 models — see
-	 * `MODEL_COUNT`) with user-facing pricing, category, and context_length
-	 * but NOT description or capabilities — those are derived here.
-	 */
-interface ApiModelEntry {
+/** OpenAI-style models with OMA catalog metadata from GET /v1/models. */
+interface ApiModelEntry extends ModelCapabilityMetadata {
 	id: string;
 	/** Customer-facing name from the server catalog; never derive this when present. */
 	display_name?: string;
@@ -437,7 +464,6 @@ interface ApiModelEntry {
 	 */
 	available?: boolean;
 	architecture?: { input_modalities?: string[]; output_modalities?: string[] };
-	supported_parameters?: string[];
 }
 
 interface ApiModelsResponse {
@@ -545,7 +571,7 @@ const tier: Tier =
 						priceUnit: derivePriceUnit(modality, entry.pricing),
 						capabilities:
 							modality === "chat"
-								? deriveCapabilities(entry.id, name, undefined, entry.supported_parameters)
+								? resolveModelCapabilities(entry, MODELS.find((model) => model.id === entry.id)?.capabilities)
 								: [],
 						modelId: entry.id,
 						inputModalities: entry.architecture?.input_modalities ?? ["text"],

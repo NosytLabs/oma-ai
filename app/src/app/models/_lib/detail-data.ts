@@ -1,14 +1,12 @@
-import { formatContextLength, type Model } from "@/lib/models-data";
+import { formatContextLength, resolveModelCapabilities, type Model, type ModelCapabilityMetadata } from "@/lib/models-data";
 
 /** Fields returned by OMA's /v1/models endpoint. Prices are already per 1M. */
-export interface LiveModelDetails {
+export interface LiveModelDetails extends ModelCapabilityMetadata {
 	id: string;
 	available?: boolean;
 	context_length?: number | null;
 	pricing?: { prompt?: string | number | null; completion?: string | number | null };
 	architecture?: { input_modalities?: string[]; output_modalities?: string[] };
-	supported_parameters?: string[];
-	supports_tools?: boolean;
 	supports_streaming?: boolean;
 }
 
@@ -31,6 +29,7 @@ export function withLiveModelDetails(model: Model, live: LiveModelDetails | null
 		outputPricePer1M: priceOrFallback(live.pricing?.completion, model.outputPricePer1M),
 		contextTokens: context,
 		contextLength: formatContextLength(context),
+		capabilities: resolveModelCapabilities(live, model.capabilities),
 		inputModalities: live.architecture?.input_modalities ?? model.inputModalities,
 		outputModalities: live.architecture?.output_modalities ?? model.outputModalities,
 	};

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type SetStateAction } from "react";
 import { useUrlFilters } from "@/components/shared/useUrlFilters";
 import { MODALITY_LABELS, MODALITY_ORDER, MODELS, TIER_ORDER, distinctProviders, getModelsByTier, loadModels, type Model } from "@/lib/models-data";
 import { TIER_LABELS } from "../_lib/labels";
@@ -83,6 +83,20 @@ interface ModelGroup {
 	models: Model[];
 }
 
+function readList(query: string, key: string): string[] {
+	return [...new Set((new URLSearchParams(query).get(key) ?? "").split(",").filter(Boolean))];
+}
+
+function readRange(query: string, key: string, maximum: number): [number, number] {
+	const raw = new URLSearchParams(query).get(key);
+	if (!raw) return [0, maximum];
+	const parts = raw.split(",");
+	const values = parts.map(Number);
+	if (parts.length !== 2 || parts.some((part) => !part.trim()) || values.some((value) => !Number.isFinite(value))) return [0, maximum];
+	const low = Math.max(0, Math.min(maximum, values[0]));
+	return [low, Math.max(low, Math.min(maximum, values[1]))];
+}
+
 export function useModelFilters() {
 	const {
 		tier: urlTier,
@@ -90,6 +104,8 @@ export function useModelFilters() {
 		search: urlSearch,
 		sort: urlSort,
 		setParam,
+		setParams,
+		params,
 		copyFilterUrl,
 	} = useUrlFilters();
 
@@ -98,19 +114,46 @@ export function useModelFilters() {
 	const [selectedProvider, setSelectedProvider] = useState<string | null>(
 		urlProvider,
 	);
-	const [sortBy, setSortBy] = useState<SortKey>((urlSort as SortKey) || "name");
+	const [sortBy, setSortBy] = useState<SortKey>(SORT_OPTIONS.some((option) => option.value === urlSort) ? urlSort as SortKey : "name");
 	const [copied, setCopied] = useState(false);
 	const [isLoadingModels, setIsLoadingModels] = useState(true);
 	const [liveModels, setLiveModels] = useState<Model[] | null>(null);
 
 	// Filter controls state
-	const [inputModalities, setInputModalities] = useState<string[]>([]);
-	const [outputModalities, setOutputModalities] = useState<string[]>([]);
-	const [capabilities, setCapabilities] = useState<string[]>([]);
-	const [contextRange, setContextRange] = useState<[number, number]>([
-		0, 2000000,
-	]); // 0 to 2M tokens
-	const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]); // $0 to $1000 per 1M tokens
+	const query = params?.toString() ?? "";
+	const [inputModalities, setInputModalitiesState] = useState<string[]>(() => readList(query, "input"));
+	const [outputModalities, setOutputModalitiesState] = useState<string[]>(() => readList(query, "output"));
+	const [capabilities, setCapabilitiesState] = useState<string[]>(() => readList(query, "cap"));
+	const [contextRange, setContextRangeState] = useState<[number, number]>(() => readRange(query, "ctx", 2_000_000));
+	const [priceRange, setPriceRangeState] = useState<[number, number]>(() => readRange(query, "price", 1000));
+
+	useEffect(() => {
+		setLocalSearch(urlSearch);
+		setSelectedTier(urlTier);
+		setSelectedProvider(urlProvider);
+		setSortBy(SORT_OPTIONS.some((option) => option.value === urlSort) ? urlSort as SortKey : "name");
+		setInputModalitiesState(readList(query, "input"));
+		setOutputModalitiesState(readList(query, "output"));
+		setCapabilitiesState(readList(query, "cap"));
+		setContextRangeState(readRange(query, "ctx", 2_000_000));
+		setPriceRangeState(readRange(query, "price", 1000));
+	}, [query, urlSearch, urlTier, urlProvider, urlSort]);
+
+	function updateList(key: string, current: string[], update: SetStateAction<string[]>, setState: (next: string[]) => void) {
+		const next = typeof update === "function" ? update(current) : update;
+		setState(next);
+		setParam(key, next.length ? next.join(",") : null);
+	}
+	const setInputModalities = (update: SetStateAction<string[]>) => updateList("input", inputModalities, update, setInputModalitiesState);
+	const setOutputModalities = (update: SetStateAction<string[]>) => updateList("output", outputModalities, update, setOutputModalitiesState);
+	const setCapabilities = (update: SetStateAction<string[]>) => updateList("cap", capabilities, update, setCapabilitiesState);
+	function updateRange(key: string, current: [number, number], update: SetStateAction<[number, number]>, max: number, setState: (next: [number, number]) => void) {
+		const next = typeof update === "function" ? update(current) : update;
+		setState(next);
+		setParam(key, next[0] === 0 && next[1] === max ? null : next.join(","));
+	}
+	const setContextRange = (update: SetStateAction<[number, number]>) => updateRange("ctx", contextRange, update, 2_000_000, setContextRangeState);
+	const setPriceRange = (update: SetStateAction<[number, number]>) => updateRange("price", priceRange, update, 1000, setPriceRangeState);
 
 	// Load the full model catalog from the API on mount.
 	useEffect(() => {
@@ -357,14 +400,15 @@ export function useModelFilters() {
 		priceRange[1] !== 1000;
 
 	const resetFilters = () => {
-		handleSearch("");
-		handleTier(null);
-		handleProvider(null);
-		setInputModalities([]);
-		setOutputModalities([]);
-		setCapabilities([]);
-		setContextRange([0, 2000000]);
-		setPriceRange([0, 1000]);
+		setLocalSearch("");
+		setSelectedTier(null);
+		setSelectedProvider(null);
+		setInputModalitiesState([]);
+		setOutputModalitiesState([]);
+		setCapabilitiesState([]);
+		setContextRangeState([0, 2000000]);
+		setPriceRangeState([0, 1000]);
+		setParams({ q: null, tier: null, provider: null, input: null, output: null, cap: null, ctx: null, price: null });
 	};
 
 	return {

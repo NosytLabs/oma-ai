@@ -2,10 +2,11 @@
 
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { OmaNavLockup } from "@/components/ui/oma-logo";
 import { useAuth } from "@/lib/hooks/useAuth";
+import { buildLoginHref } from "@/lib/login-href";
 import { isCurrentNavLink, primaryLinks } from "./navbar/_lib/nav-links";
 import { NavbarMobileMenu } from "./navbar/NavbarMobileMenu";
 import { NavbarToolsDropdown } from "./navbar/NavbarToolsDropdown";
@@ -13,18 +14,27 @@ import { NavbarUserMenu } from "./navbar/NavbarUserMenu";
 import { ThemeToggle } from "./ThemeToggle";
 
 export function Navbar() {
+	return <Suspense fallback={<NavbarContent search="" />}><NavbarWithSearch /></Suspense>;
+}
+
+function NavbarWithSearch() {
+	const search = useSearchParams()?.toString() ?? "";
+	return <NavbarContent search={search} />;
+}
+
+function NavbarContent({ search }: { search: string }) {
 	const { isAuthenticated, isDemo, evmAddress, signOut, isPending, user } = useAuth();
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [toolsOpen, setToolsOpen] = useState(false);
 	const mobileToggleRef = useRef<HTMLButtonElement>(null);
 	const pathname = usePathname() ?? "/";
-	const loginHref = `/login?next=${encodeURIComponent(pathname)}`;
+	const loginHref = buildLoginHref(`${pathname}${search ? `?${search}` : ""}`);
 	const isConnected = isAuthenticated && !isDemo;
 
 	useEffect(() => {
 		setMobileOpen(false);
 		setToolsOpen(false);
-	}, [pathname]);
+	}, [pathname, search]);
 
 	useEffect(() => {
 		const media = window.matchMedia("(min-width: 1024px)");

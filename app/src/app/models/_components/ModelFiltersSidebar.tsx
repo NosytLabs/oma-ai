@@ -70,6 +70,7 @@ export const ModelFiltersSidebar: React.FC<ModelFiltersSidebarProps> = ({
 				<button
 					type="button"
 					onClick={() => handleTier(null)}
+					aria-pressed={!selectedTier}
 					className={`px-3 py-1.5 rounded-full text-xs font-medium transition-[color,transform] duration-200 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
 						!selectedTier
 							? "bg-accent text-void"
@@ -83,6 +84,7 @@ export const ModelFiltersSidebar: React.FC<ModelFiltersSidebarProps> = ({
 						type="button"
 						key={tier}
 						onClick={() => handleTier(selectedTier === tier ? null : tier)}
+						aria-pressed={selectedTier === tier}
 						className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium capitalize transition-[color,transform] duration-200 ease-out active:scale-[0.97] ${
 							selectedTier === tier
 								? "bg-accent text-void"
@@ -101,6 +103,7 @@ export const ModelFiltersSidebar: React.FC<ModelFiltersSidebarProps> = ({
 					<button
 						type="button"
 						onClick={() => handleProvider(null)}
+						aria-pressed={!selectedProvider}
 						className={`px-3 py-1.5 rounded-full text-xs font-medium transition-[color,transform] duration-200 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
 							!selectedProvider
 								? "bg-text-bright text-void"
@@ -117,6 +120,7 @@ export const ModelFiltersSidebar: React.FC<ModelFiltersSidebarProps> = ({
 							<button
 								type="button"
 								key={p}
+								aria-pressed={selectedProvider === p}
 								onClick={() =>
 									handleProvider(selectedProvider === p ? null : p)
 								}
@@ -165,6 +169,7 @@ export const ModelFiltersSidebar: React.FC<ModelFiltersSidebarProps> = ({
 					{allInputModalities.map((mod) => (
 						<button
 							key={`input-${mod}`}
+							aria-pressed={inputModalities.includes(mod)}
 							type="button"
 							onClick={() => {
 								const newMods = inputModalities.includes(mod)
@@ -193,6 +198,7 @@ export const ModelFiltersSidebar: React.FC<ModelFiltersSidebarProps> = ({
 					{allOutputModalities.map((mod) => (
 						<button
 							key={`output-${mod}`}
+							aria-pressed={outputModalities.includes(mod)}
 							type="button"
 							onClick={() => {
 								const newMods = outputModalities.includes(mod)
@@ -221,6 +227,7 @@ export const ModelFiltersSidebar: React.FC<ModelFiltersSidebarProps> = ({
 					{allCapabilities.map((cap) => (
 						<button
 							key={`cap-${cap}`}
+							aria-pressed={capabilities.includes(cap)}
 							type="button"
 							onClick={() => {
 								const newCaps = capabilities.includes(cap)

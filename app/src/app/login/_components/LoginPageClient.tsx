@@ -41,6 +41,9 @@ import { OmaWordmark } from "@/components/ui/oma-logo";
 import { signIn } from "@/lib/auth-client";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { safeLoginNext } from "@/lib/login-href";
+
+export { safeLoginNext } from "@/lib/login-href";
 
 const LazyWalletSignInPanel = dynamic(
 	() => import("./WalletSignInPanel"),
@@ -51,17 +54,6 @@ const LazyWalletSignInPanel = dynamic(
 );
 
 type Method = "magic" | "wallet";
-
-/**
-	* Resolve post-login destination. Only same-origin relative paths are allowed
-	* (blocks open redirects via `//evil` or absolute URLs).
-	* Exported for unit tests — keep the guard in one place.
-	*/
-export function safeLoginNext(raw: string | null | undefined): string {
-	if (!raw) return "/dashboard";
-	if (!raw.startsWith("/") || raw.startsWith("//") || /[\\\u0000-\u001f\u007f]/.test(raw)) return "/dashboard";
-	return raw;
-}
 
 function defaultNext(): string {
 	if (typeof window === "undefined") return "/dashboard";
