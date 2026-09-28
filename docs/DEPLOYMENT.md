@@ -163,12 +163,38 @@ are both completed, then verify the API's dependencies:
 ```bash
 npx --yes neon@6.2.3 functions get omaapi \
   --project-id empty-bar-94645349 --branch br-sweet-rain-b40o54xa
-curl -fsS https://br-sweet-rain-b40o54xa-omaapi.compute.c-6.us-east-2.aws.neon.tech/ready
+# No -f: /ready answers 503 while Redis is degraded, and -f would abort on the
+# healthy-but-degraded response. Inspect the body instead of the exit code.
+curl -sS https://br-sweet-rain-b40o54xa-omaapi.compute.c-6.us-east-2.aws.neon.tech/ready
 ```
 
 `https://www.oma-ai.com/api/health` checks the web tier only. The native API
-`/ready` probe checks Postgres and Redis; require a successful readiness
-response as well as a successful frontend health response.
+`/ready` probe checks Postgres and Redis.
+
+**`/ready` currently returns 503 with `redis: degraded`, and that is expected
+until the Redis credentials are replaced.** The `UPSTASH_REDIS_REST_URL` on the
+Neon branch points at a database that no longer exists (`ENOTFOUND`), so the
+probe can never report `ready` no matter how healthy the deploy is. Do not treat
+it as a failed deploy, and do not gate a rollout on it.
+
+What to require instead:
+
+| Signal | Requirement |
+| --- | --- |
+| `GET /api/health` | `200` — web tier is up |
+| `GET /api/version` | `200` |
+| `/ready` → `checks.database.ok` | `true` — **this is the one that matters** |
+| `/ready` → `checks.redis.ok` | may be `false` (known, degraded) |
+
+Postgres readiness is the real gate. Redis degradation is handled in-app: general
+routes fail open to a bounded per-process memory limiter (`degraded-memory`,
+5 bursts/min) and the DLQ falls back to Postgres/logging, so a missing cache
+dependency degrades enforcement rather than availability.
+
+To actually restore `/ready`: provision a new Upstash database and set
+`UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` on the Neon branch
+(`config plan`/`apply`), then re-check. Credentials are rotated in the Neon
+console by the account owner, not from a local shell.
 
 ## DNS
 
