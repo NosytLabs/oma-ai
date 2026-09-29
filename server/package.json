@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@hono/node-server": "^2.0.12",
-    "@neon/config": "^1.7.2",
+    "@neon/config": "^1.8.2",
     "@neondatabase/serverless": "^1.1.0",
     "@opentelemetry/api": "^1.9.1",
     "@opentelemetry/auto-instrumentations-node": "^0.80.0",
@@ -30,14 +30,14 @@
     "@opentelemetry/semantic-conventions": "^1.43.0",
     "@polar-sh/sdk": "^0.49.0",
     "@upstash/redis": "^1.39.0",
-    "better-auth": "1.7.5",
+    "better-auth": "1.7.6",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "hono": "4.13.9",
     "nanoid": "^6.0.1",
     "pg": "^8.22.0",
     "pino": "^10.3.1",
-    "viem": "^2.56.5",
+    "viem": "^2.56.9",
     "zod": "^4.5.4"
   },
   "devDependencies": {
