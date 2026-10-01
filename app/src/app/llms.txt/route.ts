@@ -45,6 +45,7 @@ export function GET(): Response {
 - [Models](${siteUrl}/models)
 - [Pricing](${siteUrl}/pricing)
 - [Chat Playground](${siteUrl}/chat)
+- [Changelog](${siteUrl}/changelog): release notes and gateway behaviour changes.
 
 ## Authenticated product surfaces
 

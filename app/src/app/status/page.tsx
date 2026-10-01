@@ -13,8 +13,10 @@ import { FREE_DEFAULT_CHAT_MODEL } from "@/lib/model-utils";
 // .next/server/app/status.html contained the build machine's frozen health
 // snapshot, including the h1 "Degraded — we're on it." and the row
 // "Inference gateway (API) — Unreachable", because a build host has no route
-// to the API. Every visitor and every crawler was served that stale snapshot,
-// and it is in the sitemap at priority 0.5 with changeFrequency "daily".
+// to the API. Every visitor and every crawler was served that stale snapshot.
+// (That snapshot also claimed the page sat in the sitemap at priority 0.5 —
+// it never did, and does not. The sitemap omission is deliberate; see
+// metadata below and robots.ts, which disallows /status.)
 //
 // force-dynamic makes the route render per request, which is what the copy
 // ("This page checks liveness the moment you load it") already promised.
@@ -26,8 +28,15 @@ export const metadata: Metadata = {
 	title: "Status — live service health",
 	description:
 		"Live health of the OMA web app, inference gateway, and free website chat. Checked on each page load.",
-	alternates: { canonical: "/status" },
-	robots: { index: true, follow: true },
+	// AUDIT 2026-10-01: this route served `index, follow` plus a self-referencing
+	// canonical while robots.ts disallows /status and the sitemap omits it — a
+	// self-contradicting crawl graph, with 65 of 66 pages linking it from the
+	// footer. The disallow is the load-bearing directive: the page is a per-request
+	// health probe whose body changes every load, so there is nothing stable to
+	// index and it would otherwise compete with the marketing pages. The canonical
+	// is dropped rather than pointed at "/" because a canonical asserts "the content
+	// of this URL lives at that URL", which is not true here.
+	robots: { index: false, follow: true },
 	openGraph: {
 		locale: "en_US",
 		title: "Status — live service health",

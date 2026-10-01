@@ -18,16 +18,35 @@ export function generateStaticParams() {
 	return GLOSSARY_SLUGS.map((slug) => ({ slug }));
 }
 
+/**
+ * Meta descriptions are truncated by search engines at roughly 160
+ * characters. Slicing blindly cuts mid-word ("…turning text into a list of numbe"),
+ * which reads as broken copy in the SERP and drops the trailing call to action.
+ * Cut at the last word boundary instead and drop any dangling ellipsis.
+ */
+const MAX_DESCRIPTION_LENGTH = 160;
+
+export function truncateDescription(text: string, max = MAX_DESCRIPTION_LENGTH): string {
+	const clean = text.replace(/\s+/g, " ").trim();
+	if (clean.length <= max) return clean;
+	const cut = clean.slice(0, max);
+	const lastSpace = cut.lastIndexOf(" ");
+	// Only fall back to the hard cut when there is no space at all — otherwise
+	// a very long single token would be truncated to nothing.
+	return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).replace(/[\s,;:.!?-]+$/, "");
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
 	const { slug } = await params;
 	const entry = GLOSSARY_TERMS_BY_SLUG[slug as GlossarySlug];
 	if (!entry) return {};
 	const title = `What is ${entry.term}? · OMA glossary`;
+	const description = truncateDescription(entry.def);
 	return {
 		title,
-		description: entry.def,
+		description,
 		alternates: { canonical: `/glossary/${slug}` },
-		openGraph: { title, description: entry.def, url: `/glossary/${slug}`, images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA glossary" }] },
+		openGraph: { title, description, url: `/glossary/${slug}`, images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA glossary" }] },
 		twitter: { card: "summary_large_image", images: ["/og-image.png"] },
 		robots: { index: true, follow: true },
 	};
