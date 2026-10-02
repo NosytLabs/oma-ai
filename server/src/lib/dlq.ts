@@ -197,27 +197,6 @@ export async function getSettlementDlqLength(): Promise<number> {
 	}
 }
 
-/** Test/admin helper: drop a specific queued settlement by id. */
-export async function removeSettlementDlqEntry(id: string): Promise<boolean> {
-	try {
-		await db.delete(settlementDlq).where(eq(settlementDlq.id, id));
-		return true;
-	} catch (err) {
-		logger.error({ err, id }, "[DLQ] Error removing settlement DLQ entry");
-		return false;
-	}
-}
-
-/** Test/admin helper: clear the whole queue. */
-export async function clearSettlementDlq(): Promise<boolean> {
-	try {
-		await db.delete(settlementDlq);
-		return true;
-	} catch (err) {
-		logger.error({ err }, "[DLQ] Error clearing settlement DLQ");
-		return false;
-	}
-}
 
 // ---------------------------------------------------------------------------
 // Webhook DLQ -- still Redis-backed. Kept separate from the settlement queue

@@ -1,9 +1,6 @@
 // Centralized credit pricing/math utility for OMA
 
 /** Returns the number of credits for a given USD amount ($1 = 100 credits, 1 credit = 1 cent). */
-export function usdToCredits(usd: number): number {
-		return Math.floor(usd * 100);
-}
 
 /** Standard credit plans surfaced by the deposit UI. */
 export const CREDIT_PLANS = [
