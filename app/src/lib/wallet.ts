@@ -1,32 +1,139 @@
 "use client";
 
 /**
-	* Minimal EIP-1193 wallet client — viem-backed, no wagmi.
-	*
-	* The app deliberately avoids wagmi to keep the dependency surface
-	* small. `window.ethereum` is the standard EIP-1193 injection point;
-	* most wallets (MetaMask, Rabby, Rainbow, Coinbase) expose it.
-	*
-	* If the user has no wallet, `getWalletClient()` returns null and the
-	* login page surfaces a "no wallet detected" CTA with a link to
-	* common wallets.
-	*
-	*   import { connectWallet, signSiweMessage } from "@/lib/wallet";
-	*   const { address } = await connectWallet();
-	*   const { message, signature } = await signSiweMessage(address, nonce, "oma-ai.com");
-	*/
+ * EIP-1193 wallet client — viem-backed, no wagmi.
+ *
+ * Discovery order (EIP-6963, then the legacy injection):
+ *   1. providers that answered `eip6963:requestProvider`
+ *   2. `window.ethereum.providers` when several extensions fight over the slot
+ *   3. `window.ethereum` itself
+ *
+ * Connecting stores that provider. Later signs and transfers use it, not
+ * whichever extension last overwrote `window.ethereum`.
+ *
+ *   import { connectWallet, signSiweMessage } from "@/lib/wallet";
+ *   const { address } = await connectWallet();
+ *   const { message, signature } = await signSiweMessage(address, nonce, "oma-ai.com");
+ */
 import { createWalletClient, custom, encodeFunctionData, getAddress, type WalletClient } from "viem";
 import { base } from "viem/chains";
 import { SiweMessage } from "siwe";
 
+type Eip1193Provider = {
+	request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
+	on?: (event: string, handler: (...args: unknown[]) => void) => void;
+	removeListener?: (event: string, handler: (...args: unknown[]) => void) => void;
+	providers?: Eip1193Provider[];
+	isRabby?: boolean;
+	isCoinbaseWallet?: boolean;
+	isRainbow?: boolean;
+	isMetaMask?: boolean;
+};
+
+export interface DiscoveredWallet {
+	id: string;
+	name: string;
+	provider: Eip1193Provider;
+}
+
 declare global {
 	interface Window {
-		ethereum?: {
-			request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
-			on?: (event: string, handler: (...args: unknown[]) => void) => void;
-			removeListener?: (event: string, handler: (...args: unknown[]) => void) => void;
-		};
+		ethereum?: Eip1193Provider;
 	}
+}
+
+const NO_WALLET =
+	"No EIP-1193 wallet detected. Install MetaMask, Rabby, or Coinbase Wallet.";
+
+const announced = new Map<string, DiscoveredWallet>();
+const walletListeners = new Set<() => void>();
+let listening = false;
+let activeProvider: Eip1193Provider | undefined;
+
+function notifyWallets() {
+	for (const listener of walletListeners) listener();
+}
+
+function installEip6963Listener() {
+	if (listening || typeof window === "undefined") return;
+	listening = true;
+	window.addEventListener("eip6963:announceProvider", (event: Event) => {
+		const detail = (
+			event as CustomEvent<{
+				info?: { uuid?: string; name?: string; rdns?: string };
+				provider?: Eip1193Provider;
+			}>
+		).detail;
+		const provider = detail?.provider;
+		if (!provider || typeof provider.request !== "function") return;
+		const id = detail.info?.rdns || detail.info?.uuid || `eip6963-${announced.size}`;
+		announced.set(id, {
+			id,
+			name: detail.info?.name || "Wallet",
+			provider,
+		});
+		notifyWallets();
+	});
+}
+
+/** Ask injected wallets to announce. Safe to call more than once. */
+export function requestWalletDiscovery(): void {
+	installEip6963Listener();
+	if (typeof window === "undefined") return;
+	window.dispatchEvent(new Event("eip6963:requestProvider"));
+}
+
+export function subscribeWallets(listener: () => void): () => void {
+	requestWalletDiscovery();
+	walletListeners.add(listener);
+	return () => {
+		walletListeners.delete(listener);
+	};
+}
+
+function legacyName(provider: Eip1193Provider): string {
+	// Rabby and Coinbase also set isMetaMask. Check the specific flag first.
+	if (provider.isRabby) return "Rabby";
+	if (provider.isCoinbaseWallet) return "Coinbase Wallet";
+	if (provider.isRainbow) return "Rainbow";
+	if (provider.isMetaMask) return "MetaMask";
+	return "Browser wallet";
+}
+
+/** Wallets this page can actually call. Deduped by provider object. */
+export function listWallets(): DiscoveredWallet[] {
+	requestWalletDiscovery();
+	const out: DiscoveredWallet[] = [];
+	const seen = new Set<Eip1193Provider>();
+	for (const wallet of announced.values()) {
+		if (seen.has(wallet.provider)) continue;
+		seen.add(wallet.provider);
+		out.push(wallet);
+	}
+	const eth = typeof window === "undefined" ? undefined : window.ethereum;
+	const legacy = Array.isArray(eth?.providers)
+		? eth.providers.filter((provider) => provider && typeof provider.request === "function")
+		: eth && typeof eth.request === "function"
+			? [eth]
+			: [];
+	legacy.forEach((provider, index) => {
+		if (seen.has(provider)) return;
+		seen.add(provider);
+		const name = legacyName(provider);
+		out.push({ id: `${name}-${index}`, name, provider });
+	});
+	return out;
+}
+
+function getProvider(): Eip1193Provider | undefined {
+	if (activeProvider && typeof activeProvider.request === "function") return activeProvider;
+	return listWallets()[0]?.provider;
+}
+
+/** Test-only. Module state would otherwise leak across cases. */
+export function resetWalletDiscoveryForTests(): void {
+	announced.clear();
+	activeProvider = undefined;
 }
 
 export const OMA_CHAIN_ID = base.id; // 8453 — Base mainnet.
@@ -36,30 +143,27 @@ export interface WalletState {
 	chainId: number;
 }
 
-function getEthereum(): Window["ethereum"] {
-	if (typeof window === "undefined") return undefined;
-	return window.ethereum;
-}
-
 /**
-	* Prompt the user to connect a wallet. Returns the first authorized
-	* address (MetaMask's `eth_requestAccounts` returns the most-recently
-	* used account first; multi-account UIs can extend this).
-	*/
-export async function connectWallet(): Promise<WalletState> {
-	const eth = getEthereum();
-	if (!eth) {
+ * Prompt the user to connect a wallet. `walletId` selects one entry from
+ * `listWallets()` when several extensions are installed. Returns the first
+ * authorized address.
+ */
+export async function connectWallet(walletId?: string): Promise<WalletState> {
+	const wallets = listWallets();
+	const chosen = walletId ? wallets.find((wallet) => wallet.id === walletId) : wallets[0];
+	if (!chosen) {
 		throw new Error(
-			"No EIP-1193 wallet detected. Install MetaMask, Rabby, or Coinbase Wallet.",
+			walletId ? "That wallet is no longer available. Reload and try again." : NO_WALLET,
 		);
 	}
-	const accounts = (await eth.request({
+	activeProvider = chosen.provider;
+	const accounts = (await chosen.provider.request({
 		method: "eth_requestAccounts",
 	})) as string[];
 	if (!accounts || accounts.length === 0) {
 		throw new Error("Wallet returned no accounts — user rejected the request");
 	}
-	const chainIdHex = (await eth.request({ method: "eth_chainId" })) as string;
+	const chainIdHex = (await chosen.provider.request({ method: "eth_chainId" })) as string;
 	const chainId = Number.parseInt(chainIdHex, 16);
 	// Normalize to EIP-55 checksum case. Some wallets return all-lowercase
 	// accounts, which the `siwe` package rejects at message build time
@@ -74,7 +178,7 @@ export async function connectWallet(): Promise<WalletState> {
 }
 
 function viemWalletClient(): WalletClient {
-	const eth = getEthereum();
+	const eth = getProvider();
 	if (!eth) throw new Error("No wallet available");
 	return createWalletClient({
 		chain: base,
@@ -120,7 +224,7 @@ export async function signSiweMessage(
 
 /** True iff the browser has any EIP-1193 wallet injected. */
 export function hasWallet(): boolean {
-	return Boolean(getEthereum());
+	return listWallets().length > 0;
 }
 
 /**
@@ -128,7 +232,7 @@ export function hasWallet(): boolean {
  * (`eth_accounts`), or null when the wallet is locked / not connected.
  */
 export async function getConnectedAccount(): Promise<`0x${string}` | null> {
-	const eth = getEthereum();
+	const eth = getProvider();
 	if (!eth) return null;
 	try {
 		const accounts = (await eth.request({ method: "eth_accounts" })) as string[];
@@ -143,13 +247,11 @@ export async function getConnectedAccount(): Promise<`0x${string}` | null> {
 	}
 }
 
-/** Switches the wallet to Base mainnet, prompting when needed. */
+/** Switches the connected wallet to Base mainnet, prompting when needed. */
 export async function ensureBaseChain(): Promise<void> {
-	const eth = getEthereum();
+	const eth = getProvider();
 	if (!eth) {
-		throw new Error(
-			"No EIP-1193 wallet detected. Install MetaMask, Rabby, or Coinbase Wallet.",
-		);
+		throw new Error(NO_WALLET);
 	}
 	const hex = (await eth.request({ method: "eth_chainId" })) as string;
 	if (Number.parseInt(hex, 16) === OMA_CHAIN_ID) return;
@@ -238,11 +340,9 @@ export async function sendUsdcTransfer({
 	amountUsd: number;
 	from: `0x${string}`;
 }): Promise<{ txHash: `0x${string}` }> {
-	const eth = getEthereum();
+	const eth = getProvider();
 	if (!eth) {
-		throw new Error(
-			"No EIP-1193 wallet detected. Install MetaMask, Rabby, or Coinbase Wallet.",
-		);
+		throw new Error(NO_WALLET);
 	}
 	await ensureBaseChain();
 	const client = createWalletClient({

@@ -1,13 +1,15 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import {
 	connectWallet,
-	hasWallet,
-	OMA_CHAIN_ID,
+	ensureBaseChain,
+	listWallets,
 	signSiweMessage,
+	subscribeWallets,
+	type DiscoveredWallet,
 } from "@/lib/wallet";
 import { resolveSiweDomain } from "./siwe-domain";
 
@@ -47,22 +49,14 @@ export default function WalletSignInPanel({
 	onSuccess,
 	onRedirect,
 }: WalletSignInPanelProps) {
-	const handleSiwe = useCallback(async () => {
-		if (!hasWallet()) {
-			onError(
-				new Error("No EIP-1193 wallet detected. Install MetaMask, Rabby, or Coinbase Wallet, then reload."),
-				"Wallet connection failed"
-			);
-			return;
-		}
+	const [wallets, setWallets] = useState<DiscoveredWallet[]>([]);
+	useEffect(() => subscribeWallets(() => setWallets(listWallets())), []);
+
+	const handleSiwe = useCallback(async (walletId?: string) => {
 		setSubmitting(true);
 		try {
-			const wallet = await connectWallet();
-			if (wallet.chainId !== OMA_CHAIN_ID) {
-				throw new Error(
-					`Switch your wallet to Base mainnet (chain id ${OMA_CHAIN_ID}) and try again.`,
-				);
-			}
+			const wallet = await connectWallet(walletId);
+			await ensureBaseChain();
 
 			const nonceResp = await authClient.siwe.nonce({});
 			if (!nonceResp.data?.nonce) {
@@ -100,21 +94,37 @@ export default function WalletSignInPanel({
 				Sign in with your Base mainnet wallet via SIWE
 				(EIP-4361). No transaction — just a signature.
 			</p>
-			<button
-				type="button"
-				onClick={() => void handleSiwe()}
-				disabled={submitting}
-				className="btn-primary min-h-12 w-full rounded-[var(--radius-lg)] disabled:cursor-not-allowed disabled:opacity-50"
-			>
-				{submitting ? (
-					<>
-						<Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
-						Connecting…
-					</>
-				) : (
-					"Connect wallet"
-				)}
-			</button>
+			{wallets.length > 1 ? (
+				<div className="space-y-2">
+					{wallets.map((wallet) => (
+						<button
+							key={wallet.id}
+							type="button"
+							onClick={() => void handleSiwe(wallet.id)}
+							disabled={submitting}
+							className="btn-primary min-h-12 w-full rounded-[var(--radius-lg)] disabled:cursor-not-allowed disabled:opacity-50"
+						>
+							{submitting ? "Connecting…" : `Connect ${wallet.name}`}
+						</button>
+					))}
+				</div>
+			) : (
+				<button
+					type="button"
+					onClick={() => void handleSiwe()}
+					disabled={submitting}
+					className="btn-primary min-h-12 w-full rounded-[var(--radius-lg)] disabled:cursor-not-allowed disabled:opacity-50"
+				>
+					{submitting ? (
+						<>
+							<Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
+							Connecting…
+						</>
+					) : (
+						"Connect wallet"
+					)}
+				</button>
+			)}
 		</div>
 	);
 }

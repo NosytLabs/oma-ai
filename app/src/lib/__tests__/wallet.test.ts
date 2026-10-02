@@ -7,6 +7,8 @@ import {
 	ensureBaseChain,
 	getConnectedAccount,
 	hasWallet,
+	listWallets,
+	resetWalletDiscoveryForTests,
 	signSiweMessage,
 } from "../wallet";
 
@@ -68,9 +70,11 @@ function install(provider: unknown) {
 describe("wallet", () => {
 	beforeEach(() => {
 		delete (window as unknown as { ethereum?: unknown }).ethereum;
+		resetWalletDiscoveryForTests();
 	});
 	afterEach(() => {
 		delete (window as unknown as { ethereum?: unknown }).ethereum;
+		resetWalletDiscoveryForTests();
 	});
 
 	describe("hasWallet", () => {
@@ -240,5 +244,70 @@ describe("wallet", () => {
 
 	it("targets Base mainnet", () => {
 		expect(OMA_CHAIN_ID).toBe(8453);
+	});
+
+	it("connects an EIP-6963 wallet when window.ethereum is absent", async () => {
+		const { provider } = makeProvider();
+		const onRequest = () => {
+			window.dispatchEvent(
+				new CustomEvent("eip6963:announceProvider", {
+					detail: {
+						info: { rdns: "io.metamask", name: "MetaMask", uuid: "mm" },
+						provider,
+					},
+				}),
+			);
+		};
+		window.addEventListener("eip6963:requestProvider", onRequest);
+		try {
+			const { address } = await connectWallet();
+			expect(address).toBe(ADDRESS);
+			expect(listWallets().some((wallet) => wallet.id === "io.metamask")).toBe(true);
+		} finally {
+			window.removeEventListener("eip6963:requestProvider", onRequest);
+		}
+	});
+
+	it("connects the wallet the user picked, not the other extension", async () => {
+		const other = "0x0000000000000000000000000000000000000001";
+		const first = makeProvider();
+		const second = makeProvider({ accounts: [other] });
+		(window as unknown as { ethereum?: unknown }).ethereum = {
+			request: async () => {
+				throw new Error("aggregate");
+			},
+			providers: [first.provider, second.provider],
+		};
+		const picked = listWallets().find((wallet) => wallet.provider === second.provider);
+		expect(picked?.name).toBe("Browser wallet");
+		const { address } = await connectWallet(picked?.id);
+		expect(address).toBe("0x0000000000000000000000000000000000000001");
+	});
+
+	it("signs with the connected provider, not a later window.ethereum overwrite", async () => {
+		const real = makeProvider();
+		const onRequest = () => {
+			window.dispatchEvent(
+				new CustomEvent("eip6963:announceProvider", {
+					detail: {
+						info: { rdns: "io.rabby", name: "Rabby", uuid: "rb" },
+						provider: real.provider,
+					},
+				}),
+			);
+		};
+		window.addEventListener("eip6963:requestProvider", onRequest);
+		try {
+			await connectWallet("io.rabby");
+			(window as unknown as { ethereum?: unknown }).ethereum = {
+				request: async () => {
+					throw new Error("decoy");
+				},
+			};
+			const { signature } = await signSiweMessage(ADDRESS, "a1b2c3d4e5f6a7b8", "oma-ai.com");
+			expect(signature).toMatch(/^0x/);
+		} finally {
+			window.removeEventListener("eip6963:requestProvider", onRequest);
+		}
 	});
 });
