@@ -1,40 +1,13 @@
 import pino, { type DestinationStream, type Logger } from 'pino';
-import { config } from '../config.js';
 
-// IMPORTANT: logger.ts and config.ts have a circular dependency (config
-// imports logger for its validation messages). To avoid a circular-import
-// trap, do NOT access `config` at module top level — config may still be
-// `undefined` while loading. Read from process.env first; only consult
-// `config` lazily through a getter that fires after the import cycle
-// completes (i.e. on first use, never at module-init time).
-
-type LoggerConfig = {
-		nodeEnv: string;
-		logLevel: string | undefined;
-};
-
-let cachedConfig: LoggerConfig | undefined;
-function readConfig(): LoggerConfig {
-		if (cachedConfig) return cachedConfig;
-		const cfg = config as { NODE_ENV?: string; LOG_LEVEL?: string };
-		cachedConfig = {
-				nodeEnv: cfg.NODE_ENV ?? process.env.NODE_ENV ?? 'production',
-				logLevel: cfg.LOG_LEVEL ?? process.env.LOG_LEVEL,
-		};
-		return cachedConfig;
-}
-
-function resolveIsDevelopment(): boolean {
-		return readConfig().nodeEnv !== 'production' && readConfig().nodeEnv !== 'staging';
-}
-
-function resolveLevel(): string {
-		const c = readConfig();
-		return c.logLevel || (resolveIsDevelopment() ? 'debug' : 'info');
-}
-
-// Resolve initial values from process.env only. Reading `config` at
-// module-init time would crash on circular import — defer to first call.
+// NOTE: this module deliberately reads process.env and NEVER imports
+// `config`. config.ts imports logger for its validation messages, so a
+// `config` import here forms a circular dependency whose module-init
+// access would crash while `config` is still undefined. The lazy
+// `readConfig()` helper that bridged this was removed along with its only
+// caller (`getLoggerEnv`); nothing here needs resolved config, and
+// removing the edge entirely is safer than managing it.
+// Resolve initial values from process.env only.
 const initialNodeEnv = process.env.NODE_ENV ?? 'production';
 const isDevelopment = initialNodeEnv !== 'production' && initialNodeEnv !== 'staging';
 const initialLevel = process.env.LOG_LEVEL ?? (isDevelopment ? 'debug' : 'info');
@@ -98,12 +71,3 @@ export const logger: Logger = pino({
 				};
 		},
 }, useJsonOnly ? neonConsoleDestination : undefined);
-
-// Re-export for callers that need to inspect resolved config (e.g., a
-// runtime health check). Avoids leaking the lazy proxy.
-export function getLoggerEnv(): { isDevelopment: boolean; level: string } {
-		return {
-				isDevelopment: resolveIsDevelopment(),
-				level: resolveLevel(),
-		};
-}

@@ -185,6 +185,12 @@ const corsOptions = {
 				"X-RateLimit-Limit",
 				"X-RateLimit-Remaining",
 				"X-RateLimit-Reset",
+				// Expose the policy header so browser clients can tell a real Redis
+				// limiter (header absent) from the degraded per-instance memory
+				// store ("degraded-memory") or the fail-closed path ("limiter").
+				// Without this, enforcement silently degrades and the browser
+				// cannot observe it. See middleware/rate-limit/sliding-window.ts.
+				"X-RateLimit-Policy",
 				"Retry-After",
 				"X-DailyLimit-Limit",
 				"X-DailyLimit-Remaining",

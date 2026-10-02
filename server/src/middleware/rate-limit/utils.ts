@@ -159,17 +159,6 @@ export function extractClientIpOrNull(c: Context<OmaEnv>): string | null {
 	const ip = extractClientIp(c);
 	return ip === "unknown" ? null : ip;
 }
-
-// Helper to get client IP from proxy headers safely
-// X-Forwarded-For format: client, proxy1, proxy2, ...
-// We take the FIRST (leftmost) IP as it should be the original client
-// Subsequent IPs are added by proxies and cannot be trusted if any proxy is compromised
-export function getRightmostIp(xForwardedFor: string | undefined): string {
-		if (!xForwardedFor) return "unknown";
-		const ips = xForwardedFor.split(",").map((s) => s.trim()).filter(Boolean);
-		return ips.length > 0 ? ips[0] : "unknown";
-}
-
 // Get model-based rate limits
 export function getModelLimits(model: string): { rpm: number; tpm: number } | null {
 		return MODEL_LIMITS[model.toLowerCase()] ?? null;
