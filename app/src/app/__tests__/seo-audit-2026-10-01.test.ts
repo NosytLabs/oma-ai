@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { metadata as statusMetadata } from "../status/page";
 import { generateMetadata as glossaryMetadata, truncateDescription } from "../glossary/[slug]/page";
 import robots from "../robots";
@@ -30,11 +32,31 @@ describe("/status crawl directives are self-consistent", () => {
 		expect(statusMetadata.robots).toMatchObject({ index: false, follow: true });
 	});
 
-	it("does not advertise a canonical for a noindex URL", () => {
-		// A self-referencing canonical on a noindexed page sends a mixed signal
-		// and is pure noise in the rendered HTML. Drop it rather than pointing
-		// it at "/" — a canonical implies the content lives at that URL.
-		expect(statusMetadata.alternates?.canonical).toBeUndefined();
+	it("does not advertise the homepage as this noindex page's canonical", () => {
+		// SUPERSEDED 2026-10-01 late: this originally asserted the canonical was
+		// absent. That was wrong — it only passed because the PAGE omitted the
+		// key, while the root layout's canonical: "/" was still inherited and
+		// rendered. A noindex page should still name ITSELF, so that a crawler
+		// reading the canonical does not conclude /status duplicates the homepage.
+		// See the next test for the inheritance assertion.
+		expect(statusMetadata.alternates?.canonical).not.toBe("/");
+	});
+
+	it("does not inherit the root layout's blanket canonical", () => {
+		// The root layout sets alternates.canonical = "/", which every route
+		// inherits. Omitting the key in a page does NOT unset an inherited
+		// value, so the rendered page kept <link rel="canonical" href=".../">.
+		// A crawler is then told /status duplicates the homepage while the page
+		// is also noindex. This asserts the page overrides rather than inherits.
+		//
+		// Read layout.tsx as text: importing it executes next/font, which needs a
+		// Next build runtime and throws "Instrument_Serif is not a function".
+		const layoutSrc = readFileSync(join(process.cwd(), "src/app/layout.tsx"), "utf-8");
+		expect(layoutSrc).toMatch(/canonical:\s*"\/"/);
+
+		// The page must therefore state its own canonical target, not inherit "/".
+		expect(statusMetadata.alternates?.canonical).not.toBe("/");
+		expect(statusMetadata.alternates?.canonical).toBe("/status");
 	});
 
 	it("still disallows /status in robots.txt", () => {

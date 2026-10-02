@@ -33,10 +33,14 @@ export const metadata: Metadata = {
 	// self-contradicting crawl graph, with 65 of 66 pages linking it from the
 	// footer. The disallow is the load-bearing directive: the page is a per-request
 	// health probe whose body changes every load, so there is nothing stable to
-	// index and it would otherwise compete with the marketing pages. The canonical
-	// is dropped rather than pointed at "/" because a canonical asserts "the content
-	// of this URL lives at that URL", which is not true here.
+	// index and it would otherwise compete with the marketing pages.
 	robots: { index: false, follow: true },
+	// The root layout sets alternates.canonical = "/", and Next merges parent
+	// metadata downward — omitting the key here does NOT unset it, so the page
+	// rendered <link rel="canonical" href="https://www.oma-ai.com/">: a crawler
+	// was told /status is a duplicate of the homepage while it is also noindex.
+	// It must name itself explicitly to override the inherited value.
+	alternates: { canonical: "/status" },
 	openGraph: {
 		locale: "en_US",
 		title: "Status — live service health",
