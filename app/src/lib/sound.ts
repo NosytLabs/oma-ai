@@ -44,7 +44,7 @@ function ensureBound() {
 export function playToastCue(type: "success" | "error" | "info") {
 		if (!soundEnabled()) return;
 		ensureBound();
-		const cue = type === "success" ? "success" : type === "error" ? "error" : "tick";
+		const cue = type === "success" ? "success" : type === "error" ? "error" : "select";
 		try {
 				cuelumePlay(cue);
 		} catch {
