@@ -31,7 +31,7 @@
     "@polar-sh/sdk": "^0.49.0",
     "@upstash/redis": "^1.39.0",
     "better-auth": "1.7.5",
-    "dotenv": "^17.4.2",
+    "dotenv": "^18.0.4",
     "drizzle-orm": "^0.45.2",
     "hono": "4.13.9",
     "nanoid": "^6.0.1",
