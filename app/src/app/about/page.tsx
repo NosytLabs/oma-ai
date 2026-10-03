@@ -201,7 +201,7 @@ export default function AboutPage() {
 				</section>
 
 				<div className="flex flex-wrap gap-3">
-					<Link href="/login" className="btn-mono btn-primary">
+					<Link href="/login?next=/dashboard" className="btn-mono btn-primary">
 						<span>Get API key</span>
 						<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
 					</Link>

@@ -205,7 +205,7 @@ export function DocsContent() {
 					</div>
 					<div className="mt-8 flex flex-wrap items-center gap-3">
 						<Link
-							href="/login"
+							href="/login?next=/dashboard"
 							className="btn-mono btn-primary group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"
 							>
 							<span>Get API key</span>

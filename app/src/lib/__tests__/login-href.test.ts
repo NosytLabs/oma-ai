@@ -14,4 +14,16 @@ describe("sign-in return destinations", () => {
 	it("does not unwrap a nested login loop", () => {
 		expect(buildLoginHref("/login?next=%2Flogin%3Fnext%3D%2Flogin")).toBe("/login?next=%2Fdashboard");
 	});
+	it.each(["/", "/?utm=x", "//", "/#hero"])(
+		"lands on the account view instead of the marketing homepage: %s",
+		(path) => {
+			// Sign-in CTAs on the homepage pass next=/ . Returning there made a
+			// successful sign-in look like nothing happened.
+			expect(safeLoginNext(path)).toBe("/dashboard");
+		},
+	);
+	it("keeps open-redirect protection while redirecting the homepage", () => {
+		expect(safeLoginNext("//evil.example")).toBe("/dashboard");
+		expect(safeLoginNext("https://evil.example")).toBe("/dashboard");
+	});
 });

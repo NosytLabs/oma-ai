@@ -77,7 +77,7 @@ export function Hero() {
 
 					<div className="mt-8 flex w-full flex-col items-center justify-center gap-3 sm:mt-9 sm:w-auto sm:flex-row">
 						<Link
-							href="/login"
+							href="/login?next=/dashboard"
 							className="btn-mono btn-primary group relative w-full overflow-hidden sm:w-auto"
 						>
 							<KeyRound className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" />

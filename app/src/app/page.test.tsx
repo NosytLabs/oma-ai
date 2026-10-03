@@ -143,7 +143,9 @@ describe("HomePage", () => {
 			name: /get api key/i,
 		});
 		expect(ctaLinks.length).toBeGreaterThan(0);
-		expect(ctaLinks[0]).toHaveAttribute("href", "/login");
+		// Must carry an explicit destination: a bare /login resolves to the
+		// homepage after sign-in, which reads as "nothing happened".
+		expect(ctaLinks[0]).toHaveAttribute("href", "/login?next=/dashboard");
 	});
 
 	it("renders the trust strip with provider wordmarks", async () => {

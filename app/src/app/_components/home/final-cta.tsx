@@ -59,7 +59,7 @@ export function FinalCTA() {
 
 		<div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto mt-2">
 		<Link
-			href="/login"
+			href="/login?next=/dashboard"
 			className="btn-mono btn-primary group w-full sm:w-auto"
 		>
 			<span>Create free account</span>

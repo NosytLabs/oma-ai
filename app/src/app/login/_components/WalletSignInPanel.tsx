@@ -87,9 +87,14 @@ export default function WalletSignInPanel({
 	onUseMagicLink,
 }: WalletSignInPanelProps) {
 	const [wallets, setWallets] = useState<DiscoveredWallet[]>([]);
+	// Which wallet row the visitor actually clicked. `submitting` alone is
+	// shared across every row and tab, so without this every button claims to
+	// be connecting while a single popup is open.
+	const [pendingWalletId, setPendingWalletId] = useState<string | undefined>(undefined);
 	useEffect(() => subscribeWallets(() => setWallets(listWallets())), []);
 
 	const handleSiwe = useCallback(async (walletId?: string) => {
+		setPendingWalletId(walletId);
 		setSubmitting(true);
 		try {
 			const wallet = await connectWallet(walletId);
@@ -132,6 +137,7 @@ export default function WalletSignInPanel({
 			onError(err, "Wallet sign-in failed");
 		} finally {
 			setSubmitting(false);
+			setPendingWalletId(undefined);
 		}
 	}, [onError, onSuccess, setSubmitting]);
 
@@ -146,32 +152,43 @@ export default function WalletSignInPanel({
 				address.
 			</p>
 			{wallets.length > 1 ? (
-				<div className="space-y-2">
-					{wallets.map((wallet) => (
-						<button
-							key={wallet.id}
-							type="button"
-							onClick={() => void handleSiwe(wallet.id)}
-							disabled={submitting}
-							className="btn-primary min-h-12 w-full rounded-[var(--radius-lg)] disabled:cursor-not-allowed disabled:opacity-50"
-						>
-							{submitting ? "Connecting…" : `Connect ${wallet.name}`}
-						</button>
-					))}
-				</div>
-			) : (
-				<button
-					type="button"
-					onClick={() => void handleSiwe()}
-					disabled={submitting}
-					className="btn-primary min-h-12 w-full rounded-[var(--radius-lg)] disabled:cursor-not-allowed disabled:opacity-50"
-				>
-					{submitting ? (
-						<>
-							<Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
-							Connecting…
-						</>
-					) : (
+							<div className="space-y-2">
+								{wallets.map((wallet) => (
+									<button
+										key={wallet.id}
+										type="button"
+										onClick={() => void handleSiwe(wallet.id)}
+										disabled={submitting}
+										className="btn-primary min-h-12 w-full rounded-[var(--radius-lg)] disabled:cursor-not-allowed disabled:opacity-50"
+									>
+										{/* Only the wallet that was actually clicked shows progress.
+										    Labelling every row "Connecting…" implied all of them
+										    were being tried at once, which is confusing next to an
+										    open wallet popup. */}
+										{submitting && pendingWalletId === wallet.id ? (
+											<>
+												<Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
+												Check your wallet…
+											</>
+										) : (
+											`Connect ${wallet.name}`
+										)}
+									</button>
+								))}
+							</div>
+						) : (
+							<button
+								type="button"
+								onClick={() => void handleSiwe()}
+								disabled={submitting}
+								className="btn-primary min-h-12 w-full rounded-[var(--radius-lg)] disabled:cursor-not-allowed disabled:opacity-50"
+							>
+								{submitting ? (
+									<>
+										<Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
+										Check your wallet…
+									</>
+								) : (
 						"Connect wallet"
 					)}
 				</button>
@@ -182,7 +199,7 @@ export default function WalletSignInPanel({
 			  running an EIP-1193 provider, so offer the actual next step plus a
 			  link to the magic-link tab, which needs no extension at all.
 			*/}
-			{wallets.length === 0 && (
+			{wallets.length === 0 && !submitting && (
 				<div className="rounded-[var(--radius-lg)] border border-border/60 bg-surface/40 p-4 text-sm">
 					<p className="font-semibold text-text-primary">No wallet extension detected</p>
 					<p className="mt-1 text-xs text-text-muted">
