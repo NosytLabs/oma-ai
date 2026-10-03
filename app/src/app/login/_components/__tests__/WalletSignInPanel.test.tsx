@@ -25,17 +25,18 @@ vi.mock("@/lib/wallet", async () => {
 	};
 });
 
-vi.mock("@/lib/auth-client", () => ({ authClient: { siwe: { nonce: vi.fn(), verify: vi.fn() } } }));
+vi.mock("@/lib/auth-client", () => ({ authClient: {
+	siwe: { nonce: vi.fn(), verify: vi.fn() },
+	getSession: vi.fn(),
+} }));
 
 function renderPanel(overrides: Record<string, unknown> = {}) {
 	return render(
 		<WalletSignInPanel
-			next="/dashboard"
 			submitting={false}
 			setSubmitting={() => {}}
 			onError={() => {}}
 			onSuccess={() => {}}
-			onRedirect={() => {}}
 			onUseMagicLink={() => {}}
 			{...overrides}
 		/>,
@@ -68,6 +69,41 @@ describe("WalletSignInPanel", () => {
 		fireEvent.click(screen.getByRole("button", { name: /use magic link instead/i }));
 		expect(onUseMagicLink).toHaveBeenCalledOnce();
 	});
+
+	it("does not navigate until the server confirms the session", async () => {
+		// The wallet bug: siwe.verify resolves before the Set-Cookie is
+		// committed, so navigating immediately lands on /dashboard signed out.
+		const { authClient } = await import("@/lib/auth-client");
+		const { connectWallet, ensureBaseChain, signSiweMessage } = await import(
+			"@/lib/wallet"
+		);
+		vi.mocked(connectWallet).mockResolvedValue({ address: "0xabc" } as never);
+		vi.mocked(ensureBaseChain).mockResolvedValue(undefined as never);
+		vi.mocked(signSiweMessage).mockResolvedValue({
+			message: "m",
+			signature: "0xs",
+		} as never);
+		(authClient.siwe.verify as ReturnType<typeof vi.fn>).mockResolvedValue({
+			data: { success: true },
+			error: null,
+		});
+		// Session never appears.
+		(authClient.getSession as ReturnType<typeof vi.fn>).mockResolvedValue({
+			data: null,
+			error: null,
+		});
+
+		const onError = vi.fn();
+		const onSuccess = vi.fn();
+		renderPanel({ onError, onSuccess });
+
+		fireEvent.click(screen.getByRole("button", { name: /connect wallet/i }));
+
+		await vi.waitFor(() => expect(onError).toHaveBeenCalled(), { timeout: 8000 });
+		// It must NOT claim success, and must not have navigated away.
+		expect(onSuccess).not.toHaveBeenCalled();
+		expect(window.location.pathname).toBe("/");
+	}, 20000);
 
 	it("still renders a connect button as the primary action", () => {
 		renderPanel();

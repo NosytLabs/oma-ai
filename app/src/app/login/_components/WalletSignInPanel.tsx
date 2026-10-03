@@ -12,6 +12,7 @@ import {
 	type DiscoveredWallet,
 } from "@/lib/wallet";
 import { resolveSiweDomain } from "./siwe-domain";
+import { safeLoginNext } from "@/lib/login-href";
 
 /**
  * The SIWE `domain` in the signed message MUST equal the host the server's
@@ -31,25 +32,58 @@ import { resolveSiweDomain } from "./siwe-domain";
  */
 const SIWE_DOMAIN = resolveSiweDomain();
 
+/**
+ * Wait until the server actually reports an authenticated session.
+ *
+ * better-auth's siwe.verify resolves as soon as its fetch returns; the
+ * Set-Cookie it carries is committed by the browser independently. A
+ * client-side navigation issued in the same tick can therefore arrive before
+ * the cookie is visible, and the destination renders signed-out. This polls
+ * get-session briefly rather than assuming success, then forces a full page
+ * load so navigation can never race the cookie again.
+ *
+ * Throws if no session appears, so the caller surfaces a real error instead
+ * of silently dropping the visitor on a signed-out page.
+ */
+async function confirmSession(timeoutMs = 4000): Promise<void> {
+	const deadline = Date.now() + timeoutMs;
+	// getSession() is relative to the same-origin auth proxy by default.
+	while (Date.now() < deadline) {
+		try {
+			const { data } = await authClient.getSession({ fetchOptions: { cache: "no-store" } });
+			if (data?.user) {
+				// Cookie is confirmed. A hard navigation guarantees it is
+				// applied on the next render, with no client-cache to rehydrate.
+				window.location.assign(
+					safeLoginNext(new URLSearchParams(window.location.search).get("next")),
+				);
+				return;
+			}
+		} catch {
+			// Transient: retry until the deadline.
+		}
+		await new Promise((resolve) => setTimeout(resolve, 250));
+	}
+	throw new Error(
+		"Signed, but the session did not persist. Please try again — if this repeats, use the magic link.",
+	);
+}
+
 
 interface WalletSignInPanelProps {
-	next: string;
 	submitting: boolean;
 	setSubmitting: (submitting: boolean) => void;
 	onError: (err: unknown, fallback: string) => void;
 	onSuccess: (msg: string) => void;
-	onRedirect: (url: string) => void;
 	/** Switch back to the magic-link tab from the no-wallet help block. */
 	onUseMagicLink: () => void;
 }
 
 export default function WalletSignInPanel({
-	next,
 	submitting,
 	setSubmitting,
 	onError,
 	onSuccess,
-	onRedirect,
 	onUseMagicLink,
 }: WalletSignInPanelProps) {
 	const [wallets, setWallets] = useState<DiscoveredWallet[]>([]);
@@ -82,14 +116,24 @@ export default function WalletSignInPanel({
 				throw new Error(verifyResp.error.message ?? "Signature verification failed");
 			}
 
+			// `siwe.verify` is a fetch, so the Set-Cookie lands asynchronously.
+			// A client-side router.replace() can win that race and land on
+			// /dashboard before the browser has committed the session, which
+			// renders "SIGN IN REQUIRED" and looks like sign-in silently failed.
+			// The magic-link path never hit this because it redirects through
+			// callbackURL, i.e. a full page load, so the cookie is always set.
+			//
+			// Confirm the session actually exists before navigating.
+			// On success confirmSession() performs the hard navigation itself,
+			// so it never returns here; only the throw path falls through.
+			await confirmSession();
 			onSuccess("Wallet connected");
-			onRedirect(next);
 		} catch (err) {
 			onError(err, "Wallet sign-in failed");
 		} finally {
 			setSubmitting(false);
 		}
-	}, [next, onError, onSuccess, onRedirect, setSubmitting]);
+	}, [onError, onSuccess, setSubmitting]);
 
 	return (
 		<div className="space-y-3 animate-fade-in">
