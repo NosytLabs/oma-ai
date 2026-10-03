@@ -187,8 +187,9 @@ function LoginInner() {
 							password to lose.
 						</p>
 						<p className="mt-2 text-[11px] text-text-muted">
-							New user? Sending a magic link here also creates your account.
-						</p>
+												New user? Both options create your account on first sign-in — the
+												wallet path binds it to your address.
+											</p>
 
 						<div>
 							{connectionInterrupted && (
@@ -322,13 +323,14 @@ function LoginInner() {
 									aria-labelledby="tab-wallet"
 								>
 									<LazyWalletSignInPanel
-										next={next}
-										submitting={submitting}
-										setSubmitting={setSubmitting}
-										onError={handleError}
-										onSuccess={(msg) => toast.success(msg)}
-										onRedirect={(url) => router.replace(url)}
-									/>
+																		next={next}
+																		submitting={submitting}
+																		setSubmitting={setSubmitting}
+																		onError={handleError}
+																		onSuccess={(msg) => toast.success(msg)}
+																		onRedirect={(url) => router.replace(url)}
+																		onUseMagicLink={() => setMethod("magic")}
+																	/>
 								</div>
 							)}
 						</div>
