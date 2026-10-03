@@ -10,13 +10,9 @@ import { GLOSSARY_SLUGS, GLOSSARY_TERMS_BY_SLUG } from "@/components/glossary-da
 /**
  * AUDIT 2026-10-01 — regressions found by a live crawl of www.oma-ai.com.
  *
- * 1. /status served `<meta name="robots" content="index, follow">` and a self
- *    canonical while robots.ts disallows /status, and the route is absent from
- *    the sitemap. That is a self-contradicting crawl graph, not a preference:
- *    the disallow line and the missing sitemap entry both say "keep it out of
- *    the index", while the meta said "index it". The fix is in the metadata —
- *    the disallow is load-bearing because the page is a force-dynamic probe
- *    with no indexable content.
+ * 1. /status is a public live health probe excluded from the index by its
+ *    noindex metadata. Crawlers must be allowed to read that directive; a
+ *    robots.txt disallow would prevent it from removing an indexed URL.
  * 2. Glossary meta descriptions used the full glossary definition prose
  *    verbatim; 23 of 32 ran 161-268 chars and got truncated mid-sentence.
  */
@@ -25,10 +21,7 @@ const ORIGIN = "https://www.oma-ai.com";
 
 describe("/status crawl directives are self-consistent", () => {
 	it("is noindex,follow — the page is a per-request liveness probe with no indexable content", () => {
-		// The intent is already documented in robots.ts ("no indexable content
-		// — keep it out of the crawl graph") and next.config.ts keeps /status out
-		// of the CDN-cacheable list for the same reason. The meta robots tag is
-		// the one directive that disagreed, so it is the one that changes.
+		// The probe remains public and uncached, but is excluded from indexing.
 		expect(statusMetadata.robots).toMatchObject({ index: false, follow: true });
 	});
 
@@ -59,11 +52,11 @@ describe("/status crawl directives are self-consistent", () => {
 		expect(statusMetadata.alternates?.canonical).toBe("/status");
 	});
 
-	it("still disallows /status in robots.txt", () => {
+	it("allows crawlers to read the /status noindex directive", () => {
 		// robots.ts default-exports the *function*, not the result — call it.
 		const result = robots() as { rules: { disallow?: string[] }[] };
 		const disallowed = result.rules.flatMap((r) => r.disallow ?? []);
-		expect(disallowed).toContain("/status");
+		expect(disallowed).not.toContain("/status");
 	});
 
 	it("keeps /status absent from the sitemap (a noindex URL must not be advertised)", async () => {

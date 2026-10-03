@@ -6,6 +6,8 @@ export default function robots(): MetadataRoute.Robots {
 		rules: [
 			{
 				userAgent: "*",
+				// Public /status remains crawlable so its noindex metadata can
+				// be read. Private product paths stay excluded below.
 				allow: "/",
 				disallow: [
 					"/api/",
@@ -19,9 +21,6 @@ export default function robots(): MetadataRoute.Robots {
 					// Auth-gated product surfaces (session required)
 					"/deposit",
 					"/deposit/",
-					// /status is a per-request force-dynamic liveness probe with
-					// no indexable content — keep it out of the crawl graph.
-					"/status",
 					// /chat is the public free playground — indexable. Legacy
 					// `/image-generation`, `/video-generation`, `/create`,
 					// `/studio` paths are caught by the permanent-redirect map

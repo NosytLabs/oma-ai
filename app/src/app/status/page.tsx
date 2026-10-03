@@ -16,7 +16,7 @@ import { FREE_DEFAULT_CHAT_MODEL } from "@/lib/model-utils";
 // to the API. Every visitor and every crawler was served that stale snapshot.
 // (That snapshot also claimed the page sat in the sitemap at priority 0.5 —
 // it never did, and does not. The sitemap omission is deliberate; see
-// metadata below and robots.ts, which disallows /status.)
+// noindex metadata below.)
 //
 // force-dynamic makes the route render per request, which is what the copy
 // ("This page checks liveness the moment you load it") already promised.
@@ -28,12 +28,9 @@ export const metadata: Metadata = {
 	title: "Status — live service health",
 	description:
 		"Live health of the OMA web app, inference gateway, and free website chat. Checked on each page load.",
-	// AUDIT 2026-10-01: this route served `index, follow` plus a self-referencing
-	// canonical while robots.ts disallows /status and the sitemap omits it — a
-	// self-contradicting crawl graph, with 65 of 66 pages linking it from the
-	// footer. The disallow is the load-bearing directive: the page is a per-request
-	// health probe whose body changes every load, so there is nothing stable to
-	// index and it would otherwise compete with the marketing pages.
+	// This public health probe stays out of the index. robots.txt allows
+	// crawling so search engines can read this directive, including for a URL
+	// that was previously indexed. The sitemap deliberately omits it.
 	robots: { index: false, follow: true },
 	// The root layout sets alternates.canonical = "/", and Next merges parent
 	// metadata downward — omitting the key here does NOT unset it, so the page
