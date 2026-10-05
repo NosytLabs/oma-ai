@@ -46,7 +46,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 		title,
 		description,
 		alternates: { canonical: `/glossary/${slug}` },
-		openGraph: { title, description, url: `/glossary/${slug}`, images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA glossary" }] },
+		// `locale` must be repeated here: a page-level `openGraph` REPLACES the
+		// root layout's object wholesale, it does not merge field-by-field, so
+		// the layout's locale never reaches these pages.
+		openGraph: { title, description, url: `/glossary/${slug}`, locale: "en_US", images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA glossary" }] },
 		twitter: { card: "summary_large_image", images: ["/og-image.png"] },
 		robots: { index: true, follow: true },
 	};
