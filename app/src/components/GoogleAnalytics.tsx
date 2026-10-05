@@ -81,13 +81,23 @@ export function GoogleAnalytics() {
 		<div
 			role="region"
 			aria-label="Analytics consent"
-			className="fixed inset-x-0 bottom-0 z-[200] border-t border-border/60 bg-void/95 backdrop-blur"
+			// pb-[env(safe-area-inset-bottom)] keeps the buttons clear of the
+			// iOS home indicator / gesture bar. z-[200] is left alone: the
+			// mobile menu overlay is z-[70], so the banner stacking above it
+			// is correct — it must not be dismissable by opening the menu.
+			className="fixed inset-x-0 bottom-0 z-[200] border-t border-border/60 bg-void/95 pb-[env(safe-area-inset-bottom)] backdrop-blur"
 		>
 			<div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:gap-6">
 				<p className="flex-1 text-sm leading-relaxed text-muted">
-					We use Google Analytics to count visits and understand which pages are
-					read. No advertising, no selling of data. You can decline and use
-					everything else.
+					{/* Full explanation from sm up; a one-line variant on phones,
+					    where three lines of copy above two buttons pushed the
+					    banner over a third of the viewport. */}
+					<span className="hidden sm:block">
+						We use Google Analytics to count visits and understand which pages are
+						read. No advertising, no selling of data. You can decline and use
+						everything else.
+					</span>
+					<span className="sm:hidden">Google Analytics counts visits. No ads, no data sold.</span>
 				</p>
 				<div className="flex shrink-0 gap-2">
 					<button

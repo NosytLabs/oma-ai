@@ -222,9 +222,16 @@ export function DocsContent() {
 							className="btn-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"
 							>
 							View Pricing
-							</Link>
-						</div>
-						</div>
+													</Link>
+												</div>
+											{/* Docs visitors arrive to evaluate, not to buy, so the signup CTA
+											    gets its objection-clearing line here too. Keeps the three
+											    signup surfaces (home hero, home footer CTA, docs) saying the
+											    same true thing. */}
+											<p className="mt-4 font-mono text-[11px] uppercase tracking-[0.14em] text-text-muted">
+												No credit card required · free website chat
+											</p>
+											</div>
 
 					<div className="space-y-16">
 						<QuickStartSection />

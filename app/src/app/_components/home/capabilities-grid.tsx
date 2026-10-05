@@ -27,13 +27,7 @@ import {
 } from "@/app/_components/home/reveal";
 import { SectionHeader } from "@/app/_components/home/section-header";
 import { cn } from "@/components/ui/utils";
-import { MODELS, formatPricePerMillion } from "@/lib/models-data";
-
-// Cheapest catalog input rate — derived from the synced fallback catalog so
-// the marketing "from" figure always matches the real price list.
-const MIN_INPUT_PRICE = Math.min(
-	...MODELS.map((m) => m.inputPricePer1M).filter((p) => p > 0),
-);
+import { MIN_INPUT_PRICE_LABEL } from "@/lib/models-data";
 
 interface Pillar {
 	id: string;
@@ -430,7 +424,7 @@ export function CapabilitiesGrid() {
 	aria-hidden="true"
 	className="h-1.5 w-1.5 rounded-full bg-accent"
 	/>
-	Budget from {formatPricePerMillion(MIN_INPUT_PRICE)} / 1M tokens
+	Budget from {MIN_INPUT_PRICE_LABEL} / 1M tokens
 	</span>
 	<span aria-hidden="true" className="text-border">
 	·

@@ -1,8 +1,9 @@
 import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { Footer } from "@/components/footer";
+import { MIN_INPUT_PRICE_LABEL } from "@/lib/models-data";
 import HomePage from "./page";
 
 // Mock next/navigation — Footer + future child components may import usePathname.
@@ -148,6 +149,30 @@ describe("HomePage", () => {
 		expect(ctaLinks[0]).toHaveAttribute("href", "/login?next=/dashboard");
 	});
 
+	it("anchors the hero on a derived price, not a hardcoded figure", async () => {
+		// The hero previously said nothing about price above the fold while
+		// the stats strip 4 screens down carried the only figure. The number
+		// must come from the shared catalog-derived label.
+		renderWithQueryClient(<HomePage />);
+		await screen.findByRole("heading", { level: 1 });
+		// Match on the whole hero text node: the label is interpolated
+		// alongside copy, so it is not its own element.
+		expect(document.body.textContent).toContain(
+			`From ${MIN_INPUT_PRICE_LABEL}/1M input tokens`,
+		);
+		// Settlement + no-monthly-fee are the two objections the CTA doesn't
+		// answer, so they belong next to the price anchor.
+		expect(document.body.textContent).toMatch(/USDC or card/i);
+		expect(document.body.textContent).toMatch(/no monthly fee/i);
+	});
+
+	it("offers a tertiary pricing link below the CTAs", async () => {
+		renderWithQueryClient(<HomePage />);
+		await screen.findByRole("heading", { level: 1 });
+		const pricing = screen.getByRole("link", { name: /see pricing/i });
+		expect(pricing).toHaveAttribute("href", "/pricing");
+	});
+
 	it("renders the trust strip with provider wordmarks", async () => {
 		renderWithQueryClient(<HomePage />);
 		await waitFor(() => {
@@ -218,10 +243,44 @@ describe("Footer", () => {
 		expect(screen.getByText(/^oma$/i)).toBeInTheDocument();
 	});
 
-	it("omits GitHub from shared navigation", () => {
+	it("omits GitHub from the shared navigation link lists", () => {
 		renderWithQueryClient(<Footer />);
-		expect(screen.queryByRole("link", { name: /github/i })).not.toBeInTheDocument();
+		// GitHub is deliberately absent from the Product / Resources /
+		// Account / Company columns — it lives only in the social block, so
+		// scope this assertion to <nav> rather than the whole footer.
+		const nav = screen.getByRole("navigation", { name: "Footer navigation" });
+		expect(within(nav).queryByRole("link", { name: /github/i })).not.toBeInTheDocument();
 		expect(screen.getByRole("link", { name: "Status" })).toHaveAttribute("href", "/status");
+	});
+
+	it("renders a social block with only confirmed accounts", () => {
+		renderWithQueryClient(<Footer />);
+		const social = screen.getByRole("list", { name: "Social links" });
+		const links = within(social).getAllByRole("link");
+		// Only GitHub is a confirmed, documented account (package.json
+		// repository, README, SECURITY.md advisories, json-ld sameAs).
+		// X / Discord / Farcaster must NOT be invented.
+		expect(links).toHaveLength(1);
+		expect(links[0]).toHaveAttribute("href", "https://github.com/NosytLabs");
+		expect(links[0]).toHaveAttribute("target", "_blank");
+		expect(links[0]).toHaveAttribute("rel", "noopener noreferrer");
+	});
+
+	it("points Changelog at the shipped route", () => {
+		renderWithQueryClient(<Footer />);
+		expect(screen.getByRole("link", { name: "Changelog" })).toHaveAttribute(
+			"href",
+			"/changelog",
+		);
+	});
+
+	it("links Changelog instead of a newsletter form", () => {
+		// There is no newsletter backend, so no subscribe form may ship.
+		renderWithQueryClient(<Footer />);
+		expect(screen.queryByRole("textbox", { name: /email/i })).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: /subscribe|newsletter/i }),
+		).not.toBeInTheDocument();
 	});
 
 	it("uses the product's Base capitalization", () => {

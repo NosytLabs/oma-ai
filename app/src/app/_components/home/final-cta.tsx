@@ -70,9 +70,19 @@ export function FinalCTA() {
 						className="btn-mono w-full sm:w-auto"
 					>
 		Explore models
-		</Link>
-		</div>
-	</div>
+				</Link>
+					</div>
+
+					{/* The closing CTA is the last conversion surface on the page, so it
+					    carries the same objection-clearing line as the hero. "Create free
+					    account" plus an unstated payment requirement is the exact
+					    combination that reads as a trap; stating that no card is needed
+					    keeps the claim honest (chat is free, API calls use prepaid
+					    credits) and matches /getting-started. */}
+					<p className="text-center font-mono text-[11px] uppercase tracking-[0.14em] text-text-muted">
+						No credit card required · free website chat
+					</p>
+				</div>
 	</Reveal>
 	</div>
 	</section>

@@ -626,8 +626,15 @@ export default function PricingPage() {
 									<Coins className="h-3.5 w-3.5" aria-hidden="true" />
 								)}
 								<span>{cardActionable ? "Buy credits" : "Deposit USDC"}</span>
-							</Link>
-						</div>
+														</Link>
+													</div>
+													{/* The adjacent button asks for money, so the signup button beside
+													    it needs the reassurance spelled out — otherwise "Get API key"
+													    reads as the first step of a charge. Free website chat and
+													    no card required are both literally true. */}
+													<p className="text-center font-mono text-[11px] uppercase tracking-[0.14em] text-text-muted">
+														No credit card required to start
+													</p>
 						<Link
 							href="/models"
 							className="inline-flex min-h-11 items-center justify-center font-mono text-xs text-text-muted transition-colors duration-200 ease-out hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"

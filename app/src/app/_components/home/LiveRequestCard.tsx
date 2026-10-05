@@ -50,6 +50,37 @@ const TYPE_SPEED_MS = 6;
 const TOKEN_SPEED_MS = 28;
 const SETTLE_HOLD_MS = 2600;
 const PAUSE_MS = 500;
+/** Cadence for the reduced-motion rotation: no typing, no token animation. */
+const REDUCED_MOTION_MS = 3200;
+
+/**
+ * Badge label + colour per phase, declared in request-lifecycle order.
+ *
+ * These used to be two independent inline ternaries (`isSettled ? … :
+ * isStreaming ? …`) where the colour chain and the label chain had to be
+ * kept in sync by hand — and where the `pause` phase had no label of its own
+ * and silently inherited `settled`'s "complete", so the badge read "complete"
+ * while the card was actually mid-reset. One table, keyed by phase, in
+ * lifecycle order: typing → sending → streaming → complete.
+ */
+const PHASE_BADGE: Record<Phase, { label: string; className: string }> = {
+	typing: {
+		label: "example · sending",
+		className: "bg-warning/15 text-warning animate-pulse",
+	},
+	streaming: {
+		label: "example · streaming",
+		className: "bg-info/15 text-info",
+	},
+	settled: {
+		label: "example · complete",
+		className: "bg-accent/15 text-accent",
+	},
+	pause: {
+		label: "example · complete",
+		className: "bg-accent/15 text-accent",
+	},
+};
 
 export function LiveRequestCard({ className }: { className?: string }) {
 	const [roundIdx, setRoundIdx] = useState(0);
@@ -72,15 +103,30 @@ Content-Type: application/json`;
 }`;
 
 	useEffect(() => {
-	const reduce =
-	typeof window !== "undefined" &&
-	window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-	if (reduce) {
-	setTyped(requestHeader + "\n\n" + requestBody);
-	setStreamed(round.reply);
-	setPhase("settled");
-	return;
-	}
+			const reduce =
+				typeof window !== "undefined" &&
+				window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+			if (reduce) {
+				// Reduced motion means "no typing / no token animation", not "no
+				// content". The old branch painted one frozen request and never
+				// advanced, so the card read as a dead static screenshot. Advance
+				// through all ROUNDS on a fixed interval instead — each round
+				// swaps the complete request+reply pair with no per-frame motion,
+				// and the interval is cleared on unmount / roundIdx change.
+				const fullRequest = requestHeader + "\n\n" + requestBody;
+				setTyped(fullRequest);
+				setStreamed(round.reply);
+				setPhase("settled");
+				timerRef.current = window.setInterval(() => {
+					setRoundIdx((p) => (p + 1) % ROUNDS.length);
+				}, REDUCED_MOTION_MS);
+				const reducedTimer = timerRef;
+				return () => {
+					if (reducedTimer.current !== null) {
+						window.clearInterval(reducedTimer.current);
+					}
+				};
+			}
 
 	const fullRequest = requestHeader + "\n\n" + requestBody;
 	let i = 0;
@@ -129,6 +175,7 @@ Content-Type: application/json`;
 	const isStreaming = phase === "streaming";
 	const isSettled = phase === "settled" || phase === "pause";
 	const showCursor = isTyping || isStreaming;
+	const badge = PHASE_BADGE[phase];
 
 	return (
 	<div
@@ -178,21 +225,13 @@ Content-Type: application/json`;
 	www.oma-ai.com/api/v1/chat/completions
 	</span>
 	<span
-			className={cn(
-	 "ml-auto shrink-0 rounded-full px-2.5 py-0.5 font-mono text-[10px] tracking-wider pr-3",
-	 isSettled
-	   ? "bg-accent/15 text-accent"
-	   : isStreaming
-		 ? "bg-info/15 text-info"
-		 : "bg-warning/15 text-warning animate-pulse",
-			)}
-	>
-			{isSettled
-	 ? "example · complete"
-	 : isStreaming
-	   ? "example · streaming"
-	   : "example · sending"}
-	</span>
+					className={cn(
+						"ml-auto shrink-0 rounded-full px-2.5 py-0.5 font-mono text-[10px] tracking-wider pr-3",
+						badge.className,
+					)}
+				>
+					{badge.label}
+				</span>
 	</div>
 
 	{/* Request */}

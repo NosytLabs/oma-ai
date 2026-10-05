@@ -24,8 +24,14 @@ import {
 } from "react";
 
 import { BRAND_COLORS } from "@/lib/brand";
+import {
+	DEFAULT_THEME,
+	isValidTheme,
+	THEME_STORAGE_KEY as STORAGE_KEY,
+	type Theme,
+} from "@/lib/themes";
 
-export type Theme = "emerald" | "amber" | "mono" | "synth";
+export type { Theme } from "@/lib/themes";
 
 /** Canonical accent hex per theme — keep in sync with globals.css */
 export const THEME_ACCENTS: Readonly<Record<Theme, string>> = {
@@ -53,18 +59,6 @@ export const THEME_LIST: ReadonlyArray<{
 	{ id: "mono", name: "Mono", hint: "grayscale · austere" },
 	{ id: "synth", name: "Synth", hint: "violet · network" },
 ];
-
-const STORAGE_KEY = "oma-theme";
-const DEFAULT_THEME: Theme = "emerald";
-
-function isValidTheme(value: string | null): value is Theme {
-	return (
-		value === "emerald" ||
-		value === "amber" ||
-		value === "mono" ||
-		value === "synth"
-	);
-}
 
 interface ThemeContextValue {
 	theme: Theme;

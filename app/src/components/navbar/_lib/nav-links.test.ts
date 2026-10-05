@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isCurrentNavLink, isCurrentPath, sectionLabelFor } from "./nav-links";
+import { isCurrentNavLink, isCurrentPath } from "./nav-links";
 
 describe("navigation path matching", () => {
 	it("matches an exact route", () => {
@@ -22,17 +22,6 @@ describe("navigation path matching", () => {
 		expect(isCurrentPath("/docs?tab=api", "/docs#endpoints")).toBe(true);
 	});
 });
-
-describe("sectionLabelFor", () => {
-	it("returns the primary link label for a nested route", () => {
-		expect(sectionLabelFor("/docs/api")).toBe("Docs");
-	});
-
-	it("falls back to the first path segment for an unlisted route", () => {
-		expect(sectionLabelFor("/faq")).toBe("FAQ");
-	});
-});
-
 
 describe("current navigation destination", () => {
 	it("does not mark every docs fragment or dashboard tab as the current page", () => {

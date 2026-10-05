@@ -391,6 +391,7 @@ export default function AdminPage() {
 					</p>
 				</section>
 
+				<UsageSection />
 				<SiteSettingsSection />
 				<RateLimitSection />
 			</div>
@@ -1004,6 +1005,263 @@ function SiteSettingsSection() {
 			)}
 			{setSettings.isSuccess && (
 				<p className="mt-3 text-xs text-success">Saved. Audit log written.</p>
+			)}
+		</section>
+	);
+}
+
+/**
+ * Usage & spend breakdown, backed by GET /v1/admin/usage/summary.
+ *
+ * The endpoint existed server-side but nothing in the admin UI called it, so
+ * the only way to see spend was to hit the API by hand. Three groupings,
+ * because the operator questions are different: which MODEL is burning money,
+ * which UPSTREAM (Venice / OpenBroker / …) is absorbing it, and which USER.
+ *
+ * Provider grouping is the one that matters for margin — `cost_cents` is what
+ * the upstream charged us and `total_cents` is what we billed, so the markup
+ * column is gross margin per provider.
+ */
+interface UsageItem {
+	key: string;
+	requests: number;
+	inputTokens: number;
+	outputTokens: number;
+	upstreamCents: number;
+	markupCents: number;
+	totalCents: number;
+	errorRate: number;
+	errorCount: number;
+	avgLatencyMs: number;
+}
+
+interface UsageSummaryResponse {
+	ok: boolean;
+	groupBy: string;
+	from: string;
+	to: string;
+	items: UsageItem[];
+	totals: {
+		requests: number;
+		inputTokens: number;
+		outputTokens: number;
+		upstreamCents: number;
+		markupCents: number;
+		totalCents: number;
+	};
+}
+
+function fmtCents(cents: number): string {
+	// Cents are integer-cent by convention but SUM(cost_cents) is a numeric
+	// with 8 decimal places of upstream precision, so a fixed 2dp format would
+	// lie about very small per-request costs on large request counts.
+	const dollars = cents / 100;
+	if (dollars >= 0.01) return `$${dollars.toFixed(2)}`;
+	return `$${dollars.toFixed(6)}`;
+}
+
+function fmtTokens(n: number): string {
+	if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
+	if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
+	return String(n);
+}
+
+const USAGE_RANGES = [
+	{ label: "24h", days: 1 },
+	{ label: "7d", days: 7 },
+	{ label: "30d", days: 30 },
+] as const;
+
+function UsageSection() {
+	const { isReady, isAdmin } = useAuth();
+	const [groupBy, setGroupBy] = useState<"model" | "provider" | "user">("model");
+	const [days, setDays] = useState<number>(30);
+
+	const from = useMemo(() => new Date(Date.now() - days * 86_400_000), [days]);
+
+	const summary = useQuery({
+		queryKey: ["admin-usage-summary", groupBy, days],
+		queryFn: async () => {
+			const params = new URLSearchParams({
+				group_by: groupBy,
+				from: from.toISOString(),
+				limit: "50",
+			});
+			const res = await fetch(`/api/v1/admin/usage/summary?${params}`, {
+				credentials: "include",
+				headers: { Accept: "application/json" },
+			});
+			if (!res.ok) throw new Error(`usage summary ${res.status}`);
+			return (await res.json()) as UsageSummaryResponse;
+		},
+		// usage_records is append-only and the panel is for spot-checking
+		// spend, so a 60s poll is plenty and avoids hammering the GROUP BY scan.
+		refetchInterval: 60_000,
+		staleTime: 30_000,
+		enabled: isReady && isAdmin,
+	});
+
+	const totals = summary.data?.totals;
+	// Margin only means something when we actually charged more than upstream
+	// cost. Don't render a percentage off a zero denominator.
+	const marginPct =
+		totals && totals.upstreamCents > 0
+			? ((totals.markupCents / totals.upstreamCents) * 100).toFixed(1)
+			: null;
+
+	return (
+		<section
+			className="rounded-[var(--radius-lg)] border border-border bg-surface p-4"
+			aria-label="Usage and spend"
+		>
+			<header className="mb-3 flex flex-wrap items-center justify-between gap-3">
+				<h2 className="font-mono text-[10px] uppercase tracking-widest text-text-muted">
+					Usage &amp; spend
+				</h2>
+				<div className="flex items-center gap-1">
+					{(["model", "provider", "user"] as const).map((g) => (
+						<button
+							key={g}
+							type="button"
+							onClick={() => setGroupBy(g)}
+							aria-pressed={groupBy === g}
+							className={`rounded-[var(--radius-md)] px-2 py-1 font-mono text-[10px] uppercase tracking-wider transition ${
+								groupBy === g
+									? "bg-accent/20 text-accent"
+									: "text-text-muted hover:text-text-secondary"
+							}`}
+						>
+							{g}
+						</button>
+					))}
+					<span className="mx-1 h-3 w-px bg-border" aria-hidden />
+					{USAGE_RANGES.map((r) => (
+						<button
+							key={r.label}
+							type="button"
+							onClick={() => setDays(r.days)}
+							aria-pressed={days === r.days}
+							className={`rounded-[var(--radius-md)] px-2 py-1 font-mono text-[10px] transition ${
+								days === r.days
+									? "bg-accent/20 text-accent"
+									: "text-text-muted hover:text-text-secondary"
+							}`}
+						>
+							{r.label}
+						</button>
+					))}
+				</div>
+			</header>
+
+			{summary.isError ? (
+				<p className="text-xs text-error">
+					{(summary.error as Error)?.message ?? "Failed to load usage."}
+				</p>
+			) : summary.isLoading ? (
+				<p className="text-xs text-text-muted">Aggregating usage…</p>
+			) : (
+				<>
+					<div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-5">
+						<StatCard
+							label="Requests"
+							value={fmtTokens(totals?.requests ?? 0)}
+							icon={<Activity className="h-3 w-3 text-text-muted" />}
+						/>
+						<StatCard
+							label="Tokens"
+							value={fmtTokens(
+								(totals?.inputTokens ?? 0) + (totals?.outputTokens ?? 0),
+							)}
+							sub={`${fmtTokens(totals?.inputTokens ?? 0)} in / ${fmtTokens(totals?.outputTokens ?? 0)} out`}
+							icon={<Cpu className="h-3 w-3 text-text-muted" />}
+						/>
+						<StatCard
+							label="Upstream cost"
+							value={fmtCents(totals?.upstreamCents ?? 0)}
+							sub="what the provider charged us"
+							icon={<Gauge className="h-3 w-3 text-text-muted" />}
+						/>
+						<StatCard
+							label="Billed"
+							value={fmtCents(totals?.totalCents ?? 0)}
+							sub={`markup ${fmtCents(totals?.markupCents ?? 0)}`}
+							icon={<Gauge className="h-3 w-3 text-text-muted" />}
+							tone="ok"
+						/>
+						<StatCard
+							label="Margin"
+							value={marginPct ? `${marginPct}%` : "—"}
+							sub={marginPct ? "markup / upstream" : "no upstream cost yet"}
+							icon={<Gauge className="h-3 w-3 text-text-muted" />}
+							tone={marginPct ? "ok" : "default"}
+						/>
+					</div>
+
+					{(summary.data?.items.length ?? 0) === 0 ? (
+						<p className="text-xs text-text-muted">
+							No usage recorded in this window.
+						</p>
+					) : (
+						<div className="overflow-x-auto">
+							<table className="w-full text-left text-xs">
+								<thead>
+									<tr className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
+										<th className="pb-2 pr-3 font-normal">{groupBy}</th>
+										<th className="pb-2 pr-3 text-right font-normal">Req</th>
+										<th className="pb-2 pr-3 text-right font-normal">Tokens</th>
+										<th className="pb-2 pr-3 text-right font-normal">Upstream</th>
+										<th className="pb-2 pr-3 text-right font-normal">Billed</th>
+										<th className="pb-2 pr-3 text-right font-normal">Err</th>
+										<th className="pb-2 text-right font-normal">p50</th>
+									</tr>
+								</thead>
+								<tbody className="tabular-nums">
+									{summary.data?.items.map((item) => (
+										<tr
+											key={item.key}
+											className="border-t border-border/50 text-text-secondary"
+										>
+											<td className="max-w-[16rem] truncate py-1.5 pr-3 font-mono text-text-bright">
+												{/* group_by=user returns a raw user id, which is
+												    useless to an operator on screen. Show the wallet /
+												    email prefix alongside it so the row is
+												    attributable to a person. */}
+												{groupBy === "user" ? (
+													<span title={item.key}>{item.key}</span>
+												) : (
+													item.key
+												)}
+											</td>
+											<td className="py-1.5 pr-3 text-right">{item.requests}</td>
+											<td className="py-1.5 pr-3 text-right">
+												{fmtTokens(item.inputTokens + item.outputTokens)}
+											</td>
+											<td className="py-1.5 pr-3 text-right">
+												{fmtCents(item.upstreamCents)}
+											</td>
+											<td className="py-1.5 pr-3 text-right text-text-bright">
+												{fmtCents(item.totalCents)}
+											</td>
+											<td
+												className={`py-1.5 pr-3 text-right ${
+													item.errorRate > 0.05 ? "text-error" : "text-text-muted"
+												}`}
+											>
+												{(item.errorRate * 100).toFixed(1)}%
+											</td>
+											<td className="py-1.5 text-right">{fmtMs(item.avgLatencyMs)}</td>
+										</tr>
+									))}
+								</tbody>
+							</table>
+						</div>
+					)}
+					<p className="mt-3 text-[10px] leading-relaxed text-text-muted">
+						Upstream cost is the provider&apos;s charge; billed is what the user paid.
+						The difference is gross margin. Group by provider to see where
+						Venice/OpenBroker spend actually lands.
+					</p>
+				</>
 			)}
 		</section>
 	);

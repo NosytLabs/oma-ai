@@ -1216,16 +1216,11 @@
 	.reveal-target[data-revealed="true"] {
 		transform: translateY(0);
 	}
-	/* Backward-compat alias for any consumer still applying `.reveal-in`. */
-	.reveal-in {
-		opacity: 1;
-		transform: translateY(var(--reveal-y, 14px));
-		transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
-		transition-delay: var(--reveal-delay, 0s);
-	}
-	.reveal-in.is-revealed {
-		transform: translateY(0);
-	}
+	/* NOTE: the old `.reveal-in` / `.reveal-in.is-revealed` alias pair was
+	   removed — zero .tsx consumers referenced it (every surface uses the
+	   `<Reveal>` component's `reveal-target` + `data-revealed` contract).
+	   Content is opacity:1 by default, so a stale offset is cosmetic, not
+	   an SEO/visibility hazard. */
 	/* Stagger children (grid cards) of a revealed container. Each child is
 	   pre-offset; when the parent is revealed they transition up with an
 	   index-based delay via nth-child to approximate framer's staggerChildren. */
@@ -1253,7 +1248,7 @@
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.reveal-target,
-		.reveal-in,
+		.reveal-target > *,
 		.reveal-target[data-revealed="true"] > *,
 		.reveal-target[data-revealed="false"] > * {
 			transform: none;
@@ -1261,6 +1256,20 @@
 		}
 		.lift:hover {
 			transform: none;
+		}
+	}
+	/* No-JS clients: the IntersectionObserver that sets data-revealed="true"
+	   never runs, so .reveal-target would sit at its 14px pre-offset forever.
+	   Opacity is already pinned to 1 (content is never hidden), so this only
+	   neutralises the offset. Legacy engines without `scripting` support fall
+	   back to the <noscript> style injected in app/layout.tsx. */
+	@media (scripting: none) {
+		.reveal-target,
+		.reveal-target[data-revealed="false"],
+		.reveal-target[data-revealed="true"],
+		.reveal-target > * {
+			transform: none;
+			transition: none;
 		}
 	}
 }

@@ -103,17 +103,3 @@ export function isCurrentPath(pathname: string, href: string): boolean {
 	const routePath = href.split(/[?#]/, 1)[0] || "/";
 	return currentPath === routePath || currentPath.startsWith(`${routePath}/`);
 }
-
-export function sectionLabelFor(pathname: string): string {
-	if (pathname === "/" || pathname === "") return "home";
-	const matched = primaryLinks.find((link) =>
-		isCurrentPath(pathname, link.href),
-	);
-	if (matched) return matched.label;
-	const toolsMatched = toolsLinks.find((link) =>
-		isCurrentPath(pathname, link.href),
-	);
-	if (toolsMatched) return toolsMatched.label;
-	const segment = pathname.split("/").filter(Boolean)[0];
-	return segment ?? "home";
-}

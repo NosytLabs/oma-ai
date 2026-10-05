@@ -31,10 +31,11 @@ export interface RevealProps {
 
 /**
  * RevealStaggerProps — children are expected to opt into the reveal animation
- * individually (e.g. via `childFadeUp` / `reveal-child`). The container itself
- * just triggers on entering view and staggers via CSS transition-delay set by
- * consumers. For grid items that used framer variants, the `reveal-child`
- * class is applied to each item to animate them staggered.
+ * individually (each item can carry the `reveal-child` class directly). The
+ * container itself just triggers on entering view and staggers via CSS
+ * transition-delay set by consumers. For grid items that used framer
+ * variants, the `reveal-child` class is applied to each item to animate them
+ * staggered.
  */
 export interface RevealStaggerProps {
 	children: ReactNode;
@@ -87,6 +88,3 @@ export function RevealStagger({
 		</Tag>
 	);
 }
-
-/** Compat export — kept for any external consumers. */
-export const childFadeUp = "reveal-child";

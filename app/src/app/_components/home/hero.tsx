@@ -8,40 +8,17 @@
 
 import { ArrowRight, KeyRound, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { LiveRequestCard } from "./LiveRequestCard";
-import { models as modelsApi } from "@/lib/api/resources";
-import { isAvailableChatModel } from "./catalog-availability";
+import { MIN_INPUT_PRICE_LABEL } from "@/lib/models-data";
+import { useLiveModelCount } from "./use-live-count";
 
 /**
- * Live count of models actually accepting requests.
+ * Home · Hero
  *
- * The hero previously interpolated MODEL_COUNT, a hardcoded static fallback
- * that does not know which providers are dark. It rendered "20 models" while
- * the catalog reported 2 available — a 10x overstatement in the first
- * sentence of the page. Omits the number until
- * the catalog resolves so static rendering cannot overstate availability.
+ * The live model count and the "from" price anchor both come from shared
+ * derivations (useLiveModelCount + MIN_INPUT_PRICE_LABEL) rather than local
+ * constants, so neither can drift from the catalog or from the stats strip.
  */
-function useLiveModelCount(): number | null {
-	const [count, setCount] = useState<number | null>(null);
-	useEffect(() => {
-		let cancelled = false;
-		modelsApi
-			.list()
-			.then((res) => {
-				if (cancelled) return;
-				const live = (res.data ?? []).filter(isAvailableChatModel).length;
-				setCount(live);
-			})
-			.catch(() => {
-				/* Omit the count while availability is unknown. */
-			});
-		return () => {
-			cancelled = true;
-		};
-	}, []);
-	return count;
-}
 
 export function Hero() {
 	const liveCount = useLiveModelCount();
@@ -75,6 +52,15 @@ export function Hero() {
 						model — no new integration, no new account. Try it free in the playground.
 					</p>
 
+					{/* Price anchor. The figure is derived from the synced catalog
+					    (MIN_INPUT_PRICE_LABEL), the same value the stats strip and
+					    capabilities grid render — so it cannot drift from the real
+					    price list. Payment rails and "no monthly fee" are stated here
+					    because they are the two objections that block the CTA. */}
+					<p className="mt-4 font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted sm:mt-5 sm:text-xs">
+						From {MIN_INPUT_PRICE_LABEL}/1M input tokens · USDC or card · no monthly fee
+					</p>
+
 					<div className="mt-8 flex w-full flex-col items-center justify-center gap-3 sm:mt-9 sm:w-auto sm:flex-row">
 						<Link
 							href="/login?next=/dashboard"
@@ -101,6 +87,30 @@ export function Hero() {
 							<span>Try chat</span>
 						</Link>
 					</div>
+
+					{/* Objection-clearing microcopy directly under the CTA pair.
+									    "Get API key" reads as the start of a payment funnel, and
+									    the single most common reason for abandoning it is fear of
+									    being charged. Website chat is free without a card and API
+									    calls bill from prepaid credits, so "no credit card" is
+									    literally true — not a hedge. Placed with the buttons
+									    (not in the price line above) so it answers the CTA it
+									    qualifies. */}
+									<p className="mt-3 text-center font-mono text-[11px] uppercase tracking-[0.14em] text-text-muted">
+										No credit card required · free website chat
+									</p>
+
+									{/* Tertiary path for price-sensitive visitors: the two CTAs
+									    above are both conversion actions, so the pricing route
+									    needs its own low-emphasis link or it is unreachable from
+									    the hero. Arrow glyph rather than an icon to keep the line
+									    reading as a footnote, not a third button. */}
+					<Link
+						href="/pricing"
+						className="mt-4 inline-flex min-h-11 items-center gap-1 rounded-sm text-[13px] text-text-secondary underline-offset-4 transition-colors hover:text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+					>
+						See pricing <span aria-hidden="true">→</span>
+					</Link>
 
 					<div className="mt-8 w-full max-w-4xl sm:mt-10">
 						<div className="flex w-full justify-center">

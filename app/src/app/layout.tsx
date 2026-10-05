@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Instrument_Serif, Geist, Space_Grotesk } from "next/font/google";
 import { BRAND_COLORS } from "@/lib/brand";
 import SITE_URL from "@/lib/site";
+import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/themes";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { Footer } from "@/components/footer";
@@ -141,12 +142,24 @@ export default function RootLayout({
 			className={`${display.variable} ${body.variable} ${geometric.variable}`}
 		>
 			<head>
-				<script dangerouslySetInnerHTML={{ __html: `(function(){try{var d=document.documentElement;d.style.backgroundColor='#07090a';d.style.colorScheme='dark';var t=localStorage.getItem('oma-theme');if(t==='emerald'||t==='amber'||t==='mono'||t==='synth'){if(t==='emerald'){d.removeAttribute('data-theme');}else{d.setAttribute('data-theme',t);}}}catch(e){}})();` }} />
+				{/* Theme ids + storage key are interpolated from @/lib/themes so the
+				    pre-paint bootstrap can never drift from ThemeProvider's
+				    isValidTheme / picker list. */}
+				<script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
 				<OrganizationJsonLd />
 				<WebSiteJsonLd />
 				<SoftwareApplicationJsonLd />
 			</head>
 			<body className="flex min-h-dvh flex-col bg-void text-text font-sans antialiased overflow-x-hidden">
+				{/* Legacy no-JS fallback. globals.css also carries a
+				    `@media (scripting: none)` rule, but browsers that predate
+				    that media feature ignore it entirely — so the transform-only
+				    reveal offset would persist and leave every section sitting
+				    14px low. Content is opacity:1 either way (never hidden);
+				    this only neutralises the offset for no-JS clients. */}
+				<noscript>
+					<style>{`.reveal-target,.reveal-target[data-revealed="false"],.reveal-target[data-revealed="true"]{transform:none!important;transition:none!important}`}</style>
+				</noscript>
 				<GoogleAnalytics />
 				<a
 					href="#main-content"

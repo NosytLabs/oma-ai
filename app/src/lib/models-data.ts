@@ -865,6 +865,20 @@ export function formatPricePerMillion(pricePer1M: number): string {
 	})}`;
 }
 
+/**
+ * Cheapest catalog input rate across the static fallback catalog.
+ *
+ * Derived, never hardcoded, so every "from $X / 1M input tokens" anchor (hero,
+ * stats strip, capabilities grid) reads this one value and cannot drift from
+ * the real price list when the catalog changes.
+ */
+export const MIN_INPUT_PRICE = Math.min(
+	...MODELS.map((m) => m.inputPricePer1M).filter((p) => p > 0),
+);
+
+/** Pre-formatted cheapest-input figure, e.g. `$0.15`. */
+export const MIN_INPUT_PRICE_LABEL = formatPricePerMillion(MIN_INPUT_PRICE);
+
 export function getModelsByTier(models: Model[]): Record<Tier, Model[]> {
 	const grouped: Record<Tier, Model[]> = {
 		budget: [],
