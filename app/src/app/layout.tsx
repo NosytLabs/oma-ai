@@ -145,7 +145,6 @@ export default function RootLayout({
 				<OrganizationJsonLd />
 				<WebSiteJsonLd />
 				<SoftwareApplicationJsonLd />
-				<link rel="preconnect" href="https://base-rpc.publicnode.com" />
 			</head>
 			<body className="flex min-h-dvh flex-col bg-void text-text font-sans antialiased overflow-x-hidden">
 				<GoogleAnalytics />
