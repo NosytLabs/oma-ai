@@ -795,9 +795,10 @@ const FALLBACK_CATALOG: RawCatalog = {
 		},
 	// ── OMA-AI resale (user-facing = 2x Gonka wholesale) ────────────────
 	// OpenBroker / Gonka Network upstream (api.openbroker.gonka.gg).
-	// Verified live 2026-09-05 against /v1/models — exactly 2 chat
-	// models currently served: MiniMaxAI/MiniMax-M2.7 and
-	// deepseek-ai/DeepSeek-V4-Flash-0731. (Kimi K2.6 was dropped from
+	// Verified live 2026-09-05 against /v1/models (GLM-5.3-Flash added
+	// 2026-09-24) — the three models below are the OMA-AI set:
+	// MiniMaxAI/MiniMax-M2.7, deepseek-ai/DeepSeek-V4-Flash-0731,
+	// and zai-org/GLM-5.3-Flash. (Kimi K2.6 was dropped from
 	// the active set by network governance vote per epoch.)
 	//
 	// Free usage is restricted to /chat for signed-out visitors only.

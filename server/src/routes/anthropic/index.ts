@@ -378,7 +378,7 @@ anthropicRoutes.post(
 								const anthropicStream = createAnthropicStream(upstreamResp, actualModelId, requestId, {
 								userId,
 								model: actualModelId,
-								provider: actualModelDef.provider as "venice" | "oma-ai" | "litellm",
+								provider: actualModelDef.provider as "venice" | "oma-ai",
 								promptTokens,
 								pricing: actualPricing,
 								requestId,
@@ -389,7 +389,7 @@ anthropicRoutes.post(
 						const { data } = await parseNonStreamingResponse(upstreamResp, {
 								userId,
 								model: actualModelId,
-								provider: actualModelDef.provider as "venice" | "oma-ai" | "litellm",
+								provider: actualModelDef.provider as "venice" | "oma-ai",
 								promptTokens,
 								pricing: actualPricing,
 								requestId,

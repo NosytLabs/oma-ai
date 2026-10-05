@@ -37,7 +37,7 @@ export interface ProviderRoute {
 	 * primary route it's procuring for ("venice" or "oma-ai") — Surplus
 	 * is never surfaced to users.
 	 */
-	providerLabel: "venice" | "oma-ai" | "litellm";
+	providerLabel: "venice" | "oma-ai";
 	/**
 	 * Internal-only routing tag. Lets the proxy + audit log distinguish
 	 * "this request was served by Surplus under the venice label" from
@@ -45,7 +45,7 @@ export interface ProviderRoute {
 	 * x-oma-routed-via header but never in the user-facing provider
 	 * field.
 	 */
-	routedVia: "venice" | "oma-ai" | "surplus" | "litellm";
+	routedVia: "venice" | "oma-ai" | "surplus";
 }
 
 export class ProviderError extends Error {
@@ -59,25 +59,6 @@ export class ProviderError extends Error {
 }
 
 export function resolveProvider(provider: string, _modelDef?: ModelDef): ProviderRoute {
-	if (provider === "litellm") {
-		if (!config.LITELLM_API_KEY) {
-			throw new ProviderError(
-				"LiteLLM API key not configured (set LITELLM_API_KEY in the server env).",
-				503,
-			);
-		}
-		return {
-			baseUrl: config.LITELLM_API_URL,
-			apiKey: config.LITELLM_API_KEY,
-			// Generic OpenAI-compatible upstream: use the model's dedicated
-			// `litellmId` (e.g. NVIDIA API model id) when set, else the
-			// catalog id/veniceId as-is.
-			upstreamModel: (id, _gid) => _modelDef?.litellmId ?? id,
-			extraBody: (body) => body,
-			providerLabel: "litellm",
-			routedVia: "litellm",
-		};
-	}
 	if (provider === "oma-ai") {
 		// "oma-ai" is backed exclusively by OpenBroker after the Zyloo removal.
 		// Every catalog entry must declare upstream: "openbroker" (or be
@@ -116,7 +97,7 @@ export function resolveProvider(provider: string, _modelDef?: ModelDef): Provide
 		// id. A few entries keep a stable public id that differs from their
 		// Venice id (e.g. public `mistral-small-2603` -> Venice
 		// `mistral-small-3-2-24b-instruct`); without this the public id went
-		// upstream verbatim and 404'd. Mirrors the `litellmId` behavior above.
+		// upstream verbatim and 404'd.
 		upstreamModel: (id) => _modelDef?.veniceId ?? id,
 		extraBody: (body) => ({
 			...body,

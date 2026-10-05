@@ -38,7 +38,7 @@ import { recordUsage, type RecordUsageArgs } from "../billing.js";
 const baseArgs = {
 	userId: "u1",
 	model: "claude-opus-4-6",
-	provider: "litellm" as const,
+	provider: "venice" as const,
 	promptTokens: 100,
 	outputTokens: 50,
 	// Cost fields are DERIVED from pricing inside recordUsage, not passed in.

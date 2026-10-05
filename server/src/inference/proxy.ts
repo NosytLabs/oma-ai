@@ -46,8 +46,6 @@ export interface CallProviderOptions {
 		tool_choice?: unknown;
 		userId: string;
 		requestId: string;
-		/** Optional override: force a specific provider for testing. */
-		providerOverride?: "venice" | "oma-ai" | "litellm";
 		/** Skip credit deduction for free website chat */
 		skipBilling?: boolean;
 		/**
@@ -62,7 +60,7 @@ export interface CallProviderOptions {
 	* Returns the raw upstream Response object for the caller to translate/stream as needed.
 	*/
 async function callProvider(opts: CallProviderOptions): Promise<Response> {
-		const { modelId, messages, stream, max_tokens, temperature, top_p, tools, tool_choice, providerOverride } = opts;
+		const { modelId, messages, stream, max_tokens, temperature, top_p, tools, tool_choice } = opts;
 
 		const modelDef = getModelById(modelId);
 		if (!modelDef) {
@@ -70,7 +68,7 @@ async function callProvider(opts: CallProviderOptions): Promise<Response> {
 		}
 
 		// Resolve upstream provider (Venice vs OMA-AI/OpenBroker).
-		const provider = providerOverride ?? modelDef.provider;
+		const provider = modelDef.provider;
 		const route = resolveProvider(provider, modelDef);
 
 		const upstreamUrl = `${route.baseUrl}/chat/completions`;

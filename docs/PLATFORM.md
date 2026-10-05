@@ -124,10 +124,6 @@ Settings opened with `?demo=1` are read-only previews, including when the visito
 
 Production requires durable Postgres and Redis-compatible rate-limit state, real authentication secrets, real Base addresses and RPC configuration, and valid inference-provider credentials. At minimum, set the following for each deployed server environment.
 
-### Inference providers
-
-- `LITELLM_API_KEY` and `LITELLM_API_URL`: NVIDIA upstream access via LiteLLM, used by the provider-route fallback path.
-
 ### Core and data stores
 
 - `DATABASE_URL`: Neon Postgres connection string. This is the authoritative credit-ledger store.

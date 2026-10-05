@@ -318,7 +318,7 @@ chatRoutes.post(
 								const proxyStream = createStreamingProxy(upstreamResp, {
 										userId: userId ?? "anonymous",
 										model: actualModelId,
-										provider: actualModelDef.provider as "venice" | "oma-ai" | "litellm",
+										provider: actualModelDef.provider as "venice" | "oma-ai",
 										promptTokens,
 										pricing: actualPricing,
 										requestId,
@@ -331,7 +331,7 @@ chatRoutes.post(
 						const { data } = await parseNonStreamingResponse(upstreamResp, {
 								userId: userId ?? "anonymous",
 								model: actualModelId,
-								provider: actualModelDef.provider as "venice" | "oma-ai" | "litellm",
+								provider: actualModelDef.provider as "venice" | "oma-ai",
 								promptTokens,
 								pricing: actualPricing,
 								requestId,

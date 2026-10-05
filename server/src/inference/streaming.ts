@@ -13,7 +13,7 @@ import { recordUsage, type RecordUsageArgs } from "./billing.js";
 export interface StreamingProxyArgs {
 		userId: string;
 		model: string;
-		provider: "venice" | "oma-ai" | "litellm";
+		provider: "venice" | "oma-ai";
 		promptTokens: number;
 		pricing: RecordUsageArgs["pricing"];
 		requestId: string;

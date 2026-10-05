@@ -14,7 +14,7 @@ import { ProviderError } from "./provider-route.js";
 export interface RecordUsageArgs {
 		userId: string;
 		model: string;
-		provider: "venice" | "oma-ai" | "litellm";
+		provider: "venice" | "oma-ai";
 		promptTokens: number;
 		outputTokens: number;
 		pricing: ReturnType<typeof getModelPricing>;

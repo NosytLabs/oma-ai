@@ -6,8 +6,6 @@ vi.mock("../../config.js", () => ({
 	config: {
 		VENICE_API_KEY: "venice-test-key-not-a-placeholder",
 		VENICE_API_URL: "https://api.venice.ai",
-		LITELLM_API_KEY: undefined,
-		LITELLM_API_URL: "https://litellm.invalid",
 		OMMA_ALLOW_NON_PRIVATE_VENICE: false,
 		SURPLUS_API_KEY: "surplus-test-key",
 		SURPLUS_API_URL: "https://api.surplusintelligence.ai",
@@ -37,8 +35,7 @@ describe("venice upstream model id", () => {
 	 * public id upstream and 404'd. `mistral-small-2603` is that entry —
 	 * Venice's live catalog has no such model, only
 	 * `mistral-small-3-2-24b-instruct`. The public id must stay stable for
-	 * API consumers, so the override has to be honored on the Venice route
-	 * (mirroring the existing `litellmId` behavior).
+	 * for API consumers, so the override has to be honored on the Venice route.
 	 */
 	it("sends veniceId upstream when the catalog defines one", () => {
 		const route = resolveProvider(

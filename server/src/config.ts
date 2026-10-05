@@ -42,8 +42,6 @@ const envSchema = z.object({
 		//   OPENBROKER_* → api.openbroker.gonka.gg — MiniMax-M2.7, DeepSeek-V4-Flash.
 		// (Zyloo was previously a sister upstream; removed 2026-08-17.)
 
-		LITELLM_API_KEY: z.string().min(1).optional(),
-		LITELLM_API_URL: z.string().url().optional().default("http://localhost:4000/v1"),
 		OPENBROKER_API_KEY: z.string().min(1).optional(),
 		// Local/dev aliases — Gonka issues keys as GONKA_API_KEY or OBK_API_KEY.
 		GONKA_API_KEY: z.string().min(1).optional(),

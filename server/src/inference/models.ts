@@ -31,13 +31,13 @@
 	* Surplus is never selected for traffic. See the comment block above
 	* for the full risk writeup.
 	*
-* NOTE: `deepseek-v4-flash-0731-openbroker` is the default free
- * website-chat model. It is backed by `deepseek-ai/DeepSeek-V4-Flash-0731`
- * on the OpenBroker / Gonka.AI upstream — verified live against
- * api.openbroker.gonka.gg/v1/models. Don't add a Venice entry under
- * the same id or it will shadow the free route and break anonymous
- * website chat (401 on free model).
- *
+* NOTE: `zai-org-glm-5-3` (GLM-5.3 Flash) is the default free website-chat
+* model (see FREE_DEFAULT_CHAT_MODEL in app/src/lib/model-utils.ts), backed by
+* `zai-org/GLM-5.3-Flash` on the OpenBroker / Gonka.AI upstream — verified live
+* against api.openbroker.gonka.gg/v1/models. `deepseek-v4-flash-0731-openbroker`
+* remains selectable. Don't add a Venice entry under an openbroker id or it
+* will shadow the free route and break anonymous website chat (401 on free).
+*
  * API-token callers (Authorization: Bearer oma_sk_*) ALWAYS pay real
  * credits for these models; free usage is restricted to the public
  * /chat page for signed-out visitors only.
@@ -63,10 +63,6 @@ export interface ModelDef {
 		capabilities: string[];
 		veniceId?: string;
 		omaAiId?: string;
-		/** Generic OpenAI-compatible upstream model id (used by the `litellm`
-		 *  provider, e.g. NVIDIA API, LiteLLM proxy). When set, it overrides
-		 *  `veniceId`/`id` as the `model` sent upstream for litellm-routed models. */
-		litellmId?: string;
 		/**
 		 * Resale upstream backing an "oma-ai" model. Only "openbroker" is supported
 		 * (Zyloo was removed 2026-08-17). Models without this field are no longer
@@ -530,7 +526,6 @@ export function getModelById(id: string): ModelDef | undefined {
 	* fallback inside the router when the primary upstream fails.
 	*/
 export function providerAvailable(m: ModelDef): boolean {
-	if (m.provider === "litellm") return isConfiguredKey(config.LITELLM_API_KEY);
 	if (m.provider === "venice") return isConfiguredKey(config.VENICE_API_KEY);
 	if (m.provider === "oma-ai") {
 		// Only "openbroker" upstream remains after Zyloo removal (2026-08-17).

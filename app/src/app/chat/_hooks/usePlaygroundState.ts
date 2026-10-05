@@ -51,7 +51,7 @@ export interface UsePlaygroundStateOptions {
 	 * Override the default model. Useful for tests and for callers that
 	 * already resolved the search-param-derived value elsewhere. Defaults
 	 * to `?model=<value>` from the current URL, falling back to
-	 * `deepseek-v4-flash-0731-openbroker` (free OMA-AI on Gonka).
+	 * `FREE_DEFAULT_CHAT_MODEL` (free OMA-AI / GLM-5.3 on Gonka/OpenBroker).
 	 */
 	defaultModel?: string;
 	/**
@@ -199,7 +199,7 @@ export function usePlaygroundState(
 
 	/** Track whether the user has explicitly changed the model since mount.
 		*  Used to gate the URL mirror effect so a cold load on /chat doesn't
-* rewrite a clean URL to ?model=deepseek-v4-flash-0731-openbroker, while a deep
+* rewrite a clean URL to ?model=<default-free-model>, while a deep
 		*  link ?model=foo (which sets the initial state via the lazy
 		*  initializer) still wins on first render. Flips to `true` only on
 		*  the wrapper call, not on internal `setModelRaw` writes (rehydrate
@@ -427,7 +427,7 @@ export function usePlaygroundState(
 
 	// Mirror the selection into `?model=` so a refresh / share URL keeps
 	// it. Gated by `userChangedModelRef` so cold loads on /chat don't
-	// rewrite a clean URL to ?model=deepseek-v4-flash-0731-openbroker; only an
+	// rewrite a clean URL to ?model=<default-free-model>; only an
 	// explicit user pick triggers a router.replace. Deep links via
 	// ?model=… still win on first mount via the `initialModel` initializer.
 	useEffect(() => {
