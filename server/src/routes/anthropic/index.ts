@@ -9,9 +9,10 @@ import { Hono } from "hono";
 import { z } from "zod";
 import type { OmaEnv } from "../../types.js";
 import { sessionOrBearerAuth } from "../../auth/middleware.js";
-import { rateLimit } from "../../middleware/rate-limit.js";
+import { modelRateLimit, rateLimit } from "../../middleware/rate-limit.js";
 import { getModelById, listAllModels } from "../../inference/models.js";
 import { getModelPricing } from "../../inference/billing-service.js";
+import type { UsageProvider } from "../../inference/billing.js";
 import {
 		parseNonStreamingResponse,
 		ProviderError,
@@ -310,7 +311,16 @@ anthropicRoutes.post(
 		"/v1/messages",
 		rateLimit({ windowMs: 60_000, maxRequests: 60 }),
 		sessionOrBearerAuth,
+		// Same per-model RPM + TPM enforcement as /v1/chat/completions. This
+		// route previously had only the generic 60/min burst guard, so the
+		// Anthropic-compatible surface (what Claude Code and similar clients
+		// use) could exceed MODEL_LIMITS entirely — an alternate door into the
+		// same unthrottled inference path.
+		modelRateLimit(),
 		async (c) => {
+				// Start of the request, persisted as usage_records.latency_ms so
+				// provider latency is finally observable on this route too.
+				const startedAt = Date.now();
 				const body = await c.req.json().catch(() => null);
 				const parsed = anthropicSchema.safeParse(body);
 				if (!parsed.success) {
@@ -347,7 +357,8 @@ anthropicRoutes.post(
 				const promptTokens = estimateTokens(promptText);
 
 				try {
-						const { response: upstreamResp, actualModelId } = await routeRequestWithFallback({
+						const { response: upstreamResp, actualModelId, attemptCount } =
+							await routeRequestWithFallback({
 								modelId: model,
 								messages: openAIMessages,
 								stream,
@@ -362,6 +373,7 @@ anthropicRoutes.post(
 
 						const actualModelDef = getModelById(actualModelId) || modelDef;
 						const actualPricing = getModelPricing(actualModelId);
+						const routedVia = actualModelId !== model ? "fallback" : "direct";
 
 						// Set OMA custom response headers to indicate routing & fallback choice
 						c.header("x-provider", actualModelDef.provider);
@@ -378,22 +390,30 @@ anthropicRoutes.post(
 								const anthropicStream = createAnthropicStream(upstreamResp, actualModelId, requestId, {
 								userId,
 								model: actualModelId,
-								provider: actualModelDef.provider as "venice" | "oma-ai",
+								requestedModel: model,
+								provider: actualModelDef.provider as UsageProvider,
+								routedVia,
+								attemptCount,
 								promptTokens,
 								pricing: actualPricing,
 								requestId,
+								startedAt,
 							});
 								return c.body(anthropicStream, 200);
 						}
 
 						const { data } = await parseNonStreamingResponse(upstreamResp, {
-								userId,
-								model: actualModelId,
-								provider: actualModelDef.provider as "venice" | "oma-ai",
-								promptTokens,
-								pricing: actualPricing,
-								requestId,
-						});
+											userId,
+											model: actualModelId,
+											requestedModel: model,
+											provider: actualModelDef.provider as UsageProvider,
+											routedVia,
+											attemptCount,
+											promptTokens,
+											pricing: actualPricing,
+											requestId,
+											startedAt,
+										});
 
 						const anthropicMsg = toAnthropicMessage(data, actualModelId, requestId);
 						return c.json(anthropicMsg);

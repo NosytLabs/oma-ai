@@ -28,7 +28,7 @@ import { z } from "zod";
 import { and, eq } from "drizzle-orm";
 import type { OmaEnv } from "../../types.js";
 import { optionalAuth } from "../../auth/middleware.js";
-import { rateLimit } from "../../middleware/rate-limit.js";
+import { modelRateLimit, rateLimit } from "../../middleware/rate-limit.js";
 import { dailyUsageLimit } from "../../middleware/daily-limit.js";
 import { getModelById } from "../../inference/models.js";
 import { getModelPricing } from "../../inference/billing-service.js";
@@ -42,7 +42,8 @@ import {
 		estimateTokens,
 		flattenMessageContent,
 		routeRequestWithFallback,
-} from "../../inference/proxy.js";
+		} from "../../inference/proxy.js";
+		import type { UsageProvider } from "../../inference/billing.js";
 import { logger } from "../../lib/logger.js";
 import { config } from "../../config.js";
 import { isFreeWebsiteModel } from "../../inference/free-website-model.js";
@@ -110,11 +111,22 @@ chatRoutes.post(
 			failClosed: false,
 		}),
 		// Authenticate before the daily limiter so signed-in website users receive
-		// the registered-user quota instead of being treated as anonymous.
-		optionalAuth,
-		dailyUsageLimit(),
-		async (c) => {
-				const body = await c.req.json().catch(() => null);
+				// the registered-user quota instead of being treated as anonymous.
+				optionalAuth,
+				// Per-model RPM **and TPM** enforcement (MODEL_LIMITS). Previously
+				// this route applied only the generic 60/min burst guard, so a
+				// caller could send an unlimited number of requests — and an
+				// unlimited number of TOKENS — to a catalog model that declares
+				// limits. Runs after optionalAuth so the limit is keyed to the
+				// caller's own budget, not the shared IP bucket.
+				modelRateLimit(),
+				dailyUsageLimit(),
+				async (c) => {
+						// Captured before any upstream work so usage_records.latency_ms
+						// measures the full round-trip (queue + provider + stream).
+						// latency_ms existed on the table but was never populated.
+						const startedAt = Date.now();
+						const body = await c.req.json().catch(() => null);
 				const parsed = chatSchema.safeParse(body);
 				if (!parsed.success) {
 						return c.json(
@@ -280,7 +292,8 @@ chatRoutes.post(
 								await assertSufficientBalance(userId, worstPricing, promptTokens, max_tokens);
 						}
 
-						const { response: upstreamResp, actualModelId } = await routeRequestWithFallback({
+						const { response: upstreamResp, actualModelId, attemptCount } =
+					await routeRequestWithFallback({
 								modelId: model,
 								clientFallbacks: clientModels,
 								messages: messages.map((m) => ({
@@ -300,7 +313,14 @@ chatRoutes.post(
 						});
 
 						const actualModelDef = getModelById(actualModelId) || modelDef;
-						const actualPricing = getModelPricing(actualModelId);
+									const actualPricing = getModelPricing(actualModelId);
+									// How the request was served, for the admin ledger:
+									// "free-website" | "direct" | "fallback".
+									const routedVia = isFreeWebsiteChat
+										? "free-website"
+										: actualModelId !== model
+											? "fallback"
+											: "direct";
 
 						// Set OMA custom response headers to indicate routing & fallback choice
 						// (OpenRouter-style transparency: clients can detect failover).
@@ -318,26 +338,34 @@ chatRoutes.post(
 								const proxyStream = createStreamingProxy(upstreamResp, {
 										userId: userId ?? "anonymous",
 										model: actualModelId,
-										provider: actualModelDef.provider as "venice" | "oma-ai",
+										requestedModel: model,
+										provider: actualModelDef.provider as UsageProvider,
+										routedVia,
+										attemptCount,
 										promptTokens,
 										pricing: actualPricing,
 										requestId,
+										startedAt,
 										skipBilling: isFreeWebsiteChat,
 										apiKeyId,
-								});
+									});
 								return c.body(proxyStream, 200);
 						}
 
 						const { data } = await parseNonStreamingResponse(upstreamResp, {
-								userId: userId ?? "anonymous",
-								model: actualModelId,
-								provider: actualModelDef.provider as "venice" | "oma-ai",
-								promptTokens,
-								pricing: actualPricing,
-								requestId,
-								skipBilling: isFreeWebsiteChat,
-								apiKeyId,
-						});
+										userId: userId ?? "anonymous",
+										model: actualModelId,
+										requestedModel: model,
+										provider: actualModelDef.provider as UsageProvider,
+										routedVia,
+										attemptCount,
+										promptTokens,
+										pricing: actualPricing,
+										requestId,
+										startedAt,
+										skipBilling: isFreeWebsiteChat,
+										apiKeyId,
+									});
 
 						return c.json(data);
 				} catch (err) {

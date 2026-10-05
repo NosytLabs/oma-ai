@@ -30,7 +30,7 @@ vi.mock('../../lib/logger.js', () => ({
 		},
 }))
 
-import { checkTokenBucket, checkRpmLimit, tokenBucket, modelRateLimit, rateLimit, MODEL_LIMITS } from '../rate-limit.js'
+import { checkTokenBucket, checkRpmLimit, checkTpmLimit, tokenBucket, modelRateLimit, rateLimit, MODEL_LIMITS } from '../rate-limit.js'
 
 describe('rate-limit middleware', () => {
 		let mockContext: any
@@ -122,13 +122,62 @@ describe('rate-limit middleware', () => {
 						)
 				})
 
-		it('should fail open on Redis error', async () => {
-					mockRedisClient.eval.mockRejectedValueOnce(new Error('Redis connection failed'))
+		it('should NOT fail open on Redis error', async () => {
+			// P0: a script error previously returned allowed:true with a full
+			// budget, silently disabling the bucket for the whole fault window.
+			mockRedisClient.eval.mockRejectedValueOnce(new Error('Redis connection failed'))
 
-					const res = await checkTokenBucket(mockRedisClient as any, 'test-key', { bucketSize: 60, refillRate: 20 })
-					expect(res.allowed).toBe(true)
-			})
+			const res = await checkTokenBucket(mockRedisClient as any, 'test-key:never-reused', { bucketSize: 60, refillRate: 20 })
+			expect(res.allowed).toBe(true)
+			expect(res.remaining).toBe(59)          // charged, not 'full budget'
+			expect(res.degraded).toBe(true)         // and labelled honestly
 		})
+	})
+
+	describe('checkTpmLimit', () => {
+		it('consumes promptTokens + max_tokens against the tpm budget', async () => {
+			mockRedisClient.eval.mockResolvedValueOnce([1, 30_000, 0])
+
+			const res = await checkTpmLimit(mockRedisClient as any, 'kimi-k3:tpm', 120_000, 30_000, 60)
+
+			expect(res.allowed).toBe(true)
+			expect(res.remaining).toBe(90_000)
+			expect(res.limit).toBe(120_000)
+			expect(mockRedisClient.eval).toHaveBeenCalledWith(
+				expect.any(String),
+				['kimi-k3:tpm:z', 'kimi-k3:tpm:w'],
+				['60000', '120000', '30000', expect.any(String)],
+			)
+		})
+
+		it('rejects when the window budget is exhausted', async () => {
+			mockRedisClient.eval.mockResolvedValueOnce([0, 120_000, 12_000])
+
+			const res = await checkTpmLimit(mockRedisClient as any, 'kimi-k3:tpm:full', 120_000, 1_000, 60)
+
+			expect(res.allowed).toBe(false)
+			expect(res.remaining).toBe(0)
+			expect(res.resetMs).toBe(12_000)
+		})
+
+		it('rejects a single request larger than the whole window budget', async () => {
+			// Cannot be served inside the window by definition — must not reach
+			// Redis or an upstream provider.
+			const res = await checkTpmLimit(mockRedisClient as any, 'kimi-k3:tpm:huge', 120_000, 500_000, 60)
+
+			expect(res.allowed).toBe(false)
+			expect(mockRedisClient.eval).not.toHaveBeenCalled()
+		})
+
+		it('does not fail open on Redis error', async () => {
+			mockRedisClient.eval.mockRejectedValueOnce(new Error('NOSCRIPT'))
+
+			const res = await checkTpmLimit(mockRedisClient as any, 'kimi-k3:tpm:err', 120_000, 1_000, 60)
+
+			expect(res.allowed).toBe(true)
+			expect(res.degraded).toBe(true)
+		})
+	})
 
 		describe('checkRpmLimit', () => {
 				it('should return allowed when under RPM limit', async () => {
@@ -296,37 +345,88 @@ describe('rate-limit middleware', () => {
 
 		describe('rateLimit middleware (fixed window)', () => {
 				beforeEach(() => {
-						vi.clearAllMocks()
+					vi.clearAllMocks()
 				})
 
 				it('should allow request when under limit', async () => {
-						mockRedisClient.incr.mockResolvedValue(1)
-						mockRedisClient.ttl.mockResolvedValue(59)
+					// The fixed window is ONE atomic Lua script (INCR + PEXPIRE +
+					// PTTL). It is no longer three round-trips, so `incr`/`expire`/
+					// `ttl` must never be called individually.
+					mockRedisClient.eval.mockResolvedValue([1, 1, 59999])
 
-						const middleware = rateLimit({ windowMs: 60000, maxRequests: 60 })
-						await middleware(mockContext as any, mockNext)
+					const middleware = rateLimit({ windowMs: 60000, maxRequests: 60 })
+					await middleware(mockContext as any, mockNext)
 
-						expect(mockNext).toHaveBeenCalled()
-						expect(mockContext.header).toHaveBeenCalledWith('X-RateLimit-Limit', '60')
-						expect(mockContext.header).toHaveBeenCalledWith('X-RateLimit-Remaining', '59')
+					expect(mockRedisClient.eval).toHaveBeenCalledWith(
+						expect.any(String),
+						expect.any(Array),
+						['60000', '60'],
+					)
+					expect(mockRedisClient.incr).not.toHaveBeenCalled()
+					expect(mockRedisClient.expire).not.toHaveBeenCalled()
+					expect(mockRedisClient.ttl).not.toHaveBeenCalled()
+					expect(mockNext).toHaveBeenCalled()
+					expect(mockContext.header).toHaveBeenCalledWith('X-RateLimit-Limit', '60')
+					expect(mockContext.header).toHaveBeenCalledWith('X-RateLimit-Remaining', '59')
 				})
 
 				it('should reject when over limit', async () => {
-						mockRedisClient.incr.mockResolvedValue(61)
-						mockRedisClient.ttl.mockResolvedValue(45)
+					mockRedisClient.eval.mockResolvedValue([0, 61, 45000])
 
-						const middleware = rateLimit({ windowMs: 60000, maxRequests: 60 })
-						await middleware(mockContext as any, mockNext)
+					const middleware = rateLimit({ windowMs: 60000, maxRequests: 60 })
+					await middleware(mockContext as any, mockNext)
 
-						expect(mockNext).not.toHaveBeenCalled()
-						expect(mockContext.json).toHaveBeenCalledWith(
-								expect.objectContaining({
-										error: expect.objectContaining({
-												code: 'rate_limit_exceeded',
-										}),
-								}),
-								429
-						)
+					expect(mockNext).not.toHaveBeenCalled()
+					expect(mockContext.json).toHaveBeenCalledWith(
+						expect.objectContaining({
+							error: expect.objectContaining({
+								code: 'rate_limit_exceeded',
+							}),
+						}),
+						429
+					)
 				})
+
+				it('charges every identity layer, not just one', async () => {
+					// A user with N API keys must still share ONE per-user budget.
+					mockRedisClient.eval.mockResolvedValue([1, 1, 59999])
+					mockContext.get = vi.fn().mockImplementation((key: string) => {
+						if (key === 'apiKey') return { id: 'key-1' }
+						if (key === 'userId') return 'user-1'
+						return null
+					})
+
+					const middleware = rateLimit({ windowMs: 60000, maxRequests: 60 })
+					await middleware(mockContext as any, mockNext)
+
+					const keys = mockRedisClient.eval.mock.calls.map((call) => call[1][0])
+					// user tier, key tier and ip tier all consumed.
+					expect(keys).toContain('rl:user:user-1')
+					expect(keys).toContain('rl:key:key-1')
+					expect(keys.some((k: string) => k.startsWith('rl:ip:'))).toBe(true)
+				})
+
+				it('does not fail open when the script errors', async () => {
+					// P0: a Redis error must degrade to the bounded per-process
+					// store, never to "allowed with a full budget".
+					mockRedisClient.eval.mockRejectedValue(new Error('NOSCRIPT'))
+
+					const middleware = rateLimit({ windowMs: 60000, maxRequests: 2 })
+					await middleware(mockContext as any, mockNext)
+					await middleware(mockContext as any, mockNext)
+					expect(mockNext).toHaveBeenCalledTimes(2)
+
+					// Third call exceeds the degraded cap.
+					mockContext.json = vi.fn().mockReturnThis()
+					await middleware(mockContext as any, mockNext)
+					expect(mockNext).toHaveBeenCalledTimes(2)
+					expect(mockContext.header).toHaveBeenCalledWith('X-RateLimit-Policy', 'degraded-memory')
+					expect(mockContext.json).toHaveBeenCalledWith(
+						expect.objectContaining({
+							error: expect.objectContaining({ code: 'rate_limit_exceeded' }),
+						}),
+						429
+					)
+				})
+			})
 		})
-})

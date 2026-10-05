@@ -54,6 +54,10 @@ vi.mock("../../inference/billing-service.ts", () => ({
 // Stub rate-limit and daily-limit so they never block.
 vi.mock("../../middleware/rate-limit.js", () => ({
 	rateLimit: () => async (_c: unknown, next: () => Promise<void>) => next(),
+	// Per-model RPM/TPM limiter. Stubbed to a pass-through so these tests
+	// exercise route + billing logic, not the limiter (covered in
+	// src/middleware/__tests__/rate-limit.test.ts).
+	modelRateLimit: () => async (_c: unknown, next: () => Promise<void>) => next(),
 }));
 
 vi.mock("../../middleware/daily-limit.js", () => ({

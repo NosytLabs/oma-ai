@@ -7,6 +7,7 @@ import {
 		session as sessionTable,
 		usageRecords,
 		auditLogs,
+		walletAddress,
 } from "../db/schema.js";
 import { and, desc, eq, gt } from "drizzle-orm";
 import { auditLog } from "../middleware/audit.js";
@@ -20,10 +21,17 @@ import {
 		createApiKeyCookieHeader,
 		createLogoutCookieHeader,
 } from "../auth/api-keys.js";
-import { auth } from "../auth.js";
-import { ADMIN_WALLET_ADDRESSES_SET } from "../config.js";
+import { auth, authBaseURL } from "../auth.js";
+import { ADMIN_WALLET_ADDRESSES_SET, config } from "../config.js";
 import type { OmaEnv } from "../types.js";
 import { extractClientIpOrNull } from "../middleware/rate-limit/utils.js";
+import { getAddress } from "viem";
+import {
+	SiweVerificationError,
+	assertSelfContainedMessage,
+	parseSiweMessage,
+	verifySiweSignature,
+} from "../lib/siwe-verify.js";
 
 export const authRoutes = new Hono<OmaEnv>();
 
@@ -417,10 +425,219 @@ authRoutes.delete("/v1/history", sessionAuth, async (c) => {
 // POST /v1/keys/logout — clear the HttpOnly API key cookie (does NOT
 // touch the Better Auth session; use Better Auth sign-out for that).
 authRoutes.post(
-		"/v1/keys/logout",
+			"/v1/keys/logout",
 		rateLimit({ windowMs: 60_000, maxRequests: 20 }),
 		sessionAuth,
 		async (c) => {
 		c.header("Set-Cookie", createLogoutCookieHeader());
 		return c.json({ success: true });
 });
+
+// ============================================================
+// POST /v1/user/attach-wallet — sign up with email, attach wallet later.
+//
+// The SIWE plugin creates user+walletBinding during sign-in, but a user who
+// signed up via email needs an explicit endpoint to connect a wallet to their
+// existing account. This is NOT the same as the SIWE flow: the user is
+// already authenticated via sessionAuth, and we need only to verify the
+// wallet ownership and bind it.
+//
+// This cannot use better-auth's accountLinking (deliberately disabled — see
+// auth.ts:469-483). Instead it writes wallet_address + evmAddress directly.
+// ============================================================
+/**
+ * Origin + chain a client-supplied attach-wallet message must be bound to.
+ *
+ * Deriving these from the SAME config the SIWE plugin uses
+ * (auth.ts resolveAuthBaseURL / config.PRIMARY_DOMAIN) is what makes the two
+ * paths agree; a hardcoded "oma-ai.com" would silently reject every local and
+ * preview deployment.
+ */
+const ATTACH_WALLET_EXPECTED_DOMAIN = new URL(authBaseURL).host;
+const ATTACH_WALLET_EXPECTED_CHAIN_ID = config.BASE_CHAIN_ID;
+
+const attachWalletSchema = z.object({
+	message: z.string().min(1),
+	signature: z.string().min(1),
+	address: z
+		.string()
+		.regex(/^0x[a-fA-F0-9]{40}$/, "Invalid Ethereum address"),
+});
+
+authRoutes.post(
+	"/v1/user/attach-wallet",
+	rateLimit({ windowMs: 60_000, maxRequests: 10, failClosed: true }),
+	sessionAuth,
+	async (c) => {
+		const userId = c.get("userId");
+		const body = await c.req.json().catch(() => null);
+		const parsed = attachWalletSchema.safeParse(body);
+		if (!parsed.success) {
+			return c.json(
+				{
+					error: {
+						message: "Invalid request",
+						type: "invalid_request_error",
+						issues: parsed.error.flatten(),
+					},
+				},
+				400,
+			);
+		}
+
+		const { message, signature, address } = parsed.data;
+
+		// SECURITY: the message is client-supplied. Before checking any
+		// signature we bind it to THIS origin and THIS chain, and we require
+		// the address line inside the message to equal the `address` field.
+		// Without this, a phishing page could serve a SIWE-shaped message for
+		// its own domain, get the admin to sign it, and replay it here to bind
+		// the admin wallet to an attacker-controlled account. The signature
+		// alone proves only "some wallet signed these bytes", never "this user
+		// was on our site".
+		let checksummed: string;
+		try {
+			const parsedMessage = parseSiweMessage(message);
+			assertSelfContainedMessage(
+				parsedMessage,
+				ATTACH_WALLET_EXPECTED_DOMAIN,
+				ATTACH_WALLET_EXPECTED_CHAIN_ID,
+			);
+			if (getAddress(parsedMessage.address) !== getAddress(address)) {
+				throw new SiweVerificationError(
+					"Message address does not match the requested address",
+					"signature_mismatch",
+				);
+			}
+			checksummed = await verifySiweSignature({ address, message, signature });
+		} catch (err) {
+			const isVerificationError = err instanceof SiweVerificationError;
+			logger.warn(
+				{ err, address, userId, code: (err as SiweVerificationError)?.code },
+				"[auth] attach-wallet signature rejected",
+			);
+			return c.json(
+				{
+					error: {
+						// Do not echo internal reason codes to the client: the
+						// domain/chain/expiry distinctions tell an attacker which
+						// part of their phishing flow to fix.
+						message: isVerificationError
+							? "Wallet signature could not be verified"
+							: "Invalid request",
+						type: "invalid_request_error",
+					},
+				},
+				400,
+			);
+		}
+
+		// 2. Check if the address is already bound to another user.
+		// wallet_address.address has a UNIQUE index (uq_wallet_addr), so the
+		// insert would throw a constraint violation — but we check first to
+		// return a meaningful 409 response. Avoid GIGO: the check is NOT a
+		// TOCTOU race because the unique index is the real gate; the read is
+		// just for a better error message.
+		const existing = await db
+			.select({ userId: walletAddress.userId })
+			.from(walletAddress)
+			.where(eq(walletAddress.address, checksummed))
+			.limit(1);
+
+		if (existing.length > 0 && existing[0].userId !== userId) {
+			return c.json(
+				{
+					error: {
+						message: "This wallet address is already linked to another account",
+						type: "conflict_error",
+						code: "wallet_already_linked",
+					},
+				},
+				409,
+			);
+		}
+
+		// 3. Check if THIS user already has a wallet linked (SIWE limits one
+		// wallet per chain per user via uq_wallet_addr_user_chain). Also
+		// check evm_address — if it's already set and differs from the
+		// requested address, that's also a conflict.
+		if (existing.length > 0 && existing[0].userId === userId) {
+			// Already bound to this user — no-op success.
+			return c.json({ success: true, alreadyBound: true, address: checksummed });
+		}
+
+		const currentEvm = c.get("user")?.evmAddress as string | undefined;
+		if (currentEvm && currentEvm.toLowerCase() !== checksummed.toLowerCase()) {
+			return c.json(
+				{
+					error: {
+						message: "This account already has a different wallet linked",
+						type: "conflict_error",
+						code: "wallet_conflict",
+					},
+				},
+				409,
+			);
+		}
+
+		// 4. Insert wallet_address row (better-auth expects this table).
+		try {
+			await db.transaction(async (tx) => {
+				await tx.insert(walletAddress).values({
+					id: `wa_${crypto.randomUUID()}`,
+					userId,
+					address: checksummed,
+					// Take the chain from the SIGNED message, not a constant.
+					// Hardcoding 1 here created a second, unrelated binding row
+					// per user (uq_wallet_addr_user_chain is (userId, chainId)),
+					// so an email user could attach a Base wallet at sign-in and
+					// a mainnet one here, ending up with two wallet_address rows
+					// and evm_address pointing at whichever wrote last.
+					chainId: ATTACH_WALLET_EXPECTED_CHAIN_ID,
+					isPrimary: true,
+				});
+
+				// 5. Update user.evm_address so requireAdmin and wallet reconnection
+				// work. The SIWE after-hook does the same (auth.ts:410).
+				await tx
+					.update(user)
+					.set({ evmAddress: checksummed })
+					.where(eq(user.id, userId));
+			});
+
+			await auditLog({
+				userId,
+				action: "WALLET_LINKED",
+				resource: "wallet_address",
+				resourceId: checksummed,
+				metadata: { method: "attach-wallet" },
+			});
+
+			return c.json({ success: true, address: checksummed });
+		} catch (err) {
+			// Unique constraint violation is the real safety net.
+			if (
+				err &&
+				typeof err === "object" &&
+				"code" in err &&
+				(err as { code: string }).code === "23505"
+			) {
+				return c.json(
+					{
+						error: {
+							message: "This wallet address is already linked to another account",
+							type: "conflict_error",
+							code: "wallet_already_linked",
+						},
+					},
+					409,
+				);
+			}
+			logger.error({ err, userId, address: checksummed }, "[auth] attach-wallet failed");
+			return c.json(
+				{ error: { message: "Internal server error", type: "server_error" } },
+				500,
+			);
+		}
+	},
+);

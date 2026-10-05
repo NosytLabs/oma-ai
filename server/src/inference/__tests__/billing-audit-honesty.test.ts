@@ -9,14 +9,26 @@
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { update, updateSet, updateWhere, updateReturning, insert, auditLog } = vi.hoisted(() => {
+const { update, updateSet, updateWhere, updateReturning, insert, insertValues, insertReturning, auditLog } =
+	vi.hoisted(() => {
 	const updateReturning = vi.fn();
 	const updateWhere = vi.fn(() => ({ returning: updateReturning }));
 	const updateSet = vi.fn(() => ({ where: updateWhere }));
 	const update = vi.fn(() => ({ set: updateSet }));
-	const insert = vi.fn(() => ({ values: vi.fn(async () => undefined) }));
+	// recordUsage() now CLAIMS the request_id first:
+	//   insert().values().onConflictDoNothing().returning()
+	// A non-empty `returning()` result means this caller owns the row and may
+	// deduct; an empty one means it was a duplicate and must not charge.
+	const insertReturning = vi.fn(async () => [{ requestId: "req_1" }]);
+	const insertValues = vi.fn(() => {
+		const builder: Record<string, unknown> = {};
+		builder.onConflictDoNothing = () => builder;
+		builder.returning = insertReturning;
+		return builder;
+	});
+	const insert = vi.fn(() => ({ values: insertValues }));
 	const auditLog = vi.fn(async () => undefined);
-	return { update, updateSet, updateWhere, updateReturning, insert, auditLog };
+	return { update, updateSet, updateWhere, updateReturning, insert, insertValues, insertReturning, auditLog };
 });
 
 vi.mock("../../db/client.js", () => ({
@@ -59,7 +71,14 @@ describe("recordUsage audit honesty", () => {
 		update.mockReturnValue({ set: updateSet });
 		updateSet.mockReturnValue({ where: updateWhere });
 		updateWhere.mockReturnValue({ returning: updateReturning });
-		insert.mockReturnValue({ values: vi.fn(async () => undefined) });
+		insertValues.mockImplementation(() => {
+			const builder: Record<string, unknown> = {};
+			builder.onConflictDoNothing = () => builder;
+			builder.returning = insertReturning;
+			return builder;
+		});
+		// Default: this caller wins the request_id claim and may charge.
+		insertReturning.mockResolvedValue([{ requestId: "req_1" }]);
 	});
 
 	it("records CREDIT_DEDUCTED when the ledger row was actually updated", async () => {
@@ -80,6 +99,22 @@ describe("recordUsage audit honesty", () => {
 		expect(auditLog).toHaveBeenCalledWith(
 			expect.objectContaining({ action: "CREDIT_DEDUCTION_REJECTED" }),
 		);
+		expect(auditLog).not.toHaveBeenCalledWith(
+			expect.objectContaining({ action: "CREDIT_DEDUCTED" }),
+		);
+	});
+
+	it("does NOT deduct when the requestId was already recorded", async () => {
+		// P0 money-safety: the usage insert now claims request_id BEFORE the
+		// deduction. A duplicate loses the claim and must never touch the
+		// balance — the previous deduct-then-insert order charged twice and
+		// then swallowed the unique-violation.
+		insertReturning.mockResolvedValue([]);
+		updateReturning.mockResolvedValue([{ userId: "u1" }]);
+
+		await recordUsage(baseArgs);
+
+		expect(update).not.toHaveBeenCalled();
 		expect(auditLog).not.toHaveBeenCalledWith(
 			expect.objectContaining({ action: "CREDIT_DEDUCTED" }),
 		);

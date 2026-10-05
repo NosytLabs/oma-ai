@@ -164,30 +164,128 @@ export function getModelLimits(model: string): { rpm: number; tpm: number } | nu
 		return MODEL_LIMITS[model.toLowerCase()] ?? null;
 }
 
-/** Synthetic guests must rate-limit by IP — a shared userId would let one
-	*  noisy client exhaust free chat/search for everyone. */
+/**
+ * Synthetic guests must rate-limit by IP — a shared userId would let one
+ *  noisy client exhaust free chat/search for everyone.
+ */
 const SYNTHETIC_GUEST_IDS = new Set([
-		"oma-ai-guest",
-		"x402-guest",
+	"oma-ai-guest",
+	"x402-guest",
 ]);
 
-export function getRateLimitKey(c: Context<OmaEnv>, keyPrefix: string): string {
-		const apiKey = c.get("apiKey");
-		const userId = c.get("userId");
+/**
+ * True for a real, countable user identity.
+ *
+ * Synthetic guest ids are excluded deliberately: every anonymous visitor
+ * shares `oma-ai-guest`, so keying a per-user tier on it would collapse all
+ * guests into one shared bucket — the exact failure this module exists to
+ * prevent. Those callers fall through to the IP tier.
+ */
+export function isCountableUserId(userId: string | undefined | null): boolean {
+	if (!userId) return false;
+	if (SYNTHETIC_GUEST_IDS.has(userId)) return false;
+	return !userId.startsWith("oma-ai-guest");
+}
 
-		if (apiKey) return `${keyPrefix}:${apiKey.id}`;
-		if (userId && !SYNTHETIC_GUEST_IDS.has(userId) && !userId.startsWith("oma-ai-guest")) {
-				return `${keyPrefix}:${userId}`;
-		}
-		const ip = extractClientIp(c);
-		return `${keyPrefix}:ip:${ip}`;
+export function getRateLimitKey(c: Context<OmaEnv>, keyPrefix: string): string {
+	const apiKey = c.get("apiKey");
+	const userId = c.get("userId");
+
+	if (apiKey) return `${keyPrefix}:${apiKey.id}`;
+	if (userId && isCountableUserId(userId)) {
+		return `${keyPrefix}:${userId}`;
+	}
+	const ip = extractClientIp(c);
+	return `${keyPrefix}:ip:${ip}`;
+}
+
+/**
+ * Per-USER identity tier for the layered limiter.
+ *
+ * SECURITY: keying only on `apiKeyId` meant a user could mint N keys and
+ * multiply their effective rate limit N-fold — the per-key cap was the only
+ * cap, so `POST /v1/keys` ten times made the limiter ten times weaker for one
+ * account. This tier is checked in ADDITION to the per-key tier (see
+ * `rateLimitKeyLayers`), so every API key shares one per-user budget while
+ * each key keeps its own.
+ *
+ * Returns null for anonymous/guest traffic, which stays on the IP tier.
+ */
+export function getUserRateLimitKey(
+	c: Context<OmaEnv>,
+	keyPrefix: string,
+): string | null {
+	const userId = c.get("userId");
+	if (!isCountableUserId(userId)) return null;
+	return `${keyPrefix}:user:${userId}`;
+}
+
+/**
+ * Read a context variable that is not declared on OmaEnv.
+ *
+ * `apiKeyId` is written by some auth paths but absent from the OmaEnv map, so
+ * `c.get("apiKeyId")` does not typecheck. Both the typed (`apiKey`) and
+ * untyped sources are consulted, exactly as the pre-existing key logic did.
+ */
+export function readApiKeyId(c: Context<OmaEnv>): string | undefined {
+	// `get` is typed against OmaEnv's known keys; `apiKeyId` is written by
+	// some auth paths but absent from that map, so read through `get` with an
+	// untyped key rather than touching the internal `var` store.
+	const get = c.get as unknown as (k: string) => unknown;
+	return (
+		(get.call(c, "apiKeyId") as string | undefined) ||
+		(c.get("apiKey") as { id?: string } | undefined)?.id ||
+		undefined
+	);
+}
+
+/**
+ * The independent rate-limit buckets a request must clear.
+ *
+ * Layers are additive, not alternatives:
+ *   - per-user: one budget for the account, so N keys cannot buy N budgets
+ *   - per-key:  per-credential budget, so one noisy key is isolated
+ *   - per-IP:   always present, so unauthenticated traffic is bounded too
+ *
+ * The per-IP layer is deliberately UNCONDITIONAL. Dropping it for API-key
+ * callers would mean a leaked key can be used from unlimited addresses, which
+ * is the reason the layer exists at all.
+ */
+export function rateLimitKeyLayers(
+	c: Context<OmaEnv>,
+	keyPrefix: string,
+): string[] {
+	const layers: string[] = [];
+
+	const userKey = getUserRateLimitKey(c, keyPrefix);
+	if (userKey) layers.push(userKey);
+
+	const apiKeyId = readApiKeyId(c);
+	if (apiKeyId) layers.push(`${keyPrefix}:key:${apiKeyId}`);
+
+	layers.push(`${keyPrefix}:ip:${extractClientIp(c)}`);
+
+	// Dedupe defensively: a user whose key id equals their user id, or an
+	// "unknown" IP shared with another layer, must not be charged twice
+	// against one window or the effective limit halves.
+	return [...new Set(layers)];
 }
 
 export interface RateLimitResult {
-		allowed: boolean;
-		remaining: number;
-		resetMs: number;
-		limit: number;
+	allowed: boolean;
+	remaining: number;
+	resetMs: number;
+	limit: number;
+	/**
+	 * True when this result came from the per-process memory store rather
+	 * than Redis, because the Redis script failed or was unavailable.
+	 *
+	 * Enforcement is still real, but the bound is per-instance rather than
+	 * cluster-wide. Callers must surface this as
+	 * `X-RateLimit-Policy: degraded-memory` instead of passing the result
+	 * off as a normally-enforced limit.
+	 */
+	degraded?: boolean;
 }
 
 // Type wrapper for Redis eval results

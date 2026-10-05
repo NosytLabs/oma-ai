@@ -110,9 +110,12 @@ export const auditActionEnum = pgEnum("audit_action", [
 		// concurrent request won the race). Distinct from CREDIT_DEDUCTED so
 		// reconciliation can find uncharged-but-served requests.
 		"CREDIT_DEDUCTION_REJECTED",
+		// A second recordUsage() for a requestId that was already written. The
+		// duplicate was NOT charged, so it must not masquerade as a deduction.
+		"USAGE_RECORD_DUPLICATE",
 		"SITE_SETTINGS_UPDATED",
 		"REFUND_ISSUED",
-]);
+		]);
 
 // =============================================================================
 // Better Auth core tables
@@ -421,13 +424,35 @@ export const usageRecords = pgTable(
 						onDelete: "set null",
 				}),
 				model: text("model").notNull(),
-				provider: providerEnum("provider").notNull(),
-				inputTokens: integer("input_tokens").notNull().default(0),
+						/**
+						 * The model the CLIENT asked for, kept separately from `model`.
+						 *
+						 * `model` holds the model that actually SERVED the request after
+						 * failover, so the admin could never see how often a given requested
+						 * model failed over — the whole point of routing is invisible in the
+						 * ledger. GROUP BY requested_model, model yields the failover rate.
+						 */
+						requestedModel: text("requested_model"),
+						provider: providerEnum("provider").notNull(),
+						/**
+						 * How the request reached the provider: "direct" | "fallback" |
+						 * "free-website" | ... This is the operator's routing label; `provider`
+						 * is the billed upstream enum.
+						 */
+						routedVia: text("routed_via"),
+						/** Number of upstream attempts made (1 = served on the first try). */
+						attemptCount: integer("attempt_count").default(1).notNull(),
+						inputTokens: integer("input_tokens").notNull().default(0),
 				outputTokens: integer("output_tokens").notNull().default(0),
 				costCents: numeric("cost_cents", { precision: 18, scale: 8 }).notNull(),
 				markupCents: numeric("markup_cents", { precision: 18, scale: 8 }).notNull(),
 				totalCents: numeric("total_cents", { precision: 18, scale: 8 }).notNull(),
-				latencyMs: integer("latency_ms"),
+				/**
+			 * Wall-clock milliseconds from request start to the usage row being
+			 * written. Previously declared but NEVER written, so every latency
+			 * query returned NULL and slow-provider detection was impossible.
+			 */
+			latencyMs: integer("latency_ms"),
 				status: text("status").default("completed").notNull(),
 				refundedAt: timestamp("refunded_at", { withTimezone: true }),
 				createdAt: timestamp("created_at", { withTimezone: true })
@@ -446,9 +471,15 @@ export const usageRecords = pgTable(
 						t.costCents,
 				),
 				index("idx_usage_user_created_model").on(
-						t.userId,
-						t.createdAt,
-						t.model,
+					t.userId,
+					t.createdAt,
+					t.model,
+				),
+				// Supports the admin usage summary's GROUP BY requested_model and
+				// the failover-rate query without a sequential scan.
+				index("idx_usage_records_requested_model").on(
+					t.createdAt,
+					t.requestedModel,
 				),
 		],
 );

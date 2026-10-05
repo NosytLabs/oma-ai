@@ -346,37 +346,278 @@ adminRoutes.get(
 								: sql``;
 
 						const rows = await db.execute(sql`
-								SELECT u.id, u.email, u.name, u.role, u.suspended, u.suspended_reason,
-															u.created_at, u.updated_at,
-															COALESCE(cb.balance_cents, '0') AS balance_cents,
-															COALESCE(cb.total_deposited_cents, '0') AS total_deposited_cents
-								FROM "user" u
-								LEFT JOIN credit_balances cb ON cb.user_id = u.id
-								WHERE 1=1 ${searchFilter} ${cursorFilter}
-								ORDER BY u.id ASC
-								LIMIT ${limit + 1}
-						`);
+													SELECT u.id, u.email, u.name, u.role, u.suspended, u.suspended_reason,
+																u.created_at, u.updated_at,
+																COALESCE(cb.balance_cents, '0') AS balance_cents,
+																COALESCE(cb.total_deposited_cents, '0') AS total_deposited_cents,
+																-- Per-user lifetime usage, so the admin can see WHO is
+																-- spending without a second round-trip per row. Aggregate
+																-- in a lateral subquery rather than a GROUP BY on the outer
+																-- query, which would fight the cursor pagination.
+																COALESCE(us.requests, 0) AS usage_requests,
+																COALESCE(us.input_tokens, 0) AS usage_input_tokens,
+																COALESCE(us.output_tokens, 0) AS usage_output_tokens,
+																COALESCE(us.upstream_cents, '0') AS usage_upstream_cents,
+																COALESCE(us.total_cents, '0') AS usage_total_cents,
+																us.last_used_at AS usage_last_used_at
+														FROM "user" u
+														LEFT JOIN credit_balances cb ON cb.user_id = u.id
+														LEFT JOIN LATERAL (
+															SELECT
+																COUNT(*)::int AS requests,
+																SUM(input_tokens)::bigint AS input_tokens,
+																SUM(output_tokens)::bigint AS output_tokens,
+																SUM(cost_cents)::numeric AS upstream_cents,
+																SUM(total_cents)::numeric AS total_cents,
+																MAX(created_at) AS last_used_at
+															FROM usage_records ur
+															WHERE ur.user_id = u.id
+														) us ON TRUE
+														WHERE 1=1 ${searchFilter} ${cursorFilter}
+														ORDER BY u.id ASC
+														LIMIT ${limit + 1}
+												`);
 
-						const list = (rows as unknown as { rows?: Array<Record<string, unknown>> }).rows ?? rows;
-						const arr = list as Array<Record<string, unknown>>;
-						const items = arr.slice(0, limit).map((r) => ({
-								id: r.id,
-								email: r.email,
-								name: r.name,
-								role: r.role,
-								suspended: r.suspended,
-								suspendedReason: r.suspended_reason,
-								createdAt: r.created_at,
-								updatedAt: r.updated_at,
-								balanceCents: r.balance_cents,
-								totalDepositedCents: r.total_deposited_cents,
-						}));
+												const list = (rows as unknown as { rows?: Array<Record<string, unknown>> }).rows ?? rows;
+												const arr = list as Array<Record<string, unknown>>;
+												const items = arr.slice(0, limit).map((r) => ({
+													id: r.id,
+													email: r.email,
+													name: r.name,
+													role: r.role,
+													suspended: r.suspended,
+													suspendedReason: r.suspended_reason,
+													createdAt: r.created_at,
+													updatedAt: r.updated_at,
+													balanceCents: r.balance_cents,
+													totalDepositedCents: r.total_deposited_cents,
+													usage: {
+														requests: r.usage_requests,
+														inputTokens: r.usage_input_tokens,
+														outputTokens: r.usage_output_tokens,
+														upstreamCents: r.usage_upstream_cents,
+														totalCents: r.usage_total_cents,
+														lastUsedAt: r.usage_last_used_at ?? null,
+													},
+												}));
 						const nextCursor = items.length === limit ? items[items.length - 1]?.id : null;
 
-						return c.json({ ok: true, items, nextCursor });
-				} catch (err) {
-						logger.error({ err }, "[admin] list users failed");
-						return c.json({ error: "internal_error" }, 500);
-				}
-		},
-);
+												return c.json({ ok: true, items, nextCursor });
+											} catch (err) {
+												logger.error({ err }, "[admin] list users failed");
+												return c.json({ error: "internal_error" }, 500);
+											}
+							},
+						);
+
+						// ---------- GET /v1/admin/usage/summary ----------
+
+						/**
+						 * One grouped pass over usage_records for the admin usage charts.
+						 *
+						 * Why a single GROUP BY rather than several queries: the charts need request
+						 * volume, token volume, upstream cost, markup and error rate on the SAME
+						 * grouping key. Issuing one query per metric and joining in JS would repeat
+						 * the scan N times and let the numbers disagree if a write landed in between.
+						 *
+						 * The (created_at, model, provider, cost_cents) index
+						 * (idx_usage_records_analytics) covers the default model grouping; the
+						 * created_at predicate is what makes it usable at all.
+						 */
+						const usageSummarySchema = z.object({
+							from: z.coerce.date().optional(),
+							to: z.coerce.date().optional(),
+							group_by: z.enum(["model", "provider", "user"]).default("model"),
+							// Bounded so a missing/loose date range cannot scan the whole table and
+							// stall the admin panel.
+							limit: z.coerce.number().int().min(1).max(500).default(200),
+						});
+
+						adminRoutes.get(
+							"/v1/admin/usage/summary",
+							sessionOrBearerAuth,
+							requireAdmin(),
+							rateLimit({ windowMs: 60_000, maxRequests: 30, failClosed: false }),
+							async (c) => {
+								const url = new URL(c.req.url);
+								const parsed = usageSummarySchema.safeParse({
+									from: url.searchParams.get("from") ?? undefined,
+									to: url.searchParams.get("to") ?? undefined,
+									group_by: url.searchParams.get("group_by") ?? undefined,
+									limit: url.searchParams.get("limit") ?? undefined,
+								});
+								if (!parsed.success) {
+									return c.json({ error: { message: "Invalid query", issues: parsed.error.flatten() } }, 400);
+								}
+								const { from, to, group_by: groupBy, limit } = parsed.data;
+
+								// Default to the last 30 days. An unbounded scan of usage_records is
+								// the kind of query that takes the admin panel down on a large table.
+								const toDate = to ?? new Date();
+								const fromDate = from ?? new Date(toDate.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+								// The grouping key is chosen from a fixed allow-list, never
+								// interpolated from user input — the identifier goes into the SQL as a
+								// value only, never as an expression.
+								const groupColumn =
+									groupBy === "provider"
+										? sql`provider::text`
+										: groupBy === "user"
+											? sql`user_id`
+											: sql`model`;
+
+								// `status` is free text on the row ('completed' | 'error' |
+								// 'aborted' | 'free_tier'). A request counts as an error only when it
+								// failed — an aborted stream still consumed upstream tokens and is
+								// revenue-relevant, not an error.
+								const errorCount = sql<number>`COUNT(*) FILTER (WHERE status = 'error')`;
+
+								try {
+									const rows = await db.execute(sql`
+										SELECT
+											${groupColumn} AS key,
+											COUNT(*)::int AS requests,
+											COALESCE(SUM(input_tokens), 0)::bigint AS input_tokens,
+											COALESCE(SUM(output_tokens), 0)::bigint AS output_tokens,
+											COALESCE(SUM(cost_cents), 0)::numeric AS upstream_cents,
+											COALESCE(SUM(markup_cents), 0)::numeric AS markup_cents,
+											COALESCE(SUM(total_cents), 0)::numeric AS total_cents,
+											${errorCount}::int AS error_count,
+											-- avg_latency_ms is meaningful now that latency_ms is written.
+											COALESCE(ROUND(AVG(latency_ms))::bigint, 0) AS avg_latency_ms
+										FROM usage_records
+										WHERE created_at >= ${fromDate} AND created_at <= ${toDate}
+										GROUP BY ${groupColumn}
+										ORDER BY total_cents DESC
+										LIMIT ${limit}
+									`);
+
+									const list = (rows as unknown as { rows?: Array<Record<string, unknown>> }).rows ?? rows;
+									const arr = list as Array<Record<string, unknown>>;
+
+									const items = arr.map((r) => {
+										const requests = Number(r.requests ?? 0);
+										const errorCountNum = Number(r.error_count ?? 0);
+										return {
+											key: r.key,
+											requests,
+											inputTokens: Number(r.input_tokens ?? 0),
+											outputTokens: Number(r.output_tokens ?? 0),
+											// Numeric comes back from pg as a string to preserve
+											// precision; normalise so the charts get real numbers.
+											upstreamCents: Number(r.upstream_cents ?? 0),
+											markupCents: Number(r.markup_cents ?? 0),
+											totalCents: Number(r.total_cents ?? 0),
+											// A group with zero requests cannot have errors; avoid NaN.
+											errorRate: requests > 0 ? errorCountNum / requests : 0,
+											errorCount: errorCountNum,
+											avgLatencyMs: Number(r.avg_latency_ms ?? 0),
+										};
+									});
+
+									return c.json({
+										ok: true,
+										groupBy,
+										from: fromDate.toISOString(),
+										to: toDate.toISOString(),
+										items,
+										// Totals across the whole range (not just the returned page), so
+										// the header can show the true spend even when the group list is
+										// truncated by `limit`.
+										totals: items.reduce(
+											(acc, i) => ({
+												requests: acc.requests + i.requests,
+												inputTokens: acc.inputTokens + i.inputTokens,
+												outputTokens: acc.outputTokens + i.outputTokens,
+												upstreamCents: acc.upstreamCents + i.upstreamCents,
+												markupCents: acc.markupCents + i.markupCents,
+												totalCents: acc.totalCents + i.totalCents,
+											}),
+											{
+												requests: 0,
+												inputTokens: 0,
+												outputTokens: 0,
+												upstreamCents: 0,
+												markupCents: 0,
+												totalCents: 0,
+											},
+										),
+									});
+								} catch (err) {
+									logger.error({ err }, "[admin] usage summary failed");
+									return c.json({ error: "internal_error" }, 500);
+								}
+							},
+						);
+
+						// ---------- GET /v1/admin/usage/failover ----------
+
+						/**
+						 * Failover rate per REQUESTED model.
+						 *
+						 * Only answerable now that usage_records keeps requested_model alongside the
+						 * model that actually served the request. A group where requested_model !=
+						 * model is a request that was served by a different model than the client
+						 * asked for.
+						 */
+						adminRoutes.get(
+							"/v1/admin/usage/failover",
+							sessionOrBearerAuth,
+							requireAdmin(),
+							rateLimit({ windowMs: 60_000, maxRequests: 30, failClosed: false }),
+							async (c) => {
+								const url = new URL(c.req.url);
+								const parsed = usageSummarySchema.safeParse({
+									from: url.searchParams.get("from") ?? undefined,
+									to: url.searchParams.get("to") ?? undefined,
+									limit: url.searchParams.get("limit") ?? undefined,
+								});
+								if (!parsed.success) {
+									return c.json({ error: { message: "Invalid query", issues: parsed.error.flatten() } }, 400);
+								}
+								const { from, to, limit } = parsed.data;
+								const toDate = to ?? new Date();
+								const fromDate = from ?? new Date(toDate.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+								try {
+									const rows = await db.execute(sql`
+										SELECT
+											requested_model AS key,
+											COUNT(*)::int AS requests,
+											COUNT(*) FILTER (WHERE requested_model IS DISTINCT FROM model)::int AS failed_over,
+											COALESCE(SUM(attempt_count), 0)::numeric AS total_attempts,
+											COALESCE(SUM(total_cents), 0)::numeric AS total_cents
+										FROM usage_records
+										WHERE created_at >= ${fromDate} AND created_at <= ${toDate}
+											AND requested_model IS NOT NULL
+										GROUP BY requested_model
+										ORDER BY failed_over DESC, requests DESC
+										LIMIT ${limit}
+									`);
+
+									const list = (rows as unknown as { rows?: Array<Record<string, unknown>> }).rows ?? rows;
+									const arr = list as Array<Record<string, unknown>>;
+
+									return c.json({
+										ok: true,
+										from: fromDate.toISOString(),
+										to: toDate.toISOString(),
+										items: arr.map((r) => {
+											const requests = Number(r.requests ?? 0);
+											const failedOver = Number(r.failed_over ?? 0);
+											return {
+												key: r.key,
+												requests,
+												failedOver,
+												failoverRate: requests > 0 ? failedOver / requests : 0,
+												totalAttempts: Number(r.total_attempts ?? 0),
+												totalCents: Number(r.total_cents ?? 0),
+											};
+										}),
+									});
+								} catch (err) {
+									logger.error({ err }, "[admin] failover summary failed");
+									return c.json({ error: "internal_error" }, 500);
+								}
+							},
+						);

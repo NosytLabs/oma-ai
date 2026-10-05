@@ -183,8 +183,21 @@ async function callProvider(opts: CallProviderOptions): Promise<Response> {
 	*/
 export async function routeRequestWithFallback(
 		opts: CallProviderOptions,
-): Promise<{ response: Response; actualModelId: string }> {
-		const modelId = opts.modelId;
+): Promise<{
+	response: Response;
+	actualModelId: string;
+	/**
+	 * Total upstream attempts made across the whole fallback chain, counting
+	 * the successful one. 1 means the requested model served the request on
+	 * its first try; >1 means retries and/or model failover were needed.
+	 * Persisted as usage_records.attempt_count so the admin can compute a
+	 * failover rate per requested model.
+	 */
+	attemptCount: number;
+}> {
+	const modelId = opts.modelId;
+	// Cumulative attempts across every model in the chain, not just this one.
+	let totalAttempts = 0;
 		const freeOnly = opts.skipBilling === true;
 		const fallbacks = buildFallbackChain(
 				modelId,
@@ -219,7 +232,8 @@ export async function routeRequestWithFallback(
 
 				while (attempt <= maxRetries) {
 						try {
-								const response = await callProvider({
+							totalAttempts++;
+							const response = await callProvider({
 										...opts,
 										modelId: currentModelId,
 								});
@@ -231,7 +245,7 @@ export async function routeRequestWithFallback(
 										);
 								}
 
-								return { response, actualModelId: currentModelId };
+								return { response, actualModelId: currentModelId, attemptCount: Math.max(1, totalAttempts) };
 						} catch (err) {
 								attempt++;
 								lastError = err;

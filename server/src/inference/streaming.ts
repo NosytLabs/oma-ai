@@ -7,21 +7,30 @@ import { logger } from "../lib/logger.js";
 import { rewriteSseModelField } from "./fallback.js";
 import { ProviderError } from "./provider-route.js";
 import { estimateTokens, flattenMessageContent } from "./token-utils.js";
-import { recordUsage, type RecordUsageArgs } from "./billing.js";
+import {
+	recordUsage,
+	type RecordUsageArgs,
+	type UsageProvider,
+} from "./billing.js";
 
 /** Args for createStreamingProxy — outputTokens is calculated during streaming. */
 export interface StreamingProxyArgs {
-		userId: string;
-		model: string;
-		provider: "venice" | "oma-ai";
-		promptTokens: number;
-		pricing: RecordUsageArgs["pricing"];
-		requestId: string;
-		outputTokens?: number;
-		/** Skip credit deduction for free website chat */
-		skipBilling?: boolean;
-		/** API key row id for Bearer-auth callers (null for website sessions). */
-		apiKeyId?: string | null;
+	userId: string;
+	model: string;
+	requestedModel?: string;
+	provider: UsageProvider;
+	routedVia?: string;
+	attemptCount?: number;
+	promptTokens: number;
+	pricing: RecordUsageArgs["pricing"];
+	requestId: string;
+	outputTokens?: number;
+	/** Epoch ms of request start; persisted as usage_records.latency_ms. */
+	startedAt?: number;
+	/** Skip credit deduction for free website chat */
+	skipBilling?: boolean;
+	/** API key row id for Bearer-auth callers (null for website sessions). */
+	apiKeyId?: string | null;
 }
 
 /**

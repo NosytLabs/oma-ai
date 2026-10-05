@@ -35,11 +35,15 @@ vi.mock("../../lib/logger.js", () => ({
 }));
 
 // Better Auth mock — getSession returns a session when a Cookie header is present.
+// `authBaseURL` is exported by the real module and is read at import time by
+// routes/auth.ts to bind an attach-wallet message to our own origin, so the
+// mock must supply it or the route module throws while evaluating.
 const mockAuthApi = vi.hoisted(() => ({
 	getSession: vi.fn(),
 }));
 vi.mock("../../auth.js", () => ({
 	auth: { api: mockAuthApi },
+	authBaseURL: "http://localhost:3000",
 }));
 
 // Auth middleware mock — sessionAuth sets userId/session/user when authorised.
