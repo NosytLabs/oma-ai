@@ -191,7 +191,7 @@ export default function AdminPage() {
 
 	return (
 		<div
-			className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6"
+			className="mx-auto flex w-full min-w-0 max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6"
 			aria-busy={snapshot.isLoading || models.isLoading}
 		>
 			<header className="flex flex-wrap items-center justify-between gap-3">
