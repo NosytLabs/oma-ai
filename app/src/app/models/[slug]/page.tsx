@@ -151,12 +151,6 @@ export default async function ModelDetailPage({
 				description={model.description}
 				price={model.inputPricePer1M}
 				url={`${SITE_URL}/models/${model.id}`}
-				image={
-					model.provider === "Venice"
-						? `${SITE_URL}/logos/providers/venice.svg`
-						: `${SITE_URL}/logos/oma-icon-512.png`
-				}
-				brand={model.provider}
 				available={available}
 			/>
 			<ModelDetail

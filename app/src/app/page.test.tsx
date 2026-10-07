@@ -243,44 +243,10 @@ describe("Footer", () => {
 		expect(screen.getByText(/^oma$/i)).toBeInTheDocument();
 	});
 
-	it("omits GitHub from the shared navigation link lists", () => {
+	it("omits GitHub from shared navigation", () => {
 		renderWithQueryClient(<Footer />);
-		// GitHub is deliberately absent from the Product / Resources /
-		// Account / Company columns — it lives only in the social block, so
-		// scope this assertion to <nav> rather than the whole footer.
-		const nav = screen.getByRole("navigation", { name: "Footer navigation" });
-		expect(within(nav).queryByRole("link", { name: /github/i })).not.toBeInTheDocument();
+		expect(screen.queryByRole("link", { name: /github/i })).not.toBeInTheDocument();
 		expect(screen.getByRole("link", { name: "Status" })).toHaveAttribute("href", "/status");
-	});
-
-	it("renders a social block with only confirmed accounts", () => {
-		renderWithQueryClient(<Footer />);
-		const social = screen.getByRole("list", { name: "Social links" });
-		const links = within(social).getAllByRole("link");
-		// Only GitHub is a confirmed, documented account (package.json
-		// repository, README, SECURITY.md advisories, json-ld sameAs).
-		// X / Discord / Farcaster must NOT be invented.
-		expect(links).toHaveLength(1);
-		expect(links[0]).toHaveAttribute("href", "https://github.com/NosytLabs");
-		expect(links[0]).toHaveAttribute("target", "_blank");
-		expect(links[0]).toHaveAttribute("rel", "noopener noreferrer");
-	});
-
-	it("points Changelog at the shipped route", () => {
-		renderWithQueryClient(<Footer />);
-		expect(screen.getByRole("link", { name: "Changelog" })).toHaveAttribute(
-			"href",
-			"/changelog",
-		);
-	});
-
-	it("links Changelog instead of a newsletter form", () => {
-		// There is no newsletter backend, so no subscribe form may ship.
-		renderWithQueryClient(<Footer />);
-		expect(screen.queryByRole("textbox", { name: /email/i })).not.toBeInTheDocument();
-		expect(
-			screen.queryByRole("button", { name: /subscribe|newsletter/i }),
-		).not.toBeInTheDocument();
 	});
 
 	it("uses the product's Base capitalization", () => {

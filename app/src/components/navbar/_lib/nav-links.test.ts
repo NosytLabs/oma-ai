@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isCurrentNavLink, isCurrentPath } from "./nav-links";
+import { isCurrentNavLink, isCurrentPath, sectionLabelFor } from "./nav-links";
 
 describe("navigation path matching", () => {
 	it("matches an exact route", () => {
@@ -22,6 +22,16 @@ describe("navigation path matching", () => {
 		expect(isCurrentPath("/docs?tab=api", "/docs#endpoints")).toBe(true);
 	});
 });
+
+describe("current navigation destination", () => {
+	it("does not mark every docs fragment or dashboard tab as the current page", () => {
+		expect(isCurrentNavLink("/docs", "/docs")).toBe(true);
+		expect(isCurrentNavLink("/docs", "/docs#endpoints")).toBe(false);
+		expect(isCurrentNavLink("/docs", "/docs#integrations")).toBe(false);
+		expect(isCurrentNavLink("/dashboard", "/dashboard?tab=api-keys")).toBe(false);
+	});
+});
+
 
 describe("current navigation destination", () => {
 	it("does not mark every docs fragment or dashboard tab as the current page", () => {

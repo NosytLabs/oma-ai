@@ -10,40 +10,6 @@ import {
 import { logger } from "../../lib/logger.js";
 import { checkMemoryCounter } from "./memory-store.js";
 
-/** Result of a fixed-window check, including the key's live TTL. */
-interface FixedWindowResult {
-	allowed: boolean;
-	current: number;
-	/** Requests still available in this window. */
-	remaining: number;
-	ttlMs: number;
-}
-
-/**
- * Fixed-window request counter.
- *
- * INCR + PEXPIRE + PTTL run inside ONE Lua script (see FIXED_WINDOW_SCRIPT).
- * The previous three-round-trip version could orphan a key without a TTL if
- * the process died between INCR and EXPIRE, which 429'd that client forever.
- */
-export async function checkFixedWindow(
-	redis: NonNullable<Awaited<ReturnType<typeof getRedisClient>>>,
-	key: string,
-	maxRequests: number,
-	windowMs: number,
-): Promise<FixedWindowResult> {
-	const result = (await redis.eval(FIXED_WINDOW_SCRIPT, [key], [
-		String(windowMs),
-		String(maxRequests),
-	])) as RedisEvalResult;
-	return {
-		allowed: result[0] === 1,
-		current: result[1],
-		remaining: Math.max(0, maxRequests - result[1]),
-		ttlMs: Math.max(result[2], 0),
-	};
-}
-
 // RPM limiter using sliding window
 export async function checkRpmLimit(
 	redis: NonNullable<Awaited<ReturnType<typeof getRedisClient>>>,
@@ -152,19 +118,57 @@ export function rateLimit(options: RateLimitOptions) {
 					);
 					degradedWarned = true;
 				}
-				// Preserve this route's budget. The emergency inference cap
-				// of 5/min breaks ordinary auth and session refresh flows.
-				const fb = checkMemoryCounter(rateLimitKey, maxRequests, windowMs);
-				c.header("X-RateLimit-Policy", "degraded-memory");
-				c.header("X-RateLimit-Limit", String(maxRequests));
-				c.header("X-RateLimit-Remaining", String(fb.remaining));
-				c.header("X-RateLimit-Reset", String(Math.ceil((Date.now() + fb.resetMs) / 1000)));
-				if (!fb.allowed) {
-					c.header("Retry-After", String(Math.ceil(fb.resetMs / 1000)));
-					return c.json(
-						{ error: { message: "Rate limit exceeded. Please try again later.", type: "rate_limit_error", code: "rate_limit_exceeded" } },
-						429,
-					);
+
+				const redis = await getRedisClient();
+				const ready = isRedisReady();
+
+				if (!redis || !ready) {
+						if (!failClosed) {
+							// Degrade to a per-process limiter rather than removing the
+							// limit. Returning next() here made the cap vanish entirely
+							// for the duration of a Redis outage: unbounded magic-link
+							// sends, unbounded OTP attempts, unbounded SIWE. Failing
+							// closed instead would take login down entirely, which is
+							// the availability cost this option exists to avoid.
+							//
+							// The memory store is per-process, so the bound holds within
+							// an instance rather than cluster-wide. That is a weaker
+							// guarantee than Redis, and deliberately labelled so in the
+							// response header rather than being passed off as a normal
+							// rate-limited response.
+							if (!degradedWarned) {
+									logger.warn(
+										{ keyPrefix },
+										"Redis unavailable -- rate limiting degraded to per-process memory store",
+									);
+									degradedWarned = true;
+								}
+							// Preserve this route's budget. The emergency inference cap
+							// of 5/min breaks ordinary auth and session refresh flows.
+							const fb = checkMemoryCounter(rateLimitKey, maxRequests, windowMs);
+							c.header("X-RateLimit-Policy", "degraded-memory");
+							c.header("X-RateLimit-Limit", String(maxRequests));
+							c.header("X-RateLimit-Remaining", String(fb.remaining));
+							c.header("X-RateLimit-Reset", String(Math.ceil((Date.now() + fb.resetMs) / 1000)));
+							if (!fb.allowed) {
+								c.header("Retry-After", String(Math.ceil(fb.resetMs / 1000)));
+								return c.json(
+									{ error: { message: "Rate limit exceeded. Please try again later.", type: "rate_limit_error", code: "rate_limit_exceeded" } },
+									429,
+								);
+							}
+							return next();
+						}
+						logger.error("Redis unavailable -- failing CLOSED for auth route (rate limiting required)");
+						c.header("X-RateLimit-Limit", String(maxRequests));
+						c.header("X-RateLimit-Remaining", "0");
+						c.header("X-RateLimit-Reset", String(Math.ceil(Date.now() / 1000) + 60));
+						c.header("X-RateLimit-Policy", "limiter");
+						c.header("Retry-After", "60");
+						return c.json(
+								{ error: { message: "Service temporarily unavailable. Please try again later.", type: "rate_limit_error", code: "service_unavailable" } },
+								503
+						);
 				}
 				return next();
 			}
@@ -180,21 +184,43 @@ export function rateLimit(options: RateLimitOptions) {
 			);
 		}
 
-		try {
-			// Check EVERY layer before admitting the request. The most
-			// constrained layer wins: reporting the per-IP remaining count for
-			// a request that was actually rejected by the per-user cap would
-			// tell the client it has budget it does not have.
-			let tightest: FixedWindowResult | null = null;
-			for (const key of keyLayers) {
-				const res = await checkFixedWindow(redis, key, maxRequests, windowMs);
-				if (!res.allowed) {
-					// Still drain the remaining layers: a rejected request must
-					// consume budget on every bucket, otherwise an attacker
-					// alternates identities and each bucket stays under cap.
-					for (const other of keyLayers) {
-						if (other === key) continue;
-						await checkFixedWindow(redis, other, maxRequests, windowMs);
+				try {
+						const current = await redis.incr(rateLimitKey);
+						if (current === 1) {
+								await redis.expire(rateLimitKey, windowSec);
+						}
+
+						const ttl = await redis.ttl(rateLimitKey);
+						const resetTime = Math.ceil(Date.now() / 1000) + Math.max(ttl, 0);
+
+						c.header("X-RateLimit-Limit", String(maxRequests));
+						c.header("X-RateLimit-Remaining", String(Math.max(maxRequests - current, 0)));
+						c.header("X-RateLimit-Reset", String(resetTime));
+
+						if (current > maxRequests) {
+								c.header("Retry-After", String(Math.max(ttl, 1)));
+								return c.json(
+										{ error: { message: "Rate limit exceeded. Please try again later.", type: "rate_limit_error", code: "rate_limit_exceeded" } },
+										429
+								);
+						}
+				} catch (err) {
+					if (!failClosed) {
+						// Same reasoning as the unavailable branch above: a Redis
+						// error must not silently remove the cap.
+						const fb = checkMemoryCounter(rateLimitKey, maxRequests, windowMs);
+						c.header("X-RateLimit-Policy", "degraded-memory");
+						c.header("X-RateLimit-Limit", String(maxRequests));
+						c.header("X-RateLimit-Remaining", String(fb.remaining));
+						c.header("X-RateLimit-Reset", String(Math.ceil((Date.now() + fb.resetMs) / 1000)));
+						if (!fb.allowed) {
+							c.header("Retry-After", String(Math.ceil(fb.resetMs / 1000)));
+							return c.json(
+								{ error: { message: "Rate limit exceeded. Please try again later.", type: "rate_limit_error", code: "rate_limit_exceeded" } },
+								429,
+							);
+						}
+						return next();
 					}
 					tightest = res;
 					break;

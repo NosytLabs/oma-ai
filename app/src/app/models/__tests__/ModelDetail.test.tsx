@@ -21,8 +21,6 @@ describe("model detail", () => {
 		expect(screen.getByText("200K")).toBeInTheDocument();
 		expect(screen.getByText("Tool calling")).toBeInTheDocument();
 		const product = Array.from(container.querySelectorAll('script[type="application/ld+json"]')).map((script) => JSON.parse(script.textContent!)).find((data) => data["@type"] === "Product");
-		expect(product.image).toBe("https://www.oma-ai.com/logos/providers/venice.svg");
-		expect(product.brand).toEqual({ "@type": "Brand", name: "Venice" });
 		expect(product.offers).toMatchObject({ price: "1.171875", availability: "https://schema.org/OutOfStock" });
 	});
 
