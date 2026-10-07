@@ -165,10 +165,10 @@ the base `.btn-mono` slab with a modifier class:
 
 - **Global Navigation:** A 56px sticky header with the logo, primary destinations, Tools, theme picker and account control. No GitHub button, availability badge or animated brand border.
 - **Primary Pages:** Models · Chat · Pricing · Docs.
-- **Tools Dropdown** (secondary, off the primary path): Buy credits · API reference · Agents & IDEs · Get started · FAQ. Buy credits is shown once in mobile navigation, under Account for signed-in visitors.
+- **Tools Dropdown** (secondary, off the primary path): Buy credits · API Reference · Agents & IDEs · Get started · FAQ.
 - **Account Panel** (signed-in, desktop and mobile): Dashboard · API keys · Buy credits · Settings · Sign out.
-- **Account Panel** (signed-out): single "Sign in" CTA → `/login`.
-- **Mobile Menu:** Hamburger at `<lg` opens a full-screen menu grouping Explore + Tools + Account.
+- **Account Panel** (signed-out): single "Get API key" CTA → `/login`.
+- **Mobile Menu:** Hamburger at `<lg` opens a full-screen menu grouping Primary + Tools + Account.
 - **Theme Dropdown:** emerald (default) · amber · mono · synth.
 - **Admin:** `/admin` route is operator-gated (server check on `user.role === 'admin'`). Not surfaced anywhere in `primaryLinks`, `toolsLinks`, or footer columns. Admins only land there by typing the URL.
 - **Legacy Redirects:** All `/swap` actions permanently route to `/deposit`.

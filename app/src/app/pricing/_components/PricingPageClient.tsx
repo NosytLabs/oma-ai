@@ -300,8 +300,8 @@ export default function PricingPage() {
 					<div className="meta-strip">
 						<span role="status">
 							{availabilityStatus === "live"
-								? `${modelCount} enabled ${modelCount === 1 ? "model" : "models"}`
-								: availabilityStatus === "checking" ? "Loading model catalog" : "Live catalog unavailable"}
+								? `${modelCount} available ${modelCount === 1 ? "model" : "models"}`
+								: availabilityStatus === "checking" ? "Checking model availability" : "Live availability unavailable"}
 						</span>
 						<span>Usage-based billing</span>
 						<span>USDC · x402 · optional card</span>
@@ -327,22 +327,14 @@ export default function PricingPage() {
 							<p className="mt-3 font-geometric text-3xl font-medium tabular-nums tracking-tight text-[var(--color-text-bright)]">
 								{lowestInputPrice}
 							</p>
-							<p className="mt-2 min-h-12 text-sm leading-relaxed text-[var(--color-text)]">
+							<p className="mt-2 text-sm leading-relaxed text-[var(--color-text)]">
 								{availabilityStatus === "checking"
-									? "Loading current models and input-token prices."
+									? "Checking current availability and input-token prices."
 									: availabilityStatus === "unavailable"
-										? "We could not load the live catalog. Prices below are for reference."
+										? "We could not confirm current availability. Catalog prices below are for reference."
 										: modelCount === 0
-											? "No chat models are currently enabled. Check again before adding credits."
-											: "Lowest price per 1M input tokens among enabled models. Provider availability can vary."}
-							</p>
-							{/* Trailing note mirrors the "x402 settlement" note in the
-							    sibling card. Without it this card's content ended at
-							    y=142 against the sibling's y=159 — same outer height,
-							    17px apart on the last text baseline, so the two hero
-							    cards read as misaligned rather than paired. */}
-							<p className="mt-auto pt-3 text-xs leading-relaxed text-[var(--color-text-muted)]">
-								No subscriptions — pay per token.
+											? "No chat models are currently available. Check again before adding credits."
+											: "Lowest price per 1M input tokens among the models currently accepting requests."}
 							</p>
 						</m.div>
 						<m.div

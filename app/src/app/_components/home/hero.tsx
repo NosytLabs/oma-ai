@@ -9,16 +9,38 @@
 import { ArrowRight, KeyRound, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { LiveRequestCard } from "./LiveRequestCard";
-import { MIN_INPUT_PRICE_LABEL } from "@/lib/models-data";
-import { useLiveModelCount } from "./use-live-count";
+import { models as modelsApi } from "@/lib/api/resources";
+import { isAvailableChatModel } from "./catalog-availability";
 
 /**
  * Home · Hero
  *
- * The live model count and the "from" price anchor both come from shared
- * derivations (useLiveModelCount + MIN_INPUT_PRICE_LABEL) rather than local
- * constants, so neither can drift from the catalog or from the stats strip.
+ * The hero previously interpolated MODEL_COUNT, a hardcoded static fallback
+ * that does not know which providers are dark. It rendered "20 models" while
+ * the catalog reported 2 available — a 10x overstatement in the first
+ * sentence of the page. Omits the number until
+ * the catalog resolves so static rendering cannot overstate availability.
  */
+function useLiveModelCount(): number | null {
+	const [count, setCount] = useState<number | null>(null);
+	useEffect(() => {
+		let cancelled = false;
+		modelsApi
+			.list()
+			.then((res) => {
+				if (cancelled) return;
+				const live = (res.data ?? []).filter(isAvailableChatModel).length;
+				setCount(live);
+			})
+			.catch(() => {
+				/* Omit the count while availability is unknown. */
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+	return count;
+}
 
 export function Hero() {
 	const liveCount = useLiveModelCount();

@@ -80,7 +80,8 @@ export const mobileGroups: NavGroup[] = [
 		links: primaryLinks,
 	},
 	{
-		title: "Tools",
+		title: "tools",
+		caption: "fund · integrate · learn",
 		links: toolsLinks,
 	},
 ];

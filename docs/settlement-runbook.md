@@ -12,13 +12,12 @@ Confirm the API environment has the production configuration described in PLATFO
 
 The facilitator needs Base ETH for transaction gas. The **payer wallet** needs the USDC being transferred. Read current balances and network gas conditions rather than relying on a fixed seed amount or historical cost estimate. QuickNode can provide Base RPC; it is not a substitute for the configured settlement implementation.
 
-Before sending funds, establish a SIWE session with the paying wallet. Read `payTo`, `network`, and `asset` from public `GET https://www.oma-ai.com/x402/info` and compare them with the intended payment. This discovery call does not move funds. Do not use a treasury address copied from an old runbook or substitute the direct-deposit address, which can differ from the x402 treasury.
+Before sending funds, establish a SIWE session with the paying wallet. Read the treasury from authenticated `GET https://www.oma-ai.com/api/v1/deposit/usdc` and compare it with the intended recipient. Do not use a treasury address copied from an old runbook.
 
-## Funding discovery and operations
+## The two funding operations
 
 | Operation | Effect | Authentication |
 |-----------|--------|----------------|
-| `GET https://www.oma-ai.com/x402/info` | Returns the configured treasury and signing information; does not move funds | None |
 | `POST https://www.oma-ai.com/x402/verify` | Validates the signed authorization, broadcasts the USDC transfer, and waits for confirmation | Signed payment envelope |
 | `POST https://www.oma-ai.com/x402/settle` | Records settlement and credits the confirmed transfer to the payer's account | SIWE session cookie; linked wallet must equal the USDC payer |
 

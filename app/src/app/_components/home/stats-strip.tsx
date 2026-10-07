@@ -6,15 +6,61 @@
 	*/
 
 import { Reveal } from "@/app/_components/home/reveal";
+import { isAvailableChatModel } from "./catalog-availability";
 import {
-	MIN_INPUT_PRICE_LABEL,
+	formatPricePerMillion,
+	MODELS,
+	loadRawModelEntries,
 } from "@/lib/models-data";
 import { countLiveModels, useLiveModelCount } from "./use-live-count";
 
-// `countLiveModels` + `useLiveModelCount` live in ./use-live-count so the hero
-// and this strip cannot report different numbers for the same catalog.
-// Re-exported here for the existing test import path.
-export { countLiveModels };
+// Cheapest catalog input rate, derived from the synced fallback catalog so
+// the hero "From" figure can never drift from the real price list again.
+const MIN_INPUT_PRICE = Math.min(
+	...MODELS.map((m) => m.inputPricePer1M).filter((p) => p > 0),
+);
+
+/**
+ * Count the models a visitor can actually call right now.
+ *
+ * The previous count filtered by modality only, so the "Models live" stat
+ * reported the whole catalog (20) while the API was serving 2 as available
+ * and 18 as unavailable — the same signal the /models and /pricing badges
+ * already surface. An unavailable entry is not live, so it is excluded here
+ * too; entries that omit the flag are counted, matching loadModels().
+ */
+export function countLiveModels(
+	entries: readonly { modality?: string; category?: string; available?: boolean }[],
+): number {
+	return entries.filter(isAvailableChatModel).length;
+}
+
+function useLiveModelCount() {
+	const [count, setCount] = useState<number | null>(null);
+	useEffect(() => {
+		let alive = true;
+		loadRawModelEntries()
+			.then((entries) => {
+				if (!alive || !entries.length) return;
+				// Filter to chat-only so the "Models live" stat matches the
+				// "curated chat models" label even when the upstream catalog also
+				// exposes image / video / tts / embedding / asr / music / upscale
+				// / inpaint rows. Without this the live number is inflated by
+				// every modality bucket and the hero drifts from the static
+				// `MODEL_COUNT` claim. Unavailable entries are excluded by
+				// countLiveModels so the stat reports what can be called.
+				const chatCount = countLiveModels(entries);
+				setCount(chatCount);
+			})
+			.catch(() => {
+				/* Availability unknown — keep the placeholder instead of claiming the catalog is live. */
+			});
+		return () => {
+			alive = false;
+		};
+	}, []);
+	return count;
+}
 
 const STATS: { label: string; value: string; hint: string; live?: boolean }[] =
 	[

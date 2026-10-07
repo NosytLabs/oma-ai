@@ -377,14 +377,7 @@ export function resolveAuthBaseURL(input: AuthOriginConfig): string {
 	return input.BETTER_AUTH_URL ?? input.PUBLIC_APP_URL ?? "http://localhost:3000";
 }
 
-/**
- * Canonical better-auth base URL (host + scheme). Exported so other modules
- * that must bind a client-supplied SIWE message to our own origin — currently
- * routes/auth.ts's POST /v1/user/attach-wallet — derive the expected domain
- * from the same value the siwe plugin uses, instead of re-implementing the
- * prod-redirect rule and drifting from it.
- */
-export const authBaseURL = resolveAuthBaseURL(config);
+const authBaseURL = resolveAuthBaseURL(config);
 const authHostname = new URL(authBaseURL).hostname;
 
 export const auth = betterAuth({
@@ -573,18 +566,19 @@ user: {
 						getNonce: async () => {
 								return generateRandomString(32, "a-z", "A-Z", "0-9");
 						},
-						// Delegates to lib/siwe-verify.ts so sign-in and
-											// POST /v1/user/attach-wallet cannot drift apart on what
-											// counts as a valid signature.
-											verifyMessage: async ({ message, signature, address }: { message: string; signature: string; address: string }) => {
-												try {
-													await verifySiweSignature({ address, message, signature });
-													return true;
-												} catch (err) {
-													logger.warn({ err, address }, "[siwe] verifyMessage failed");
-													return false;
-												}
-											},
+						verifyMessage: async ({ message, signature, address }: { message: string; signature: string; address: string }) => {
+							try {
+								const valid = await verifyMessage({
+									address: getAddress(address) as `0x${string}`,
+									message,
+									signature: signature as `0x${string}`,
+								});
+								return !!valid;
+							} catch (err) {
+								logger.warn({ err, address }, "[siwe] verifyMessage failed");
+								return false;
+							}
+						},
 						ensLookup: async ({ walletAddress }: { walletAddress: string }) => {
 								try {
 										const ensName = await ensClient.getEnsName({

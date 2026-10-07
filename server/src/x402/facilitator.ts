@@ -20,7 +20,7 @@
 import { Hono } from "hono";
 import type { Context, Next, MiddlewareHandler } from "hono";
 import { config, isProductionEnv } from "../config.js";
-import { CAIP2_BASE_MAINNET, buildV2Challenge, buildXPaymentResponse, parsePaymentSignatureHeader, parseXPaymentHeader } from "./v2.js";
+import { buildV2Challenge, buildXPaymentResponse, parsePaymentSignatureHeader, parseXPaymentHeader } from "./v2.js";
 import type { OmaEnv } from "../types.js";
 import { sessionAuth } from "../auth/middleware.js";
 import { db } from "../db/client.js";
@@ -44,7 +44,7 @@ import { settlePaymentAsync } from "./settle.js";
 import { SERVER_TREASURY } from "./treasury.js";
 import { readTreasuryTransfer } from "./funding-recovery.js";
 import { getPublicClient } from "../lib/rpc-client.js";
-import { creditConfirmedUsdcPayment, PaymentCreditConflictError } from "../lib/payment-credit.js";
+import { creditConfirmedUsdcPayment } from "../lib/payment-credit.js";
 import { verifyPayment } from "./verify.js";
 import {
 		PAYMENT_WINDOW_SECONDS,
@@ -457,7 +457,6 @@ x402Routes.post("/x402/settle", sessionAuth, async (c) => {
 				if (result.settled) c.header("PAYMENT-RESPONSE", buildXPaymentResponse({ txHash: body.txHash, payer: recovered.payFrom }));
 				return c.json(result, result.settled ? 200 : 422);
 			} catch (err) {
-				if (err instanceof PaymentCreditConflictError) return c.json(paymentError(err.code, err.message, false), err.status);
 				logger.error({ err, txHash: body.txHash }, "[FACILITATOR] recovered payment credit failed");
 				return c.json(paymentError("x402_credit_failed", "Payment confirmed but credit is pending. Retry settlement with the same transaction hash.", true), 500);
 			}

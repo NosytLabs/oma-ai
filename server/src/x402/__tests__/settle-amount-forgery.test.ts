@@ -249,17 +249,6 @@ describe("C2 — /x402/settle ignores body.amount, uses verified amount", () => 
 				mockGetReceipt.mockRejectedValue(new Error("Transaction not found"));
 		});
 
-		it("discovers the pinned funding recipient without a payment or a session", async () => {
-			const response = await app.request("/x402/info");
-			expect(response.status).toBe(200);
-			expect(await response.json()).toEqual({
-				x402Version: 2, scheme: "exact", network: "eip155:8453",
-				asset: USDC_BASE, decimals: 6, payTo: TREASURY.toLowerCase(),
-				maxTimeoutSeconds: 300, extra: { name: "USD Coin", version: "2" },
-			});
-			expect(chain.select).not.toHaveBeenCalled();
-		});
-
 		it("accepts a base64 current-v2 funding envelope through the public verify route", async () => {
 			const now = Math.floor(Date.now() / 1000);
 			const envelope = { x402Version: 2, accepted: { scheme: "exact", network: "eip155:8453", asset: USDC_BASE, amount: "1000000", payTo: TREASURY }, payload: { signature: `0x${"ab".repeat(65)}`, authorization: { from: "0x" + "12".repeat(20), to: TREASURY, value: "1000000", validAfter: String(now - 60), validBefore: String(now + 300), nonce: `0x${"78".repeat(32)}` } } };

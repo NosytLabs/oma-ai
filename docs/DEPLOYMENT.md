@@ -114,21 +114,6 @@ The API is a Neon Function, not a Vercel serverless function. The verified
 target is project `empty-bar-94645349` (`oma-ai-prod`), branch
 `br-sweet-rain-b40o54xa` (`main`), function `omaapi`, runtime `nodejs24`.
 
-Apply pending database migrations before deploying API code that uses new
-tables or columns. Set `DATABASE_URL` securely to this branch's unpooled
-production connection, then run the existing migration command:
-
-```bash
-pnpm --filter oma-server db:migrate
-```
-
-The migrator applies pending files from `server/src/db/migrations` in a
-transaction and records them in `drizzle.__drizzle_migrations`. Verify the
-expected journal entry and schema after it completes. A successful
-`/ready` database check only proves connectivity; it does not prove that
-migrations were applied. Do not deploy code requiring a migration that
-failed or was skipped.
-
 For a code-only release, deploy the tested entry point with an explicit
 project and branch. This preserves the existing function environment:
 
@@ -163,38 +148,12 @@ are both completed, then verify the API's dependencies:
 ```bash
 npx --yes neon@6.2.3 functions get omaapi \
   --project-id empty-bar-94645349 --branch br-sweet-rain-b40o54xa
-# No -f: /ready answers 503 while Redis is degraded, and -f would abort on the
-# healthy-but-degraded response. Inspect the body instead of the exit code.
-curl -sS https://br-sweet-rain-b40o54xa-omaapi.compute.c-6.us-east-2.aws.neon.tech/ready
+curl -fsS https://br-sweet-rain-b40o54xa-omaapi.compute.c-6.us-east-2.aws.neon.tech/ready
 ```
 
 `https://www.oma-ai.com/api/health` checks the web tier only. The native API
-`/ready` probe checks Postgres and Redis.
-
-**`/ready` currently returns 503 with `redis: degraded`, and that is expected
-until the Redis credentials are replaced.** The `UPSTASH_REDIS_REST_URL` on the
-Neon branch points at a database that no longer exists (`ENOTFOUND`), so the
-probe can never report `ready` no matter how healthy the deploy is. Do not treat
-it as a failed deploy, and do not gate a rollout on it.
-
-What to require instead:
-
-| Signal | Requirement |
-| --- | --- |
-| `GET /api/health` | `200` — web tier is up |
-| `GET /api/version` | `200` |
-| `/ready` → `checks.database.ok` | `true` — **this is the one that matters** |
-| `/ready` → `checks.redis.ok` | may be `false` (known, degraded) |
-
-Postgres readiness is the real gate. Redis degradation is handled in-app: general
-routes fail open to a bounded per-process memory limiter (`degraded-memory`,
-5 bursts/min) and the DLQ falls back to Postgres/logging, so a missing cache
-dependency degrades enforcement rather than availability.
-
-To actually restore `/ready`: provision a new Upstash database and set
-`UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` on the Neon branch
-(`config plan`/`apply`), then re-check. Credentials are rotated in the Neon
-console by the account owner, not from a local shell.
+`/ready` probe checks Postgres and Redis; require a successful readiness
+response as well as a successful frontend health response.
 
 ## DNS
 
