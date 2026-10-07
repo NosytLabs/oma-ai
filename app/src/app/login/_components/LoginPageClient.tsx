@@ -323,12 +323,11 @@ function LoginInner() {
 									aria-labelledby="tab-wallet"
 								>
 									<LazyWalletSignInPanel
-										next={next}
 										submitting={submitting}
 										setSubmitting={setSubmitting}
 										onError={handleError}
 										onSuccess={(msg) => toast.success(msg)}
-										onRedirect={(url) => router.replace(url)}
+										onUseMagicLink={() => setMethod("magic")}
 									/>
 								</div>
 							)}

@@ -17,6 +17,7 @@
 	*/
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { RefreshCw, Wifi, WifiOff } from "lucide-react";
 import { useCallback } from "react";
 import { api } from "@/lib/api";
 import { nextHealthPollMs } from "@/lib/health-backoff";

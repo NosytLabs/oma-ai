@@ -15,7 +15,7 @@ vi.mock("@/components/ui/Toast", () => ({
 	useToast: () => ({ error: vi.fn(), success: vi.fn(), toast: vi.fn() }),
 }));
 vi.mock("@/components/api-status", () => ({
-	useApiHealth: () => health,
+	useApiHealth: () => ({ status: "online" as const }),
 }));
 vi.mock("@/lib/hooks/useAuth", () => ({
 	useAuth: () => ({ isAuthenticated: false, isDemo: false, isReady: true }),

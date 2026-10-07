@@ -71,7 +71,6 @@ async function confirmSession(timeoutMs = 4000): Promise<void> {
 
 
 interface WalletSignInPanelProps {
-	next: string;
 	submitting: boolean;
 	setSubmitting: (submitting: boolean) => void;
 	onError: (err: unknown, fallback: string) => void;
@@ -81,7 +80,6 @@ interface WalletSignInPanelProps {
 }
 
 export default function WalletSignInPanel({
-	next,
 	submitting,
 	setSubmitting,
 	onError,
@@ -149,21 +147,117 @@ export default function WalletSignInPanel({
 				Sign in with your Base mainnet wallet via SIWE
 				(EIP-4361). No transaction — just a signature.
 			</p>
-			<button
-				type="button"
-				onClick={() => void handleSiwe()}
-				disabled={submitting}
-				className="btn-primary min-h-12 w-full rounded-[var(--radius-lg)] disabled:cursor-not-allowed disabled:opacity-50"
-			>
-				{submitting ? (
-					<>
-						<Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
-						Connecting…
-					</>
-				) : (
-					"Connect wallet"
-				)}
-			</button>
+			<p className="text-[11px] text-text-muted">
+				No wallet yet? This creates your account and binds it to your
+				address.
+			</p>
+			{wallets.length > 1 ? (
+							<div className="space-y-2">
+								{wallets.map((wallet) => (
+									<button
+										key={wallet.id}
+										type="button"
+										onClick={() => void handleSiwe(wallet.id)}
+										disabled={submitting}
+										className="btn-primary min-h-12 w-full rounded-[var(--radius-lg)] disabled:cursor-not-allowed disabled:opacity-50"
+									>
+										{/* Only the wallet that was actually clicked shows progress.
+										    Labelling every row "Connecting…" implied all of them
+										    were being tried at once, which is confusing next to an
+										    open wallet popup. */}
+										{submitting && pendingWalletId === wallet.id ? (
+											<>
+												<Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
+												Check your wallet…
+											</>
+										) : (
+											`Connect ${wallet.name}`
+										)}
+									</button>
+								))}
+							</div>
+						) : (
+							<button
+								type="button"
+								onClick={() => void handleSiwe()}
+								disabled={submitting}
+								className="btn-primary min-h-12 w-full rounded-[var(--radius-lg)] disabled:cursor-not-allowed disabled:opacity-50"
+							>
+								{submitting ? (
+									<>
+										<Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
+										Check your wallet…
+									</>
+								) : (
+						"Connect wallet"
+					)}
+				</button>
+			)}
+			{/*
+			  The "no wallet" case is a dead end if the only output is an error
+			  toast naming three wallets. Most visitors here are not already
+			  running an EIP-1193 provider, so offer the actual next step plus a
+			  link to the magic-link tab, which needs no extension at all.
+			*/}
+			{wallets.length === 0 && !submitting && (
+				<div className="rounded-[var(--radius-lg)] border border-border/60 bg-surface/40 p-4 text-sm">
+					<p className="font-semibold text-text-primary">No wallet extension detected</p>
+					<p className="mt-1 text-xs text-text-muted">
+						SIWE needs an EIP-1193 provider. Install one, or use the magic
+						link instead — it needs no extension and creates the same
+						account.
+					</p>
+					<ul className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs">
+						<li>
+							<a
+								href="https://metamask.io/download/"
+								target="_blank"
+								rel="noopener noreferrer"
+								className="text-accent underline underline-offset-2 hover:opacity-80"
+							>
+								MetaMask
+							</a>
+						</li>
+						<li>
+							<a
+								href="https://rabby.io/"
+								target="_blank"
+								rel="noopener noreferrer"
+								className="text-accent underline underline-offset-2 hover:opacity-80"
+							>
+								Rabby
+							</a>
+						</li>
+						<li>
+							<a
+								href="https://www.coinbase.com/wallet/downloads"
+								target="_blank"
+								rel="noopener noreferrer"
+								className="text-accent underline underline-offset-2 hover:opacity-80"
+							>
+								Coinbase Wallet
+							</a>
+						</li>
+						<li>
+							<a
+								href="https://www.walletconnect.com/"
+								target="_blank"
+								rel="noopener noreferrer"
+								className="text-accent underline underline-offset-2 hover:opacity-80"
+							>
+								WalletConnect
+							</a>
+						</li>
+					</ul>
+					<button
+						type="button"
+						onClick={onUseMagicLink}
+						className="mt-4 w-full rounded-[var(--radius-lg)] border border-border px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:border-text/40 hover:text-text"
+					>
+						Use magic link instead
+					</button>
+				</div>
+			)}
 		</div>
 	);
 }

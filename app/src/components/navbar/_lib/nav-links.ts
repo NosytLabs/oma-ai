@@ -24,6 +24,7 @@ export interface NavItem {
 export interface NavGroup {
 	title: string;
 	links: NavItem[];
+	caption?: string;
 }
 
 /** Primary nav — visible at all times on desktop, used in the mobile menu. */

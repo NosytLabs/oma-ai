@@ -7,12 +7,13 @@
 
 import { Reveal } from "@/app/_components/home/reveal";
 import { isAvailableChatModel } from "./catalog-availability";
+import { useEffect, useState } from "react";
 import {
 	formatPricePerMillion,
+	MIN_INPUT_PRICE_LABEL,
 	MODELS,
 	loadRawModelEntries,
 } from "@/lib/models-data";
-import { countLiveModels, useLiveModelCount } from "./use-live-count";
 
 // Cheapest catalog input rate, derived from the synced fallback catalog so
 // the hero "From" figure can never drift from the real price list again.

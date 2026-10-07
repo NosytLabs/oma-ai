@@ -27,7 +27,7 @@ import {
 } from "@/app/_components/home/reveal";
 import { SectionHeader } from "@/app/_components/home/section-header";
 import { cn } from "@/components/ui/utils";
-import { MODELS, formatPricePerMillion } from "@/lib/models-data";
+import { MIN_INPUT_PRICE_LABEL, MODELS, formatPricePerMillion } from "@/lib/models-data";
 
 // Cheapest catalog input rate — derived from the synced fallback catalog so
 // the marketing "from" figure always matches the real price list.

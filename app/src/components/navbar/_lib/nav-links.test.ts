@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isCurrentNavLink, isCurrentPath, sectionLabelFor } from "./nav-links";
+import { isCurrentNavLink, isCurrentPath } from "./nav-links";
 
 describe("navigation path matching", () => {
 	it("matches an exact route", () => {

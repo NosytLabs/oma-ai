@@ -8,8 +8,10 @@
 
 import { ArrowRight, KeyRound, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { LiveRequestCard } from "./LiveRequestCard";
 import { models as modelsApi } from "@/lib/api/resources";
+import { MIN_INPUT_PRICE_LABEL } from "@/lib/models-data";
 import { isAvailableChatModel } from "./catalog-availability";
 
 /**
