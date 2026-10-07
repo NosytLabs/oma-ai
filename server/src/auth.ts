@@ -24,7 +24,7 @@ import {
 	emailOTP,
 	admin,
 } from "better-auth/plugins";
-import { createPublicClient, http, getAddress } from "viem";
+import { verifyMessage, createPublicClient, http, getAddress } from "viem";
 import { mainnet } from "viem/chains";
 import { verifySiweSignature } from "./lib/siwe-verify.js";
 import { generateRandomString } from "better-auth/crypto";
@@ -377,7 +377,7 @@ export function resolveAuthBaseURL(input: AuthOriginConfig): string {
 	return input.BETTER_AUTH_URL ?? input.PUBLIC_APP_URL ?? "http://localhost:3000";
 }
 
-const authBaseURL = resolveAuthBaseURL(config);
+export const authBaseURL = resolveAuthBaseURL(config);
 const authHostname = new URL(authBaseURL).hostname;
 
 export const auth = betterAuth({

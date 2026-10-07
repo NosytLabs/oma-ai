@@ -27,7 +27,7 @@ import { db } from "../db/client.js";
 import { deposits, settlements, user as userTable } from "../db/schema.js";
 import { eq, and } from "drizzle-orm";
 import { rateLimit } from "../middleware/rate-limit.js";
-import { USDC_BASE, USDC_DECIMALS } from "../constants.js";
+import { USDC_BASE } from "../constants.js";
 import {
 	isSupportedSettlementAsset,
 	resolveSettlementNetwork,
@@ -131,26 +131,6 @@ function paymentError(
 }
 
 export const x402Routes = new Hono<OmaEnv>();
-
-// Funding discovery intentionally has no amount: the caller chooses how many
-// credits to buy. Use the same pinned treasury as verification/settlement,
-// which may differ from the direct-deposit address.
-x402Routes.get("/x402/info", (c) => {
-	c.header("Cache-Control", "no-store");
-	if (!/^0x[a-f0-9]{40}$/.test(SERVER_TREASURY) || /^0x0{40}$/.test(SERVER_TREASURY)) {
-		return c.json(paymentError("x402_unavailable", "Payment funding is not configured", false), 503);
-	}
-	return c.json({
-		x402Version: 2,
-		scheme: "exact",
-		network: CAIP2_BASE_MAINNET,
-		asset: USDC_BASE,
-		decimals: USDC_DECIMALS,
-		payTo: SERVER_TREASURY,
-		maxTimeoutSeconds: PAYMENT_WINDOW_SECONDS,
-		extra: { name: "USD Coin", version: "2" },
-	});
-});
 
 x402Routes.post("/x402/verify", rateLimit({ windowMs: 60_000, maxRequests: 10 }), async (c) => {
 		const headerVal = c.req.header("PAYMENT-SIGNATURE") ?? c.req.header("X-PAYMENT");
@@ -344,7 +324,6 @@ x402Routes.post("/x402/settle", sessionAuth, async (c) => {
 					if (result.settled) c.header("PAYMENT-RESPONSE", buildXPaymentResponse({ txHash: body.txHash, payer: cached.payFrom }));
 					return c.json(result, result.settled ? 200 : 422);
 				} catch (err) {
-						if (err instanceof PaymentCreditConflictError) return c.json(paymentError(err.code, err.message, false), err.status);
 						const message = err instanceof Error ? err.message : "Failed to credit settlement";
 						return c.json(
 							{ error: { message, type: "payment_error", code: "x402_credit_failed" } },
@@ -432,7 +411,6 @@ x402Routes.post("/x402/settle", sessionAuth, async (c) => {
 								200,
 						);
 				} catch (err) {
-						if (err instanceof PaymentCreditConflictError) return c.json(paymentError(err.code, err.message, false), err.status);
 						const message = err instanceof Error ? err.message : "Failed to credit settlement";
 						return c.json(
 								{ error: { message, type: "payment_error", code: "x402_credit_failed" } },
