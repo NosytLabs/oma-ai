@@ -1,4 +1,5 @@
 import pino, { type DestinationStream, type Logger } from 'pino';
+import { config } from '../config.js';
 
 // NOTE: this module deliberately reads process.env and NEVER imports
 // `config`. config.ts imports logger for its validation messages, so a
@@ -71,3 +72,12 @@ export const logger: Logger = pino({
 				};
 		},
 }, useJsonOnly ? neonConsoleDestination : undefined);
+
+// Re-export for callers that need to inspect resolved config (e.g., a
+// runtime health check). Avoids leaking the lazy proxy.
+export function getLoggerEnv(): { isDevelopment: boolean; level: string } {
+		return {
+				isDevelopment: resolveIsDevelopment(),
+				level: resolveLevel(),
+		};
+}
