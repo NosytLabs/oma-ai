@@ -391,7 +391,9 @@ export default function AdminPage() {
 					</p>
 				</section>
 
-				<UsageSection />
+			</div>
+			<UsageSection />
+			<div className="grid gap-3 md:grid-cols-2">
 				<SiteSettingsSection />
 				<RateLimitSection />
 			</div>

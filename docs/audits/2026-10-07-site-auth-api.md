@@ -27,6 +27,8 @@ Changes address reproduced failures:
 - Guest chat no longer fetches an authenticated balance after sending.
 - Docs navigation/search, keyboard focus, mobile model selection and dashboard
   columns are aligned. The analytics banner reserves space above the composer.
+- Admin usage/spend has a full-width row instead of squeezing five metrics
+  inside a single third-width card; operator controls use two columns.
 - API examples, streaming code, OpenAPI schemas and auth/deployment guidance
   are corrected. Duplicate examples, unused timers and dead helpers are removed.
 - Neon code-only deploys preserve environment/triggers. Vercel uploads exclude
