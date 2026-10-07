@@ -102,3 +102,6 @@ audit-*.jpg
 audit-lh/
 .audit-2026-08-16/
 lh-audit*/
+
+# Playwright MCP runtime dumps
+.playwright-mcp/
