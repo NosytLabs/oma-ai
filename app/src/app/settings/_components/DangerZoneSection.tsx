@@ -77,7 +77,7 @@ export function DangerZoneSection({
 			</div>
 
 			<p className="rounded-[var(--radius-md)] border border-border bg-surface/30 px-5 py-3 text-xs text-text-muted">
-				Export your data above first if you might need it later. Deletion forfeits remaining credits.
+				Export your data above first if you might need it later. Deletion forfeits remaining credits and requires a recent sign-in.
 			</p>
 
 			{/* Wipe History */}

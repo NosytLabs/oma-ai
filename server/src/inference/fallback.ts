@@ -36,8 +36,8 @@ export const FALLBACK_MAP: Record<string, string[]> = {
 
 	// Mid / Venice-only that previously had no chain
 	"gemini-3-6-flash": ["deepseek-v4-flash-0731-openbroker", "minimax-m2-7", "xiaomi-mimo-v2-5"],
-	"google-gemma-4-31b-it": ["mistral-small-2603", "deepseek-v4-flash-0731-openbroker", "xiaomi-mimo-v2-5"],
-	"venice-uncensored-1-2": ["mistral-small-2603", "llama-3.3-70b", "xiaomi-mimo-v2-5"],
+	"google-gemma-4-31b-it": ["deepseek-v4-flash-0731-openbroker", "xiaomi-mimo-v2-5"],
+	"venice-uncensored-1-2": ["llama-3.3-70b", "xiaomi-mimo-v2-5"],
 
 	// Budget
 	"xiaomi-mimo-v2-5": ["deepseek-v4-flash-0731-openbroker", "minimax-m2-7"],
@@ -45,26 +45,15 @@ export const FALLBACK_MAP: Record<string, string[]> = {
 	"minimax-m2-7": [
 		"deepseek-v4-flash-0731-openbroker",
 		"xiaomi-mimo-v2-5",
-		"mistral-small-2603",
 	],
 	"deepseek-v4-flash-0731": [
 		"deepseek-v4-flash-0731-openbroker",
 		"minimax-m2-7",
 		"xiaomi-mimo-v2-5",
-		"mistral-small-2603",
 	],
 	// OpenBroker default — prefer oma-ai peers first, then budget Venice
 	"deepseek-v4-flash-0731-openbroker": [
 		"minimax-m2-7",
-		"xiaomi-mimo-v2-5",
-		"mistral-small-2603",
-	],
-	// Venice budget — Gonka peers first so a dead VENICE_API_KEY still
-	// fails over on the free website path.
-	"mistral-small-2603": [
-		"deepseek-v4-flash-0731-openbroker",
-		"minimax-m2-7",
-		"deepseek-v4-flash-0731",
 		"xiaomi-mimo-v2-5",
 	],
 };

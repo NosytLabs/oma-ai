@@ -328,6 +328,51 @@ const spec = {
 				responses: { "200": { description: "Revoked" }, "404": { description: "Not found" } },
 			},
 		},
+		"/user": {
+			get: {
+				summary: "Get the signed-in account",
+				description: "Requires a Better Auth session cookie; API keys are not accepted.",
+				security: [{ SessionCookie: [] }],
+				responses: { "200": { description: "Current account" }, "401": { description: "No active session" } },
+			},
+		},
+		"/sessions": {
+			get: {
+				summary: "List active browser sessions",
+				security: [{ SessionCookie: [] }],
+				responses: { "200": { description: "Active sessions" }, "401": { description: "No active session" } },
+			},
+			delete: {
+				summary: "Revoke every other browser session",
+				description: "Keeps the current session and immediately invalidates every other active session.",
+				security: [{ SessionCookie: [] }],
+				responses: { "200": { description: "Sessions revoked" }, "401": { description: "No active session" } },
+			},
+		},
+		"/sessions/{id}": {
+			delete: {
+				summary: "Revoke one browser session",
+				security: [{ SessionCookie: [] }],
+				parameters: [{ in: "path", name: "id", required: true, schema: { type: "string" } }],
+				responses: { "200": { description: "Session revoked" }, "400": { description: "Current or invalid session id" }, "404": { description: "Session not found" } },
+			},
+		},
+		"/account": {
+			delete: {
+				summary: "Delete the signed-in account",
+				description: "Permanently removes the account and user-owned data. Requires a fresh sign-in within the last 24 hours. Remaining credits are forfeited and payment-security audit records may be retained with the user id detached.",
+				security: [{ SessionCookie: [] }],
+				responses: { "200": { description: "Account deleted" }, "400": { description: "Session is not fresh enough" }, "401": { description: "No active session" } },
+			},
+		},
+		"/v1/history": {
+			delete: {
+				summary: "Clear usage history and telemetry",
+				description: "Removes usage records and telemetry while preserving the account, API keys and credit balance.",
+				security: [{ SessionCookie: [] }],
+				responses: { "200": { description: "History cleared" }, "401": { description: "No active session" } },
+			},
+		},
 		"/v1/deposit/usdc": {
 			get: {
 				summary: "USDC deposit instructions (treasury address, network, bounds)",

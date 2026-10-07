@@ -357,7 +357,7 @@ describe("auth routes", () => {
 		it("deletes the account and writes audit logs", async () => {
 			mockAuthApi.getSession.mockResolvedValueOnce({
 				user: { id: "user_1" },
-				session: { id: "s1" },
+				session: { id: "s1", createdAt: new Date() },
 			});
 			mockDb.delete.mockReturnValue({
 				where: vi.fn().mockResolvedValue({ rowCount: 1 }),
@@ -373,6 +373,17 @@ describe("auth routes", () => {
 			expect(auditLog).toHaveBeenCalledWith(
 				expect.objectContaining({ action: "ACCOUNT_DELETE_REQUESTED" }),
 			);
+		});
+
+		it("rejects stale sessions before deleting anything", async () => {
+			mockAuthApi.getSession.mockResolvedValueOnce({
+				user: { id: "user_1" },
+				session: { id: "s1", createdAt: new Date(Date.now() - 25 * 60 * 60 * 1000) },
+			});
+			const res = await authReq("delete", "/account", undefined, authedHeaders);
+			expect(res.status).toBe(400);
+			expect((await res.json()).error.type).toBe("session_not_fresh");
+			expect(mockDb.delete).not.toHaveBeenCalled();
 		});
 	});
 });

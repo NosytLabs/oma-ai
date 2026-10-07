@@ -212,7 +212,17 @@ authRoutes.delete(
 						401,
 				);
 		}
-		const userId = session.user.id;
+			const userId = session.user.id;
+			// Account deletion is destructive. Match Better Auth's sensitive
+			// session behavior so a copied or stale cookie cannot delete an
+			// account without a recent sign-in.
+			const sessionCreatedAt = new Date(session.session.createdAt).getTime();
+			if (!Number.isFinite(sessionCreatedAt) || Date.now() - sessionCreatedAt >= 24 * 60 * 60 * 1000) {
+				return c.json(
+					{ error: { message: "Your session is too old for account deletion. Sign in again, then retry.", type: "session_not_fresh" } },
+					400,
+				);
+			}
 		const ipAddress = extractClientIpOrNull(c) ?? undefined;
 		const userAgent = c.req.header("user-agent") ?? undefined;
 		// Audit BEFORE deletion — the FK on audit_logs.user_id is `set null`
@@ -258,7 +268,12 @@ authRoutes.delete(
 		// a now-orphaned key value. The corresponding api_keys row is gone
 		// (cascade) but the cookie would still be sent on subsequent
 		// requests until it expires (7 days).
-		c.header("Set-Cookie", createLogoutCookieHeader());
+			c.header("Set-Cookie", createLogoutCookieHeader());
+			// This custom route deletes directly, so Better Auth does not clear
+			// its session cookie for us. Clear both local and secure cookie names.
+			for (const cookieName of ["oma.session_token", "__Secure-oma.session_token"]) {
+				c.header("Set-Cookie", `${cookieName}=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax`, { append: true });
+			}
 		return c.json({ success: true });
 });
 

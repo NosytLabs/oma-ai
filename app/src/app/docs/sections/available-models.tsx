@@ -79,7 +79,7 @@ export function AvailableModelsSection() {
 					</div>
 					<p className="text-sm text-text-muted">
 						Text and reasoning models from Venice (frontier/premium/mid/budget)
-						and OMA-AI (MiniMax M2.7, DeepSeek V4 Flash, GLM-5.3 Flash).
+						and OMA-AI (MiniMax M2.7 and GLM-5.3 Flash). The Gonka DeepSeek route is currently paused while its output quality is investigated.
 					</p>
 				</div>
 				<div className="rounded-[var(--radius-xl)] border border-border bg-panel p-4 shadow-[var(--shadow-md)] transition-transform duration-200 ease-out hover:border-accent/40 active:scale-[0.97]">

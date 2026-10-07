@@ -28,7 +28,7 @@ describe("isFreeChatModel (guest website chat)", () => {
 		expect(isFreeChatModel("kimi-k3")).toBe(false);
 		expect(isFreeChatModel("llama-3.3-70b")).toBe(false);
 		expect(isFreeChatModel("llama-3.3-70b", "Venice")).toBe(false);
-		expect(isFreeChatModel("mistral-small-2603")).toBe(false);
+		expect(isFreeChatModel("deepseek-v4-flash")).toBe(false);
 	});
 
 	it("only allowlisted openbroker ids are free; unknown ids require auth", () => {
@@ -48,10 +48,9 @@ describe("isFreeChatModel (guest website chat)", () => {
  * Locked in by exporting FREE_DEFAULT_CHAT_MODEL and having the
  * ModelSelector render the badge for `model.id === FREE_DEFAULT_CHAT_MODEL`.
  *
- * Open question 2 (audit 2026-09-01 §5): the mistral "free" badge
- * could be misread as "OpenBroker-grade free" when it's a Venice
- * fallback. FREE_TIER_LABELS disambiguates the two tiers with
- * explicit copy + tooltip.
+ * Open question 2 (audit 2026-09-01 §5): provider-specific "free"
+ * badges must be explicit so they cannot be confused with the
+ * OpenBroker guest tier. FREE_TIER_LABELS owns that copy and tooltip.
  */
 describe("FREE_TIER_LABELS", () => {
 	it("covers every entry in FREE_CHAT_MODEL_IDS", () => {

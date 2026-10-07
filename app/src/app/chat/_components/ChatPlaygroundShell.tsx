@@ -658,9 +658,11 @@ function ShellContent({
 
 								<div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-1 sm:mt-2.5 sm:px-2">
 									<p className="text-[11px] text-text-muted/80 tracking-wide font-mono min-w-0 break-words select-none">
-										{isReady && !isAuthenticated && verifiedFreeSelection && (
+										{isReady && !isAuthenticated && !guestNeedsSignIn && (
 											<span className="text-accent/80 font-semibold">
-												{guestQuota ? `${guestQuota.remaining} free left` : "Free daily allowance"}
+												{verifiedFreeSelection && guestQuota
+													? `${guestQuota.remaining} free left`
+													: "Free daily allowance"}
 											</span>
 										)}
 										{guestNeedsSignIn && <Link href={loginHref} onClick={() => saveChatDraftForSignIn()} className="text-accent hover:underline">Sign in to use {modelName}</Link>}

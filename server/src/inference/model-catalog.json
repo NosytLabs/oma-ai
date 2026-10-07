@@ -324,27 +324,6 @@
     ]
   },
   {
-    "id": "mistral-small-2603",
-    "provider": "venice",
-    "veniceId": "mistral-small-3-2-24b-instruct",
-    "surplusId": "mistral-small-4",
-    "inputPricePer1M": 0.1875,
-    "outputPricePer1M": 0.75,
-    "markupPercent": 50,
-    "displayName": "Mistral Small 4",
-    "category": "budget",
-    "maxTokens": 16384,
-    "contextWindow": 256000,
-    "maxOutputTokens": 16384,
-    "supportsStreaming": true,
-    "capabilities": [
-      "chat",
-      "tools",
-      "fast"
-    ],
-    "disabledReason": "This model is no longer listed by its provider. Choose another model."
-  },
-  {
     "id": "google-gemma-4-31b-it",
     "provider": "venice",
     "inputPricePer1M": 0.12,

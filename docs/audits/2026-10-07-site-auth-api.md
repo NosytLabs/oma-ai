@@ -85,7 +85,7 @@ configuration and scheduled triggers. Deployment **65** added the expanded model
 ## Expanded model, wallet and dependency pass
 
 - One shared model catalog now supplies billing and UI fallback data. Gonka is exactly $0.02/M input and output; Venice is 50% markup over its refreshed published catalog, including long-context tiers.
-- Paused the absent Venice Mistral entry and the degraded OpenBroker DeepSeek route. Model details show output limits and pause reasons; dashboard counts exclude paused entries. Added context/output validation and increased reasoning-model examples to 1,024 output tokens.
+- Removed the absent Venice Mistral entry from the catalog and fallback map, and paused the degraded OpenBroker DeepSeek route. Model details show output limits and pause reasons; dashboard counts exclude paused entries. Added context/output validation and increased reasoning-model examples to 1,024 output tokens.
 - MiniMax and GLM completed production coding checks with 1,024-token budgets. Both returned tool calls and accepted synthetic tool results. Some upstream output contained duplicate calls, inline reasoning or stray control text. No generated tools were executed.
 - Browser and backend settlement use bounded Base public RPC failover. Mainnet Base and PublicNode returned chain 8453; Llama returned HTML and was removed. Connected QuickNode endpoints were suspended.
 - Wallet setup handles missing Base network definitions with public RPC settings. Better Auth SIWE signatures, nonce replay, magic-link sessions and admin authorization passed real local HTTP checks. Optional ENS lookup timeouts are bounded.

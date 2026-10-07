@@ -51,7 +51,6 @@ describe("FALLBACK_MAP (inference router)", () => {
 			"kimi-k3",
 			"llama-3.3-70b",
 			"minimax-m2-7",
-			"mistral-small-2603",
 			"openai-gpt-56-sol",
 			"qwen-3-7-plus",
 			"qwen-3-8-max",
@@ -147,10 +146,4 @@ describe("buildFallbackChain", () => {
 		expect(chain).toEqual(["llama-3.3-70b"]);
 	});
 
-	it("lets a Venice free-list model fail over to Gonka peers", () => {
-		const chain = buildFallbackChain("mistral-small-2603", [], true);
-		expect(chain[0]).toBe("mistral-small-2603");
-		const gonka = chain.filter((id) => getModelById(id)?.upstream === "openbroker");
-		expect(gonka.length).toBeGreaterThan(0);
-	});
 });

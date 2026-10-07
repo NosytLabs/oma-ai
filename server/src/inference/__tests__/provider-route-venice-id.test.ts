@@ -31,19 +31,17 @@ function veniceModel(overrides: Partial<ModelDef> = {}): ModelDef {
 describe("venice upstream model id", () => {
 	/**
 	 * Regression: `veniceId` was declared on ModelDef but never read, so a
-	 * catalog entry whose PUBLIC id differs from its Venice id sent the
-	 * public id upstream and 404'd. `mistral-small-2603` is that entry —
-	 * Venice's live catalog has no such model, only
-	 * `mistral-small-3-2-24b-instruct`. The public id must stay stable for
-	 * for API consumers, so the override has to be honored on the Venice route.
+	 * catalog entry whose public id differs from its Venice id sent the
+	 * public id upstream and 404'd. The public id must stay stable for API
+	 * consumers, so the override has to be honored on the Venice route.
 	 */
 	it("sends veniceId upstream when the catalog defines one", () => {
 		const route = resolveProvider(
 			"venice",
-			veniceModel({ id: "mistral-small-2603", veniceId: "mistral-small-3-2-24b-instruct" }),
+			veniceModel({ id: "deepseek-v4-flash-0731", veniceId: "deepseek-v4-flash" }),
 		);
-		expect(route.upstreamModel("mistral-small-2603")).toBe(
-			"mistral-small-3-2-24b-instruct",
+		expect(route.upstreamModel("deepseek-v4-flash-0731")).toBe(
+			"deepseek-v4-flash",
 		);
 	});
 

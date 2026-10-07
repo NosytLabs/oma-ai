@@ -20,7 +20,7 @@ vi.mock("next/navigation", () => ({
 const { usePlaygroundState } = await import("../usePlaygroundState");
 const { FREE_DEFAULT_CHAT_MODEL } = await import("@/lib/model-utils");
 
-const AVAILABLE = ["zai-org-glm-5-3", "mistral-small-2603"];
+const AVAILABLE = ["zai-org-glm-5-3", "minimax-m2-7"];
 
 beforeEach(() => {
 	localStorage.clear();
@@ -34,12 +34,12 @@ afterEach(() => {
 
 describe("usePlaygroundState — live availability validation (BUG-G)", () => {
 	it("keeps a selection that is in the available set", async () => {
-		searchParamsRef = new URLSearchParams("model=mistral-small-2603");
+		searchParamsRef = new URLSearchParams("model=minimax-m2-7");
 		const { result } = renderHook(() =>
 			usePlaygroundState({ authReady: true, availableModelIds: AVAILABLE }),
 		);
 		await act(async () => {});
-		expect(result.current.model).toBe("mistral-small-2603");
+		expect(result.current.model).toBe("minimax-m2-7");
 	});
 
 	it("falls back to the free default when the saved model is unavailable", async () => {
@@ -58,11 +58,11 @@ describe("usePlaygroundState — live availability validation (BUG-G)", () => {
 		const { result } = renderHook(() =>
 			usePlaygroundState({
 				authReady: true,
-				availableModelIds: ["mistral-small-2603"],
+				availableModelIds: ["minimax-m2-7"],
 			}),
 		);
 		await act(async () => {});
-		expect(result.current.model).toBe("mistral-small-2603");
+		expect(result.current.model).toBe("minimax-m2-7");
 	});
 
 	it("does not touch the selection when no availability set is supplied", async () => {
