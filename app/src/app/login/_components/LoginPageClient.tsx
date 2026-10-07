@@ -55,17 +55,6 @@ const LazyWalletSignInPanel = dynamic(
 
 type Method = "magic" | "wallet";
 
-/**
-	* Resolve post-login destination. Only same-origin relative paths are allowed
-	* (blocks open redirects via `//evil` or absolute URLs).
-	* Exported for unit tests — keep the guard in one place.
-	*/
-export function safeLoginNext(raw: string | null | undefined): string {
-	if (!raw) return "/dashboard";
-	if (!raw.startsWith("/") || raw.startsWith("//") || /[\\\u0000-\u001f\u007f]/.test(raw)) return "/dashboard";
-	return raw;
-}
-
 function defaultNext(): string {
 	if (typeof window === "undefined") return "/dashboard";
 	const params = new URLSearchParams(window.location.search);

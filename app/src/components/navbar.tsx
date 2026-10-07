@@ -7,6 +7,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { OmaNavLockup } from "@/components/ui/oma-logo";
 import { useAuth } from "@/lib/hooks/useAuth";
+import { buildLoginHref } from "@/lib/login-href";
 import { isCurrentNavLink, primaryLinks } from "./navbar/_lib/nav-links";
 import { NavbarMobileMenu } from "./navbar/NavbarMobileMenu";
 import { NavbarToolsDropdown } from "./navbar/NavbarToolsDropdown";
@@ -14,12 +15,25 @@ import { NavbarUserMenu } from "./navbar/NavbarUserMenu";
 import { ThemeToggle } from "./ThemeToggle";
 
 export function Navbar() {
+	return <Suspense fallback={<NavbarContent search="" />}><NavbarWithSearch /></Suspense>;
+}
+
+function NavbarWithSearch() {
+	const search = useSearchParams()?.toString() ?? "";
+	return <NavbarContent search={search} />;
+}
+
+function NavbarContent({ search }: { search: string }) {
 	const { isAuthenticated, isDemo, evmAddress, signOut, isPending, user } = useAuth();
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [toolsOpen, setToolsOpen] = useState(false);
 	const mobileToggleRef = useRef<HTMLButtonElement>(null);
 	const pathname = usePathname() ?? "/";
-	const loginHref = `/login?next=${encodeURIComponent(pathname)}`;
+	const chatModel = useSyncExternalStore(subscribeChatSignInModel, getActiveChatSignInModel, () => null);
+	const returnParams = new URLSearchParams(search);
+	if (pathname === "/chat" && chatModel) returnParams.set("model", chatModel);
+	const returnSearch = returnParams.toString();
+	const loginHref = buildLoginHref(`${pathname}${returnSearch ? `?${returnSearch}` : ""}`);
 	const isConnected = isAuthenticated && !isDemo;
 
 	useEffect(() => {
@@ -68,7 +82,7 @@ export function Navbar() {
 					) : isConnected ? (
 						<NavbarUserMenu evmAddress={evmAddress} email={user?.email ?? null} onSignOut={() => signOut({ callbackURL: "/" })} />
 					) : (
-						<Link href={loginHref} aria-label="Sign in or create an account" className="btn-mono btn-primary inline-flex px-3 text-xs sm:px-4">Sign in</Link>
+						<Link href={loginHref} onClick={() => saveChatDraftForSignIn()} aria-label="Sign in or create an account" className="btn-mono btn-primary inline-flex px-3 text-xs sm:px-4">Sign in</Link>
 					)}
 					<button ref={mobileToggleRef} type="button" onClick={() => setMobileOpen(!mobileOpen)}
 						className="inline-flex h-11 w-11 items-center justify-center rounded-sm text-text-secondary transition-colors hover:bg-surface hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent lg:hidden"

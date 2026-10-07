@@ -103,7 +103,7 @@ function ModelsPageInner() {
 							)}
 							{availableCount === null && (
 								<span className="ml-2 text-text-tertiary normal-case tracking-normal">
-									· {isLoadingModels ? "checking live availability…" : "live availability unavailable"}
+									· {isLoadingModels ? "loading live catalog…" : "live catalog unavailable"}
 								</span>
 							)}
 							{visibleModels < totalModels && (

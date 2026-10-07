@@ -15,4 +15,25 @@ describe("model detail data", () => {
 		expect(result).toMatchObject({ inputPricePer1M: model.inputPricePer1M, outputPricePer1M: model.outputPricePer1M, contextTokens: model.contextTokens });
 		expect(withLiveModelDetails(model, null)).toBe(model);
 	});
+
+	it("replaces curated capabilities with the live catalog", () => {
+		const result = withLiveModelDetails(model, { id: model.id, capabilities: ["chat", "vision"] });
+		expect(result.capabilities).toEqual(["chat", "vision"]);
+		expect(result.description).toBe(model.description);
+	});
+
+	it("retains curated capabilities when an older API has no full list", () => {
+		const result = withLiveModelDetails(model, { id: model.id, supports_tools: true });
+		expect(result.capabilities).toEqual(model.capabilities);
+	});
+
+	it("honors an explicit false tool flag without losing other curated facts", () => {
+		const result = withLiveModelDetails(model, { id: model.id, supports_tools: false, supported_parameters: ["tools"] });
+		expect(result.capabilities).toEqual(model.capabilities.filter((capability) => capability !== "agents"));
+	});
+
+	it("does not repopulate an explicit empty capability list from the fallback", () => {
+		const result = withLiveModelDetails(model, { id: model.id, capabilities: [] });
+		expect(result.capabilities).toEqual([]);
+	});
 });

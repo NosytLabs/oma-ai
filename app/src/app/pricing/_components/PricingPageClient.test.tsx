@@ -28,7 +28,7 @@ describe("pricing availability and rates", () => {
 	it("does not advertise the fallback count or entry price while checking", () => {
 		loadModels.mockReturnValue(new Promise(() => {}));
 		render(<PricingPage />);
-		expect(screen.getByRole("status")).toHaveTextContent("Checking model availability");
+		expect(screen.getByRole("status")).toHaveTextContent("Loading model catalog");
 		expect(within(screen.getByText("Starts at").parentElement!).getByText("—")).toBeInTheDocument();
 		expect(screen.getAllByText("Checking").length).toBeGreaterThan(0);
 	});
@@ -36,10 +36,10 @@ describe("pricing availability and rates", () => {
 	it("identifies the loader's static fallback as unverified after a failed request", async () => {
 		loadModels.mockResolvedValue(MODELS);
 		render(<PricingPage />);
-		await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Live availability unavailable"));
+		await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Live catalog unavailable"));
 		expect(within(screen.getByText("Starts at").parentElement!).getByText("—")).toBeInTheDocument();
 		expect(screen.getAllByText("Unverified").length).toBeGreaterThan(0);
-		expect(screen.queryByText(/models currently accepting requests/)).not.toBeInTheDocument();
+		expect(screen.queryByText(/enabled models. Provider availability can vary/)).not.toBeInTheDocument();
 	});
 
 	it("uses the exact cheapest available chat rate, excluding unavailable and per-generation models", async () => {
@@ -48,7 +48,7 @@ describe("pricing availability and rates", () => {
 			{ ...model("image-only", 0.001), modality: "image" },
 		]);
 		render(<PricingPage />);
-		await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("1 available model"));
+		await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("1 enabled model"));
 		expect(within(screen.getByText("Starts at").parentElement!).getByText("$0.6125")).toBeInTheDocument();
 		expect(screen.queryByText("image-only")).not.toBeInTheDocument();
 	});
@@ -56,15 +56,15 @@ describe("pricing availability and rates", () => {
 	it("shows zero availability without inventing an entry price", async () => {
 		loadModels.mockResolvedValue([model("offline", 0.01, false)]);
 		render(<PricingPage />);
-		await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("0 available models"));
-		expect(screen.getByText("No chat models are currently available. Check again before adding credits.")).toBeInTheDocument();
+		await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("0 enabled models"));
+		expect(screen.getByText("No chat models are currently enabled. Check again before adding credits.")).toBeInTheDocument();
 		expect(within(screen.getByText("Starts at").parentElement!).getByText("—")).toBeInTheDocument();
 	});
 
 	it("does not promise a credit discount, a fixed free-model count, or a signup bonus", async () => {
 		loadModels.mockResolvedValue([]);
 		render(<PricingPage />);
-		await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("0 available models"));
+		await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("0 enabled models"));
 		expect(screen.getByText("High volume")).toBeInTheDocument();
 		expect(screen.getByText(/Eligible models can be used free in website chat/)).toBeInTheDocument();
 		expect(screen.queryByText(/best value per credit|3 OMA-AI models|\$1\.00 in trial credit/i)).not.toBeInTheDocument();
