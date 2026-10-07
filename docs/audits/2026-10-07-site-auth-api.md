@@ -79,9 +79,7 @@ every possible account state, provider behavior or code path is defect-free.
 ## Releases
 
 Neon `omaapi` deployment **64** delivered the initial server fixes, preserving production
-configuration and scheduled triggers. Deployment **65** added the expanded model, pricing and RPC changes below. The frontend is deployed to the existing
-Vercel project `oma` and canonical `https://www.oma-ai.com`; the final deployment
-identifier is recorded in the task completion report.
+configuration and scheduled triggers. Deployment **65** added the expanded model, pricing and RPC changes below; **66** delivers the final streaming-meter fix. The frontend is live on Vercel project `oma`, deployment `dpl_8h6UPWjYTiLPyPDygLrZ2JT1sTSN`, at `https://www.oma-ai.com`. Both code releases use commit `e366462b` and preserve production environment values.
 
 
 ## Expanded model, wallet and dependency pass
@@ -100,3 +98,5 @@ See [pricing, limits and treasury operations](../pricing-and-treasury.md) for cu
 
 
 Final streaming checks ran MiniMax and GLM concurrently: both SSE streams finished with `stop` and `[DONE]` in approximately 59 and 67 seconds. GLM returned the exact requested marker; MiniMax added unwanted text. These two requests establish basic concurrent operation, not a capacity guarantee. Missing upstream usage frames exposed per-chunk rounding in the estimate; the follow-up fix requests final usage totals and keeps a streaming counter across content, reasoning and tool-call fragments. Tests cover chunk invariance, zero reported counts and structured non-streaming content. Homepage/About/FAQ fallback copy now matches actual routing behavior.
+
+Final post-release verification: one GLM stream exceeded a 90-second client timeout. A follow-up returned HTTP 200, `OMA_READY`, `finish_reason=stop`, `[DONE]`, and an upstream usage frame (19 prompt / 139 completion tokens) in 9.9 seconds. This confirms the new usage option works on the live OpenBroker route, while latency remains variable. The production wallet RPC returned chain `0x2105`; the public catalog returned 21 models with the paused entries and exact Gonka prices. Neon and Vercel reported no runtime errors in the inspected 10-/30-minute windows. GitHub lockfile and Vercel preview checks passed.
