@@ -30,6 +30,7 @@ vi.mock("../../config.js", () => ({
 }));
 
 vi.mock("../../lib/rpc-client.js", () => ({
+	createBaseTransport: vi.fn(() => ({})),
 	getPublicClient: vi.fn(() => ({
 		call: vi.fn(async () => "0x"),
 		// The settlement path waits on THIS client's receipt, so the mock has

@@ -17,9 +17,9 @@ export const dynamic = "force-dynamic";
 
 type Chain = "base" | "base-sepolia";
 
-const ALLOWED: Record<Chain, { id: number; fallback: string }> = {
-	base: { id: 8453, fallback: "https://mainnet.base.org" },
-	"base-sepolia": { id: 84532, fallback: "https://sepolia.base.org" },
+const ALLOWED: Record<Chain, { id: number; fallbacks: string[] }> = {
+	base: { id: 8453, fallbacks: ["https://mainnet.base.org", "https://base-rpc.publicnode.com"] },
+	"base-sepolia": { id: 84532, fallbacks: ["https://sepolia.base.org", "https://base-sepolia-rpc.publicnode.com"] },
 };
 
 // Methods we will refuse to proxy. Conservative allowlist of read + tx
@@ -43,8 +43,6 @@ const ALLOWED_METHODS = new Set([
 	"eth_getTransactionCount",
 	"eth_getTransactionReceipt",
 	"eth_sendRawTransaction",
-	"eth_subscribe",
-	"eth_unsubscribe",
 ]);
 
 // Hard body cap (16 KB). JSON-RPC bodies are normally <2 KB; anything
@@ -82,7 +80,7 @@ async function handleRpc(
 	// Body size guard. Read as text first so we can enforce the cap
 	// before json() tries to allocate a huge in-memory parse tree.
 	const rawText = await request.text();
-	if (rawText.length > MAX_BODY_BYTES) {
+	if (new TextEncoder().encode(rawText).byteLength > MAX_BODY_BYTES) {
 		return NextResponse.json(
 			{
 				error: {
@@ -105,6 +103,9 @@ async function handleRpc(
 	}
 
 	const incoming = Array.isArray(body) ? body : [body];
+	if (incoming.length === 0) {
+		return NextResponse.json({ error: { message: "Empty JSON-RPC batch", type: "validation_error" } }, { status: 400 });
+	}
 	if (incoming.length > MAX_BATCH) {
 		return NextResponse.json(
 			{
@@ -137,43 +138,32 @@ async function handleRpc(
 		}
 	}
 
-	const upstream = resolveUpstream(chain);
-	if (!upstream) {
-		return NextResponse.json(
-			{
-				error: {
-					message: "RPC upstream not configured",
-					type: "upstream_unconfigured",
-				},
-			},
-			{ status: 503 },
-		);
+	// A suspended or throttled dedicated endpoint must not disable the wallet.
+	// Try each endpoint once; never retry a valid application error or a
+	// partially successful batch (which may already have broadcast a tx).
+	for (const upstream of resolveUpstreams(chain)) {
+		try {
+			const resp = await fetch(upstream, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: rawText,
+				signal: AbortSignal.any([request.signal, AbortSignal.timeout(5_000)]),
+				cache: "no-store",
+			});
+			if (!resp.ok) { await resp.body?.cancel(); continue; }
+			const payload: unknown = await resp.json();
+			const replies = Array.isArray(payload) ? payload : [payload];
+			if (!replies.length || replies.some((reply) => !reply || typeof reply !== "object" || !("result" in reply || "error" in reply))) continue;
+			if (replies.every((reply) => [-32005, -32016, -32097, -32098, -32099, 429].includes(reply.error?.code))) continue;
+			return NextResponse.json(payload, { headers: { "Cache-Control": "no-store" } });
+		} catch {
+			if (request.signal.aborted) break;
+		}
 	}
-
-	try {
-		const resp = await fetch(upstream, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(body),
-			signal: AbortSignal.timeout(15_000),
-			cache: "no-store",
-		});
-		const text = await resp.text();
-		return new NextResponse(text, {
-			status: resp.status,
-			headers: {
-				"Content-Type": resp.headers.get("Content-Type") ?? "application/json",
-				"Cache-Control": "no-store",
-			},
-		});
-	} catch {
-		return NextResponse.json(
-			{
-				error: { message: "RPC upstream unreachable", type: "upstream_error" },
-			},
-			{ status: 502 },
-		);
-	}
+	return NextResponse.json(
+		{ error: { message: "Base RPC endpoints are temporarily unavailable. Please retry shortly.", type: "upstream_error" } },
+		{ status: 503, headers: { "Cache-Control": "no-store", "Retry-After": "5" } },
+	);
 }
 
 export async function POST(
@@ -185,13 +175,11 @@ export async function POST(
 	) as Promise<NextResponse>;
 }
 
-function resolveUpstream(chain: Chain): string | null {
-	// Priority: explicit env var (server-only), otherwise the public default.
-	const envUrl = process.env[`${chainKey(chain)}_RPC_URL`];
-	if (envUrl) return envUrl;
-	return ALLOWED[chain].fallback;
-}
-
-function chainKey(chain: Chain): string {
-	return chain === "base" ? "BASE" : "BASE_SEPOLIA";
+function resolveUpstreams(chain: Chain): string[] {
+	const prefix = chain === "base" ? "BASE" : "BASE_SEPOLIA";
+	return [...new Set([
+		process.env[`${prefix}_RPC_URL`],
+		process.env[`${prefix}_RPC_URL_FALLBACK`],
+		...ALLOWED[chain].fallbacks,
+	].filter((url): url is string => Boolean(url) && !/placeholder|changeme/i.test(url!)))];
 }

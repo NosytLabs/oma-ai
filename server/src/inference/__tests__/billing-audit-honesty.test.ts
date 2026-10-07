@@ -66,6 +66,16 @@ const baseArgs = {
 };
 
 describe("recordUsage audit honesty", () => {
+	it("records the subsidy cost of signed-in free chat without charging the user", async () => {
+		await recordUsage({ ...baseArgs, skipBilling: true });
+		expect(insertValues).toHaveBeenCalledWith(expect.objectContaining({ costCents: "20000.0000", markupCents: "-20000.0000", totalCents: "0.0000", status: "free_tier" }));
+		expect(update).not.toHaveBeenCalled();
+	});
+	it("does not report an aborted response as customer revenue", async () => {
+		await recordUsage({ ...baseArgs, status: "aborted" });
+		expect(insertValues).toHaveBeenCalledWith(expect.objectContaining({ totalCents: "0.0000", markupCents: "-20000.0000", status: "aborted" }));
+		expect(update).not.toHaveBeenCalled();
+	});
 	beforeEach(() => {
 		vi.clearAllMocks();
 		update.mockReturnValue({ set: updateSet });

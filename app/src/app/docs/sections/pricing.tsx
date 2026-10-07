@@ -39,6 +39,8 @@ export function PricingSection() {
 				subtitle="Per-model pricing. Input and output priced per million tokens."
 			/>
 
+			<p className="mb-6 text-sm leading-relaxed text-text-muted">Gonka models are $0.02 per million input tokens and $0.02 per million output tokens. Venice rates include 50% markup. Some Venice models use higher rates for long prompts; check pricing.extended in GET /v1/models and the model detail page. Prices are final customer rates, including any active admin override.</p>
+
 			<div id="pricing-table" className="mb-6 rounded-[var(--radius-xl)] border border-border overflow-x-auto overscroll-x-contain scroll-mt-24">
 				<table className="w-full min-w-[30rem] text-left text-sm" aria-label="Model pricing per million tokens">
 					<thead>

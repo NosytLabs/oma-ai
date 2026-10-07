@@ -262,10 +262,19 @@ export async function ensureBaseChain(): Promise<void> {
 			method: "wallet_switchEthereumChain",
 			params: [{ chainId: `0x${OMA_CHAIN_ID.toString(16)}` }],
 		});
-	} catch {
-		throw new Error(
-			`Switch your wallet to Base mainnet (chain id ${OMA_CHAIN_ID}) and try again.`,
-		);
+	} catch (error) {
+		const code = typeof error === "object" && error !== null && "code" in error ? error.code : undefined;
+		if (code === 4902) {
+			try {
+				await eth.request({ method: "wallet_addEthereumChain", params: [{
+					chainId: "0x2105", chainName: "Base", nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+					rpcUrls: ["https://mainnet.base.org", "https://base-rpc.publicnode.com"], blockExplorerUrls: ["https://basescan.org"],
+				}] });
+				await eth.request({ method: "wallet_switchEthereumChain", params: [{ chainId: "0x2105" }] });
+				return;
+			} catch { /* Keep wallet rejection actionable and do not retry prompts. */ }
+		}
+		throw new Error(`Switch your wallet to Base mainnet (chain id ${OMA_CHAIN_ID}) and try again.`);
 	}
 }
 

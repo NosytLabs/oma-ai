@@ -61,6 +61,7 @@ describe("getModelPricing", () => {
 			inputPer1M: 5,
 			outputPer1M: 10,
 			markup: 0,
+ upstream: { inputPer1M: 10, outputPer1M: 20 },
 		});
 	});
 	

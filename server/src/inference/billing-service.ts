@@ -10,16 +10,13 @@
 	* matching what /v1/models displays.
 	*/
 import { getModelById } from "./models.js";
+import type { PricingWithCosts } from "./pricing-costs.js";
 import {
 		readModelPricingOverrides,
 		type ModelPricingOverride,
 } from "../lib/model-overrides.js";
 
-export interface ModelPricing {
-		inputPer1M: number;
-		outputPer1M: number;
-		markup: number;
-}
+export type ModelPricing = PricingWithCosts;
 
 let _overrideCache: {
 		at: number;
@@ -40,18 +37,20 @@ export function getModelPricing(modelId: string): ModelPricing {
 	if (!m) {
 		throw new Error(`Model ${modelId} not found in catalog`);
 	}
-	const override = getOverrides()[modelId];
+	const override = getOverrides()[modelId] ?? (m.retailPricing ? { inputPricePer1M: m.retailPricing.inputPer1M, outputPricePer1M: m.retailPricing.outputPer1M } : undefined);
 	if (override) {
 		return {
 			inputPer1M: override.inputPricePer1M,
 			outputPer1M: override.outputPricePer1M,
 			markup: 0,
+			upstream: { inputPer1M: m.inputPricePer1M, outputPer1M: m.outputPricePer1M, ...(m.extendedPricing ? { extended: m.extendedPricing } : {}) },
 		};
 	}
 	return {
 		inputPer1M: m.inputPricePer1M,
 		outputPer1M: m.outputPricePer1M,
 		markup: m.markupPercent,
+		...(m.extendedPricing ? { extended: m.extendedPricing } : {}),
 	};
 }
 
@@ -63,11 +62,13 @@ export function getModelPricing(modelId: string): ModelPricing {
 export function userFacingFor(modelId: string): {
 	inputPer1M: number;
 	outputPer1M: number;
+	extended?: { threshold: number; inputPer1M: number; outputPer1M: number };
 } {
 	const p = getModelPricing(modelId);
 	const factor = 1 + p.markup / 100;
 	return {
 		inputPer1M: p.inputPer1M * factor,
 		outputPer1M: p.outputPer1M * factor,
+		...(p.extended ? { extended: { threshold: p.extended.threshold, inputPer1M: p.extended.inputPer1M * factor, outputPer1M: p.extended.outputPer1M * factor } } : {}),
 	};
 }

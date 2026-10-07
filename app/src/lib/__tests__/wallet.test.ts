@@ -146,6 +146,15 @@ describe("wallet", () => {
 	});
 
 	describe("ensureBaseChain", () => {
+		it("offers public Base network details when the wallet does not know Base", async () => {
+			const request = vi.fn().mockResolvedValueOnce("0x1")
+				.mockRejectedValueOnce({ code: 4902 }).mockResolvedValue(null);
+			install({ request });
+			await ensureBaseChain();
+			expect(request.mock.calls[2][0]).toMatchObject({ method: "wallet_addEthereumChain", params: [{ chainId: "0x2105", rpcUrls: ["https://mainnet.base.org", "https://base-rpc.publicnode.com"] }] });
+			expect(request.mock.calls[3][0].method).toBe("wallet_switchEthereumChain");
+		});
+
 		it("does nothing when already on Base", async () => {
 			const { provider, calls } = makeProvider({ chainId: "0x2105" });
 			install(provider);

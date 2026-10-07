@@ -13,9 +13,9 @@ export const modelRoutes = new Hono<OmaEnv>();
 	* User-facing per-1M prices for a model, via the same override-aware
 	* lookup billing deducts with — displayed prices always match charges.
 	*/
-function facingPrices(m: { id: string }): { prompt: number; completion: number } {
+function facingPrices(m: { id: string }): { prompt: number; completion: number; extended?: { context_threshold: number; prompt: number; completion: number } } {
 		const pricing = userFacingFor(m.id);
-		return { prompt: pricing.inputPer1M, completion: pricing.outputPer1M };
+		return { prompt: pricing.inputPer1M, completion: pricing.outputPer1M, ...(pricing.extended ? { extended: { context_threshold: pricing.extended.threshold, prompt: pricing.extended.inputPer1M, completion: pricing.extended.outputPer1M } } : {}) };
 }
 
 // OpenAI-compatible /v1/models
@@ -34,10 +34,14 @@ modelRoutes.get("/v1/models", async (c) => {
 								created: Math.floor(Date.now() / 1000),
 								owned_by: m.provider ?? "oma",
 								display_name: m.displayName,
+		description: m.description,
 								provider: m.provider,
 								category: m.category,
 								modality: "chat",
 								context_length: m.contextWindow ?? 0,
+ max_output_tokens: m.maxOutputTokens ?? m.maxTokens,
+ default_output_tokens: m.maxTokens,
+ unavailable_reason: m.disabledReason,
 								supports_streaming: m.supportsStreaming,
 								supports_tools: m.capabilities?.includes("tools") ?? false,
 								capabilities: m.capabilities ?? [],
@@ -45,6 +49,7 @@ modelRoutes.get("/v1/models", async (c) => {
 								pricing: {
 										prompt: prices.prompt,
 										completion: prices.completion,
+ ...(prices.extended ? { extended: prices.extended } : {}),
 								},
 						};
 				}),
@@ -69,10 +74,14 @@ modelRoutes.get("/v1/models/:id", async (c) => {
 				created: Math.floor(Date.now() / 1000),
 				owned_by: m.provider ?? "oma",
 				display_name: m.displayName,
+		description: m.description,
 				provider: m.provider,
 				category: m.category,
 				modality: "chat",
 				context_length: m.contextWindow ?? 0,
+ max_output_tokens: m.maxOutputTokens ?? m.maxTokens,
+ default_output_tokens: m.maxTokens,
+ unavailable_reason: m.disabledReason,
 				supports_streaming: m.supportsStreaming,
 				supports_tools: m.capabilities?.includes("tools") ?? false,
 				capabilities: m.capabilities ?? [],
@@ -80,6 +89,7 @@ modelRoutes.get("/v1/models/:id", async (c) => {
 				pricing: {
 						prompt: prices.prompt,
 						completion: prices.completion,
+ ...(prices.extended ? { extended: prices.extended } : {}),
 				},
 		});
 });

@@ -83,7 +83,7 @@ const PILLARS: Pillar[] = [
 	href: "/docs#endpoints",
 	cta: "API endpoints",
 	accent: "info",
-	highlights: ["OpenAI-compatible", "Circuit-breaker protection", "No OMA prompt logging"],
+	highlights: ["OpenAI-compatible", "Automatic retries", "No OMA prompt logging"],
 	visual: "ledger",
 	},
 ];
@@ -100,7 +100,7 @@ const SUPPORT = [
 	id: "routing",
 	icon: Zap,
 	title: "Live routing + failover",
-	body: "Circuit-breaker protection and fallback routes across the curated catalog.",
+	body: "Automatic retries and fallback routes across the curated catalog.",
 	href: "/docs#endpoints",
 	},
 	{
@@ -279,10 +279,10 @@ export function CapabilitiesGrid() {
 		eyebrowVariant="caps"
 		headline={
 		<>
-		Three stories.
+		One account.
 		<br />
 		<span className="text-accent font-bold not-italic">
-		One inference surface.
+		More ways to build.
 		</span>
 		</>
 		}

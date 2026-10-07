@@ -32,53 +32,7 @@ import { MODELS } from "./models-data";
  * meets the app's narrower one and reports a false error in code this test
  * never runs. Reading the file keeps the test out of both compilers.
  */
-const SERVER_MODELS = resolve(
-	dirname(fileURLToPath(import.meta.url)),
-	"../../../server/src/inference/models.ts",
-);
-
-type ServerEntry = {
-	id: string;
-	inputPricePer1M: number;
-	outputPricePer1M: number;
-	markupPercent: number;
-};
-
-function readServerCatalog(): ServerEntry[] {
-	const source = readFileSync(SERVER_MODELS, "utf8");
-	const entries: ServerEntry[] = [];
-
-	// Each catalog entry is an object literal starting with `id: "..."`.
-	// Splitting on that anchor stops a field bleeding across entries.
-	const anchors = [...source.matchAll(/\bid:\s*"([a-z0-9.-]+)"/g)];
-	expect(
-		anchors.length,
-		`found no catalog entries in ${SERVER_MODELS}. If the server catalog ` +
-			"format changed, update readServerCatalog() rather than weakening " +
-			"this assertion.",
-	).toBeGreaterThan(0);
-
-	for (let i = 0; i < anchors.length; i++) {
-		const start = anchors[i].index ?? 0;
-		const end = anchors[i + 1]?.index ?? source.length;
-		const block = source.slice(start, end);
-
-		const num = (key: string) => {
-			const m = block.match(new RegExp(`${key}:\\s*([0-9][0-9_]*(?:\\.[0-9]+)?)`));
-			return m ? Number(m[1].replace(/_/g, "")) : Number.NaN;
-		};
-
-		entries.push({
-			id: anchors[i][1],
-			inputPricePer1M: num("inputPricePer1M"),
-			outputPricePer1M: num("outputPricePer1M"),
-			markupPercent: num("markupPercent"),
-		});
-	}
-	return entries;
-}
-
-const server = readServerCatalog();
+const server = JSON.parse(readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), "../../../server/src/inference/model-catalog.json"), "utf8")) as Array<{ id: string; inputPricePer1M: number; outputPricePer1M: number; markupPercent: number; retailPricing?: { inputPer1M: number; outputPer1M: number } }>;
 
 describe("app fallback catalog matches the server catalog", () => {
 	it("parses the expected number of server entries", () => {
@@ -114,9 +68,9 @@ describe("app fallback catalog matches the server catalog", () => {
 				return {
 					id: s.id,
 					markupPercent: s.markupPercent,
-					expectedInput: s.inputPricePer1M * factor,
+					expectedInput: s.retailPricing?.inputPer1M ?? s.inputPricePer1M * factor,
 					actualInput: a.inputPricePer1M,
-					expectedOutput: s.outputPricePer1M * factor,
+					expectedOutput: s.retailPricing?.outputPer1M ?? s.outputPricePer1M * factor,
 					actualOutput: a.outputPricePer1M,
 				};
 			})

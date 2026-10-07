@@ -68,18 +68,21 @@ export function ModelDetail({ model, availability, supportedParameters, supports
 
 				{availability !== true && (
 					<p role="status" className={`mb-6 rounded-[var(--radius-lg)] border px-4 py-3 text-sm leading-relaxed ${unavailable ? "border-amber/25 bg-amber/5 text-text-secondary" : "border-border bg-panel text-text-muted"}`}>
-						{unavailable ? "This model is not accepting requests right now. Pricing and API examples remain available for reference." : "Live availability could not be confirmed. Catalog details are shown for reference; availability is checked when you start a chat."}
+						{unavailable ? (model.unavailableReason ?? "This model is not accepting requests right now. Pricing and API examples remain available for reference.") : "Live availability could not be confirmed. Catalog details are shown for reference; availability is checked when you start a chat."}
 					</p>
 				)}
 
-				<div className="mb-3 grid gap-3 sm:grid-cols-3">
+				<div className="mb-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
 					<Stat label="Input price" value={formatPricePerMillion(model.inputPricePer1M)} unit="USD per 1M tokens" />
 					<Stat label="Output price" value={formatPricePerMillion(model.outputPricePer1M)} unit="USD per 1M tokens" />
+					<Stat label="Maximum output" value={model.maxOutputTokens?.toLocaleString("en-US") ?? "Model dependent"} unit="tokens per response, including reasoning" />
 					<Stat label="Context window" value={model.contextLength} unit={`${model.contextTokens.toLocaleString("en-US")} tokens`} />
 				</div>
 				<p className="mb-8 text-xs leading-relaxed text-text-muted">
 					{isFreeChatModel(model.id) ? "Free in website chat within the daily limit. API usage is billed at the rates above." : "Pay for the tokens you use. Chat and API usage draw from your account credits."}
 				</p>
+
+				{model.extendedPricing && <p className="mb-6 text-sm leading-relaxed text-text-secondary">Above {model.extendedPricing.threshold.toLocaleString("en-US")} input tokens, extended-context rates apply to the request: {formatPricePerMillion(model.extendedPricing.inputPer1M)} input and {formatPricePerMillion(model.extendedPricing.outputPer1M)} output per million tokens.</p>}
 
 				<ModelDetailTabs label="Model details" tabs={DETAIL_TABS} selected={tab} onSelect={setTab} prefix="model" />
 				<div role="tabpanel" id="model-panel-overview" aria-labelledby="model-tab-overview" hidden={tab !== "overview"} tabIndex={0} className="pt-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">

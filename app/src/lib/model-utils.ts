@@ -160,6 +160,8 @@ export interface LiveModelRaw {
 	display_name?: string;
 	category?: string;
 	context_length?: number;
+ max_output_tokens?: number;
+ unavailable_reason?: string;
 	provider?: string;
 	/** false when the provider's API key is missing/placeholder server-side */
 	available?: boolean;
@@ -210,6 +212,8 @@ export function mapLiveModel(m: LiveModelRaw): ModelOption {
 		category: cat,
 		provider,
 		available: isModelAvailable(m),
+ maxOutputTokens: m.max_output_tokens,
+ unavailableReason: m.unavailable_reason,
 		inputPer1M: m.pricing?.prompt
 			? Number(m.pricing.prompt)
 			: 0,

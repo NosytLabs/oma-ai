@@ -65,8 +65,7 @@ fixtures are under `.tmp/browser-audit/`, also excluded from Git.
 - MiniMax M2.7: production browser stream returned `OK` and completed.
 - DeepSeek V4 Flash through OpenBroker: HTTP 200, but repetitive output and
   `finish_reason: length`, reproduced with a fresh arithmetic prompt. The UI
-  flagged low quality/truncation. Existing exclusion from automatic free
-  fallback is retained; explicit selection remains available.
+  flagged low quality/truncation. The route is now paused in the catalog and rejected before inference; it is excluded from automatic fallback.
 - The local Venice credential was rejected with 401 for all 18 Venice models.
   Production paid-model inference is **not verified** by these checks. The
   configured/available flags are not inference health checks.
@@ -83,3 +82,18 @@ Neon `omaapi` deployment **64** includes the server fixes, preserving production
 configuration and scheduled triggers. The frontend is deployed to the existing
 Vercel project `oma` and canonical `https://www.oma-ai.com`; the final deployment
 identifier is recorded in the task completion report.
+
+
+## Expanded model, wallet and dependency pass
+
+- One shared model catalog now supplies billing and UI fallback data. Gonka is exactly $0.02/M input and output; Venice is 50% markup over its refreshed published catalog, including long-context tiers.
+- Paused the absent Venice Mistral entry and the degraded OpenBroker DeepSeek route. Model details show output limits and pause reasons; dashboard counts exclude paused entries. Added context/output validation and increased reasoning-model examples to 1,024 output tokens.
+- MiniMax and GLM completed production coding checks with 1,024-token budgets. Both returned tool calls and accepted synthetic tool results. Some upstream output contained duplicate calls, inline reasoning or stray control text. No generated tools were executed.
+- Browser and backend settlement use bounded Base public RPC failover. Mainnet Base and PublicNode returned chain 8453; Llama returned HTML and was removed. Connected QuickNode endpoints were suspended.
+- Wallet setup handles missing Base network definitions with public RPC settings. Better Auth SIWE signatures, nonce replay, magic-link sessions and admin authorization passed real local HTTP checks. Optional ENS lookup timeouts are bounded.
+- Estimated provider cost is independent of final customer overrides. Signed-in free/aborted usage records retain cost but no customer revenue. Admin gross margin uses revenue as denominator and is explicitly an estimate.
+- Updated all direct dependencies to latest except TypeScript 6.0.3, retained for current ESLint parser compatibility. Migrated Polar's versioned SDK. pnpm overrides remove vulnerable transitive esbuild and KaTeX releases. One unpatched braces advisory remains in lint tooling.
+
+Validation: frontend typecheck/lint/build and 647 tests; backend typecheck/lint/build and 500 tests (six database cases skipped in the ordinary suite, exercised in the separate database run); 95 browser-suite checks; 11 real auth integration flows; 125 payment checks with isolated Postgres. Browser login, chat, admin, model details and 375px screenshots were checked with the in-app browser; inspected console had no warnings/errors. Production paid Venice inference and a funded mainnet settlement remain unverified.
+
+See [pricing, limits and treasury operations](../pricing-and-treasury.md) for current configuration, costs and external sources.

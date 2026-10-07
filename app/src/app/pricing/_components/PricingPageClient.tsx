@@ -295,7 +295,7 @@ export default function PricingPage() {
 						See model costs first, then choose how to pay. OMA bills from
 						prepaid credits per token, with no subscriptions and no lock-in.
 						Listed prices are what you pay: Venice-routed models include a
-						25% platform fee; OMA-AI models are priced at 2x Gonka wholesale.
+						50% markup; OMA-AI rates include about a 500% markup on estimated Gonka compute costs, rounded to $0.02 per million input or output tokens. Listed prices already include markup.
 					</p>
 					<div className="meta-strip">
 						<span role="status">

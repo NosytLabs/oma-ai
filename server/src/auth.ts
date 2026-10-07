@@ -255,7 +255,7 @@ const ensRpcUrl =
 	config.ETH_RPC_URL ?? "https://cloudflare-eth.com";
 const ensClient = createPublicClient({
 	chain: mainnet,
-	transport: http(ensRpcUrl),
+	transport: http(ensRpcUrl, { timeout: 3_000, retryCount: 0 }),
 });
 
 // SECURITY (audit 1.1): treat `preview` as production for cookie

@@ -95,6 +95,7 @@ export function buildFallbackChain(
 		if (!id || seen.has(id)) continue;
 		const def = getModelById(id);
 		if (!def) continue;
+		if (def.disabledReason && id !== primary) continue;
 		// Keep the requested primary even if it is Venice — failover
 		// peers after it must still be Gonka/openbroker on the free path.
 		if (freeOnly && id !== primary && (

@@ -1,3 +1,5 @@
+import { resolveOutputBudget } from "../../inference/request-limits.js";
+import { assertSufficientBalance } from "../../inference/billing.js";
 /**
 	* Anthropic-compatible Messages API — /v1/messages
 	*
@@ -357,12 +359,14 @@ anthropicRoutes.post(
 				const promptTokens = estimateTokens(promptText);
 
 				try {
+ const outputBudget = resolveOutputBudget(modelDef, max_tokens, promptTokens);
+ await assertSufficientBalance(userId, getModelPricing(model), promptTokens, outputBudget);
 						const { response: upstreamResp, actualModelId, attemptCount } =
 							await routeRequestWithFallback({
 								modelId: model,
 								messages: openAIMessages,
 								stream,
-								max_tokens,
+								max_tokens: outputBudget,
 								temperature,
 								top_p,
 								tools,

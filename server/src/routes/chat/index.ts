@@ -31,6 +31,9 @@ import { optionalAuth } from "../../auth/middleware.js";
 import { modelRateLimit, rateLimit } from "../../middleware/rate-limit.js";
 import { dailyUsageLimit } from "../../middleware/daily-limit.js";
 import { getModelById } from "../../inference/models.js";
+import { resolveOutputBudget } from "../../inference/request-limits.js";
+import { calculateUsageCosts } from "../../inference/pricing-costs.js";
+import { buildFallbackChain } from "../../inference/fallback.js";
 import { getModelPricing } from "../../inference/billing-service.js";
 import { usageRecords } from "../../db/schema.js";
 import { db } from "../../db/client.js";
@@ -283,7 +286,8 @@ chatRoutes.post(
 				}
 
 				const promptText = messages.map((m) => flattenMessageContent(m.content)).join("\n");
-				const promptTokens = estimateTokens(promptText);
+				const promptTokens = estimateTokens(promptText + JSON.stringify(tools ?? []) + JSON.stringify(messages.filter((m) => m.tool_calls).map((m) => m.tool_calls)));
+ const outputBudget = resolveOutputBudget(modelDef, max_tokens, promptTokens);
 
 				// Fail before calling an upstream provider when an authenticated request
 				// has no usable credit balance. The ledger remains the final atomic guard
@@ -296,19 +300,16 @@ chatRoutes.post(
 								// requested model + client fallbacks so the 402 gate is not
 								// misleading. The atomic conditional UPDATE in
 								// deductCreditsIfSufficient remains the authoritative guard.
-								const candidates = [model, ...(clientModels ?? [])];
-								let worstPricing = getModelPricing(model);
-								for (const cand of candidates) {
-										const p = getModelPricing(cand);
-										if (!p) continue;
-										if (
-												p.inputPer1M + 3 * p.outputPer1M >
-												worstPricing.inputPer1M + 3 * worstPricing.outputPer1M
-										) {
-												worstPricing = p;
-										}
-								}
-								await assertSufficientBalance(userId, worstPricing, promptTokens, max_tokens);
+                const candidates = buildFallbackChain(model, clientModels ?? []).filter((id) => {
+                  const candidate = getModelById(id);
+                  return candidate && !candidate.disabledReason && (candidate.maxOutputTokens ?? candidate.maxTokens) >= outputBudget && (candidate.contextWindow ?? Infinity) >= promptTokens + outputBudget;
+                });
+                let worstPricing = getModelPricing(model);
+                for (const id of candidates) {
+                  const pricing = getModelPricing(id);
+                  if (calculateUsageCosts(pricing, promptTokens, outputBudget).userCostCents > calculateUsageCosts(worstPricing, promptTokens, outputBudget).userCostCents) worstPricing = pricing;
+                }
+                await assertSufficientBalance(userId, worstPricing, promptTokens, outputBudget);
 						}
 
 						const { response: upstreamResp, actualModelId, attemptCount } =
@@ -317,7 +318,7 @@ chatRoutes.post(
 								clientFallbacks: clientModels,
 								messages,
 								stream,
-								max_tokens,
+								max_tokens: outputBudget,
 								temperature,
 								top_p,
 								tools,

@@ -33,28 +33,28 @@ interface Step {
 const STEPS: Step[] = [
 	{
 		n: "01",
-		title: "Create your account",
+		title: "Sign in",
 		description:
 			"Use a passwordless email link or sign in with an EVM wallet via SIWE. No password to remember.",
 		icon: Wallet,
 	},
 	{
 		n: "02",
-		title: "Get your API key",
+		title: "Create an API key",
 		description:
 			"One key works across every model and provider. Rotate, scope, and revoke from your dashboard at any time.",
 		icon: Key,
 	},
 	{
 		n: "03",
-		title: "Fund credits or use x402",
+		title: "Add credits",
 		description:
 			"Deposit USDC on Base, use card checkout when available, or settle USDC via x402 to credit the same balance.",
 		icon: Rocket,
 	},
 	{
 		n: "04",
-		title: "Send your first request",
+		title: "Make a request",
 		description:
 			"Point any OpenAI-compatible SDK at OMA. One key, one endpoint, every curated model.",
 		icon: Terminal,
@@ -120,7 +120,7 @@ function StepCard({ step, isLast }: { step: Step; isLast: boolean }) {
 				</div>
 			</div>
 			<div>
-				<h3 className="font-display text-xl sm:text-2xl font-medium tracking-tight text-text-bright">
+				<h3 className="font-display text-xl sm:text-2xl font-medium tracking-tight text-text-bright lg:min-h-[2lh]">
 					{step.title}
 				</h3>
 				<p className="mt-2 text-sm text-text-secondary leading-relaxed">

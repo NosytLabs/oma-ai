@@ -11,6 +11,8 @@
 import { getModelById } from "./models.js";
 import { buildFallbackChain } from "./fallback.js";
 import { logger } from "../lib/logger.js";
+import { resolveOutputBudget } from "./request-limits.js";
+import { estimateTokens, flattenMessageContent } from "./token-utils.js";
 
 // Decomposed modules — re-export for backward compatibility.
 export {
@@ -67,6 +69,8 @@ async function callProvider(opts: CallProviderOptions): Promise<Response> {
 		if (!modelDef) {
 			throw new ProviderError(`Model ${modelId} not found`, 404);
 		}
+		const promptTokens = estimateTokens(messages.map((m) => flattenMessageContent(m.content)).join("\n") + JSON.stringify(tools ?? []));
+		const outputBudget = resolveOutputBudget(modelDef, max_tokens, promptTokens);
 
 		// Resolve upstream provider (Venice vs OMA-AI/OpenBroker).
 		const provider = modelDef.provider;
@@ -88,7 +92,7 @@ async function callProvider(opts: CallProviderOptions): Promise<Response> {
 						...(m.tool_call_id ? { tool_call_id: m.tool_call_id } : {}),
 				})),
 				stream,
-				...(max_tokens ? { max_tokens } : {}),
+				max_tokens: outputBudget,
 				...(temperature !== undefined ? { temperature } : {}),
 				...(top_p !== undefined ? { top_p } : {}),
 				...(tools ? { tools } : {}),
@@ -289,7 +293,7 @@ export async function routeRequestWithFallback(
 										// don't hammer a throttled provider (OpenRouter-style patience).
 										const baseDelay =
 												e.status === 429
-														? 400 * Math.pow(2, attempt - 1)
+														? 2_000 * Math.pow(2, attempt - 1)
 														: 100 * Math.pow(2, attempt - 1);
 										const jitter = Math.random() * (e.status === 429 ? 150 : 50);
 										const delay = Math.min(baseDelay + jitter, e.status === 429 ? 5000 : 2000);

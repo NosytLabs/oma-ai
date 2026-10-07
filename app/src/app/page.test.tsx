@@ -196,10 +196,10 @@ describe("HomePage", () => {
 	it("renders the how-it-works steps", async () => {
 		renderWithQueryClient(<HomePage />);
 		await waitFor(() => {
-			expect(screen.getByText(/create your account/i)).toBeInTheDocument();
-			expect(screen.getByText(/fund credits or use x402/i)).toBeInTheDocument();
+			expect(screen.getByRole("heading", { name: "Sign in" })).toBeInTheDocument();
+			expect(screen.getByRole("heading", { name: "Add credits" })).toBeInTheDocument();
 		});
-		expect(screen.getAllByText(/get your api key/i).length).toBeGreaterThan(0);
+		expect(screen.getAllByText(/create an api key/i).length).toBeGreaterThan(0);
 	});
 
 	it("renders the stats section with honest metrics", async () => {

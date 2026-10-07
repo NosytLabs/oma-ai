@@ -98,7 +98,7 @@ async function fetchChat24h(): Promise<Chat24h> {
 
 opsRoutes.get("/v1/ops/snapshot", sessionOrBearerAuth, requireAdmin(), async (c) => {
 		const dbStart = Date.now();
-		let dbLatencyMs: number | null = null;
+		let dbLatencyMs: number | null;
 		try {
 				await db.execute(sql`select 1`);
 				dbLatencyMs = Date.now() - dbStart;

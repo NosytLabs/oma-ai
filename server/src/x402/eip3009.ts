@@ -1,6 +1,5 @@
 import {
 		createWalletClient,
-		http,
 		formatUnits,
 		encodePacked,
 		encodeFunctionData,
@@ -15,7 +14,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { config } from "../config.js";
 import { USDC_BASE, USDC_DECIMALS } from "../constants.js";
 import { logger } from "../lib/logger.js";
-import { getPublicClient } from "../lib/rpc-client.js";
+import { getPublicClient, createBaseTransport } from "../lib/rpc-client.js";
 import { parseUsdcAtomic } from "./facilitator-signing.js";
 import { consumeNonce } from "./replay.js";
 import { SERVER_TREASURY } from "./treasury.js";
@@ -293,7 +292,7 @@ async function submitEip3009Transfer(
 		const walletClient = createWalletClient({
 				account,
 				chain: base,
-				transport: http(config.CHAIN_RPC_URL),
+				transport: createBaseTransport(),
 		});
 		const txHash = await walletClient.writeContract({
 			address: USDC_BASE,

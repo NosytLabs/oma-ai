@@ -90,6 +90,11 @@ export function RateLimitsSection() {
 				</table>
 			</div>
 
+			<div className="mb-6 rounded-[var(--radius-xl)] border border-border bg-panel p-4 text-sm leading-relaxed text-text-muted">
+                <h3 className="mb-2 font-semibold text-text">Context, output and upstream capacity</h3>
+                <p>GET /v1/models publishes context_length, max_output_tokens and default_output_tokens for each model. Input plus output must fit the context window. Reasoning tokens count toward the output budget; start with 1,024 tokens or more for reasoning models.</p>
+                <p className="mt-3">OMA limits and upstream capacity are separate. Gonka/OpenBroker can return 429 when its shared gateway is busy, even below your OMA limit. Begin with one or two concurrent requests, honor Retry-After when present, and retry with exponential backoff measured in seconds. A model’s context window is not a promise of unlimited throughput.</p>
+            </div>
 			<div className="grid gap-4 sm:grid-cols-2">
 				<div className="rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] p-4">
 					<h3 className="mb-2 font-semibold text-text">Burst Handling</h3>

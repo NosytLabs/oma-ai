@@ -1113,8 +1113,8 @@ function UsageSection() {
 	// Margin only means something when we actually charged more than upstream
 	// cost. Don't render a percentage off a zero denominator.
 	const marginPct =
-		totals && totals.upstreamCents > 0
-			? ((totals.markupCents / totals.upstreamCents) * 100).toFixed(1)
+		totals && totals.totalCents > 0
+			? ((totals.markupCents / totals.totalCents) * 100).toFixed(1)
 			: null;
 
 	return (
@@ -1186,7 +1186,7 @@ function UsageSection() {
 						<StatCard
 							label="Upstream cost"
 							value={fmtCents(totals?.upstreamCents ?? 0)}
-							sub="what the provider charged us"
+							sub="catalog-based estimate"
 							icon={<Gauge className="h-3 w-3 text-text-muted" />}
 						/>
 						<StatCard
@@ -1197,9 +1197,9 @@ function UsageSection() {
 							tone="ok"
 						/>
 						<StatCard
-							label="Margin"
+							label="Est. gross margin"
 							value={marginPct ? `${marginPct}%` : "—"}
-							sub={marginPct ? "markup / upstream" : "no upstream cost yet"}
+							sub={marginPct ? "(billed − estimated cost) / billed" : "no upstream cost yet"}
 							icon={<Gauge className="h-3 w-3 text-text-muted" />}
 							tone={marginPct ? "ok" : "default"}
 						/>
@@ -1265,9 +1265,7 @@ function UsageSection() {
 						</div>
 					)}
 					<p className="mt-3 text-[10px] leading-relaxed text-text-muted">
-						Upstream cost is the provider&apos;s charge; billed is what the user paid.
-						The difference is gross margin. Group by provider to see where
-						Venice/OpenBroker spend actually lands.
+						Provider costs are catalog estimates, not reconciled invoices. Gonka uses a dated GNK/USD reference and retry allowance. Gross margin excludes hosting, payment fees, anonymous free traffic, and uncollected charges. Reconcile OpenBroker settled usage before treating this as profit.
 					</p>
 				</>
 			)}

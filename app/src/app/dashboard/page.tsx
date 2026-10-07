@@ -310,7 +310,7 @@ function DashboardPageInner() {
 				<div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
 					<DashboardHeader
 						loading={loading}
-						modelsAvailable={models.length}
+						modelsAvailable={models.filter((model) => model.available !== false).length}
 						hasAnyData={hasAnyData}
 						refreshTick={refreshTick}
 						onRefresh={handleRefresh}

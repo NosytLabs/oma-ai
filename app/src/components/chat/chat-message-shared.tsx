@@ -85,6 +85,8 @@ export interface ModelOption {
 	inputPer1M: number;
 	outputPer1M: number;
 	ctx: string;
+ maxOutputTokens?: number;
+ unavailableReason?: string;
 	available?: boolean;
 	/** Only true when both prices were present and valid in the live response. */
 	pricingAvailable?: boolean;
@@ -123,6 +125,9 @@ export const FALLBACK_MODELS: ModelOption[] = MODELS.map((m) => {
 		inputPer1M: m.inputPricePer1M,
 		outputPer1M: m.outputPricePer1M,
 		ctx: m.contextLength,
+ maxOutputTokens: m.maxOutputTokens,
+ available: m.available,
+ unavailableReason: m.unavailableReason,
 	};
 });
 

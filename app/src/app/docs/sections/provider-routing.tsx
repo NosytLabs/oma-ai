@@ -19,8 +19,7 @@ export function ProviderRoutingSection() {
 						<p className="mt-1 text-sm text-text-muted">
 							Every model id resolves to an upstream provider. OMA routes each
 							request to the model&apos;s catalog-mapped provider based on
-							availability — with circuit-breaker protection against failing
-							upstreams.
+							availability, with bounded retries and configured fallback models.
 						</p>
 					</div>
 				</div>
@@ -67,8 +66,8 @@ export function ProviderRoutingSection() {
 						<li>Request arrives with a model id</li>
 						<li>OMA looks up the model→provider mapping in the catalog</li>
 						<li>The model&apos;s primary provider handles the request</li>
-						<li>On failure, the circuit breaker may retry a configured fallback for that mapped model</li>
-						<li>The public model id and customer price remain stable across that retry</li>
+						<li>On failure, OMA may retry or select a configured fallback model</li>
+						<li>The serving model is reported in x-actual-model and billed at its listed rate</li>
 					</ol>
 				</div>
 				<div className="rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] p-4">
@@ -80,6 +79,10 @@ export function ProviderRoutingSection() {
 						<div>
 							<span className="text-accent">x-provider</span>: venice | oma-ai
 						</div>
+						<div><span className="text-accent">x-actual-model</span>: serving model ID
+						</div>
+						<div><span className="text-accent">x-oma-fallback</span>: 1 when a peer served the request
+						</div>
 					</div>
 				</div>
 			</div>
@@ -88,8 +91,7 @@ export function ProviderRoutingSection() {
 				A mapped model may also have a compatible fallback provider configured.
 				If a primary provider fails and that fallback is used,
 				request content must be forwarded to the inference service that actually
-				handles the retry. The public model id and listed customer price do not
-				change. See <a href="/privacy" className="text-accent underline underline-offset-2">Privacy</a> for data-flow details.
+				handles the retry. The serving model and its listed price can change. Free website requests stay within the free model pool. See <a href="/privacy" className="text-accent underline underline-offset-2">Privacy</a> for data-flow details.
 			</p>
 		</AnimatedSection>
 	);

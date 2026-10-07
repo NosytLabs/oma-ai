@@ -110,7 +110,8 @@ vi.mock('viem/chains', () => ({
 		base: { id: 8453, name: 'Base' },
 }))
 vi.mock('../../lib/rpc-client.js', () => ({
-		getPublicClient: vi.fn(() => ({
+		createBaseTransport: vi.fn(() => ({})),
+	getPublicClient: vi.fn(() => ({
 			call: callMock,
 			// Settlement waits for the receipt before reporting success, so a
 			// missing method here correctly fails the verify — this mock has to

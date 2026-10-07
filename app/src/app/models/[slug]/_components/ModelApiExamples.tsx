@@ -21,7 +21,7 @@ export function ModelApiExamples({ modelId, name }: { modelId: string; name: str
   -d '{
     "model": ${quotedId},
     "messages": [{ "role": "user", "content": "Hello!" }],
-    "max_tokens": 150
+    "max_tokens": 1024
   }'`,
 		python: `import os
 from openai import OpenAI
@@ -34,7 +34,7 @@ client = OpenAI(
 response = client.chat.completions.create(
     model=${quotedId},
     messages=[{"role": "user", "content": "Hello!"}],
-    max_tokens=150,
+    max_tokens=1024,
 )
 
 print(response.choices[0].message.content)`,
@@ -48,7 +48,7 @@ const client = new OpenAI({
 const response = await client.chat.completions.create({
   model: ${quotedId},
   messages: [{ role: "user", content: "Hello!" }],
-  max_tokens: 150,
+  max_tokens: 1024,
 });
 
 console.log(response.choices[0].message.content);`,

@@ -1,5 +1,6 @@
 "use client";
 
+import { MODELS } from "@/lib/models-data";
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import { useCallback, useEffect, useRef } from "react";
 import type { Message, SearchResult } from "@/components/chat";
@@ -320,7 +321,7 @@ export function useStreamingChat(
 						})),
 						temperature: live.temperature,
 						top_p: live.topP,
-						max_tokens: live.maxTokens,
+						max_tokens: Math.min(live.maxTokens, MODELS.find((m) => m.id === useModel)?.maxOutputTokens ?? 16384),
 						top_k: live.topK,
 						frequency_penalty: live.freqPenalty,
 						presence_penalty: live.presPenalty,

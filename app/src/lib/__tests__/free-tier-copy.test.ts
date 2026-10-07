@@ -4,6 +4,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { MODELS } from "@/lib/models-data";
 import { FREE_CHAT_MODEL_IDS, FREE_DEFAULT_CHAT_MODEL } from "@/lib/model-utils";
 
 // AUDIT 2026-09-27 / T-8: anchor to this file, not process.cwd().
@@ -19,7 +20,7 @@ describe("free-tier copy accuracy", () => {
 		// change. Assert the invariants that actually matter: every free id is
 		// a real catalog entry (no fabricated ids in marketing copy) and the
 		// default free model is itself free.
-		const catalogIds = new Set(readApp("lib/models-data.ts").match(/id:\s*"([^"]+)"/g)?.map((s) => s.match(/"([^"]+)"/)?.[1]) ?? []);
+		const catalogIds = new Set(MODELS.map((m) => m.id));
 		for (const id of FREE_CHAT_MODEL_IDS) {
 			// Model ids referenced anywhere in the app source must exist either
 			// in the static fallback catalog or in the live-catalog mapping —
@@ -33,7 +34,7 @@ describe("free-tier copy accuracy", () => {
 
 	it("pricing page states honest OMA-AI margin", () => {
 		const src = readApp("app/pricing/_components/PricingPageClient.tsx");
-		expect(src).toMatch(/OMA-AI models are priced at 2x Gonka wholesale\./);
+		expect(src).toMatch(/500% markup on estimated Gonka compute costs/);
 		expect(src).not.toMatch(/OMA-AI models do not\./);
 	});
 

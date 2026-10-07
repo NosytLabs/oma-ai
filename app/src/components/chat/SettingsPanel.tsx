@@ -333,6 +333,7 @@ export function SettingsPanel({
 }: SettingsPanelProps) {
 	const MODELS = useSharedLiveModels();
 	const selectedModel = MODELS.find((m) => m.id === model);
+ const outputLimit = selectedModel?.maxOutputTokens ?? 16384;
 
 	return (
 		<div className="space-y-5 font-mono text-sm">
@@ -401,7 +402,7 @@ export function SettingsPanel({
 						MAX_TOK
 					</label>
 					<span className="text-xs font-mono text-success tabular-nums">
-						{maxTokens}
+						{maxTokens} / {outputLimit.toLocaleString()}
 					</span>
 				</div>
 				<input
@@ -411,11 +412,13 @@ export function SettingsPanel({
 						setMaxTokens(
 							Math.max(
 								1,
-								Math.min(32000, parseInt(e.target.value, 10) || 2048),
+								Math.min(outputLimit, parseInt(e.target.value, 10) || 2048),
 							),
 						)
 					}
-					aria-label="Max tokens"
+					min={1}
+ max={outputLimit}
+ aria-label="Max tokens"
 					className="
  w-full px-3 py-2 bg-[var(--color-void)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-sm font-mono text-text-secondary
  focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)]/20

@@ -10,6 +10,7 @@ import { logger } from "../lib/logger.js";
 import { and, eq, sql } from "drizzle-orm";
 import { getModelPricing } from "./billing-service.js";
 import { ProviderError } from "./provider-route.js";
+import { calculateUsageCosts } from "./pricing-costs.js";
 
 export type UsageProvider = "venice" | "litellm" | "tinyfish" | "surplus" | "oma-ai";
 
@@ -54,11 +55,7 @@ function estimateUserCostCents(
 		maxOutputTokens?: number,
 ): number {
 		const outputTokens = Math.max(0, maxOutputTokens ?? 0);
-		const upstreamCostCents =
-				((promptTokens / 1_000_000) * pricing.inputPer1M +
-						(outputTokens / 1_000_000) * pricing.outputPer1M) *
-				100;
-		return upstreamCostCents * (1 + pricing.markup / 100);
+		return calculateUsageCosts(pricing, promptTokens, outputTokens).userCostCents;
 }
 
 /**
@@ -145,13 +142,9 @@ export async function recordUsage(args: RecordUsageArgs): Promise<void> {
 					? Math.max(0, Date.now() - startedAt)
 					: null;
 		// Pricing fields are in DOLLARS per 1M tokens; multiply by 100 for cents.
-		const upstreamCostCents =
-				((promptTokens / 1_000_000) * pricing.inputPer1M +
-						(outputTokens / 1_000_000) * pricing.outputPer1M) *
-				100;
-		const markupMultiplier = 1 + pricing.markup / 100;
-		const userCostCents = upstreamCostCents * markupMultiplier;
-		const markupCents = userCostCents - upstreamCostCents;
+		const { upstreamCostCents, userCostCents } = calculateUsageCosts(pricing, promptTokens, outputTokens);
+		const chargedCents = status === "completed" && !skipBilling ? userCostCents : 0;
+		const markupCents = chargedCents - upstreamCostCents;
 
 		// Anonymous free-tier requests have no BetterAuth user. The DB schema
 		// enforces a FK on usage_records.user_id, and there's no credit balance
@@ -196,11 +189,11 @@ export async function recordUsage(args: RecordUsageArgs): Promise<void> {
 								attemptCount: attemptCount ?? 1,
 								inputTokens: promptTokens,
 								outputTokens,
-								costCents: skipBilling ? "0" : upstreamCostCents.toFixed(4),
-								markupCents: skipBilling ? "0" : markupCents.toFixed(4),
-								totalCents: skipBilling ? "0" : userCostCents.toFixed(4),
+								costCents: upstreamCostCents.toFixed(4),
+								markupCents: markupCents.toFixed(4),
+								totalCents: chargedCents.toFixed(4),
 								latencyMs,
-								status: skipBilling ? "free_tier" : status,
+								status: skipBilling && status === "completed" ? "free_tier" : status,
 							})
 							.onConflictDoNothing({ target: usageRecords.requestId })
 							.returning({ requestId: usageRecords.requestId });
