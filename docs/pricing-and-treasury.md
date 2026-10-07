@@ -56,7 +56,7 @@ OMA's account/key rate limits are separate from provider limits. OpenBroker desc
 ## Operations and reconciliation
 
 1. Monitor treasury USDC, facilitator ETH, OpenBroker GNK and Venice credit separately. Never infer one from another.
-2. Record OpenBroker completion/request IDs and reconcile `/v1/usage/{id}` `cost_ngonka` and `cost_source` against the account ledger. Current OMA admin costs are catalog estimates, not a full upstream invoice reconciliation. Signed-in free and aborted requests now retain estimated provider costs with zero customer revenue; anonymous guest usage is still tracked outside the user usage ledger.
+2. Record OpenBroker completion/request IDs and reconcile `/v1/usage/{id}` `cost_ngonka` and `cost_source` against the account ledger. Streaming requests ask for the final provider usage chunk. When it is absent, fallback token estimates are independent of SSE chunk boundaries and count content, reasoning and tool-call arguments. Current OMA admin costs are catalog estimates, not a full upstream invoice reconciliation. Signed-in free and aborted requests now retain estimated provider costs with zero customer revenue; anonymous guest usage is still tracked outside the user usage ledger.
 3. Refresh Venice catalog prices and output/context limits before releases. Preserve long-context tiers. Review admin overrides when costs change.
 4. Re-run payment replay, amount-forgery, finality, cross-account and database credit tests for payment changes. Local fixture transfers do not prove a real funded mainnet settlement.
 5. Keep public endpoint failures observable without logging private RPC URLs or API keys. Restore a dedicated endpoint if traffic outgrows public capacity.

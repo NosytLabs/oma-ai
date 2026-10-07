@@ -31,6 +31,29 @@ export function estimateTokens(text: string): number {
 		return Math.max(1, Math.ceil(estimate));
 }
 
+/** Same heuristic as estimateTokens, with bounded state per output channel.
+ * Rounding each SSE fragment separately overcharges short token fragments. */
+export function createStreamTokenMeter() {
+	const inWord = new Map<string, boolean>();
+	let words = 0;
+	let punctuation = 0;
+	let hasText = false;
+	return {
+		add(text: string, channel = "content") {
+			let previous = inWord.get(channel) ?? false;
+			for (const character of text) {
+				hasText = true;
+				const current = /\S/u.test(character);
+				if (current && !previous) words++;
+				if (/[^\p{L}\p{N}\s]/u.test(character)) punctuation++;
+				previous = current;
+			}
+			inWord.set(channel, previous);
+		},
+		tokens: () => hasText ? Math.max(1, Math.ceil(words * 1.33 + punctuation * 0.5)) : 0,
+	};
+}
+
 export function flattenMessageContent(content: string | unknown[] | null | undefined): string {
 		if (typeof content === "string") return content;
 		if (Array.isArray(content)) {

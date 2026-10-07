@@ -78,8 +78,8 @@ every possible account state, provider behavior or code path is defect-free.
 
 ## Releases
 
-Neon `omaapi` deployment **64** includes the server fixes, preserving production
-configuration and scheduled triggers. The frontend is deployed to the existing
+Neon `omaapi` deployment **64** delivered the initial server fixes, preserving production
+configuration and scheduled triggers. Deployment **65** added the expanded model, pricing and RPC changes below. The frontend is deployed to the existing
 Vercel project `oma` and canonical `https://www.oma-ai.com`; the final deployment
 identifier is recorded in the task completion report.
 
@@ -94,6 +94,9 @@ identifier is recorded in the task completion report.
 - Estimated provider cost is independent of final customer overrides. Signed-in free/aborted usage records retain cost but no customer revenue. Admin gross margin uses revenue as denominator and is explicitly an estimate.
 - Updated all direct dependencies to latest except TypeScript 6.0.3, retained for current ESLint parser compatibility. Migrated Polar's versioned SDK. pnpm overrides remove vulnerable transitive esbuild and KaTeX releases. One unpatched braces advisory remains in lint tooling.
 
-Validation: frontend typecheck/lint/build and 647 tests; backend typecheck/lint/build and 500 tests (six database cases skipped in the ordinary suite, exercised in the separate database run); 95 browser-suite checks; 11 real auth integration flows; 125 payment checks with isolated Postgres. Browser login, chat, admin, model details and 375px screenshots were checked with the in-app browser; inspected console had no warnings/errors. Production paid Venice inference and a funded mainnet settlement remain unverified.
+Validation: frontend typecheck/lint/build and 647 tests; backend typecheck/lint/build and 506 tests (six database cases skipped in the ordinary suite, exercised in the separate database run); 95 browser-suite checks; 11 real auth integration flows; 125 payment checks with isolated Postgres. Browser login, chat, admin, model details and 375px screenshots were checked with the in-app browser; inspected console had no warnings/errors. Production paid Venice inference and a funded mainnet settlement remain unverified.
 
 See [pricing, limits and treasury operations](../pricing-and-treasury.md) for current configuration, costs and external sources.
+
+
+Final streaming checks ran MiniMax and GLM concurrently: both SSE streams finished with `stop` and `[DONE]` in approximately 59 and 67 seconds. GLM returned the exact requested marker; MiniMax added unwanted text. These two requests establish basic concurrent operation, not a capacity guarantee. Missing upstream usage frames exposed per-chunk rounding in the estimate; the follow-up fix requests final usage totals and keeps a streaming counter across content, reasoning and tool-call fragments. Tests cover chunk invariance, zero reported counts and structured non-streaming content. Homepage/About/FAQ fallback copy now matches actual routing behavior.

@@ -107,7 +107,7 @@ const SUPPORT = [
 	id: "wallet",
 	icon: Wallet,
 	title: "SIWE wallet auth",
-	body: "Sign in with any Base wallet. No password to lose.",
+	body: "Sign in with a compatible browser wallet. No password to lose.",
 	href: "/docs#authentication",
 	},
 	{
@@ -437,7 +437,7 @@ export function CapabilitiesGrid() {
 	<span aria-hidden="true" className="text-border">
 	·
 	</span>
-	<span>Circuit-breaker failover</span>
+	<span>Automatic retry and failover</span>
 	</div>
 	</Reveal>
 	</div>

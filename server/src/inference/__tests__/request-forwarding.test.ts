@@ -5,6 +5,12 @@ vi.mock("../streaming.js", () => ({ createStreamingProxy: vi.fn(), parseNonStrea
 import { routeRequestWithFallback } from "../proxy.js";
 
 afterEach(() => vi.unstubAllGlobals());
+it("asks streaming providers for authoritative usage totals", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response("", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    await routeRequestWithFallback({ modelId: "llama-3.3-70b", messages: [{ role: "user", content: "hello" }], stream: true, userId: "audit", requestId: "usage-audit" });
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).stream_options).toEqual({ include_usage: true });
+});
 it("sends tool-call history and JSON schema settings to the upstream HTTP endpoint", async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response("{}", { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);

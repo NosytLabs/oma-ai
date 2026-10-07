@@ -26,7 +26,7 @@ const PILLARS = [
 	{
 		icon: Cpu,
 		title: "Open Model Access",
-		body: `One OpenAI-compatible API across ${MODEL_COUNT} curated models and multiple providers, with circuit-breaker protection and configured fallbacks where available.`,
+		body: `One OpenAI-compatible API across ${MODEL_COUNT} curated models and multiple providers, with bounded retries and configured fallback models.`,
 	},
 	{
 		icon: Wallet,
@@ -130,9 +130,7 @@ export default function AboutPage() {
 							<code className="rounded border border-border bg-surface px-1.5 py-0.5 font-mono text-[13px] text-text-bright">https://www.oma-ai.com/api/v1</code> —
 							in front of a rotating catalog of chat models routed across
 							multiple upstream providers. Each requested model resolves to
-							its configured upstream route. Circuit breakers stop repeated
-							calls to unhealthy routes, and mapped models can use a configured
-							fallback where one is available.
+							its configured upstream route. OMA retries transient failures and can use a configured fallback model. The response identifies the serving model, whose listed price applies.
 						</p>
 						<p>
 							You pay from a prepaid credit balance. Top up with a card when

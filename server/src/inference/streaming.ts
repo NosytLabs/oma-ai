@@ -6,7 +6,7 @@
 import { logger } from "../lib/logger.js";
 import { rewriteSseModelField } from "./fallback.js";
 import { ProviderError } from "./provider-route.js";
-import { estimateTokens, flattenMessageContent } from "./token-utils.js";
+import { createStreamTokenMeter, estimateTokens, flattenMessageContent } from "./token-utils.js";
 import {
 	recordUsage,
 	type RecordUsageArgs,
@@ -48,7 +48,7 @@ export function createStreamingProxy(
 		const reader = upstreamResp.body.getReader();
 		const decoder = new TextDecoder();
 		const encoder = new TextEncoder();
-		let outputTokens = 0;
+		const outputMeter = createStreamTokenMeter();
 		let finalPromptTokens: number | null = null;
 		let finalOutputTokens: number | null = null;
 		let upstreamStatus: "completed" | "error" = "completed";
@@ -68,7 +68,7 @@ export function createStreamingProxy(
 										controller.close();
 										// Use upstream-reported usage when available (OMA-AI sends a final
 										// usage chunk at the end of the stream), falling back to estimates.
-										const finalTokens = finalOutputTokens ?? recordArgs.outputTokens ?? outputTokens;
+										const finalTokens = finalOutputTokens ?? recordArgs.outputTokens ?? outputMeter.tokens();
 										const promptTokens = finalPromptTokens ?? recordArgs.promptTokens;
 										await recordUsage({ ...recordArgs, promptTokens, outputTokens: finalTokens, status: upstreamStatus });
 										return;
@@ -89,15 +89,21 @@ export function createStreamingProxy(
 												// Handle both "content" and "reasoning"/"reasoning_content" deltas.
 												// OMA-AI/Gonka uses "reasoning" for chain-of-thought;
 												// Venice uses "reasoning_content". Both count as output tokens.
-												const delta = choice?.delta?.content ?? choice?.delta?.reasoning_content ?? choice?.delta?.reasoning;
-												if (typeof delta === "string" && delta.length > 0) {
-														outputTokens += estimateTokens(delta);
+												const delta = choice?.delta;
+												if (typeof delta?.content === "string") outputMeter.add(delta.content);
+												const reasoning = delta?.reasoning_content ?? delta?.reasoning;
+												if (typeof reasoning === "string") outputMeter.add(reasoning, "reasoning");
+												for (const tool of delta?.tool_calls ?? []) {
+													for (const field of ["name", "arguments"] as const) {
+														const text = tool.function?.[field];
+														if (typeof text === "string") outputMeter.add(text, `tool:${tool.index ?? 0}:${field}`);
+													}
 												}
 												// Capture upstream-reported usage (final chunk has usage object)
-												if (obj.usage?.completion_tokens) {
+												if (Number.isSafeInteger(obj.usage?.completion_tokens) && obj.usage.completion_tokens >= 0) {
 														finalOutputTokens = obj.usage.completion_tokens;
 												}
-												if (obj.usage?.prompt_tokens) {
+												if (Number.isSafeInteger(obj.usage?.prompt_tokens) && obj.usage.prompt_tokens >= 0) {
 														finalPromptTokens = obj.usage.prompt_tokens;
 												}
 										} catch {
@@ -111,14 +117,13 @@ export function createStreamingProxy(
 									upstreamStatus = "error";
 									controller.error(err);
 									// SECURITY (audit 2026-09-27 / P0): record usage for the tokens
-									// already streamed before the read error. Without this the
-									// consumed upstream tokens are never billed — a client can
-									// force a read error and walk away with free tokens.
+									// already streamed before the read error so provider costs
+									// remain visible even when the incomplete response is not billed.
 									try {
 										await recordUsage({
 											...recordArgs,
 											promptTokens: finalPromptTokens ?? recordArgs.promptTokens,
-											outputTokens: finalOutputTokens ?? outputTokens,
+											outputTokens: finalOutputTokens ?? outputMeter.tokens(),
 											status: "error",
 										});
 									} catch (recErr) {
@@ -134,13 +139,13 @@ export function createStreamingProxy(
 								async cancel() {
 								reader.cancel().catch(() => {});
 								// SECURITY (audit 2026-09-27 / P0): a client can read most of a
-								// completion then abort before done. Bill the tokens streamed so far
-								// instead of letting the disconnect absorb the cost.
+								// completion then abort before done. Record provider costs for
+								// reconciliation; the billing policy does not charge incomplete replies.
 								try {
 								await recordUsage({
 									...recordArgs,
 									promptTokens: finalPromptTokens ?? recordArgs.promptTokens,
-									outputTokens: finalOutputTokens ?? outputTokens,
+									outputTokens: finalOutputTokens ?? outputMeter.tokens(),
 									status: "aborted",
 								});
 								} catch (recErr) {
@@ -167,13 +172,15 @@ export async function parseNonStreamingResponse(
 				throw new ProviderError("Invalid upstream response", 502);
 		}
 
-		const completionText =
-				data?.choices?.[0]?.message?.content ??
-				flattenMessageContent(data?.choices?.[0]?.message?.content ?? "") ??
-				"";
+		const message = data?.choices?.[0]?.message;
+		const completionText = [
+			flattenMessageContent(message?.content),
+			message?.reasoning_content ?? message?.reasoning ?? "",
+			message?.tool_calls ? JSON.stringify(message.tool_calls) : "",
+		].join(" ");
 		const reported = data?.usage?.completion_tokens;
 		const completionTokens =
-				typeof reported === "number" && reported > 0 ? reported : estimateTokens(completionText);
+				typeof reported === "number" && Number.isSafeInteger(reported) && reported >= 0 ? reported : estimateTokens(completionText);
 		const finalPromptTokens = data?.usage?.prompt_tokens ?? recordArgs.promptTokens;
 
 		await recordUsage({

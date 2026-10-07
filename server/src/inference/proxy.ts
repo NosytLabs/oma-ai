@@ -92,6 +92,7 @@ async function callProvider(opts: CallProviderOptions): Promise<Response> {
 						...(m.tool_call_id ? { tool_call_id: m.tool_call_id } : {}),
 				})),
 				stream,
+				...(stream ? { stream_options: { include_usage: true } } : {}),
 				max_tokens: outputBudget,
 				...(temperature !== undefined ? { temperature } : {}),
 				...(top_p !== undefined ? { top_p } : {}),

@@ -45,7 +45,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 		items: [
 			{
 				q: "How does OMA handle provider outages?",
-				a: `A circuit breaker keeps traffic off an unhealthy upstream route. If the requested model has a configured fallback, OMA can retry that mapped model on the fallback route; otherwise the request returns an upstream/unavailable error rather than silently swapping to a different model. Check /status for live gateway health.`,
+				a: `OMA retries transient upstream errors and can route to a configured fallback model. The x-actual-model response header identifies the model that served the request; its listed rate applies. Free website requests stay within the free model pool. If all candidates fail, the request returns an upstream error.`,
 			},
 			{
 				q: "Can a provider see my prompts?",
@@ -182,7 +182,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "What happens when a model provider is down?",
-				a: "The circuit breaker stops repeatedly sending traffic to an unhealthy route. If the requested model has a configured fallback, OMA can retry that mapped model there. If no fallback is configured, the request can return an upstream/unavailable error rather than silently substituting a different model.",
+				a: "OMA retries transient failures with bounded backoff and may select a configured fallback model. Check x-actual-model and x-oma-fallback to identify the serving model. Usage is billed at that model’s listed rate; free website requests remain within the free pool. If every candidate fails, an upstream error is returned.",
 			},
 			{
 				q: "I got a 402 error — what now?",
