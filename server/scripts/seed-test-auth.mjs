@@ -55,8 +55,8 @@ try {
 			 VALUES ($1, $2, $3, $4, NOW(), NOW())`,
 			[
 				crypto.randomBytes(16).toString("hex"),
-				tokenHash,
-				JSON.stringify({ email: identity.email, name: identity.name }),
+				`magic-link:${tokenHash}`,
+				JSON.stringify({ type: "magic-link", email: identity.email, name: identity.name }),
 				new Date(Date.now() + 10 * 60 * 1000),
 			],
 		);

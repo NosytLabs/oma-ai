@@ -51,21 +51,6 @@ export const FREE_TIER_LABELS: Record<string, { label: string; tooltip: string }
 export const DOCS_EXAMPLE_MODEL = "llama-3.3-70b";
 
 /**
-	* Pick the canonical display name for a model coming from the live API.
-	* Used by `mapLiveModel` so the chat dropdown shows the right name even when
-	* the upstream server is stale.
-	*/
-function liveDisplayName(
-	id: string,
-	rawName: string | undefined,
-): string | undefined {
-	// Reserved for future client-side canonicalisation overrides when the
-	// upstream `display_name` is wrong (e.g. "Google Gemini 3" instead of
-	// the truthful upstream label). The per-model patch point lives here.
-	return rawName?.trim() || undefined;
-}
-
-/**
 	* Whether the website chat may call completions without sign-in / API key.
 	* Only OMA-AI / Gonka.AI (openbroker upstream) models are free in /chat
 	* and /playground. Everything else (Venice + paid OMA-AI resale) is paid.
@@ -221,7 +206,7 @@ export function mapLiveModel(m: LiveModelRaw): ModelOption {
 
 	return {
 		id: m.id,
-		name: liveDisplayName(m.id, m.display_name) || humanizeModelId(m.id),
+		name: m.display_name?.trim() || undefined || humanizeModelId(m.id),
 		category: cat,
 		provider,
 		available: isModelAvailable(m),

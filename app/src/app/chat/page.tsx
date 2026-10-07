@@ -89,7 +89,7 @@ export default function ChatPage() {
 		// every viewport width. In flow they occupy their own row instead,
 		// and because the wrapper height is fixed at `100dvh - 57px` the shell
 		// just gives up that row's height — the composer still lands on screen.
-		<div className="flex h-[calc(100dvh-57px)] min-h-0 flex-col overflow-hidden">
+		<div className="flex h-[calc(100dvh-57px-var(--analytics-consent-height,0px))] min-h-0 flex-col overflow-hidden">
 			<nav
 				aria-label="Chat resources"
 				className="gutter-page flex flex-none flex-wrap items-center justify-end gap-x-3 gap-y-1 py-1 text-xs text-text-muted"

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { privateKeyToAccount } from "viem/accounts";
 import { hexToBytes, verifyMessage } from "viem";
 import {
@@ -8,6 +8,8 @@ import {
 	getConnectedAccount,
 	hasWallet,
 	listWallets,
+	subscribeWallets,
+	requestWalletDiscovery,
 	resetWalletDiscoveryForTests,
 	signSiweMessage,
 } from "../wallet";
@@ -240,6 +242,34 @@ describe("wallet", () => {
 			// The address line must be checksummed, not the lowercase input.
 			expect(message).toContain(ADDRESS);
 		});
+	});
+
+	it("reports an already installed wallet to a new subscriber", () => {
+		install(makeProvider().provider);
+		const listener = vi.fn(() => listWallets());
+		const unsubscribe = subscribeWallets(listener);
+		try { expect(listener).toHaveBeenCalledOnce(); }
+		finally { unsubscribe(); }
+	});
+
+	it("does not recursively rediscover unchanged EIP-6963 providers", () => {
+		const { provider } = makeProvider();
+		let requests = 0;
+		const onRequest = () => {
+			requests++;
+			if (requests > 5) return; // Bound the buggy recursion so failures stay readable.
+			window.dispatchEvent(new CustomEvent("eip6963:announceProvider", { detail: {
+				info: { rdns: "io.rabby", name: "Rabby", uuid: "rabby-audit" }, provider,
+			} }));
+		};
+		const listener = vi.fn(() => listWallets());
+		const unsubscribe = subscribeWallets(listener);
+		window.addEventListener("eip6963:requestProvider", onRequest);
+		try {
+			requestWalletDiscovery();
+			expect(requests).toBeLessThanOrEqual(2);
+			expect(listWallets().filter(w => w.provider === provider)).toHaveLength(1);
+		} finally { unsubscribe(); window.removeEventListener("eip6963:requestProvider", onRequest); }
 	});
 
 	it("targets Base mainnet", () => {

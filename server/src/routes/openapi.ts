@@ -114,10 +114,11 @@ const spec = {
 			},
 			ChatMessage: {
 				type: "object",
-				required: ["role", "content"],
+				required: ["role"],
+				description: "Content is required except for assistant tool calls. Tool results require tool_call_id.",
 				properties: {
 					role: { type: "string", enum: ["system", "user", "assistant", "tool"] },
-					content: { type: "string" },
+					content: { type: ["string", "array", "null"], items: { type: "object" } },
 					name: { type: "string" },
 					tool_call_id: { type: "string" },
 					tool_calls: { type: "array" },
@@ -138,13 +139,18 @@ const spec = {
 						description:
 							"OpenRouter-style fallback chain tried after `model` fails (before server peer map). Response `model` + x-actual-model reflect the peer that served.",
 					},
-					messages: { type: "array", items: { $ref: "#/components/schemas/ChatMessage" } },
+					messages: { type: "array", minItems: 1, items: { $ref: "#/components/schemas/ChatMessage" } },
 					max_tokens: { type: "integer" },
 					stream: { type: "boolean" },
 					temperature: { type: "number" },
 					top_p: { type: "number" },
 					tools: { type: "array" },
 					tool_choice: { type: ["string", "object"] },
+					response_format: {
+						type: "object", required: ["type"],
+						description: "Forwarded to the selected model; support depends on the provider. json_schema requires json_schema.name and json_schema.schema.",
+						properties: { type: { type: "string", enum: ["text", "json_object", "json_schema"] }, json_schema: { type: "object" } },
+					},
 				},
 			},
 			Balance: {
@@ -252,6 +258,11 @@ const spec = {
 									stream: { type: "boolean" },
 									tools: { type: "array" },
 									tool_choice: { type: ["string", "object"] },
+					response_format: {
+						type: "object", required: ["type"],
+						description: "Forwarded to the selected model; support depends on the provider. json_schema requires json_schema.name and json_schema.schema.",
+						properties: { type: { type: "string", enum: ["text", "json_object", "json_schema"] }, json_schema: { type: "object" } },
+					},
 								},
 							},
 						},

@@ -47,7 +47,7 @@ for (const vp of VIEWPORTS) {
 
       // The quota/token/cost readout lives in the composer's footer. Locate
       // it by its stable copy rather than a test id.
-      const meta = page.getByText(/cr est/i).first();
+      const meta = page.getByText(/free left|Free daily allowance/i).first();
       await expect(meta).toBeVisible();
 
       const vh = page.viewportSize()!.height;

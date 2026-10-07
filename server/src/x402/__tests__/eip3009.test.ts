@@ -278,6 +278,24 @@ describe('EIP-3009 V1 verify path', () => {
 		})
 
 		// ── Payee pin ────────────────────────────────────────────
+		it.each(['not-a-time', '-1', '1.5', ''])('rejects malformed authorization time %j without throwing or calling RPC', async (time) => {
+			const sig = makeEip3009PaymentSig()
+			const auth = JSON.parse(sig.authorization)
+			auth.validAfter = time
+			sig.authorization = JSON.stringify(auth)
+			const result = await verifyPayment(sig)
+			expect(result.valid).toBe(false)
+			expect(result.error).toMatch(/time/i)
+			expect(callMock).not.toHaveBeenCalled()
+		})
+
+		it('rejects a correctly sized non-hex signature without throwing or calling RPC', async () => {
+			const result = await verifyPayment(makeEip3009PaymentSig({ signature: '0x' + 'zz'.repeat(65) }))
+			expect(result.valid).toBe(false)
+			expect(result.error).toMatch(/signature/i)
+			expect(callMock).not.toHaveBeenCalled()
+		})
+
 		it('rejects when authorization.to does not match the server treasury', async () => {
 				const sig = makeEip3009PaymentSig({
 						payee: TREASURY,

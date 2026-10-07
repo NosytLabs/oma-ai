@@ -13,6 +13,17 @@ import { rateLimit } from "../sliding-window.js";
 afterEach(() => vi.useRealTimers());
 
 describe("configured auth budgets survive Redis outages", () => {
+	it("keeps chat traffic out of the key-creation budget and groups route parameters", async () => {
+		getRedisClient.mockResolvedValue(null);
+		isRedisReady.mockReturnValue(false);
+		const app = new Hono();
+		app.post("/audit-chat", rateLimit({ maxRequests: 5, windowMs: 60_000 }), (c) => c.json({ ok: true }));
+		app.post("/audit-keys/:id", rateLimit({ maxRequests: 1, windowMs: 60_000 }), (c) => c.json({ ok: true }));
+		for (let i = 0; i < 4; i++) expect((await app.request("/audit-chat", { method: "POST" })).status).toBe(200);
+		expect((await app.request("/audit-keys/first", { method: "POST" })).status).toBe(200);
+		expect((await app.request("/audit-keys/second", { method: "POST" })).status).toBe(429);
+	});
+
 	for (const state of ["unavailable", "command error"] as const) {
 		it(`enforces the configured count and window after a Redis ${state}`, async () => {
 			vi.useFakeTimers();

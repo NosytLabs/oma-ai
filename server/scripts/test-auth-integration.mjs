@@ -86,7 +86,7 @@ async function magicSignIn(email) {
 	const url = new URL(await deliverySince(offset, /magicLink:\s*"([^"]+)"/));
 	const token = url.searchParams.get("token");
 	const rows = await pool.query("SELECT identifier FROM verification WHERE identifier = $1", [
-		createHash("sha256").update(token).digest("base64url"),
+		`magic-link:${createHash("sha256").update(token).digest("base64url")}`,
 	]);
 	assert.equal(rows.rowCount, 1, "Magic link must be stored hashed");
 	const signedIn = await request(`${url.pathname}${url.search}`, { expected: 302 });
@@ -233,13 +233,32 @@ try {
 	assert.equal((await once(seeder, "exit"))[0], 0, "Test auth seeder failed");
 	const fixtureLinks = [...seedOutput.matchAll(/magic link: (\S+)/g)];
 	assert.equal(fixtureLinks.length, 2);
+	const fixtures = [];
 	for (const [index, [, link]] of fixtureLinks.entries()) {
 		const url = new URL(link);
 		const fixture = await request(`${url.pathname}${url.search}`, { expected: 302 });
 		assert.doesNotMatch(fixture.response.headers.get("location"), /error=/);
 		assert.equal((await request("/user", { cookie: fixture.cookie })).data.role, index === 0 ? "user" : "admin");
+		fixtures.push(fixture);
 	}
 	pass("seeded user/admin magic links authenticate against the real hashed-token verifier");
+	await request("/v1/admin/site-settings", { cookie: fixtures[0].cookie, expected: 403 });
+	const savedSettings = { maintenanceMode: false, maintenanceMessage: "Scheduled local test", cardPaymentsEnabled: true, cryptoPaymentsEnabled: false };
+	await request("/v1/admin/site-settings", { method: "POST", cookie: fixtures[1].cookie, body: savedSettings });
+	assert.deepEqual((await request("/v1/admin/site-settings", { cookie: fixtures[1].cookie })).data, savedSettings);
+	pass("admin settings persist independently of public rail availability and reject non-admin sessions");
+	for (let attempt = 0; attempt < 8; attempt += 1) {
+		await request("/v1/chat/completions", {
+			method: "POST", cookie: fixtures[1].cookie,
+			body: { model: "nonexistent-audit-model", messages: [{ role: "user", content: "test" }] },
+			expected: attempt < 5 ? 404 : 503,
+		});
+	}
+	pass("repeated inference requests return validation and rate-limit responses without adapter crashes");
+	const afterChatKey = await request("/v1/keys", { method: "POST", cookie: fixtures[1].cookie, body: { name: "After chat" } });
+	assert.ok(afterChatKey.data.key.startsWith("oma_sk_"));
+	await request(`/v1/keys/${afterChatKey.data.id}`, { method: "DELETE", cookie: fixtures[1].cookie });
+	pass("chat traffic cannot consume the API-key creation budget");
 	console.log(`All ${passed} real auth integration checks passed.`);
 } finally {
 	if (backend && backend.exitCode === null) {

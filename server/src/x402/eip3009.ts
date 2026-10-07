@@ -488,6 +488,13 @@ export async function verifyEip3009Payment(
 
 		// 5. Time-bounds check. Authorization is valid while
 		//    validAfter <= now < validBefore.
+		// Legacy headers can carry arbitrary strings. Validate before BigInt so
+		// malformed input returns a payment rejection instead of an HTTP 500.
+		if (![auth.validAfter, auth.validBefore].every((value) =>
+			(typeof value !== "number" || Number.isSafeInteger(value)) && /^\d{1,78}$/.test(String(value)),
+		)) {
+			return { valid: false, error: "Invalid authorization time: expected unsigned integer seconds" };
+		}
 		const nowSec = BigInt(Math.floor(Date.now() / 1000));
 		const validAfter = BigInt(auth.validAfter);
 		const validBefore = BigInt(auth.validBefore);
@@ -503,6 +510,9 @@ export async function verifyEip3009Payment(
 		const sigHex = (signature.startsWith("0x") ? signature : `0x${signature}`) as Hex;
 		if (sigHex.length !== 132) {
 				return { valid: false, error: `Invalid EIP-712 signature length: expected 65 bytes (132 hex chars), got ${(sigHex.length - 2) / 2} bytes` };
+		}
+		if (!/^0x[0-9a-fA-F]{130}$/.test(sigHex)) {
+			return { valid: false, error: "Invalid EIP-712 signature: expected hexadecimal bytes" };
 		}
 		// SECURITY (audit 3.1 / MEDIUM): reject high-S signatures explicitly.
 		// EIP-2 mandates low-S; a high-S variant is a malleated signature that

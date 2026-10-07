@@ -555,14 +555,14 @@ export const QUICK_START_STEPS = [
 	{
 		n: "2",
 		id: "qs-step-request",
-		title: "Add to Headers",
-		desc: "Include your key in the Authorization header: Bearer oma_sk_...",
+		title: "Check Your Credits",
+		desc: "API requests use prepaid credits, including models that are free in website chat. Check your balance and add credits as needed.",
 	},
 	{
 		n: "3",
 		id: "qs-step-response",
 		title: "Start Building",
-		desc: "Use the OpenAI SDK with base_url=https://www.oma-ai.com/api/v1",
+		desc: "Send your key as Authorization: Bearer oma_sk_... or use the OpenAI SDK with the OMA base URL below.",
 	},
 ];
 

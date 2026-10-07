@@ -21,6 +21,17 @@ describe("GoogleAnalytics consent gate", () => {
 
 	afterEach(() => {
 		cleanup();
+		vi.restoreAllMocks();
+	});
+
+	it("reserves the banner height for viewport-bound chat and releases it on decline", async () => {
+		vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({ height: 96 } as DOMRect);
+		const { GoogleAnalytics } = await import("../GoogleAnalytics");
+		const { render, fireEvent } = await import("@testing-library/react");
+		const { getByRole } = render(<GoogleAnalytics />);
+		expect(document.documentElement.style.getPropertyValue("--analytics-consent-height")).toBe("96px");
+		fireEvent.click(getByRole("button", { name: /decline/i }));
+		expect(document.documentElement.style.getPropertyValue("--analytics-consent-height")).toBe("");
 	});
 
 	it("prompts without firing any gtag request before a decision", async () => {

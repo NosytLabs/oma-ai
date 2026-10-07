@@ -92,4 +92,44 @@ describe("dailyUsageLimit", () => {
 			String(DAILY_LIMIT_ANONYMOUS - 1),
 		);
 	});
+
+	it("bounds usage even when an available Redis connection starts failing", async () => {
+		mocks.getRedisClient.mockResolvedValue({ incr: vi.fn().mockRejectedValue(new Error("connection lost")) });
+		mocks.isRedisReady.mockReturnValue(true);
+		const app = await makeApp();
+		for (let i = 0; i < 20; i++) expect((await send(app)).status).toBe(200);
+		expect((await send(app)).status).toBe(429);
+	});
+
+	it("does not consume website quota for paid API-key calls", async () => {
+		const { Hono } = await import("hono");
+		const { dailyUsageLimit } = await import("../daily-limit.js");
+		const app = new Hono();
+		app.use("*", async (c, next) => { c.set("apiKey" as never, { id: "paid_key" } as never); await next(); });
+		app.post("/v1/chat/completions", dailyUsageLimit(), (c) => c.json({ ok: true }));
+		const response = await send(app);
+		expect(response.status).toBe(200);
+		expect(response.headers.get("X-DailyLimit-Limit")).toBeNull();
+	});
+
+	it("preserves the chat body after the model limiter has read it", async () => {
+		const { Hono } = await import("hono");
+		const { bodyLimit } = await import("hono/body-limit");
+		const { modelRateLimit } = await import("../rate-limit/token-bucket.js");
+		const { dailyUsageLimit } = await import("../daily-limit.js");
+		const app = new Hono();
+		app.use("*", bodyLimit({ maxSize: 2048 }));
+		app.post("/v1/chat/completions", modelRateLimit(), dailyUsageLimit(), async (c) =>
+			c.json(await c.req.json()),
+		);
+		const body = { model: "minimax-m2-7", messages: [{ role: "user", content: "Hello" }], stream: true };
+		const response = await app.request("/v1/chat/completions", {
+			method: "POST",
+			headers: { "Content-Type": "application/json", "X-OMA-Source": "website" },
+			body: JSON.stringify(body),
+		});
+		expect(response.status).toBe(200);
+		expect(await response.json()).toEqual(body);
+		expect(response.headers.get("X-DailyLimit-Remaining")).toBe("19");
+	});
 });

@@ -1,4 +1,4 @@
-import { fireEvent, render } from "@testing-library/react";
+import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useDialog } from "./use-dialog";
 
@@ -25,7 +25,24 @@ describe("useDialog", () => {
 		originalOverflow = document.body.style.overflow;
 	});
 	afterEach(() => {
+		cleanup();
+		vi.useRealTimers();
 		document.body.style.overflow = originalOverflow;
+	});
+
+	it("keeps keyboard focus when the close callback changes during a render", () => {
+		vi.useFakeTimers();
+		const firstClose = vi.fn();
+		const latestClose = vi.fn();
+		const { getByTestId, rerender } = render(<Harness open onClose={firstClose} />);
+		act(() => vi.runAllTimers());
+		getByTestId("b").focus();
+		rerender(<Harness open onClose={latestClose} />);
+		act(() => vi.runAllTimers());
+		expect(document.activeElement).toBe(getByTestId("b"));
+		fireEvent.keyDown(document, { key: "Escape" });
+		expect(latestClose).toHaveBeenCalledOnce();
+		expect(firstClose).not.toHaveBeenCalled();
 	});
 
 	it("locks body scroll while open and restores on close", () => {

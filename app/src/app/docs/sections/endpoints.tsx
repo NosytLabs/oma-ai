@@ -16,7 +16,8 @@ export function EndpointsSection() {
 				subtitle="OpenAI-compatible REST API endpoints."
 			/>
 			<p className="-mt-4 mb-6 text-sm text-text-muted">
-				The public inference, model, balance, usage, and deposit endpoints.
+				The public inference, model, balance, usage, and deposit endpoints.{" "}
+				<a href="/api/v1/openapi.json" className="text-accent underline underline-offset-4">Download the OpenAPI schema</a>.
 			</p>
 
 			<div className="space-y-4">

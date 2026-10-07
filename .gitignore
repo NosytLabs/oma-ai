@@ -78,6 +78,7 @@ tmp/lighthouse/
 .hermes/
 
 # Playwright artifacts
+.playwright-mcp/
 playwright-report/
 app/playwright-report/
 

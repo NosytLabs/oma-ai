@@ -1,4 +1,5 @@
 import type { Context, Next } from "hono";
+import { routePath } from "hono/route";
 import type { OmaEnv } from "../../types.js";
 import { getRedisClient, isRedisReady } from "../../lib/redis-client.js";
 import { FIXED_WINDOW_SCRIPT, RPM_LIMIT_SCRIPT } from "./lua-scripts.js";
@@ -115,12 +116,17 @@ export interface RateLimitOptions {
 }
 
 export function rateLimit(options: RateLimitOptions) {
-	const { windowMs, maxRequests, keyPrefix = "rl", failClosed = false } = options;
+	const { windowMs, maxRequests, failClosed = false } = options;
 	// Per-limiter-instance, not per-process: each configured route gets its
 	// own one-shot warning instead of the first one silencing the rest.
 	let degradedWarned = false;
 
 	return async (c: Context, next: Next) => {
+		// Share only when explicitly configured. Otherwise chat, key creation,
+		// checkout and admin requests were charging the same "rl" bucket with
+		// different limits. Use the registered pattern so changing :id cannot
+		// create a fresh budget or grow the key space without bound.
+		const keyPrefix = options.keyPrefix ?? `rl:${c.req.method}:${routePath(c)}`;
 		// Per-user AND per-key AND per-IP. See rateLimitKeyLayers(): keying
 		// only on apiKeyId let one user mint N keys and multiply the cap N
 		// times for a single account.

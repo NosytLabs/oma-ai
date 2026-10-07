@@ -300,7 +300,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 
 						{/* Primary row — three user-facing panels of equal weight. */}
 						<div
-							className={`mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 [&>*]:min-h-[12rem] lg:grid-cols-3`}
+							className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 [&>*]:min-h-[12rem]"
 						>
 							<WidgetErrorBoundary title="Credits">
 								<CreditBalanceCard

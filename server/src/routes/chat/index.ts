@@ -74,9 +74,19 @@ const chatSchema = z.object({
 				.array(
 						z.object({
 								role: z.enum(["system", "user", "assistant", "tool"]),
-								content: z.string().or(z.array(z.any())),
+								content: z.string().or(z.array(z.unknown())).nullable().optional(),
 								name: z.string().optional(),
-						}),
+								tool_calls: z.array(z.object({
+									id: z.string().min(1),
+									type: z.literal("function"),
+									function: z.object({ name: z.string().min(1), arguments: z.string() }),
+								})).min(1).optional(),
+								tool_call_id: z.string().min(1).optional(),
+						}).refine((message) =>
+							(message.content != null || (message.role === "assistant" && !!message.tool_calls?.length)) &&
+							(message.role !== "tool" || !!message.tool_call_id),
+							"Content is required except for assistant tool calls; tool results require tool_call_id",
+						),
 				)
 				.min(1),
 		temperature: z.number().min(0).max(2).optional(),
@@ -85,6 +95,14 @@ const chatSchema = z.object({
 		stream: z.boolean().optional().default(false),
 		tools: z.array(z.any()).optional(),
 		tool_choice: z.any().optional(),
+		response_format: z.discriminatedUnion("type", [
+			z.object({ type: z.literal("text") }),
+			z.object({ type: z.literal("json_object") }),
+			z.object({ type: z.literal("json_schema"), json_schema: z.object({
+				name: z.string().min(1), description: z.string().optional(),
+				schema: z.record(z.string(), z.unknown()), strict: z.boolean().optional(),
+			}) }),
+		]).optional(),
 });
 
 export const chatRoutes = new Hono<OmaEnv>();
@@ -150,6 +168,7 @@ chatRoutes.post(
 						top_p,
 						tools,
 						tool_choice,
+						response_format,
 				} = parsed.data;
 				const modelDef = getModelById(model);
 				if (!modelDef) {
@@ -296,17 +315,14 @@ chatRoutes.post(
 					await routeRequestWithFallback({
 								modelId: model,
 								clientFallbacks: clientModels,
-								messages: messages.map((m) => ({
-										role: m.role,
-										content: m.content,
-										...(m.name ? { name: m.name } : {}),
-								})),
+								messages,
 								stream,
 								max_tokens,
 								temperature,
 								top_p,
 								tools,
 								tool_choice,
+								response_format,
 								userId: userId ?? "anonymous",
 								requestId,
 								skipBilling: isFreeWebsiteChat, // Don't deduct credits for free website chat

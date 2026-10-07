@@ -311,13 +311,12 @@ export function modelRateLimit(options: ModelRateLimitOptions = {}) {
 			return;
 		}
 
-		const apiKey = c.get("apiKey");
 		const userId = c.get("userId");
 		const modelLimits = getModelLimits(model);
 
 		if (!modelLimits) {
-			await baseRateLimit(c, next);
-			return;
+			// Preserve early 429/503 responses from the delegated limiter.
+			return baseRateLimit(c, next);
 		}
 
 		const redis = await getRedisClient();
@@ -512,5 +511,4 @@ export function modelRateLimit(options: ModelRateLimitOptions = {}) {
 		}
 	};
 }
-
 

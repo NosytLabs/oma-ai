@@ -67,11 +67,12 @@ function installEip6963Listener() {
 		const provider = detail?.provider;
 		if (!provider || typeof provider.request !== "function") return;
 		const id = detail.info?.rdns || detail.info?.uuid || `eip6963-${announced.size}`;
-		announced.set(id, {
-			id,
-			name: detail.info?.name || "Wallet",
-			provider,
-		});
+		const name = detail.info?.name || "Wallet";
+		const existing = announced.get(id);
+		// Wallets re-announce on every discovery request. Do not notify readers
+		// again when nothing changed: their listWallets() call would recurse.
+		if (existing?.provider === provider && existing.name === name) return;
+		announced.set(id, { id, name, provider });
 		notifyWallets();
 	});
 }
@@ -86,6 +87,7 @@ export function requestWalletDiscovery(): void {
 export function subscribeWallets(listener: () => void): () => void {
 	requestWalletDiscovery();
 	walletListeners.add(listener);
+	listener(); // Include legacy providers and synchronous discovery responses.
 	return () => {
 		walletListeners.delete(listener);
 	};

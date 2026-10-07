@@ -1,0 +1,25 @@
+# Deploy from platform environment settings, never local test credentials.
+.env*
+**/.env*
+.git/
+.vercel/
+node_modules/
+**/node_modules/
+.next/
+**/.next/
+dist/
+**/dist/
+.tmp/
+.screenshots/
+.playwright-mcp/
+test-results/
+**/test-results/
+playwright-report/
+**/playwright-report/
+coverage/
+**/coverage/
+*.log
+**/*.log
+*.tsbuildinfo
+**/*.tsbuildinfo
+.DS_Store

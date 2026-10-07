@@ -130,6 +130,14 @@ beforeEach(() => {
 });
 
 describe("admin routes", () => {
+		it("returns saved operator settings including an inactive maintenance message", async () => {
+			const settings = { maintenanceMode: false, maintenanceMessage: "Scheduled maintenance", cardPaymentsEnabled: true, cryptoPaymentsEnabled: false };
+			mockDb.select.mockReturnValue({ from: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([settings]) }) });
+			const response = await adminRequest("get", "/v1/admin/site-settings");
+			expect(response.status).toBe(200);
+			expect(await response.json()).toEqual(settings);
+		});
+
 		describe("POST /v1/admin/site-settings", () => {
 				it("rejects invalid body", async () => {
 						const res = await adminRequest("post", "/v1/admin/site-settings", {

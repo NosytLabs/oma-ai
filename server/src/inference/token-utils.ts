@@ -31,7 +31,7 @@ export function estimateTokens(text: string): number {
 		return Math.max(1, Math.ceil(estimate));
 }
 
-export function flattenMessageContent(content: string | unknown[]): string {
+export function flattenMessageContent(content: string | unknown[] | null | undefined): string {
 		if (typeof content === "string") return content;
 		if (Array.isArray(content)) {
 				return content

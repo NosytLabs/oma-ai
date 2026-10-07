@@ -8,7 +8,7 @@ import { api, type BalanceResponse } from "@/lib/api";
 import { isAuthError } from "@/lib/api/client";
 
 /**
-	* Live credit balance for the playground. Polls `/v1/balance` every 30 s via
+	* Live credit balance for the playground. Polls `/v1/balance` every 120 s via
 	* React Query so the toolbar pill and the low-balance warning stay current
 	* without hammering the API. Returns null when unauthenticated and surfaces
 	* a `loading` flag for the first paint.
@@ -63,6 +63,9 @@ export function useBalance(): {
 		? query.isLoading || (query.isFetching && !query.data)
 		: false;
 	const refresh = async () => {
+		// Manual refetch bypasses React Query's enabled flag. Guest chat must
+		// not request this session-only endpoint after sending a message.
+		if (!canLoadBalance) return;
 		await query.refetch();
 	};
 

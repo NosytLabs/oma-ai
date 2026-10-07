@@ -378,7 +378,7 @@ export default function AdminPage() {
 											) : (
 												<AlertTriangle className="h-3 w-3" />
 											)}
-											{available}/{total} models ok
+											{available}/{total} models configured
 										</span>
 									</li>
 								);
@@ -885,9 +885,9 @@ function SiteSettingsSection() {
 	const [message, setMessage] = useState("");
 	const queryClient = useQueryClient();
 	const current = useQuery({
-		queryKey: ["site-settings"],
+		queryKey: ["admin", "site-settings"],
 		queryFn: async () => {
-			const res = await fetch("/api/v1/site-settings", {
+			const res = await fetch("/api/v1/admin/site-settings", {
 				credentials: "include",
 				headers: { Accept: "application/json" },
 			});
@@ -927,6 +927,7 @@ function SiteSettingsSection() {
 			return res.json();
 		},
 		onSuccess: () => {
+			void queryClient.invalidateQueries({ queryKey: ["admin", "site-settings"] });
 			void queryClient.invalidateQueries({ queryKey: ["site-settings"] });
 		},
 	});
@@ -982,7 +983,7 @@ function SiteSettingsSection() {
 			<div className="mt-4 flex items-center justify-end gap-2">
 				<button
 					type="button"
-					disabled={setSettings.isPending || current.isLoading}
+					disabled={setSettings.isPending || current.isPending || current.isError}
 					onClick={() =>
 						setSettings.mutate({
 							maintenanceMode: maintenance,
@@ -998,6 +999,11 @@ function SiteSettingsSection() {
 				</button>
 			</div>
 
+			{current.isError && (
+				<p role="alert" className="mt-3 text-xs text-error">
+					Could not load saved settings. <button type="button" className="underline" onClick={() => { void current.refetch(); }}>Retry</button>
+				</p>
+			)}
 			{setSettings.isError && (
 				<p className="mt-3 text-xs text-error">
 					{(setSettings.error as Error)?.message ?? "Failed to save."}

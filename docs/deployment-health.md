@@ -39,9 +39,9 @@ without changing application storage behavior.
 
 The frontend and API are separate health signals. A Ready Vercel deployment
 and API `/health` response do not prove that Redis or inference providers
-are healthy. The API `/ready` still reports degraded Redis: its configured
-Upstash hostname does not resolve. Restoring service requires the matching
-production URL/token pair; do not substitute the development environment.
+are healthy. On September 28, API `/ready` reported degraded Redis because its configured
+Upstash hostname did not resolve. The October 7 check confirms this outage
+has been resolved; do not substitute the development environment.
 The bounded authentication fallback preserves each route's configured
 request budget while that dependency is unavailable.
 
@@ -61,3 +61,31 @@ Model API `available` flags reflect configured routes, not synthetic
 inference health probes. Public counts use **enabled models**, and both
 model endpoints expose the catalog's canonical `capabilities` array so list
 and detail pages do not disagree after loading live data.
+
+## October 7 audit
+
+The production Neon `/ready` probe reports HTTP 200, with Postgres and Redis
+healthy. The usage-metering columns from migration 0004 are present. No database
+migration or credential replacement was needed for this release.
+
+A real browser chat request returned HTTP 500 with `unusable`. The per-model
+limiter consumed the body before the daily limiter tried to clone the raw
+Request. Both middlewares now use Hono's cached body parser. The regression
+check exercises body-size, model-limit, and daily-limit middleware together.
+
+The dependency upgrade also changed Better Auth's development magic-link
+record format. Local seeded records now include the `magic-link:` identifier
+prefix and record type; the real authentication integration suite validates
+both seeded roles against the installed verifier.
+
+Two more rate-limit regressions were reproduced over HTTP: delegated model
+limits dropped their rejection response, and unrelated routes shared a default
+counter. Rejections now propagate, and default budgets use the HTTP method and
+registered route pattern. Parameter changes cannot create new budgets.
+
+The October 7 live GLM and MiniMax browser requests returned complete HTTP 200
+streams. DeepSeek still returned repetitive text and exhausted its output limit
+on two independent prompts; it remains excluded from automatic free failover.
+The local Venice credential returned 401, which does not establish the health
+of the separate production Venice credential. See the full scope and evidence
+in [the October 7 audit](audits/2026-10-07-site-auth-api.md).

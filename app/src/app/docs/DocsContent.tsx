@@ -52,7 +52,7 @@ function Sidebar({ activeId }: { activeId: string }) {
 				onClick={() => setMobileOpen(!mobileOpen)}
 				className="fixed bottom-24 right-6 z-[100] flex h-14 w-14 items-center justify-center rounded-full bg-accent text-void shadow-[0_0_20px_var(--color-accent-glow)] lg:hidden active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"
 				aria-label={
-					mobileOpen ? "Close navigation menu" : "Open navigation menu"
+					mobileOpen ? "Close documentation navigation" : "Open documentation navigation"
 				}
 				aria-expanded={mobileOpen}
 				aria-controls={mobileNavId}
@@ -65,7 +65,7 @@ function Sidebar({ activeId }: { activeId: string }) {
 					type="button"
 					className="fixed inset-0 z-40 bg-void/80 backdrop-blur-sm lg:hidden cursor-default active:scale-[0.97]"
 					onClick={() => setMobileOpen(false)}
-					aria-label="Close navigation menu"
+					aria-label="Close documentation navigation"
 				/>
 			)}
 
@@ -73,6 +73,8 @@ function Sidebar({ activeId }: { activeId: string }) {
 				ref={panelRef}
 				id={mobileNavId}
 				aria-label="Documentation navigation"
+				role={isMobile ? "dialog" : undefined}
+				aria-modal={isMobile && mobileOpen ? true : undefined}
 				aria-hidden={drawerHidden}
 				inert={drawerHidden}
 				className={`fixed left-0 top-14 z-[60] h-[calc(100dvh-3.5rem)] w-72 overflow-y-auto border-r border-border bg-surface transition-transform duration-200 ease-out lg:translate-x-0 ${
@@ -161,7 +163,7 @@ export function DocsContent() {
 
 				<div className="min-w-0 lg:pl-72">
 					<div className="mx-auto max-w-5xl min-w-0 px-4 pb-24 pt-6 sm:px-6 sm:pt-8 lg:px-8 lg:pb-10 lg:pt-10">
-						<div className="relative mb-10 overflow-hidden rounded-[var(--radius-2xl)] border border-accent/20 bg-surface/50 p-8 sm:p-10 lg:p-12 shadow-2xl">
+						<div className="relative mb-10 overflow-hidden rounded-[var(--radius-2xl)] border border-accent/20 bg-surface/50 p-5 sm:p-8 shadow-2xl">
 							<div
 								aria-hidden="true"
 								className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-accent/5 blur-[80px]"
@@ -176,27 +178,20 @@ export function DocsContent() {
 								<span className="opacity-50">/</span>
 								<span className="text-text">docs</span>
 							</nav>
-						{/* The two hero columns measured 502x193 against 336x70 - the search
-						    column carried 123px less content but `lg:items-start` pinned both
-						    to the top edge, so the short one floated with all that height as
-						    dead space beneath it. `lg:items-center` pairs them on a shared
-						    optical centre; min-width steps 21rem -> 22rem to give the search
-						    field room to breathe; the meta-strip keeps its nowrap so the
-						    three facts stay on one line. */}
-					<div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+					<div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_18rem] xl:items-center">
 						<div className="min-w-0">
 							<span className="section-eyebrow-caps">API reference</span>
 							<h1 className="display-headline mt-4 text-text-bright">
 								API Docs
 							</h1>
 							<p className="page-intro max-w-2xl">
-								OpenAI-compatible inference with wallet auth and x402
-								credit billing. One endpoint, one key, every curated model.
+								OpenAI-compatible inference with prepaid credits. Sign in with
+								email or a wallet, create a key, and connect your app.
 							</p>
 						</div>
-						<div className="flex flex-col gap-3 lg:min-w-[22rem] lg:items-center lg:justify-end">
+						<div className="flex min-w-0 flex-col gap-3">
 							<DocsSearch />
-							<div className="meta-strip justify-start lg:justify-end lg:flex-nowrap lg:whitespace-nowrap">
+							<div className="meta-strip flex-wrap justify-start">
 								<span>OpenAI-compatible</span>
 								<span>{MODEL_COUNT} models</span>
 								<span>x402 on Base</span>

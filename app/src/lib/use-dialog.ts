@@ -27,6 +27,8 @@ export function useDialog({
 }) {
 	const panelRef = useRef<HTMLDivElement>(null);
 	const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+	const onCloseRef = useRef(onClose);
+	useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
 
 	useEffect(() => {
 		if (!open) return;
@@ -52,7 +54,7 @@ export function useDialog({
 		function onKeyDown(e: KeyboardEvent) {
 			if (e.key === "Escape") {
 				e.stopPropagation();
-				onClose();
+				onCloseRef.current();
 				return;
 			}
 			if (e.key === "Tab" && panelRef.current) {
@@ -83,7 +85,7 @@ export function useDialog({
 			// Restore focus to the element that opened the dialog.
 			previouslyFocusedRef.current?.focus?.();
 		};
-	}, [open, onClose, initialFocusRef]);
+	}, [open, initialFocusRef]);
 
 	return { panelRef };
 }

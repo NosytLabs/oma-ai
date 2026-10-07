@@ -122,7 +122,7 @@ export function Footer() {
 								{section.links.map((link) => {
 									const active = isCurrentNavLink(pathname, link.href);
 									return <li key={link.href}><Link href={link.href} prefetch={false} aria-current={active ? "page" : undefined}
-										className={`inline-flex min-h-8 items-center rounded-sm py-1 text-xs leading-relaxed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${active ? "text-accent" : "text-text-secondary hover:text-accent"}`}>{link.label}</Link></li>;
+										className={`inline-flex min-h-8 min-w-6 items-center rounded-sm py-1 text-xs leading-relaxed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${active ? "text-accent" : "text-text-secondary hover:text-accent"}`}>{link.label}</Link></li>;
 								})}
 							</ul>
 						</div>)}
@@ -170,25 +170,7 @@ export function Footer() {
 					</ul>
 				</div>
 
-				{/* Open-source callout. The repo is public and self-hostable;
-				    saying so above the copyright is the honest thing to do —
-				    and it is the one "follow us" slot that exists without a
-				    backend behind it (there is no newsletter service, so no
-				    subscribe form is shipped here). */}
-				<p className="border-t border-border py-5 text-[13px] leading-relaxed text-text-secondary">
-					OMA is open source. Read it, fork it, or self-host the gateway —{" "}
-					<a
-						href="https://github.com/NosytLabs/oma-ai"
-						target="_blank"
-						rel="noopener noreferrer"
-						className="text-accent underline underline-offset-4 hover:no-underline"
-					>
-						the whole stack is on GitHub
-					</a>
-					.
-				</p>
-
-				<p className="pb-5 font-mono text-[11px] text-text-muted">© <span suppressHydrationWarning>{CURRENT_YEAR}</span> OMA by NosytLabs</p>
+				<p className="py-5 font-mono text-[11px] text-text-muted">© <span suppressHydrationWarning>{CURRENT_YEAR}</span> OMA by NosytLabs</p>
 			</div>
 		</footer>
 	);

@@ -5,6 +5,7 @@ import { springs } from "@/lib/animation";
 import { AlertTriangle, Check, Copy, Eye, EyeOff, Key } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { ApiKeyWithSecret } from "@/lib/api";
+import { useDialog } from "@/lib/use-dialog";
 
 interface CreatedKeyModalProps {
 	createdKey: ApiKeyWithSecret | null;
@@ -20,16 +21,13 @@ export function CreatedKeyModal({
 	onDismiss,
 }: CreatedKeyModalProps) {
 	const [revealed, setRevealed] = useState(false);
-	const [autoHideTimer, setAutoHideTimer] = useState<ReturnType<
-		typeof setTimeout
-	> | null>(null);
+	const { panelRef } = useDialog({ open: !!createdKey, onClose: onDismiss });
 
 	useEffect(() => {
 		if (revealed) {
 			const timer = setTimeout(() => {
 				setRevealed(false);
 			}, 10000);
-			setAutoHideTimer(timer);
 			return () => {
 				if (timer) clearTimeout(timer);
 			};
@@ -37,7 +35,6 @@ export function CreatedKeyModal({
 	}, [revealed]);
 
 	const handleReveal = () => {
-		if (autoHideTimer) clearTimeout(autoHideTimer);
 		setRevealed(!revealed);
 	};
 
@@ -52,6 +49,12 @@ export function CreatedKeyModal({
 				exit={{ opacity: 0 }}
 			>
 				<m.div
+					ref={panelRef}
+					tabIndex={-1}
+					role="dialog"
+					aria-modal="true"
+					aria-labelledby="created-key-title"
+					aria-describedby="key-warning"
 					className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto border border-accent/20 bg-void p-6"
 					initial={{ scale: 0.9, opacity: 0 }}
 					animate={{ scale: 1, opacity: 1 }}
@@ -63,7 +66,7 @@ export function CreatedKeyModal({
 							<Key className="h-6 w-6" />
 						</div>
 						<div>
-							<h3 className="text-lg font-bold text-text-bright">
+							<h3 id="created-key-title" className="text-lg font-bold text-text-bright">
 								API key created
 							</h3>
 							<p className="text-xs text-text-muted">

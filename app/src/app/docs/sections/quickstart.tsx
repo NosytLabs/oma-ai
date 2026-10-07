@@ -1,51 +1,5 @@
-import { Play, Terminal, Copy, Check } from "lucide-react";
-import { useState } from "react";
-import { copyToClipboard } from "@/lib/clipboard";
+import { Play, Terminal } from "lucide-react";
 import { AnimatedSection, CodeBlock, SectionHeading, QUICK_START_STEPS } from "./shared";
-
-// Compact per-modality curl blocks. Each block's code defaults to a
-// bash snippet, matching the real /v1/* surface: chat completions.
-function ModalityExample({ title, code }: { title: string; code: string }) {
-	const [copied, setCopied] = useState(false);
-	const looksLikeCurl = code.trimStart().startsWith("curl");
-	const isInteractive = looksLikeCurl || !code.trimStart().startsWith("#");
-
-	return (
-		<div className="rounded-[var(--radius-lg)] border border-border bg-panel shadow-[var(--shadow-md)] p-4 relative group">
-			<div className="mb-2 flex items-center justify-between">
-				<span className="text-xs font-semibold text-text-secondary font-mono uppercase tracking-wider">
-					{title}
-				</span>
-				<div className="flex items-center gap-1.5">
-					{looksLikeCurl && (
-						<span className="rounded-[var(--radius-md)] bg-accent/10 px-1.5 py-0.5 text-[10px] font-mono text-accent border border-accent/20">
-							cURL
-						</span>
-					)}
-					{isInteractive && (
-						<button
-							type="button"
-							onClick={() => {
-								void copyToClipboard(code).then((ok) => {
-									if (!ok) return;
-									setCopied(true);
-									setTimeout(() => setCopied(false), 2000);
-								});
-							}}
-							className="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity duration-200 ease-out p-1 min-h-6 min-w-6 inline-flex items-center justify-center text-text-muted hover:text-accent"
-							aria-label={copied ? "Copied" : "Copy code"}
-						>
-							{copied ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
-						</button>
-					)}
-				</div>
-			</div>
-			<pre className="overflow-x-auto rounded-[var(--radius-md)] bg-void/40 p-3 text-[11px] leading-snug font-mono text-text-secondary whitespace-pre">
-{code}
-			</pre>
-		</div>
-	);
-}
 
 export function QuickStartSection() {
 	const curlCode = `curl https://www.oma-ai.com/api/v1/chat/completions \\
@@ -107,27 +61,10 @@ export function QuickStartSection() {
 				</div>
 			</div>
 
-			{/* Per-modality examples — copyable from the docs page so users see
-			 every supported modality at a glance. Each block uses the
-			 OpenAI-compatible surface so SDKs work out-of-the-box. OMA
-			 serves chat completions only (text + multimodal input); image
-			 and video generation endpoints were intentionally removed. */}
-			<div className="mt-10 space-y-4">
-				<p className="text-xs font-mono uppercase tracking-widest text-text-muted">
-					Chat · Anthropic messages · curl
-				</p>
-				<div className="grid gap-3 md:grid-cols-2">
-					<ModalityExample
-						title="Chat (OpenAI-compatible)"
-						code={`curl https://www.oma-ai.com/api/v1/chat/completions \\
-		-H "Authorization: Bearer oma_sk_your_key_here" \\
-		-H "Content-Type: application/json" \\
-		-d '{
-	"model": "llama-3.3-70b",
-	"messages": [{"role": "user", "content": "Hello!"}]
-	}'`}
-					/>
-					<ModalityExample
+			<div className="mt-8">
+				<h3 className="mb-3 text-sm font-semibold text-text">Using the Anthropic API format</h3>
+					<CodeBlock
+						lang="bash"
 						title="Messages (Anthropic-compatible)"
 						code={`curl https://www.oma-ai.com/api/v1/messages \\
 	-H "x-api-key: oma_sk_your_key_here" \\
@@ -139,7 +76,6 @@ export function QuickStartSection() {
 	"messages": [{"role": "user", "content": "Hello!"}]
 	}'`}
 					/>
-				</div>
 			</div>
 		</AnimatedSection>
 	);

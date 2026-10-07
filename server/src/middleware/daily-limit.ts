@@ -29,7 +29,6 @@ export const DAILY_LIMIT_ANONYMOUS = 20;
 export const DAILY_LIMIT_REGISTERED = 100;
 
 interface DailyUsageResult {
-	available: boolean;
 	allowed: boolean;
 		remaining: number;
 		limit: number;
@@ -53,14 +52,14 @@ async function checkDailyUsageLimit(
 		// But "fail open" must mean *degrade enforcement*, not *drop* it. This
 		// used to return `allowed: true, remaining: 0` unconditionally, which
 		// made the anonymous 20/day cap completely unenforced in production
-		// (there are no working Upstash credentials there) AND told every caller
+		// during an outage AND told every caller
 		// they had 0 left while happily serving them. Degrade to a bounded
 		// per-process counter instead, same policy the rate limiter already uses
 		// for its `degraded-memory` mode.
 		if (!redis || !ready) {
 			logger.warn("Redis unavailable for daily free-tier limit — enforcing a bounded in-memory cap (degraded)");
 			const mem = checkMemoryCounter(identifier, limit, 86_400_000);
-			return { available: true, allowed: mem.allowed, remaining: mem.remaining, limit, resetMs: mem.resetMs };
+			return { allowed: mem.allowed, remaining: mem.remaining, limit, resetMs: mem.resetMs };
 		}
 
 		const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
@@ -79,15 +78,15 @@ async function checkDailyUsageLimit(
 				const resetMs = ttl > 0 ? ttl * 1000 : 0;
 
 			return {
-				available: true,
 				allowed: current <= limit,
 						remaining,
 						limit,
 						resetMs,
 				};
 		} catch (err) {
-				logger.error({ err }, "Daily usage limit check failed — allowing request (fail open)");
-				return { available: true, allowed: true, remaining: 0, limit, resetMs: 0 };
+				logger.error({ err }, "Daily usage limit check failed — enforcing a bounded in-memory cap");
+				const mem = checkMemoryCounter(identifier, limit, 86_400_000);
+				return { allowed: mem.allowed, remaining: mem.remaining, limit, resetMs: mem.resetMs };
 		}
 }
 
@@ -99,17 +98,13 @@ export function dailyUsageLimit() {
 		return async (c: Context<OmaEnv>, next: Next) => {
 				// Only apply to website chat requests
 				const source = c.req.header("X-OMA-Source");
-				if (source !== "website") {
+				if (source !== "website" || c.get("apiKey")) {
 						return next();
 				}
 
-				// Check if this is a free OMA-AI model.
-				// Clone the raw request first: `c.req.json()` consumes the body stream,
-				// which would leave the route handler reading an empty body.
-				const body = await c.req.raw
-						.clone()
-						.json()
-						.catch(() => null);
+				// Hono caches parsed bodies across middleware. The model limiter
+				// has already read this body; cloning the consumed raw Request throws.
+				const body = await c.req.json().catch(() => null);
 				const model = body?.model as string | undefined;
 
 				// Provider-based check: only OMA-AI-routed models that map to the
@@ -140,18 +135,6 @@ export function dailyUsageLimit() {
 				}
 
 				const result = await checkDailyUsageLimit(identifier, limit);
-				if (!result.available) {
-					return c.json(
-						{
-							error: {
-								message: "Free website chat is temporarily unavailable. Please try again shortly.",
-								type: "service_unavailable",
-								code: "free_tier_unavailable",
-							},
-						},
-						503,
-					);
-				}
 
 				if (!result.allowed) {
 						const retryAfterHours = Math.ceil(result.resetMs / 3600000);

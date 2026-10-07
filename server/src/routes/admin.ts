@@ -31,6 +31,29 @@ import { auditLog, createAuditLogger } from "../middleware/audit.js";
 
 export const adminRoutes = new Hono<OmaEnv>();
 
+// Operator intent differs from the public endpoint's configured payment rails.
+adminRoutes.get(
+	"/v1/admin/site-settings",
+	sessionOrBearerAuth,
+	requireAdmin(),
+	rateLimit({ windowMs: 60_000, maxRequests: 60, failClosed: false }),
+	async (c) => {
+		const [settings] = await db.select({
+			maintenanceMode: siteSettings.maintenanceMode,
+			maintenanceMessage: siteSettings.maintenanceMessage,
+			cardPaymentsEnabled: siteSettings.cardPaymentsEnabled,
+			cryptoPaymentsEnabled: siteSettings.cryptoPaymentsEnabled,
+		}).from(siteSettings).limit(1);
+		c.header("Cache-Control", "no-store");
+		return c.json({
+			maintenanceMode: settings?.maintenanceMode ?? false,
+			maintenanceMessage: settings?.maintenanceMessage ?? "",
+			cardPaymentsEnabled: settings?.cardPaymentsEnabled ?? true,
+			cryptoPaymentsEnabled: settings?.cryptoPaymentsEnabled ?? true,
+		});
+	},
+);
+
 // ---------- POST /v1/admin/site-settings ----------
 
 const siteSettingsSchema = z.object({

@@ -1,12 +1,12 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Footer controls", () => {
-  test("shared navigation omits GitHub and the site-online badge", async ({ page }) => {
+  test("footer links to the organization and current service status", async ({ page }) => {
     await page.goto("/");
     const chrome = page.locator("header, footer");
-    await expect(chrome.getByRole("link", { name: /github/i })).toHaveCount(0);
+    await expect(chrome.getByRole("link", { name: "OMA on GitHub", exact: true })).toHaveAttribute("href", "https://github.com/NosytLabs");
     await expect(chrome.getByText(/site online/i)).toHaveCount(0);
-    await expect(page.getByRole("navigation", { name: "Footer navigation" }).getByRole("link", { name: "Status", exact: true })).toBeVisible();
+    await expect(page.getByRole("contentinfo", { name: "Site footer" }).getByRole("link", { name: "Status", exact: true })).toBeVisible();
   });
 
   test("standalone footer links meet the minimum tap size", async ({ page }) => {

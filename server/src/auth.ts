@@ -218,7 +218,7 @@ function renderMagicLinkEmail(url: string): string {
 </body></html>`;
 }
 
-function renderOTPEmail(email: string, otp: string, type: string): string {
+function renderOTPEmail(otp: string, type: string): string {
 		const title =
 				type === "forget-password"
 						? "Reset your OMA-AI password"
@@ -658,7 +658,7 @@ user: {
 																: type === "email-verification"
 																		? "Verify your OMA-AI email"
 																		: "Sign in to OMA-AI",
-												html: renderOTPEmail(email, otp, type),
+												html: renderOTPEmail(otp, type),
 												text: `Your OMA-AI ${type} code is: ${otp}`,
 										}),
 								});

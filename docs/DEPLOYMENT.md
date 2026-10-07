@@ -4,7 +4,7 @@ Canonical deployment facts for OMA-AI. Other docs link here rather than
 restating them — this file is the single source of truth so a deploy
 instruction can't drift between documents.
 
-Last verified against live infrastructure: 2026-09-28. Current dependency
+Last verified against live infrastructure: 2026-10-07. Current dependency
 outages and verification limits are recorded in [deployment health](deployment-health.md).
 
 ## Canonical host
@@ -69,6 +69,9 @@ vercel deploy --prod --yes
 ```
 
 **Run it from the repository root** (`oma-ai/`), not from `app/`.
+
+`.vercelignore` excludes local environment files and audit artifacts. Configure
+production values in Vercel; do not upload development credentials with a release.
 
 The Vercel project's Root Directory is `app`. This dashboard setting
 tells Vercel where the app lives inside the repository; the CLI still runs
@@ -139,7 +142,8 @@ npx --yes neon@6.2.3 functions deploy omaapi \
   --branch br-sweet-rain-b40o54xa --wait
 ```
 
-Run from the repository root with `NEON_API_KEY` exported. Omit `--env` for
+Run from the repository root with an authenticated Neon CLI session or
+`NEON_API_KEY` exported. Omit `--env` for
 a code-only release. Existing environment variables carry over; a supplied
 `--env KEY=value` updates that key, while `--env KEY=` deletes it. Do not
 substitute a development `.env` for the live configuration.
@@ -163,38 +167,27 @@ are both completed, then verify the API's dependencies:
 ```bash
 npx --yes neon@6.2.3 functions get omaapi \
   --project-id empty-bar-94645349 --branch br-sweet-rain-b40o54xa
-# No -f: /ready answers 503 while Redis is degraded, and -f would abort on the
-# healthy-but-degraded response. Inspect the body instead of the exit code.
-curl -sS https://br-sweet-rain-b40o54xa-omaapi.compute.c-6.us-east-2.aws.neon.tech/ready
+# Inspect the dependency checks as well as the HTTP status.
+curl -fsS https://br-sweet-rain-b40o54xa-omaapi.compute.c-6.us-east-2.aws.neon.tech/ready
 ```
 
 `https://www.oma-ai.com/api/health` checks the web tier only. The native API
 `/ready` probe checks Postgres and Redis.
 
-**`/ready` currently returns 503 with `redis: degraded`, and that is expected
-until the Redis credentials are replaced.** The `UPSTASH_REDIS_REST_URL` on the
-Neon branch points at a database that no longer exists (`ENOTFOUND`), so the
-probe can never report `ready` no matter how healthy the deploy is. Do not treat
-it as a failed deploy, and do not gate a rollout on it.
-
-What to require instead:
+The October 7 readiness check returned HTTP 200 with both database and Redis
+healthy. Require `/ready` to report healthy dependencies after a release;
+do not carry forward the September Redis outage as a permanent exception.
 
 | Signal | Requirement |
 | --- | --- |
 | `GET /api/health` | `200` — web tier is up |
 | `GET /api/version` | `200` |
-| `/ready` → `checks.database.ok` | `true` — **this is the one that matters** |
-| `/ready` → `checks.redis.ok` | may be `false` (known, degraded) |
+| Native API `/ready` | `200`, database and Redis checks both healthy |
+| Real website chat completion | Successful response through the same-origin proxy |
 
-Postgres readiness is the real gate. Redis degradation is handled in-app: general
-routes fail open to a bounded per-process memory limiter (`degraded-memory`,
-5 bursts/min) and the DLQ falls back to Postgres/logging, so a missing cache
-dependency degrades enforcement rather than availability.
-
-To actually restore `/ready`: provision a new Upstash database and set
-`UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` on the Neon branch
-(`config plan`/`apply`), then re-check. Credentials are rotated in the Neon
-console by the account owner, not from a local shell.
+If Redis degrades again, inspect the deployed URL/token pair and service health.
+The bounded in-memory fallback preserves limited availability but is per-process;
+it does not establish shared quota enforcement across instances.
 
 ## DNS
 

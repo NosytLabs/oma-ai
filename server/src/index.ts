@@ -1,11 +1,10 @@
+import { handleUnhandledError } from "./lib/unhandled-error.js";
 import "dotenv/config";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { cors } from "hono/cors";
 import { compress } from "hono/compress";
 import { serve } from "@hono/node-server";
-import { HTTPException } from "hono/http-exception";
-import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { eq } from "drizzle-orm";
 import { config } from "./config.js";
 import { securityHeaders } from "./middleware/security.js";
@@ -499,31 +498,7 @@ app.notFound((c) =>
 		c.json({ error: { message: `Route ${c.req.path} not found`, type: "not_found" } }, 404),
 );
 
-app.onError((err, c) => {
-		if (err instanceof HTTPException) {
-				return err.getResponse();
-		}
-		const correlationId = c.get("correlationId") as string | undefined;
-		logger.error({ correlationId, error: err.message }, "[OMA] Unhandled error");
-		const errWithStatus = err as Error & { status?: ContentfulStatusCode };
-		const status = errWithStatus.status ?? 500;
-		// 5xx with an explicit ProviderError message — surface it. These are
-		// upstream-failure messages we crafted for users (e.g. "Backend
-		// request timed out", "All model providers failed: ..."). Hiding them
-		// as "Internal server error" leaves chat users staring at a silent
-		// failure with no way to recover.
-		if (status >= 500 && errWithStatus.message && errWithStatus.message !== "Internal server error") {
-				return c.json({ error: { message: errWithStatus.message, type: "server_error", correlationId } }, status as ContentfulStatusCode);
-		}
-		if (status >= 500) {
-				return c.json({ error: { message: "Internal server error", type: "server_error", correlationId } }, 500);
-		}
-		const safeClientStatuses: ContentfulStatusCode[] = [400, 401, 403, 404, 409, 422, 429];
-		if (safeClientStatuses.includes(status)) {
-				return c.json({ error: { message: err.message, type: "client_error" } }, status);
-		}
-		return c.json({ error: { message: "Client error", type: "client_error" } }, status);
-});
+app.onError(handleUnhandledError);
 
 function startServer() {
 		const server = serve({

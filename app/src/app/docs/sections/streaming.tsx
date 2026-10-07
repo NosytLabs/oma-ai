@@ -2,7 +2,7 @@ import { Zap } from "lucide-react";
 import { AnimatedSection, CodeBlock, SectionHeading, TabbedCode } from "./shared";
 
 export function StreamingSection() {
-	const streamCode = `curl https://www.oma-ai.com/api/v1/chat/completions \\
+	const streamCode = `curl -N https://www.oma-ai.com/api/v1/chat/completions \\
 	-H "Authorization: Bearer oma_sk_your_key_here" \\
 	-H "Content-Type: application/json" \\
 	-d '{
@@ -34,8 +34,11 @@ stream = client.chat.completions.create(
 )
 
 for chunk in stream:
-	if chunk.choices[0].delta.content:
-	print(chunk.choices[0].delta.content, end="")`;
+    if not chunk.choices:
+        continue
+    content = chunk.choices[0].delta.content
+    if content:
+        print(content, end="", flush=True)`;
 
 	const jsStreamCode = `import { OpenAI } from "openai";
 const client = new OpenAI({
@@ -117,9 +120,6 @@ for await (const chunk of stream) {
 							<span className="text-accent">Cache-Control</span>: no-cache
 						</div>
 						<div>
-							<span className="text-accent">Connection</span>: keep-alive
-						</div>
-						<div>
 							<span className="text-accent">X-Accel-Buffering</span>: no
 						</div>
 					</div>
@@ -131,7 +131,7 @@ for await (const chunk of stream) {
 							<span className="text-accent">x-provider</span>: Provider handling the request
 						</div>
 						<div>
-							<span className="text-accent">X-Correlation-ID</span>: Request tracking ID
+							<span className="text-accent">X-Request-ID</span>: Request tracking ID
 						</div>
 						<div>
 							<span className="text-accent">X-Key-Rotation-Recommended</span>: Key age advisory

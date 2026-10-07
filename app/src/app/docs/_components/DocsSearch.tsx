@@ -20,28 +20,24 @@ function searchDocs(query: string): SearchResult[] {
 	const results: SearchResult[] = [];
 
 	for (const item of NAV_ITEMS) {
-		let score = 0;
 		const matches: string[] = [];
 
-		// Direct label match (highest priority)
+		// Match the section label, id, and search keywords.
 		if (item.label.toLowerCase().includes(q)) {
-			score += 10;
 			matches.push(item.label);
 		}
 		// ID match
 		if (item.id.toLowerCase().includes(q)) {
-			score += 5;
 			matches.push(item.id);
 		}
 		// Keyword match
 		for (const kw of item.keywords) {
 			if (kw.toLowerCase().includes(q)) {
-				score += 3;
 				matches.push(kw);
 			}
 		}
 
-		if (score > 0) {
+		if (matches.length > 0) {
 			results.push({
 				item,
 				matchedOn: matches[0] ?? item.label,
@@ -101,15 +97,6 @@ export function DocsSearch() {
 		setSelectedIndex(0);
 	}, [query]);
 
-	// Clamp on every result change too, in case a deeper effect updates it.
-	useEffect(() => {
-		if (results.length === 0) {
-			setSelectedIndex(0);
-			return;
-		}
-		setSelectedIndex((i) => (i >= results.length ? results.length - 1 : i));
-	}, [results.length]);
-
 	useEffect(() => {
 		function onKeyDown(e: KeyboardEvent) {
 			// Cmd/Ctrl + K to open
@@ -134,7 +121,7 @@ export function DocsSearch() {
 		} else if (e.key === "ArrowUp") {
 			e.preventDefault();
 			setSelectedIndex((i) => (i - 1 + results.length) % results.length);
-		} else if (e.key === "Enter") {
+		} else if (e.key === "Enter" && e.target === inputRef.current) {
 			e.preventDefault();
 			handleSelect(results[selectedIndex]);
 		} else if (e.key === "Home") {
@@ -158,13 +145,13 @@ export function DocsSearch() {
 					setOpen(true);
 					setTimeout(() => inputRef.current?.focus(), 50);
 				}}
-				className="flex min-h-10 items-center gap-2 rounded-[var(--radius-lg)] border border-border bg-surface/60 px-3 py-1.5 text-sm text-text-muted transition-[background-color,border-color,color] hover:border-border-bright hover:bg-surface hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"
+				className="flex min-h-11 w-full items-center gap-2 rounded-[var(--radius-lg)] border border-border bg-surface/60 px-3 py-1.5 text-sm text-text-muted transition-[background-color,border-color,color] hover:border-border-bright hover:bg-surface hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"
 				aria-label="Search docs ⌘K"
 			>
 				<Search className="h-3.5 w-3.5" aria-hidden="true" />
-				<span className="hidden sm:inline">Search docs</span>
+				<span>Search docs</span>
 				<kbd
-					className="ml-2 hidden rounded-[var(--radius-sm)] border border-border bg-panel px-1.5 py-0.5 text-[10px] font-mono text-text-tertiary lg:inline"
+					className="ml-auto hidden rounded-[var(--radius-sm)] border border-border bg-panel px-1.5 py-0.5 text-[10px] font-mono text-text-tertiary lg:inline"
 					aria-hidden="true"
 				>
 					⌘K
@@ -199,25 +186,17 @@ export function DocsSearch() {
 								value={query}
 								onChange={(e) => setQuery(e.target.value)}
 								placeholder="Search docs..."
-								className="flex-1 bg-transparent text-sm text-text placeholder:text-text-muted outline-none"
+								className="min-w-0 flex-1 bg-transparent text-sm text-text placeholder:text-text-muted outline-none"
 								aria-label="Search query"
 							/>
-							{query && (
-								<button
-									type="button"
-									onClick={() => {
-										setQuery("");
-										inputRef.current?.focus();
-									}}
-									className="rounded-[var(--radius-sm)] p-0.5 text-text-muted hover:text-text"
-									aria-label="Clear search"
-								>
-									<X className="h-3.5 w-3.5" />
-								</button>
-							)}
-							<kbd className="hidden rounded-[var(--radius-sm)] border border-border bg-surface px-1.5 py-0.5 text-[10px] font-mono text-text-tertiary sm:inline">
-								ESC
-							</kbd>
+							<button
+								type="button"
+								onClick={() => { setOpen(false); setQuery(""); }}
+								className="flex h-11 w-11 shrink-0 items-center justify-center rounded text-text-muted hover:text-text focus-visible:ring-2 focus-visible:ring-accent"
+								aria-label="Close search"
+							>
+								<X className="h-4 w-4" aria-hidden="true" />
+							</button>
 						</div>
 
 						{/* Results */}

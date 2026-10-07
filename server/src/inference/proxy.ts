@@ -37,13 +37,14 @@ import { ProviderError, resolveProvider } from "./provider-route.js";
 
 export interface CallProviderOptions {
 		modelId: string;
-		messages: Array<{ role: string; content: string | unknown[]; name?: string }>;
+		messages: Array<{ role: string; content?: string | unknown[] | null; name?: string; tool_calls?: unknown[]; tool_call_id?: string }>;
 		stream: boolean;
 		max_tokens?: number;
 		temperature?: number;
 		top_p?: number;
 		tools?: unknown[];
 		tool_choice?: unknown;
+		response_format?: { type: "text" | "json_object" | "json_schema"; json_schema?: Record<string, unknown> };
 		userId: string;
 		requestId: string;
 		/** Skip credit deduction for free website chat */
@@ -60,7 +61,7 @@ export interface CallProviderOptions {
 	* Returns the raw upstream Response object for the caller to translate/stream as needed.
 	*/
 async function callProvider(opts: CallProviderOptions): Promise<Response> {
-		const { modelId, messages, stream, max_tokens, temperature, top_p, tools, tool_choice } = opts;
+		const { modelId, messages, stream, max_tokens, temperature, top_p, tools, tool_choice, response_format } = opts;
 
 		const modelDef = getModelById(modelId);
 		if (!modelDef) {
@@ -83,6 +84,8 @@ async function callProvider(opts: CallProviderOptions): Promise<Response> {
 						role: m.role,
 						content: m.content,
 						...(m.name ? { name: m.name } : {}),
+						...(m.tool_calls ? { tool_calls: m.tool_calls } : {}),
+						...(m.tool_call_id ? { tool_call_id: m.tool_call_id } : {}),
 				})),
 				stream,
 				...(max_tokens ? { max_tokens } : {}),
@@ -90,6 +93,7 @@ async function callProvider(opts: CallProviderOptions): Promise<Response> {
 				...(top_p !== undefined ? { top_p } : {}),
 				...(tools ? { tools } : {}),
 				...(tool_choice ? { tool_choice } : {}),
+				...(response_format ? { response_format } : {}),
 		});
 
 		// Hard timeout so a hung upstream cannot pin a worker forever.
