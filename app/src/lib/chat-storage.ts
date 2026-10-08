@@ -27,7 +27,7 @@ export interface ConversationHistoryState {
 	threads: ConversationThread[];
 }
 
-export interface LoadConversationHistoryOptions {
+interface LoadConversationHistoryOptions {
 	historyKey: string;
 	legacyKey: string;
 	model: string;
@@ -35,7 +35,7 @@ export interface LoadConversationHistoryOptions {
 	now?: () => number;
 }
 
-export interface ConversationHistoryLoadResult {
+interface ConversationHistoryLoadResult {
 	history: ConversationHistoryState;
 	source: "history" | "legacy" | "empty";
 	canPersist: boolean;
@@ -63,8 +63,6 @@ export function systemPromptStorageKey(
 		? `oma_chat_system_prompt:u:${userId}`
 		: "oma_chat_system_prompt:guest";
 }
-
-export const isPersistableMessage = isChatMessage;
 
 export function conversationTitle(messages: Message[]): string {
 	const firstUserMessage = messages.find(
@@ -123,7 +121,7 @@ function parseMessages(serialized: string | null): Message[] | null {
 	try {
 		const parsed: unknown = JSON.parse(serialized);
 		if (!Array.isArray(parsed)) return null;
-		const messages = parsed.filter(isPersistableMessage);
+		const messages = parsed.filter(isChatMessage);
 		return messages.length > 0 ? messages : null;
 	} catch {
 		return null;
@@ -148,7 +146,7 @@ function parseThread(value: unknown): ConversationThread | null {
 	) {
 		return null;
 	}
-	if (!thread.messages.every(isPersistableMessage)) return null;
+	if (!thread.messages.every(isChatMessage)) return null;
 	return {
 		id: thread.id,
 		title: thread.title.trim() || conversationTitle(thread.messages),

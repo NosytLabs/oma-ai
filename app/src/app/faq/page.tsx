@@ -49,7 +49,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "Can a provider see my prompts?",
-				a: `OMA itself does not persist prompt or completion content and meters only billing metadata. However, the inference provider that serves a request must process that content to answer it, so provider-side retention guarantees depend on the model and provider you select. See /privacy for the exact data-flow.`,
+				a: `The OMA gateway does not persist prompt or completion content and meters billing metadata. Website chat saves conversations and drafts in your browser. However, the inference provider that serves a request must process that content to answer it, so provider-side retention guarantees depend on the model and provider you select. See /privacy for the exact data-flow.`,
 			},
 			{
 				q: "What are the rate limits?",
@@ -91,7 +91,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "Do you store my API keys?",
-				a: "Only the SHA-256 hash of your key is stored — not the key itself. The plaintext `oma_sk_...` is shown once when you create it and can't be viewed again; if you lose it, just revoke and create a new one. Keys are tied to your account and can be revoked instantly from the dashboard. OMA does not persist prompt or completion content. See /privacy for the full detail.",
+				a: "Only the SHA-256 hash of your key is stored — not the key itself. The plaintext `oma_sk_...` is shown once when you create it and can't be viewed again; if you lose it, just revoke and create a new one. Keys are tied to your account and can be revoked instantly from the dashboard. The gateway does not persist prompt or completion content. Website chat history stays in your browser. See /privacy for details.",
 			},
 			{
 				q: "What is a magic link?",
@@ -103,7 +103,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "Is my data private?",
-				a: "OMA itself does not persist prompt or completion content. The inference provider that serves a request must process that content, and provider retention/privacy guarantees depend on the selected provider and model. See /privacy for the data-flow details.",
+				a: "The OMA gateway does not persist prompt or completion content. Website chat history stays in your browser and does not sync between devices. The inference provider that serves a request must process that content, and provider retention/privacy guarantees depend on the selected provider and model. See /privacy for the data-flow details.",
 			},
 		],
 	},

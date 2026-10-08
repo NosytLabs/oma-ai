@@ -13,15 +13,10 @@ import { springs } from "@/lib/animation";
 import { ChevronDown } from "lucide-react";
 import type { RefObject } from "react";
 import type { Message } from "@/components/chat";
-import { A2UIRenderer, type A2UIActionEvent } from "@/components/chat/A2UIRenderer";
-import { OpenUIRenderer } from "@/components/chat/OpenUIRenderer";
-import { classifyMessage } from "@/lib/openui-message-format";
-import { isValidOpenUIResponse } from "@/lib/openui";
+import type { A2UIActionEvent } from "@/components/chat/A2UIRenderer";
 import type { OpenUIActionHandler } from "@/lib/openui-actions";
 import { ChatEmptyState, type EmptyStateProps } from "@/components/chat/ChatEmptyState";
-import { ChatMessageed } from "@/components/chat/ChatMessage";
-
-export { classifyMessage } from "@/lib/openui-message-format";
+import { ChatMessage } from "@/components/chat/ChatMessage";
 
 interface MessagesListProps {
 	scrollContainerRef: RefObject<HTMLDivElement | null>;
@@ -76,19 +71,9 @@ export function MessagesList({
 				aria-hidden="true"
 			/>
 			<div className="max-w-4xl mx-auto relative z-0 min-h-full">
-				{deferredMessages.length === 0 ? (
+						{deferredMessages.length === 0 ? (
 					<div className="pb-8">
-						{/*
-						  The empty state reserved min-h-[58vh]/md:min-h-[62vh]
-						  around ~250px of content, so at 1440x900 the
-						  scroll area held a 558px box whose text sat
-						  between 166px of padding above and 142px below
-						  — a ~300px void between the model selector and
-						  the composer. The starter prompts below fill
-						  that space with something useful, so the box
-						  only needs to clear the composer rather than
-						  claim a fixed share of the viewport.
-						*/}
+						{/* Starter prompts fill the empty chat without reserving viewport height. */}
 						<div
 							className={
 								isAuthenticated
@@ -104,30 +89,11 @@ export function MessagesList({
 						<AnimatePresence mode="popLayout">
 							{deferredMessages.map((msg, index) => {
 								const isLast = index === deferredMessages.length - 1;
-								// Skip legacy empty assistant payloads (e.g. from
-								// failed sends before history sanitizing) — they
-								// render as hollow bubbles otherwise.
-								const emptyAssistant =
-									msg.role === "assistant" &&
-									!msg.content?.trim() &&
-									!msg.reasoning?.trim() &&
-									!(loading && isLast);
-								if (emptyAssistant) return null;
-								// The explicit format on new messages lets partial
-								// OpenUI render before a complete parser root exists.
 								const isLastAssistant =
 									msg.role === "assistant" && isLast;
 								const isStreaming = loading && isLastAssistant;
-								const classification =
-									msg.role === "assistant"
-										? classifyMessage(msg.content, {
-												format: msg.format,
-												isStreaming,
-												isValidOpenUI: isValidOpenUIResponse,
-											})
-										: ({ kind: "plain" } as const);
 								return (
-									<ChatMessageed
+									<ChatMessage
 										key={msg.id ?? `${msg.role}-${msg.timestamp}`}
 										msg={msg}
 										loading={isStreaming}
@@ -138,20 +104,8 @@ export function MessagesList({
 												: undefined
 										}
 										isLastAssistant={isLastAssistant}
-										assistantContent={
-											classification.kind === "a2ui" ? (
-												<A2UIRenderer
-													payload={classification.payload}
-													onAction={onA2UIAction}
-												/>
-											) : classification.kind === "openui" ? (
-												<OpenUIRenderer
-													response={classification.response}
-													isStreaming={isStreaming}
-													onAction={onOpenUIAction}
-												/>
-											) : undefined
-										}
+										onA2UIAction={onA2UIAction}
+										onOpenUIAction={onOpenUIAction}
 									/>
 								);
 							})}

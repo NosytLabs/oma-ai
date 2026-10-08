@@ -114,7 +114,7 @@ https://www.oma-ai.com/api/v1/openapi.json
 
 ## Privacy and availability
 
-OMA does not persist prompt or completion content. It stores account, billing, and usage metadata required to operate the service. Upstream providers handle inference content according to their own policies, which can differ by provider and model; do not interpret the gateway's storage policy as a universal no-training or no-retention promise.
+The OMA gateway does not persist prompt or completion content. It stores account, billing, and usage metadata required to operate the service. Website chat saves conversations and drafts in the current browser, separately for guests and each signed-in account; this history does not sync between devices. See [Chat UI](chat-ui.md) for local storage and deletion behavior. Upstream providers handle inference content according to their own policies, which can differ by provider and model; do not interpret the gateway's storage policy as a universal no-training or no-retention promise.
 
 The live model endpoint is the source of truth for current availability and prices. The bundled catalog is a fallback reference and must not be presented as a count of callable models. Website examples and animated request illustrations do not establish live availability.
 

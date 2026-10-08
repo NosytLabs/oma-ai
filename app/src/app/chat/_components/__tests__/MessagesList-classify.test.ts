@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { classifyMessage } from "../MessagesList";
+import { isValidOpenUIResponse } from "@/lib/openui";
+import { classifyMessage } from "@/lib/openui-message-format";
 
 /**
  * classifyMessage decides whether an assistant message is a plain-text reply
@@ -137,5 +138,39 @@ describe("classifyMessage — OpenUI streaming detection", () => {
 			kind: "openui",
 			response: 'root = Text({ content: "Saved" })',
 		});
+	});
+
+	it("accepts parser-supported leading comments only for a requested, validated response", () => {
+		const response = [
+			"// generated interface",
+			'root = Card("Ready", [body])',
+			'body = Text("Catalog-backed content")',
+		].join("\n");
+		expect(isValidOpenUIResponse(response)).toBe(true);
+		expect(
+			classifyMessage(response, {
+				format: "openui",
+				isStreaming: false,
+				isValidOpenUI: isValidOpenUIResponse,
+			}),
+		).toEqual({ kind: "openui", response });
+		expect(
+			classifyMessage(response, {
+				isStreaming: false,
+				isValidOpenUI: isValidOpenUIResponse,
+			}),
+		).toEqual({ kind: "plain" });
+	});
+
+	it.each([
+		"# generated interface\nroo",
+		'// generated interface\nroot = Card("Ready", [',
+	])("finds a requested OpenUI stream after a leading comment: %s", (response) => {
+		expect(
+			classifyMessage(response, {
+				format: "openui",
+				isStreaming: true,
+			}),
+		).toEqual({ kind: "openui", response });
 	});
 });

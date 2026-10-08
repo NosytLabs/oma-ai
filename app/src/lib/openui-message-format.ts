@@ -18,24 +18,8 @@ export function classifyMessage(
 	options: ClassifyMessageOptions = {},
 ): MessageClassification {
 	const trimmed = content.trimStart();
-	const openui = extractOpenUIResponse(trimmed);
-	const looksLikeOpenUI =
-		/^root\s*=|^[A-Za-z_$][\w$]*\s*=\s*[A-Z][\w$]*\s*\(/.test(
-			openui.response,
-		) ||
-		(options.format === "openui" &&
-			options.isStreaming === true &&
-			looksLikePartialRootAssignment(openui.response));
-
-	if (
-		(openui.response || (openui.explicit && options.isStreaming)) &&
-		(openui.explicit || looksLikeOpenUI) &&
-		(options.isStreaming ||
-			options.isValidOpenUI?.(openui.response) === true ||
-			(options.isValidOpenUI === undefined && looksLikeOpenUI))
-	) {
-		return { kind: "openui", response: openui.response };
-	}
+	const openui = classifyOpenUI(trimmed, options);
+	if (openui) return openui;
 
 	if (trimmed.startsWith("{")) {
 		const parsed = safeJsonParse(trimmed);
@@ -47,12 +31,62 @@ export function classifyMessage(
 	return detectEmbeddedA2UI(trimmed);
 }
 
+function classifyOpenUI(
+	content: string,
+	options: ClassifyMessageOptions,
+): Extract<MessageClassification, { kind: "openui" }> | null {
+	const extracted = extractOpenUIResponse(content);
+	const looksLikeAssignment = looksLikeOpenUIAssignment(extracted.response);
+
+	if (options.isStreaming) {
+		const looksLikeRequestedStream =
+			options.format === "openui" &&
+			looksLikeRequestedOpenUIStream(extracted.response);
+		return extracted.explicit || looksLikeAssignment || looksLikeRequestedStream
+			? { kind: "openui", response: extracted.response }
+			: null;
+	}
+
+	if (!extracted.response) return null;
+	const hasOpenUIPrefix =
+		extracted.explicit || looksLikeAssignment || options.format === "openui";
+	if (!hasOpenUIPrefix) return null;
+
+	const isValid = options.isValidOpenUI
+		? options.isValidOpenUI(extracted.response)
+		: looksLikeAssignment;
+	return isValid ? { kind: "openui", response: extracted.response } : null;
+}
+
+function looksLikeRequestedOpenUIStream(response: string): boolean {
+	const withoutComments = stripLeadingLineComments(response);
+	return (
+		looksLikeOpenUIAssignment(withoutComments) ||
+		looksLikePartialRootAssignment(withoutComments)
+	);
+}
+
+function looksLikeOpenUIAssignment(response: string): boolean {
+	return /^root\s*=|^[A-Za-z_$][\w$]*\s*=\s*[A-Z][\w$]*\s*\(/.test(response);
+}
+
 /** Keep an incomplete `root = Component(` prefix out of the text stream. */
 function looksLikePartialRootAssignment(response: string): boolean {
 	const firstLine = response.split(/\r?\n/, 1)[0].trim();
 	if (!firstLine) return false;
 	if ("root".startsWith(firstLine)) return true;
 	return /^root\s*(?:=\s*(?:[A-Z][\w$]*)?)?$/.test(firstLine);
+}
+
+/** OpenUI Lang accepts `//` and `#` line comments before its root statement. */
+function stripLeadingLineComments(response: string): string {
+	let remaining = response.trimStart();
+	while (remaining.startsWith("//") || remaining.startsWith("#")) {
+		const nextLine = remaining.indexOf("\n");
+		if (nextLine === -1) return "";
+		remaining = remaining.slice(nextLine + 1).trimStart();
+	}
+	return remaining;
 }
 
 /** Remove a model-friendly OpenUI markdown fence without exposing it to users. */

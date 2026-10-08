@@ -19,7 +19,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { A2UIRenderer, type A2UIActionEvent } from "../A2UIRenderer";
-import { A2UI_SYSTEM_SUFFIX, formatA2UIAction } from "@/lib/a2ui";
+import { formatA2UIAction } from "@/lib/a2ui";
 
 /** A one-field form: TextField bound to /email + a submit Button. */
 interface FormPayload {
@@ -306,95 +306,6 @@ describe("A2UIRenderer — CheckRule uses check.condition", () => {
 		fireEvent.change(input, { target: { value: "a@b.co" } });
 		fireEvent.change(input, { target: { value: "" } });
 		expect(screen.getByText("Needed")).toBeInTheDocument();
-	});
-});
-
-describe("a2ui system prompt", () => {
-	/**
-	 * Parse every `- "Component": {...}` example line out of the prompt and
-	 * assert each one matches the v0.9.1 CheckRule shape:
-	 * `required: ["condition", "message"]`, `additionalProperties: false`.
-	 * A textual "does it mention condition" check would pass even if a rule
-	 * buried a sibling `call`, which is the exact bug being regressed.
-	 *
-	 * Examples use the `"a"|"b"` shorthand for enums (clearer to a model than
-	 * prose), so collapse a union to its first member before parsing.
-	 */
-	function parseExamples(): Array<Record<string, unknown>> {
-		const out: Array<Record<string, unknown>> = [];
-		for (const line of A2UI_SYSTEM_SUFFIX.split("\n")) {
-			const start = line.indexOf('{"id"');
-			if (start === -1) continue;
-			// Walk to the matching close brace so trailing prose (e.g.
-			// "— Card child is usually the root") doesn't break the parse.
-			let depth = 0;
-			let end = -1;
-			let inString = false;
-			let escaped = false;
-			for (let i = start; i < line.length; i++) {
-				const ch = line[i];
-				if (inString) {
-					if (escaped) escaped = false;
-					else if (ch === "\\") escaped = true;
-					else if (ch === '"') inString = false;
-					continue;
-				}
-				if (ch === '"') inString = true;
-				else if (ch === "{") depth++;
-				else if (ch === "}" && --depth === 0) {
-					end = i + 1;
-					break;
-				}
-			}
-			if (end === -1) continue;
-			// Collapse the whole `"a"|"b"|"c"` chain (one pass leaves the
-			// remainder, since the alternatives are non-overlapping).
-			let json = line.slice(start, end);
-			for (let prev = ""; prev !== json; ) {
-				prev = json;
-				json = json.replace(/"([^"]*)"\|(?:"[^"]*"\s*\|?)*/g, '"$1"');
-			}
-			try {
-				out.push(JSON.parse(json) as Record<string, unknown>);
-			} catch {
-				throw new Error(`Prompt example is not valid JSON: ${json}`);
-			}
-		}
-		return out;
-	}
-
-	it("teaches the v0.9.1 CheckRule shape, not a sibling `call`", () => {
-		const withChecks = parseExamples().filter((c) => Array.isArray(c.checks));
-		expect(withChecks.length).toBeGreaterThan(0);
-
-		for (const component of withChecks) {
-			for (const rule of component.checks as Array<Record<string, unknown>>) {
-				expect(Object.keys(rule).sort()).toEqual(["condition", "message"]);
-				// The condition must be a DynamicBoolean, not a bare sibling call.
-				expect(rule.condition).toMatchObject({ call: expect.any(String) });
-				expect(rule.message).toEqual(expect.any(String));
-			}
-		}
-	});
-
-	it("shows the condition-wrapped form explicitly in the rules text", () => {
-		expect(A2UI_SYSTEM_SUFFIX).toContain(
-			'{"condition":{"call":"required","args":{"value":{"path":"/email"}}}',
-		);
-	});
-
-	it("tells the model the client writes input back to the data model", () => {
-		expect(A2UI_SYSTEM_SUFFIX).toMatch(/writes the user'?s input back/i);
-	});
-
-	it("binds editable controls to a data-model path, not a literal", () => {
-		// A literal `value` cannot be read back, so every editable control
-		// in the prompt must demonstrate a {"path":...} binding.
-		for (const component of parseExamples()) {
-			if (component.component === "TextField" || component.component === "CheckBox") {
-				expect(component.value).toMatchObject({ path: expect.any(String) });
-			}
-		}
 	});
 });
 

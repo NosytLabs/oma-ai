@@ -83,4 +83,29 @@ describe("ModelComparePanel message rendering", () => {
 			screen.getByRole("button", { name: "Select AI model — Compare Model" }),
 		).toBeDisabled();
 	});
+
+	it("does not render a hollow frame for a completed empty assistant message", () => {
+		const { container } = render(
+			<ModelComparePanel
+				open
+				onClose={vi.fn()}
+				primaryModel="compare-model"
+				compareModel="compare-model"
+				setCompareModel={vi.fn()}
+				prompt=""
+				onSubmit={vi.fn()}
+				loading={false}
+				compareMessages={[
+					{
+						id: "empty-compare-answer",
+						role: "assistant",
+						content: "",
+						timestamp: Date.now(),
+					},
+				]}
+			/>,
+		);
+
+		expect(container.querySelector("[data-chat-message]")).toBeNull();
+	});
 });

@@ -4,7 +4,7 @@ import { MotionProvider } from "@/lib/animation/MotionProvider";
 export const metadata: Metadata = {
 	title: "Chat Playground — free OMA-AI models",
 	description:
-		"Free AI chat playground on OMA-AI budget models. No account required for guests. Sign in for the full catalog and saved conversations.",
+		"Free AI chat on eligible OMA-AI models, with browser-local history and interactive responses. No account required for guests. Sign in for the full catalog.",
 	alternates: { canonical: "/chat" },
 	// Free public playground — indexable. robots.ts and sitemap.ts both
 	// allow /chat to be crawled; keep the metadata aligned so the page

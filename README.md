@@ -21,7 +21,7 @@ OMA-AI (**Open Model Access**) is a single API endpoint that fronts multiple AI 
 | Anthropic-compatible apps | Drop-in `/v1/messages` endpoint |
 | Multi-model routing | Circuit breakers and configured fallback routes for mapped models |
 | Agent billing | x402 USDC verify/settle → credits + optional Polar card |
-| Privacy | OMA does not persist prompt or completion content; upstream policies depend on provider and model |
+| Privacy | The gateway does not persist prompt or completion content; website history stays in your browser and upstream policies vary |
 
 One OpenAI-compatible endpoint for a curated catalog. Venice-routed models include a 25% platform fee; OMA-AI/OpenBroker prices already include margin. Guest chat is free with a daily cap.
 
@@ -50,7 +50,7 @@ Drop-in replacement for any OpenAI or Anthropic SDK. Unified chat completions (`
 A curated chat catalog across providers. We keep the public model list current so you do not have to sift through hundreds of low-quality alternatives; the live `/v1/models` endpoint is the source of truth for availability and pricing.
 
 ### 🆓 Free Guest Chat
-Budget-friendly, sign-in-free chat via OMA-AI models with a generous daily limit for anonymous visitors. Perfect for evaluating the platform before upgrading.
+Chat with the eligible OMA-AI models without signing in, within the daily guest allowance. The workspace includes searchable browser-local conversations, per-thread drafts, model comparison, and OpenUI cards and forms in Interactive mode. See [Chat UI](docs/chat-ui.md) for behavior and storage details.
 
 ---
 
