@@ -33,7 +33,6 @@ vi.mock("next/link", () => ({
 }));
 
 const baseProps = {
-	variant: "chat" as const,
 	model: "deepseek-v4-flash-0731-openbroker",
 	setModel: vi.fn(),
 	paramsOpen: false,
@@ -45,8 +44,8 @@ const baseProps = {
 	isLowBalance: false,
 	compareMode: false,
 	setCompareMode: vi.fn(),
-	shareStatus: "default" as const,
-	shareConversation: vi.fn(),
+	modelLinkStatus: "default" as const,
+	copyModelLink: vi.fn(),
 	exportConversation: vi.fn(),
 	clearChat: vi.fn(),
 	messagesLength: 0,
@@ -85,5 +84,17 @@ describe("ChatToolbar — single WEB / COMPARE path", () => {
 		expect(start).toBeDisabled();
 		fireEvent.click(start);
 		expect(newConversation).not.toHaveBeenCalled();
+	});
+
+	it("offers model-link copying before the first message", () => {
+		const copyModelLink = vi.fn();
+		render(<ChatToolbar {...baseProps} copyModelLink={copyModelLink} />);
+
+		fireEvent.click(screen.getByRole("button", { name: /more chat actions/i }));
+		const copyLink = screen.getByRole("menuitem", { name: "Copy model link" });
+		expect(copyLink).toBeEnabled();
+		fireEvent.click(copyLink);
+
+		expect(copyModelLink).toHaveBeenCalledTimes(1);
 	});
 });

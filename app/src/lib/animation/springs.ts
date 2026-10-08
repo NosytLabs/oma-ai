@@ -28,6 +28,6 @@ export const springs: Record<SpringName, { type: "spring"; stiffness: number; da
 	toast: { type: "spring", stiffness: 260, damping: 16, mass: 1.0 },
 	// magnetic button — fast follow, instant reset
 	magnet: { type: "spring", stiffness: 400, damping: 28, mass: 0.6 },
-	// gentle reveal — soft settle for content entrances (EASE_SPRING_SOFT)
+	// gentle reveal — soft settle for content entrances
 	soft: { type: "spring", stiffness: 220, damping: 26, mass: 1.0 },
 };

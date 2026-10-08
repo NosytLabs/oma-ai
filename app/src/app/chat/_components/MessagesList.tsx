@@ -26,7 +26,6 @@ interface MessagesListProps {
 	jumpToBottom: () => void;
 	handleScroll: () => void;
 	deferredMessages: Message[];
-	handleCopy: () => void;
 	/** Regenerate the last assistant turn (ChatGPT-style Retry). */
 	onRegenerate?: () => void;
 	/** Fired when the user clicks an A2UI action button (server action event). */
@@ -52,7 +51,6 @@ export function MessagesList({
 	jumpToBottom,
 	handleScroll,
 	deferredMessages,
-	handleCopy,
 	onRegenerate,
 	onA2UIAction,
 	onOpenUIAction,
@@ -97,7 +95,6 @@ export function MessagesList({
 										key={msg.id ?? `${msg.role}-${msg.timestamp}`}
 										msg={msg}
 										loading={isStreaming}
-										onCopy={handleCopy}
 										onRegenerate={
 											isLastAssistant && !loading
 												? onRegenerate

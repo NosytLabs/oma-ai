@@ -24,7 +24,6 @@ import { useToast } from "@/components/ui/Toast";
 import { formatA2UIAction } from "@/lib/a2ui";
 import { OPENUI_SYSTEM_SUFFIX } from "@/lib/openui";
 import type { OpenUIActionHandler } from "@/lib/openui-actions";
-import { genConversationId } from "@/lib/gen-id";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { log } from "@/lib/logger";
 import {
@@ -44,7 +43,7 @@ import { useSystemPromptPersistence } from "../_hooks/useSystemPromptPersistence
 import { useConversationHistory } from "../_hooks/useConversationHistory";
 import { useChatScroll } from "../_hooks/useChatScroll";
 import { useChatShortcuts } from "../_hooks/useChatShortcuts";
-import { useConversationShare } from "../_hooks/useConversationShare";
+import { useModelLinkShare } from "../_hooks/useModelLinkShare";
 import { useGuestQuota } from "../_hooks/useGuestQuota";
 import { usePlaygroundState } from "../_hooks/usePlaygroundState";
 import { useStreamingChat, type SendMessageOptions } from "../_hooks/useStreamingChat";
@@ -93,13 +92,6 @@ const LazyModelComparePanel = dynamic(
 	{ ssr: false, loading: () => null },
 );
 
-export interface ChatPlaygroundShellProps {
-	variant: "chat" | "playground";
-	storageKey: string;
-	systemPromptKey: string;
-	conversationIdKey?: string;
-}
-
 export interface RegeneratePlan {
 	prompt: string;
 	primaryMessages: Message[];
@@ -138,13 +130,7 @@ export function buildRegeneratePlan(
 	};
 }
 
-function ShellContent({
-	variant,
-	storageKey: _storageKey,
-	systemPromptKey: _systemPromptKey,
-	conversationIdKey,
-}: ChatPlaygroundShellProps) {
-	const isChat = variant === "chat";
+function ShellContent() {
 	const [historyOpen, setHistoryOpen] = useState(false);
 	const historyDrawerRef = useRef<HTMLDivElement | null>(null);
 	const historyReturnFocusRef = useRef<HTMLElement | null>(null);
@@ -278,8 +264,6 @@ function ShellContent({
 		setSystemPrompt,
 		systemPromptOpen,
 		setSystemPromptOpen,
-		shareStatus,
-		setShareStatus,
 		compareMode,
 		setCompareMode,
 		compareModel,
@@ -325,7 +309,6 @@ function ShellContent({
 	// Only flag low balance after a real balance payload arrives — treating
 	// null/loading as $0 was flashing "LOW CREDITS — $0.00" on every cold load.
 	const isLowBalance =
-		isChat &&
 		isAuthenticated &&
 		(!freeModelSelected || (compareMode && !isFreeChatModel(compareModel))) &&
 		balance != null &&
@@ -360,28 +343,11 @@ function ShellContent({
 	const inputRef = useRef<HTMLTextAreaElement | null>(null);
 	const messagesRef = useRef<Message[]>(messages);
 	const compareMessagesRef = useRef<Message[]>(compareMessages);
-	const [conversationId, setConversationId] = useState<string>("");
-
 	const deferredMessages = useDeferredValue(messages);
 
 	useEffect(() => {
 		compareMessagesRef.current = compareMessages;
 	}, [compareMessages]);
-
-	// Playground-specific: conversation ID persistence for replay links
-	useEffect(() => {
-		if (isChat || !conversationIdKey) return;
-		let storedCid = localStorage.getItem(conversationIdKey);
-		if (!storedCid) {
-			storedCid = genConversationId();
-			try {
-				localStorage.setItem(conversationIdKey, storedCid);
-			} catch {
-				/* private mode / corrupt storage */
-			}
-		}
-		setConversationId(storedCid);
-	}, [isChat, conversationIdKey]);
 
 	useSystemPromptPersistence({
 		systemPrompt,
@@ -592,15 +558,6 @@ function ShellContent({
 		toast,
 	]);
 
-	const handleCopy = useCallback(() => {
-		if (!isChat) {
-			toast.success("Copied to clipboard");
-		}
-		// Chat intentionally does NOT toast — the per-message inline copied state
-		// already gives feedback, and a second success toast is noisy when the
-		// user copies many messages in a row.
-	}, [isChat, toast]);
-
 	/**
 	 * Regenerate the last assistant response (ChatGPT / Claude-style Retry).
 	 * Drops the latest shared user turn and both models' responses to it, then
@@ -623,11 +580,15 @@ function ShellContent({
 
 	const exportConversation = useCallback((format: "json" | "txt" | "md" = "json") => {
 		try {
-			exportChatHistory(messages, format, conversationId);
+			exportChatHistory(
+				messages,
+				format,
+				conversationHistory.activeThreadId,
+			);
 		} catch (err) {
 			log.warn("Failed to export conversation", err);
 		}
-	}, [messages, conversationId]);
+	}, [conversationHistory.activeThreadId, messages]);
 	const exportHistoryThread = useCallback((threadId: string) => {
 		const thread = conversationHistory.threads.find((item) => item.id === threadId);
 		if (!thread) return;
@@ -643,7 +604,6 @@ function ShellContent({
 		setCompareMessages([]);
 		setError(null);
 		setCompareError(null);
-		setConversationId(genConversationId());
 		toast.success("Conversation imported successfully");
 	}, [
 		conversationHistory,
@@ -651,7 +611,6 @@ function ShellContent({
 		setCompareMessages,
 		setError,
 		setCompareError,
-		setConversationId,
 		toast,
 	]);
 
@@ -660,7 +619,6 @@ function ShellContent({
 		setCompareMessages([]);
 		setError(null);
 		setCompareError(null);
-		setConversationId(genConversationId());
 		if (window.matchMedia?.("(max-width: 1023px)").matches) {
 			setHistoryOpen(false);
 		}
@@ -671,7 +629,6 @@ function ShellContent({
 		setCompareMessages,
 		setError,
 		setCompareError,
-		setConversationId,
 	]);
 
 	const selectHistoryThread = useCallback((threadId: string) => {
@@ -685,7 +642,6 @@ function ShellContent({
 		setCompareMessages([]);
 		setError(null);
 		setCompareError(null);
-		setConversationId(threadId);
 		if (mobile) setHistoryOpen(false);
 	}, [
 		conversationHistory,
@@ -726,16 +682,7 @@ function ShellContent({
 		newConversation,
 	});
 
-	const shareConversation = useConversationShare({
-		isChat,
-		messages,
-		model,
-		conversationId,
-		conversationIdKey,
-		toast,
-		setConversationId,
-		setShareStatus,
-	});
+	const modelLinkShare = useModelLinkShare({ model, toast });
 	const historyPanelProps: ConversationHistoryProps = {
 		threads: conversationHistory.threads,
 		activeThreadId: conversationHistory.activeThreadId,
@@ -756,13 +703,8 @@ function ShellContent({
 
 	return (
 		<div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-void font-sans text-text">
-			<h1 className="sr-only">
-				{isChat
-					? "OMA Playground — text and multimodal LLM chat"
-					: "OMA API Playground"}
-			</h1>
+			<h1 className="sr-only">OMA Playground — text and multimodal LLM chat</h1>
 			<MemoizedChatToolbar
-				variant={variant}
 				model={model}
 				setModel={setModel}
 				paramsOpen={paramsOpen}
@@ -774,8 +716,8 @@ function ShellContent({
 				isLowBalance={isLowBalance}
 				compareMode={compareMode}
 				setCompareMode={setCompareMode}
-				shareStatus={shareStatus}
-				shareConversation={shareConversation}
+				modelLinkStatus={modelLinkShare.status}
+				copyModelLink={modelLinkShare.copyModelLink}
 				exportConversation={exportConversation}
 				importConversation={importConversation}
 				newConversation={newConversation}
@@ -841,7 +783,6 @@ function ShellContent({
 						jumpToBottom={jumpToBottom}
 						handleScroll={handleScroll}
 						deferredMessages={deferredMessages}
-						handleCopy={handleCopy}
 						onRegenerate={handleRegenerate}
 						onA2UIAction={(event) => {
 							void gatedSendRef.current(formatA2UIAction(event));
@@ -862,14 +803,10 @@ function ShellContent({
 						}}
 						/>
 
-					{/* Text composer — chat surface is text-only */}
-					{isChat && (
-						// Added safe-area-inset padding so the composer never sits flush
-						// against the browser edge (mobile bottom bar / iOS notch home bar)
-						// and there's breathing room above the copyright/footer.
-						<div
-							className="gutter-page z-10 flex-none border-t border-border bg-[color-mix(in_srgb,var(--color-surface)_60%,transparent)] pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-20px_40px_-20px_rgba(0,0,0,0.6)] backdrop-blur-md sm:pt-4 sm:pb-[max(1.25rem,env(safe-area-inset-bottom))]"
-						>
+					{/* Keep the composer above mobile browser chrome and the consent banner. */}
+					<div
+						className="gutter-page z-10 flex-none border-t border-border bg-[color-mix(in_srgb,var(--color-surface)_60%,transparent)] pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-20px_40px_-20px_rgba(0,0,0,0.6)] backdrop-blur-md sm:pt-4 sm:pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+					>
 							<div className="max-w-4xl mx-auto">
 								<ChatErrorBanner
 									error={error}
@@ -927,8 +864,7 @@ function ShellContent({
 									/>
 								</div>
 							</div>
-						</div>
-					)}
+					</div>
 				</section>
 
 				<ChatSettingsPanel
@@ -1043,11 +979,11 @@ function ShellLoadingFallback() {
 	);
 }
 
-export function ChatPlaygroundShell(props: ChatPlaygroundShellProps) {
+export function ChatPlaygroundShell() {
 	return (
 		<Suspense fallback={<ShellLoadingFallback />}>
 			<LiveModelsProvider>
-				<ShellContent {...props} />
+				<ShellContent />
 			</LiveModelsProvider>
 		</Suspense>
 	);

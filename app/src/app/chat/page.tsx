@@ -88,11 +88,7 @@ export default function ChatPage() {
 				</div>
 			}
 		>
-			<ChatPlaygroundShell
-				variant="chat"
-				storageKey="oma_chat_conversation"
-				systemPromptKey="oma_chat_system_prompt"
-			/>
+			<ChatPlaygroundShell />
 		</ErrorBoundary>
 		</div>
 	);

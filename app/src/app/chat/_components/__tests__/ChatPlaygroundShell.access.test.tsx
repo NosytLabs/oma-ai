@@ -2,7 +2,10 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ChatPlaygroundShell } from "../ChatPlaygroundShell";
 import { Navbar } from "@/components/navbar";
-import { conversationStorageKey } from "@/lib/chat-storage";
+import {
+	conversationHistoryStorageKey,
+	conversationStorageKey,
+} from "@/lib/chat-storage";
 
 const fixtures = vi.hoisted(() => ({
 	auth: { isAuthenticated: false, isReady: true, isDemo: false, user: null as { id: string } | null },
@@ -10,6 +13,7 @@ const fixtures = vi.hoisted(() => ({
 	router: { replace: vi.fn() },
 	fetch: vi.fn(),
 	toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
+	exportChatHistory: vi.fn(),
 	models: [
 		{ id: "claude-opus-5", display_name: "Claude Opus 5", provider: "Venice", category: "frontier", context_length: 1000000, available: true, pricing: { prompt: "7.5", completion: "37.5" } },
 		{ id: "zai-org-glm-5-3", display_name: "GLM-5.3 Flash", provider: "OMA-AI", category: "budget", context_length: 200000, available: true, pricing: { prompt: "0.1", completion: "0.2" } },
@@ -27,6 +31,10 @@ vi.mock("next/dynamic", async () => {
 vi.mock("@/components/ThemeToggle", () => ({ ThemeToggle: () => null }));
 vi.mock("@/lib/hooks/useAuth", () => ({ useAuth: () => fixtures.auth }));
 vi.mock("@/components/ui/Toast", () => ({ useToast: () => fixtures.toast }));
+vi.mock("@/lib/chat-export", async (original) => ({
+	...await original<typeof import("@/lib/chat-export")>(),
+	exportChatHistory: fixtures.exportChatHistory,
+}));
 vi.mock("@/components/chat/useBalance", async (original) => ({
 	...await original<typeof import("@/components/chat/useBalance")>(),
 	useBalance: () => ({ balance: null, loading: false, refresh: async () => {} }),
@@ -44,6 +52,7 @@ beforeEach(() => {
 	fixtures.auth.isDemo = false;
 	fixtures.searchParams = new URLSearchParams("model=claude-opus-5");
 	fixtures.fetch.mockReset();
+	fixtures.exportChatHistory.mockReset();
 	fixtures.fetch.mockImplementation(async (url: string) => url.includes("usage/today")
 		? new Response(JSON.stringify({ remaining: 19, limit: 20 }), { status: 200 })
 		: new Response(JSON.stringify({ error: { message: "Authentication required" } }), { status: 401 }));
@@ -54,7 +63,7 @@ beforeEach(() => {
 afterEach(() => { vi.restoreAllMocks(); });
 
 function renderChat(withNavbar = false) {
-	return render(<>{withNavbar && <Navbar />}<ChatPlaygroundShell variant="chat" storageKey="test" systemPromptKey="test-prompt" /></>);
+	return render(<>{withNavbar && <Navbar />}<ChatPlaygroundShell /></>);
 }
 
 function clickSignIn(link: HTMLElement) {
@@ -85,6 +94,42 @@ describe("guest chat model access", () => {
 		fireEvent.click(within(history).getByRole("button", { name: "New chat" }));
 		expect(within(history).getByText("Legacy sparse attention question")).toBeVisible();
 		expect(within(history).getByRole("button", { name: "Open New chat" })).toBeVisible();
+	});
+
+	it("uses the active history thread id when exporting the open conversation", async () => {
+		const messages = [
+			{ role: "user" as const, content: "Export this thread", timestamp: 1 },
+		];
+		localStorage.setItem(
+			conversationHistoryStorageKey(null),
+			JSON.stringify({
+				version: 1,
+				activeThreadId: "active-thread-id",
+				threads: [{
+					id: "active-thread-id",
+					title: "Export this thread",
+					createdAt: 1,
+					updatedAt: 1,
+					pinned: false,
+					customTitle: false,
+					messages,
+					draft: "",
+					model: "zai-org-glm-5-3",
+				}],
+			}),
+		);
+		fixtures.searchParams = new URLSearchParams("model=zai-org-glm-5-3");
+		renderChat();
+		await screen.findByText("Export this thread");
+
+		fireEvent.click(screen.getByRole("button", { name: /more chat actions/i }));
+		fireEvent.click(screen.getByRole("menuitem", { name: "Export JSON" }));
+
+		expect(fixtures.exportChatHistory).toHaveBeenCalledWith(
+			messages,
+			"json",
+			"active-thread-id",
+		);
 	});
 
 	it("focuses the mobile history drawer, closes it with Escape, and restores focus", async () => {
@@ -229,7 +274,7 @@ describe("guest chat model access", () => {
 		const restoredComposer = screen.getByRole("textbox", { name: "Enter your message" });
 		fixtures.auth.user = transition === "sign-out" ? null : { id: "user-b" };
 		fixtures.auth.isAuthenticated = transition !== "sign-out";
-		returned.rerender(<>{false}<ChatPlaygroundShell variant="chat" storageKey="test" systemPromptKey="test-prompt" /></>);
+		returned.rerender(<>{false}<ChatPlaygroundShell /></>);
 		await waitFor(() => expect(restoredComposer).toHaveValue(""));
 		expect(screen.getByRole("textbox", { name: "Enter your message" })).toBe(restoredComposer);
 	});
@@ -245,7 +290,7 @@ describe("guest chat model access", () => {
 		await waitFor(() => expect(composer).toHaveValue("Keep through late session resolution"));
 		fixtures.auth.isAuthenticated = true;
 		fixtures.auth.user = { id: "user-a" };
-		returned.rerender(<>{false}<ChatPlaygroundShell variant="chat" storageKey="test" systemPromptKey="test-prompt" /></>);
+		returned.rerender(<>{false}<ChatPlaygroundShell /></>);
 		expect(screen.getByRole("textbox", { name: "Enter your message" })).toBe(composer);
 		expect(composer).toHaveValue("Keep through late session resolution");
 	});

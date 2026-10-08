@@ -2,8 +2,9 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { MODELS, normalizeProvider, type Provider } from "@/lib/models-data";
+import { MODELS, normalizeProvider } from "@/lib/models-data";
 import { type LiveModelRaw, mapLiveModel } from "@/lib/model-utils";
+import type { ModelOption } from "@/lib/types/model";
 
 /**
 	* Validate that an unknown value conforms to the LiveModelRaw shape.
@@ -67,31 +68,6 @@ export interface Message {
 	degenerate?: boolean;
 }
 
-export interface ModelOption {
-	id: string;
-	name: string;
-	category:
-		| "frontier"
-		| "premium"
-		| "mid"
-		| "budget"
-		| "reasoning"
-		| "coding"
-		| "uncensored";
-	/**
-	 * User-facing provider label. Surplus Intelligence is internal-only
-	 * procurement (never surfaced to users), so the only valid values are
-	 * the customer-visible brands: Venice and OMA-AI.
-	 */
-	provider: Provider;
-	inputPer1M: number;
-	outputPer1M: number;
-	ctx: string;
-	available?: boolean;
-	/** Only true when both prices were present and valid in the live response. */
-	pricingAvailable?: boolean;
-}
-
 export type TierFilter =
 	| "all"
 	| "frontier"
@@ -102,7 +78,7 @@ export type TierFilter =
 	| "coding"
 	| "uncensored";
 
-export const FALLBACK_MODELS: ModelOption[] = MODELS.map((m) => {
+const FALLBACK_MODELS: ModelOption[] = MODELS.map((m) => {
 	const validCats: ModelOption["category"][] = [
 		"frontier",
 		"premium",
@@ -166,7 +142,7 @@ function fetchLiveModels(): Promise<ModelOption[]> {
 	return promise;
 }
 
-export interface LiveModelCatalog {
+interface LiveModelCatalog {
 	models: ModelOption[];
 	status: "loading" | "live" | "fallback";
 }

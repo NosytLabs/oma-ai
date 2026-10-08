@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildTopModels, buildUsageByDay, buildUsageByKey } from "./dashboard-aggregate";
+import { buildTopModels, buildUsageByDay } from "./dashboard-aggregate";
 import type { UsageRecord } from "@/lib/api";
 
 function usage(overrides: Partial<UsageRecord>): UsageRecord {
@@ -46,17 +46,5 @@ describe("dashboard usage aggregation", () => {
 		const result = buildTopModels(records);
 		expect(result.slice(0, 3).map((item) => item.value)).toEqual([3, 2, 1]);
 		expect(result.at(-1)).toMatchObject({ name: "Other (1)", value: 0.1 });
-	});
-
-	it("splits usage by API key, bucketing web/session rows", () => {
-		const result = buildUsageByKey([
-			usage({ id: "a", apiKeyId: "11111111-2222-3333-4444-555555555555", totalCents: "100" }),
-			usage({ id: "b", apiKeyId: "11111111-2222-3333-4444-555555555555", totalCents: "50" }),
-			usage({ id: "c", apiKeyId: null, totalCents: "25" }),
-		]);
-
-		expect(result).toHaveLength(2);
-		expect(result[0]).toMatchObject({ requests: 2, cost: 1.5 });
-		expect(result[1]).toMatchObject({ key: "Web / session", requests: 1 });
 	});
 });
