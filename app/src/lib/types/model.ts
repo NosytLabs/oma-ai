@@ -1,10 +1,7 @@
 import type { Provider } from "@/lib/models-data";
 
 /**
-	* Shared ModelOption type — used by both the live model catalog
-	* (components/chat/ChatMessage) and the humanization utilities
-	* (lib/model-utils). Living here breaks the lib → components circular
-	* dependency that previously existed.
+	* Shared model contract for the live catalog and display utilities.
 	*
 	* `provider` is the customer-visible brand — sourced from the canonical
 	* `Provider` type in `models-data.ts` (capitalized "Venice" / "OMA-AI").
@@ -28,4 +25,6 @@ export interface ModelOption {
 	ctx: string;
 	/** false when the serving provider key is missing/placeholder (server-reported) */
 	available?: boolean;
+	/** Only true when both prices were present and valid in the live response. */
+	pricingAvailable?: boolean;
 }

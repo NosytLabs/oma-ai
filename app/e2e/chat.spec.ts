@@ -18,6 +18,48 @@ test.describe("Chat playground", () => {
 		await expect(page.getByRole("slider", { name: "Temperature", exact: true }).filter({ visible: true })).toHaveCount(0);
 	});
 
+	test("copies a model link before the first message", async ({ page, context, chatApi }) => {
+		await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+		await page.getByRole("button", { name: /^Select AI model/ }).click();
+		await page.getByRole("menuitemradio", { name: /^MiniMax M2\.7,/ }).click();
+		await page.getByRole("button", { name: "More chat actions", exact: true }).click();
+		await page.getByRole("menuitem", { name: "Copy model link", exact: true }).click();
+		await expect(page.getByText(/Model link copied/)).toBeVisible();
+		const copied = await page.evaluate(() => navigator.clipboard.readText());
+		expect(new URL(copied).pathname).toBe("/chat");
+		expect([...new URL(copied).searchParams]).toEqual([["model", "minimax-m2-7"]]);
+		expect(chatApi.requests).toHaveLength(0);
+	});
+
+	test("keyboard shortcuts target current controls and Escape closes only the active popup", async ({ page }) => {
+		const modifier = await page.evaluate(() => /Mac|iPhone|iPad/.test(navigator.platform) ? "Meta" : "Control");
+		const temperature = page.getByRole("slider", { name: "Temperature", exact: true }).filter({ visible: true });
+		const modelMenu = page.getByRole("menu", { name: "Available AI models", exact: true });
+		const more = page.getByRole("button", { name: "More chat actions", exact: true });
+		await page.keyboard.press(`${modifier}+/`);
+		await expect(temperature).toBeVisible();
+		await page.keyboard.press(`${modifier}+k`);
+		await expect(modelMenu).toBeVisible();
+		await page.keyboard.press("Escape");
+		await expect(modelMenu).toBeHidden();
+		await expect(temperature).toBeVisible();
+		await more.click();
+		await page.keyboard.press("Escape");
+		await expect(page.getByRole("menu", { name: "More chat actions", exact: true })).toBeHidden();
+		await expect(more).toBeFocused();
+		await expect(temperature).toBeVisible();
+		await page.keyboard.press(`${modifier}+Shift+p`);
+		await expect(page.getByRole("textbox", { name: "System prompt", exact: true })).toBeVisible();
+		await more.click();
+		await page.getByRole("menuitem", { name: "Keyboard shortcuts", exact: true }).click();
+		const help = page.getByRole("dialog", { name: "Keyboard shortcuts", exact: true });
+		await expect(help.getByText("Toggle instructions panel", { exact: true })).toBeVisible();
+		await expect(help.getByText(/Create studio/)).toHaveCount(0);
+		await page.keyboard.press("Escape");
+		await expect(help).toBeHidden();
+		await expect(temperature).toBeVisible();
+	});
+
 	test("keeps UI and web controls visible when the draft is typed and cleared", async ({ page }) => {
 		const input = page.getByRole("textbox", { name: "Enter your message", exact: true });
 		const ui = page.getByRole("button", { name: /^Toggle UI mode/ });

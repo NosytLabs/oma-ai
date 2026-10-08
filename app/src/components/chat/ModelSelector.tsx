@@ -131,7 +131,10 @@ export function ModelSelector({
 			}
 		}
 		function handleKeyDown(e: KeyboardEvent) {
-			if (e.key === "Escape") setOpen(false);
+			if (e.key === "Escape" && !e.defaultPrevented) {
+				e.preventDefault();
+				setOpen(false);
+			}
 		}
 		document.addEventListener("click", handleClickOutside);
 		document.addEventListener("keydown", handleKeyDown);

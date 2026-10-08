@@ -12,6 +12,7 @@ send inference through a separate hosted UI gateway.
 | Account model preferences and atomic parameter updates | `app/src/app/chat/_hooks/usePlaygroundState.ts` |
 | Conversation lifecycle, current-message ref and persistence | `app/src/app/chat/_hooks/useConversationHistory.ts` |
 | Account system-prompt persistence | `app/src/app/chat/_hooks/useSystemPromptPersistence.ts` |
+| Model deep-link copying and feedback lifecycle | `app/src/app/chat/_hooks/useModelLinkShare.ts` |
 | Storage schema, validation and legacy migration | `app/src/lib/chat-storage.ts` and `chat-message-validation.ts` |
 | Request ownership, search, cancellation and streaming | `app/src/app/chat/_hooks/useStreamingChat.ts` |
 | Shared message frame, Markdown, reasoning, sources and metadata | `app/src/components/chat/ChatMessage.tsx` |
@@ -29,6 +30,9 @@ History is stored in this browser's local storage, separately for guests and
 each authenticated account. It does not provide cloud synchronization. Each
 thread keeps its messages, composer draft, selected model, title and pinned state.
 Users can search, rename, pin, export and delete threads.
+Toolbar exports use the active history thread ID in their filenames. The model-link
+action copies `/chat?model=…` and remains available before the first message. It
+does not put the conversation transcript or replay metadata in the URL.
 
 The versioned keys are `oma_chat_history:v1:guest` and
 `oma_chat_history:v1:u:<userId>`. On first use, the prior single-conversation

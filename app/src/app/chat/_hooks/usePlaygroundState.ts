@@ -14,12 +14,6 @@ import {
 import { MODELS } from "@/lib/models-data";
 import { FREE_DEFAULT_CHAT_MODEL } from "@/lib/model-utils";
 
-/**
-	* Status enum for the share-conversation button. No 'loading' state —
-	* the share copy is gated on the clipboard write resolving.
-	*/
-type ShareStatus = "default" | "success" | "error";
-
 /** localStorage key for the user-scoped model preference. Mirrors the
 	*  `conversationStorageKey` pattern: guests get their own bucket so a
 	*  signed-in / signed-out pair of users on the same browser don't fight
@@ -136,10 +130,6 @@ export interface PlaygroundState {
 	setSystemPrompt: Dispatch<SetStateAction<string>>;
 	systemPromptOpen: boolean;
 	setSystemPromptOpen: Dispatch<SetStateAction<boolean>>;
-
-	// --- Toolbar status states ---
-	shareStatus: ShareStatus;
-	setShareStatus: Dispatch<SetStateAction<ShareStatus>>;
 
 	// --- Compare mode ---
 	compareMode: boolean;
@@ -339,9 +329,6 @@ export function usePlaygroundState(
 	const [systemPrompt, setSystemPrompt] = useState<string>("");
 	const [systemPromptOpen, setSystemPromptOpen] = useState<boolean>(false);
 
-	// --- Toolbar status states ---
-	const [shareStatus, setShareStatus] = useState<ShareStatus>("default");
-
 	// --- Compare mode ---
 	// Default the compare slot to a free OMA-AI peer so guests can run
 	// side-by-side without signing in for Venice models.
@@ -491,10 +478,6 @@ export function usePlaygroundState(
 		setSystemPrompt,
 		systemPromptOpen,
 		setSystemPromptOpen,
-
-		// Toolbar status states
-		shareStatus,
-		setShareStatus,
 
 		// Compare mode
 		compareMode,

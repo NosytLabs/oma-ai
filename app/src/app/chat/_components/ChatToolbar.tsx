@@ -3,7 +3,7 @@
 import {
 	AlertCircle, AlertTriangle, BookOpen, CheckCircle2, Coins, Columns2,
 	FileDown, FileJson, FileText, HelpCircle, History, Keyboard,
-	MessageSquarePlus, MoreHorizontal, Settings2, Share2, Trash2, Upload,
+	Link2, MessageSquarePlus, MoreHorizontal, Settings2, Trash2, Upload,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
@@ -15,6 +15,7 @@ import { btnBase } from "@/components/playground/PlaygroundComponents";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import type { BalanceResponse } from "@/lib/api";
+import type { ModelLinkStatus } from "../_hooks/useModelLinkShare";
 
 const LazyModelSelector = dynamic(
 	() => import("@/components/chat/ModelSelector").then((mod) => mod.ModelSelector),
@@ -29,7 +30,6 @@ const iconClass = "h-4 w-4 shrink-0";
 const toolbarButtonClass = `${btnBase} min-h-11 min-w-11 shrink-0 disabled:cursor-not-allowed disabled:opacity-35`;
 
 interface ChatToolbarProps {
-	variant?: "chat" | "playground";
 	model: string;
 	setModel: Dispatch<SetStateAction<string>>;
 	paramsOpen: boolean;
@@ -41,8 +41,8 @@ interface ChatToolbarProps {
 	isLowBalance: boolean;
 	compareMode: boolean;
 	setCompareMode: Dispatch<SetStateAction<boolean>>;
-	shareStatus: "default" | "success" | "error";
-	shareConversation: () => void;
+	modelLinkStatus: ModelLinkStatus;
+	copyModelLink: () => void;
 	exportConversation: (format?: "json" | "txt" | "md") => void;
 	importConversation?: (messages: Message[]) => void;
 	newConversation?: () => void;
@@ -56,14 +56,13 @@ interface ChatToolbarProps {
 }
 
 export function ChatToolbar({
-	variant = "chat", model, setModel, paramsOpen, setParamsOpen, searching,
+	model, setModel, paramsOpen, setParamsOpen, searching,
 	isAuthenticated, balance, balanceDollars, isLowBalance, compareMode,
-	setCompareMode, shareStatus, shareConversation, exportConversation,
+	setCompareMode, modelLinkStatus, copyModelLink, exportConversation,
 	importConversation, newConversation, clearChat, messagesLength,
 	deferredMessages, setShortcutsOpen, loading = false, historyOpen = false,
 	onToggleHistory,
 }: ChatToolbarProps) {
-	const isChat = variant === "chat";
 	const toast = useToast();
 	const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 	const menuId = useId();
@@ -149,7 +148,7 @@ export function ChatToolbar({
 				)}
 			</div>
 			{messagesLength > 0 && <div className="hidden shrink-0 xl:block"><LazyStatsBar messages={deferredMessages} model={model} /></div>}
-			{isChat && isAuthenticated && (
+			{isAuthenticated && (
 				balance ? (
 					<Link href="/deposit" aria-label={`Credit balance: ${Math.round(parseFloat(balance.balanceCents))} credits. Add credits.`} data-state={isLowBalance ? "low" : "ok"} className={`${toolbarButtonClass} hidden sm:inline-flex data-[state=low]:!border-warning/40 data-[state=low]:!bg-warning/10 data-[state=low]:!text-warning`} title="Add credits">
 						{isLowBalance ? <AlertTriangle className={iconClass} /> : <Coins className={iconClass} />}<span className="text-xs tabular-nums">{formatCreditsShort(balanceDollars)}</span>
@@ -170,24 +169,22 @@ export function ChatToolbar({
 						<button type="button" role="menuitem" onClick={() => runMenuAction(() => setParamsOpen(!paramsOpen))} className={menuItemClass}><Settings2 className={iconClass} />{paramsOpen ? "Hide parameters" : "Parameters"}</button>
 						<button type="button" role="menuitem" onClick={() => runMenuAction(() => setCompareMode(!compareMode))} disabled={loading} className={menuItemClass}><Columns2 className={iconClass} />{compareMode ? "Stop comparing models" : "Compare models"}</button>
 						<button type="button" role="menuitem" onClick={() => runMenuAction(() => setShortcutsOpen(true))} className={menuItemClass}><Keyboard className={iconClass} />Keyboard shortcuts</button>
-						{isChat && isAuthenticated && <Link href="/deposit" role="menuitem" onClick={closeMoreMenu} className={`${menuItemClass} sm:hidden`}><Coins className={iconClass} />{balance ? `${formatCreditsShort(balanceDollars)} · Add credits` : "Add credits"}</Link>}
+						{isAuthenticated && <Link href="/deposit" role="menuitem" onClick={closeMoreMenu} className={`${menuItemClass} sm:hidden`}><Coins className={iconClass} />{balance ? `${formatCreditsShort(balanceDollars)} · Add credits` : "Add credits"}</Link>}
 						<div role="separator" className="my-1 border-t border-border" />
-						<button type="button" role="menuitem" onClick={() => runMenuAction(shareConversation)} disabled={messagesLength === 0 || loading} className={menuItemClass}>
-							{shareStatus === "success" ? <CheckCircle2 className={iconClass} /> : shareStatus === "error" ? <AlertCircle className={iconClass} /> : <Share2 className={iconClass} />}{shareStatus === "success" ? "Link copied" : "Share conversation"}
+						<button type="button" role="menuitem" onClick={() => runMenuAction(copyModelLink)} className={menuItemClass}>
+							{modelLinkStatus === "success" ? <CheckCircle2 className={iconClass} /> : modelLinkStatus === "error" ? <AlertCircle className={iconClass} /> : <Link2 className={iconClass} />}{modelLinkStatus === "success" ? "Model link copied" : modelLinkStatus === "error" ? "Copy model link failed" : "Copy model link"}
 						</button>
 						{importConversation && <button type="button" role="menuitem" disabled={loading} onClick={() => runMenuAction(() => importRef.current?.click())} className={menuItemClass}><Upload className={iconClass} />Import conversation</button>}
-						{isChat && messagesLength > 0 && <>
+						{messagesLength > 0 && <>
 							<button type="button" role="menuitem" onClick={() => runMenuAction(() => exportConversation("json"))} className={menuItemClass}><FileJson className={iconClass} />Export JSON</button>
 							<button type="button" role="menuitem" onClick={() => runMenuAction(() => exportConversation("md"))} className={menuItemClass}><FileDown className={iconClass} />Export Markdown</button>
 							<button type="button" role="menuitem" onClick={() => runMenuAction(() => exportConversation("txt"))} className={menuItemClass}><FileText className={iconClass} />Export text</button>
 						</>}
 						<button type="button" role="menuitem" onClick={() => runMenuAction(clearChat)} disabled={messagesLength === 0 || loading} className={`${menuItemClass} !text-red-300 hover:bg-red-400/10`}><Trash2 className={iconClass} />Clear conversation</button>
-						{isChat && <>
-							<div role="separator" className="my-1 border-t border-border" />
-							<Link href="/models" role="menuitem" onClick={closeMoreMenu} className={menuItemClass}><Columns2 className={iconClass} />Browse models</Link>
-							<Link href="/getting-started" role="menuitem" onClick={closeMoreMenu} className={menuItemClass}><BookOpen className={iconClass} />Getting started</Link>
-							<Link href="/faq" role="menuitem" onClick={closeMoreMenu} className={menuItemClass}><HelpCircle className={iconClass} />FAQ</Link>
-						</>}
+						<div role="separator" className="my-1 border-t border-border" />
+						<Link href="/models" role="menuitem" onClick={closeMoreMenu} className={menuItemClass}><Columns2 className={iconClass} />Browse models</Link>
+						<Link href="/getting-started" role="menuitem" onClick={closeMoreMenu} className={menuItemClass}><BookOpen className={iconClass} />Getting started</Link>
+						<Link href="/faq" role="menuitem" onClick={closeMoreMenu} className={menuItemClass}><HelpCircle className={iconClass} />FAQ</Link>
 					</div>
 				)}
 			</div>

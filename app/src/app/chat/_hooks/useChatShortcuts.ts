@@ -13,32 +13,11 @@ interface UseChatShortcutsOptions {
 	setParamsOpen: Dispatch<SetStateAction<boolean>>;
 	compareMode: boolean;
 	setCompareMode: Dispatch<SetStateAction<boolean>>;
-	/**
-	 * Toggles the system-prompt (Instructions) panel. Wired directly rather
-	 * than through a window CustomEvent — nothing ever listened for
-	 * `oma:toggle-system-prompt`, so Cmd/Ctrl+Shift+P was a dead shortcut
-	 * that swallowed the keystroke (BUG-C).
-	 */
 	setSystemPromptOpen: Dispatch<SetStateAction<boolean>>;
 	newConversation?: () => void;
 }
 
-/**
-	* Global keyboard shortcuts for the playground.
-	*
-	*   ? / Shift+/       → open the shortcuts modal (when not in a text field)
-	*   Escape            → close shortcuts → params → compare, in that order
-	*   Cmd/Ctrl + K      → focus the model picker (clicks its DOM button)
-	*   Cmd/Ctrl + /      → toggle the parameters panel
-	*   Cmd/Ctrl + Shift + P → toggle the system-prompt panel
-	*   Cmd/Ctrl + Enter  → send the current input (ref-based so we always
-	*                       see the latest sendMessage without re-binding)
-	*
-	* The listener binds to `window` and inspects `e.target` so it stays out
-	* of the way while the user is typing in the input or any other text
-	* field. `sendMessage` is held in a ref that the page updates in a
-	* useEffect — see page.tsx for the P1 #10 fix.
-	*/
+/** Chat shortcuts run after focused controls have handled their own keys. */
 export function useChatShortcuts({
 	sendMessageRef,
 	input,
@@ -59,6 +38,7 @@ export function useChatShortcuts({
 		const modKey = isMac ? "metaKey" : "ctrlKey";
 
 		const handler = (e: KeyboardEvent) => {
+			if (e.defaultPrevented || e.isComposing) return;
 			const target = e.target as HTMLElement | null;
 			const inTextField =
 				!!target &&
@@ -79,53 +59,40 @@ export function useChatShortcuts({
 				return;
 			}
 
-			if (e[modKey as "metaKey" | "ctrlKey"] && e.key.toLowerCase() === "n") {
+			if (e[modKey] && e.key.toLowerCase() === "n") {
 				if (inTextField) return;
 				if (!newConversation) return;
 				e.preventDefault();
-				const hasThread =
-					document.querySelectorAll('[data-role="chat-message"]').length > 0;
-				if (hasThread && !window.confirm("Start a new chat? The current thread will be cleared.")) {
-					return;
-				}
 				newConversation();
 				return;
 			}
 
 			// Cmd/Ctrl+Shift+P → toggle the system prompt panel
 			if (
-				e[modKey as "metaKey" | "ctrlKey"] &&
+				e[modKey] &&
 				e.shiftKey &&
 				e.key.toLowerCase() === "p"
 			) {
 				e.preventDefault();
-				// BUG-C: dispatch the real state update. The previous
-				// `window.dispatchEvent(new CustomEvent("oma:toggle-system-prompt"))`
-				// had no listener anywhere in the app, so the shortcut did
-				// nothing but eat the keystroke.
 				setSystemPromptOpen((v) => !v);
 				return;
 			}
 
-			if (e[modKey as "metaKey" | "ctrlKey"] && e.key.toLowerCase() === "k") {
+			if (e[modKey] && e.key.toLowerCase() === "k") {
 				e.preventDefault();
-				// Focus the model selector by clicking it. We dispatch a custom event
-				// that the ModelSelector listens to (or we just click the toolbar's
-				// model selector button). For now, focus the first toolbar button.
-				const buttons = document.querySelectorAll<HTMLButtonElement>(
-					'header[aria-label="Playground toolbar"] button[aria-label*="Select AI model"]',
-				);
-				buttons[0]?.click();
+				document.querySelector<HTMLButtonElement>(
+					'header[aria-label="Chat toolbar"] button[aria-label^="Select AI model"]',
+				)?.click();
 				return;
 			}
 
-			if (e[modKey as "metaKey" | "ctrlKey"] && e.key === "/") {
+			if (e[modKey] && e.key === "/") {
 				e.preventDefault();
 				setParamsOpen((v) => !v);
 				return;
 			}
 
-			if (e[modKey as "metaKey" | "ctrlKey"] && e.key === "Enter") {
+			if (e[modKey] && e.key === "Enter") {
 				e.preventDefault();
 				if (input.trim() && !loading) {
 					void sendMessageRef.current();
