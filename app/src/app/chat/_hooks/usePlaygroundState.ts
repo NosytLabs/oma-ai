@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { Message } from "@/components/chat";
 import {
 	CHAT_PARAMS_DEFAULTS,
+	normalizeChatParams,
 	readChatParams,
 	writeChatParams,
 	type ChatParams,
@@ -71,16 +72,18 @@ export interface UsePlaygroundStateOptions {
 	 */
 	availableModelIds?: string[];
 	/** When `true`, auth state has resolved — safe to read the userId-scoped
-	 *  bucket. Before this flips on, the hook always reads the guest bucket
-	 *  to avoid an `undefined`/`null` key smashing both. */
+	 *  bucket. Before this flips on, hydration stays pending so a guest value
+	 *  cannot flash into or initialize an authenticated account. */
 	authReady?: boolean;
 }
 
 export interface PlaygroundState {
 	// --- Core chat ---
 	model: string;
-	/** Initial URL/storage model hydration has finished for the current auth readiness. */
+	/** URL/storage model hydration has finished for the current account identity. */
 	modelHydrated: boolean;
+	/** A valid `?model=` supplied the first model shown on this mount. */
+	hasInitialUrlModel: boolean;
 	setModel: Dispatch<SetStateAction<string>>;
 	messages: Message[];
 	setMessages: Dispatch<SetStateAction<Message[]>>;
@@ -106,6 +109,7 @@ export interface PlaygroundState {
 	 */
 	paramsError: string | null;
 	clearParamsError: () => void;
+	applyChatParams: (updates: Partial<ChatParams>) => boolean;
 	temperature: number;
 	setTemperature: Dispatch<SetStateAction<number>>;
 	topP: number;
@@ -178,6 +182,14 @@ export function usePlaygroundState(
 	// The lazy initializer avoids a localStorage hit on every render and
 	// keeps SSR + first paint consistent (no flicker to a stale default).
 	const urlModel = searchParams?.get("model");
+	const initialUrlModelRef = useRef<string | null>(
+		isKnownModelId(urlModel) ? urlModel : null,
+	);
+	const initialDefaultModelRef = useRef(
+		options.defaultModel && isKnownModelId(options.defaultModel)
+			? options.defaultModel
+			: FREE_DEFAULT_CHAT_MODEL,
+	);
 	const initialModel = (() => {
 		if (options.defaultModel && isKnownModelId(options.defaultModel))
 			return options.defaultModel;
@@ -191,7 +203,10 @@ export function usePlaygroundState(
 
 	// --- Core chat ---
 	const [model, setModelRaw] = useState<string>(initialModel);
-	const [modelHydratedForAuth, setModelHydratedForAuth] = useState<boolean | null>(null);
+	const [hydratedModelIdentity, setHydratedModelIdentity] = useState<string | null>(
+		null,
+	);
+	const initialUrlIdentityRef = useRef<string | null>(null);
 	// Track the last userId we persisted under. The effect below moves the
 	// stored value into a new bucket on sign-in / sign-out so a guest's
 	// saved model doesn't leak into a signed-in session (and vice versa).
@@ -233,6 +248,8 @@ export function usePlaygroundState(
 		...CHAT_PARAMS_DEFAULTS,
 	});
 	const [paramsError, setParamsError] = useState<string | null>(null);
+	const chatParamsRef = useRef(chatParams);
+	chatParamsRef.current = chatParams;
 
 	useEffect(() => {
 		if (typeof window === "undefined") return;
@@ -240,92 +257,57 @@ export function usePlaygroundState(
 		if (stored) setChatParams(stored);
 	}, []);
 
+	// Manual controls and generated forms commit through the same checked path.
+	// Persist before updating React state, so a failed form is never half applied.
+	const applyChatParams = useCallback((updates: Partial<ChatParams>): boolean => {
+		const next = normalizeChatParams({ ...chatParamsRef.current, ...updates });
+		if (!writeChatParams(next)) {
+			setParamsError("Couldn't save these settings in your browser — changes were not applied");
+			return false;
+		}
+		chatParamsRef.current = next;
+		setChatParams(next);
+		setParamsError(null);
+		return true;
+	}, []);
+
 	const updateParam = useCallback(
-		<K extends keyof ChatParams>(key: K, value: ChatParams[K]) => {
-			setParamsError(null);
-			setChatParams((prev) => {
-				const next = { ...prev, [key]: value };
-				if (writeChatParams(next)) return next;
-				// Revert to the last value we know is persisted, and tell
-				// the caller so the panel can show the failure.
-				setParamsError(
-					"Couldn't save this setting in your browser — change reverted",
-				);
-				return prev;
-			});
+		<K extends keyof ChatParams>(key: K, value: SetStateAction<ChatParams[K]>) => {
+			const resolved = typeof value === "function"
+				? (value as (previous: ChatParams[K]) => ChatParams[K])(chatParamsRef.current[key])
+				: value;
+			applyChatParams({ [key]: resolved });
 		},
-		[],
+		[applyChatParams],
 	);
 
 	const setTemperature = useCallback<Dispatch<SetStateAction<number>>>(
-		(next) =>
-			updateParam(
-				"temperature",
-				typeof next === "function"
-					? (next as (p: number) => number)(chatParams.temperature)
-					: next,
-			),
-		[updateParam, chatParams.temperature],
+		(next) => updateParam("temperature", next),
+		[updateParam],
 	);
 	const setTopP = useCallback<Dispatch<SetStateAction<number>>>(
-		(next) =>
-			updateParam(
-				"topP",
-				typeof next === "function"
-					? (next as (p: number) => number)(chatParams.topP)
-					: next,
-			),
-		[updateParam, chatParams.topP],
+		(next) => updateParam("topP", next),
+		[updateParam],
 	);
 	const setMaxTokens = useCallback<Dispatch<SetStateAction<number>>>(
-		(next) =>
-			updateParam(
-				"maxTokens",
-				typeof next === "function"
-					? (next as (p: number) => number)(chatParams.maxTokens)
-					: next,
-			),
-		[updateParam, chatParams.maxTokens],
+		(next) => updateParam("maxTokens", next),
+		[updateParam],
 	);
 	const setTopK = useCallback<Dispatch<SetStateAction<number>>>(
-		(next) =>
-			updateParam(
-				"topK",
-				typeof next === "function"
-					? (next as (p: number) => number)(chatParams.topK)
-					: next,
-			),
-		[updateParam, chatParams.topK],
+		(next) => updateParam("topK", next),
+		[updateParam],
 	);
 	const setFreqPenalty = useCallback<Dispatch<SetStateAction<number>>>(
-		(next) =>
-			updateParam(
-				"freqPenalty",
-				typeof next === "function"
-					? (next as (p: number) => number)(chatParams.freqPenalty)
-					: next,
-			),
-		[updateParam, chatParams.freqPenalty],
+		(next) => updateParam("freqPenalty", next),
+		[updateParam],
 	);
 	const setPresPenalty = useCallback<Dispatch<SetStateAction<number>>>(
-		(next) =>
-			updateParam(
-				"presPenalty",
-				typeof next === "function"
-					? (next as (p: number) => number)(chatParams.presPenalty)
-					: next,
-			),
-		[updateParam, chatParams.presPenalty],
+		(next) => updateParam("presPenalty", next),
+		[updateParam],
 	);
 	const setStream = useCallback<Dispatch<SetStateAction<boolean>>>(
-		(next) =>
-			updateParam(
-				"stream",
-				typeof next === "function"
-					? (next as (p: boolean) => boolean)(chatParams.stream)
-					: next,
-			),
-		[updateParam, chatParams.stream],
+		(next) => updateParam("stream", next),
+		[updateParam],
 	);
 	const { temperature, topP, maxTokens, topK, freqPenalty, presPenalty, stream } =
 		chatParams;
@@ -370,25 +352,33 @@ export function usePlaygroundState(
 	// --- Misc UI ---
 	const [shortcutsOpen, setShortcutsOpen] = useState<boolean>(false);
 
-	// Model persistence — rehydrate from localStorage on mount (after auth
-	// resolves, so the user-scoped bucket is correct) and re-write whenever
-	// the user picks a new model. URL `?model=` always wins on the first
-	// rehydration so deep links keep working.
+	// Rehydrate once auth resolves and again whenever the mounted account
+	// changes. A valid URL model wins only for the first resolved identity;
+	// later account transitions must read their own bucket instead of carrying
+	// the previous account's selection across scopes.
 	useEffect(() => {
 		if (typeof window === "undefined") return;
-		const userId = options.authReady ? options.userId ?? null : null;
-		lastScopedUserIdRef.current = userId;
-		const urlParam = searchParams?.get("model");
-		if (!urlParam || !isKnownModelId(urlParam)) {
-			const stored = readStoredModel(userId);
-			if (stored && stored !== model) {
-				setModelRaw(stored);
-			}
+		if (!options.authReady) {
+			userChangedModelRef.current = false;
+			setHydratedModelIdentity(null);
+			return;
 		}
-		setModelHydratedForAuth(Boolean(options.authReady));
-		// Intentionally one-shot on mount — re-running when `model` changes
-		// would clobber the user's in-flight selection with the stored one.
-	}, [options.authReady]);
+		const userId = options.userId ?? null;
+		const identity = modelStorageKey(userId);
+		lastScopedUserIdRef.current = userId;
+		userChangedModelRef.current = false;
+		const preserveInitialUrl =
+			initialUrlModelRef.current !== null &&
+			(initialUrlIdentityRef.current === null ||
+				initialUrlIdentityRef.current === identity);
+		if (preserveInitialUrl && initialUrlIdentityRef.current === null) {
+			initialUrlIdentityRef.current = identity;
+		}
+		if (!preserveInitialUrl) {
+			setModelRaw(readStoredModel(userId) ?? initialDefaultModelRef.current);
+		}
+		setHydratedModelIdentity(identity);
+	}, [options.authReady, options.userId]);
 
 	// BUG-G: validate the resolved selection against the LIVE availability
 	// set. `isKnownModelId` only checks the static catalog, so a model the
@@ -451,7 +441,10 @@ export function usePlaygroundState(
 	return {
 		// Core chat
 		model,
-		modelHydrated: modelHydratedForAuth === Boolean(options.authReady),
+		modelHydrated:
+			Boolean(options.authReady) &&
+			hydratedModelIdentity === modelStorageKey(options.userId ?? null),
+		hasInitialUrlModel: initialUrlModelRef.current !== null,
 		setModel,
 		messages,
 		setMessages,
@@ -471,6 +464,7 @@ export function usePlaygroundState(
 		setShowAdvanced,
 		paramsError,
 		clearParamsError: () => setParamsError(null),
+		applyChatParams,
 		temperature,
 		setTemperature,
 		topP,

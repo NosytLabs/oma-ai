@@ -13,7 +13,6 @@ import {
 	createThinkRouter,
 	handleChatResponseStatus,
 	MAX_MESSAGE_LENGTH,
-	stripPendingAssistant,
 	type DailyQuota,
 } from "@/lib/chat-stream";
 import { log } from "@/lib/logger";
@@ -72,6 +71,8 @@ function newMessageId(prefix: string): string {
 }
 
 interface UseStreamingChatOptions {
+	/** Account and conversation identity; changing it cancels the previous request. */
+	ownerKey?: string;
 	messagesRef: RefObject<Message[]>;
 	compareMessagesRef: RefObject<Message[]>;
 	input: string;
@@ -88,6 +89,8 @@ interface UseStreamingChatOptions {
 	setCompareError: Dispatch<SetStateAction<string | null>>;
 	model: string;
 	systemPrompt: string;
+	/** Presentation metadata only; the inference API still receives role/content messages. */
+	responseFormat?: Message["format"];
 	compareMode: boolean;
 	compareModel: string;
 	setCompareMessages: Dispatch<SetStateAction<Message[]>>;
@@ -109,9 +112,26 @@ interface UseStreamingChatOptions {
 	onDailyQuota?: (quota: DailyQuota) => void;
 }
 
+export interface SendMessageOptions {
+	/** Let interactive actions report failures instead of showing a false success. */
+	throwOnError?: boolean;
+}
+
 interface UseStreamingChatResult {
-	sendMessage: (overridePrompt?: string) => Promise<void>;
+	sendMessage: (overridePrompt?: string, options?: SendMessageOptions) => Promise<void>;
 	abortRef: RefObject<AbortController | null>;
+}
+
+interface ChatRequest {
+	options: UseStreamingChatOptions;
+	signal: AbortSignal;
+	isCurrent: () => boolean;
+}
+
+function assertRequestActive(request: ChatRequest) {
+	if (request.signal.aborted || !request.isCurrent()) {
+		throw new DOMException("Response stopped", "AbortError");
+	}
 }
 
 /**
@@ -133,6 +153,8 @@ export function useStreamingChat(
 ): UseStreamingChatResult {
 	const toast = useToast();
 	const abortRef = useRef<AbortController | null>(null);
+	const requestGenerationRef = useRef(0);
+	const ownerRef = useRef(opts.ownerKey);
 	// BUG-B: the parent rebuilds a fresh `opts` object every render, so any
 	// useCallback that closes over it keeps the FIRST render's values unless
 	// every field is listed as a dependency (impossible — the object identity
@@ -159,47 +181,73 @@ export function useStreamingChat(
 	// it into the HttpOnly cookie the browser-direct SSE chat relies on.
 	// We surface a friendly 401 once the server says the key is missing.
 	const ensureKeyPromiseRef = useRef<Promise<boolean> | null>(null);
-	const ensureChatKeyOnce = useCallback(async (): Promise<boolean> => {
+	const ensureChatKeyOnce = useCallback(async (request: ChatRequest): Promise<boolean> => {
+		assertRequestActive(request);
 		if (ensureKeyPromiseRef.current) return ensureKeyPromiseRef.current;
-		ensureKeyPromiseRef.current = (async () => {
+		const pending = (async () => {
 			try {
-				await api.auth.listKeys();
-				const created = await api.auth.createKey("Browser chat");
-				const installed = await api.auth.installKeyCookie(created.key);
+				await api.auth.listKeys(request.signal);
+				assertRequestActive(request);
+				const created = await api.auth.createKey("Browser chat", request.signal);
+				assertRequestActive(request);
+				const installed = await api.auth.installKeyCookie(
+					created.key,
+					request.signal,
+				);
+				assertRequestActive(request);
 				return installed.success;
 			} catch {
 				return false;
-			} finally {
-				ensureKeyPromiseRef.current = null;
 			}
 		})();
-		return ensureKeyPromiseRef.current;
+		ensureKeyPromiseRef.current = pending;
+		// Keep the settled result for this Send: the comparison stream can
+		// receive its initial 401 after the primary repair already completed.
+		// A new Send or owner change clears the memoized attempt.
+		return pending;
 	}, []);
 
 	useEffect(() => {
+		if (ownerRef.current === opts.ownerKey) return;
+		ownerRef.current = opts.ownerKey;
+		requestGenerationRef.current += 1;
+		abortRef.current?.abort();
+		abortRef.current = null;
+		ensureKeyPromiseRef.current = null;
+		clearStuckTimer();
+		optsRef.current.setLoading(false);
+		optsRef.current.setSearching(false);
+	}, [opts.ownerKey, clearStuckTimer]);
+
+	useEffect(() => {
 		return () => {
+			requestGenerationRef.current += 1;
 			abortRef.current?.abort();
+			abortRef.current = null;
 		};
 	}, []);
 
 	const fetchWebSearch = useCallback(
 		async (
 			query: string,
-			setSearchingFn: (b: boolean) => void,
+			request: ChatRequest,
 		): Promise<{ results: SearchResult[]; contextMessage: Message | null }> => {
-			const live = optsRef.current;
+			const live = request.options;
+			assertRequestActive(request);
 			if (!live.webSearchEnabled || !query.trim()) {
 				return { results: [], contextMessage: null };
 			}
-			setSearchingFn(true);
+			live.setSearching(true);
 			try {
 				const searchResp = await fetch(
 					`${SEARCH_ENDPOINT}?query=${encodeURIComponent(query.trim())}`,
 					{
 						credentials: "include",
 						headers: { Accept: "application/json" },
+						signal: request.signal,
 					},
 				);
+				assertRequestActive(request);
 				// Backend returns 200 + empty `results` when upstream is not
 				// configured, so the only "expected" non-OK here is 404 if
 				// the route was removed. 5xx is a real error.
@@ -212,6 +260,7 @@ export function useStreamingChat(
 					return { results: [], contextMessage: null };
 				}
 				const searchData = await searchResp.json();
+				assertRequestActive(request);
 				const rawResults = (searchData?.results ?? []) as Array<{
 					title: string;
 					url: string;
@@ -245,17 +294,16 @@ export function useStreamingChat(
 				};
 				return { results, contextMessage };
 			} catch (err) {
+				assertRequestActive(request);
 				log.warn("Web search failed", err);
 				toast.error(
 					"Web search unavailable — proceeding without search results",
 				);
 				return { results: [], contextMessage: null };
 			} finally {
-				setSearchingFn(false);
+				if (request.isCurrent()) live.setSearching(false);
 			}
 		},
-		// Live options come from `optsRef` (see BUG-B) — `toast` is the only
-		// real dependency.
 		[toast],
 	);
 
@@ -266,7 +314,8 @@ export function useStreamingChat(
 			setMessages: Dispatch<SetStateAction<Message[]>>;
 			searchContext: Message | null;
 			searchResults: SearchResult[];
-			signal: AbortSignal;
+			assistantId: string;
+			request: ChatRequest;
 		}): Promise<void> => {
 			const {
 				model: useModel,
@@ -274,11 +323,24 @@ export function useStreamingChat(
 				setMessages: setMsgs,
 				searchContext,
 				searchResults,
-				signal,
+				assistantId,
+				request,
 			} = params;
-			// BUG-B: read the CURRENT options, not the ones captured when
-			// this callback was memoized.
-			const live = optsRef.current;
+			const { options: live, signal } = request;
+			assertRequestActive(request);
+			const updateAssistant = (update: (message: Message) => Message) => {
+				if (signal.aborted || !request.isCurrent()) return;
+				setMsgs((prev) => {
+					// Check again when React applies a deferred update. A completed
+					// request retains its generation until another request starts.
+					if (!request.isCurrent()) return prev;
+					const index = prev.findIndex((message) => message.id === assistantId);
+					if (index < 0) return prev;
+					const updated = [...prev];
+					updated[index] = update(prev[index]);
+					return updated;
+				});
+			};
 
 			let messagesToSend = sanitizeHistory(history);
 			if (searchContext) {
@@ -300,8 +362,9 @@ export function useStreamingChat(
 			const freePeers = freeModelSelected
 				? [...FREE_CHAT_MODEL_IDS].filter((id) => id !== useModel)
 				: [];
-			const doFetch = () =>
-				fetch(CHAT_ENDPOINT, {
+			const doFetch = () => {
+				assertRequestActive(request);
+				return fetch(CHAT_ENDPOINT, {
 					method: "POST",
 					credentials: "include",
 					headers: {
@@ -331,8 +394,10 @@ export function useStreamingChat(
 					}),
 					signal,
 				});
+			};
 
 			let response = await doFetch();
+			assertRequestActive(request);
 
 			// Paid models only: logged-in users on a new device may have a session
 			// but no `oma_api_key` cookie, so chat returns 401. Free OMA-AI models
@@ -343,7 +408,8 @@ export function useStreamingChat(
 				response.status === 401 &&
 				!signal.aborted
 			) {
-				const repaired = await ensureChatKeyOnce();
+				const repaired = await ensureChatKeyOnce(request);
+				assertRequestActive(request);
 				if (repaired && !signal.aborted) {
 					response = await doFetch();
 				}
@@ -354,8 +420,11 @@ export function useStreamingChat(
 			// the user-facing Error for anything non-2xx.
 			await handleChatResponseStatus(response, {
 				freeModel: freeModelSelected,
-				onDailyQuota: live.onDailyQuota,
+				onDailyQuota: (quota) => {
+					if (request.isCurrent() && !signal.aborted) live.onDailyQuota?.(quota);
+				},
 			});
+			assertRequestActive(request);
 
 			// Surface server failover (OpenRouter-style transparency).
 			const usedFallback =
@@ -410,34 +479,20 @@ export function useStreamingChat(
 						// Use the real usage count once it arrives in the final chunk;
 						// otherwise approximate from accumulated text.
 						const tokenCount = realTokenCount || estimateTokens(accumulated);
-						setMsgs((prev) => {
-							const updated = [...prev];
-							const lastIdx = updated.length - 1;
-							if (lastIdx >= 0) {
-							updated[lastIdx] = {
-								...updated[lastIdx],
-								content: accumulated,
-								reasoning: accumulatedReasoning || undefined,
-								tokens: tokenCount,
-								outputTokens: realTokenCount || estimateTokens(accumulated),
-								latency: now - startTime,
-								truncated: finishReason === "length",
-								// BUG-D: flag degenerate fallback output so the UI
-								// can surface a "low-quality response" hint instead
-								// of rendering a wall of repeated tokens as a normal
-								// reply. See isDegenerateResponse for the heuristic.
-								degenerate: isDegenerateResponse(accumulated),
-								finishReason,
-								model: actualModel,
-								viaFallback: usedFallback && actualModel !== useModel,
-									searchResults:
-										searchResults.length > 0
-											? searchResults
-											: updated[lastIdx].searchResults,
-								};
-							}
-							return updated;
-						});
+						updateAssistant((message) => ({
+							...message,
+							content: accumulated,
+							reasoning: accumulatedReasoning || undefined,
+							tokens: tokenCount,
+							outputTokens: realTokenCount || estimateTokens(accumulated),
+							latency: now - startTime,
+							truncated: finishReason === "length",
+							degenerate: isDegenerateResponse(accumulated),
+							finishReason,
+							model: actualModel,
+							viaFallback: usedFallback && actualModel !== useModel,
+							searchResults: searchResults.length > 0 ? searchResults : message.searchResults,
+						}));
 					}
 				};
 
@@ -482,14 +537,17 @@ export function useStreamingChat(
 				};
 
 				await consumeSSE(reader, (block) => {
+					assertRequestActive(request);
 					for (const d of block.data) {
 						processData(d);
 					}
 				});
+				assertRequestActive(request);
 				router.flushTail();
 				flushToState(true);
 			} else {
 				const data = await response.json();
+				assertRequestActive(request);
 				let content = data.choices?.[0]?.message?.content || "";
 				let reasoning = data.choices?.[0]?.message?.reasoning_content || "";
 				// Non-streaming fallback: some models emit an inline thinking
@@ -506,44 +564,50 @@ export function useStreamingChat(
 					typeof data.model === "string" && data.model
 						? data.model
 						: actualModel;
-				setMsgs((prev) => {
-					const updated = [...prev];
-					const lastIdx = updated.length - 1;
-					if (lastIdx >= 0) {
-						updated[lastIdx] = {
-							...updated[lastIdx],
-							content,
-							reasoning: reasoning || undefined,
-							tokens: usage?.total_tokens || 0,
-							inputTokens: usage?.prompt_tokens || updated[lastIdx].inputTokens,
-							outputTokens: usage?.completion_tokens || estimateTokens(content),
-							latency: Date.now() - startTime,
-							// BUG-D: same degenerate-output flag for the non-streaming path
-							degenerate: isDegenerateResponse(content),
-							model: bodyModel,
-							viaFallback: usedFallback && bodyModel !== useModel,
-							searchResults:
-								searchResults.length > 0
-									? searchResults
-									: updated[lastIdx].searchResults,
-						};
-					}
-					return updated;
-				});
+				updateAssistant((message) => ({
+					...message,
+					content,
+					reasoning: reasoning || undefined,
+					tokens: usage?.total_tokens || 0,
+					inputTokens: usage?.prompt_tokens || message.inputTokens,
+					outputTokens: usage?.completion_tokens || estimateTokens(content),
+					latency: Date.now() - startTime,
+					degenerate: isDegenerateResponse(content),
+					model: bodyModel,
+					viaFallback: usedFallback && bodyModel !== useModel,
+					searchResults: searchResults.length > 0 ? searchResults : message.searchResults,
+				}));
 			}
-		// BUG-B: every option is read live through `optsRef`, so the
-		// dependency list collapses to the stable helpers it captures.
-		}, [ensureChatKeyOnce]);
+		}, [ensureChatKeyOnce, toast]);
 
 	const sendMessage = useCallback(
-		async (overridePrompt?: string) => {
-			// BUG-B: everything below reads the live options object.
-			const live = optsRef.current;
+		async (overridePrompt?: string, options?: SendMessageOptions) => {
+			// Read the latest settings at Send, then keep this request immutable
+			// across web search, auth repair and both comparison streams.
+			const live = { ...optsRef.current };
 			const promptText = (overridePrompt ?? live.input).trim();
-			if (!promptText || live.loading) return;
+			if (!promptText || live.loading || abortRef.current) {
+				if (options?.throwOnError) throw new Error("Wait for the current response before sending a follow-up.");
+				return;
+			}
 
 			// Fresh cookie-repair budget for this send (see ensureChatKeyOnce).
 			ensureKeyPromiseRef.current = null;
+			const generation = ++requestGenerationRef.current;
+			const abortController = new AbortController();
+			abortRef.current = abortController;
+			const request: ChatRequest = {
+				options: live,
+				signal: abortController.signal,
+				isCurrent: () => requestGenerationRef.current === generation && optsRef.current.ownerKey === live.ownerKey,
+			};
+			const previousMessages = [...live.messagesRef.current];
+			const previousCompareMessages = [...live.compareMessagesRef.current];
+			const removePending = (setMessages: Dispatch<SetStateAction<Message[]>>, assistantId: string) => {
+				setMessages((previous) => request.isCurrent()
+					? previous.filter((message) => message.id !== assistantId || message.content !== "")
+					: previous);
+			};
 
 			const userMessage: Message = {
 				id: newMessageId("user"),
@@ -553,7 +617,7 @@ export function useStreamingChat(
 				inputTokens: estimateTokens(promptText),
 			};
 
-			live.setMessages((prev) => [...prev, userMessage]);
+			live.setMessages((prev) => request.isCurrent() ? [...prev, userMessage] : prev);
 			live.setInput("");
 			live.setLoading(true);
 			live.setError(null);
@@ -565,34 +629,39 @@ export function useStreamingChat(
 			// doesn't think the page is hung. Cleared in `finally`.
 			clearStuckTimer();
 			stuckTimerRef.current = setTimeout(() => {
-				toast.info("Server is taking longer than usual — retrying if needed");
+				if (request.isCurrent() && !request.signal.aborted) {
+					toast.info("Server is taking longer than usual — retrying if needed");
+				}
 			}, 15_000);
 
+			const assistantId = newMessageId("assistant");
 			const assistantMessage: Message = {
-				id: newMessageId("assistant"),
+				id: assistantId,
 				role: "assistant",
+				format: live.responseFormat ?? "text",
 				content: "",
 				timestamp: Date.now(),
 			};
-			live.setMessages((prev) => [...prev, assistantMessage]);
+			live.setMessages((prev) => request.isCurrent() ? [...prev, assistantMessage] : prev);
 
 			// Build compare side: add user message + empty assistant message so the
 			// panel mirrors the conversation shape.
+			const compareAssistantId = newMessageId("compare");
+			const compareAssistantMessage: Message = {
+				id: compareAssistantId,
+				role: "assistant",
+				format: live.responseFormat ?? "text",
+				content: "",
+				timestamp: Date.now(),
+			};
 			if (live.compareMode) {
-				live.setCompareMessages((prev) => [
+				live.setCompareMessages((prev) => request.isCurrent() ? [
 					...prev,
 					userMessage,
-					{
-						id: newMessageId("compare"),
-						role: "assistant",
-						content: "",
-						timestamp: Date.now(),
-					},
-				]);
+					compareAssistantMessage,
+				] : prev);
 			}
 
-			const abortController = new AbortController();
-			abortRef.current = abortController;
 			live.isNearBottomRef.current = true;
 
 			// Build history for streaming: refs already have previous messages,
@@ -600,7 +669,7 @@ export function useStreamingChat(
 			// The refs will be updated after the next render, so we construct
 			// the history manually here to include the new messages.
 			const primaryHistory = [
-				...live.messagesRef.current,
+				...previousMessages,
 				userMessage,
 				assistantMessage,
 			];
@@ -611,8 +680,9 @@ export function useStreamingChat(
 				// latency and backend load.
 				const searchResult = await fetchWebSearch(
 					promptText,
-					live.setSearching,
+					request,
 				);
+				assertRequestActive(request);
 				const primarySearch = searchResult;
 				const compareSearch = live.compareMode
 					? searchResult
@@ -626,26 +696,23 @@ export function useStreamingChat(
 					setMessages: live.setMessages,
 					searchContext: primarySearch.contextMessage,
 					searchResults: primarySearch.results,
-					signal: abortController.signal,
+					assistantId,
+					request,
 				});
 
 				const comparePromise = live.compareMode
 					? streamChatCompletion({
 							model: live.compareModel,
 							history: [
-								...live.compareMessagesRef.current,
+								...previousCompareMessages,
 								userMessage,
-								{
-									id: newMessageId("compare"),
-									role: "assistant",
-									content: "",
-									timestamp: Date.now(),
-								},
+								compareAssistantMessage,
 							],
 							setMessages: live.setCompareMessages,
 							searchContext: compareSearch.contextMessage,
 							searchResults: compareSearch.results,
-							signal: abortController.signal,
+							assistantId: compareAssistantId,
+							request,
 						})
 					: (Promise.resolve() as Promise<void>);
 
@@ -654,6 +721,7 @@ export function useStreamingChat(
 					comparePromise,
 				]);
 				const [primaryResult, compareResult] = results;
+				assertRequestActive(request);
 
 				if (primaryResult.status === "rejected") {
 					throw primaryResult.reason;
@@ -670,17 +738,20 @@ export function useStreamingChat(
 					live.setCompareError(
 						`${live.compareModel} failed — ${message}`,
 					);
-					live.setCompareMessages((prev) => stripPendingAssistant(prev));
+					removePending(live.setCompareMessages, compareAssistantId);
 				}
 			} catch (err: unknown) {
+				if (!request.isCurrent()) {
+					if (options?.throwOnError) throw new Error("The conversation changed before the response finished.");
+					return;
+				}
+				removePending(live.setMessages, assistantId);
+				if (live.compareMode) removePending(live.setCompareMessages, compareAssistantId);
 				const aborted =
 					abortController.signal.aborted ||
 					(err instanceof Error && err.name === "AbortError");
 				if (aborted) {
-					live.setMessages((prev) => stripPendingAssistant(prev));
-					if (live.compareMode) {
-						live.setCompareMessages((prev) => stripPendingAssistant(prev));
-					}
+					if (options?.throwOnError) throw new Error("Response stopped.");
 				} else {
 					// Network failures (backend down / CORS) surface as TypeError —
 					// translate to a friendly message rather than a cryptic "fetch failed".
@@ -694,10 +765,7 @@ export function useStreamingChat(
 						message = "Unknown error";
 					}
 					live.setError(message);
-					live.setMessages((prev) => stripPendingAssistant(prev));
-					if (live.compareMode) {
-						live.setCompareMessages((prev) => stripPendingAssistant(prev));
-					}
+					if (options?.throwOnError) throw new Error(message);
 				}
 			} finally {
 				// BUG-A: the streaming/abort state is reset on EVERY exit path
@@ -707,15 +775,19 @@ export function useStreamingChat(
 				// permanently disabled with the Stop button stuck on and no
 				// way to retry. Clearing the ref also means Stop can never
 				// abort a finished request.
-				if (abortRef.current === abortController) abortRef.current = null;
-				live.setLoading(false);
-				clearStuckTimer();
-				setTimeout(() => live.inputRef.current?.focus(), 100);
+				if (request.isCurrent()) {
+					if (abortRef.current === abortController) abortRef.current = null;
+					live.setLoading(false);
+					clearStuckTimer();
+					setTimeout(() => {
+						if (request.isCurrent()) live.inputRef.current?.focus();
+					}, 100);
+				}
 			}
 		},
 		// BUG-B: `opts` is read live via `optsRef`, so only the stable
 		// helpers this callback calls belong in the dependency list.
-		[clearStuckTimer, fetchWebSearch, streamChatCompletion],
+		[clearStuckTimer, fetchWebSearch, streamChatCompletion, toast],
 	);
 
 	return { sendMessage, abortRef };

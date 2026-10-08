@@ -1,7 +1,7 @@
 "use client";
 
 import Script from "next/script";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
  * Google Analytics 4 (gtag.js), behind an explicit consent gate.
@@ -32,6 +32,23 @@ export function GoogleAnalytics() {
 	// null until localStorage is read, so the prompt cannot flash for a
 	// returning visitor who already decided.
 	const [ready, setReady] = useState(false);
+	const bannerRef = useRef<HTMLDivElement>(null);
+
+	// Viewport-bound pages reserve this space so consent never covers controls.
+	useEffect(() => {
+		const banner = bannerRef.current;
+		if (!measurementId || !ready || decision || !banner) return;
+		const updateHeight = () => document.documentElement.style.setProperty(
+			"--consent-banner-height", `${banner.getBoundingClientRect().height}px`,
+		);
+		updateHeight();
+		const observer = new ResizeObserver(updateHeight);
+		observer.observe(banner);
+		return () => {
+			observer.disconnect();
+			document.documentElement.style.removeProperty("--consent-banner-height");
+		};
+	}, [measurementId, ready, decision]);
 
 	useEffect(() => {
 		try {
@@ -79,6 +96,7 @@ export function GoogleAnalytics() {
 
 	return (
 		<div
+			ref={bannerRef}
 			role="region"
 			aria-label="Analytics consent"
 			// pb-[env(safe-area-inset-bottom)] keeps the buttons clear of the
@@ -103,14 +121,14 @@ export function GoogleAnalytics() {
 					<button
 						type="button"
 						onClick={() => decide("accepted")}
-						className="rounded-[var(--radius-lg)] border border-accent/60 bg-accent/10 px-4 py-2 text-sm font-semibold text-accent transition-colors hover:bg-accent/20"
+						className="min-h-11 rounded-[var(--radius-lg)] border border-accent/60 bg-accent/10 px-4 py-2 text-sm font-semibold text-accent transition-colors hover:bg-accent/20 focus-ring"
 					>
 						Accept analytics
 					</button>
 					<button
 						type="button"
 						onClick={() => decide("declined")}
-						className="rounded-[var(--radius-lg)] border border-border px-4 py-2 text-sm font-semibold text-muted transition-colors hover:border-text/40 hover:text-text"
+						className="min-h-11 rounded-[var(--radius-lg)] border border-border px-4 py-2 text-sm font-semibold text-muted transition-colors hover:border-text/40 hover:text-text focus-ring"
 					>
 						Decline
 					</button>

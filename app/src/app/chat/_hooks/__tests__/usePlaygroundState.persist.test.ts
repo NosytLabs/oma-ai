@@ -16,7 +16,8 @@
  *  5. URL `?model=` is mirrored after the *user* picks a model, not on
  *     cold load (no `?model=deepseek-v4-flash-0731-openbroker` clutter on /chat).
  */
-import { act, renderHook } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
+import { createElement, StrictMode, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FREE_DEFAULT_CHAT_MODEL } from "@/lib/model-utils";
 
@@ -45,6 +46,30 @@ beforeEach(() => {
 
 afterEach(() => {
 	vi.useRealTimers();
+	vi.restoreAllMocks();
+});
+
+describe("usePlaygroundState — atomic request settings", () => {
+	it("applies a settings form in one persisted update", () => {
+		const { result } = renderHook(() => usePlaygroundState({ authReady: true }));
+		const write = vi.spyOn(Storage.prototype, "setItem");
+		let applied = false;
+		act(() => { applied = result.current.applyChatParams({ temperature: 1.2, topP: 0.8, maxTokens: 4096 }); });
+		expect(applied).toBe(true);
+		expect(result.current).toMatchObject({ temperature: 1.2, topP: 0.8, maxTokens: 4096 });
+		expect(write).toHaveBeenCalledTimes(1);
+		expect(JSON.parse(localStorage.getItem("oma_chat_params")!)).toMatchObject({ temperature: 1.2, topP: 0.8, maxTokens: 4096 });
+	});
+
+	it("reports a failed save without partially changing the request settings", () => {
+		const { result } = renderHook(() => usePlaygroundState({ authReady: true }));
+		vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("Storage full"); });
+		let applied = true;
+		act(() => { applied = result.current.applyChatParams({ temperature: 1.2, topP: 0.8 }); });
+		expect(applied).toBe(false);
+		expect(result.current).toMatchObject({ temperature: 0.7, topP: 1 });
+		expect(result.current.paramsError).toMatch(/couldn't save/i);
+	});
 });
 
 describe("usePlaygroundState — model persistence", () => {
@@ -65,7 +90,13 @@ describe("usePlaygroundState — model persistence", () => {
 	it("?model=<id> wins over localStorage on initial mount (deep links)", async () => {
 		localStorage.setItem("oma_chat_model:guest", "mistral-small-2603");
 		searchParamsRef = new URLSearchParams("model=claude-sonnet-4-6");
-		const { result } = renderHook(() => usePlaygroundState({ authReady: true }));
+		const { result } = renderHook(
+			() => usePlaygroundState({ authReady: true }),
+			{
+				wrapper: ({ children }: { children: ReactNode }) =>
+					createElement(StrictMode, null, children),
+			},
+		);
 		expect(result.current.model).toBe("claude-sonnet-4-6");
 		// Even after the rehydrate effect, the URL choice wins.
 		await act(async () => {});
@@ -125,6 +156,43 @@ describe("usePlaygroundState — model persistence", () => {
 			"claude-sonnet-4-6",
 		);
 		expect(localStorage.getItem("oma_chat_model:guest")).toBeNull();
+	});
+
+	it("rehydrates the model when the mounted account identity changes", async () => {
+		localStorage.setItem("oma_chat_model:u:alice", "mistral-small-2603");
+		localStorage.setItem("oma_chat_model:u:bob", "claude-sonnet-4-6");
+		const { result, rerender } = renderHook(
+			({ userId }) => usePlaygroundState({ authReady: true, userId }),
+			{ initialProps: { userId: "alice" } },
+		);
+		await waitFor(() => expect(result.current.model).toBe("mistral-small-2603"));
+
+		rerender({ userId: "bob" });
+		await waitFor(() => expect(result.current.model).toBe("claude-sonnet-4-6"));
+		expect(result.current.modelHydrated).toBe(true);
+
+		act(() => result.current.setModel("deepseek-v4-flash-0731-openbroker"));
+		await waitFor(() => {
+			expect(localStorage.getItem("oma_chat_model:u:bob")).toBe(
+				"deepseek-v4-flash-0731-openbroker",
+			);
+		});
+		expect(localStorage.getItem("oma_chat_model:u:alice")).toBe(
+			"mistral-small-2603",
+		);
+	});
+
+	it("does not carry the previous account's model into an empty account", async () => {
+		localStorage.setItem("oma_chat_model:u:alice", "claude-sonnet-4-6");
+		const { result, rerender } = renderHook(
+			({ userId }) => usePlaygroundState({ authReady: true, userId }),
+			{ initialProps: { userId: "alice" as string | null } },
+		);
+		await waitFor(() => expect(result.current.model).toBe("claude-sonnet-4-6"));
+
+		rerender({ userId: "bob" });
+		await waitFor(() => expect(result.current.model).toBe(FREE_DEFAULT_CHAT_MODEL));
+		expect(localStorage.getItem("oma_chat_model:u:bob")).toBeNull();
 	});
 
 	it("does not write to localStorage before the user picks a model (StrictMode-safe)", async () => {

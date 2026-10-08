@@ -67,3 +67,75 @@ describe("classifyMessage — A2UI detection", () => {
 		expect(classifyMessage(content)).toEqual({ kind: "plain" });
 	});
 });
+
+describe("classifyMessage — OpenUI streaming detection", () => {
+	it("streams ordinary prose normally even when UI mode requested OpenUI", () => {
+		expect(
+			classifyMessage("Here is a normal text answer.", {
+				format: "openui",
+				isStreaming: true,
+			}),
+		).toEqual({ kind: "plain" });
+	});
+
+	it("suppresses a partial root assignment while OpenUI is streaming", () => {
+		expect(
+			classifyMessage("roo", {
+				format: "openui",
+				isStreaming: true,
+			}),
+		).toEqual({ kind: "openui", response: "roo" });
+	});
+
+	it("uses an explicit message format before the first OpenUI statement is complete", () => {
+		expect(
+			classifyMessage("root = Stack([", {
+				format: "openui",
+				isStreaming: true,
+			}),
+		).toEqual({ kind: "openui", response: "root = Stack([" });
+	});
+
+	it("extracts an OpenUI fence while it is still streaming", () => {
+		expect(
+			classifyMessage("```openui\nroot = Stack([title", {
+				isStreaming: true,
+			}),
+		).toEqual({ kind: "openui", response: "root = Stack([title" });
+	});
+
+	it("falls back to plain text when an explicitly formatted response is invalid at completion", () => {
+		expect(
+			classifyMessage("This model ignored the OpenUI instructions.", {
+				format: "openui",
+				isStreaming: false,
+				isValidOpenUI: () => false,
+			}),
+		).toEqual({ kind: "plain" });
+	});
+
+	it("keeps a completed, valid explicitly formatted OpenUI response", () => {
+		expect(
+			classifyMessage('root = Text({ content: "Ready" })', {
+				format: "openui",
+				isStreaming: false,
+				isValidOpenUI: () => true,
+			}),
+		).toEqual({
+			kind: "openui",
+			response: 'root = Text({ content: "Ready" })',
+		});
+	});
+
+	it("recognizes a completed valid OpenUI response from saved history without a format stamp", () => {
+		expect(
+			classifyMessage('root = Text({ content: "Saved" })', {
+				isStreaming: false,
+				isValidOpenUI: () => true,
+			}),
+		).toEqual({
+			kind: "openui",
+			response: 'root = Text({ content: "Saved" })',
+		});
+	});
+});

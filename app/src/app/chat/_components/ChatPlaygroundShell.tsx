@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, X } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
@@ -14,10 +14,16 @@ import {
 	type SetStateAction,
 } from "react";
 import type { Message } from "@/components/chat";
+import {
+	ConversationHistory,
+	type ConversationHistoryProps,
+} from "@/components/chat/ConversationHistory";
 import { balanceToDollars, useBalance } from "@/components/chat/useBalance";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
-import { A2UI_SYSTEM_SUFFIX, formatA2UIAction } from "@/lib/a2ui";
+import { formatA2UIAction } from "@/lib/a2ui";
+import { OPENUI_SYSTEM_SUFFIX } from "@/lib/openui";
+import type { OpenUIActionHandler } from "@/lib/openui-actions";
 import { genConversationId } from "@/lib/gen-id";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { log } from "@/lib/logger";
@@ -35,12 +41,13 @@ import { buildLoginHref } from "@/lib/login-href";
 import { playgroundHrefForModel } from "@/lib/playground-href";
 import { GUEST_DAILY_LIMIT_DEFAULT } from "@/lib/guest-daily-quota";
 import { useChatPersistence } from "../_hooks/useChatPersistence";
+import { useConversationHistory } from "../_hooks/useConversationHistory";
 import { useChatScroll } from "../_hooks/useChatScroll";
 import { useChatShortcuts } from "../_hooks/useChatShortcuts";
 import { useConversationShare } from "../_hooks/useConversationShare";
 import { useGuestQuota } from "../_hooks/useGuestQuota";
 import { usePlaygroundState } from "../_hooks/usePlaygroundState";
-import { useStreamingChat } from "../_hooks/useStreamingChat";
+import { useStreamingChat, type SendMessageOptions } from "../_hooks/useStreamingChat";
 import {
 	LiveModelsProvider,
 	useSharedLiveModelCatalog,
@@ -53,7 +60,7 @@ import { ChatSystemPromptPanel } from "./ChatSystemPromptPanel";
 import { MemoizedChatToolbar } from "./ChatToolbar";
 import { MessagesList } from "./MessagesList";
 
-/** localStorage key for the A2UI (UI mode) composer toggle. */
+/** Retains the existing interactive-mode preference across the renderer upgrade. */
 const UI_MODE_STORAGE_KEY = "oma_chat_ui_mode";
 
 const LazyMessageInput = dynamic(
@@ -93,6 +100,44 @@ export interface ChatPlaygroundShellProps {
 	conversationIdKey?: string;
 }
 
+export interface RegeneratePlan {
+	prompt: string;
+	primaryMessages: Message[];
+	compareMessages: Message[];
+}
+
+/**
+ * Remove the latest shared user turn and every response produced from it.
+ * New compare sends reuse the primary user message object, so its id is the
+ * stable join key between the two histories.
+ */
+export function buildRegeneratePlan(
+	primaryMessages: Message[],
+	compareMessages: Message[],
+): RegeneratePlan | null {
+	const userIndex = primaryMessages.findLastIndex(
+		(message) => message.role === "user",
+	);
+	if (userIndex < 0) return null;
+
+	const userMessage = primaryMessages[userIndex];
+	const compareUserIndex = userMessage.id
+		? compareMessages.findLastIndex(
+				(message) =>
+					message.role === "user" && message.id === userMessage.id,
+			)
+		: -1;
+
+	return {
+		prompt: userMessage.content,
+		primaryMessages: primaryMessages.slice(0, userIndex),
+		compareMessages:
+			compareUserIndex >= 0
+				? compareMessages.slice(0, compareUserIndex)
+				: compareMessages,
+	};
+}
+
 function ShellContent({
 	variant,
 	storageKey: _storageKey,
@@ -100,6 +145,58 @@ function ShellContent({
 	conversationIdKey,
 }: ChatPlaygroundShellProps) {
 	const isChat = variant === "chat";
+	const [historyOpen, setHistoryOpen] = useState(false);
+	const historyDrawerRef = useRef<HTMLDivElement | null>(null);
+	const historyReturnFocusRef = useRef<HTMLElement | null>(null);
+
+	useEffect(() => {
+		if (typeof window !== "undefined" && window.matchMedia?.("(min-width: 1024px)").matches) {
+			setHistoryOpen(true);
+		}
+	}, []);
+
+	useEffect(() => {
+		if (!historyOpen || typeof window === "undefined") return;
+		const mobile = window.matchMedia?.("(max-width: 1023px)").matches;
+		if (!mobile) return;
+		if (!historyReturnFocusRef.current) {
+			historyReturnFocusRef.current = document.activeElement as HTMLElement | null;
+		}
+		const drawer = historyDrawerRef.current;
+		const focusableSelector =
+			'button:not([disabled]), input:not([disabled]), [href], [tabindex]:not([tabindex="-1"])';
+		const focusSearch = window.setTimeout(() => {
+			drawer?.querySelector<HTMLElement>('input[type="search"]')?.focus();
+		}, 0);
+		const handleKeyDown = (event: KeyboardEvent) => {
+			if (event.key === "Escape") {
+				event.preventDefault();
+				setHistoryOpen(false);
+				return;
+			}
+			if (event.key !== "Tab" || !drawer) return;
+			const focusable = Array.from(
+				drawer.querySelectorAll<HTMLElement>(focusableSelector),
+			);
+			if (focusable.length === 0) return;
+			const first = focusable[0];
+			const last = focusable[focusable.length - 1];
+			if (event.shiftKey && document.activeElement === first) {
+				event.preventDefault();
+				last.focus();
+			} else if (!event.shiftKey && document.activeElement === last) {
+				event.preventDefault();
+				first.focus();
+			}
+		};
+		document.addEventListener("keydown", handleKeyDown);
+		return () => {
+			window.clearTimeout(focusSearch);
+			document.removeEventListener("keydown", handleKeyDown);
+			historyReturnFocusRef.current?.focus();
+			historyReturnFocusRef.current = null;
+		};
+	}, [historyOpen]);
 
 	// BUG-D: A2UI uiMode was plain component state, so it reset to off on
 	// every reload and the user had to re-arm it each session. Persist the
@@ -143,6 +240,7 @@ function ShellContent({
 	const {
 		model,
 		modelHydrated,
+		hasInitialUrlModel,
 		setModel,
 		messages,
 		setMessages,
@@ -160,6 +258,7 @@ function ShellContent({
 		setShowAdvanced,
 		paramsError,
 		clearParamsError,
+		applyChatParams,
 		temperature,
 		setTemperature,
 		topP,
@@ -202,27 +301,7 @@ function ShellContent({
 	});
 	const checkedSignInDraft = useRef(false);
 	const restoredDraftOwner = useRef<string | null | undefined>(undefined);
-	useEffect(() => {
-		if (!isReady || !modelHydrated) return;
-		const userId = user?.id ?? null;
-		if (!checkedSignInDraft.current) {
-			checkedSignInDraft.current = true;
-			const draft = consumeChatSignInDraft(model, userId);
-			if (draft !== null) {
-				setInput((current) => current || draft);
-				restoredDraftOwner.current = userId;
-			}
-		} else if (restoredDraftOwner.current === null && userId !== null) {
-			// Auth readiness can time out before the sign-in session resolves.
-			// Let the guest handoff adopt its first resolved account once.
-			restoredDraftOwner.current = userId;
-		} else if (restoredDraftOwner.current !== undefined && restoredDraftOwner.current !== userId) {
-			// A restored draft belongs to the account that received the handoff.
-			setInput("");
-			restoredDraftOwner.current = undefined;
-		}
-	}, [isReady, modelHydrated, model, user?.id, setInput]);
-	useEffect(() => registerChatSignInDraft(() => ({ model, input, userId: user?.id ?? null })), [model, input, user?.id]);
+	const restoredDraftValue = useRef("");
 
 	// BUG-G: a selection that isn't in the live set can't be sent.
 	const isModelUnavailable =
@@ -280,7 +359,6 @@ function ShellContent({
 		isAuthenticated,
 		onExhausted: handleQuotaExhausted,
 	});
-	const showComposerAdvancedTools = !!input.trim();
 
 	const inputRef = useRef<HTMLTextAreaElement | null>(null);
 	const messagesRef = useRef<Message[]>(messages);
@@ -310,15 +388,68 @@ function ShellContent({
 
 	useChatPersistence({
 		messages,
-		setMessages,
 		systemPrompt,
 		setSystemPrompt,
 		setSystemPromptOpen,
 		messagesRef,
-		storageKey: scopedStorageKey,
 		systemPromptKey: scopedPromptKey,
 		enabled: isReady,
 	});
+	const conversationHistory = useConversationHistory({
+		enabled: isReady && modelHydrated,
+		userId: user?.id ?? null,
+		legacyStorageKey: scopedStorageKey,
+		messages,
+		setMessages,
+		messagesRef,
+		input,
+		setInput,
+		readCurrentDraft: () => inputRef.current?.value ?? input,
+		model,
+		setModel,
+		preserveInitialModel: hasInitialUrlModel,
+	});
+
+	// Restore a draft carried through sign-in after the local thread has
+	// hydrated, so an empty saved draft cannot overwrite the handoff.
+	useEffect(() => {
+		if (!isReady || !modelHydrated || !conversationHistory.hydrated) return;
+		const userId = user?.id ?? null;
+		if (!checkedSignInDraft.current) {
+			checkedSignInDraft.current = true;
+			const draft = consumeChatSignInDraft(model, userId);
+			if (draft !== null) {
+				setInput((current) => current || draft);
+				restoredDraftOwner.current = userId;
+				restoredDraftValue.current = draft;
+			}
+		} else if (restoredDraftOwner.current === null && userId !== null) {
+			restoredDraftOwner.current = userId;
+			setInput((current) => current || restoredDraftValue.current);
+		} else if (
+			restoredDraftOwner.current !== undefined &&
+			restoredDraftOwner.current !== userId
+		) {
+			setInput("");
+			restoredDraftOwner.current = undefined;
+			restoredDraftValue.current = "";
+		}
+	}, [
+		conversationHistory.hydrated,
+		isReady,
+		modelHydrated,
+		model,
+		user?.id,
+		setInput,
+	]);
+	useEffect(
+		() =>
+			registerChatSignInDraft(
+				() => ({ model, input, userId: user?.id ?? null }),
+				conversationHistory.clearActiveDraftForHandoff,
+			),
+		[conversationHistory, model, input, user?.id],
+	);
 
 	const {
 		scrollContainerRef,
@@ -329,7 +460,20 @@ function ShellContent({
 		jumpToBottom,
 	} = useChatScroll(loading, messages, deferredMessages);
 
+	const interactiveContext = useMemo(() => uiMode ? JSON.stringify({
+		selectedModel: model,
+		requestSettings: { temperature, topP, maxTokens },
+		catalogStatus,
+		availableModels: liveModels.filter((item) => item.available !== false).map((item) => ({
+			id: item.id, name: item.name, freeInWebsiteChat: isFreeChatModel(item.id),
+		})),
+	}) : "", [uiMode, model, temperature, topP, maxTokens, catalogStatus, liveModels]);
+	const effectiveSystemPrompt = uiMode
+		? `${systemPrompt}${OPENUI_SYSTEM_SUFFIX}\nCurrent OMA context: ${interactiveContext}`
+		: systemPrompt;
+
 	const { sendMessage, abortRef } = useStreamingChat({
+		ownerKey: `${user?.id ?? "guest"}:${conversationHistory.activeThreadId}`,
 		messagesRef,
 		compareMessagesRef,
 		input,
@@ -340,7 +484,8 @@ function ShellContent({
 		setError,
 		setCompareError,
 		model,
-		systemPrompt: uiMode ? `${systemPrompt}${A2UI_SYSTEM_SUFFIX}` : systemPrompt,
+		systemPrompt: effectiveSystemPrompt,
+		responseFormat: uiMode ? "openui" : "text",
 		compareMode,
 		compareModel,
 		setCompareMessages,
@@ -379,56 +524,76 @@ function ShellContent({
 		}
 		return allowGuestSend();
 	}, [isReady, isModelUnavailable, setError, model, compareMode, compareModel, isAuthenticated, isLowBalance, allowGuestSend]);
-	const gatedSend = useCallback(async (prompt?: string) => {
+	const gatedSend = useCallback(async (prompt?: string, options?: SendMessageOptions) => {
 		if (!checkSendAccess()) {
 			if (prompt) setInput(prompt);
+			if (options?.throwOnError) throw new Error("The follow-up could not be sent. Resolve the chat access notice and try again.");
 			return;
 		}
-		await sendMessage(prompt);
-		void refreshBalance();
-	}, [checkSendAccess, setInput, sendMessage, refreshBalance]);
+		try {
+			await sendMessage(prompt, options);
+		} finally {
+			if (isAuthenticated) void refreshBalance();
+		}
+	}, [checkSendAccess, setInput, sendMessage, refreshBalance, isAuthenticated]);
 
 	const gatedSendRef = useRef(gatedSend);
 	useEffect(() => {
 		gatedSendRef.current = gatedSend;
 	}, [gatedSend]);
 
+	const handleOpenUIAction = useCallback<OpenUIActionHandler>(async (action) => {
+		if (!isReady || !conversationHistory.hydrated) throw new Error("Chat is still loading. Try again in a moment.");
+		if (loading) throw new Error("Wait for the current response before using this action.");
+		if (action.type === "followup") {
+			await gatedSendRef.current(action.prompt, { throwOnError: true });
+			return;
+		}
+		const { model: targetModel, ...parameters } = action.settings;
+		if (targetModel) {
+			if (catalogStatus !== "live" || !availableModelIds.includes(targetModel)) {
+				throw new Error("That model is not currently available. Choose a model from the live catalog.");
+			}
+			if (!isAuthenticated && !isFreeChatModel(targetModel)) {
+				throw new Error("Sign in to select this model, or choose a free chat model.");
+			}
+		}
+		if (Object.keys(parameters).length > 0 && !applyChatParams(parameters)) {
+			throw new Error("Could not save these settings in your browser. Your settings were not changed.");
+		}
+		if (targetModel) setModel(targetModel);
+	}, [isReady, conversationHistory.hydrated, loading, catalogStatus, availableModelIds, isAuthenticated, applyChatParams, setModel]);
+
 	const stopGeneration = useCallback(() => {
 		abortRef.current?.abort();
 	}, [abortRef]);
 
 	const clearChat = useCallback(() => {
-		// Guard accidental wipes — export is one click away if needed.
+		if (loading) return;
 		const hasContent =
 			messages.length > 0 || compareMessages.length > 0;
 		if (hasContent) {
 			const ok =
 				typeof window !== "undefined" &&
 				window.confirm(
-					"Clear this conversation? Local history in this browser will be removed.",
+					"Clear this conversation? Its messages in this browser will be removed.",
 				);
 			if (!ok) return;
 		}
-		setMessages([]);
+		if (!conversationHistory.clearActiveThread()) return;
 		setCompareMessages([]);
 		setError(null);
 		setCompareError(null);
-		try {
-			localStorage.removeItem(scopedStorageKey);
-			// WEB preference intentionally kept — users expect toggle to stick.
-		} catch {
-			/* private mode */
-		}
 		toast.success("Conversation cleared");
 		setTimeout(() => inputRef.current?.focus(), 100);
 	}, [
-		scopedStorageKey,
+		conversationHistory,
 		setError,
 		setCompareError,
 		setCompareMessages,
-		setMessages,
 		messages.length,
 		compareMessages.length,
+		loading,
 		toast,
 	]);
 
@@ -443,28 +608,23 @@ function ShellContent({
 
 	/**
 	 * Regenerate the last assistant response (ChatGPT / Claude-style Retry).
-	 * Drops the trailing assistant turn (and its paired user prompt if present),
-	 * then re-sends the user prompt so history stays consistent.
+	 * Drops the latest shared user turn and both models' responses to it, then
+	 * re-sends that prompt so the primary and comparison histories stay aligned.
 	 */
 	const handleRegenerate = useCallback(() => {
 		if (loading || !checkSendAccess()) return;
-		const current = messagesRef.current;
-		const lastAss = current.findLast((m) => m.role === "assistant");
-		if (!lastAss) {
-			const lastUser = current.findLast((m) => m.role === "user");
-			if (lastUser) void gatedSendRef.current(lastUser.content);
-			return;
-		}
-		const assIdx = current.lastIndexOf(lastAss);
-		const pairUser = current[assIdx - 1];
-		if (!pairUser || pairUser.role !== "user") return;
+		const plan = buildRegeneratePlan(
+			messagesRef.current,
+			compareMessagesRef.current,
+		);
+		if (!plan) return;
 
-		// Truncate up to but EXCLUDING the matched user prompt (we re-send it).
-		const truncated = current.slice(0, assIdx - 1);
-		setMessages(truncated);
-		messagesRef.current = truncated;
-		void gatedSendRef.current(pairUser.content);
-	}, [loading, setMessages, checkSendAccess]);
+		setMessages(plan.primaryMessages);
+		messagesRef.current = plan.primaryMessages;
+		setCompareMessages(plan.compareMessages);
+		compareMessagesRef.current = plan.compareMessages;
+		void gatedSendRef.current(plan.prompt);
+	}, [loading, setMessages, setCompareMessages, checkSendAccess]);
 
 	const exportConversation = useCallback((format: "json" | "txt" | "md" = "json") => {
 		try {
@@ -473,26 +633,88 @@ function ShellContent({
 			log.warn("Failed to export conversation", err);
 		}
 	}, [messages, conversationId]);
+	const exportHistoryThread = useCallback((threadId: string) => {
+		const thread = conversationHistory.threads.find((item) => item.id === threadId);
+		if (!thread) return;
+		try {
+			exportChatHistory(thread.messages, "json", thread.id);
+		} catch (err) {
+			log.warn("Failed to export conversation", err);
+		}
+	}, [conversationHistory.threads]);
 
 	const importConversation = useCallback((importedMessages: Message[]) => {
-		setMessages(importedMessages);
-		setConversationId(genConversationId());
-		toast.success("Conversation imported successfully");
-	}, [setMessages, setConversationId]);
-
-	const newConversation = useCallback(() => {
-		setMessages([]);
+		if (loading || !conversationHistory.importThread(importedMessages)) return;
 		setCompareMessages([]);
 		setError(null);
 		setCompareError(null);
 		setConversationId(genConversationId());
-		setTimeout(() => inputRef.current?.focus(), 100);
+		toast.success("Conversation imported successfully");
 	}, [
-		setMessages,
+		conversationHistory,
+		loading,
 		setCompareMessages,
 		setError,
 		setCompareError,
 		setConversationId,
+		toast,
+	]);
+
+	const newConversation = useCallback(() => {
+		if (loading || !conversationHistory.newThread()) return;
+		setCompareMessages([]);
+		setError(null);
+		setCompareError(null);
+		setConversationId(genConversationId());
+		if (window.matchMedia?.("(max-width: 1023px)").matches) {
+			setHistoryOpen(false);
+		}
+		setTimeout(() => inputRef.current?.focus(), 100);
+	}, [
+		conversationHistory,
+		loading,
+		setCompareMessages,
+		setError,
+		setCompareError,
+		setConversationId,
+	]);
+
+	const selectHistoryThread = useCallback((threadId: string) => {
+		if (loading) return;
+		const mobile = window.matchMedia?.("(max-width: 1023px)").matches;
+		if (threadId === conversationHistory.activeThreadId) {
+			if (mobile) setHistoryOpen(false);
+			return;
+		}
+		if (!conversationHistory.selectThread(threadId)) return;
+		setCompareMessages([]);
+		setError(null);
+		setCompareError(null);
+		setConversationId(threadId);
+		if (mobile) setHistoryOpen(false);
+	}, [
+		conversationHistory,
+		loading,
+		setCompareMessages,
+		setError,
+		setCompareError,
+	]);
+
+	const deleteHistoryThread = useCallback((threadId: string) => {
+		if (loading) return;
+		const deletingActive = threadId === conversationHistory.activeThreadId;
+		if (!conversationHistory.deleteThread(threadId)) return;
+		if (deletingActive) {
+			setCompareMessages([]);
+			setError(null);
+			setCompareError(null);
+		}
+	}, [
+		conversationHistory,
+		loading,
+		setCompareMessages,
+		setError,
+		setCompareError,
 	]);
 
 	useChatShortcuts({
@@ -519,8 +741,25 @@ function ShellContent({
 		setConversationId,
 		setShareStatus,
 	});
+	const historyPanelProps: ConversationHistoryProps = {
+		threads: conversationHistory.threads,
+		activeThreadId: conversationHistory.activeThreadId,
+		disabled: loading,
+		persistenceStatus: conversationHistory.persistenceStatus,
+		persistenceError: conversationHistory.persistenceError,
+		onNew: newConversation,
+		onSelect: selectHistoryThread,
+		onRename: (threadId, title) => {
+			if (!loading) conversationHistory.renameThread(threadId, title);
+		},
+		onTogglePinned: (threadId) => {
+			if (!loading) conversationHistory.togglePinned(threadId);
+		},
+		onDelete: deleteHistoryThread,
+		onExport: exportHistoryThread,
+	};
 
-		return (
+	return (
 		<div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-void font-sans text-text">
 			<h1 className="sr-only">
 				{isChat
@@ -549,9 +788,22 @@ function ShellContent({
 				messagesLength={messages.length}
 				deferredMessages={deferredMessages}
 				setShortcutsOpen={setShortcutsOpen}
+				loading={loading}
+				historyOpen={historyOpen}
+				onToggleHistory={() => {
+					if (!historyOpen) {
+						historyReturnFocusRef.current = document.activeElement as HTMLElement | null;
+					}
+					setHistoryOpen((open) => !open);
+				}}
 			/>
 
 			<div className="flex-1 flex overflow-hidden bg-[color-mix(in_srgb,var(--color-surface)_40%,transparent)]">
+				{historyOpen && (
+					<div className="hidden w-72 shrink-0 lg:block">
+						<ConversationHistory {...historyPanelProps} />
+					</div>
+				)}
 				<section
 					aria-label="Chat messages"
 					className="flex-1 flex flex-col min-w-0 relative"
@@ -599,6 +851,7 @@ function ShellContent({
 						onA2UIAction={(event) => {
 							void gatedSendRef.current(formatA2UIAction(event));
 						}}
+						onOpenUIAction={handleOpenUIAction}
 						isAuthenticated={isAuthenticated}
 						emptyStateProps={{
 							modelName,
@@ -644,16 +897,14 @@ function ShellContent({
 									onStop={stopGeneration}
 									loading={loading}
 									textareaRef={inputRef}
-									disabled={!isReady || isLowBalance}
-										disabledReason={!isReady ? "Checking your session…" : "Your credit balance is too low — top up to send"}
+									disabled={!isReady || !conversationHistory.hydrated || isLowBalance}
+									disabledReason={!isReady || !conversationHistory.hydrated ? "Restoring your chats…" : "Your credit balance is too low — top up to send"}
 									modelUnavailable={isModelUnavailable}
 									webSearchEnabled={webSearchEnabled}
-									setWebSearchEnabled={
-										showComposerAdvancedTools ? setWebSearchEnabled : undefined
-									}
+									setWebSearchEnabled={setWebSearchEnabled}
 									uiMode={uiMode}
-									setUiMode={showComposerAdvancedTools ? setUiMode : undefined}
-									showAdvancedTools={showComposerAdvancedTools}
+									setUiMode={setUiMode}
+									showAdvancedTools
 								/>
 
 								<div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-1 sm:mt-2.5 sm:px-2">
@@ -710,6 +961,35 @@ function ShellContent({
 				/>
 			</div>
 
+			{historyOpen && (
+				<div className="fixed inset-0 z-50 lg:hidden">
+					<button
+						type="button"
+						aria-label="Close conversation history"
+						className="absolute inset-0 bg-black/65 backdrop-blur-sm"
+						onClick={() => setHistoryOpen(false)}
+					/>
+					<div
+						ref={historyDrawerRef}
+						id="conversation-history-drawer"
+						role="dialog"
+						aria-modal="true"
+						aria-label="Conversation history"
+						className="relative h-full w-[min(88vw,22rem)] shadow-2xl shadow-black/60"
+					>
+						<button
+							type="button"
+							onClick={() => setHistoryOpen(false)}
+							aria-label="Close conversation history"
+							className="absolute right-2 top-2 z-10 rounded-md p-2 text-text-muted hover:bg-white/5 hover:text-text"
+						>
+							<X className="h-4 w-4" aria-hidden="true" />
+						</button>
+						<ConversationHistory {...historyPanelProps} autoFocusSearch />
+					</div>
+				</div>
+			)}
+
 			<LazyKeyboardShortcutsModal
 				open={shortcutsOpen}
 				onClose={() => setShortcutsOpen(false)}
@@ -730,6 +1010,9 @@ function ShellContent({
 				}}
 				loading={loading}
 				compareMessages={compareMessages}
+				onRegenerate={handleRegenerate}
+				onOpenUIAction={handleOpenUIAction}
+				onA2UIAction={(event) => { void gatedSendRef.current(formatA2UIAction(event)); }}
 				error={compareError}
 				onDismissError={() => setCompareError(null)}
 			/>

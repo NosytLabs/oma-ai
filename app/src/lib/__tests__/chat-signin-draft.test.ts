@@ -1,7 +1,13 @@
-import { beforeEach, describe, expect, it } from "vitest";
-import { consumeChatSignInDraft, registerChatSignInDraft, saveChatDraftForSignIn } from "../chat-signin-draft";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	consumeChatSignInDraft,
+	getActiveChatSignInModel,
+	registerChatSignInDraft,
+	saveChatDraftForSignIn,
+} from "../chat-signin-draft";
 
 beforeEach(() => { sessionStorage.clear(); });
+afterEach(() => { vi.restoreAllMocks(); });
 
 describe("sign-in draft handoff", () => {
 	it("does not restore an existing account's draft into another account", () => {
@@ -31,5 +37,37 @@ describe("sign-in draft handoff", () => {
 		sessionStorage.setItem("oma_chat_signin_draft", "invalid json");
 		expect(consumeChatSignInDraft("claude-opus-5", "account-a")).toBeNull();
 		expect(sessionStorage.getItem("oma_chat_signin_draft")).toBeNull();
+	});
+
+	it("keeps model inspection pure and clears only after a saved handoff", () => {
+		const onSaved = vi.fn();
+		const unregister = registerChatSignInDraft(
+			() => ({ model: "claude-opus-5", input: "Keep me", userId: null }),
+			onSaved,
+		);
+
+		expect(getActiveChatSignInModel()).toBe("claude-opus-5");
+		expect(getActiveChatSignInModel()).toBe("claude-opus-5");
+		expect(onSaved).not.toHaveBeenCalled();
+
+		saveChatDraftForSignIn();
+		expect(onSaved).toHaveBeenCalledTimes(1);
+		expect(sessionStorage.getItem("oma_chat_signin_draft")).toContain("Keep me");
+		unregister();
+	});
+
+	it("preserves the source draft when durable handoff storage fails", () => {
+		const onSaved = vi.fn();
+		const unregister = registerChatSignInDraft(
+			() => ({ model: "claude-opus-5", input: "Still local", userId: null }),
+			onSaved,
+		);
+		vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+			throw new Error("Storage blocked");
+		});
+
+		saveChatDraftForSignIn();
+		expect(onSaved).not.toHaveBeenCalled();
+		unregister();
 	});
 });

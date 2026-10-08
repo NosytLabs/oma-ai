@@ -163,7 +163,11 @@ export async function request<T>(
 		path: string,
 		opts: RequestOptions = {},
 ): Promise<T> {
-		const { responseType = "json", ...fetchOpts } = opts;
+		const {
+			responseType = "json",
+			signal: callerSignal,
+			...fetchOpts
+		} = opts;
 		const headers: Record<string, string> = {
 				"Content-Type": "application/json",
 				Accept: "application/json",
@@ -171,6 +175,16 @@ export async function request<T>(
 		};
 
 		const controller = new AbortController();
+		const abortFromCaller = () => {
+			if (controller.signal.aborted) return;
+			if (callerSignal?.reason !== undefined) {
+				controller.abort(callerSignal.reason);
+			} else {
+				controller.abort();
+			}
+		};
+		if (callerSignal?.aborted) abortFromCaller();
+		else callerSignal?.addEventListener("abort", abortFromCaller, { once: true });
 		const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
 		try {
@@ -213,11 +227,13 @@ export async function request<T>(
 				if (responseType === "blob") return (await res.blob()) as T;
 				return (await res.json()) as T;
 		} catch (error) {
-				clearTimeout(timeoutId);
 				if (error instanceof TypeError && error.message.includes("fetch")) {
 						throw new BackendUnavailableError();
 				}
 				if (error instanceof ApiError) throw error;
 				throw error;
+		} finally {
+				clearTimeout(timeoutId);
+				callerSignal?.removeEventListener("abort", abortFromCaller);
 		}
 }

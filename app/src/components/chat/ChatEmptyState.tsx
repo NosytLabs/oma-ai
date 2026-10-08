@@ -20,16 +20,11 @@ export interface EmptyStateProps {
 	onPickPrompt?: (prompt: string) => void;
 }
 
-/**
- * Starter prompts double as the empty state's layout ballast. This surface
- * previously reserved 58-62vh around a short welcome block, leaving a large
- * void between the model selector and the composer; these fill it with
- * something a visitor can act on instead of empty space.
- */
+/** Starter prompts invite everyday tasks without sending a request automatically. */
 const STARTER_PROMPTS = [
-	"Explain the difference between tokens and credits.",
-	"Write a Python script that calls the OMA chat completions API.",
-	"Summarise what x402 settlement does and when to use it.",
+	"Help me debug some code. Ask me for the code and the error first.",
+	"Compare models for my next project. Ask what I want to build.",
+	"Turn an idea into a practical plan. Ask me about my goal and timeline.",
 ] as const;
 
 export function ChatEmptyState({

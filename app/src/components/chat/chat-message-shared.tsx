@@ -35,6 +35,8 @@ export interface Message {
 	id?: string;
 	role: "user" | "assistant" | "system";
 	content: string;
+	/** Rendering contract selected when the assistant placeholder is created. */
+	format?: "text" | "openui" | "a2ui";
 	timestamp: number;
 	tokens?: number;
 	latency?: number;
