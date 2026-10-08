@@ -1,50 +1,27 @@
-import { act, renderHook, waitFor } from "@testing-library/react";
-import { useRef, useState } from "react";
+import { renderHook, waitFor } from "@testing-library/react";
+import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Message } from "@/components/chat";
-import { useChatPersistence } from "../useChatPersistence";
-
-const LEGACY_KEY = "oma_chat_conversation_test_clear";
+import { useSystemPromptPersistence } from "../useSystemPromptPersistence";
 
 function useHarness(systemPromptKey: string) {
-	const [messages, setMessages] = useState<Message[]>([]);
 	const [systemPrompt, setSystemPrompt] = useState("");
 	const [systemPromptOpen, setSystemPromptOpen] = useState(false);
-	const messagesRef = useRef<Message[]>([]);
-	useChatPersistence({
-		messages,
+	useSystemPromptPersistence({
 		systemPrompt,
 		setSystemPrompt,
 		setSystemPromptOpen,
-		messagesRef,
 		systemPromptKey,
 	});
 	return {
-		messages,
-		setMessages,
-		messagesRef,
 		systemPrompt,
 		setSystemPrompt,
 		systemPromptOpen,
 	};
 }
 
-describe("useChatPersistence responsibilities", () => {
+describe("useSystemPromptPersistence responsibilities", () => {
 	beforeEach(() => localStorage.clear());
 	afterEach(() => localStorage.clear());
-
-	it("mirrors messages for streaming without deleting the legacy history key", () => {
-		localStorage.setItem(LEGACY_KEY, "keep-for-migration");
-		const { result } = renderHook(() => useHarness("prompt"));
-		const next: Message[] = [
-			{ role: "user", content: "hello", timestamp: 1 },
-		];
-
-		act(() => result.current.setMessages(next));
-
-		expect(result.current.messagesRef.current).toBe(next);
-		expect(localStorage.getItem(LEGACY_KEY)).toBe("keep-for-migration");
-	});
 
 	it("hydrates the next identity before allowing prompt writes to its key", async () => {
 		localStorage.setItem("prompt:alice", "Alice instructions");

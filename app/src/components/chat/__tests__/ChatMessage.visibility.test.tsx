@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { ChatMessageed } from "../ChatMessage";
+import { ChatMessage } from "../ChatMessage";
 import type { Message } from "../chat-message-shared";
 
 vi.mock("thinking-orbs", () => ({
@@ -14,10 +14,10 @@ const assistantMessage: Message = {
 	timestamp: Date.now(),
 };
 
-describe("ChatMessageed", () => {
+describe("ChatMessage", () => {
 	it("renders completed assistant messages at full visibility", () => {
 		render(
-			<ChatMessageed
+			<ChatMessage
 				msg={assistantMessage}
 				loading={false}
 				onCopy={vi.fn()}
@@ -32,9 +32,14 @@ describe("ChatMessageed", () => {
 	it("keeps the standard message frame around structured assistant content", () => {
 		const onRegenerate = vi.fn();
 		render(
-			<ChatMessageed
+			<ChatMessage
 				msg={{
 					...assistantMessage,
+					content: [
+						'root = Card("Interactive UI", [body])',
+						'body = Text("Catalog-backed content")',
+					].join("\n"),
+					format: "openui",
 					model: "claude-opus-5",
 					outputTokens: 42,
 					searchResults: [
@@ -49,11 +54,11 @@ describe("ChatMessageed", () => {
 				onCopy={vi.fn()}
 				onRegenerate={onRegenerate}
 				isLastAssistant
-				assistantContent={<div data-testid="structured-content">Interactive UI</div>}
 			/>,
 		);
 
-		expect(screen.getByTestId("structured-content")).toBeVisible();
+		expect(screen.getByText("Interactive UI")).toBeVisible();
+		expect(screen.getByText("Catalog-backed content")).toBeVisible();
 		expect(screen.getByText("1 SOURCE")).toBeVisible();
 		expect(screen.getByText("TK:42")).toBeVisible();
 		expect(screen.getByRole("button", { name: "Copy message" })).toBeVisible();
@@ -64,7 +69,7 @@ describe("ChatMessageed", () => {
 
 	it("renders one code frame per fence while keeping inline code inline", () => {
 		const { container } = render(
-			<ChatMessageed
+			<ChatMessage
 				msg={{
 					...assistantMessage,
 					content: [

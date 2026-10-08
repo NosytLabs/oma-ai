@@ -10,7 +10,8 @@ send inference through a separate hosted UI gateway.
 |---------|--------|
 | Access gates, toolbar, parameters, history and action integration | `app/src/app/chat/_components/ChatPlaygroundShell.tsx` |
 | Account model preferences and atomic parameter updates | `app/src/app/chat/_hooks/usePlaygroundState.ts` |
-| Conversation lifecycle and persistence | `app/src/app/chat/_hooks/useConversationHistory.ts` |
+| Conversation lifecycle, current-message ref and persistence | `app/src/app/chat/_hooks/useConversationHistory.ts` |
+| Account system-prompt persistence | `app/src/app/chat/_hooks/useSystemPromptPersistence.ts` |
 | Storage schema, validation and legacy migration | `app/src/lib/chat-storage.ts` and `chat-message-validation.ts` |
 | Request ownership, search, cancellation and streaming | `app/src/app/chat/_hooks/useStreamingChat.ts` |
 | Shared message frame, Markdown, reasoning, sources and metadata | `app/src/components/chat/ChatMessage.tsx` |
@@ -101,9 +102,10 @@ pnpm validate
 pnpm --filter app run test:e2e
 ```
 
-The browser suite uses deterministic API fixtures for chat, model availability,
+The chat browser specs use deterministic API fixtures for chat, model availability,
 quota and authentication. It checks responsive layout, toolbar access, model
 selection, response/Stop behavior, generated settings and history persistence.
 The optional `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` points to an existing browser
 when Playwright's managed Chromium is unavailable. Provider availability and
-paid-account behavior still require deployment-specific verification.
+paid-account behavior still require deployment-specific verification. See the
+[browser guide](../app/e2e/README.md) for focused commands and server setup.

@@ -150,6 +150,13 @@ export function useConversationHistory({
 	modelRef.current = model;
 	latestSessionRef.current = session;
 
+	// Keep imperative consumers such as streaming and regeneration aligned with
+	// ordinary message updates. Thread applications also assign synchronously
+	// below so a switch cannot expose the previous thread before this effect runs.
+	useEffect(() => {
+		messagesRef.current = messages;
+	}, [messages, messagesRef]);
+
 	const draftForPersistence = useCallback(
 		(history: ConversationHistoryState, currentInput: string) => {
 			const suppressed = suppressedDraftRef.current;

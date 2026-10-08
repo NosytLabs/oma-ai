@@ -4,20 +4,16 @@ import {
 	useEffect,
 	useState,
 	type Dispatch,
-	type RefObject,
 	type SetStateAction,
 } from "react";
-import type { Message } from "@/components/chat";
 import { log } from "@/lib/logger";
 
 const DEFAULT_SYSTEM_PROMPT_KEY = "oma_chat_system_prompt";
 
-interface UseChatPersistenceOptions {
-	messages: Message[];
+interface UseSystemPromptPersistenceOptions {
 	systemPrompt: string;
 	setSystemPrompt: Dispatch<SetStateAction<string>>;
 	setSystemPromptOpen: Dispatch<SetStateAction<boolean>>;
-	messagesRef: RefObject<Message[]>;
 	systemPromptKey?: string;
 	/** Skip hydration and writes until the authentication identity is known. */
 	enabled?: boolean;
@@ -28,25 +24,15 @@ interface PromptSession {
 	canPersist: boolean;
 }
 
-/**
-	* Persists the account-scoped system prompt and keeps the streaming message
-	* ref current. Conversation messages are owned solely by
-	* `useConversationHistory`, which prevents competing storage effects.
-	*/
-export function useChatPersistence({
-	messages,
+/** Persists system instructions in the current account's storage bucket. */
+export function useSystemPromptPersistence({
 	systemPrompt,
 	setSystemPrompt,
 	setSystemPromptOpen,
-	messagesRef,
 	systemPromptKey = DEFAULT_SYSTEM_PROMPT_KEY,
 	enabled = true,
-}: UseChatPersistenceOptions): void {
+}: UseSystemPromptPersistenceOptions): void {
 	const [promptSession, setPromptSession] = useState<PromptSession | null>(null);
-
-	useEffect(() => {
-		messagesRef.current = messages;
-	}, [messages, messagesRef]);
 
 	useEffect(() => {
 		if (!enabled || typeof localStorage === "undefined") return;

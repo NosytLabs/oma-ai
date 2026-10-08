@@ -4,8 +4,8 @@ Canonical deployment facts for OMA-AI. Other docs link here rather than
 restating them — this file is the single source of truth so a deploy
 instruction can't drift between documents.
 
-Last verified against live infrastructure: 2026-09-28. Current dependency
-outages and verification limits are recorded in [deployment health](deployment-health.md).
+Production topology was verified on 2026-10-08. See
+[deployment verification](deployment-health.md) for release checks and failure diagnosis.
 
 ## Canonical host
 
@@ -58,7 +58,7 @@ A Vercel deploy ships the **frontend only**. It does not pick up server-side
 changes — those require a Neon deploy (see below).
 
 The browser reaches the API same-origin at `https://www.oma-ai.com/api/*`,
-which App Router handlers under `app/api/**` proxy to the Neon endpoint.
+which App Router handlers under `app/src/app/api/**` proxy to the Neon endpoint.
 These handlers preserve Better Auth session cookies and authenticate the
 Vercel-to-Neon hop; they do not translate session cookies into bearer tokens.
 

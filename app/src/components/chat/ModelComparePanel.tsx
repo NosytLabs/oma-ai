@@ -6,12 +6,9 @@ import { Columns2, Loader2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { Message } from "./chat-message-shared";
 import { useSharedLiveModels } from "./chat-message-shared";
-import { ChatMessageed } from "./ChatMessage";
-import { A2UIRenderer, type A2UIActionEvent } from "./A2UIRenderer";
-import { OpenUIRenderer } from "./OpenUIRenderer";
+import { ChatMessage } from "./ChatMessage";
+import type { A2UIActionEvent } from "./A2UIRenderer";
 import { ModelSelector } from "./ModelSelector";
-import { classifyMessage } from "@/lib/openui-message-format";
-import { isValidOpenUIResponse } from "@/lib/openui";
 import type { OpenUIActionHandler } from "@/lib/openui-actions";
 
 interface ModelComparePanelProps {
@@ -155,16 +152,8 @@ export function ModelComparePanel({
 										msg.role === "assistant" &&
 										index === compareMessages.length - 1;
 									const isStreaming = loading && isLastAssistant;
-									const classification =
-										msg.role === "assistant"
-											? classifyMessage(msg.content, {
-													format: msg.format,
-													isStreaming,
-													isValidOpenUI: isValidOpenUIResponse,
-												})
-											: ({ kind: "plain" } as const);
 									return (
-										<ChatMessageed
+										<ChatMessage
 											key={msg.id || `${msg.role}-${msg.timestamp}`}
 											msg={
 												msg.role === "assistant" && !msg.model
@@ -172,27 +161,14 @@ export function ModelComparePanel({
 													: msg
 											}
 											loading={isStreaming}
-											onCopy={() => undefined}
 											isLastAssistant={isLastAssistant}
 											onRegenerate={
 												isLastAssistant && !loading
 													? onRegenerate
 													: undefined
 											}
-											assistantContent={
-												classification.kind === "a2ui" ? (
-													<A2UIRenderer
-														payload={classification.payload}
-														onAction={onA2UIAction}
-													/>
-												) : classification.kind === "openui" ? (
-													<OpenUIRenderer
-														response={classification.response}
-														isStreaming={isStreaming}
-														onAction={onOpenUIAction}
-													/>
-												) : undefined
-											}
+											onA2UIAction={onA2UIAction}
+											onOpenUIAction={onOpenUIAction}
 										/>
 									);
 								})}

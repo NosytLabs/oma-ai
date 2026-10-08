@@ -20,24 +20,24 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageShell } from "@/app/_components/page-shell";
 
+const PRIVACY_DESCRIPTION =
+	"The OMA gateway does not save prompts or responses. Website chat history stays in your browser; inference-provider policies vary.";
+
 export const metadata: Metadata = {
 	title: "Privacy — OMA AI Gateway",
-	description:
-		"OMA minimizes stored data. OMA does not persist prompt or completion content; inference providers process request content transiently to generate responses.",
+	description: PRIVACY_DESCRIPTION,
 	alternates: { canonical: "/privacy" },
 	openGraph: {
 		locale: "en_US",
 		title: "Privacy · OMA",
-		description:
-			"OMA minimizes stored data. OMA does not persist prompt or completion content; inference providers process request content transiently to generate responses.",
+		description: PRIVACY_DESCRIPTION,
 		url: "/privacy",
 		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA Privacy" }],
 	},
 	twitter: {
 		card: "summary_large_image",
 		title: "Privacy · OMA",
-		description:
-			"Minimal stored data. OMA does not persist prompt or completion content; inference providers process requests transiently.",
+		description: PRIVACY_DESCRIPTION,
 		images: ["/og-image.png"],
 	},
 	robots: { index: true, follow: true },
@@ -203,8 +203,9 @@ export default function PrivacyPage() {
 										on-chain deposit or settlement identifiers.
 									</p>
 									<p className="mt-3 text-[13.5px] sm:text-[14px] text-text-secondary leading-relaxed">
-										We do not sell personal information. OMA does not persist
-										prompt or completion content. Request content is forwarded
+										We do not sell personal information. The OMA gateway does not
+										save prompt or completion content. Website conversations and
+										drafts are saved in this browser. Request content is forwarded
 										transiently to the selected inference provider so it can
 										generate a response; provider handling is described below.
 										You can export or delete the account data OMA stores from
@@ -312,18 +313,18 @@ export default function PrivacyPage() {
 								<div className="mb-3 flex items-center gap-2">
 									<CircleX className="h-4 w-4 text-error" aria-hidden="true" />
 									<h3 className="text-[13px] font-semibold text-text-bright">
-										What OMA does not persist
+										What the OMA gateway does not persist
 									</h3>
 								</div>
 								<ul className="space-y-3">
 									<DataPoint
 										term="Prompt text"
-										detail="Inference runs in memory; content is not persisted."
+										detail="Request content is forwarded for inference without being saved by the gateway."
 										tone="warning"
 									/>
 									<DataPoint
 										term="Completion text"
-										detail="Model output is streamed to you and discarded."
+										detail="Model output is streamed to you without being saved by the gateway. Website chat keeps a local copy in your browser."
 										tone="warning"
 									/>
 									<DataPoint
@@ -430,12 +431,12 @@ export default function PrivacyPage() {
 								<ul className="space-y-3">
 									<DataPoint
 										term="Prompt text"
-										detail="The body of your request is never stored."
+										detail="The gateway does not include request content in usage logs."
 										tone="warning"
 									/>
 									<DataPoint
 										term="Completion text"
-										detail="The model's response is never stored."
+										detail="The gateway does not include response content in usage logs."
 										tone="warning"
 									/>
 									<DataPoint
@@ -464,6 +465,15 @@ export default function PrivacyPage() {
 							title="Retention"
 							meta="How long we keep things"
 						/>
+
+						<p className="mb-5 max-w-2xl text-[13px] leading-relaxed text-text-secondary sm:text-sm">
+							Website chat saves conversations, drafts, and preferences in this
+							browser, with separate histories for guests and each signed-in
+							account. History does not sync between devices. Manage, export,
+							or delete threads from Chat history. Clear this site&apos;s browser
+							data to remove all local copies and preferences. Account data
+							exports and deletion apply to the server records listed below.
+						</p>
 
 						<ul className="border border-border bg-surface divide-y divide-border">
 							{[

@@ -1,24 +1,5 @@
 "use client";
 
-/**
-	* CHAT MESSAGE REDESIGN — Frontend-Design Skill Application
-	*
-	* Design Direction: "Terminal Noir" — A cinematic take on terminal aesthetics.
-	* Think: Blade Runner meets a high-end code editor. Dark, atmospheric,
-	* with moments of emerald accent glow that feel earned, not decorative.
-	*
-	* Typography: JetBrains Mono (code/labels) + DM Sans (body prose)
-	* — DM Sans is geometric with soft ink traps, avoiding the coldness
-	* of Inter while staying clean. JetBrains Mono for all code/data.
-	*
-	* Key Principles Applied:
-	* - Asymmetric layout: user messages shift right with a subtle skew
-	* - Depth through layered shadows and ambient glow on assistant side
-	* - Staggered entrance animations for message groups
-	* - Atmospheric background with animated grain + subtle radial glow
-	* - Typography hierarchy: display → body → micro-copy
-	*/
-
 import {
 	AnimatePresence,
 	m,
@@ -64,8 +45,13 @@ import {
 	type Message,
 	type SearchResult,
 } from "./chat-message-shared";
+import { A2UIRenderer, type A2UIActionEvent } from "./A2UIRenderer";
+import { OpenUIRenderer } from "./OpenUIRenderer";
+import { classifyMessage } from "@/lib/openui-message-format";
+import { isValidOpenUIResponse } from "@/lib/openui";
+import type { OpenUIActionHandler } from "@/lib/openui-actions";
 
-export const TypingBubble = () => (
+const TypingBubble = () => (
 		<div className="flex h-6 items-center justify-center gap-1 rounded-full bg-accent/10 border border-accent/20 px-3 shadow-sm w-fit">
 				<m.div
 						className="h-1.5 w-1.5 rounded-full bg-accent"
@@ -85,26 +71,23 @@ export const TypingBubble = () => (
 		</div>
 );
 
-// ═══════════════════════════════════════════════════════════════════
-// REDESIGNED ChatMessage COMPONENT
-// ═══════════════════════════════════════════════════════════════════
-
-export const ChatMessageed = memo(function ChatMessageed({
+export const ChatMessage = memo(function ChatMessage({
 		msg,
 		loading,
 		onCopy,
 		onRegenerate,
 		isLastAssistant,
-		assistantContent,
+		onA2UIAction,
+		onOpenUIAction,
 }: {
 		msg: Message;
 		loading: boolean;
-		onCopy: (content: string) => void;
+		onCopy?: (content: string) => void;
 		/** Regenerate this turn (last assistant only). */
 		onRegenerate?: () => void;
 		isLastAssistant?: boolean;
-	/** Structured assistant body rendered inside the standard message frame. */
-	assistantContent?: ReactNode;
+		onA2UIAction?: (event: A2UIActionEvent) => void;
+		onOpenUIAction?: OpenUIActionHandler;
 }) {
 		const isUser = msg.role === "user";
 		const [copied, setCopied] = useState(false);
@@ -135,7 +118,7 @@ export const ChatMessageed = memo(function ChatMessageed({
 						setCopied(true);
 						if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
 						copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
-						onCopy(msg.content);
+						onCopy?.(msg.content);
 				});
 		}, [msg.content, onCopy]);
 
@@ -146,6 +129,26 @@ export const ChatMessageed = memo(function ChatMessageed({
 
 		const isAssistant = msg.role === "assistant";
 		const isStreaming = loading && isAssistant;
+		const classification = isAssistant
+			? classifyMessage(msg.content, {
+					format: msg.format,
+					isStreaming,
+					isValidOpenUI: isValidOpenUIResponse,
+				})
+			: ({ kind: "plain" } as const);
+		const assistantContent =
+			classification.kind === "a2ui" ? (
+				<A2UIRenderer
+					payload={classification.payload}
+					onAction={onA2UIAction}
+				/>
+			) : classification.kind === "openui" ? (
+				<OpenUIRenderer
+					response={classification.response}
+					isStreaming={isStreaming}
+					onAction={onOpenUIAction}
+				/>
+			) : undefined;
 		const hasReasoning =
 				!isUser && !!msg.reasoning && msg.reasoning.trim().length > 0;
 		const waitingForFirstToken = isWaitingForFirstToken({
@@ -161,9 +164,18 @@ export const ChatMessageed = memo(function ChatMessageed({
 				reasoning: msg.reasoning,
 				userExpanded: reasoningExpanded,
 		});
+		if (
+			isAssistant &&
+			!isStreaming &&
+			!msg.content.trim() &&
+			!msg.reasoning?.trim()
+		) {
+			return null;
+		}
 
 		return (
 				<m.div
+						data-chat-message
 						layout="position"
 						initial={false}
 						exit={{

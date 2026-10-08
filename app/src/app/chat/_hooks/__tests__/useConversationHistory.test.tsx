@@ -39,6 +39,7 @@ function useHarness(
 	});
 	return {
 		...history,
+		messagesRef,
 		messages,
 		setMessages,
 		input,
@@ -101,6 +102,16 @@ describe("useConversationHistory", () => {
 		expect(result.current.messages).toEqual([message("First thread", 1)]);
 		expect(result.current.input).toBe("unfinished first draft");
 		expect(result.current.model).toBe("model-b");
+	});
+
+	it("keeps the imperative message ref current after ordinary updates", async () => {
+		const { result } = renderHook(() => useHarness(null));
+		await waitFor(() => expect(result.current.hydrated).toBe(true));
+		const next = [message("Current request context", 1)];
+
+		act(() => result.current.setMessages(next));
+
+		expect(result.current.messagesRef.current).toBe(next);
 	});
 
 	it("archives the live composer draft before React commits it", async () => {

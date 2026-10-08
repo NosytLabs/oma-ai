@@ -40,7 +40,7 @@ import { consumeChatSignInDraft, registerChatSignInDraft, saveChatDraftForSignIn
 import { buildLoginHref } from "@/lib/login-href";
 import { playgroundHrefForModel } from "@/lib/playground-href";
 import { GUEST_DAILY_LIMIT_DEFAULT } from "@/lib/guest-daily-quota";
-import { useChatPersistence } from "../_hooks/useChatPersistence";
+import { useSystemPromptPersistence } from "../_hooks/useSystemPromptPersistence";
 import { useConversationHistory } from "../_hooks/useConversationHistory";
 import { useChatScroll } from "../_hooks/useChatScroll";
 import { useChatShortcuts } from "../_hooks/useChatShortcuts";
@@ -198,11 +198,8 @@ function ShellContent({
 		};
 	}, [historyOpen]);
 
-	// BUG-D: A2UI uiMode was plain component state, so it reset to off on
-	// every reload and the user had to re-arm it each session. Persist the
-	// preference under a fixed key and restore it on mount. The lazy
-	// initializer guards SSR (no window) and the read is wrapped so private
-	// mode / corrupt storage can't break the page.
+	// Keep the Interactive preference across reloads; unavailable browser
+	// storage must not prevent the chat from opening.
 	const [uiMode, setUiModeState] = useState<boolean>(() => {
 		if (typeof window === "undefined") return false;
 		try {
@@ -386,12 +383,10 @@ function ShellContent({
 		setConversationId(storedCid);
 	}, [isChat, conversationIdKey]);
 
-	useChatPersistence({
-		messages,
+	useSystemPromptPersistence({
 		systemPrompt,
 		setSystemPrompt,
 		setSystemPromptOpen,
-		messagesRef,
 		systemPromptKey: scopedPromptKey,
 		enabled: isReady,
 	});
