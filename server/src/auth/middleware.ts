@@ -159,20 +159,26 @@ async function rejectIfSuspended(
 
 export async function bearerAuth(c: Context<OmaEnv>, next: Next) {
 		let rawKey: string | null = null;
+		let keySource: "authorization" | "x-api-key" | "cookie" | null = null;
 		const authHeader = c.req.header("Authorization");
 		if (authHeader && authHeader.startsWith("Bearer ")) {
 				rawKey = authHeader.slice(7);
+				keySource = "authorization";
 		} else {
 				// Anthropic SDK / Claude Code send `x-api-key: sk-…`
 				const xApiKey = c.req.header("x-api-key") ?? c.req.header("X-Api-Key");
 				if (xApiKey?.trim()) {
 						rawKey = xApiKey.trim();
+						keySource = "x-api-key";
 				} else {
 						const cookieHeader = c.req.header("Cookie") || "";
 						const match = cookieHeader.match(
 								/(?:^|;\s*)(?:__Host-)?oma_api_key=([^;]+)/,
 						);
-						if (match) rawKey = decodeURIComponent(match[1]);
+						if (match) {
+								rawKey = decodeURIComponent(match[1]);
+								keySource = "cookie";
+						}
 				}
 		}
 		if (!rawKey) {
@@ -216,6 +222,39 @@ export async function bearerAuth(c: Context<OmaEnv>, next: Next) {
 						},
 						401,
 				);
+		}
+
+		// The HttpOnly API-key cookie is a browser convenience layered on top
+		// of a Better Auth session. Bind it to the current session on every use
+		// so a delayed Account-A install response cannot authorize Account B.
+		// Explicit Authorization/x-api-key credentials remain standalone API
+		// authentication for CLI and agent callers.
+		if (keySource === "cookie") {
+				let session;
+				try {
+						const headers = new Headers();
+						for (const [key, value] of c.req.raw.headers) headers.set(key, value);
+						session = await auth.api.getSession({ headers });
+				} catch (err) {
+						logger.error(
+								{
+									err: err instanceof Error ? err.message : String(err),
+									type: "cookie_session_validation_error",
+								},
+								"[bearerAuth] failed to validate session for API-key cookie",
+						);
+				}
+				if (!session?.user || session.user.id !== apiKey.userId) {
+						return c.json(
+								{
+									error: {
+										message: "Invalid API key",
+										type: "authentication_error",
+									},
+								},
+								401,
+						);
+				}
 		}
 
 		// Check if owner is banned or suspended

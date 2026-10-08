@@ -66,38 +66,8 @@ const ChatPlaygroundShell = nextDynamic(
 
 export default function ChatPage() {
 	return (
-		// Bound the playground to the viewport instead of letting it grow.
-		// The root layout uses `min-h-dvh`, so `flex-1` here had no definite
-		// basis: the flex chain sized to content, the document grew past the
-		// viewport, and the composer's metadata row (remaining guest quota,
-		// token count, cost estimate) fell below the fold — by 19px on a
-		// 390x844 phone, 74px at 1440x900, and 142px at 1280x720. On a chat
-		// surface the input and its cost/quota readout must always be
-		// reachable without scrolling the page; only the message list
-		// should scroll.
-		//
-		// 57px is the Navbar height, measured identical at 390/768/1280/1440/
-		// 1920. e2e/chat-viewport.spec.ts asserts the composer's metadata
-		// stays on screen at each of those widths, so a Navbar height change
-		// fails CI rather than silently clipping the composer.
-		//
-		// The resource links sit in normal flow as a `flex-none` row above the
-		// shell. They were `absolute right-3 top-2`, but nothing in the chain
-		// (this wrapper, `main`, the `flex.min-h-dvh` div in layout.tsx) is
-		// `position: relative`, so they resolved against the initial
-		// containing block and landed on top of the shell's own toolbar at
-		// every viewport width. In flow they occupy their own row instead,
-		// and because the wrapper height is fixed at `100dvh - 57px` the shell
-		// just gives up that row's height — the composer still lands on screen.
-		<div className="flex h-[calc(100dvh-57px)] min-h-0 flex-col overflow-hidden">
-			<nav
-				aria-label="Chat resources"
-				className="gutter-page flex flex-none flex-wrap items-center justify-end gap-x-3 gap-y-1 py-1 text-xs text-text-muted"
-			>
-			<Link href="/models" className="hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">Models</Link>
-			<Link href="/getting-started" className="hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">Getting started</Link>
-			<Link href="/faq" className="hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">FAQ</Link>
-		</nav>
+		// Only messages scroll; leave room for the navbar and visible consent banner.
+		<div className="flex h-[calc(100dvh-57px-var(--consent-banner-height,0px))] min-h-0 flex-col overflow-hidden">
 		<ErrorBoundary
 			fallback={
 				<div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center">

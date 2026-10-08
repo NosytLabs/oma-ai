@@ -69,9 +69,21 @@ describe("ChatToolbar — single WEB / COMPARE path", () => {
 		expect(compare).toHaveLength(1);
 	});
 
-	it("does not render Create / image-video tab (text-only chat surface)", () => {
-		render(<ChatToolbar {...baseProps} />);
-		const create = screen.queryByRole("tab", { name: /create/i });
-		expect(create).toBeNull();
+	it("closes the action menu with Escape and returns focus to its trigger", () => {
+		render(<ChatToolbar {...baseProps} messagesLength={1} />);
+		const trigger = screen.getByRole("button", { name: /more chat actions/i });
+		fireEvent.click(trigger);
+		fireEvent.keyDown(screen.getByRole("menu"), { key: "Escape" });
+		expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+		expect(trigger).toHaveFocus();
+	});
+
+	it("prevents a new conversation from interrupting an active response", () => {
+		const newConversation = vi.fn();
+		render(<ChatToolbar {...baseProps} newConversation={newConversation} loading />);
+		const start = screen.getByRole("button", { name: /new conversation/i });
+		expect(start).toBeDisabled();
+		fireEvent.click(start);
+		expect(newConversation).not.toHaveBeenCalled();
 	});
 });

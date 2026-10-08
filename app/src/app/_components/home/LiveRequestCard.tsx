@@ -63,25 +63,6 @@ const REDUCED_MOTION_MS = 3200;
  * while the card was actually mid-reset. One table, keyed by phase, in
  * lifecycle order: typing → sending → streaming → complete.
  */
-const PHASE_BADGE: Record<Phase, { label: string; className: string }> = {
-	typing: {
-		label: "example · sending",
-		className: "bg-warning/15 text-warning animate-pulse",
-	},
-	streaming: {
-		label: "example · streaming",
-		className: "bg-info/15 text-info",
-	},
-	settled: {
-		label: "example · complete",
-		className: "bg-accent/15 text-accent",
-	},
-	pause: {
-		label: "example · complete",
-		className: "bg-accent/15 text-accent",
-	},
-};
-
 export function LiveRequestCard({ className }: { className?: string }) {
 	const [roundIdx, setRoundIdx] = useState(0);
 	const [phase, setPhase] = useState<Phase>("typing");
@@ -175,7 +156,6 @@ Content-Type: application/json`;
 	const isStreaming = phase === "streaming";
 	const isSettled = phase === "settled" || phase === "pause";
 	const showCursor = isTyping || isStreaming;
-	const badge = PHASE_BADGE[phase];
 
 	return (
 	<div

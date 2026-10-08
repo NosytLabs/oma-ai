@@ -39,7 +39,15 @@ import {
 		RotateCcw,
 		Clock,
 } from "lucide-react";
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import {
+	memo,
+	isValidElement,
+	type ReactNode,
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -87,6 +95,7 @@ export const ChatMessageed = memo(function ChatMessageed({
 		onCopy,
 		onRegenerate,
 		isLastAssistant,
+		assistantContent,
 }: {
 		msg: Message;
 		loading: boolean;
@@ -94,6 +103,8 @@ export const ChatMessageed = memo(function ChatMessageed({
 		/** Regenerate this turn (last assistant only). */
 		onRegenerate?: () => void;
 		isLastAssistant?: boolean;
+	/** Structured assistant body rendered inside the standard message frame. */
+	assistantContent?: ReactNode;
 }) {
 		const isUser = msg.role === "user";
 		const [copied, setCopied] = useState(false);
@@ -317,14 +328,16 @@ export const ChatMessageed = memo(function ChatMessageed({
 							 punctuation for partial markdown tokens. We swap to the
 							 markdown renderer the moment streaming ends so the final
 							 answer gets full formatting (bold, code, lists, links). */}
-														{waitingForFirstToken ? (
+												{waitingForFirstToken ? (
 																<div className="flex items-center gap-3 py-1 text-accent">
 																		<TypingBubble />
 																		<span className="text-xs font-mono uppercase tracking-wider animate-pulse">
 																				Streaming...
 																		</span>
 																</div>
-														) : isStreaming ? (
+												) : assistantContent !== undefined ? (
+														assistantContent
+												) : isStreaming ? (
 																<div className="flex flex-col gap-2">
 																		<p className="whitespace-pre-wrap break-words">{msg.content}</p>
 																		<div className="flex items-center gap-2 mt-2 py-0.5 text-accent border-t border-accent/10 pt-2 w-fit">
@@ -342,29 +355,44 @@ export const ChatMessageed = memo(function ChatMessageed({
 																		remarkPlugins={[remarkGfm, remarkMath]}
 																		rehypePlugins={[rehypeKatex]}
 																		components={{
-																				code({ className, children, ...props }) {
-																						const match = /language-(\w+)/.exec(className || "");
-																						const text = String(children ?? "");
-																						const isInline = !match && !text.includes("\n");
-																						return isInline ? (
-																								<code
-																										className="px-1.5 py-0.5 bg-surface-elevated text-accent-bright font-mono text-[13px] rounded-sm"
-																										{...props}
-																								>
-																										{String(children)}
-																								</code>
-																						) : (
-																								<CodeBlock className={className}>
-																										{text.replace(/\n$/, "")}
-																								</CodeBlock>
-																						);
+																		pre({ children }) {
+																				if (
+																						!isValidElement<{
+																								children?: ReactNode;
+																								className?: string;
+																						}>(children)
+																				) {
+																						return <pre>{children}</pre>;
+																				}
+																				const languageClass = children.props.className?.includes(
+																						"language-",
+																				)
+																						? children.props.className
+																						: undefined;
+																				return (
+																						<CodeBlock className={languageClass}>
+																								{String(children.props.children ?? "")}
+																						</CodeBlock>
+																				);
+																		},
+																		code({ className, children }) {
+																				return (
+																						<code
+																								className={
+																										className ??
+																										"px-1.5 py-0.5 bg-surface-elevated text-accent-bright font-mono text-[13px] rounded-sm"
+																								}
+																						>
+																								{children}
+																						</code>
+																				);
 																				},
 																		}}
 																>
 																		{msg.content}
 																</ReactMarkdown>
 														)}
-														{isActivelyStreaming && (
+												{isActivelyStreaming && assistantContent === undefined && (
 																<span
 																		className="caret-blink inline-block align-baseline"
 																		aria-hidden="true"

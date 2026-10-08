@@ -64,10 +64,12 @@ vi.mock("../../auth/middleware.js", () => ({
 const mockCreateApiKey = vi.hoisted(() => vi.fn());
 const mockListApiKeys = vi.hoisted(() => vi.fn());
 const mockRevokeApiKey = vi.hoisted(() => vi.fn());
+const mockValidateApiKey = vi.hoisted(() => vi.fn());
 vi.mock("../../auth/api-keys.js", () => ({
 	createApiKey: mockCreateApiKey,
 	listApiKeys: mockListApiKeys,
 	revokeApiKey: mockRevokeApiKey,
+	validateApiKey: mockValidateApiKey,
 	createApiKeyCookieHeader: vi.fn(() => "oma_api_key=test; HttpOnly; Path=/; Max-Age=604800"),
 	createLogoutCookieHeader: vi.fn(() => "oma_api_key=; HttpOnly; Path=/; Max-Age=0"),
 }));
@@ -124,6 +126,12 @@ beforeEach(() => {
 	mockAuthApi.getSession.mockResolvedValue(null);
 	mockListApiKeys.mockResolvedValue([]);
 	mockRevokeApiKey.mockResolvedValue(null);
+	mockValidateApiKey.mockResolvedValue({
+		id: "key_1",
+		userId: "user_1",
+		active: true,
+		expiresAt: null,
+	});
 });
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
@@ -337,6 +345,64 @@ describe("auth routes", () => {
 			const data = await res.json();
 			expect(data.success).toBe(true);
 			expect(res.headers.get("Set-Cookie")).toContain("oma_api_key=");
+		});
+
+		it("rejects a valid key owned by another account without setting a cookie", async () => {
+			mockValidateApiKey.mockResolvedValueOnce({
+				id: "key_foreign",
+				userId: "user_2",
+				active: true,
+				expiresAt: null,
+			});
+			const res = await authReq(
+				"post",
+				"/v1/keys/install",
+				{ key: "oma_sk_foreign_key_here" },
+				authedHeaders,
+			);
+
+			expect(res.status).toBe(403);
+			expect(res.headers.get("Set-Cookie")).toBeNull();
+			expect(await res.json()).toMatchObject({
+				error: { message: "API key cannot be installed" },
+			});
+		});
+
+		it("rejects an unknown key with the same generic response", async () => {
+			mockValidateApiKey.mockResolvedValueOnce(null);
+			const res = await authReq(
+				"post",
+				"/v1/keys/install",
+				{ key: "oma_sk_unknown_key_here" },
+				authedHeaders,
+			);
+
+			expect(res.status).toBe(403);
+			expect(res.headers.get("Set-Cookie")).toBeNull();
+			expect(await res.json()).toMatchObject({
+				error: { message: "API key cannot be installed" },
+			});
+		});
+
+		it("rejects an expired key owned by the session without setting a cookie", async () => {
+			mockValidateApiKey.mockResolvedValueOnce({
+				id: "key_expired",
+				userId: "user_1",
+				active: true,
+				expiresAt: new Date("2020-01-01T00:00:00.000Z"),
+			});
+			const res = await authReq(
+				"post",
+				"/v1/keys/install",
+				{ key: "oma_sk_expired_key_here" },
+				authedHeaders,
+			);
+
+			expect(res.status).toBe(403);
+			expect(res.headers.get("Set-Cookie")).toBeNull();
+			expect(await res.json()).toMatchObject({
+				error: { message: "API key cannot be installed" },
+			});
 		});
 	});
 

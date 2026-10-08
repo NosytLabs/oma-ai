@@ -47,7 +47,7 @@ interface MessageInputProps {
 	/** Web-search toggle rendered inside the composer tool rail. */
 	webSearchEnabled?: boolean;
 	setWebSearchEnabled?: (v: boolean) => void;
-	/** UI-mode toggle (A2UI) rendered inside the composer tool rail. */
+	/** Interactive-response toggle rendered inside the composer tool rail. */
 	uiMode?: boolean;
 	setUiMode?: (v: boolean) => void;
 	/** Whether the advanced composer tool rail should be visible. Defaults on for standalone callers. */
@@ -68,16 +68,16 @@ export const MessageInput = forwardRef<
 		disabled = false,
 		disabledReason,
 		modelUnavailable = false,
-	webSearchEnabled = false,
-	setWebSearchEnabled,
-	uiMode = false,
-	setUiMode,
-	showAdvancedTools = true,
+		webSearchEnabled = false,
+		setWebSearchEnabled,
+		uiMode = false,
+		setUiMode,
+		showAdvancedTools = true,
 	},
 	forwardedRef,
 ) {
 	const [focused, setFocused] = useState(false);
-	// BUG-E: IME composition flag. `compositionstart`/`compositionend` are
+	// `compositionstart`/`compositionend` are
 	// the only reliable cross-browser signal for "an IME candidate window is
 	// open" — Enter there confirms the candidate, not the message.
 	const isComposingRef = useRef(false);
@@ -102,7 +102,7 @@ export const MessageInput = forwardRef<
 		return () => cancelAnimationFrame(id);
 	}, []);
 
-	// BUG-E: Enter means different things depending on context.
+	// Enter means different things depending on context.
 	//   * IME composition active → let the browser commit the candidate;
 	//     sending here swallowed the chosen characters and fired a send.
 	//   * Shift+Enter            → insert a newline (handled explicitly so
@@ -137,7 +137,7 @@ export const MessageInput = forwardRef<
 	);
 
 	const hasInput = input.trim().length > 0;
-	// BUG-F: gating is not just "has text". Insufficient balance
+	// Insufficient balance
 	// (`disabled`), a composer-level block, and an unavailable model all
 	// gate the send.
 	const canSend = hasInput && !disabled && !modelUnavailable && !loading;
@@ -163,7 +163,7 @@ export const MessageInput = forwardRef<
 
 	useEffect(() => {
 		const target = localTextareaRef.current;
-		if (!target || !input) return;
+		if (!target) return;
 		target.style.height = "auto";
 		target.style.height = `${Math.min(target.scrollHeight, 200)}px`;
 	}, [input]);
@@ -175,7 +175,7 @@ export const MessageInput = forwardRef<
 		activeCls: string,
 		idleCls: string,
 	) =>
-		`inline-flex h-11 min-h-11 items-center justify-center gap-1.5 rounded-full px-3 font-mono text-[10px] font-semibold uppercase tracking-wider transition-[background-color,border-color,color,box-shadow] duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] active:scale-[0.97] ${
+		`inline-flex h-11 min-h-11 items-center justify-center gap-1.5 rounded-full px-3 text-xs font-medium transition-[background-color,border-color,color,box-shadow] duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 ${
 			active ? activeCls : idleCls
 		}`;
 
@@ -293,12 +293,13 @@ export const MessageInput = forwardRef<
 								<button
 									type="button"
 									onClick={() => setUiMode(!uiMode)}
+									disabled={loading}
 									aria-pressed={uiMode}
 									aria-label="Toggle UI mode — model can render interactive interfaces"
 									title={
 										uiMode
-											? "UI mode on — model can render interactive interfaces"
-											: "UI mode off — turn on to let the model build interactive UIs"
+											? "Interactive responses on — tables, cards, and forms when useful"
+											: "Enable interactive responses — tables, cards, and forms when useful"
 									}
 									className={toolPill(
 										uiMode,
@@ -310,7 +311,7 @@ export const MessageInput = forwardRef<
 										className={`h-3.5 w-3.5 shrink-0 ${uiMode ? "text-[var(--color-accent)]" : ""}`}
 										aria-hidden="true"
 									/>
-									<span>UI</span>
+									<span>Interactive</span>
 								</button>
 							)}
 
@@ -318,6 +319,7 @@ export const MessageInput = forwardRef<
 								<button
 									type="button"
 									onClick={() => setWebSearchEnabled(!webSearchEnabled)}
+									disabled={loading}
 									aria-pressed={webSearchEnabled}
 									aria-label="Toggle web search — ground responses in live internet data"
 									title={
@@ -335,7 +337,7 @@ export const MessageInput = forwardRef<
 										className={`h-3.5 w-3.5 shrink-0 ${webSearchEnabled ? "text-[var(--color-success)]" : ""}`}
 										aria-hidden="true"
 									/>
-									<span>WEB</span>
+									<span>Web</span>
 								</button>
 							)}
 						</div>

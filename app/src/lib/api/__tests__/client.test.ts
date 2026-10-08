@@ -26,6 +26,68 @@ describe("api client", () => {
 	});
 
 	describe("request() core logic", () => {
+		it("composes caller cancellation with the request timeout", async () => {
+			const caller = new AbortController();
+			let completeFetch!: (response: Response) => void;
+			fetchMock.mockImplementationOnce(
+				(_url: string, init: RequestInit) =>
+					new Promise<Response>((resolve, reject) => {
+						completeFetch = resolve;
+						init.signal?.addEventListener(
+							"abort",
+							() => reject(init.signal?.reason),
+							{ once: true },
+						);
+					}),
+			);
+
+			const pending = request("/test", { signal: caller.signal });
+			const observed = pending.then(
+				() => null,
+				(error: unknown) => error,
+			);
+			caller.abort();
+			const result = await Promise.race([
+				observed,
+				new Promise<"still-pending">((resolve) =>
+					setTimeout(() => resolve("still-pending"), 20),
+				),
+			]);
+			if (result === "still-pending") {
+				completeFetch(
+					new Response(JSON.stringify({ late: true }), {
+						status: 200,
+						headers: { "Content-Type": "application/json" },
+					}),
+				);
+				await pending;
+			}
+
+			expect(result).toMatchObject({ name: "AbortError" });
+		});
+
+		it("retains the timeout when a caller signal is supplied", async () => {
+			vi.useFakeTimers();
+			const caller = new AbortController();
+			fetchMock.mockImplementationOnce(
+				(_url: string, init: RequestInit) =>
+					new Promise<Response>((_resolve, reject) => {
+						init.signal?.addEventListener(
+							"abort",
+							() => reject(init.signal?.reason),
+							{ once: true },
+						);
+					}),
+			);
+
+			const pending = request("/test", { signal: caller.signal });
+			const rejection = expect(pending).rejects.toMatchObject({
+				name: "AbortError",
+			});
+			await vi.advanceTimersByTimeAsync(30_000);
+			await rejection;
+		});
+
 		it("returns JSON on success", async () => {
 			fetchMock.mockResolvedValueOnce({
 				ok: true,

@@ -132,6 +132,7 @@ Runs type checking, linting, tests, and production builds across `app/` and `ser
 | Reference | Source of truth |
 |-----------|-----------------|
 | [Platform](docs/PLATFORM.md) | Billing, authentication, funding rails, and operator configuration |
+| [Chat UI](docs/chat-ui.md) | Conversation history, OpenUI actions, shared rendering, and browser validation |
 | [Deployment](docs/DEPLOYMENT.md) | Production topology and deployment procedures |
 | [Brand](BRAND.md) | Visual tokens, typography, navigation, and product language |
 | [Settlement runbook](docs/settlement-runbook.md) | Payment recovery and settlement operations |

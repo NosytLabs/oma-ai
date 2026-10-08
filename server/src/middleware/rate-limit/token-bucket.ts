@@ -311,7 +311,6 @@ export function modelRateLimit(options: ModelRateLimitOptions = {}) {
 			return;
 		}
 
-		const apiKey = c.get("apiKey");
 		const userId = c.get("userId");
 		const modelLimits = getModelLimits(model);
 

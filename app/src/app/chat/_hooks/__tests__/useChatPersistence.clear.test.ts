@@ -1,70 +1,105 @@
-/**
-	* Ensures empty conversation clears storage key (no resurrect-after-clear race).
-	*/
-import { describe, expect, it, beforeEach, afterEach } from "vitest";
-import { renderHook, act } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { useRef, useState } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Message } from "@/components/chat";
 import { useChatPersistence } from "../useChatPersistence";
 
-const KEY = "oma_chat_conversation_test_clear";
-const PROMPT_KEY = "oma_chat_system_prompt_test_clear";
+const LEGACY_KEY = "oma_chat_conversation_test_clear";
 
-function useHarness() {
+function useHarness(systemPromptKey: string) {
 	const [messages, setMessages] = useState<Message[]>([]);
 	const [systemPrompt, setSystemPrompt] = useState("");
-	const [, setSystemPromptOpen] = useState(false);
+	const [systemPromptOpen, setSystemPromptOpen] = useState(false);
 	const messagesRef = useRef<Message[]>([]);
 	useChatPersistence({
 		messages,
-		setMessages,
 		systemPrompt,
 		setSystemPrompt,
 		setSystemPromptOpen,
 		messagesRef,
-		storageKey: KEY,
-		systemPromptKey: PROMPT_KEY,
+		systemPromptKey,
 	});
-	return { messages, setMessages };
+	return {
+		messages,
+		setMessages,
+		messagesRef,
+		systemPrompt,
+		setSystemPrompt,
+		systemPromptOpen,
+	};
 }
 
-function storage(): Storage {
-	// Prefer window (jsdom) then global — Node 26 bare `localStorage` can be a
-	// broken host getter unless setup.ts has rebound it.
-	const s =
-		(typeof window !== "undefined" ? window.localStorage : undefined) ??
-		globalThis.localStorage;
-	if (!s || typeof s.clear !== "function") {
-		throw new Error("localStorage is not available in this test environment");
-	}
-	return s;
-}
+describe("useChatPersistence responsibilities", () => {
+	beforeEach(() => localStorage.clear());
+	afterEach(() => localStorage.clear());
 
-describe("useChatPersistence clear path", () => {
-	beforeEach(() => {
-		storage().clear();
-	});
-	afterEach(() => {
-		storage().clear();
+	it("mirrors messages for streaming without deleting the legacy history key", () => {
+		localStorage.setItem(LEGACY_KEY, "keep-for-migration");
+		const { result } = renderHook(() => useHarness("prompt"));
+		const next: Message[] = [
+			{ role: "user", content: "hello", timestamp: 1 },
+		];
+
+		act(() => result.current.setMessages(next));
+
+		expect(result.current.messagesRef.current).toBe(next);
+		expect(localStorage.getItem(LEGACY_KEY)).toBe("keep-for-migration");
 	});
 
-	it("removes conversation key when messages become empty", () => {
-		// Seed storage as if a prior session wrote a thread
-		storage().setItem(
-			KEY,
-			JSON.stringify([
-				{ role: "user", content: "hello", timestamp: Date.now() },
-			]),
+	it("hydrates the next identity before allowing prompt writes to its key", async () => {
+		localStorage.setItem("prompt:alice", "Alice instructions");
+		localStorage.setItem("prompt:bob", "Bob instructions");
+		const { result, rerender } = renderHook(
+			({ promptKey }) => useHarness(promptKey),
+			{ initialProps: { promptKey: "prompt:alice" } },
 		);
-		expect(storage().getItem(KEY)).toBeTruthy();
+		await waitFor(() =>
+			expect(result.current.systemPrompt).toBe("Alice instructions"),
+		);
 
-		const { result } = renderHook(() => useHarness());
+		rerender({ promptKey: "prompt:bob" });
+		await waitFor(() =>
+			expect(result.current.systemPrompt).toBe("Bob instructions"),
+		);
 
-		// Hydrate may load messages; force clear like clearChat does
-		act(() => {
-			result.current.setMessages([]);
+		expect(localStorage.getItem("prompt:bob")).toBe("Bob instructions");
+	});
+
+	it("clears the visible prompt when a readable identity bucket has none", async () => {
+		localStorage.setItem("prompt:alice", "Alice instructions");
+		const { result, rerender } = renderHook(
+			({ promptKey }) => useHarness(promptKey),
+			{ initialProps: { promptKey: "prompt:alice" } },
+		);
+		await waitFor(() =>
+			expect(result.current.systemPrompt).toBe("Alice instructions"),
+		);
+
+		rerender({ promptKey: "prompt:bob" });
+
+		await waitFor(() => expect(result.current.systemPrompt).toBe(""));
+		expect(result.current.systemPromptOpen).toBe(false);
+	});
+
+	it("clears a previous identity prompt when the next bucket cannot be read", async () => {
+		localStorage.setItem("prompt:alice", "Alice instructions");
+		const originalGetItem = Storage.prototype.getItem;
+		const getItem = vi.spyOn(Storage.prototype, "getItem").mockImplementation(function (this: Storage, key: string) {
+			if (key === "prompt:bob") throw new DOMException("blocked", "SecurityError");
+			return originalGetItem.call(this, key);
 		});
+		const { result, rerender } = renderHook(
+			({ promptKey }) => useHarness(promptKey),
+			{ initialProps: { promptKey: "prompt:alice" } },
+		);
+		await waitFor(() =>
+			expect(result.current.systemPrompt).toBe("Alice instructions"),
+		);
 
-		expect(storage().getItem(KEY)).toBeNull();
+		rerender({ promptKey: "prompt:bob" });
+
+		await waitFor(() => expect(result.current.systemPrompt).toBe(""));
+		expect(result.current.systemPromptOpen).toBe(false);
+		expect(getItem).toHaveBeenCalledWith("prompt:bob");
 	});
 });

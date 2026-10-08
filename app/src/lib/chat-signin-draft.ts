@@ -3,11 +3,16 @@ const STORAGE_KEY = "oma_chat_signin_draft";
 const MAX_AGE_MS = 15 * 60_000;
 
 type ChatDraft = { model: string; input: string; userId: string | null };
-let activeDraft: (() => ChatDraft) | null = null;
+interface ActiveDraftRegistration {
+	source: () => ChatDraft;
+	onSaved?: () => void;
+}
+
+let activeDraft: ActiveDraftRegistration | null = null;
 const modelListeners = new Set<() => void>();
 
 export function getActiveChatSignInModel(): string | null {
-	return activeDraft?.().model ?? null;
+	return activeDraft?.source().model ?? null;
 }
 
 export function subscribeChatSignInModel(listener: () => void): () => void {
@@ -15,20 +20,25 @@ export function subscribeChatSignInModel(listener: () => void): () => void {
 	return () => { modelListeners.delete(listener); };
 }
 
-/** Lets navbar sign-in use the mounted chat's draft without saving each edit. */
-export function registerChatSignInDraft(source: () => ChatDraft): () => void {
-	activeDraft = source;
+/** Lets navbar sign-in inspect and save the mounted chat without mutating it. */
+export function registerChatSignInDraft(
+	source: () => ChatDraft,
+	onSaved?: () => void,
+): () => void {
+	const registration = { source, onSaved };
+	activeDraft = registration;
 	modelListeners.forEach((listener) => listener());
 	return () => {
-		if (activeDraft !== source) return;
+		if (activeDraft !== registration) return;
 		activeDraft = null;
 		modelListeners.forEach((listener) => listener());
 	};
 }
 
 export function saveChatDraftForSignIn(returnModel?: string): void {
-	const draft = activeDraft?.();
-	if (!draft) return;
+	const registration = activeDraft;
+	if (!registration) return;
+	const draft = registration.source();
 	try {
 		if (typeof sessionStorage === "undefined") return;
 		if (!draft.input.trim()) {
@@ -40,6 +50,7 @@ export function saveChatDraftForSignIn(returnModel?: string): void {
 			model: returnModel ?? draft.model,
 			createdAt: Date.now(),
 		}));
+		registration.onSaved?.();
 	} catch {
 		// Storage may be unavailable in private browsing; sign-in still works.
 	}

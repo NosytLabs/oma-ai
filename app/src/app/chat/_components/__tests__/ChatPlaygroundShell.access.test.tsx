@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ChatPlaygroundShell } from "../ChatPlaygroundShell";
 import { Navbar } from "@/components/navbar";
+import { conversationStorageKey } from "@/lib/chat-storage";
 
 const fixtures = vi.hoisted(() => ({
 	auth: { isAuthenticated: false, isReady: true, isDemo: false, user: null as { id: string } | null },
@@ -64,6 +65,56 @@ function clickSignIn(link: HTMLElement) {
 }
 
 describe("guest chat model access", () => {
+	it("migrates the legacy chat into searchable history and keeps it when starting a new chat", async () => {
+		localStorage.setItem(
+			conversationStorageKey(null),
+			JSON.stringify([
+				{ role: "user", content: "Legacy sparse attention question", timestamp: 1 },
+			]),
+		);
+		renderChat();
+		await waitFor(() =>
+			expect(screen.getByRole("textbox", { name: "Enter your message" })).toBeEnabled(),
+		);
+
+		const historyToggle = screen.getByRole("button", { name: "Conversation history" });
+		fireEvent.click(historyToggle);
+		const history = await screen.findByRole("dialog", { name: "Conversation history" });
+		expect(within(history).getByText("Legacy sparse attention question")).toBeVisible();
+
+		fireEvent.click(within(history).getByRole("button", { name: "New chat" }));
+		expect(within(history).getByText("Legacy sparse attention question")).toBeVisible();
+		expect(within(history).getByRole("button", { name: "Open New chat" })).toBeVisible();
+	});
+
+	it("focuses the mobile history drawer, closes it with Escape, and restores focus", async () => {
+		vi.spyOn(window, "matchMedia").mockImplementation((query: string) => ({
+			matches: query.includes("max-width"),
+			media: query,
+			onchange: null,
+			addListener: vi.fn(),
+			removeListener: vi.fn(),
+			addEventListener: vi.fn(),
+			removeEventListener: vi.fn(),
+			dispatchEvent: vi.fn(),
+		}));
+		renderChat();
+		const historyToggle = await screen.findByRole("button", { name: "Conversation history" });
+		historyToggle.focus();
+		fireEvent.click(historyToggle);
+		const dialog = await screen.findByRole("dialog", { name: "Conversation history" });
+		await waitFor(() =>
+			expect(within(dialog).getByRole("searchbox", { name: "Search chats" })).toHaveFocus(),
+		);
+
+		fireEvent.keyDown(document, { key: "Escape" });
+
+		await waitFor(() =>
+			expect(screen.queryByRole("dialog", { name: "Conversation history" })).not.toBeInTheDocument(),
+		);
+		expect(historyToggle).toHaveFocus();
+	});
+
 	it("keeps a paid selection and draft while requesting sign-in before a network send", async () => {
 		renderChat();
 		const composer = await screen.findByRole("textbox", { name: "Enter your message" });

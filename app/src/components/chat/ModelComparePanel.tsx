@@ -6,7 +6,13 @@ import { Columns2, Loader2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { Message } from "./chat-message-shared";
 import { useSharedLiveModels } from "./chat-message-shared";
+import { ChatMessageed } from "./ChatMessage";
+import { A2UIRenderer, type A2UIActionEvent } from "./A2UIRenderer";
+import { OpenUIRenderer } from "./OpenUIRenderer";
 import { ModelSelector } from "./ModelSelector";
+import { classifyMessage } from "@/lib/openui-message-format";
+import { isValidOpenUIResponse } from "@/lib/openui";
+import type { OpenUIActionHandler } from "@/lib/openui-actions";
 
 interface ModelComparePanelProps {
 	open: boolean;
@@ -26,6 +32,9 @@ interface ModelComparePanelProps {
 	 */
 	error?: string | null;
 	onDismissError?: () => void;
+	onRegenerate?: () => void;
+	onA2UIAction?: (event: A2UIActionEvent) => void;
+	onOpenUIAction?: OpenUIActionHandler;
 }
 
 /**
@@ -45,6 +54,9 @@ export function ModelComparePanel({
 	compareMessages,
 	error = null,
 	onDismissError,
+	onRegenerate,
+	onA2UIAction,
+	onOpenUIAction,
 }: ModelComparePanelProps) {
 	const models = useSharedLiveModels();
 	const [localPrompt, setLocalPrompt] = useState(prompt);
@@ -86,8 +98,9 @@ export function ModelComparePanel({
 						<button
 							type="button"
 							onClick={onClose}
+							disabled={loading}
 							aria-label="Close comparison panel"
-							className="text-text-muted hover:text-text-secondary focus-ring active:scale-[0.97]"
+							className="text-text-muted hover:text-text-secondary focus-ring active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40"
 						>
 							<X className="w-4 h-4" />
 						</button>
@@ -97,11 +110,13 @@ export function ModelComparePanel({
 						<label className="block text-[10px] font-mono text-text-muted uppercase tracking-widest mb-1">
 							COMPARE MODEL
 						</label>
-						<ModelSelector
-							model={compareModel}
-							setModel={setCompareModel}
-							compact
-						/>
+						<fieldset disabled={loading} className="contents">
+							<ModelSelector
+								model={compareModel}
+								setModel={setCompareModel}
+								compact
+							/>
+						</fieldset>
 					</div>
 
 					{error && (
@@ -135,36 +150,52 @@ export function ModelComparePanel({
 							</div>
 						) : (
 							<div className="space-y-3">
-								{compareMessages.map((msg) => (
-									<div
-										key={msg.id || `${msg.role}-${msg.timestamp}`}
-										className={`p-3 rounded-[var(--radius-md)] border ${
-											msg.role === "user"
-												? "border-[var(--color-success)]/30 bg-[color-mix(in_srgb,var(--color-success)_5%,transparent)]"
-												: "border-[var(--color-border)] bg-[var(--color-surface)]"
-										}`}
-									>
-										<div className="text-[10px] font-mono text-text-muted uppercase tracking-widest mb-1.5">
-											{msg.role === "user"
-												? `YOU · ${compareName}`
-												: compareName}
-										</div>
-										<p className="text-xs font-mono text-text-secondary whitespace-pre-wrap break-words leading-relaxed">
-											{msg.content || (loading ? "..." : "")}
-											{loading &&
-												msg.role === "assistant" &&
-												msg.content === "" && (
-													<Loader2 className="w-3 h-3 inline ml-1 animate-spin text-[var(--color-success)]" />
-												)}
-										</p>
-										{msg.tokens !== undefined && msg.tokens > 0 && (
-											<div className="text-[10px] font-mono text-text-muted mt-2">
-												TK:{msg.tokens}{" "}
-												{msg.latency ? `· ${msg.latency}ms` : ""}
-											</div>
-										)}
-									</div>
-								))}
+								{compareMessages.map((msg, index) => {
+									const isLastAssistant =
+										msg.role === "assistant" &&
+										index === compareMessages.length - 1;
+									const isStreaming = loading && isLastAssistant;
+									const classification =
+										msg.role === "assistant"
+											? classifyMessage(msg.content, {
+													format: msg.format,
+													isStreaming,
+													isValidOpenUI: isValidOpenUIResponse,
+												})
+											: ({ kind: "plain" } as const);
+									return (
+										<ChatMessageed
+											key={msg.id || `${msg.role}-${msg.timestamp}`}
+											msg={
+												msg.role === "assistant" && !msg.model
+													? { ...msg, model: compareModel }
+													: msg
+											}
+											loading={isStreaming}
+											onCopy={() => undefined}
+											isLastAssistant={isLastAssistant}
+											onRegenerate={
+												isLastAssistant && !loading
+													? onRegenerate
+													: undefined
+											}
+											assistantContent={
+												classification.kind === "a2ui" ? (
+													<A2UIRenderer
+														payload={classification.payload}
+														onAction={onA2UIAction}
+													/>
+												) : classification.kind === "openui" ? (
+													<OpenUIRenderer
+														response={classification.response}
+														isStreaming={isStreaming}
+														onAction={onOpenUIAction}
+													/>
+												) : undefined
+											}
+										/>
+									);
+								})}
 							</div>
 						)}
 					</div>

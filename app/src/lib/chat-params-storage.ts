@@ -36,7 +36,7 @@ export const CHAT_PARAMS_DEFAULTS: ChatParams = {
 };
 
 /** Inclusive bounds, matching the slider/input ranges in SettingsPanel. */
-const BOUNDS: Record<keyof Omit<ChatParams, "stream">, [number, number]> = {
+export const CHAT_PARAM_BOUNDS: Record<keyof Omit<ChatParams, "stream">, [number, number]> = {
 	temperature: [0, 2],
 	topP: [0, 1],
 	maxTokens: [1, 32000],
@@ -45,8 +45,8 @@ const BOUNDS: Record<keyof Omit<ChatParams, "stream">, [number, number]> = {
 	presPenalty: [-2, 2],
 };
 
-function clampNumber(key: keyof typeof BOUNDS, value: unknown): number {
-	const [min, max] = BOUNDS[key];
+function clampNumber(key: keyof typeof CHAT_PARAM_BOUNDS, value: unknown): number {
+	const [min, max] = CHAT_PARAM_BOUNDS[key];
 	if (typeof value !== "number" || !Number.isFinite(value)) {
 		return CHAT_PARAMS_DEFAULTS[key];
 	}

@@ -26,7 +26,6 @@ import {
 } from "better-auth/plugins";
 import { verifyMessage, createPublicClient, http, getAddress } from "viem";
 import { mainnet } from "viem/chains";
-import { verifySiweSignature } from "./lib/siwe-verify.js";
 import { generateRandomString } from "better-auth/crypto";
 import { sql } from "drizzle-orm";
 import { db } from "./db/client.js";

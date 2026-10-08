@@ -44,14 +44,15 @@ export const auth = {
 				});
 		},
 
-		listKeys(): Promise<{ keys: ApiKey[] }> {
-				return request<{ keys: ApiKey[] }>("/v1/keys");
+		listKeys(signal?: AbortSignal): Promise<{ keys: ApiKey[] }> {
+				return request<{ keys: ApiKey[] }>("/v1/keys", { signal });
 		},
 
-		createKey(name: string): Promise<ApiKeyWithSecret> {
+		createKey(name: string, signal?: AbortSignal): Promise<ApiKeyWithSecret> {
 				return request<ApiKeyWithSecret>("/v1/keys", {
 						method: "POST",
 						body: JSON.stringify({ name }),
+						signal,
 				});
 		},
 
@@ -62,14 +63,14 @@ export const auth = {
 		},
 
 		/**
-			* Install the raw API key as an HttpOnly cookie so browser-direct
-			* SSE chat can authenticate against the backend. The key never
-			* leaves the browser except in the Set-Cookie header.
+			* POST the raw API key to the same-origin installer, which validates it
+			* and returns the browser-chat credential as an HttpOnly Set-Cookie.
 			*/
-		installKeyCookie(key: string): Promise<{ success: boolean }> {
+		installKeyCookie(key: string, signal?: AbortSignal): Promise<{ success: boolean }> {
 				return request<{ success: boolean }>("/v1/keys/install", {
 						method: "POST",
 						body: JSON.stringify({ key }),
+						signal,
 				});
 		},
 

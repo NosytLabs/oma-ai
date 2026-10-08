@@ -18,6 +18,7 @@ import {
 		createApiKey,
 		listApiKeys,
 		revokeApiKey,
+		validateApiKey,
 		createApiKeyCookieHeader,
 		createLogoutCookieHeader,
 } from "../auth/api-keys.js";
@@ -416,6 +417,29 @@ authRoutes.delete("/v1/history", sessionAuth, async (c) => {
 								},
 								400,
 						);
+				}
+				const sessionUserId = c.get("userId");
+				let apiKey: Awaited<ReturnType<typeof validateApiKey>> = null;
+				try {
+					apiKey = await validateApiKey(parsed.data.key);
+				} catch (error) {
+					logger.warn(
+						{ error },
+						"Failed to validate API key during browser cookie installation",
+					);
+				}
+				const expired =
+					apiKey?.expiresAt != null && new Date(apiKey.expiresAt) < new Date();
+				if (!apiKey || expired || apiKey.userId !== sessionUserId) {
+					return c.json(
+						{
+							error: {
+								message: "API key cannot be installed",
+								type: "forbidden",
+							},
+						},
+						403,
+					);
 				}
 				c.header("Set-Cookie", createApiKeyCookieHeader(parsed.data.key));
 				return c.json({ success: true });
