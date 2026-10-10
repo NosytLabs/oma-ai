@@ -45,7 +45,13 @@ Local cleanup removed nine historical test accounts and 27 expired sessions afte
 - Frontend: 714 tests passed; production build generated 79 routes; lint passed.
 - Backend: 517 tests passed, 6 skipped; type checking and lint passed. The skipped tests are reported as skipped, not executed checks.
 - Real HTTP/PostgreSQL integration: all 13 groups passed, including more than 2,000 history records, microsecond pagination, four billion input tokens, sub-cent spend, refunds, permissions and account deletion.
-- Browser: authenticated MiniMax chat, live dashboard/usage, desktop/mobile layout and session refresh. At 390px, the usage page's document width was also 390px. Treasury was checked in local mock mode; mainnet settlement was not tested.
+- Browser: authenticated MiniMax chat, live dashboard/usage, desktop/mobile layout and session refresh. The user export downloaded eight records with `billed_cents` and `refunded_at`. At 390px, the usage page's document width was also 390px. The final user dashboard/usage checks produced no captured warnings or errors after 23:15 UTC. Treasury was checked in local mock mode; mainnet settlement was not tested.
 - Screenshots are under `.screenshots/account-audit-2026-10-10/`. An intermediate missing-chunk error while replacing the local production build disappeared after restarting the server and reloading; it is not counted as a clean console capture.
 
-Release details are recorded after deployment verification.
+## Release verification
+
+Application commit `b0fdcf3f0e83a24de40e915b08a3937563f3413f` is pushed on `codex/repo-vercel-audit` and reviewed in [PR #30](https://github.com/NosytLabs/oma-ai/pull/30), which remains open. Vercel production deployment `dpl_4Z5GJmT6QBboQ42AWDKCBTLbahPH` reached READY at `oma-2svrx46pa-nosyt.vercel.app`; Neon function `omaapi` has completed and active deployment 73, Node.js 24 and 2048 MiB memory.
+
+Production checks at approximately 23:17 UTC returned 200 for the frontend health endpoint, model catalog, chat, MiniMax model page and docs. Neon `/ready` returned 200 with database and Redis ready. Both native Neon and same-origin frontend usage-summary/treasury endpoints returned 401 without credentials, as required. An initial native usage-summary probe returned 404 during deployment propagation; subsequent plain and range-query checks returned 401 and the published OpenAPI document included the route. The live pricing screenshot shows the current $0.02 rate, 18 enabled models and aligned summary cards.
+
+These checks do not establish authenticated production analytics or mainnet settlement. Authenticated user/admin verification used local accounts and the real local database. The MiniMax continuation defect and unverified production facilitator readiness remain explicit limitations.
