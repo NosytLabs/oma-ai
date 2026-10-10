@@ -94,6 +94,24 @@ export const MODEL_PRICING_ROWS: ModelPricing[] = MODELS.map((m) => ({
 }));
 
 export const ENDPOINTS: EndpointInfo[] = [
+	{ method: "GET", path: "/user", anchor: "ep-user", title: "Current Account",
+		desc: "Returns the signed-in profile, linked wallet, and admin status.", auth: "Session cookie",
+		response: `{ "id": "user_…", "email": "you@example.com", "name": "You", "evmAddress": null, "isAdmin": false }` },
+	{ method: "GET", path: "/sessions", anchor: "ep-sessions", title: "Active Sessions",
+		desc: "Lists active sessions with device details and isCurrent.", auth: "Session cookie",
+		response: `{ "sessions": [{ "id": "session_…", "isCurrent": true, "createdAt": "2026-10-10T00:00:00Z", "expiresAt": "2026-10-17T00:00:00Z" }] }` },
+	{ method: "DELETE", path: "/sessions/:id", anchor: "ep-session-revoke", title: "Revoke Remote Session",
+		desc: "Revokes an owned remote session. Use sign-out for the current session.", auth: "Session cookie",
+		response: `{ "success": true, "id": "session_…" }` },
+	{ method: "DELETE", path: "/sessions", anchor: "ep-sessions-revoke", title: "Revoke Other Sessions",
+		desc: "Revokes all other active sessions and keeps the current one.", auth: "Session cookie",
+		response: `{ "success": true, "revokedCount": 2 }` },
+	{ method: "DELETE", path: "/v1/history", anchor: "ep-history-clear", title: "Clear Usage History",
+		desc: "Deletes usage and previous audit logs, then records the clearing event. Preserves identity, sessions, keys, and balances.", auth: "Session cookie",
+		response: `{ "success": true, "deleted": { "usageRecords": 4, "auditLogs": 2 } }` },
+	{ method: "DELETE", path: "/account", anchor: "ep-account-delete", title: "Delete Account",
+		desc: "Permanently deletes identity, sessions, keys, and usage, and forfeits remaining credits. Payment and security audit records remain with the account ID detached. Requires sign-in within the last 24 hours; HTTP 400 session_not_fresh means sign in again.", auth: "Fresh session cookie; API keys are not accepted",
+		response: `{ "success": true }` },
 	{
 		method: "POST",
 		path: "/v1/chat/completions",
@@ -174,7 +192,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 		path: "/v1/models",
 		anchor: "ep-models",
 		title: "List Models",
-		desc: "Returns the curated catalog, including currently unavailable models. Check the available flag before calling a model. No auth required.",
+		desc: "Returns the curated catalog, including currently unavailable models. Check available, context_length, and max_output_tokens. Prices are USD per million tokens. pricing.extended applies when input tokens exceed its context_token_threshold. No auth required.",
 		auth: "None",
 		response: `{
 	"object": "list",
@@ -187,7 +205,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 	"permission": [],
 	"root": "llama-3.3-70b",
 	"parent": null,
-		"pricing": { "prompt": "0.875", "completion": "3.50" },
+		"pricing": { "prompt": 1.05, "completion": 4.20 },
 		"category": "mid",
 		"context_length": 128000
 	},
@@ -196,7 +214,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 "object": "model",
 "created": 1717194000,
 "owned_by": "oma-ai",
-"pricing": { "prompt": "0.50000000", "completion": "0.50000000" },
+"pricing": { "prompt": 0.02, "completion": 0.02 },
 "category": "budget",
 "context_length": 400000
 }
@@ -221,7 +239,8 @@ export const ENDPOINTS: EndpointInfo[] = [
 	"context_length": 128000,
 		"supports_streaming": true,
 		"supports_tools": true,
-		"pricing": { "prompt": "0.875", "completion": "3.50" }
+		"pricing": { "prompt": 1.05, "completion": 4.20 },
+		"max_output_tokens": 4096
 }`,
 	},
 	{

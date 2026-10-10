@@ -94,7 +94,7 @@ function mountChat(initial: Partial<Parameters<typeof useStreamingChat>[0]> = {}
 		model: "deepseek-v4-flash-0731-openbroker",
 		systemPrompt: "",
 		compareMode: false,
-		compareModel: "mistral-small-2603",
+		compareModel: "llama-3.3-70b",
 		setCompareMessages: ((updater: unknown) => {
 			state.compareMessages =
 				typeof updater === "function"
@@ -225,7 +225,7 @@ describe("useStreamingChat — BUG-B: options are read live", () => {
 			model: "claude-sonnet-4-6",
 			systemPrompt: "FIRST PROMPT",
 		});
-		(opts as { model: string }).model = "mistral-small-2603";
+		(opts as { model: string }).model = "llama-3.3-70b";
 		(opts as { systemPrompt: string }).systemPrompt = "SECOND PROMPT";
 
 		await act(async () => {
@@ -233,7 +233,7 @@ describe("useStreamingChat — BUG-B: options are read live", () => {
 		});
 
 		expect(bodies).toHaveLength(1);
-		expect(bodies[0].model).toBe("mistral-small-2603");
+		expect(bodies[0].model).toBe("llama-3.3-70b");
 		const messages = bodies[0].messages as { role: string; content: string }[];
 		expect(messages[0].content).toBe("SECOND PROMPT");
 	});
@@ -374,7 +374,7 @@ describe("useStreamingChat — request ownership", () => {
 				const attempt = (attempts.get(body.model) ?? 0) + 1;
 				attempts.set(body.model, attempt);
 				if (attempt > 1) return completionResponse(`${body.model} repaired`);
-				if (body.model === "mistral-small-2603") {
+				if (body.model === "llama-3.3-70b") {
 					return delayedCompare.promise;
 				}
 				return new Response(JSON.stringify({ error: "missing key" }), {
@@ -386,7 +386,7 @@ describe("useStreamingChat — request ownership", () => {
 		const { view } = mountChat({
 			model: "claude-sonnet-4-6",
 			compareMode: true,
-			compareModel: "mistral-small-2603",
+			compareModel: "llama-3.3-70b",
 		});
 		let pending!: Promise<void>;
 		await act(async () => {
@@ -410,7 +410,7 @@ describe("useStreamingChat — request ownership", () => {
 		expect(api.auth.createKey).toHaveBeenCalledOnce();
 		expect(api.auth.installKeyCookie).toHaveBeenCalledOnce();
 		expect(attempts.get("claude-sonnet-4-6")).toBe(2);
-		expect(attempts.get("mistral-small-2603")).toBe(2);
+		expect(attempts.get("llama-3.3-70b")).toBe(2);
 	});
 
 	it("aborts a replaced conversation and ignores its late response and cleanup", async () => {
@@ -479,7 +479,7 @@ describe("useStreamingChat — request ownership", () => {
 		let pending!: Promise<void>;
 		await act(async () => { pending = view.result.current.sendMessage("question"); });
 		act(() => {
-			opts.model = "mistral-small-2603";
+			opts.model = "llama-3.3-70b";
 			opts.systemPrompt = "New instructions";
 			opts.temperature = 0.2;
 			opts.responseFormat = "text";
@@ -554,7 +554,7 @@ describe("useStreamingChat — BUG-H: compare failures stay in compare state", (
 				// Both streams hit the same endpoint, so discriminate on the
 				// requested model: the compare slot fails, the primary is fine.
 				const body = JSON.parse(String(init.body)) as { model: string };
-				if (body.model === "mistral-small-2603") {
+				if (body.model === "llama-3.3-70b") {
 					return new Response(
 						JSON.stringify({ error: "compare model exploded" }),
 						{ status: 500, headers: { "Content-Type": "application/json" } },
@@ -573,7 +573,7 @@ describe("useStreamingChat — BUG-H: compare failures stay in compare state", (
 		// Primary succeeded → its error slot must stay empty.
 		expect(state.error).toBeNull();
 		expect(state.compareError).toBeTruthy();
-		expect(state.compareError).toMatch(/mistral-small-2603/);
+		expect(state.compareError).toMatch(/llama-3.3-70b/);
 		expect(state.loading).toBe(false);
 	});
 });

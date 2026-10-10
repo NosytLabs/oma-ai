@@ -37,11 +37,16 @@ export async function proxy(req: NextRequest) {
 			redirect: "manual",
 			body: ["GET", "HEAD"].includes(req.method) ? undefined : req.body,
 			duplex: "half",
-			signal: AbortSignal.timeout(120_000),
+			// Backend inference has a 240-second overall budget. Leave room to
+			// forward its error, and stop upstream work when the browser cancels.
+			signal: AbortSignal.any([req.signal, AbortSignal.timeout(270_000)]),
 		} as RequestInit);
 
 		return proxyResponse(res);
 	} catch (err) {
+		if (req.signal.aborted) {
+			return NextResponse.json({ error: { message: "Request canceled", code: "request_canceled" } }, { status: 499 });
+		}
 		// Differentiate timeouts from connection errors so the caller can
 		// retry / show a useful message. Without this, every transport
 		// failure collapsed into the same "Backend unreachable" string.

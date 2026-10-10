@@ -35,6 +35,7 @@ import { config } from "./config.js";
 import { logger } from "./lib/logger.js";
 
 import { getRedisClient } from "./lib/redis-client.js";
+import { SESSION_FRESH_AGE_SECONDS } from "./auth/session-policy.js";
 
 const RESEND_FROM = config.RESEND_FROM ?? "OMA-AI <noreply@oma-ai.com>";
 
@@ -456,6 +457,7 @@ user: {
 		session: {
 				expiresIn: 60 * 60 * 24 * 7, // 7 days
 				updateAge: 60 * 60 * 24, // refresh once per day
+				freshAge: SESSION_FRESH_AGE_SECONDS,
 				// Settings can revoke sessions and delete accounts at any time.
 				// Always consult the session store so a copied cookie cannot remain
 				// authenticated after revocation (including Better Auth endpoints).

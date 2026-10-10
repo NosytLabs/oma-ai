@@ -1,0 +1,436 @@
+[
+  {
+    "id": "openai-gpt-56-sol",
+    "provider": "venice",
+    "surplusId": "gpt-5.6-sol",
+    "inputPricePer1M": 5,
+    "outputPricePer1M": 25,
+    "markupPercent": 50,
+    "displayName": "GPT-5.6 Sol",
+    "category": "frontier",
+    "maxTokens": 16384,
+    "contextWindow": 1000000,
+    "maxOutputTokens": 128000,
+    "supportsStreaming": true,
+    "capabilities": [
+      "chat",
+      "reasoning",
+      "tools",
+      "multimodal"
+    ],
+    "extendedPricing": {
+      "contextTokenThreshold": 272000,
+      "inputPricePer1M": 10,
+      "outputPricePer1M": 37.5
+    }
+  },
+  {
+    "id": "claude-opus-5",
+    "provider": "venice",
+    "surplusId": "claude-opus-5",
+    "inputPricePer1M": 6,
+    "outputPricePer1M": 30,
+    "markupPercent": 50,
+    "displayName": "Claude Opus 5",
+    "category": "frontier",
+    "maxTokens": 16384,
+    "contextWindow": 1000000,
+    "maxOutputTokens": 128000,
+    "supportsStreaming": true,
+    "capabilities": [
+      "chat",
+      "reasoning",
+      "coding",
+      "tools",
+      "multimodal"
+    ]
+  },
+  {
+    "id": "kimi-k3",
+    "provider": "venice",
+    "surplusId": "kimi-k3",
+    "inputPricePer1M": 3.75,
+    "outputPricePer1M": 18.75,
+    "markupPercent": 50,
+    "displayName": "Kimi K3",
+    "category": "premium",
+    "maxTokens": 16384,
+    "contextWindow": 1000000,
+    "maxOutputTokens": 131072,
+    "supportsStreaming": true,
+    "capabilities": [
+      "chat",
+      "reasoning",
+      "coding",
+      "tools",
+      "multimodal"
+    ]
+  },
+  {
+    "id": "zai-org-glm-5-2",
+    "provider": "venice",
+    "surplusId": "glm-5.2",
+    "inputPricePer1M": 1.4,
+    "outputPricePer1M": 4.4,
+    "markupPercent": 50,
+    "displayName": "GLM 5.2",
+    "category": "premium",
+    "maxTokens": 16384,
+    "contextWindow": 1000000,
+    "maxOutputTokens": 131072,
+    "supportsStreaming": true,
+    "capabilities": [
+      "chat",
+      "reasoning",
+      "coding",
+      "tools"
+    ]
+  },
+  {
+    "id": "deepseek-v4-pro",
+    "provider": "venice",
+    "surplusId": "deepseek-v4-pro",
+    "inputPricePer1M": 1.65,
+    "outputPricePer1M": 3.301,
+    "markupPercent": 50,
+    "displayName": "DeepSeek V4 Pro",
+    "category": "premium",
+    "maxTokens": 16384,
+    "contextWindow": 1000000,
+    "maxOutputTokens": 32768,
+    "supportsStreaming": true,
+    "capabilities": [
+      "chat",
+      "reasoning",
+      "coding",
+      "tools"
+    ]
+  },
+  {
+    "id": "qwen-3-8-max",
+    "provider": "venice",
+    "surplusId": "qwen-3-8-max",
+    "inputPricePer1M": 2.5,
+    "outputPricePer1M": 7.5,
+    "markupPercent": 50,
+    "displayName": "Qwen 3.8 Max",
+    "category": "premium",
+    "maxTokens": 16384,
+    "contextWindow": 1000000,
+    "maxOutputTokens": 131072,
+    "supportsStreaming": true,
+    "capabilities": [
+      "chat",
+      "reasoning",
+      "coding",
+      "tools",
+      "multimodal"
+    ]
+  },
+  {
+    "id": "grok-4-5",
+    "provider": "venice",
+    "surplusId": "grok-4.5",
+    "inputPricePer1M": 2.27,
+    "outputPricePer1M": 6.8,
+    "markupPercent": 50,
+    "displayName": "Grok 4.5",
+    "category": "premium",
+    "maxTokens": 16384,
+    "contextWindow": 500000,
+    "maxOutputTokens": 32000,
+    "supportsStreaming": true,
+    "capabilities": [
+      "chat",
+      "reasoning",
+      "coding",
+      "tools",
+      "multimodal"
+    ],
+    "extendedPricing": {
+      "contextTokenThreshold": 200000,
+      "inputPricePer1M": 4.53,
+      "outputPricePer1M": 13.6
+    }
+  },
+  {
+    "id": "claude-sonnet-4-6",
+    "provider": "venice",
+    "surplusId": "claude-sonnet-4.6",
+    "inputPricePer1M": 3.6,
+    "outputPricePer1M": 18,
+    "markupPercent": 50,
+    "displayName": "Claude Sonnet 4.6",
+    "category": "premium",
+    "maxTokens": 16384,
+    "contextWindow": 1000000,
+    "maxOutputTokens": 64000,
+    "supportsStreaming": true,
+    "capabilities": [
+      "chat",
+      "reasoning",
+      "coding",
+      "tools",
+      "multimodal"
+    ]
+  },
+  {
+    "id": "gemini-3-6-flash",
+    "provider": "venice",
+    "surplusId": "gemini-3.7-flash",
+    "inputPricePer1M": 0.9375,
+    "outputPricePer1M": 4.6875,
+    "markupPercent": 50,
+    "displayName": "Gemini 3.6 Flash",
+    "category": "premium",
+    "maxTokens": 65536,
+    "contextWindow": 1000000,
+    "maxOutputTokens": 65536,
+    "supportsStreaming": true,
+    "capabilities": [
+      "chat",
+      "reasoning",
+      "tools",
+      "multimodal"
+    ]
+  },
+  {
+    "id": "llama-3.3-70b",
+    "provider": "venice",
+    "surplusId": "llama-3.3-70b-instruct",
+    "inputPricePer1M": 0.7,
+    "outputPricePer1M": 2.8,
+    "markupPercent": 50,
+    "displayName": "Llama 3.3 70B",
+    "category": "mid",
+    "maxTokens": 8192,
+    "contextWindow": 128000,
+    "maxOutputTokens": 4096,
+    "supportsStreaming": true,
+    "capabilities": [
+      "chat",
+      "tools"
+    ]
+  },
+  {
+    "id": "hermes-3-llama-3.1-405b",
+    "provider": "venice",
+    "surplusId": "hermes-3-llama-3.1-405b",
+    "inputPricePer1M": 1.1,
+    "outputPricePer1M": 3,
+    "markupPercent": 50,
+    "displayName": "Hermes 3 405B",
+    "category": "mid",
+    "maxTokens": 8192,
+    "contextWindow": 128000,
+    "maxOutputTokens": 16384,
+    "supportsStreaming": true,
+    "capabilities": [
+      "chat"
+    ]
+  },
+  {
+    "id": "zai-org-glm-5-1",
+    "provider": "venice",
+    "surplusId": "glm-5.1",
+    "inputPricePer1M": 1.54,
+    "outputPricePer1M": 4.84,
+    "markupPercent": 50,
+    "displayName": "GLM 5.1",
+    "category": "mid",
+    "maxTokens": 16384,
+    "contextWindow": 200000,
+    "maxOutputTokens": 80000,
+    "supportsStreaming": true,
+    "capabilities": [
+      "chat",
+      "reasoning",
+      "tools"
+    ]
+  },
+  {
+    "id": "qwen-3-7-plus",
+    "provider": "venice",
+    "surplusId": "qwen-3-7-plus",
+    "inputPricePer1M": 0.5,
+    "outputPricePer1M": 2,
+    "markupPercent": 50,
+    "displayName": "Qwen 3.7 Plus",
+    "category": "mid",
+    "maxTokens": 16384,
+    "contextWindow": 1000000,
+    "maxOutputTokens": 65536,
+    "supportsStreaming": true,
+    "capabilities": [
+      "chat",
+      "reasoning",
+      "coding",
+      "tools",
+      "multimodal"
+    ],
+    "extendedPricing": {
+      "contextTokenThreshold": 256000,
+      "inputPricePer1M": 1.5,
+      "outputPricePer1M": 6
+    }
+  },
+  {
+    "id": "venice-uncensored-1-2",
+    "provider": "venice",
+    "surplusId": "venice-uncensored",
+    "inputPricePer1M": 0.2,
+    "outputPricePer1M": 0.9,
+    "markupPercent": 50,
+    "displayName": "Venice Uncensored 1.2",
+    "category": "mid",
+    "maxTokens": 8192,
+    "contextWindow": 128000,
+    "maxOutputTokens": 8192,
+    "supportsStreaming": true,
+    "capabilities": [
+      "chat",
+      "tools",
+      "multimodal",
+      "uncensored"
+    ]
+  },
+  {
+    "id": "xiaomi-mimo-v2-5",
+    "provider": "venice",
+    "inputPricePer1M": 0.4,
+    "outputPricePer1M": 2,
+    "markupPercent": 50,
+    "displayName": "Xiaomi MiMo V2.5",
+    "category": "budget",
+    "maxTokens": 16384,
+    "contextWindow": 1000000,
+    "maxOutputTokens": 65536,
+    "supportsStreaming": true,
+    "capabilities": [
+      "chat",
+      "reasoning",
+      "coding",
+      "tools",
+      "multimodal",
+      "fast"
+    ]
+  },
+  {
+    "id": "deepseek-v4-flash-0731",
+    "provider": "venice",
+    "surplusId": "deepseek-v4-flash",
+    "inputPricePer1M": 0.13,
+    "outputPricePer1M": 0.26,
+    "markupPercent": 50,
+    "displayName": "DeepSeek V4 Flash",
+    "category": "budget",
+    "maxTokens": 16384,
+    "contextWindow": 1000000,
+    "maxOutputTokens": 32768,
+    "supportsStreaming": true,
+    "capabilities": [
+      "chat",
+      "reasoning",
+      "coding",
+      "tools",
+      "fast"
+    ]
+  },
+  {
+    "id": "google-gemma-4-31b-it",
+    "provider": "venice",
+    "inputPricePer1M": 0.12,
+    "outputPricePer1M": 0.36,
+    "markupPercent": 50,
+    "displayName": "Gemma 4 31B",
+    "category": "budget",
+    "maxTokens": 16384,
+    "contextWindow": 256000,
+    "maxOutputTokens": 8192,
+    "supportsStreaming": true,
+    "capabilities": [
+      "chat",
+      "reasoning",
+      "tools",
+      "multimodal",
+      "fast"
+    ]
+  },
+  {
+    "id": "minimax-m2-7",
+    "provider": "oma-ai",
+    "upstream": "openbroker",
+    "omaAiId": "MiniMaxAI/MiniMax-M2.7",
+    "surplusId": "minimax-m2.7",
+    "inputPricePer1M": 0,
+    "outputPricePer1M": 0,
+    "markupPercent": 0,
+    "displayName": "MiniMax M2.7",
+    "category": "budget",
+    "maxTokens": 16384,
+    "contextWindow": 200000,
+    "maxOutputTokens": 16384,
+    "supportsStreaming": true,
+    "capabilities": [
+      "chat",
+      "reasoning",
+      "coding",
+      "tools"
+    ],
+    "customerInputPricePer1M": 0.02,
+    "customerOutputPricePer1M": 0.02,
+    "upstreamCostKnown": false
+  },
+  {
+    "id": "deepseek-v4-flash-0731-openbroker",
+    "disabledReason": "Temporarily paused after repeated upstream output. Please choose MiniMax M2.7 or GLM-5.3 Flash.",
+    "provider": "oma-ai",
+    "upstream": "openbroker",
+    "omaAiId": "deepseek-ai/DeepSeek-V4-Flash-0731",
+    "surplusId": "deepseek-v4-flash-0731",
+    "inputPricePer1M": 0,
+    "outputPricePer1M": 0,
+    "markupPercent": 0,
+    "displayName": "DeepSeek V4 Flash (OMA-AI)",
+    "category": "budget",
+    "maxTokens": 16384,
+    "contextWindow": 400000,
+    "maxOutputTokens": 16384,
+    "supportsStreaming": true,
+    "capabilities": [
+      "chat",
+      "reasoning",
+      "fast",
+      "tools"
+    ],
+    "customerInputPricePer1M": 0.02,
+    "customerOutputPricePer1M": 0.02,
+    "upstreamCostKnown": false
+  },
+  {
+    "id": "zai-org-glm-5-3",
+    "provider": "oma-ai",
+    "upstream": "openbroker",
+    "omaAiId": "zai-org/GLM-5.3-Flash",
+    "surplusId": "zai-org/glm-5.3-flash",
+    "inputPricePer1M": 0,
+    "outputPricePer1M": 0,
+    "markupPercent": 0,
+    "displayName": "GLM-5.3 Flash (OMA-AI)",
+    "category": "budget",
+    "maxTokens": 16384,
+    "contextWindow": 1000000,
+    "maxOutputTokens": 128000,
+    "supportsStreaming": true,
+    "capabilities": [
+      "chat",
+      "reasoning",
+      "fast",
+      "tools",
+      "multimodal"
+    ],
+    "customerInputPricePer1M": 0.02,
+    "customerOutputPricePer1M": 0.02,
+    "upstreamCostKnown": false
+  }
+]

@@ -369,6 +369,7 @@ anthropicRoutes.post(
 								tool_choice,
 								userId,
 								requestId,
+								signal: c.req.raw.signal,
 						});
 
 						const actualModelDef = getModelById(actualModelId) || modelDef;

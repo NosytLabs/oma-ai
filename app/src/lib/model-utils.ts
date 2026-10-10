@@ -12,7 +12,7 @@ import { isModelAvailable } from "@/lib/model-availability";
 /**
  * Free catalog ids (upstream=openbroker — OMA-AI on Gonka.AI).
  * Mirrors server-side logic in `server/src/inference/free-website-model.ts`.
- * Only zero-upstream-cost OpenBroker models qualify as free in /chat.
+ * OMA sponsors these models within the daily website quota; API calls pay.
  */
 export const FREE_CHAT_MODEL_IDS = new Set<string>([
 	"zai-org-glm-5-3",
@@ -28,7 +28,7 @@ export const FREE_CHAT_MODEL_IDS = new Set<string>([
  * OpenBroker vLLM backend is loop-degenerating (it repeats the first
  * answer token forever, e.g. "PONG PONG PONG…" to finish_reason=length).
  * GLM-5.3 verified clean on the same probe (finish_reason=stop, "PONG").
- * DeepSeek stays selectable in case the backend recovers.
+ * DeepSeek is paused after the October 10 probe reproduced the repetition.
  */
 export const FREE_DEFAULT_CHAT_MODEL = "zai-org-glm-5-3";
 

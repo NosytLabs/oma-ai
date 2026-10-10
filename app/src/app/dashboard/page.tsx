@@ -11,6 +11,7 @@ import { useToast } from "@/components/ui/Toast";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { type ApiKey, type ApiKeyWithSecret, api } from "@/lib/api";
 import { log } from "@/lib/logger";
+import { selectAvailableModels } from "@/lib/model-availability";
 import { type TabId, type TimeRangeId } from "./_constants";
 import { TABS } from "./_constants";
 import { DashboardHeader } from "./_components/DashboardHeader";
@@ -310,7 +311,7 @@ function DashboardPageInner() {
 				<div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
 					<DashboardHeader
 						loading={loading}
-						modelsAvailable={models.length}
+						modelsAvailable={selectAvailableModels(models).length}
 						hasAnyData={hasAnyData}
 						refreshTick={refreshTick}
 						onRefresh={handleRefresh}

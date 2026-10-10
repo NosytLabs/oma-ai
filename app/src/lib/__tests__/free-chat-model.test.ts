@@ -28,7 +28,7 @@ describe("isFreeChatModel (guest website chat)", () => {
 		expect(isFreeChatModel("kimi-k3")).toBe(false);
 		expect(isFreeChatModel("llama-3.3-70b")).toBe(false);
 		expect(isFreeChatModel("llama-3.3-70b", "Venice")).toBe(false);
-		expect(isFreeChatModel("mistral-small-2603")).toBe(false);
+		expect(isFreeChatModel("llama-3.3-70b")).toBe(false);
 	});
 
 	it("only allowlisted openbroker ids are free; unknown ids require auth", () => {

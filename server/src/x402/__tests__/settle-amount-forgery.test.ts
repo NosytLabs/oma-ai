@@ -240,6 +240,16 @@ function makeV1PaymentSig(amount: string, nonce: string): string {
 }
 
 describe("C2 — /x402/settle ignores body.amount, uses verified amount", () => {
+		it("publishes the exact treasury and signing domain before a payment is authorized", async () => {
+			const res = await app.request("/x402/info");
+			expect(res.status).toBe(200);
+			expect(await res.json()).toMatchObject({
+				x402Version: 2, scheme: "exact", network: "eip155:8453", asset: USDC_BASE,
+				decimals: 6, payTo: TREASURY.toLowerCase(), maxTimeoutSeconds: 300,
+				extra: { name: "USD Coin", version: "2" },
+			});
+			expect(res.headers.get("cache-control")).toBe("no-store");
+		});
 		beforeEach(() => {
 				vi.clearAllMocks();
 				resetChain();

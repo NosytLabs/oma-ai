@@ -19,11 +19,11 @@ OMA-AI (**Open Model Access**) is a single API endpoint that fronts multiple AI 
 |------|-----------------|
 | OpenAI-compatible apps | Drop-in `/v1/chat/completions` endpoint |
 | Anthropic-compatible apps | Drop-in `/v1/messages` endpoint |
-| Multi-model routing | Circuit breakers and configured fallback routes for mapped models |
+| Multi-model routing | Bounded retries and configured fallback routes for mapped models |
 | Agent billing | x402 USDC verify/settle → credits + optional Polar card |
 | Privacy | The gateway does not persist prompt or completion content; website history stays in your browser and upstream policies vary |
 
-One OpenAI-compatible endpoint for a curated catalog. Venice-routed models include a 25% platform fee; OMA-AI/OpenBroker prices already include margin. Guest chat is free with a daily cap.
+One OpenAI-compatible endpoint for a curated catalog. Venice-routed models include a 50% markup on catalog rates; OMA-AI/OpenBroker models cost $0.02 per million input tokens and $0.02 per million output tokens. Guest chat is free with a daily cap. OpenBroker's USD provider cost depends on GNK acquisition cost and retries, so its margin is not assumed.
 
 ---
 
@@ -35,8 +35,8 @@ Passwordless onboarding with magic-link email sign-in or SIWE (Sign-In with Ethe
 ### 💳 x402 USDC Crypto Billing
 Agent-native USDC funding powered by EIP-3009. Agents sign the payment envelope, call `/x402/verify` to broadcast the transfer, then `/x402/settle` with the payer's SIWE session to credit the account. Inference spends those prepaid credits through an API key. No subscriptions; funding methods have their own deposit limits.
 
-### 🛡️ Fallback Routing & Circuit Breakers
-Built-in health checks and circuit breakers stop repeated calls to unhealthy routes. Models with a configured fallback can retry on that route; otherwise the request returns an upstream or unavailable error. OMA does not silently substitute an arbitrary model.
+### 🛡️ Bounded Fallback Routing
+Requests use a shared timeout budget and configured fallback peers. Paused models are excluded, and caller cancellation stops further retries. Responses identify the actual model and whether fallback occurred; catalog availability is not a continuous live provider health check.
 
 ### 📊 Developer Dashboard
 Manage API keys, monitor real-time usage and spend, inspect request logs, and configure model preferences—all from a polished, real-time dashboard.
@@ -136,6 +136,7 @@ Runs type checking, linting, tests, and production builds across `app/` and `ser
 | [Deployment](docs/DEPLOYMENT.md) | Production topology and deployment procedures |
 | [Brand](BRAND.md) | Visual tokens, typography, navigation, and product language |
 | [Settlement runbook](docs/settlement-runbook.md) | Payment recovery and settlement operations |
+| [October 10 audit](docs/audit-2026-10-10.md) | Verified fixes, test coverage, and remaining operational limits |
 | [Public docs](https://www.oma-ai.com/docs) | Customer quickstart, API usage, and integrations |
 
 Keep implementation details in these references and link to them from summaries so parallel copies do not drift.
@@ -242,7 +243,7 @@ OMA-AI is MIT-licensed and open to contributions.
 
 ### Key Contribution Notes
 
-- **Catalog sync:** Frontend static catalog lives in `app/src/lib/models-data.ts`; backend runtime catalog lives in `server/src/inference/models.ts`. Keep them in sync.
+- **Catalog:** `server/src/inference/model-catalog.json` is shared by the frontend and backend. Update it once; parity tests check displayed rates, capabilities, and limits. Runtime availability and price overrides remain server-owned.
 - **Animations:** Custom visual primitives are in `app/src/lib/animation/`.
 - **Security:** See `SECURITY.md` for responsible disclosure policy.
 

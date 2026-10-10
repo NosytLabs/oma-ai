@@ -58,7 +58,7 @@ export function Footer() {
 								{section.links.map((link) => {
 									const active = isCurrentNavLink(pathname, link.href);
 									return <li key={link.href}><Link href={link.href} prefetch={false} aria-current={active ? "page" : undefined}
-										className={`inline-flex min-h-8 items-center rounded-sm py-1 text-xs leading-relaxed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${active ? "text-accent" : "text-text-secondary hover:text-accent"}`}>{link.label}</Link></li>;
+										className={`inline-flex min-h-8 min-w-6 items-center rounded-sm py-1 text-xs leading-relaxed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${active ? "text-accent" : "text-text-secondary hover:text-accent"}`}>{link.label}</Link></li>;
 								})}
 							</ul>
 						</div>)}

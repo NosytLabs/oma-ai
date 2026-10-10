@@ -9,7 +9,7 @@ describe("normalizeUsageRecord", () => {
 			id: "1",
 			requestId: "r1",
 			apiKeyId: null,
-			model: "mistral-small-2603",
+			model: "llama-3.3-70b",
 			provider: "venice",
 			promptTokens: 0,
 			completionTokens: 0,

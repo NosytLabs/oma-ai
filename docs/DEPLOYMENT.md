@@ -26,6 +26,7 @@ GET  https://www.oma-ai.com/api/v1/models
 POST https://www.oma-ai.com/api/v1/chat/completions
 POST https://www.oma-ai.com/api/v1/messages
 GET  https://www.oma-ai.com/api/v1/openapi.json
+GET  https://www.oma-ai.com/x402/info
 POST https://www.oma-ai.com/x402/verify
 POST https://www.oma-ai.com/x402/settle
 GET  https://www.oma-ai.com/api/v1/search

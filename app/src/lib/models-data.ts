@@ -1,26 +1,7 @@
-// Single source of truth for the model catalog surfaced in the UI.
-//
-// History:
-//   - Before 2026-07-02, this file held 13 hand-curated Model entries — many
-//     were fabricated. Every page that imported MODEL_COUNT or MODELS was
-//     wrong.
-//   - Until 2026-07-07, the catalog was loaded at module-init via a static
-//     `import catalogJson from "../../../server/models.json"`. That put a
-//     58 KB JSON blob in the client bundle for every page that imported
-//     anything from this file — including static SSR pages like the
-//     homepage, pricing, and `/models` routes that only need a count.
-//   - Now we ship a *small static fallback* (a handful of hand-picked models with the
-//     exact `Model` shape consumers expect) and load the full catalog
-//     lazily at runtime via the `/v1/models` endpoint. The fallback
-//     guarantees SSR metadata (`MODEL_COUNT`, layout descriptions,
-//     `generateStaticParams`) keeps working without an async fetch; the
-//     lazy loader returns the full catalog for anything that needs it.
-//   - The static fallback mirrors the curated server catalog exactly
-//     (21 chat models: 18 Venice + 3 OMA-AI). See `MODEL_COUNT`.
-//
-// Public API is preserved: `Model`, `Capability`, `Provider`, `Tier`,
-// `formatPricePerMillion`, `getModelsByTier`,
-// `MODEL_COUNT`, `MODELS`, `PROVIDER_COLORS`, `TIER_COLORS`, `TIER_ORDER`.
+// Shared backend catalog supplies SSR prices, model pages, and metadata.
+// The live API refreshes availability and administrative price overrides.
+
+import catalogData from "../../../server/src/inference/model-catalog.json";
 
 export type Tier = "budget" | "mid" | "premium" | "frontier";
 
@@ -91,6 +72,8 @@ export interface Model {
 	contextLength: string;
 	/** Raw context length in tokens (for filter sliders). */
 	contextTokens: number;
+	maxOutputTokens?: number;
+	extendedPricing?: { contextTokenThreshold: number; inputPricePer1M: number; outputPricePer1M: number };
 	inputPricePer1M: number;
 	outputPricePer1M: number;
 	/**
@@ -111,6 +94,7 @@ export interface Model {
 	 * cached payloads and the static fallback catalog omit it).
 	 */
 	available?: boolean;
+	unavailableReason?: string;
 }
 
 export type Capability =
@@ -202,6 +186,7 @@ export const TIER_COLORS: Record<
 
 interface RawEntry {
 	id: string;
+	disabledReason?: string;
 	veniceId?: string;
 	/** Raw provider model id when the public OMA id must stay URL-safe. */
 	upstreamId?: string;
@@ -212,6 +197,8 @@ interface RawEntry {
 	markupPercent?: number;
 	category: Tier | string;
 	maxTokens: number;
+	maxOutputTokens?: number;
+	extendedPricing?: Model["extendedPricing"];
 	supportsStreaming?: boolean;
 	displayName: string;
 	capabilities: string[];
@@ -301,14 +288,8 @@ function deriveDescription(
 ): string {
 	const trimmed = (description ?? "").trim();
 	if (trimmed) return trimmed;
-	const cleaned = id.replace(/^(openai|minimax|together|deepinfra)\//i, "");
-	const titleCase = cleaned
-		.split(/[-_]/)
-		.map((part) => (part ? part.charAt(0).toUpperCase() + part.slice(1) : ""))
-		.filter(Boolean)
-		.join(" ");
 	const label = MODALITY_LABELS[modality] ?? "language model";
-	return `${titleCase || displayName} — ${label.toLowerCase()} served by OMA.`;
+	return `${displayName || id} — ${label.toLowerCase()} served by OMA.`;
 }
 
 /**
@@ -354,8 +335,8 @@ function derivePriceUnit(modality: Modality, _pricing: ApiModelEntry["pricing"])
 	* without forking the SSR fallback. Keyed by lower-cased model id.
 	*
  * DeepSeek V4 Flash exists twice in the catalog — once via Venice
- * (`deepseek-v4-flash-0731`, 25% markup) and once via OMA-AI/OpenBroker
- * (`deepseek-v4-flash-0731-openbroker`, 100% over Gonka wholesale). Both share the same
+ * (`deepseek-v4-flash-0731`, 50% markup) and once via OMA-AI/OpenBroker
+ * (`deepseek-v4-flash-0731-openbroker`, fixed $0.02/M retail). Both share the same
 	* upstream displayName ("DeepSeek V4 Flash"), which renders as an
 	* indistinguishable duplicate on /pricing and /models. Disambiguate by
 	* provider suffix.
@@ -411,12 +392,15 @@ function toModel(entry: RawEntry): Model {
 		description: deriveDescription(entry.id, entry.displayName, entry.description, modality),
 		contextLength: formatContextLength(entry.maxTokens),
 		contextTokens: entry.maxTokens,
+		maxOutputTokens: entry.maxOutputTokens,
+		extendedPricing: entry.extendedPricing,
 		inputPricePer1M: entry.inputPricePer1M,
 		outputPricePer1M: entry.outputPricePer1M,
 		capabilities: deriveCapabilities(entry.id, entry.displayName, entry.description, serverCaps),
 		modelId: entry.upstreamId ?? entry.veniceId ?? entry.id,
 		inputModalities: ["text"],
 		outputModalities: ["text"],
+		...(entry.disabledReason ? { available: false, unavailableReason: entry.disabledReason } : {}),
 	};
 }
 
@@ -432,6 +416,7 @@ function catalogFromRaw(catalog: RawCatalog): Model[] {
 /** OpenAI-style models with OMA catalog metadata from GET /v1/models. */
 interface ApiModelEntry extends ModelCapabilityMetadata {
 	id: string;
+	unavailable_reason?: string;
 	/** Customer-facing name from the server catalog; never derive this when present. */
 	display_name?: string;
 	owned_by?: string;
@@ -443,6 +428,7 @@ interface ApiModelEntry extends ModelCapabilityMetadata {
 	pricing: {
 		prompt: string;
 		completion: string | null;
+		extended?: { context_token_threshold: number; prompt: number; completion: number };
 		/** Per-generation USD price for image/video/music/upscale/inpaint. */
 		generation?: string;
 		/** Per-second USD price for ASR. */
@@ -452,6 +438,7 @@ interface ApiModelEntry extends ModelCapabilityMetadata {
 	};
 	category: string;
 	context_length: number | null;
+	max_output_tokens?: number;
 	/** Upstream routing target surfaced by /v1/models ("venice" | "oma-ai").
 	 * Backends differ: OMA + Pollinations return `provider`, OpenRouter returns
 	 * `owned_by`, etc. The loader picks whichever is present. */
@@ -565,6 +552,12 @@ const tier: Tier =
 						description: deriveDescription(entry.id, name, undefined, modality),
 						contextLength: formatContextLength(entry.context_length ?? 0),
 						contextTokens: entry.context_length ?? 0,
+						maxOutputTokens: entry.max_output_tokens,
+						extendedPricing: entry.pricing.extended ? {
+							contextTokenThreshold: entry.pricing.extended.context_token_threshold,
+							inputPricePer1M: entry.pricing.extended.prompt,
+							outputPricePer1M: entry.pricing.extended.completion,
+						} : undefined,
 						inputPricePer1M: inputPrice,
 						outputPricePer1M: outputPrice,
 						pricePerUnit: modality === "chat" ? undefined : (Number(entry.pricing?.generation) || Number(entry.pricing?.audio_second) || inputPrice),
@@ -580,6 +573,7 @@ const tier: Tier =
 						// which must read as available so a missing flag never hides
 						// a working model.
 						available: entry.available !== false,
+						unavailableReason: entry.unavailable_reason,
 					};
 				});
 			_liveModels = models;
@@ -605,254 +599,28 @@ const tier: Tier =
 	* pages that need a synchronous `MODELS` / `MODEL_COUNT`. Mirrors the
 	* curated server catalog (20 models) — keep in sync with
 	* server/src/inference/models.ts. Prices are USER-FACING per-1M rates
-	* (Venice wholesale × 1.25 markup; OMA-AI prices already final), exactly
+	* (Venice catalog rates × 1.5; OMA-AI prices already final), exactly
 	* as returned by GET /v1/models.
 	*/
+// The same catalog supplies backend billing and the frontend's SSR fallback.
 const FALLBACK_CATALOG: RawCatalog = {
-	MODEL_CATALOG: {
-		// ── Venice (wholesale × 1.25 markup = user-facing) ───────────────
-		// All prices rounded to .00 / .05 / .25 / .50 / .75 — keeps the catalog
-		// scannable while still preserving a healthy margin on every model.
-		"openai-gpt-56-sol": {
-			id: "openai-gpt-56-sol",
-			displayName: "GPT-5.6 Sol",
-			provider: "venice",
-			category: "frontier",
-			maxTokens: 1000000,
-			inputPricePer1M: 7.8125,
-			outputPricePer1M: 46.875,
-			capabilities: ["chat", "reasoning", "coding", "tools"],
-		},
-		"claude-opus-5": {
-			id: "claude-opus-5",
-			displayName: "Claude Opus 5",
-			provider: "venice",
-			category: "frontier",
-			maxTokens: 1000000,
-			inputPricePer1M: 7.50,
-			outputPricePer1M: 37.50,
-			capabilities: ["chat", "reasoning", "coding", "tools"],
-		},
-		"kimi-k3": {
-			id: "kimi-k3",
-			displayName: "Kimi K3",
-			provider: "venice",
-			category: "premium",
-			maxTokens: 1000000,
-			inputPricePer1M: 4.6875,
-			outputPricePer1M: 23.4375,
-			capabilities: ["chat", "reasoning", "tools"],
-		},
-		"zai-org-glm-5-2": {
-			id: "zai-org-glm-5-2",
-			displayName: "GLM 5.2",
-			provider: "venice",
-			category: "premium",
-			maxTokens: 1000000,
-			inputPricePer1M: 1.75,
-			outputPricePer1M: 5.50,
-			capabilities: ["chat", "reasoning", "tools"],
-		},
-		"deepseek-v4-pro": {
-			id: "deepseek-v4-pro",
-			displayName: "DeepSeek V4 Pro",
-			provider: "venice",
-			category: "premium",
-			maxTokens: 1000000,
-			inputPricePer1M: 2.0625,
-			outputPricePer1M: 4.12625,
-			capabilities: ["chat", "reasoning", "coding", "tools"],
-		},
-		"qwen-3-8-max": {
-			id: "qwen-3-8-max",
-			displayName: "Qwen 3.8 Max",
-			provider: "venice",
-			category: "premium",
-			maxTokens: 1000000,
-			inputPricePer1M: 3.125,
-			outputPricePer1M: 9.375,
-			capabilities: ["chat", "reasoning", "coding", "tools"],
-		},
-		"grok-4-5": {
-			id: "grok-4-5",
-			displayName: "Grok 4.5",
-			provider: "venice",
-			category: "premium",
-			maxTokens: 500000,
-			inputPricePer1M: 2.8375,
-			outputPricePer1M: 8.50,
-			capabilities: ["chat", "reasoning", "coding", "tools"],
-		},
-		"claude-sonnet-4-6": {
-			id: "claude-sonnet-4-6",
-			displayName: "Claude Sonnet 4.6",
-			provider: "venice",
-			category: "premium",
-			maxTokens: 1000000,
-			inputPricePer1M: 4.50,
-			outputPricePer1M: 22.50,
-			capabilities: ["chat", "reasoning", "coding", "tools"],
-		},
-		"gemini-3-6-flash": {
-			id: "gemini-3-6-flash",
-			displayName: "Gemini 3.6 Flash",
-			provider: "venice",
-			category: "premium",
-			maxTokens: 1000000,
-			inputPricePer1M: 1.171875,
-			outputPricePer1M: 5.859375,
-			capabilities: ["chat", "reasoning", "coding", "tools", "vision"],
-		},
-		"llama-3.3-70b": {
-			id: "llama-3.3-70b",
-			displayName: "Llama 3.3 70B",
-			provider: "venice",
-			category: "mid",
-			maxTokens: 128000,
-			inputPricePer1M: 0.875,
-			outputPricePer1M: 3.50,
-			capabilities: ["chat", "tools"],
-		},
-		"hermes-3-llama-3.1-405b": {
-			id: "hermes-3-llama-3.1-405b",
-			displayName: "Hermes 3 405B",
-			provider: "venice",
-			category: "mid",
-			maxTokens: 128000,
-			inputPricePer1M: 1.375,
-			outputPricePer1M: 3.75,
-			capabilities: ["chat", "reasoning", "tools"],
-		},
-		"zai-org-glm-5-1": {
-			id: "zai-org-glm-5-1",
-			displayName: "GLM 5.1",
-			provider: "venice",
-			category: "mid",
-			maxTokens: 200000,
-			inputPricePer1M: 1.925,
-			outputPricePer1M: 6.05,
-			capabilities: ["chat", "reasoning", "tools"],
-		},
-		"qwen-3-7-plus": {
-			id: "qwen-3-7-plus",
-			displayName: "Qwen 3.7 Plus",
-			provider: "venice",
-			category: "mid",
-			maxTokens: 1000000,
-			inputPricePer1M: 0.625,
-			outputPricePer1M: 2.50,
-			capabilities: ["chat", "reasoning", "tools"],
-		},
-		"venice-uncensored-1-2": {
-			id: "venice-uncensored-1-2",
-			displayName: "Venice Uncensored 1.2",
-			provider: "venice",
-			category: "mid",
-			maxTokens: 128000,
-			inputPricePer1M: 0.25,
-			outputPricePer1M: 1.125,
-			capabilities: ["chat", "uncensored"],
-		},
-		"xiaomi-mimo-v2-5": {
-			id: "xiaomi-mimo-v2-5",
-			displayName: "Xiaomi MiMo V2.5",
-			provider: "venice",
-			category: "budget",
-			maxTokens: 1000000,
-			inputPricePer1M: 0.50,
-			outputPricePer1M: 2.50,
-			capabilities: ["chat", "reasoning", "fast"],
-		},
-		"deepseek-v4-flash-0731": {
-			id: "deepseek-v4-flash-0731",
-			displayName: "DeepSeek V4 Flash",
-			provider: "venice",
-			category: "budget",
-			maxTokens: 1000000,
-			inputPricePer1M: 0.21875,
-			outputPricePer1M: 0.4375,
-			capabilities: ["chat", "reasoning", "fast"],
-		},
-		"mistral-small-2603": {
-			id: "mistral-small-2603",
-			displayName: "Mistral Small 4",
-			provider: "venice",
-			category: "budget",
-			maxTokens: 256000,
-			inputPricePer1M: 0.234375,
-			outputPricePer1M: 0.9375,
-			capabilities: ["chat", "tools", "fast"],
-		},
-		"google-gemma-4-31b-it": {
-			id: "google-gemma-4-31b-it",
-			displayName: "Gemma 4 31B",
-			provider: "venice",
-			category: "budget",
-			maxTokens: 256000,
-			inputPricePer1M: 0.15,
-			outputPricePer1M: 0.45,
-			capabilities: ["chat", "fast"],
-		},
-	// ── OMA-AI resale (user-facing = 2x Gonka wholesale) ────────────────
-	// OpenBroker / Gonka Network upstream (api.openbroker.gonka.gg).
-	// Verified live 2026-09-05 against /v1/models (GLM-5.3-Flash added
-	// 2026-09-24) — the three models below are the OMA-AI set:
-	// MiniMaxAI/MiniMax-M2.7, deepseek-ai/DeepSeek-V4-Flash-0731,
-	// and zai-org/GLM-5.3-Flash. (Kimi K2.6 was dropped from
-	// the active set by network governance vote per epoch.)
-	//
-	// Free usage is restricted to /chat for signed-out visitors only.
-	// API-token callers (Authorization: Bearer *** ALWAYS pay
-	// real credits for these models, even at the same displayed price.
-	//
-	// Base wholesale (openbroker.gonka.gg, verified 2026-09-05):
-	//   MiniMax M2.7 200K            $0.30 / M tokens  (in == out)
-	//   DeepSeek V4 Flash 400K       $0.25 / M tokens  (in == out)
-	// User-facing = base x 2 (100% platform margin) → 0.60 / 0.50.
-	"minimax-m2-7": {
-		id: "minimax-m2-7",
-		upstreamId: "MiniMaxAI/MiniMax-M2.7",
-		displayName: "MiniMax M2.7",
-		provider: "oma-ai",
-		category: "budget",
-		maxTokens: 200000,
-		inputPricePer1M: 0.60,
-		outputPricePer1M: 0.60,
-		capabilities: ["chat", "reasoning", "coding", "tools"],
-	},
-	"deepseek-v4-flash-0731-openbroker": {
-		id: "deepseek-v4-flash-0731-openbroker",
-		upstreamId: "deepseek-ai/DeepSeek-V4-Flash-0731",
-		displayName: "DeepSeek V4 Flash (OMA-AI)",
-		provider: "oma-ai",
-		category: "budget",
-		maxTokens: 400000,
-		inputPricePer1M: 0.50,
-		outputPricePer1M: 0.50,
-		capabilities: ["chat", "reasoning", "fast", "tools"],
-	},
-	"zai-org-glm-5-3": {
-		id: "zai-org-glm-5-3",
-		upstreamId: "zai-org/GLM-5.3-Flash",
-		displayName: "GLM-5.3 Flash (OMA-AI)",
-		provider: "oma-ai",
-		category: "budget",
-		maxTokens: 1000000,
-		inputPricePer1M: 0.30,
-		outputPricePer1M: 1.00,
-		capabilities: ["chat", "reasoning", "fast", "tools", "multimodal"],
-	},
-	},
+	MODEL_CATALOG: Object.fromEntries(catalogData.map((entry) => {
+		const factor = 1 + entry.markupPercent / 100;
+		return [entry.id, {
+			...entry,
+			upstreamId: entry.omaAiId,
+			maxTokens: entry.contextWindow,
+			inputPricePer1M: entry.customerInputPricePer1M ?? entry.inputPricePer1M * factor,
+			outputPricePer1M: entry.customerOutputPricePer1M ?? entry.outputPricePer1M * factor,
+			extendedPricing: entry.extendedPricing ? {
+				...entry.extendedPricing,
+				inputPricePer1M: entry.extendedPricing.inputPricePer1M * factor,
+				outputPricePer1M: entry.extendedPricing.outputPricePer1M * factor,
+			} : undefined,
+		}];
+	})),
 };
 
-/**
-	* Synchronous `MODELS` array for SSR metadata and the few places that
-	* genuinely can't go async (Next.js `generateStaticParams`, page
-	* metadata). This is the *fallback* catalog — the full curated catalog
-	* is loaded lazily via `loadModels()` from GET /v1/models. Keep prices
-	* and ids in sync with server/src/inference/models.ts (single source
-	* of truth); entries here that the server can't route will 404.
-	*/
 export const MODELS: Model[] = catalogFromRaw(FALLBACK_CATALOG);
 
 export function formatPricePerMillion(pricePer1M: number): string {
@@ -892,19 +660,5 @@ export function getModelsByTier(models: Model[]): Record<Tier, Model[]> {
 	return grouped;
 }
 
-// Marketing model count surfaced across the UI. Must match the live
-// `GET /v1/models` count — 21 curated chat models (18 Venice + 3 OMA-AI).
-// Kept in sync with `server/src/inference/models.ts` defaultCatalog().
-// The 3 OMA-AI models are the exact set served by api.openbroker.gonka.gg.
-export const MODEL_COUNT = 21;
-
-// DRIFT GUARD: if anyone adds/removes an entry in `FALLBACK_CATALOG`
-// they MUST update `MODEL_COUNT` above — these are the marketing
-// numbers that show in the SSR `<title>`, hero stats, sitemap anchor,
-// and the trust strip. Throws at module-load time so a typecheck
-// or build never silently ships a stale count.
-if (MODELS.length !== MODEL_COUNT) {
-	throw new Error(
-		`models-data drift: FALLBACK_CATALOG has ${MODELS.length} entries but MODEL_COUNT is ${MODEL_COUNT}. Update both (see comment).`,
-	);
-}
+// Marketing counts derive from the shared catalog.
+export const MODEL_COUNT = MODELS.length;

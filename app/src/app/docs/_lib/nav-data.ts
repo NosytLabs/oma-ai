@@ -99,6 +99,12 @@ export const NAV_ITEMS: NavItem[] = [
 		],
 		headings: [
 			{ id: "ep-chat", label: "Chat completions" },
+			{ id: "ep-user", label: "Current account" },
+			{ id: "ep-sessions", label: "Active sessions" },
+			{ id: "ep-session-revoke", label: "Revoke remote session" },
+			{ id: "ep-sessions-revoke", label: "Revoke other sessions" },
+			{ id: "ep-history-clear", label: "Clear usage history" },
+			{ id: "ep-account-delete", label: "Delete account" },
 			{ id: "ep-messages", label: "Anthropic messages" },
 			{ id: "ep-search", label: "Web search" },
 			{ id: "ep-models", label: "List models" },

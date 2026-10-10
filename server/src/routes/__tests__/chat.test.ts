@@ -149,6 +149,8 @@ const baseBody = {
 
 beforeEach(() => {
 	vi.clearAllMocks();
+	mockRouteRequest.mockReset();
+	mockParseNonStreaming.mockReset();
 	// Reset default db select to return [] (no idempotency cache hit).
 	mockDb.select.mockReturnValue({
 		from: vi.fn().mockReturnValue({
@@ -162,6 +164,18 @@ beforeEach(() => {
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
 describe("POST /v1/chat/completions", () => {
+	it("forwards assistant tool calls and tool results for a coding follow-up", async () => {
+		const messages = [
+			{ role: "user", content: "Read the file." },
+			{ role: "assistant", content: null, tool_calls: [{ id: "call_1", type: "function", function: { name: "read_file", arguments: '{"path":"README.md"}' } }] },
+			{ role: "tool", content: "The file contents.", tool_call_id: "call_1" },
+		];
+		mockRouteRequest.mockResolvedValueOnce({ response: new Response("{}"), actualModelId: baseBody.model });
+		mockParseNonStreaming.mockResolvedValueOnce({ data: { ok: true } });
+		const res = await chatRequest({ ...baseBody, messages }, { Authorization: "Bearer test-key" });
+		expect(res.status).toBe(200);
+		expect(mockRouteRequest).toHaveBeenCalledWith(expect.objectContaining({ messages }));
+	});
 	describe("request validation", () => {
 		it("rejects invalid JSON body with 400", async () => {
 			const res = await chatRequest("not json", {});

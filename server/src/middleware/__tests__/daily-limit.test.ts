@@ -23,12 +23,16 @@ vi.mock("../../lib/logger.js", () => ({ logger: { error: vi.fn(), warn: vi.fn() 
 // constant value. A static top-level import would pin a single module graph
 // for the whole file, so the counter would leak across cases and the suite
 // would depend on execution order.
-async function makeApp() {
+async function makeApp(withModelLimiter = false) {
 	const { dailyUsageLimit } = await import("../daily-limit.js");
 	const { Hono } = await import("hono");
 	const app = new Hono();
+	if (withModelLimiter) {
+		const { modelRateLimit } = await import("../rate-limit/token-bucket.js");
+		app.use("/v1/chat/completions", modelRateLimit());
+	}
 	app.use("/v1/chat/completions", dailyUsageLimit());
-	app.post("/v1/chat/completions", (c) => c.json({ ok: true }));
+	app.post("/v1/chat/completions", async (c) => c.json({ ok: true, model: (await c.req.json()).model }));
 	return app;
 }
 
@@ -46,6 +50,13 @@ describe("dailyUsageLimit", () => {
 		mocks.isFreeWebsiteModel.mockReturnValue(true);
 		mocks.getRedisClient.mockResolvedValue(null);
 		mocks.isRedisReady.mockReturnValue(false);
+	});
+
+	it("shares the parsed body with the model limiter and completion handler", async () => {
+		const response = await send(await makeApp(true));
+		expect(response.status).toBe(200);
+		await expect(response.json()).resolves.toEqual({ ok: true, model: "minimax-m2-7" });
+		expect(response.headers.get("X-DailyLimit-Remaining")).toBe("19");
 	});
 
 	it("fails OPEN for free website chat when the quota store is unavailable", async () => {

@@ -37,6 +37,8 @@ interface Chat24h {
 		errors: number;
 		p95LatencyMs: number | null;
 		topModels: { model: string; requests: number; tokens: number }[];
+		activeModels: number;
+		available: boolean;
 }
 
 async function fetchChat24h(): Promise<Chat24h> {
@@ -48,6 +50,8 @@ async function fetchChat24h(): Promise<Chat24h> {
 				errors: 0,
 				p95LatencyMs: null,
 				topModels: [],
+				activeModels: 0,
+				available: false,
 		};
 		try {
 				const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -57,7 +61,8 @@ async function fetchChat24h(): Promise<Chat24h> {
 								completions: sql<number>`count(*)::int`,
 								inputTokens: sql<number>`coalesce(sum(${usageRecords.inputTokens}), 0)::int`,
 								outputTokens: sql<number>`coalesce(sum(${usageRecords.outputTokens}), 0)::int`,
-								errors: sql<number>`count(*) filter (where ${usageRecords.status} <> 'completed')::int`,
+								errors: sql<number>`count(*) filter (where ${usageRecords.status} = 'error')::int`,
+								activeModels: sql<number>`count(distinct ${usageRecords.model})::int`,
 								p95LatencyMs: sql<number | null>`percentile_cont(0.95) within group (order by ${usageRecords.latencyMs})::int`,
 						})
 						.from(usageRecords)
@@ -78,6 +83,8 @@ async function fetchChat24h(): Promise<Chat24h> {
 				const inputTokens = agg?.inputTokens ?? 0;
 				const outputTokens = agg?.outputTokens ?? 0;
 				return {
+						available: true,
+						activeModels: agg?.activeModels ?? 0,
 						completions: agg?.completions ?? 0,
 						inputTokens,
 						outputTokens,
@@ -98,7 +105,7 @@ async function fetchChat24h(): Promise<Chat24h> {
 
 opsRoutes.get("/v1/ops/snapshot", sessionOrBearerAuth, requireAdmin(), async (c) => {
 		const dbStart = Date.now();
-		let dbLatencyMs: number | null = null;
+		let dbLatencyMs: number | null;
 		try {
 				await db.execute(sql`select 1`);
 				dbLatencyMs = Date.now() - dbStart;
@@ -111,7 +118,7 @@ opsRoutes.get("/v1/ops/snapshot", sessionOrBearerAuth, requireAdmin(), async (c)
 		const mem = process.memoryUsage();
 
 		return c.json({
-				status: dbLatencyMs != null ? "ok" : "degraded",
+				status: dbLatencyMs != null && chat24h.available ? "ok" : "degraded",
 				version: VERSION,
 				env: config.NODE_ENV,
 				uptimeSec: Math.round(process.uptime()),

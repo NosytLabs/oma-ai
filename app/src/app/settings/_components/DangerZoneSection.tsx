@@ -94,7 +94,7 @@ export function DangerZoneSection({
 							Clear usage history
 						</h3>
 						<p className="mt-1 text-xs text-text-muted">
-							Wipe usage records, audit logs, and prompt telemetry. Your
+							Remove usage records and your audit history. A record of this action is kept. Your
 							identity, API keys, sessions, and credit balances are preserved.
 						</p>
 
@@ -128,7 +128,7 @@ export function DangerZoneSection({
 											aria-hidden="true"
 										/>
 										<span className="text-sm font-semibold text-text-bright">
-											Clear telemetry &amp; logs?
+											Clear usage history &amp; logs?
 										</span>
 									</div>
 									<p className="mb-4 text-xs text-text-muted">
@@ -189,7 +189,7 @@ export function DangerZoneSection({
 						</h3>
 						<p className="mt-1 text-xs text-text-muted">
 							Permanently delete your OMA account, API keys, and credits. This
-							cannot be undone. Credits are non-redeemable and will be
+							cannot be undone and requires a sign-in within the last 24 hours. Payment-security audit records are retained with your account ID detached. Credits are non-redeemable and will be
 							forfeited
 							{Number.isFinite(balanceDollars)
 								? ` (about $${balanceDollars.toFixed(2)} remaining)`
@@ -236,7 +236,7 @@ export function DangerZoneSection({
 											DELETE
 										</code>
 										{" "}
-										below to confirm. All data will be permanently destroyed.
+										below to confirm account deletion. Remaining credits are forfeited. Payment-security records are retained without your account ID.
 									</p>
 									<input
 										type="text"

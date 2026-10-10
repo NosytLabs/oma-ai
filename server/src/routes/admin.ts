@@ -28,10 +28,26 @@ import {
 } from "../db/schema.js";
 import { logger } from "../lib/logger.js";
 import { auditLog, createAuditLogger } from "../middleware/audit.js";
+import { adminAnalyticsRoutes } from "./admin-analytics.js";
 
 export const adminRoutes = new Hono<OmaEnv>();
+adminRoutes.route("/", adminAnalyticsRoutes);
 
 // ---------- POST /v1/admin/site-settings ----------
+
+adminRoutes.get("/v1/admin/site-settings", sessionOrBearerAuth, requireAdmin(), async (c) => {
+	c.header("Cache-Control", "no-store");
+	try {
+		const [settings] = await db.select().from(siteSettings).limit(1);
+		return c.json({ maintenanceMode: settings?.maintenanceMode ?? false,
+			cardPaymentsEnabled: settings?.cardPaymentsEnabled ?? true,
+			cryptoPaymentsEnabled: settings?.cryptoPaymentsEnabled ?? true,
+			maintenanceMessage: settings?.maintenanceMessage ?? "" });
+	} catch (err) {
+		logger.error({ err }, "[admin] settings read failed");
+		return c.json({ error: { message: "Could not load operator settings." } }, 500);
+	}
+});
 
 const siteSettingsSchema = z.object({
 		cardPaymentsEnabled: z.boolean().optional(),
@@ -150,7 +166,7 @@ adminRoutes.post(
 								userId,
 								balanceCents: Math.max(deltaCents, 0).toString(),
 								totalDepositedCents: deltaCents > 0 ? deltaCents.toString() : "0",
-								totalUsedCents: deltaCents < 0 ? (-deltaCents).toString() : "0",
+								totalUsedCents: "0",
 							})
 							.onConflictDoUpdate({
 								target: creditBalances.userId,
@@ -164,7 +180,7 @@ adminRoutes.post(
 											: sql`${creditBalances.totalDepositedCents}::numeric`,
 									totalUsedCents:
 										deltaCents < 0
-											? sql`${creditBalances.totalUsedCents}::numeric + ${-deltaCents}::numeric`
+											? sql`${creditBalances.totalUsedCents}::numeric + LEAST(${creditBalances.balanceCents}::numeric, ${-deltaCents}::numeric)`
 											: sql`${creditBalances.totalUsedCents}::numeric`,
 									lastActivityAt: sql`NOW()`,
 								},
@@ -175,7 +191,7 @@ adminRoutes.post(
 								action: deltaCents >= 0 ? "CREDIT_ADJUSTED" : "CREDIT_DEDUCTED",
 								resource: "credit_balance",
 								resourceId: userId,
-								metadata: { deltaCents, reason },
+								metadata: { requestedDeltaCents: deltaCents, reason, deductionCappedAtBalance: deltaCents < 0 },
 						});
 
 						return c.json({ ok: true, userId, deltaCents });
@@ -208,6 +224,7 @@ adminRoutes.post(
 
 				const adminId = c.get("userId");
 				const { userId, suspended, reason } = parsed.data;
+				if (suspended && userId === adminId) return c.json({ error: { message: "You cannot suspend your own admin account." } }, 400);
 
 				try {
 						const [target] = await db
@@ -340,7 +357,7 @@ adminRoutes.get(
 						// Hand-rolled SQL because drizzle's nested select on a correlated
 						// subquery + ILIKE is awkward when combined with cursor pagination.
 						const search = q ? `%${q}%` : null;
-						const cursorFilter = cursor ? sql`AND id > ${cursor}` : sql``;
+						const cursorFilter = cursor ? sql`AND u.id > ${cursor}` : sql``;
 						const searchFilter = search
 								? sql`AND (email ILIKE ${search} OR name ILIKE ${search})`
 								: sql``;
@@ -368,7 +385,7 @@ adminRoutes.get(
 																SUM(input_tokens)::bigint AS input_tokens,
 																SUM(output_tokens)::bigint AS output_tokens,
 																SUM(cost_cents)::numeric AS upstream_cents,
-																SUM(total_cents)::numeric AS total_cents,
+																SUM(total_cents) FILTER (WHERE refunded_at IS NULL)::numeric AS total_cents,
 																MAX(created_at) AS last_used_at
 															FROM usage_records ur
 															WHERE ur.user_id = u.id
@@ -400,7 +417,7 @@ adminRoutes.get(
 														lastUsedAt: r.usage_last_used_at ?? null,
 													},
 												}));
-						const nextCursor = items.length === limit ? items[items.length - 1]?.id : null;
+						const nextCursor = arr.length > limit ? items[items.length - 1]?.id : null;
 
 												return c.json({ ok: true, items, nextCursor });
 											} catch (err) {
@@ -455,6 +472,7 @@ adminRoutes.get(
 								// the kind of query that takes the admin panel down on a large table.
 								const toDate = to ?? new Date();
 								const fromDate = from ?? new Date(toDate.getTime() - 30 * 24 * 60 * 60 * 1000);
+								if (fromDate > toDate || toDate.getTime() - fromDate.getTime() > 90 * 86_400_000) return c.json({ error: { message: "Choose an ordered range of up to 90 days." } }, 400);
 
 								// The grouping key is chosen from a fixed allow-list, never
 								// interpolated from user input — the identifier goes into the SQL as a
@@ -465,6 +483,7 @@ adminRoutes.get(
 										: groupBy === "user"
 											? sql`user_id`
 											: sql`model`;
+								const groupLabel = groupBy === "user" ? sql`(SELECT COALESCE(u.email, u.name, u.id) FROM "user" u WHERE u.id = usage_records.user_id)` : groupColumn;
 
 								// `status` is free text on the row ('completed' | 'error' |
 								// 'aborted' | 'free_tier'). A request counts as an error only when it
@@ -476,12 +495,21 @@ adminRoutes.get(
 									const rows = await db.execute(sql`
 										SELECT
 											${groupColumn} AS key,
+											${groupLabel} AS label,
 											COUNT(*)::int AS requests,
+											COUNT(*) FILTER (WHERE provider = 'oma-ai')::int AS unknown_cost_requests,
+											SUM(COUNT(*)) OVER ()::bigint AS range_requests,
+											SUM(COUNT(*) FILTER (WHERE provider = 'oma-ai')) OVER ()::bigint AS range_unknown_cost_requests,
+											SUM(SUM(input_tokens)) OVER ()::bigint AS range_input_tokens,
+											SUM(SUM(output_tokens)) OVER ()::bigint AS range_output_tokens,
+											SUM(SUM(cost_cents) FILTER (WHERE provider <> 'oma-ai')) OVER ()::numeric AS range_upstream_cents,
+											SUM(SUM(markup_cents)) OVER ()::numeric AS range_markup_cents,
+											SUM(SUM(total_cents) FILTER (WHERE refunded_at IS NULL)) OVER ()::numeric AS range_total_cents,
 											COALESCE(SUM(input_tokens), 0)::bigint AS input_tokens,
 											COALESCE(SUM(output_tokens), 0)::bigint AS output_tokens,
-											COALESCE(SUM(cost_cents), 0)::numeric AS upstream_cents,
+											COALESCE(SUM(cost_cents) FILTER (WHERE provider <> 'oma-ai'), 0)::numeric AS upstream_cents,
 											COALESCE(SUM(markup_cents), 0)::numeric AS markup_cents,
-											COALESCE(SUM(total_cents), 0)::numeric AS total_cents,
+											COALESCE(SUM(total_cents) FILTER (WHERE refunded_at IS NULL), 0)::numeric AS total_cents,
 											${errorCount}::int AS error_count,
 											-- avg_latency_ms is meaningful now that latency_ms is written.
 											COALESCE(ROUND(AVG(latency_ms))::bigint, 0) AS avg_latency_ms
@@ -500,7 +528,9 @@ adminRoutes.get(
 										const errorCountNum = Number(r.error_count ?? 0);
 										return {
 											key: r.key,
+											label: r.label ?? r.key,
 											requests,
+											unknownCostRequests: Number(r.unknown_cost_requests ?? 0),
 											inputTokens: Number(r.input_tokens ?? 0),
 											outputTokens: Number(r.output_tokens ?? 0),
 											// Numeric comes back from pg as a string to preserve
@@ -524,24 +554,15 @@ adminRoutes.get(
 										// Totals across the whole range (not just the returned page), so
 										// the header can show the true spend even when the group list is
 										// truncated by `limit`.
-										totals: items.reduce(
-											(acc, i) => ({
-												requests: acc.requests + i.requests,
-												inputTokens: acc.inputTokens + i.inputTokens,
-												outputTokens: acc.outputTokens + i.outputTokens,
-												upstreamCents: acc.upstreamCents + i.upstreamCents,
-												markupCents: acc.markupCents + i.markupCents,
-												totalCents: acc.totalCents + i.totalCents,
-											}),
-											{
-												requests: 0,
-												inputTokens: 0,
-												outputTokens: 0,
-												upstreamCents: 0,
-												markupCents: 0,
-												totalCents: 0,
-											},
-										),
+										totals: {
+											requests: Number(arr[0]?.range_requests ?? 0),
+											inputTokens: Number(arr[0]?.range_input_tokens ?? 0),
+											outputTokens: Number(arr[0]?.range_output_tokens ?? 0),
+											upstreamCents: Number(arr[0]?.range_upstream_cents ?? 0),
+											markupCents: Number(arr[0]?.range_markup_cents ?? 0),
+											totalCents: Number(arr[0]?.range_total_cents ?? 0),
+											unknownCostRequests: Number(arr[0]?.range_unknown_cost_requests ?? 0),
+										},
 									});
 								} catch (err) {
 									logger.error({ err }, "[admin] usage summary failed");
@@ -578,6 +599,7 @@ adminRoutes.get(
 								const { from, to, limit } = parsed.data;
 								const toDate = to ?? new Date();
 								const fromDate = from ?? new Date(toDate.getTime() - 30 * 24 * 60 * 60 * 1000);
+								if (fromDate > toDate || toDate.getTime() - fromDate.getTime() > 90 * 86_400_000) return c.json({ error: { message: "Choose an ordered range of up to 90 days." } }, 400);
 
 								try {
 									const rows = await db.execute(sql`
@@ -586,7 +608,7 @@ adminRoutes.get(
 											COUNT(*)::int AS requests,
 											COUNT(*) FILTER (WHERE requested_model IS DISTINCT FROM model)::int AS failed_over,
 											COALESCE(SUM(attempt_count), 0)::numeric AS total_attempts,
-											COALESCE(SUM(total_cents), 0)::numeric AS total_cents
+											COALESCE(SUM(total_cents) FILTER (WHERE refunded_at IS NULL), 0)::numeric AS total_cents
 										FROM usage_records
 										WHERE created_at >= ${fromDate} AND created_at <= ${toDate}
 											AND requested_model IS NOT NULL

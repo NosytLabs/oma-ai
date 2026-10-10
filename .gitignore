@@ -45,7 +45,7 @@ audit-screenshots/
 .visual-audit/
 screenshots/
 # Audit reports left at repo root after a session
-audit-*.md
+/audit-*.md
 
 # Root-level public only (Next app assets live in app/public/)
 /public/

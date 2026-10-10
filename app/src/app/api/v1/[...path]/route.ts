@@ -1,6 +1,7 @@
 import { proxy } from "@/lib/api/proxy-handler";
 
 export const runtime = "nodejs";
+export const maxDuration = 300;
 
 /**
 	* Catch-all proxy for /api/v1/* — forwards any request not handled by a

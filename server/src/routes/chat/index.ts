@@ -74,8 +74,10 @@ const chatSchema = z.object({
 				.array(
 						z.object({
 								role: z.enum(["system", "user", "assistant", "tool"]),
-								content: z.string().or(z.array(z.any())),
+								content: z.string().or(z.array(z.any())).nullable(),
 								name: z.string().optional(),
+								tool_calls: z.array(z.unknown()).optional(),
+								tool_call_id: z.string().optional(),
 						}),
 				)
 				.min(1),
@@ -160,6 +162,9 @@ chatRoutes.post(
 				}
 
 				const userId = c.get("userId");
+				if (modelDef.disabledReason) {
+					return c.json({ error: { message: modelDef.disabledReason, type: "model_unavailable" } }, 503);
+				}
 				const source = c.req.header("X-OMA-Source");
 				const origin = c.req.header("Origin") || c.req.header("Referer") || "";
 				const allowedOrigins = [
@@ -296,11 +301,7 @@ chatRoutes.post(
 					await routeRequestWithFallback({
 								modelId: model,
 								clientFallbacks: clientModels,
-								messages: messages.map((m) => ({
-										role: m.role,
-										content: m.content,
-										...(m.name ? { name: m.name } : {}),
-								})),
+								messages,
 								stream,
 								max_tokens,
 								temperature,
@@ -309,6 +310,7 @@ chatRoutes.post(
 								tool_choice,
 								userId: userId ?? "anonymous",
 								requestId,
+								signal: c.req.raw.signal,
 								skipBilling: isFreeWebsiteChat, // Don't deduct credits for free website chat
 						});
 

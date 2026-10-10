@@ -86,7 +86,7 @@ async function magicSignIn(email) {
 	const url = new URL(await deliverySince(offset, /magicLink:\s*"([^"]+)"/));
 	const token = url.searchParams.get("token");
 	const rows = await pool.query("SELECT identifier FROM verification WHERE identifier = $1", [
-		createHash("sha256").update(token).digest("base64url"),
+		`magic-link:${createHash("sha256").update(token).digest("base64url")}`,
 	]);
 	assert.equal(rows.rowCount, 1, "Magic link must be stored hashed");
 	const signedIn = await request(`${url.pathname}${url.search}`, { expected: 302 });
@@ -116,6 +116,11 @@ try {
 	databaseCreated = true;
 	pool = new pg.Pool({ connectionString: databaseUrl.toString() });
 	await migrate(drizzle(pool), { migrationsFolder: `${serverDir}src/db/migrations` });
+	const meteringColumns = await pool.query("SELECT column_name FROM information_schema.columns WHERE table_name = 'usage_records'");
+	for (const column of ["requested_model", "routed_via", "attempt_count"]) {
+		assert.ok(meteringColumns.rows.some((row) => row.column_name === column), `Fresh migrations must include ${column}`);
+	}
+	pass("fresh database migrations include all usage metering columns");
 	backend = spawn(process.execPath, ["--import", "tsx/esm", "src/index.ts"], {
 		cwd: serverDir,
 		env: {
@@ -194,6 +199,56 @@ try {
 	assert.equal(Number(remainingBalance.rows[0].balance_cents), 100);
 	pass("revoke-other-sessions preserves the current session; export and history clearing preserve the account and balance");
 
+	await request("/v1/admin/usage/timeline", { cookie: first.cookie, expected: 403 });
+	await request("/v1/admin/usage/logs", { expected: 401 });
+	await pool.query("UPDATE \"user\" SET role = 'admin' WHERE id = $1", [profile.id]);
+	await request("/v1/admin/site-settings", { method: "POST", cookie: first.cookie, body: { maintenanceMode: true, maintenanceMessage: "Local integration maintenance" } });
+	const adminSettings = (await request("/v1/admin/site-settings", { cookie: first.cookie })).data;
+	assert.equal(adminSettings.maintenanceMessage, "Local integration maintenance");
+	await request("/v1/models", { expected: 503 });
+	await request("/v1/admin/site-settings", { method: "POST", cookie: first.cookie, body: { maintenanceMode: false } });
+	await pool.query(`INSERT INTO "user" (id, name, email, email_verified) VALUES ('admin-test-target', 'Operator test target', 'operator-target@local.test', true)`);
+	await request("/v1/admin/credit-adjust", { method: "POST", cookie: first.cookie, body: { userId: "admin-test-target", deltaCents: 10, reason: "Local adjustment test" } });
+	await request("/v1/admin/credit-adjust", { method: "POST", cookie: first.cookie, body: { userId: "admin-test-target", deltaCents: -20, reason: "Local deduction test" } });
+	const adjustedBalance = (await pool.query("SELECT balance_cents, total_used_cents FROM credit_balances WHERE user_id = 'admin-test-target'")).rows[0];
+	assert.equal(Number(adjustedBalance.balance_cents), 0);
+	assert.equal(Number(adjustedBalance.total_used_cents), 10, "A clamped deduction must only book credits actually removed");
+	await request("/v1/admin/rate-limit-override", { method: "POST", cookie: first.cookie, body: { userId: "admin-test-target", maxRequestsPerMinute: 12, reason: "Local override test" } });
+	assert.equal((await pool.query("SELECT max_requests_per_minute FROM rate_limit_overrides WHERE user_id = 'admin-test-target'")).rows[0].max_requests_per_minute, 12);
+	await request("/v1/admin/rate-limit-override", { method: "POST", cookie: first.cookie, body: { userId: "admin-test-target", maxRequestsPerMinute: null, reason: "Clear local override" } });
+	assert.equal((await pool.query("SELECT 1 FROM rate_limit_overrides WHERE user_id = 'admin-test-target'")).rowCount, 0);
+	await request("/v1/admin/user-suspend", { method: "POST", cookie: first.cookie, body: { userId: "admin-test-target", suspended: true, reason: "Local suspension test" } });
+	assert.equal((await pool.query("SELECT suspended FROM \"user\" WHERE id = 'admin-test-target'")).rows[0].suspended, true);
+	await request("/v1/admin/user-suspend", { method: "POST", cookie: first.cookie, body: { userId: "admin-test-target", suspended: false, reason: "Restore local target" } });
+	await request("/v1/admin/user-suspend", { method: "POST", cookie: first.cookie, body: { userId: profile.id, suspended: true, reason: "Must reject self suspension" }, expected: 400 });
+	pass("admin maintenance remains reversible, settings retain their message, and real ledger, override, suspension controls work safely");
+	await pool.query(`INSERT INTO usage_records (request_id, user_id, model, requested_model, provider, input_tokens, output_tokens, cost_cents, markup_cents, total_cents, status, attempt_count, latency_ms, refunded_at)
+	 VALUES ('admin-venice', $1, 'claude-opus-5', 'claude-opus-5', 'venice', 100, 50, 2, 1, 3, 'completed', 1, 1200, NULL),
+	 ('admin-gonka', $1, 'minimax-m2-7', 'zai-org-glm-5-3', 'oma-ai', 80, 20, 0, 0, 1, 'completed', 2, 2200, NULL),
+	 ('admin-refunded', $1, 'claude-opus-5', 'claude-opus-5', 'venice', 10, 5, 1, 1, 2, 'error', 1, 200, NOW())`, [profile.id]);
+	const timeline = (await request("/v1/admin/usage/timeline?days=7", { cookie: first.cookie })).data;
+	assert.equal(timeline.items.reduce((sum, row) => sum + row.requests, 0), 3);
+	assert.equal(timeline.items.reduce((sum, row) => sum + row.billedCents, 0), 4);
+	assert.equal(timeline.items.reduce((sum, row) => sum + row.errors, 0), 1);
+	assert.equal(timeline.items.reduce((sum, row) => sum + row.failedOver, 0), 1);
+	assert.equal(timeline.items.reduce((sum, row) => sum + row.unknownCostRequests, 0), 1);
+	assert.ok(timeline.items.some((row) => row.requests === 0), "Empty chart buckets must be present");
+	assert.equal((await request("/v1/admin/usage/summary", { cookie: first.cookie })).data.totals.totalCents, 4, "Spend breakdown and timeline must both exclude refunds");
+	const logPage = (await request("/v1/admin/usage/logs?limit=1", { cookie: first.cookie })).data;
+	assert.equal(logPage.items.length, 1);
+	assert.ok(logPage.nextCursor);
+	const nextLogPage = (await request(`/v1/admin/usage/logs?limit=1&cursor=${encodeURIComponent(logPage.nextCursor)}`, { cookie: first.cookie })).data;
+	assert.notEqual(nextLogPage.items[0].id, logPage.items[0].id);
+	const searchedLogs = (await request("/v1/admin/usage/logs?q=admin-gonka", { cookie: first.cookie })).data;
+	assert.equal(searchedLogs.items.length, 1);
+	assert.equal(searchedLogs.items[0].upstreamCents, null);
+	assert.equal(searchedLogs.items[0].requestedModel, "zai-org-glm-5-3");
+	assert.ok(!("prompt" in searchedLogs.items[0]));
+	await request("/v1/admin/usage/logs?cursor=invalid", { cookie: first.cookie, expected: 400 });
+	await request("/v1/admin/usage/timeline?days=999", { cookie: first.cookie, expected: 400 });
+	await pool.query("UPDATE \"user\" SET role = 'user' WHERE id = $1", [profile.id]);
+	pass("admin analytics enforce roles, fill empty buckets, exclude refunds, retain failover and unknown costs, and paginate searchable metadata logs");
+
 	const signedOut = await request("/api/auth/sign-out", { method: "POST", cookie: first.cookie, body: {} });
 	assert.ok(signedOut.response.headers.getSetCookie().some((cookie) => /oma\.session_token=;.*Max-Age=0/i.test(cookie)));
 	await assertSignedOut(first.cookie);
@@ -201,7 +256,19 @@ try {
 	assert.equal((await request("/user", { cookie: returning.cookie })).data.id, profile.id);
 	pass("sign-out clears the cookie and rejects replay; returning magic-link login keeps the same account");
 
-	await request("/account", { method: "DELETE", cookie: returning.cookie });
+	await pool.query("UPDATE session SET created_at = now() - interval '25 hours', updated_at = now() WHERE user_id = $1", [profile.id]);
+	const staleDeletion = await request("/account", { method: "DELETE", cookie: returning.cookie, expected: 400 });
+	assert.equal(staleDeletion.data.error.type, "session_not_fresh");
+	assert.equal((await request("/user", { cookie: returning.cookie })).data.id, profile.id);
+	pass("account deletion rejects an old session even after refresh and preserves the account");
+
+	const freshDeletionSession = await magicSignIn(email);
+	const deletedAccount = await request("/account", { method: "DELETE", cookie: freshDeletionSession.cookie });
+	const deletionCookies = deletedAccount.response.headers.getSetCookie();
+	assert.ok(deletionCookies.some((cookie) => /oma_api_key=;.*Max-Age=0/i.test(cookie)));
+	assert.ok(deletionCookies.some((cookie) => /^oma\.session_token=;.*Max-Age=0/i.test(cookie)));
+	assert.ok(deletionCookies.some((cookie) => /^__Secure-oma\.session_token=;.*Max-Age=0/i.test(cookie)));
+	await assertSignedOut(freshDeletionSession.cookie);
 	await assertSignedOut(returning.cookie);
 	const recreated = await otpSignIn(email);
 	assert.notEqual(recreated.data.user.id, profile.id);

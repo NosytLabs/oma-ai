@@ -110,10 +110,8 @@ export function createStreamingProxy(
 									logger.warn({ err }, "[proxy] stream read failed");
 									upstreamStatus = "error";
 									controller.error(err);
-									// SECURITY (audit 2026-09-27 / P0): record usage for the tokens
-									// already streamed before the read error. Without this the
-									// consumed upstream tokens are never billed — a client can
-									// force a read error and walk away with free tokens.
+									// Retain consumed-token cost estimates for operations. Failed
+									// completions are recorded without a customer credit deduction.
 									try {
 										await recordUsage({
 											...recordArgs,
@@ -133,9 +131,8 @@ export function createStreamingProxy(
 								},
 								async cancel() {
 								reader.cancel().catch(() => {});
-								// SECURITY (audit 2026-09-27 / P0): a client can read most of a
-								// completion then abort before done. Bill the tokens streamed so far
-								// instead of letting the disconnect absorb the cost.
+								// Canceled streams retain token/cost estimates without charging
+								// customer credits, so the admin can account for the expense.
 								try {
 								await recordUsage({
 									...recordArgs,

@@ -23,6 +23,7 @@ import {
 		createLogoutCookieHeader,
 } from "../auth/api-keys.js";
 import { auth, authBaseURL } from "../auth.js";
+import { SESSION_FRESH_AGE_SECONDS } from "../auth/session-policy.js";
 import { ADMIN_WALLET_ADDRESSES_SET, config } from "../config.js";
 import type { OmaEnv } from "../types.js";
 import { extractClientIpOrNull } from "../middleware/rate-limit/utils.js";
@@ -214,6 +215,18 @@ authRoutes.delete(
 				);
 		}
 		const userId = session.user.id;
+		// Refreshing expiry must not authorize a sensitive operation: freshness
+		// is tied to creation time, as in Better Auth's fresh-session checks.
+		const createdAt = new Date(session.session.createdAt).getTime();
+		const age = Date.now() - createdAt;
+		if (!Number.isFinite(age) || age < 0 || age >= SESSION_FRESH_AGE_SECONDS * 1_000) {
+			return c.json({
+				error: {
+					message: "Sign in again before deleting your account. Your last sign-in is older than 24 hours.",
+					type: "session_not_fresh",
+				},
+			}, 400);
+		}
 		const ipAddress = extractClientIpOrNull(c) ?? undefined;
 		const userAgent = c.req.header("user-agent") ?? undefined;
 		// Audit BEFORE deletion — the FK on audit_logs.user_id is `set null`
@@ -260,6 +273,14 @@ authRoutes.delete(
 		// (cascade) but the cookie would still be sent on subsequent
 		// requests until it expires (7 days).
 		c.header("Set-Cookie", createLogoutCookieHeader());
+		// This custom deletion bypasses Better Auth's logout handler. Expire
+		// its session cookies too, including either environment's cookie name.
+		for (const prefix of ["oma.", "__Secure-oma."]) {
+			for (const name of ["session_token", "session_data", "dont_remember"]) {
+				const secure = prefix.startsWith("__Secure-") ? "; Secure" : "";
+				c.header("Set-Cookie", `${prefix}${name}=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax${secure}`, { append: true });
+			}
+		}
 		return c.json({ success: true });
 });
 

@@ -4,6 +4,7 @@ import {
 		ensureCatalogLoaded,
 		listAllModels,
 		providerAvailable,
+		type ModelDef,
 } from "../inference/models.js";
 import { userFacingFor } from "../inference/billing-service.js";
 
@@ -13,9 +14,20 @@ export const modelRoutes = new Hono<OmaEnv>();
 	* User-facing per-1M prices for a model, via the same override-aware
 	* lookup billing deducts with — displayed prices always match charges.
 	*/
-function facingPrices(m: { id: string }): { prompt: number; completion: number } {
+function facingPrices(m: ModelDef) {
 		const pricing = userFacingFor(m.id);
-		return { prompt: pricing.inputPer1M, completion: pricing.outputPer1M };
+		const extended = m.extendedPricing
+			? userFacingFor(m.id, m.extendedPricing.contextTokenThreshold + 1)
+			: undefined;
+		return {
+			prompt: pricing.inputPer1M,
+			completion: pricing.outputPer1M,
+			...(extended && m.extendedPricing ? { extended: {
+				context_token_threshold: m.extendedPricing.contextTokenThreshold,
+				prompt: extended.inputPer1M,
+				completion: extended.outputPer1M,
+			} } : {}),
+		};
 }
 
 // OpenAI-compatible /v1/models
@@ -38,14 +50,13 @@ modelRoutes.get("/v1/models", async (c) => {
 								category: m.category,
 								modality: "chat",
 								context_length: m.contextWindow ?? 0,
+								max_output_tokens: m.maxOutputTokens ?? m.maxTokens,
 								supports_streaming: m.supportsStreaming,
 								supports_tools: m.capabilities?.includes("tools") ?? false,
 								capabilities: m.capabilities ?? [],
 								available: providerAvailable(m),
-								pricing: {
-										prompt: prices.prompt,
-										completion: prices.completion,
-								},
+								...(m.disabledReason ? { unavailable_reason: m.disabledReason } : {}),
+								pricing: prices,
 						};
 				}),
 		});
@@ -73,14 +84,12 @@ modelRoutes.get("/v1/models/:id", async (c) => {
 				category: m.category,
 				modality: "chat",
 				context_length: m.contextWindow ?? 0,
+				max_output_tokens: m.maxOutputTokens ?? m.maxTokens,
 				supports_streaming: m.supportsStreaming,
 				supports_tools: m.capabilities?.includes("tools") ?? false,
 				capabilities: m.capabilities ?? [],
 				available: providerAvailable(m),
-				pricing: {
-						prompt: prices.prompt,
-						completion: prices.completion,
-				},
+				...(m.disabledReason ? { unavailable_reason: m.disabledReason } : {}),
+				pricing: prices,
 		});
 });
-

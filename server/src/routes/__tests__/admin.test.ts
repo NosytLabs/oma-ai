@@ -130,6 +130,24 @@ beforeEach(() => {
 });
 
 describe("admin routes", () => {
+		it("keeps full-range usage totals when only one group is returned and flags unknown costs", async () => {
+				mockDb.execute.mockResolvedValueOnce([{
+					key: "venice", requests: 2, upstream_cents: "100", total_cents: "150",
+					unknown_cost_requests: 0, range_requests: 5, range_input_tokens: 200,
+					range_output_tokens: 100, range_upstream_cents: "100", range_markup_cents: "50",
+					range_total_cents: "160", range_unknown_cost_requests: 3,
+				}]);
+				const res = await adminRequest("get", "/v1/admin/usage/summary?limit=1");
+				expect(res.status).toBe(200);
+				const json = await res.json();
+				expect(json.items).toHaveLength(1);
+				expect(json.items[0].unknownCostRequests).toBe(0);
+				expect(json.totals).toEqual({
+					requests: 5, inputTokens: 200, outputTokens: 100, upstreamCents: 100,
+					markupCents: 50, totalCents: 160, unknownCostRequests: 3,
+				});
+		});
+
 		describe("POST /v1/admin/site-settings", () => {
 				it("rejects invalid body", async () => {
 						const res = await adminRequest("post", "/v1/admin/site-settings", {
@@ -219,7 +237,7 @@ describe("admin routes", () => {
 										action: "CREDIT_ADJUSTED",
 										resource: "credit_balance",
 										resourceId: "u_target",
-										metadata: expect.objectContaining({ deltaCents: 500, reason: "support credit" }),
+										metadata: expect.objectContaining({ requestedDeltaCents: 500, reason: "support credit" }),
 								}),
 						);
 				});

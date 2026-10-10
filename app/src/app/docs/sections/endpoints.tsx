@@ -4,7 +4,7 @@ import { AnimatedSection, CodeBlock, ENDPOINTS, SectionHeading } from "./shared"
 
 export function EndpointsSection() {
 	const [expanded, setExpanded] = useState<string | null>(
-		"/v1/chat/completions",
+		"ep-chat",
 	);
 
 	return (
@@ -28,10 +28,10 @@ export function EndpointsSection() {
 					>
 						<button
 							type="button"
-							onClick={() => setExpanded(expanded === ep.path ? null : ep.path)}
+							onClick={() => setExpanded(expanded === ep.anchor ? null : ep.anchor)}
 							className="flex w-full items-center justify-between gap-3 p-4 text-left transition-colors duration-200 ease-out hover:bg-surface/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
-							aria-expanded={expanded === ep.path}
-							aria-controls={expanded === ep.path ? `${ep.anchor}-details` : undefined}
+							aria-expanded={expanded === ep.anchor}
+							aria-controls={expanded === ep.anchor ? `${ep.anchor}-details` : undefined}
 						>
 							<div className="flex min-w-0 flex-1 items-center gap-3">
 								<span
@@ -52,7 +52,7 @@ export function EndpointsSection() {
 								</div>
 							</div>
 							<div className="flex shrink-0 items-center gap-2">
-								{ep.auth && !ep.auth.toLowerCase().includes("optional") && (
+								{ep.auth && ep.auth !== "None" && !ep.auth.toLowerCase().includes("optional") && (
 									<span className="flex items-center gap-1.5 rounded-full bg-surface px-2.5 py-0.5 text-xs text-text-muted border border-border">
 										<Lock className="h-3 w-3" /> Auth
 									</span>
@@ -63,12 +63,12 @@ export function EndpointsSection() {
 									</span>
 								)}
 								<ChevronRight
-									className={`h-4 w-4 text-text-muted transition-transform duration-200 ease-out ${expanded === ep.path ? "rotate-90" : ""}`}
+									className={`h-4 w-4 text-text-muted transition-transform duration-200 ease-out ${expanded === ep.anchor ? "rotate-90" : ""}`}
 								/>
 							</div>
 						</button>
 
-						{expanded === ep.path && (
+						{expanded === ep.anchor && (
 							<div id={`${ep.anchor}-details`} className="border-t border-border p-4 space-y-4">
 								<p className="text-sm text-text-muted">{ep.desc}</p>
 

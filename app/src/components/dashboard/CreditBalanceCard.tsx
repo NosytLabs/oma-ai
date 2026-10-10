@@ -80,7 +80,7 @@ function CreditBalanceCardComponent({
 								{/* balanceCents is integer-cent credits (1 credit = $0.01).
 								  Do not dollar-prefix — that double-counts with the CR unit. */}
 								<AnimatedNumber
-									value={Math.round(parseFloat(balance.balanceCents))}
+									value={parseFloat(balance.balanceCents)}
 									prefix=""
 								/>
 								<span className="text-[16px] font-mono font-bold uppercase tracking-wider text-text-muted">
@@ -89,6 +89,7 @@ function CreditBalanceCardComponent({
 							</div>
 						)}
 					</div>
+					{balance && <p className="mt-2 text-sm text-text-muted">{toDollars(balance.balanceCents).toLocaleString(undefined, { style: "currency", currency: "USD" })} USD · 1 credit = $0.01</p>}
 				</div>
 
 				<div className="mb-4 flex items-center gap-2.5 rounded-[var(--radius-sm)] border border-border/40 bg-surface/50 px-3 py-1.5 text-[11.5px] font-mono text-text-muted shadow-inner w-fit">

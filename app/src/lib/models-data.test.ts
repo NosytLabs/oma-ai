@@ -144,7 +144,7 @@ describe("live model capabilities", () => {
 
 	it("retains curated capabilities for a known model served by an older API", async () => {
 		const model = await loadEntry({ id: "claude-opus-5", supports_tools: true });
-		expect(model.capabilities).toEqual(["chat", "reasoning", "coding", "agents"]);
+		expect(model.capabilities).toEqual(["chat", "reasoning", "coding", "multimodal", "agents"]);
 	});
 
 	it("uses supported parameters and the tool flag for an unknown legacy model", async () => {

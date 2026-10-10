@@ -77,7 +77,7 @@ Users can fund the same internal balance with USDC on Base mainnet. Direct depos
 Agents can use the x402 funding flow:
 
 1. Establish a SIWE website session with the wallet that will pay. Its linked EVM address must equal the USDC payer; an API key or email-only session cannot claim the payment.
-2. Read the current treasury address from `GET /api/v1/deposit/usdc`. Sign an EIP-3009 USDC `transferWithAuthorization` for that treasury and the intended amount.
+2. Read `payTo` from `GET /x402/info`. Sign an EIP-3009 USDC `transferWithAuthorization` for that recipient and the intended amount. The direct-deposit address from `/api/v1/deposit/usdc` can differ; do not substitute it for the x402 recipient.
 3. Call `POST /x402/verify` with the signed envelope in `PAYMENT-SIGNATURE`. **This endpoint broadcasts the transfer and waits for on-chain confirmation. It is not a dry run.** The facilitator pays gas. Save the returned `txHash`, `amount`, and `networkId`.
 4. Call `POST /x402/settle` with `{ txHash, networkId }` and the same payer's session cookie. Settlement credits the account balance; it does not initiate another transfer.
 5. Use an API key from that account against the credited balance. Ordinary chat inference does not issue a mid-request x402 challenge.
@@ -118,7 +118,25 @@ The OMA gateway does not persist prompt or completion content. It stores account
 
 The live model endpoint is the source of truth for current availability and prices. The bundled catalog is a fallback reference and must not be presented as a count of callable models. Website examples and animated request illustrations do not establish live availability.
 
+Inference shares a 240-second total time budget across retries, fallbacks, and response reads. OpenBroker attempts allow up to 180 seconds for host selection and completion; other provider attempts allow 60 seconds for JSON responses or 120 seconds for streams. The website proxy waits up to 270 seconds and declares a 300-second Vercel function limit. Caller cancellation propagates to the provider and stops further retries. SDK clients should allow at least 270 seconds and inspect the actual-model/fallback headers. OpenBroker can queue longer than OMA's budget; a catalog-enabled model is not a guarantee of immediate capacity.
+
 Settings opened with `?demo=1` are read-only previews, including when the visitor has a real session. The preview must preserve that flag while navigating, avoid fetching private account data, and disable profile changes, exports, session actions, preference changes, history clearing, and deletion.
+
+## Admin console and usage records
+
+`/admin` requires an authenticated account with the `admin` role. User accounts and anonymous requests cannot read the private usage, user-management, or site-control endpoints. The console provides:
+
+- A 24-hour, 7-day, or 30-day overview with UTC request/error and charge/cost charts. Charts use persisted usage metadata; anonymous guest requests are counted in Redis and worker HTTP counters instead of these account-linked charts.
+- Spend grouped by model, provider, or account; totals include the entire selected range, even when the group list is truncated. Customer charges exclude refunds and failed credit deductions. Canceled streams and failed requests generate no customer charge.
+- Searchable usage logs with outcome and date filters, 25-row pages, request IDs, requested/served models, provider routes, attempts, tokens, charges, and latency. Prompts and completion content are not stored. Cursor pagination preserves database timestamp precision.
+- Payment configuration and the public x402 treasury recipient. A configured rail does not prove a successful transaction, a funded gas wallet, or sufficient provider credits.
+- User search, lifetime usage, copied account IDs, credit adjustments, suspension, maintenance controls, and per-user rate-limit overrides. The current admin cannot suspend itself. Deductions are capped at the account's balance; audit events retain the requested adjustment.
+
+The private endpoints include `GET /api/v1/admin/site-settings`, `GET /api/v1/admin/usage/timeline?days=7`, and `GET /api/v1/admin/usage/logs?days=7&limit=25`. Analytics ranges are bounded to 90 days. These responses are not cacheable. The operator settings endpoint includes the maintenance message and raw rail switches; the public settings endpoint reports effective customer availability.
+
+Venice costs are catalog estimates, not settled invoices. Gonka/OpenBroker costs are paid in GNK; they remain unknown in dollars until a procurement cost basis is recorded. Gross margin is unavailable when the selected range contains unknown costs. Worker HTTP counters reset at restart and are labeled separately from durable usage history.
+
+For local user/admin testing, `server/scripts/seed-test-auth.mjs` creates short-lived magic links for test identities. It refuses non-local databases and app origins, and production/staging/preview environments. `pnpm --filter oma-server run test:auth:integration` exercises real HTTP authentication, admin controls, and migrations against a disposable local database.
 
 ## Required operator configuration
 

@@ -3,7 +3,7 @@
 	*
 	* Transport order (viem tries each in sequence on failure):
 	*   1. QuickNode (paid, covered by $300 credit — fast, archive data)
-	*   2. Free public RPCs (base.llamarpc.com, mainnet.base.org, publicnode)
+	*   2. Free public RPCs (mainnet.base.org, publicnode)
 	*
 	* Usage:
 	*   import { getPublicClient } from "../lib/rpc-client.js";
@@ -23,7 +23,6 @@ import { logger } from "./logger.js";
 
 // Free public Base RPCs — no API key, rate-limited but reliable for reads.
 const FREE_BASE_RPCS = [
-		"https://base.llamarpc.com",
 		"https://mainnet.base.org",
 		"https://base-rpc.publicnode.com",
 ];
@@ -36,14 +35,6 @@ const FREE_BASE_RPCS = [
 	*/
 type BasePublicClient = PublicClient<FallbackTransport, typeof base>;
 
-/** Build the Base public client from an ordered transport list. */
-function createClient(transports: ReturnType<typeof http>[]): BasePublicClient {
-		return createPublicClient({
-				chain: base,
-				transport: fallback(transports, { rank: true }),
-		});
-}
-
 let cachedClient: BasePublicClient | null = null;
 
 /**
@@ -51,9 +42,7 @@ let cachedClient: BasePublicClient | null = null;
 	* transport. Primary = CHAIN_RPC_URL (QuickNode), fallbacks = free public
 	* RPCs. If CHAIN_RPC_URL is unset (dev/test), uses free RPCs only.
 	*/
-export function getPublicClient(): BasePublicClient {
-		if (cachedClient) return cachedClient;
-
+export function createBaseTransport(): FallbackTransport {
 		const transports: ReturnType<typeof http>[] = [];
 		const seenUrls = new Set<string>();
 
@@ -64,16 +53,17 @@ export function getPublicClient(): BasePublicClient {
 		// falling through to the working public RPCs. Treat it as unset so the
 		// real fallback + free RPCs serve directly.
 		if (config.CHAIN_RPC_URL && !/placeholder|changeme/i.test(config.CHAIN_RPC_URL)) {
-				transports.push(http(config.CHAIN_RPC_URL));
+				transports.push(http(config.CHAIN_RPC_URL, { retryCount: 0, timeout: 5_000 }));
 				seenUrls.add(config.CHAIN_RPC_URL);
 		}
 
 		// Explicit fallback from env (e.g. QUICKNODE_RPC_URL_FALLBACK)
 		if (
 				config.CHAIN_RPC_URL_FALLBACK &&
+				!/placeholder|changeme/i.test(config.CHAIN_RPC_URL_FALLBACK) &&
 				config.CHAIN_RPC_URL_FALLBACK !== config.CHAIN_RPC_URL
 		) {
-				transports.push(http(config.CHAIN_RPC_URL_FALLBACK));
+				transports.push(http(config.CHAIN_RPC_URL_FALLBACK, { retryCount: 0, timeout: 5_000 }));
 				seenUrls.add(config.CHAIN_RPC_URL_FALLBACK);
 		}
 
@@ -82,24 +72,21 @@ export function getPublicClient(): BasePublicClient {
 		// transports, which is not part of the public transport type.)
 		for (const url of FREE_BASE_RPCS) {
 				if (!seenUrls.has(url)) {
-						transports.push(http(url));
+						transports.push(http(url, { retryCount: 0, timeout: 5_000 }));
 						seenUrls.add(url);
 				}
 		}
 
-		if (transports.length === 0) {
-				// Absolute last resort — viem's default public transport
-				transports.push(http());
-		}
-
 		logger.info(
-				`[rpc] fallback transport: ${transports.length} endpoints (primary: ${config.CHAIN_RPC_URL ? "QuickNode" : "free"})`,
+				`[rpc] fallback transport: ${transports.length} endpoints (configured primary: ${seenUrls.has(config.CHAIN_RPC_URL ?? "")})`,
 		);
+		return fallback(transports, { rank: true, retryCount: 1 });
+}
 
-		const client = createClient(transports);
-		cachedClient = client;
-
-		return client;
+/** Shared fallback policy for chain reads and facilitator broadcasting. */
+export function getPublicClient(): BasePublicClient {
+		if (!cachedClient) cachedClient = createPublicClient({ chain: base, transport: createBaseTransport() });
+		return cachedClient;
 }
 
 /** Reset cached client (for tests). */

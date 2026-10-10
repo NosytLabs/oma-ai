@@ -227,10 +227,10 @@ export function DashboardHeader({
 						</span>
 						<span
 							className="hidden items-center gap-1.5 text-text-secondary/80 md:flex bg-surface/50 px-2 py-0.5 rounded-[var(--radius-sm)] border border-border/50"
-							title="Keyboard shortcuts: R = refresh, 1-4 = switch tabs"
+							title={`Keyboard shortcuts: R = refresh, 1-${TABS.length} = switch tabs`}
 						>
 							<Keyboard className="h-3 w-3" aria-hidden="true" />
-							<span>R · 1-4</span>
+							<span>R · 1-{TABS.length}</span>
 						</span>
 						{modelsAvailable > 0 && (
 							<span className="flex items-center gap-1.5 whitespace-nowrap text-text-muted/70">
@@ -238,7 +238,7 @@ export function DashboardHeader({
 									aria-hidden="true"
 									className="inline-block h-1 w-1 bg-text-muted/50"
 								/>
-								{modelsAvailable} {modelsAvailable === 1 ? "model" : "models"} online
+								{modelsAvailable} {modelsAvailable === 1 ? "model" : "models"} available
 							</span>
 						)}
 						{hasAnyData && autoRefreshCountdown > 0 && (

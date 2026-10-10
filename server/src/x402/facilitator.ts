@@ -20,14 +20,14 @@
 import { Hono } from "hono";
 import type { Context, Next, MiddlewareHandler } from "hono";
 import { config, isProductionEnv } from "../config.js";
-import { buildV2Challenge, buildXPaymentResponse, parsePaymentSignatureHeader, parseXPaymentHeader } from "./v2.js";
+import { buildV2Challenge, buildXPaymentResponse, CAIP2_BASE_MAINNET, parsePaymentSignatureHeader, parseXPaymentHeader } from "./v2.js";
 import type { OmaEnv } from "../types.js";
 import { sessionAuth } from "../auth/middleware.js";
 import { db } from "../db/client.js";
 import { deposits, settlements, user as userTable } from "../db/schema.js";
 import { eq, and } from "drizzle-orm";
 import { rateLimit } from "../middleware/rate-limit.js";
-import { USDC_BASE } from "../constants.js";
+import { USDC_BASE, USDC_DECIMALS } from "../constants.js";
 import {
 	isSupportedSettlementAsset,
 	resolveSettlementNetwork,
@@ -131,6 +131,18 @@ function paymentError(
 }
 
 export const x402Routes = new Hono<OmaEnv>();
+
+x402Routes.get("/x402/info", (c) => {
+		c.header("Cache-Control", "no-store");
+		if (!SERVER_TREASURY) {
+			return c.json(paymentError("funding_unconfigured", "Funding recipient is not configured", false), 503);
+		}
+		return c.json({
+			x402Version: 2, scheme: "exact", network: CAIP2_BASE_MAINNET,
+			asset: USDC_BASE, decimals: USDC_DECIMALS, payTo: SERVER_TREASURY,
+			maxTimeoutSeconds: PAYMENT_WINDOW_SECONDS, extra: { name: "USD Coin", version: "2" },
+		});
+});
 
 x402Routes.post("/x402/verify", rateLimit({ windowMs: 60_000, maxRequests: 10 }), async (c) => {
 		const headerVal = c.req.header("PAYMENT-SIGNATURE") ?? c.req.header("X-PAYMENT");

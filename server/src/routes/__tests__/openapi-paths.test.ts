@@ -18,6 +18,20 @@ function openapiSourcePaths(): string[] {
 }
 
 describe("OpenAPI path inventory", () => {
+	it("documents session management, history clearing, and fresh-session account deletion", async () => {
+		const { Hono } = await import("hono");
+		const { openapiRoutes } = await import("../openapi.js");
+		const app = new Hono();
+		app.route("/", openapiRoutes);
+		const spec = await (await app.request("/openapi.json")).json();
+		expect(spec.paths["/user"].get).toBeDefined();
+		expect(spec.paths["/sessions"].get).toBeDefined();
+		expect(spec.paths["/sessions"].delete).toBeDefined();
+		expect(spec.paths["/sessions/{id}"].delete).toBeDefined();
+		expect(spec.paths["/v1/history"].delete).toBeDefined();
+		expect(spec.paths["/account"].delete.security).toEqual([{ SessionCookie: [] }]);
+		expect(spec.paths["/account"].delete.responses["400"].description).toMatch(/24 hours/);
+	});
 	const required = [
 		// Public SDK surface
 		"/v1/models",

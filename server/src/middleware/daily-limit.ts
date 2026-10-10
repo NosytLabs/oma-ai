@@ -104,12 +104,10 @@ export function dailyUsageLimit() {
 				}
 
 				// Check if this is a free OMA-AI model.
-				// Clone the raw request first: `c.req.json()` consumes the body stream,
-				// which would leave the route handler reading an empty body.
-				const body = await c.req.raw
-						.clone()
-						.json()
-						.catch(() => null);
+				// Hono caches c.req.json() across middleware and the handler. The
+				// model limiter has already parsed it; cloning raw here throws
+				// "unusable" because that underlying stream has been consumed.
+				const body = await c.req.json<{ model?: string }>().catch(() => null);
 				const model = body?.model as string | undefined;
 
 				// Provider-based check: only OMA-AI-routed models that map to the

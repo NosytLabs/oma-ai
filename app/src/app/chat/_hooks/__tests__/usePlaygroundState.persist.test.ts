@@ -79,16 +79,16 @@ describe("usePlaygroundState — model persistence", () => {
 	});
 
 	it("restores the saved model after a reload (localStorage read)", async () => {
-		localStorage.setItem("oma_chat_model:guest", "mistral-small-2603");
+		localStorage.setItem("oma_chat_model:guest", "minimax-m2-7");
 		const { result } = renderHook(() => usePlaygroundState({ authReady: true }));
 		// First render uses the URL/default; the post-mount rehydrate
 		// effect then pulls the stored value.
 		await act(async () => {});
-		expect(result.current.model).toBe("mistral-small-2603");
+		expect(result.current.model).toBe("minimax-m2-7");
 	});
 
 	it("?model=<id> wins over localStorage on initial mount (deep links)", async () => {
-		localStorage.setItem("oma_chat_model:guest", "mistral-small-2603");
+		localStorage.setItem("oma_chat_model:guest", "minimax-m2-7");
 		searchParamsRef = new URLSearchParams("model=claude-sonnet-4-6");
 		const { result } = renderHook(
 			() => usePlaygroundState({ authReady: true }),
@@ -104,14 +104,14 @@ describe("usePlaygroundState — model persistence", () => {
 	});
 
 	it("an unknown ?model= falls back to localStorage (no clobber)", async () => {
-		localStorage.setItem("oma_chat_model:guest", "mistral-small-2603");
+		localStorage.setItem("oma_chat_model:guest", "minimax-m2-7");
 		searchParamsRef = new URLSearchParams("model=does-not-exist");
 		const { result } = renderHook(() => usePlaygroundState({ authReady: true }));
 		await act(async () => {});
-		expect(result.current.model).toBe("mistral-small-2603");
+		expect(result.current.model).toBe("minimax-m2-7");
 		// Critically: the unknown URL did NOT clobber the saved value.
 		expect(localStorage.getItem("oma_chat_model:guest")).toBe(
-			"mistral-small-2603",
+			"minimax-m2-7",
 		);
 	});
 
@@ -159,13 +159,13 @@ describe("usePlaygroundState — model persistence", () => {
 	});
 
 	it("rehydrates the model when the mounted account identity changes", async () => {
-		localStorage.setItem("oma_chat_model:u:alice", "mistral-small-2603");
+		localStorage.setItem("oma_chat_model:u:alice", "minimax-m2-7");
 		localStorage.setItem("oma_chat_model:u:bob", "claude-sonnet-4-6");
 		const { result, rerender } = renderHook(
 			({ userId }) => usePlaygroundState({ authReady: true, userId }),
 			{ initialProps: { userId: "alice" } },
 		);
-		await waitFor(() => expect(result.current.model).toBe("mistral-small-2603"));
+		await waitFor(() => expect(result.current.model).toBe("minimax-m2-7"));
 
 		rerender({ userId: "bob" });
 		await waitFor(() => expect(result.current.model).toBe("claude-sonnet-4-6"));
@@ -178,7 +178,7 @@ describe("usePlaygroundState — model persistence", () => {
 			);
 		});
 		expect(localStorage.getItem("oma_chat_model:u:alice")).toBe(
-			"mistral-small-2603",
+			"minimax-m2-7",
 		);
 	});
 

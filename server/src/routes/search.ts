@@ -91,7 +91,7 @@ export function dedupeResults(results: SearchResult[]): SearchResult[] {
 	const seen = new Set<string>();
 	const out: SearchResult[] = [];
 	for (const r of results) {
-		let key = r.url;
+		let key: string;
 		try {
 			const u = new URL(r.url);
 			key = `${u.hostname}${u.pathname}`.replace(/\/$/, "").toLowerCase();

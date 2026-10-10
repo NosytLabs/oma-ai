@@ -82,7 +82,7 @@ const spec = {
 			SessionCookie: {
 				type: "apiKey", in: "cookie",
 				name: ["development", "test"].includes(config.NODE_ENV) ? "oma.session_token" : "__Secure-oma.session_token",
-				description: "Better Auth session established by SIWE with the wallet that paid. API keys do not authenticate settlement.",
+				description: "Better Auth session from magic-link or wallet sign-in. x402 settlement additionally requires the session wallet to own the payment.",
 			},
 		},
 		schemas: {
@@ -95,6 +95,7 @@ const spec = {
 					created: { type: "integer" },
 					owned_by: { type: "string" },
 					context_length: { type: "integer" },
+					max_output_tokens: { type: "integer", description: "Maximum response token budget, distinct from the context window" },
 					supports_streaming: { type: "boolean" },
 					supports_tools: { type: "boolean" },
 					capabilities: {
@@ -108,6 +109,11 @@ const spec = {
 						properties: {
 							prompt: { type: "number", description: "USD per 1M input tokens" },
 							completion: { type: "number", description: "USD per 1M output tokens" },
+							extended: { type: "object", properties: {
+								context_token_threshold: { type: "integer", description: "Higher rates apply when input tokens exceed this threshold" },
+								prompt: { type: "number", description: "USD per 1M input tokens" },
+								completion: { type: "number", description: "USD per 1M output tokens" },
+							} },
 						},
 					},
 				},
@@ -117,7 +123,7 @@ const spec = {
 				required: ["role", "content"],
 				properties: {
 					role: { type: "string", enum: ["system", "user", "assistant", "tool"] },
-					content: { type: "string" },
+					content: { type: ["string", "array", "null"] },
 					name: { type: "string" },
 					tool_call_id: { type: "string" },
 					tool_calls: { type: "array" },
@@ -170,6 +176,31 @@ const spec = {
 	},
 	security: [{ BearerAuth: [] }],
 	paths: {
+		"/user": { get: {
+			summary: "Current account and admin status", security: [{ SessionCookie: [] }],
+			responses: { "200": { description: "Current account profile" }, "401": { description: "Sign in required" } },
+		} },
+		"/sessions": {
+			get: { summary: "List active sessions", security: [{ SessionCookie: [] }],
+				responses: { "200": { description: "Sessions with isCurrent, expiry, and device details" }, "401": { description: "Sign in required" } } },
+			delete: { summary: "Revoke all other sessions, retaining the current session", security: [{ SessionCookie: [] }],
+				responses: { "200": { description: "success and revokedCount" }, "401": { description: "Sign in required" } } },
+		},
+		"/sessions/{id}": { delete: {
+			summary: "Revoke an owned remote session", security: [{ SessionCookie: [] }],
+			parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+			responses: { "200": { description: "Session revoked" }, "400": { description: "Use sign-out for the current session" }, "401": { description: "Sign in required" }, "404": { description: "Session not found or not owned" } },
+		} },
+		"/account": { delete: {
+			summary: "Permanently delete the current account", security: [{ SessionCookie: [] }],
+			description: "Requires a session created within the last 24 hours. Deletes identity, sessions, API keys, and usage; forfeits remaining credits. Payment and security audit records are retained with the account ID detached. Clears session and installed API-key cookies.",
+			responses: { "200": { description: "Account deleted and cookies cleared" }, "400": { description: "session_not_fresh: sign in again; session must be younger than 24 hours" }, "401": { description: "Sign in required" } },
+		} },
+		"/v1/history": { delete: {
+			summary: "Clear usage history and previous audit logs", security: [{ SessionCookie: [] }],
+			description: "Preserves identity, API keys, sessions, and balances. Records a new HISTORY_CLEARED audit event.",
+			responses: { "200": { description: "success and deleted usageRecords/auditLogs counts" }, "401": { description: "Sign in required" } },
+		} },
 		"/v1/models": {
 			get: {
 				summary: "List the model catalog",

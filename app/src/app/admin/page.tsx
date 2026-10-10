@@ -17,6 +17,7 @@ import {
 	AlertTriangle,
 	CheckCircle2,
 	Cpu,
+	Copy,
 	Gauge,
 	Loader2,
 	PowerOff,
@@ -32,6 +33,9 @@ import { useAuth } from "@/lib/hooks/useAuth";
 import { useDialog } from "@/lib/use-dialog";
 import { useToast } from "@/components/ui/Toast";
 import { isModelAvailable } from "@/lib/model-availability";
+import { AdminAnalytics } from "./_components/AdminAnalytics";
+import { UsageLogs } from "./_components/UsageLogs";
+import { FundingStatus } from "./_components/FundingStatus";
 
 interface OpsSnapshot {
 	status: "ok" | "degraded";
@@ -52,6 +56,8 @@ interface OpsSnapshot {
 		errors: number;
 		p95LatencyMs: number | null;
 		topModels: Array<{ model: string; requests: number; tokens: number }>;
+		activeModels: number;
+		available: boolean;
 	};
 }
 
@@ -77,7 +83,7 @@ function StatCard({
 	return (
 		<div className="flex flex-col gap-1 rounded-[var(--radius-lg)] border border-border bg-surface p-4">
 			<div className="flex items-center justify-between gap-2">
-				<span className="text-[10px] font-mono uppercase tracking-widest text-text-muted">
+				<span className="text-xs font-medium text-text-secondary">
 					{label}
 				</span>
 				{icon}
@@ -85,7 +91,7 @@ function StatCard({
 			<span className={`font-mono text-xl font-bold tabular-nums ${toneCls}`}>
 				{value}
 			</span>
-			{sub && <span className="text-[10px] font-mono text-text-muted">{sub}</span>}
+			{sub && <span className="text-xs leading-relaxed text-text-muted">{sub}</span>}
 		</div>
 	);
 }
@@ -104,6 +110,7 @@ function fmtUptime(sec: number): string {
 
 export default function AdminPage() {
 	const { isReady, isAuthenticated, isAdmin, user } = useAuth();
+	const queryClient = useQueryClient();
 
 	const snapshot = useQuery({
 		queryKey: ["ops", "snapshot"],
@@ -191,17 +198,17 @@ export default function AdminPage() {
 
 	return (
 		<div
-			className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6"
+			className="mx-auto flex w-full min-w-0 max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6"
 			aria-busy={snapshot.isLoading || models.isLoading}
 		>
 			<header className="flex flex-wrap items-center justify-between gap-3">
 				<div>
-					<h1 className="flex items-center gap-2 font-mono text-sm font-bold uppercase tracking-widest text-text-bright">
+					<h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight text-text-bright sm:text-3xl">
 						<ShieldCheck className="h-4 w-4 text-accent" />
-						Admin · Operator dashboard
+						Admin overview
 					</h1>
-					<p className="mt-1 text-xs text-text-muted">
-						Live operational snapshot — refreshed every 60s. Signed in as{" "}
+					<p className="mt-2 text-sm text-text-muted">
+						Usage, billing, and operations. Signed in as{" "}
 						<span className="text-text-secondary">{user?.email ?? "unknown"}</span>
 					</p>
 				</div>
@@ -222,6 +229,15 @@ export default function AdminPage() {
 					</span>
 				)}
 			</header>
+			<nav aria-label="Admin sections" className="flex flex-wrap items-center gap-2 border-b border-border pb-4">
+				{[["overview", "Overview"], ["usage-summary", "Spend breakdown"], ["usage-logs", "Usage logs"], ["admin-users", "Users"], ["admin-controls", "Controls"]].map(([id, label]) => <a key={id} href={`#${id}`} className="inline-flex min-h-11 items-center rounded-md border border-border px-3 text-sm text-text-secondary hover:bg-surface-elevated">{label}</a>)}
+				<button type="button" className="min-h-11 rounded-md border border-accent/30 px-3 text-sm text-accent sm:ml-auto" onClick={() => void queryClient.invalidateQueries({ predicate: query => ["ops", "models", "site-settings"].includes(String(query.queryKey[0])) || String(query.queryKey[0]).startsWith("admin") })}>Refresh dashboard</button>
+			</nav>
+			<AdminAnalytics />
+			<FundingStatus />
+			<UsageSection />
+			<UsageLogs />
+			<UsersSection />
 
 			{snapshot.isError && (
 				<div className="flex items-center gap-2 rounded-[var(--radius-lg)] border border-error/30 bg-error/10 px-4 py-3 text-xs text-error">
@@ -242,6 +258,7 @@ export default function AdminPage() {
 					<StatCard
 						label="Uptime"
 						value={fmtUptime(snap.uptimeSec)}
+						sub="Current worker; resets after a restart"
 						icon={<Activity className="h-3.5 w-3.5 text-text-muted" />}
 					/>
 					<StatCard
@@ -259,7 +276,7 @@ export default function AdminPage() {
 					<StatCard
 						label="HTTP errors"
 						value={String(snap.http.errorsTotal)}
-						sub={`of ${snap.http.requestsTotal} requests`}
+						sub={`of ${snap.http.requestsTotal} requests in this worker`}
 						tone={snap.http.errorsTotal > 0 ? "warn" : "ok"}
 						icon={<Activity className="h-3.5 w-3.5 text-text-muted" />}
 					/>
@@ -271,15 +288,15 @@ export default function AdminPage() {
 					className="grid grid-cols-2 gap-3 md:grid-cols-5"
 					aria-label="Chat traffic 24h"
 				>
-					<StatCard label="Completions 24h" value={String(snap.chat24h.completions)} />
+					<StatCard label="Recorded requests · 24h" value={snap.chat24h.available ? String(snap.chat24h.completions) : "Unavailable"} />
 					<StatCard
 						label="Tokens 24h"
-						value={snap.chat24h.totalTokens.toLocaleString()}
+						value={snap.chat24h.available ? snap.chat24h.totalTokens.toLocaleString() : "—"}
 						sub={`${snap.chat24h.inputTokens.toLocaleString()} in · ${snap.chat24h.outputTokens.toLocaleString()} out`}
 					/>
 					<StatCard
 						label="Errors 24h"
-						value={String(snap.chat24h.errors)}
+						value={snap.chat24h.available ? String(snap.chat24h.errors) : "—"}
 						tone={snap.chat24h.errors > 0 ? "warn" : "ok"}
 					/>
 					<StatCard
@@ -287,8 +304,8 @@ export default function AdminPage() {
 						value={fmtMs(snap.chat24h.p95LatencyMs)}
 					/>
 					<StatCard
-						label="Active Models"
-						value={String(snap.chat24h.topModels.length)}
+						label="Models used"
+						value={snap.chat24h.available ? String(snap.chat24h.activeModels) : "—"}
 					/>
 				</section>
 			)}
@@ -348,9 +365,9 @@ export default function AdminPage() {
 					</section>
 				)}
 
-				<section className="rounded-[var(--radius-lg)] border border-border bg-surface p-4" aria-label="Provider health">
+				<section className="rounded-[var(--radius-lg)] border border-border bg-surface p-4" aria-label="Provider availability">
 					<h2 className="mb-3 font-mono text-[10px] uppercase tracking-widest text-text-muted">
-						Provider health
+						Provider availability
 					</h2>
 					{models.isLoading ? (
 						<p className="text-xs text-text-muted">Loading catalog…</p>
@@ -378,7 +395,7 @@ export default function AdminPage() {
 											) : (
 												<AlertTriangle className="h-3 w-3" />
 											)}
-											{available}/{total} models ok
+											{available}/{total} models enabled
 										</span>
 									</li>
 								);
@@ -386,16 +403,12 @@ export default function AdminPage() {
 						</ul>
 					)}
 					<p className="mt-3 text-[10px] leading-relaxed text-text-muted">
-						Models behind a provider with a missing/placeholder API key are
-						disabled in the chat model selector.
+						Catalog configuration, not a live inference health test. Paused models and missing provider keys are disabled.
 					</p>
 				</section>
 
-				<UsageSection />
-				<SiteSettingsSection />
-				<RateLimitSection />
 			</div>
-			<UsersSection />
+			<div id="admin-controls" className="grid scroll-mt-24 gap-4 lg:grid-cols-2"><SiteSettingsSection /><RateLimitSection /></div>
 		</div>
 	);
 }
@@ -414,6 +427,7 @@ interface AdminUser {
 	createdAt: string | null;
 	balanceCents: string;
 	totalDepositedCents: string;
+	usage?: { requests: number; totalCents: string };
 }
 
 type AdminDialog =
@@ -422,7 +436,7 @@ type AdminDialog =
 
 function UsersSection() {
 	const toast = useToast();
-	const { isReady, isAdmin } = useAuth();
+	const { isReady, isAdmin, user: currentUser } = useAuth();
 	const [q, setQ] = useState("");
 	const [debouncedQ, setDebouncedQ] = useState("");
 	const [cursor, setCursor] = useState<string | null>(null);
@@ -464,7 +478,7 @@ function UsersSection() {
 		if (!users.data?.items) return;
 		setPages((prev) => {
 			if (!cursor) return [users.data.items];
-			if (prev.some((page) => page[0]?.id === users.data.items[0]?.id)) return prev;
+			if (prev.some((page) => page[0]?.id === users.data.items[0]?.id)) return prev.map(page => page[0]?.id === users.data.items[0]?.id ? users.data.items : page);
 			return [...prev, users.data.items];
 		});
 	}, [users.data, cursor]);
@@ -483,6 +497,8 @@ function UsersSection() {
 			if (!res.ok) throw new Error(`suspend failed: ${res.status}`);
 		},
 		onSuccess: () => {
+			setCursor(null);
+			setPages([]);
 			void queryClient.invalidateQueries({ queryKey: ["admin-users"] });
 			toast.success("User status updated");
 			setDialog(null);
@@ -507,6 +523,8 @@ function UsersSection() {
 			if (!res.ok) throw new Error(`credit adjust failed: ${res.status}`);
 		},
 		onSuccess: () => {
+			setCursor(null);
+			setPages([]);
 			void queryClient.invalidateQueries({ queryKey: ["admin-users"] });
 			toast.success("Credits adjusted");
 			setDialog(null);
@@ -518,6 +536,7 @@ function UsersSection() {
 
 	return (
 		<section
+			id="admin-users"
 			className="rounded-[var(--radius-lg)] border border-border bg-surface p-4"
 			aria-label="User management"
 		>
@@ -548,6 +567,7 @@ function UsersSection() {
 								<th className="py-1.5 pr-3">Email</th>
 								<th className="py-1.5 pr-3">Role</th>
 								<th className="py-1.5 pr-3">Balance</th>
+								<th className="py-1.5 pr-3">Lifetime usage</th>
 								<th className="py-1.5 pr-3">Status</th>
 								<th className="py-1.5 pr-3">Created</th>
 								<th className="py-1.5 pr-3 text-right">Actions</th>
@@ -568,6 +588,7 @@ function UsersSection() {
 									<td className="py-2 pr-3 font-mono tabular-nums">
 										${(Number(u.balanceCents) / 100).toFixed(2)}
 									</td>
+									<td className="py-2 pr-3 tabular-nums text-text-secondary">{Number(u.usage?.requests ?? 0).toLocaleString()} requests<span className="mt-1 block text-xs text-text-muted">{fmtCents(Number(u.usage?.totalCents ?? 0))} charged</span></td>
 									<td className="py-2 pr-3">
 										{u.suspended ? (
 											<span className="inline-flex items-center gap-1 rounded-full border border-error/30 bg-error/10 px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider text-error">
@@ -586,6 +607,7 @@ function UsersSection() {
 									</td>
 									<td className="py-2 pr-3 text-right">
 										<div className="inline-flex items-center gap-1">
+											<button type="button" aria-label={`Copy user ID for ${u.email ?? u.id}`} title="Copy user ID" className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-border text-text-secondary" onClick={() => void navigator.clipboard.writeText(u.id).then(() => toast.success("User ID copied"), () => toast.error("Could not copy user ID"))}><Copy className="h-4 w-4" /></button>
 											<button
 												type="button"
 												onClick={() => setDialog({ kind: "credit", user: u })}
@@ -598,6 +620,7 @@ function UsersSection() {
 											<button
 												type="button"
 												onClick={() => setDialog({ kind: "suspend", user: u })}
+												disabled={u.id === currentUser?.id}
 													className={`rounded-[var(--radius-sm)] border px-2 py-1 text-[10px] font-mono uppercase tracking-wider ${
 													u.suspended
 														? "border-success/30 bg-success/10 text-success hover:border-success/50"
@@ -799,7 +822,7 @@ function RateLimitSection() {
 	});
 
 	const trimmed = userId.trim();
-	const rpmNum = Number.parseInt(rpm, 10);
+	const rpmNum = Number(rpm);
 
 	return (
 		<section
@@ -842,7 +865,7 @@ function RateLimitSection() {
 			<div className="mt-3 flex flex-wrap gap-2">
 				<button
 					type="button"
-					disabled={mutate.isPending || !trimmed || !Number.isFinite(rpmNum)}
+					disabled={mutate.isPending || !trimmed || !Number.isInteger(rpmNum) || rpmNum < 1 || rpmNum > 10_000 || reason.trim().length < 3}
 					onClick={() =>
 						mutate.mutate({
 							userId: trimmed,
@@ -856,7 +879,7 @@ function RateLimitSection() {
 				</button>
 				<button
 					type="button"
-					disabled={mutate.isPending || !trimmed}
+					disabled={mutate.isPending || !trimmed || reason.trim().length < 3}
 					onClick={() =>
 						mutate.mutate({
 							userId: trimmed,
@@ -885,9 +908,9 @@ function SiteSettingsSection() {
 	const [message, setMessage] = useState("");
 	const queryClient = useQueryClient();
 	const current = useQuery({
-		queryKey: ["site-settings"],
+		queryKey: ["admin-site-settings"],
 		queryFn: async () => {
-			const res = await fetch("/api/v1/site-settings", {
+			const res = await fetch("/api/v1/admin/site-settings", {
 				credentials: "include",
 				headers: { Accept: "application/json" },
 			});
@@ -928,6 +951,7 @@ function SiteSettingsSection() {
 		},
 		onSuccess: () => {
 			void queryClient.invalidateQueries({ queryKey: ["site-settings"] });
+			void queryClient.invalidateQueries({ queryKey: ["admin-site-settings"] });
 		},
 	});
 
@@ -938,7 +962,7 @@ function SiteSettingsSection() {
 		>
 			<header className="mb-3 flex items-center justify-between gap-3">
 				<h2 className="font-mono text-[10px] uppercase tracking-widest text-text-muted">
-					Kill switches
+					Site controls
 				</h2>
 				{setSettings.isPending && (
 					<Loader2 className="h-3 w-3 animate-spin text-text-muted" />
@@ -948,20 +972,20 @@ function SiteSettingsSection() {
 			<div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))" }}>
 				<ToggleRow
 					label="Maintenance mode"
-					hint="Returns 503 to all routes except /health."
+					hint="Pause customer API traffic. Admin controls and sign-in remain available."
 					checked={maintenance}
 					onChange={setMaintenance}
 					tone="danger"
 				/>
 				<ToggleRow
 					label="Card payments"
-					hint="Disable Polar checkout (USDC + x402 remain)."
+					hint="Allow new card credit purchases. Requires complete Polar setup."
 					checked={cardEnabled}
 					onChange={setCardEnabled}
 				/>
 				<ToggleRow
 					label="Crypto payments"
-					hint="Disable USDC + x402 deposits (card remains)."
+					hint="Allow USDC deposits and x402 funding. Card checkout has its own switch."
 					checked={cryptoEnabled}
 					onChange={setCryptoEnabled}
 				/>
@@ -982,7 +1006,7 @@ function SiteSettingsSection() {
 			<div className="mt-4 flex items-center justify-end gap-2">
 				<button
 					type="button"
-					disabled={setSettings.isPending || current.isLoading}
+					disabled={setSettings.isPending || current.isLoading || current.isError}
 					onClick={() =>
 						setSettings.mutate({
 							maintenanceMode: maintenance,
@@ -1018,16 +1042,17 @@ function SiteSettingsSection() {
  * because the operator questions are different: which MODEL is burning money,
  * which UPSTREAM (Venice / OpenBroker / …) is absorbing it, and which USER.
  *
- * Provider grouping is the one that matters for margin — `cost_cents` is what
- * the upstream charged us and `total_cents` is what we billed, so the markup
- * column is gross margin per provider.
+ * Provider costs are catalog estimates. Gonka USD costs remain unknown,
+ * so a mixed-provider window cannot report a complete gross margin.
  */
 interface UsageItem {
 	key: string;
+	label?: string;
 	requests: number;
 	inputTokens: number;
 	outputTokens: number;
 	upstreamCents: number;
+	unknownCostRequests: number;
 	markupCents: number;
 	totalCents: number;
 	errorRate: number;
@@ -1046,6 +1071,7 @@ interface UsageSummaryResponse {
 		inputTokens: number;
 		outputTokens: number;
 		upstreamCents: number;
+		unknownCostRequests: number;
 		markupCents: number;
 		totalCents: number;
 	};
@@ -1077,14 +1103,12 @@ function UsageSection() {
 	const [groupBy, setGroupBy] = useState<"model" | "provider" | "user">("model");
 	const [days, setDays] = useState<number>(30);
 
-	const from = useMemo(() => new Date(Date.now() - days * 86_400_000), [days]);
-
 	const summary = useQuery({
 		queryKey: ["admin-usage-summary", groupBy, days],
 		queryFn: async () => {
 			const params = new URLSearchParams({
 				group_by: groupBy,
-				from: from.toISOString(),
+				from: new Date(Date.now() - days * 86_400_000).toISOString(),
 				limit: "50",
 			});
 			const res = await fetch(`/api/v1/admin/usage/summary?${params}`, {
@@ -1105,12 +1129,13 @@ function UsageSection() {
 	// Margin only means something when we actually charged more than upstream
 	// cost. Don't render a percentage off a zero denominator.
 	const marginPct =
-		totals && totals.upstreamCents > 0
-			? ((totals.markupCents / totals.upstreamCents) * 100).toFixed(1)
+		totals && totals.totalCents > 0 && totals.unknownCostRequests === 0
+			? (((totals.totalCents - totals.upstreamCents) / totals.totalCents) * 100).toFixed(1)
 			: null;
 
 	return (
 		<section
+			id="usage-summary"
 			className="rounded-[var(--radius-lg)] border border-border bg-surface p-4"
 			aria-label="Usage and spend"
 		>
@@ -1176,22 +1201,22 @@ function UsageSection() {
 							icon={<Cpu className="h-3 w-3 text-text-muted" />}
 						/>
 						<StatCard
-							label="Upstream cost"
+							label="Estimated upstream cost"
 							value={fmtCents(totals?.upstreamCents ?? 0)}
-							sub="what the provider charged us"
+							sub={totals?.unknownCostRequests ? `${totals.unknownCostRequests} requests with unknown GNK cost excluded` : "catalog estimate; not a settled invoice"}
 							icon={<Gauge className="h-3 w-3 text-text-muted" />}
 						/>
 						<StatCard
 							label="Billed"
 							value={fmtCents(totals?.totalCents ?? 0)}
-							sub={`markup ${fmtCents(totals?.markupCents ?? 0)}`}
+						sub="customer charges, excluding refunds"
 							icon={<Gauge className="h-3 w-3 text-text-muted" />}
 							tone="ok"
 						/>
 						<StatCard
-							label="Margin"
+							label="Estimated gross margin"
 							value={marginPct ? `${marginPct}%` : "—"}
-							sub={marginPct ? "markup / upstream" : "no upstream cost yet"}
+							sub={marginPct ? "(revenue − estimated cost) / revenue" : "requires revenue and a known cost basis"}
 							icon={<Gauge className="h-3 w-3 text-text-muted" />}
 							tone={marginPct ? "ok" : "default"}
 						/>
@@ -1212,7 +1237,7 @@ function UsageSection() {
 										<th className="pb-2 pr-3 text-right font-normal">Upstream</th>
 										<th className="pb-2 pr-3 text-right font-normal">Billed</th>
 										<th className="pb-2 pr-3 text-right font-normal">Err</th>
-										<th className="pb-2 text-right font-normal">p50</th>
+										<th className="pb-2 text-right font-normal">Avg latency</th>
 									</tr>
 								</thead>
 								<tbody className="tabular-nums">
@@ -1227,7 +1252,7 @@ function UsageSection() {
 												    email prefix alongside it so the row is
 												    attributable to a person. */}
 												{groupBy === "user" ? (
-													<span title={item.key}>{item.key}</span>
+												<span title={item.key}>{item.label ?? item.key}</span>
 												) : (
 													item.key
 												)}
@@ -1237,7 +1262,7 @@ function UsageSection() {
 												{fmtTokens(item.inputTokens + item.outputTokens)}
 											</td>
 											<td className="py-1.5 pr-3 text-right">
-												{fmtCents(item.upstreamCents)}
+												{item.unknownCostRequests > 0 ? "—" : fmtCents(item.upstreamCents)}
 											</td>
 											<td className="py-1.5 pr-3 text-right text-text-bright">
 												{fmtCents(item.totalCents)}
@@ -1257,9 +1282,9 @@ function UsageSection() {
 						</div>
 					)}
 					<p className="mt-3 text-[10px] leading-relaxed text-text-muted">
-						Upstream cost is the provider&apos;s charge; billed is what the user paid.
-						The difference is gross margin. Group by provider to see where
-						Venice/OpenBroker spend actually lands.
+						Venice cost is estimated from catalog rates. OpenBroker charges in GNK,
+						so its USD cost and gross margin remain unknown until a settled cost basis
+						is recorded. Billed is what the customer was charged.
 					</p>
 				</>
 			)}

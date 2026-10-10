@@ -22,6 +22,8 @@ vi.mock("../../inference/models.js", () => ({
 						displayName: "Claude Opus 5",
 						category: "frontier",
 						contextWindow: 1000000,
+						maxOutputTokens: 16384,
+						extendedPricing: { contextTokenThreshold: 200000, inputPricePer1M: 10, outputPricePer1M: 30 },
 						supportsStreaming: true,
 						capabilities: ["chat", "reasoning", "coding", "tools"]
 				},
@@ -118,8 +120,18 @@ describe("/v1/models — modality field (R6)", () => {
 						expect(listed).toMatchObject(model);
 						const detail = await (await app.request(`/v1/models/${model.id}`)).json();
 						expect(detail).toMatchObject(model);
-						expect(detail.pricing).toEqual({ prompt: 7.5, completion: 37.5 });
+						expect(detail.pricing).toMatchObject({ prompt: 7.5, completion: 37.5 });
 						expect(listed.pricing).toEqual(detail.pricing);
 				}
+		});
+
+		it("publishes output limits and long-context pricing in list and detail", async () => {
+			const body = await (await app.request("/v1/models")).json();
+			const listed = body.data.find((m: { id: string }) => m.id === "claude-opus-5");
+			const detail = await (await app.request("/v1/models/claude-opus-5")).json();
+			for (const model of [listed, detail]) {
+				expect(model.max_output_tokens).toBe(16384);
+				expect(model.pricing.extended).toEqual({ context_token_threshold: 200000, prompt: 7.5, completion: 37.5 });
+			}
 		});
 });

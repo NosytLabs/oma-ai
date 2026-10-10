@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 	const { slug } = await params;
 	const entry = GLOSSARY_TERMS_BY_SLUG[slug as GlossarySlug];
 	if (!entry) return {};
-	const title = `What is ${entry.term}? · OMA glossary`;
+	const title = `What is ${entry.term}? · Glossary`;
 	const description = truncateDescription(entry.def);
 	return {
 		title,
@@ -77,7 +77,7 @@ export default async function GlossaryTermPage({ params }: { params: Promise<{ s
 					<Link href="/glossary" className="flex min-h-11 items-center gap-1.5 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"><ArrowLeft className="h-4 w-4" aria-hidden="true" />Glossary</Link>
 					<span aria-hidden="true">/</span><span className="text-text-muted">{entry.term}</span>
 				</nav>
-				<main>
+				<article>
 					<span className="section-eyebrow-caps">Glossary</span>
 					<h1 className="display-headline mt-3 text-text-bright">What is {entry.term}?</h1>
 					{entry.aka && <p className="mt-2 font-mono text-sm text-text-muted">Also known as {entry.aka}</p>}
@@ -88,7 +88,7 @@ export default async function GlossaryTermPage({ params }: { params: Promise<{ s
 							{related.map((relatedSlug) => <li key={relatedSlug}><Link href={`/glossary/${relatedSlug}`} className="flex min-h-12 items-center justify-between border border-border px-4 text-sm font-medium text-text-bright transition-colors hover:border-accent/40 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">{GLOSSARY_TERMS_BY_SLUG[relatedSlug].term}<ArrowRight className="h-4 w-4 text-accent" aria-hidden="true" /></Link></li>)}
 						</ul>
 					</section>
-				</main>
+				</article>
 			</PageShell>
 		</div>
 	);
