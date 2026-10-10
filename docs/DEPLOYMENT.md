@@ -4,8 +4,12 @@ Canonical deployment facts for OMA-AI. Other docs link here rather than
 restating them — this file is the single source of truth so a deploy
 instruction can't drift between documents.
 
-Production topology was verified on 2026-10-08. See
+Production topology was verified on 2026-10-10. See
 [deployment verification](deployment-health.md) for release checks and failure diagnosis.
+
+The October 10 release serves code commit `c3ad79573c56c3d5a1ee265d349666331b4a0485`
+from Vercel deployment `dpl_6MRKyahfttBHMAyzBE6d6jSKJGbw` and Neon `omaapi/72`.
+Both were verified ready. See the [audit](audit-2026-10-10.md) for checks and cleanup.
 
 ## Canonical host
 
