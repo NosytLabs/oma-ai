@@ -127,8 +127,8 @@ adminRoutes.post(
 
 const creditAdjustSchema = z.object({
 		userId: z.string().min(1),
-		// Positive cents to add, negative to deduct. Server clamps to ±$1k/operation.
-		deltaCents: z.number().int().min(-1_000_000).max(1_000_000),
+		// Positive cents to add, negative to deduct; at most $10k per operation.
+		deltaCents: z.number().int().min(-1_000_000).max(1_000_000).refine(value => value !== 0),
 		reason: z.string().min(3).max(200),
 });
 
@@ -157,44 +157,52 @@ adminRoutes.post(
 								return c.json({ error: { message: "User not found" } }, 404);
 						}
 
-						// SECURITY (audit 2026-09-27 / P2): floor deducts at 0 and book the
-						// deduction into totalUsedCents so /v1/export/summary and the
-						// ledger agree. The refund path already does both (polar.ts).
-						await db
+						const appliedDeltaCents = await db.transaction(async tx => {
+							if (deltaCents < 0) {
+								// Lock the balance so the response and audit describe the same
+								// deduction even when billing or another operator writes concurrently.
+								const [balance] = await tx.select({ balanceCents: creditBalances.balanceCents })
+									.from(creditBalances).where(eq(creditBalances.userId, userId)).for("update");
+								if (!balance || Number(balance.balanceCents) <= 0) return null;
+								const applied = -Math.min(-deltaCents, Number(balance.balanceCents));
+								await tx.update(creditBalances).set({
+									balanceCents: sql`GREATEST(${creditBalances.balanceCents}::numeric + ${deltaCents}::numeric, 0)`,
+									totalUsedCents: sql`${creditBalances.totalUsedCents}::numeric + LEAST(${creditBalances.balanceCents}::numeric, ${-deltaCents}::numeric)`,
+									lastActivityAt: sql`NOW()`,
+								}).where(eq(creditBalances.userId, userId));
+								return applied;
+							}
+							await tx
 							.insert(creditBalances)
 							.values({
 								userId,
-								balanceCents: Math.max(deltaCents, 0).toString(),
-								totalDepositedCents: deltaCents > 0 ? deltaCents.toString() : "0",
+								balanceCents: deltaCents.toString(),
+								totalDepositedCents: deltaCents.toString(),
 								totalUsedCents: "0",
 							})
 							.onConflictDoUpdate({
 								target: creditBalances.userId,
 								set: {
-									// GREATEST floor: a deduction on a small balance clamps at 0
-									// instead of leaving the ledger negative.
-									balanceCents: sql`GREATEST(${creditBalances.balanceCents}::numeric + ${deltaCents}::numeric, 0)`,
-									totalDepositedCents:
-										deltaCents > 0
-											? sql`${creditBalances.totalDepositedCents}::numeric + ${deltaCents}::numeric`
-											: sql`${creditBalances.totalDepositedCents}::numeric`,
-									totalUsedCents:
-										deltaCents < 0
-											? sql`${creditBalances.totalUsedCents}::numeric + LEAST(${creditBalances.balanceCents}::numeric, ${-deltaCents}::numeric)`
-											: sql`${creditBalances.totalUsedCents}::numeric`,
+									balanceCents: sql`${creditBalances.balanceCents}::numeric + ${deltaCents}::numeric`,
+									totalDepositedCents: sql`${creditBalances.totalDepositedCents}::numeric + ${deltaCents}::numeric`,
 									lastActivityAt: sql`NOW()`,
 								},
 							});
+							return deltaCents;
+						});
+						if (appliedDeltaCents === null) {
+							return c.json({ error: { message: "This account has no credits to deduct" } }, 400);
+						}
 
 						await auditLog({
 								userId: adminId,
 								action: deltaCents >= 0 ? "CREDIT_ADJUSTED" : "CREDIT_DEDUCTED",
 								resource: "credit_balance",
 								resourceId: userId,
-								metadata: { requestedDeltaCents: deltaCents, reason, deductionCappedAtBalance: deltaCents < 0 },
+								metadata: { requestedDeltaCents: deltaCents, appliedDeltaCents, reason, deductionCappedAtBalance: appliedDeltaCents !== deltaCents },
 						});
 
-						return c.json({ ok: true, userId, deltaCents });
+						return c.json({ ok: true, userId, deltaCents: appliedDeltaCents, requestedDeltaCents: deltaCents, capped: appliedDeltaCents !== deltaCents });
 				} catch (err) {
 						logger.error({ err, adminId, userId, deltaCents }, "[admin] credit adjust failed");
 						return c.json({ error: "internal_error" }, 500);

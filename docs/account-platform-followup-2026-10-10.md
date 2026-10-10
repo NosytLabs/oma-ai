@@ -12,6 +12,8 @@ Model/provider percentages measure request share, including free requests. Token
 
 Export, operations and admin token aggregates no longer overflow PostgreSQL's 32-bit integers. Unexpected server errors return a safe error and correlation ID; database statements and parameters are not exposed to customers. Controlled provider errors retain useful recovery messages.
 
+Admin deductions lock the balance and report the amount actually removed. Missing/empty balances and zero adjustments are rejected. Partial deductions carry an accurate cap flag in the response and audit record, and the console displays the applied amount. Regression checks include simultaneous deductions against one small balance.
+
 ## Dependency decisions
 
 The compatible direct dependencies are current, including Next.js 16.4.0, Better Auth 1.7.7 and viem 2.57.4. Two apparent updates are deliberately held:
@@ -36,7 +38,7 @@ No mainnet transaction was executed. Facilitator gas readiness and a live settle
 ## Verification
 
 - Frontend: 731 tests passed in 111 files; lint and type checks passed; production build generated 79 routes. One cold lazy-loading chat test timed out while tests and a build competed for resources; the isolated 20-test file and subsequent full 731-test run passed. No assertion was weakened.
-- Backend: 517 tests passed, 6 skipped; lint, type checks and build passed. All 15 real HTTP/PostgreSQL integration groups passed, including SIWE, session revocation, account deletion, admin controls, multi-billion-token totals and database-error redaction. Each integration run uses a separate disposable local database.
+- Backend: 521 tests passed, 6 skipped; lint, type checks and build passed. All 16 real HTTP/PostgreSQL integration groups passed, including SIWE, session revocation, account deletion, admin controls, concurrent capped deductions, multi-billion-token totals and database-error redaction. Each integration run uses a separate disposable local database.
 - Dependency installation: frozen lockfile check passed; production audit reported zero vulnerabilities. The full audit retained the single mitigated development advisory described above.
 - Browser: authenticated profile save/restoration, session refresh, revocation of two other local sessions, account JSON download with eight usage records, deletion confirmation/cancel, appearance change/restoration, legacy bookmarks, read-only demo isolation, keyboard tab navigation and request-ID copying. Production account deletion and mainnet purchases were not executed. The two updated Playwright bookmark specifications were verified manually through the browser rather than run by the Playwright CLI.
 - Layout: desktop and 390px screenshots captured for unified settings and usage. Document width equaled the viewport at both sizes, and no duplicate element IDs were present. Final browser capture returned no warnings or errors. Artifacts remain ignored under `.screenshots/account-audit-2026-10-10/`.

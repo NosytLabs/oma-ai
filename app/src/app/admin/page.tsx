@@ -520,13 +520,17 @@ function UsersSection() {
 				headers: { "Content-Type": "application/json", Accept: "application/json" },
 				body: JSON.stringify(input),
 			});
-			if (!res.ok) throw new Error(`credit adjust failed: ${res.status}`);
+			const result = await res.json().catch(() => null) as { deltaCents?: number; capped?: boolean; error?: { message?: string } } | null;
+			if (!res.ok) throw new Error(result?.error?.message ?? `Credit adjustment failed: ${res.status}`);
+			if (typeof result?.deltaCents !== "number" || !Number.isFinite(result.deltaCents)) throw new Error("The server did not confirm the applied credit adjustment");
+			return { deltaCents: result.deltaCents, capped: result.capped === true };
 		},
-		onSuccess: () => {
+		onSuccess: (result) => {
 			setCursor(null);
 			setPages([]);
 			void queryClient.invalidateQueries({ queryKey: ["admin-users"] });
-			toast.success("Credits adjusted");
+			if (result.capped) toast.info(`Deducted ${fmtCents(Math.abs(result.deltaCents))}; limited to available credits.`);
+			else toast.success(`${result.deltaCents > 0 ? "Added" : "Deducted"} ${fmtCents(Math.abs(result.deltaCents))} in credits`);
 			setDialog(null);
 		},
 		onError: (err) => {

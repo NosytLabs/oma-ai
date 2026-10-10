@@ -443,10 +443,10 @@ const spec = {
 			post: {
 				summary: "Add or deduct credits for a user (cents)",
 				description:
-					"Admin-only. Server clamps delta to ±$1k per operation. Writes CREDIT_ADJUSTED or CREDIT_DEDUCTED audit row.",
+					"Admin-only. Rejects zero or amounts beyond ±$10k per operation. Deductions are limited to the available balance; empty balances are rejected. The response deltaCents and audit appliedDeltaCents report the amount actually applied; requestedDeltaCents retains the request and capped reports a partial deduction.",
 				responses: {
-					"200": { description: "OK" },
-					"400": { description: "Invalid body" },
+					"200": { description: "Applied adjustment, requested amount and cap flag" },
+					"400": { description: "Invalid body or no credits available to deduct" },
 					"404": { description: "User not found" },
 					"401": { description: "Not authenticated" },
 					"403": { description: "Not an admin" },
