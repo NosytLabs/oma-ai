@@ -7,9 +7,10 @@ instruction can't drift between documents.
 Production topology was verified on 2026-10-10. See
 [deployment verification](deployment-health.md) for release checks and failure diagnosis.
 
-The October 10 release serves code commit `c3ad79573c56c3d5a1ee265d349666331b4a0485`
-from Vercel deployment `dpl_6MRKyahfttBHMAyzBE6d6jSKJGbw` and Neon `omaapi/72`.
-Both were verified ready. See the [audit](audit-2026-10-10.md) for checks and cleanup.
+The latest [account and dependency follow-up](account-platform-followup-2026-10-10.md)
+records the release receipt and remaining limitations. Deployment targets below
+describe the platform topology; historical audit receipts retain their original
+deployment IDs.
 
 ## Canonical host
 
@@ -35,6 +36,7 @@ POST https://www.oma-ai.com/x402/verify
 POST https://www.oma-ai.com/x402/settle
 GET  https://www.oma-ai.com/api/v1/search
 GET  https://www.oma-ai.com/api/v1/usage
+GET  https://www.oma-ai.com/api/v1/usage/summary
 GET  https://www.oma-ai.com/api/v1/usage/today
 GET  https://www.oma-ai.com/api/v1/balance
 GET  https://www.oma-ai.com/api/v1/keys

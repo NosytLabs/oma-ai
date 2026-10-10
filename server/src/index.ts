@@ -15,6 +15,7 @@ import { drainSettlementDlq, getSettlementDlqLength } from "./lib/dlq.js";
 import { auth } from "./auth.js";
 import { initAuth } from "./auth/middleware.js";
 import { ensureCatalogLoaded } from "./inference/models.js";
+import { ProviderError } from "./inference/provider-route.js";
 import { authRoutes } from "./routes/auth.js";
 import { modelRoutes } from "./routes/models.js";
 import { healthRoutes } from "./routes/health.js";
@@ -516,7 +517,7 @@ app.onError((err, c) => {
 		// request timed out", "All model providers failed: ..."). Hiding them
 		// as "Internal server error" leaves chat users staring at a silent
 		// failure with no way to recover.
-		if (status >= 500 && errWithStatus.message && errWithStatus.message !== "Internal server error") {
+		if (status >= 500 && err instanceof ProviderError) {
 				return c.json({ error: { message: errWithStatus.message, type: "server_error", correlationId } }, status as ContentfulStatusCode);
 		}
 		if (status >= 500) {

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";
 import {
@@ -29,6 +30,9 @@ import { QuickActions } from "./QuickActions";
 import { QuickStatsCard } from "./QuickStatsCard";
 import { RecentTransactions } from "./RecentTransactions";
 import { DashboardErrorBanner } from "./DashboardErrorBanner";
+const AccountSettings = dynamic(() => import("./AccountSettings"), {
+	loading: () => <p role="status" className="py-8 text-text-muted">Loading account settings…</p>,
+});
 import {
 	LazyApiKeyManager,
 	LazyCreatedKeyModal,
@@ -275,13 +279,19 @@ export function DashboardGrid(props: DashboardGridProps) {
 
 	return (
 		<>
-			<DashboardErrorBanner
+			{activeTab !== "settings" && <DashboardErrorBanner
 				error={error}
 				backendUnavailable={backendUnavailable}
 				onRefresh={onRefresh}
-			/>
+			/>}
 
 			<AnimatePresence mode="wait">
+				{activeTab === "settings" && (
+					<m.div key="settings" id="panel-settings" role="tabpanel" aria-labelledby="tab-settings"
+						variants={tabContentVariants} initial="hidden" animate="visible" exit="exit">
+						<WidgetErrorBoundary title="Account settings"><AccountSettings /></WidgetErrorBoundary>
+					</m.div>
+				)}
 				{/* Overview Tab */}
 				{activeTab === "overview" && (
 					<m.div
@@ -345,7 +355,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 							</WidgetErrorBoundary>
 						</div>
 
-						<QuickActions />
+						<QuickActions isDemo={_isDemo} />
 
 						<RecentTransactions transactions={transactions} />
 					</m.div>
@@ -394,7 +404,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 									</WidgetErrorBoundary>
 								</div>
 
-								<div className="mb-8 grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-2">
+								<div className="mb-8 grid min-w-0 grid-cols-1 gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
 									<WidgetErrorBoundary title="Model usage">
 										<LazyModelUsageTable usage={usage} summary={summary?.models} loading={loading} />
 									</WidgetErrorBoundary>

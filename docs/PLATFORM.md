@@ -106,6 +106,8 @@ Authorization: Bearer oma_sk_...
 
 Website sessions support email magic-link authentication and SIWE wallet authentication. Better Auth owns the `oma`-prefixed `HttpOnly` session cookies, with `SameSite=Lax` and secure cookies on HTTPS deployments. Browser requests forward those cookies through the same-origin proxies; browser sessions are not API-key bearer tokens. Session cookies are accepted by authenticated account and funding endpoints. API keys and sessions are distinct from payment settlement: x402 verification uses the signed `PAYMENT-SIGNATURE`, while x402 settlement requires a SIWE session whose linked wallet matches the USDC payer; API keys do not authenticate settlement.
 
+The user account has one home at `/dashboard`: Overview, Usage, API Keys and Settings. Settings sections use `?tab=settings&section=profile|appearance|sessions|danger`. `/settings` remains a compatibility redirect, preserving demo/query parameters and legacy section/hash bookmarks. Account controls do not depend on analytics loading. Demo controls are read-only. Usage model/provider percentages describe request share, including free chat; charges remain separate and preserve sub-cent values. Request details expose a copyable correlation ID, requested/served models and timestamp without storing prompt content.
+
 The OpenAPI document is served at:
 
 ```text

@@ -259,7 +259,7 @@ try {
 
 	await request("/v1/usage/summary", { expected: 401 });
 	await pool.query(`INSERT INTO usage_records (request_id, user_id, model, provider, input_tokens, output_tokens, cost_cents, markup_cents, total_cents, status, created_at)
-	 SELECT 'user-bulk-' || n, $1, 'minimax-m2-7', 'oma-ai', CASE WHEN n<=2 THEN 2000000000 ELSE 2 END, 1, 0, 0, 0, 'free_tier',
+	 SELECT 'user-bulk-' || n, $1, 'minimax-m2-7', 'oma-ai', CASE WHEN n<=2 THEN 2000000000 ELSE 2 END, CASE WHEN n<=2 THEN 2000000000 ELSE 1 END, 0, 0, 0, 'free_tier',
 	 date_trunc('milliseconds', now()-interval '22 hours') + n * interval '1 microsecond' FROM generate_series(1,2001) n`, [profile.id]);
 	await pool.query(`INSERT INTO usage_records (request_id, user_id, model, provider, input_tokens, output_tokens, cost_cents, markup_cents, total_cents, status, refunded_at, created_at)
 	 VALUES ('user-tiny', $1, 'minimax-m2-7', 'oma-ai', 1, 2, 0, 0, 0.00000600, 'completed', NULL, now()-interval '22 hours'),
@@ -282,6 +282,31 @@ try {
 	assert.equal(userSummary.models.reduce((sum,r)=>sum+r.requests,0), 2008);
 	assert.equal(userSummary.providers.reduce((sum,r)=>sum+r.requests,0), 2008);
 	assert.equal((await request("/v1/usage/summary?range=all", { cookie: first.cookie })).data.totals.requests, 2009);
+	const summaryExport = (await request("/v1/export/summary?format=json", { cookie: first.cookie })).data;
+	assert.equal(summaryExport.total_input_tokens, userSummary.totals.input_tokens);
+	assert.equal(summaryExport.total_output_tokens, userSummary.totals.output_tokens);
+	assert.equal(Number(summaryExport.total_cost_cents), 9.000006);
+	await pool.query('UPDATE "user" SET role = \'admin\' WHERE id = $1', [profile.id]);
+	const opsSnapshot = (await request("/v1/ops/snapshot", { cookie: first.cookie })).data;
+	assert.equal(opsSnapshot.chat24h.available, true);
+	assert.equal(opsSnapshot.chat24h.inputTokens, userSummary.totals.input_tokens + 1);
+	assert.equal(opsSnapshot.chat24h.outputTokens, userSummary.totals.output_tokens + 1);
+	assert.equal(opsSnapshot.chat24h.totalTokens, opsSnapshot.chat24h.inputTokens + opsSnapshot.chat24h.outputTokens);
+	assert.ok(opsSnapshot.chat24h.topModels.some(m => m.tokens > 4_000_000_000));
+	const largeTimeline = (await request("/v1/admin/usage/timeline?days=7", { cookie: first.cookie })).data;
+	assert.equal(largeTimeline.items.reduce((sum, row) => sum + row.tokens, 0), opsSnapshot.chat24h.totalTokens);
+	await pool.query('UPDATE "user" SET role = \'user\' WHERE id = $1', [profile.id]);
+	pass("summary exports and admin snapshots/trends preserve large input/output totals without per-row or aggregate overflow");
+	// Force an actual database failure only in this disposable database.
+	await pool.query('ALTER TABLE usage_records RENAME TO usage_records_unavailable');
+	try {
+		const failedExport = await request("/v1/export/summary?format=json", { cookie: first.cookie, expected: 500 });
+		assert.equal(failedExport.data.error.message, "Internal server error");
+		assert.doesNotMatch(JSON.stringify(failedExport.data), /select|usage_records|params:|person@example/i);
+	} finally {
+		await pool.query('ALTER TABLE usage_records_unavailable RENAME TO usage_records');
+	}
+	pass("database failures return safe errors without exposing queries, parameters or account identifiers");
 	await request("/v1/usage/summary?range=invalid", { cookie: first.cookie, expected: 400 });
 	await request("/v1/usage/summary?timezone=invalid", { cookie: first.cookie, expected: 400 });
 	await request("/v1/usage?cursor=invalid", { cookie: first.cookie, expected: 400 });

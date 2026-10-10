@@ -17,7 +17,7 @@ interface UseDashboardKeyboardOptions {
 	* Dashboard-wide keyboard shortcuts.
 	*
 	*   R         — refresh dashboard
-	*   1 / 2 / 3 — switch to Overview / Usage / API keys
+	*   1 / 2 / 3 / 4 — switch to Overview / Usage / API keys / Settings
 	*   ArrowLeft / ArrowRight (Usage tab only) — paginate recent-requests
 	*
 	* Ignored while focus is in an input/textarea/select/contenteditable, and
@@ -53,9 +53,9 @@ export function useDashboardKeyboard({
 					return;
 				}
 			}
-			if (e.metaKey || e.ctrlKey || e.altKey) return;
+			if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
 
-			if (e.key === "r" || e.key === "R") {
+			if (activeTab !== "settings" && (e.key === "r" || e.key === "R")) {
 				e.preventDefault();
 				void refreshRef.current();
 				return;
@@ -75,7 +75,12 @@ export function useDashboardKeyboard({
 				setActiveTab("api-keys");
 				return;
 			}
-			if (activeTab === "usage") {
+			if (e.key === "4") {
+				e.preventDefault();
+				setActiveTab("settings");
+				return;
+			}
+			if (activeTab === "usage" && !target?.closest("[role=tablist], [role=radiogroup]")) {
 				if (e.key === "ArrowLeft" && page > 1) {
 					setPage((p) => p - 1);
 				} else if (e.key === "ArrowRight" && hasMorePages) {

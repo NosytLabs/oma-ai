@@ -39,12 +39,22 @@ beforeEach(() => {
 	vi.mocked(api.creditHistory.list).mockResolvedValue({ transactions: [] });
 });
 describe("useDashboardData", () => {
+	it("keeps settings usable without loading analytics and starts analytics when returning to usage", async () => {
+		const { result, rerender } = renderHook(({ analyticsEnabled }) => useDashboardData({ isAuthenticated: true, userId: "a", analyticsEnabled }),
+			{ wrapper: wrapper(), initialProps: { analyticsEnabled: false } });
+		await waitFor(() => expect(result.current.loading).toBe(false));
+		expect(api.auth.listKeys).toHaveBeenCalled();
+		for (const query of [api.usage.summary, api.usage.get, api.models.list, api.creditHistory.list]) expect(query).not.toHaveBeenCalled();
+		rerender({ analyticsEnabled: true });
+		await waitFor(() => expect(result.current.summary?.totals.requests).toBe(2500));
+	});
 	it("does not fetch private data without an authenticated identity", () => {
 		const { result } = renderHook(() => useDashboardData({ isAuthenticated: false }), { wrapper: wrapper() });
 		expect(result.current.usage).toEqual([]);
 		expect(result.current.summary).toBeNull();
 		expect(result.current.loading).toBe(false);
 		expect(api.usage.summary).not.toHaveBeenCalled();
+		expect(useBalance).toHaveBeenCalledWith({ enabled: false });
 	});
 	it("gets full-range statistics separately from on-demand request pages", async () => {
 		vi.mocked(api.usage.get).mockResolvedValueOnce({ records: [], count: 0, nextCursor: "next", totalCount: 2500 });

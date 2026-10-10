@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { privateKeyToAccount } from "viem/accounts";
 import { hexToBytes, verifyMessage } from "viem";
 import {
@@ -246,6 +246,26 @@ describe("wallet", () => {
 		expect(OMA_CHAIN_ID).toBe(8453);
 	});
 
+	it("does not retry a failing signature prompt automatically", async () => {
+		const request = vi.fn(async ({ method }: { method: string }) => {
+			if (method === "personal_sign") throw new Error("Wallet disconnected");
+			return [];
+		});
+		install({ request });
+		await expect(signSiweMessage(ADDRESS, "a1b2c3d4e5f6a7b8", "oma-ai.com")).rejects.toThrow();
+		expect(request.mock.calls.filter(([args]) => args.method === "personal_sign")).toHaveLength(1);
+	});
+
+	it("keeps providers with the same wallet brand distinct by EIP-6963 UUID", () => {
+		const first = makeProvider();
+		const second = makeProvider();
+		listWallets();
+		for (const [uuid, provider] of [["wallet-one", first.provider], ["wallet-two", second.provider]] as const) {
+			window.dispatchEvent(new CustomEvent("eip6963:announceProvider", { detail: { info: { uuid, rdns: "io.example", name: "Example" }, provider } }));
+		}
+		expect(listWallets().filter(wallet => wallet.name === "Example").map(wallet => wallet.id)).toEqual(["wallet-one", "wallet-two"]);
+	});
+
 	it("connects an EIP-6963 wallet when window.ethereum is absent", async () => {
 		const { provider } = makeProvider();
 		const onRequest = () => {
@@ -262,7 +282,7 @@ describe("wallet", () => {
 		try {
 			const { address } = await connectWallet();
 			expect(address).toBe(ADDRESS);
-			expect(listWallets().some((wallet) => wallet.id === "io.metamask")).toBe(true);
+		expect(listWallets().some((wallet) => wallet.id === "mm")).toBe(true);
 		} finally {
 			window.removeEventListener("eip6963:requestProvider", onRequest);
 		}
@@ -298,7 +318,7 @@ describe("wallet", () => {
 		};
 		window.addEventListener("eip6963:requestProvider", onRequest);
 		try {
-			await connectWallet("io.rabby");
+			await connectWallet("rb");
 			(window as unknown as { ethereum?: unknown }).ethereum = {
 				request: async () => {
 					throw new Error("decoy");

@@ -534,47 +534,9 @@ x402Routes.post("/x402/middleware-test", async (c) => {
 
 // Houdini/crosschain deposit flow removed — /v1/x402/proxy/chat/completions no longer exists.
 
-// =============================================================================
-// x402 SPEC NOTE (post-2026-07-02 audit fix):
-//
-// As of audit-x402-eip3009-fix-2026-07-02, the V1 verify path now uses
-// EIP-3009 transferWithAuthorization (gasless for the user, facilitator pays
-// gas). The canonical Coinbase x402 v2 spec lives at
-//   https://github.com/coinbase/x402/blob/main/specs/x402-specification-v2.md
-//   (transport: https://github.com/coinbase/x402/blob/main/specs/transports-v2/http.md)
-//
-// V1 wire shape (now EIP-3009-aligned; was: receipt-check of pre-paid transfer):
-//   * x402Version: string ("1"|"2"). V2 spec uses number (2); v2.ts adapts
-//     the v2 wire (base64 PAYMENT-SIGNATURE / X-PAYMENT) onto this envelope.
-//   * Transport header: PAYMENT-SIGNATURE (JSON-encoded PaymentSignature).
-//   * signature     = 65-byte EIP-712 sig over TransferWithAuthorization typed data.
-//   * authorization = JSON { from, to, value, validAfter, validBefore, nonce }.
-//   * payload       = { scheme, networkId, asset, amount, payee, payFrom,
-//                      maxAmountRequired, validBefore, validAfter, nonce? }.
-//   * Legacy back-compat: if authorization is not a JSON EIP-3009 tuple, the
-//     verify path falls through to `verifyUsdcTransferReceipt` which decodes
-//     `transfer`/`transferFrom` calldata from a tx hash (pre-paid flow).
-//
-// EIP-3009 verify path (verifyEip3009Payment):
-//   1. Consume nonce (CRIT-2 replay protection).
-//   2. Parse + shape-check the authorization tuple.
-//   3. Pin payee to SERVER_TREASURY (reject mismatches).
-//   4. Pin amount >= payload.maxAmountRequired.
-//   5. Validate validAfter <= now < validBefore.
-//   6. Recover EIP-712 signer via viem.recoverTypedDataAddress; reject if
-//      recovered != authorization.from.
-//   7. Simulate via eth_call (catches double-spend attempts where the
-//      contract would revert because the nonce is already used).
-//   8. Settle: if FACILITATOR_PRIVATE_KEY is configured, submit the real
-//      transferWithAuthorization tx (facilitator pays gas). Otherwise emit
-//      a deterministic synthetic txHash (keccak256 of tuple+sig) so the
-//      verify+settle cache key still works for dev/preview deployments.
-//
-// Canonical chain IDs: Base mainnet = eip155:8453, USDC = 0x833589…29913;
-// Base Sepolia = eip155:84532, USDC = 0x036CbD…CF7e (matches v2 spec).
-// Only mainnet is supported today.
-//
-// =============================================================================
+// Public funding endpoints accept the v2 wire envelope and bind credited
+// payments to the SIWE payer. The middleware below supports development
+// protocol tests; production inference spends prepaid account credits.
 
 // ============================================================
 // Payment Middleware

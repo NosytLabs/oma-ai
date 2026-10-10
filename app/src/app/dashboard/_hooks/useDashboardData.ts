@@ -10,20 +10,22 @@ interface Options {
 	isAuthenticated: boolean;
 	userId?: string;
 	timeRange?: TimeRangeId;
+	analyticsEnabled?: boolean;
 }
 
 /** Full-range aggregates and on-demand history; all private caches include identity. */
-export function useDashboardData({ isAuthenticated, userId, timeRange = "7d" }: Options) {
+export function useDashboardData({ isAuthenticated, userId, timeRange = "7d", analyticsEnabled = true }: Options) {
 	const queryClient = useQueryClient();
 	const enabled = isAuthenticated && !!userId;
+	const analytics = enabled && analyticsEnabled;
 	const timezone = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC", []);
-	const balanceQuery = useBalance();
+	const balanceQuery = useBalance({ enabled });
 	const keysQuery = useQuery({
 		queryKey: ["apiKeys", userId], queryFn: () => api.auth.listKeys(), enabled, staleTime: 60_000,
 	});
 	const summaryQuery = useQuery({
 		queryKey: ["usageSummary", userId, timeRange, timezone],
-		queryFn: () => api.usage.summary(timeRange, timezone), enabled, staleTime: 60_000,
+		queryFn: () => api.usage.summary(timeRange, timezone), enabled: analytics, staleTime: 60_000,
 	});
 	const summary = enabled ? summaryQuery.data ?? null : null;
 	const usageQuery = useInfiniteQuery({
@@ -33,19 +35,19 @@ export function useDashboardData({ isAuthenticated, userId, timeRange = "7d" }: 
 		}),
 		initialPageParam: undefined as string | undefined,
 		getNextPageParam: page => page.nextCursor ?? undefined,
-		enabled: enabled && !!summary, staleTime: 60_000,
+		enabled: analytics && !!summary, staleTime: 60_000,
 	});
 	const modelsQuery = useQuery({
-		queryKey: ["models"], queryFn: () => api.models.list(), enabled, staleTime: 300_000,
+		queryKey: ["models"], queryFn: () => api.models.list(), enabled: analytics, staleTime: 300_000,
 	});
 	const transactionsQuery = useQuery({
 		queryKey: ["recentTransactions", userId],
-		queryFn: () => api.creditHistory.list(5), enabled, staleTime: 60_000,
+		queryFn: () => api.creditHistory.list(5), enabled: analytics, staleTime: 60_000,
 	});
 	const usage = useMemo(() => enabled ? usageQuery.data?.pages.flatMap(p => p.records) ?? [] : [],
 		[enabled, usageQuery.data]);
-	const errors = enabled ? [balanceQuery.error, keysQuery.error, summaryQuery.error, usageQuery.error,
-		modelsQuery.error, transactionsQuery.error] : [];
+	const errors = enabled ? [balanceQuery.error, keysQuery.error, ...(analytics ? [summaryQuery.error, usageQuery.error,
+		modelsQuery.error, transactionsQuery.error] : [])] : [];
 	const error = errors.find(e => e instanceof Error) as Error | undefined;
 	const refresh = useCallback(async () => {
 		if (!enabled) return;
@@ -62,8 +64,8 @@ export function useDashboardData({ isAuthenticated, userId, timeRange = "7d" }: 
 		creditBatches: [],
 		models: enabled ? modelsQuery.data?.data ?? [] : [],
 		transactions: enabled ? transactionsQuery.data?.transactions ?? [] : [],
-		loading: enabled && (balanceQuery.loading || keysQuery.isLoading || summaryQuery.isLoading ||
-			usageQuery.isLoading || modelsQuery.isLoading || transactionsQuery.isLoading),
+		loading: enabled && (balanceQuery.loading || keysQuery.isLoading || (analytics && (summaryQuery.isLoading ||
+			usageQuery.isLoading || modelsQuery.isLoading || transactionsQuery.isLoading))),
 		error: error ?? null,
 		backendUnavailable: errors.some(e => e instanceof BackendUnavailableError),
 		hasMoreUsage: enabled && usageQuery.hasNextPage,

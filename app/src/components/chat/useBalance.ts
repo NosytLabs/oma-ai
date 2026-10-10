@@ -17,14 +17,14 @@ import { isAuthError } from "@/lib/api/client";
 	* and clears the pill so the user knows to reconnect — previously the pill
 	* silently disappeared which looked like a billing bug.
 	*/
-export function useBalance(): {
+export function useBalance({ enabled = true }: { enabled?: boolean } = {}): {
 	balance: BalanceResponse | null;
 	loading: boolean;
 	error?: Error | null;
 	refresh: () => Promise<void>;
 } {
 	const { isAuthenticated, isDemo, isReady, user } = useAuth();
-	const canLoadBalance = isReady && isAuthenticated && !isDemo && !!user?.id;
+	const canLoadBalance = enabled && isReady && isAuthenticated && !isDemo && !!user?.id;
 	const toast = useToast();
 
 	const query = useQuery({
@@ -64,6 +64,7 @@ export function useBalance(): {
 		? query.isLoading || (query.isFetching && !query.data)
 		: false;
 	const refresh = async () => {
+		if (!canLoadBalance) return;
 		await query.refetch();
 	};
 

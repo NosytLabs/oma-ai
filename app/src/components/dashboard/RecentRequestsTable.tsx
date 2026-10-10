@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import type { UsageRecord } from "@/lib/api";
 import { formatTime, formatUsdPrecise } from "@/lib/utils";
+import { useToast } from "@/components/ui/Toast";
 import { resolveModelDisplayName, usageBilledDollars } from "@/lib/dashboard-aggregate";
 
 interface RecentRequestsTableProps {
@@ -30,6 +31,7 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 	hasMore = false,
 	loadingMore = false,
 }: RecentRequestsTableProps) {
+	const toast = useToast();
 	const totalPages = Math.ceil(totalCount / limit);
 	const currentPage = Math.min(page, Math.max(1, Math.ceil(usage.length / limit)));
 
@@ -37,7 +39,7 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 		<div className="flex flex-col h-full border border-border bg-surface/30 rounded-[var(--radius-xl)] shadow-[var(--shadow-md)] transition-colors duration-200 ease-out hover:border-accent/40">
 			<div className="p-6 border-b border-border/50">
 				<div className="flex items-center justify-between">
-					<h2 className="text-[14.5px] font-bold text-text-bright tracking-tight">
+					<h2 className="font-sans text-[14.5px] font-bold text-text-bright tracking-tight">
 						Recent requests
 					</h2>
 					{!loading && usage.length > 0 && (
@@ -127,7 +129,19 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 									transition={{ delay: i * 0.03, ...springs.soft }}
 								>
 									<td className="px-6 sm:px-7 py-4 text-[13px] font-bold text-accent font-mono transition-colors duration-200 ease-out group-hover:text-accent-hover">
-										<span title={`Request ${row.requestId}${row.requestedModel && row.requestedModel !== row.model ? ` · Requested ${row.requestedModel}` : ""}`}>{resolveModelDisplayName(row.model)}</span>
+										<details className="min-w-[10rem] max-w-[18rem]">
+											<summary className="cursor-pointer rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">{resolveModelDisplayName(row.model)}</summary>
+											<div className="mt-3 space-y-2 text-xs font-normal text-text-secondary">
+												<p>Request ID <code className="block break-all select-all text-text-bright">{row.requestId}</code></p>
+												<button type="button" className="min-h-9 rounded border border-border px-2 text-accent" onClick={() => {
+													void navigator.clipboard.writeText(row.requestId).then(() => toast.success("Request ID copied"), () => toast.error("Could not copy. Select the request ID to copy it."));
+												}}>Copy request ID</button>
+												{row.requestedModel && row.requestedModel !== row.model && <p>Requested: <span className="break-all">{row.requestedModel}</span></p>}
+												<p>Served: <span className="break-all">{row.model}</span></p>
+												<p>Provider: {row.provider || "Unknown"}</p>
+												<p><time dateTime={row.createdAt}>{new Date(row.createdAt).toLocaleString()}</time></p>
+											</div>
+										</details>
 									</td>
 									<td className="px-6 py-4 text-[13px] text-text-secondary text-right font-mono transition-colors duration-200 ease-out group-hover:text-text-bright">
 										{(row.promptTokens ?? 0).toLocaleString()}
@@ -149,7 +163,7 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 									<td className="px-6 py-4 text-[12.5px] text-text-secondary text-right font-mono transition-colors duration-200 ease-out group-hover:text-text-bright">
 										{typeof row.latencyMs === "number" &&
 										Number.isFinite(row.latencyMs)
-											? `${Math.round(row.latencyMs)}ms`
+											? row.latencyMs >= 1000 ? `${(row.latencyMs / 1000).toFixed(1)}s` : `${Math.round(row.latencyMs)}ms`
 											: "—"}
 									</td>
 								<td className="px-6 py-4 text-[11.5px] font-mono text-text-muted/80 transition-colors duration-200 ease-out group-hover:text-text-secondary">
@@ -167,7 +181,7 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 									)}
 								</td>
 								<td className="px-6 sm:px-7 py-4 text-[11.5px] font-mono text-text-muted/80 transition-colors duration-200 ease-out group-hover:text-text-secondary">
-									{formatTime(row.createdAt)}
+									<time dateTime={row.createdAt} title={new Date(row.createdAt).toLocaleString()}>{formatTime(row.createdAt)}</time>
 								</td>
 								</m.tr>
 							))

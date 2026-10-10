@@ -5,7 +5,6 @@ import {
 		buildV2Challenge,
 		buildXPaymentResponse,
 		CAIP2_BASE_MAINNET,
-		CHAT_COMPLETIONS_BAZAAR,
 		parseXPaymentHeader,
 } from "../v2.js";
 
@@ -129,9 +128,14 @@ describe("buildV2Challenge", () => {
 						priceUsd: "0.10",
 						payTo: AUTH.to,
 						resource: "/v1/chat/completions",
-						bazaar: CHAT_COMPLETIONS_BAZAAR,
+						bazaar: {
+							resource: { url: "/test/weather", description: "Test discovery resource", mimeType: "application/json", serviceName: "Test service" },
+							input: { type: "http", method: "POST", bodyType: "json", body: { city: "Test city" } },
+							output: { type: "json", example: { temperature: 20 } },
+							schema: { type: "object", properties: { input: { type: "object" } }, required: ["input"] },
+						},
 				});
-				expect(challenge.resource?.serviceName).toBe("OMA — Open Model Access");
+				expect(challenge.resource?.serviceName).toBe("Test service");
 				const bazaar = (
 						challenge.extensions as Record<
 								string,

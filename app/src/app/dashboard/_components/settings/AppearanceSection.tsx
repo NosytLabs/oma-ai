@@ -7,7 +7,7 @@ import { isSoundEnabled, setSoundEnabled } from "@/lib/sound";
 import { SettingsCard } from "./SettingsCard";
 
 /**
-	* Appearance settings — theme switcher surfaced inside /settings.
+	* Appearance preferences in the account dashboard.
 	* Mirrors the ThemeToggle chip but laid out as a full settings card
 	* with labels, hints, and a live preview swatch.
 	*/
@@ -174,4 +174,3 @@ export function AppearanceSection({ readOnly = false }: { readOnly?: boolean }) 
 		</section>
 	);
 }
-

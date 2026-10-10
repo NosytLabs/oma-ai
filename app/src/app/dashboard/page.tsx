@@ -85,7 +85,8 @@ function DashboardPageInner() {
 			: "overview";
 
 	const [timeRange, setTimeRange] = useState<TimeRangeId>("7d");
-	const live = useDashboardData({ isAuthenticated: canLoadDashboard, userId: user?.id, timeRange });
+	const [activeTab, setActiveTab] = useState<TabId>(initialTab);
+	const live = useDashboardData({ isAuthenticated: canLoadDashboard, userId: user?.id, timeRange, analyticsEnabled: activeTab === "overview" || activeTab === "usage" });
 	const demoUsage = useMemo(
 		() => (isDemoView ? buildDemoUsage() : []),
 		[isDemoView],
@@ -109,7 +110,6 @@ function DashboardPageInner() {
 	const [revokingId, setRevokingId] = useState<string | null>(null);
 	const [copied, setCopied] = useState<string | null>(null);
 	const [refreshTick, setRefreshTick] = useState(0);
-	const [activeTab, setActiveTab] = useState<TabId>(initialTab);
 	useEffect(() => { setPage(1); }, [timeRange, user?.id]);
 
 	useEffect(() => {
@@ -139,9 +139,9 @@ function DashboardPageInner() {
 	} = useDashboardStats(usage, timeRange);
 
 	const handleRefresh = useCallback(async () => {
-		setRefreshTick((n) => n + 1);
 		setPage(1);
 		await refresh();
+		setRefreshTick((n) => n + 1);
 	}, [refresh]);
 
 	const handlePageChange = async (next: number) => {
@@ -288,19 +288,19 @@ function DashboardPageInner() {
 						</Link>
 					</div>
 				)}
-				{isDemoView && (
+				{isDemoView && activeTab !== "settings" && (
 					<div
 						role="status"
 						className="flex flex-wrap items-center justify-between gap-3 border-b border-accent/25 bg-accent/10 px-4 py-2 sm:px-6 lg:px-8 text-[11px] font-mono text-accent"
 					>
 						<span className="uppercase tracking-wider">
-							Demo tour · sample charts &amp; balances (read-only)
+							Demo tour · sample account data (read-only)
 						</span>
 						<Link
-							href="/login?next=/dashboard"
+							href={isAuthenticated && !isDemo ? `/dashboard?tab=${activeTab}` : "/login?next=/dashboard"}
 							className="shrink-0 rounded-[var(--radius-sm)] bg-accent px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-void hover:bg-accent-bright"
 						>
-							Sign in for live data
+							{isAuthenticated && !isDemo ? "Exit demo" : "Sign in for live data"}
 						</Link>
 					</div>
 				)}
@@ -313,7 +313,7 @@ function DashboardPageInner() {
 							Wallet connected · {evmAddress.slice(0, 6)}…{evmAddress.slice(-4)}
 						</span>
 						<Link
-							href="/settings"
+							href="/dashboard?tab=settings"
 							className="shrink-0 rounded-[var(--radius-sm)] bg-accent px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-void hover:bg-accent-bright"
 						>
 							Manage
@@ -326,6 +326,7 @@ function DashboardPageInner() {
 						modelsAvailable={selectAvailableModels(models).length}
 						hasAnyData={hasAnyData}
 						refreshTick={refreshTick}
+						hasError={!!error}
 						onRefresh={handleRefresh}
 						onExport={handleExport}
 						activeTab={activeTab}

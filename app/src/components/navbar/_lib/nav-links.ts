@@ -92,7 +92,7 @@ export const accountLinks: NavItem[] = [
 	{ href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
 	{ href: "/dashboard?tab=api-keys", label: "API keys", icon: KeyRound },
 	{ href: "/deposit", label: "Buy credits", icon: Coins },
-	{ href: "/settings", label: "Settings", icon: Settings },
+	{ href: "/dashboard?tab=settings", label: "Settings", icon: Settings },
 ];
 
 /** A pathname cannot identify a specific fragment or query tab. */

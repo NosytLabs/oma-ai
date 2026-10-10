@@ -1,4 +1,5 @@
 import { Key, Mail, Shield } from "lucide-react";
+import Link from "next/link";
 import { AnimatedSection, SectionHeading, TabbedCode } from "./shared";
 
 export function AuthenticationSection() {
@@ -39,6 +40,11 @@ func main() {
 				title="Authentication"
 				subtitle="Programmatic inference uses a Bearer API key. Website accounts use email or wallet sessions; eligible free website chat also works without sign-in."
 			/>
+			<p className="mb-6 text-sm text-text-muted">
+				Your <Link href="/dashboard" className="text-accent underline underline-offset-2">dashboard</Link> contains credits, full-range usage and API keys.
+				{" "}<Link href="/dashboard?tab=settings" className="text-accent underline underline-offset-2">Account settings</Link> manages your profile, appearance, active sessions and data.
+				{" "}Expand a request in Usage to copy its request ID when reporting an issue. Account deletion requires a fresh sign-in and forfeits remaining credits.
+			</p>
 
 			<div
 				id="auth-free-chat"

@@ -1,6 +1,6 @@
 # Account, usage and treasury audit — October 10, 2026
 
-This follow-up covers the user dashboard, settings, local test tooling, database cleanup, treasury visibility and the chat defects encountered in real authenticated use. It builds on [the platform audit](audit-2026-10-10.md).
+This follow-up covers the user dashboard, settings, local test tooling, database cleanup, treasury visibility and the chat defects encountered in real authenticated use. It builds on [the platform audit](audit-2026-10-10.md). The later [account workspace and dependency follow-up](account-platform-followup-2026-10-10.md) records dashboard/settings unification and the subsequent release.
 
 ## Changes
 

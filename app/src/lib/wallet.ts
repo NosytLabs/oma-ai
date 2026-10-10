@@ -66,7 +66,7 @@ function installEip6963Listener() {
 		).detail;
 		const provider = detail?.provider;
 		if (!provider || typeof provider.request !== "function") return;
-		const id = detail.info?.rdns || detail.info?.uuid || `eip6963-${announced.size}`;
+		const id = detail.info?.uuid || detail.info?.rdns || `eip6963-${announced.size}`;
 		announced.set(id, {
 			id,
 			name: detail.info?.name || "Wallet",
@@ -182,7 +182,8 @@ function viemWalletClient(): WalletClient {
 	if (!eth) throw new Error("No wallet available");
 	return createWalletClient({
 		chain: base,
-		transport: custom(eth as never),
+		// A wallet prompt must be explicitly retried by the user, never automatically.
+		transport: custom(eth as never, { retryCount: 0 }),
 	});
 }
 
@@ -361,4 +362,3 @@ export async function sendUsdcTransfer({
 	});
 	return { txHash };
 }
-

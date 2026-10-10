@@ -122,8 +122,8 @@ exportRoutes.get("/v1/export/summary", sessionAuth, async (c) => {
 		const [usageSummary] = await db
 				.select({
 						total_requests: sql<number>`count(*)::int`,
-						total_input_tokens: sql<number>`coalesce(sum(${usageRecords.inputTokens}), 0)::int`,
-						total_output_tokens: sql<number>`coalesce(sum(${usageRecords.outputTokens}), 0)::int`,
+						total_input_tokens: sql<string>`coalesce(sum(${usageRecords.inputTokens}), 0)::text`,
+						total_output_tokens: sql<string>`coalesce(sum(${usageRecords.outputTokens}), 0)::text`,
 						total_cost_cents: sql<string>`coalesce(sum(${usageRecords.totalCents}) FILTER (WHERE ${usageRecords.refundedAt} IS NULL), 0)::numeric`,
 				})
 				.from(usageRecords)
@@ -134,8 +134,8 @@ exportRoutes.get("/v1/export/summary", sessionAuth, async (c) => {
 				total_deposited_cents: balance?.total_deposited_cents ?? "0",
 				total_used_cents: balance?.total_used_cents ?? "0",
 				total_requests: usageSummary?.total_requests ?? 0,
-				total_input_tokens: usageSummary?.total_input_tokens ?? 0,
-				total_output_tokens: usageSummary?.total_output_tokens ?? 0,
+				total_input_tokens: Number(usageSummary?.total_input_tokens ?? 0),
+				total_output_tokens: Number(usageSummary?.total_output_tokens ?? 0),
 				total_cost_cents: usageSummary?.total_cost_cents ?? "0",
 				exported_at: new Date().toISOString(),
 		};

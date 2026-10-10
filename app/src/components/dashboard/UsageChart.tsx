@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import { DashboardCard } from "@/components/dashboard/DashboardCard";
 import type { DataPoint } from "@/components/ui/charts/AreaChart";
 import type { ModelData } from "@/components/ui/charts/DonutChart";
+import { formatUsdPrecise } from "@/lib/utils";
 
 const AreaChartComponent = dynamic(
 	() => import("@/components/ui/charts").then((m) => m.AreaChartComponent),
@@ -52,29 +53,36 @@ export function UsageChart({
 	const areaLabel = buildAreaLabel(usageData, timeRange);
 	const donutLabel = buildDonutLabel(modelData);
 	const rangeLabel = TIME_LABELS[timeRange] || timeRange;
+	const hasCharges = usageData.some(p => p.cost > 0);
 
 	return (
 		<div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
 			<m.div
+				className="h-full"
 				initial={{ opacity: 0, y: 20 }}
 				animate={{ opacity: 1, y: 0 }}
 				transition={{ ...springs.card, delay: 0.3 }}
 			>
 				<DashboardCard
 					tone="accent"
+					className="h-full"
 					title={`Usage (${rangeLabel})`}
 					hint={`Requests per ${bucket}${timezone ? ` · ${timezone.replaceAll("_", " ")}` : ""}`}
 					flush
 				>
 					{hasUsageData ? (
 						<div role="img" aria-label={areaLabel} className="rounded-[var(--radius-md)] border border-border/50 bg-void p-4">
-							<AreaChartComponent data={usageData} tickPattern={bucket === "month" ? "MMM yyyy" : "MMM d"} />
+							<div className="mb-3 flex flex-wrap gap-4 text-xs text-text-secondary">
+								<span><span aria-hidden="true" className="mr-1.5 inline-block h-2 w-2 rounded-full bg-accent" />Requests</span>
+								{hasCharges && <span><span aria-hidden="true" className="mr-1.5 inline-block h-2 w-2 rounded-full bg-secondary" />Charges (USD)</span>}
+							</div>
+							<AreaChartComponent data={usageData} showCostArea={hasCharges} tickPattern={bucket === "month" ? "MMM yyyy" : "MMM d"} />
 						</div>
 					) : (
 						<div
 							role="img"
 							aria-label="Usage chart placeholder. No data yet."
-							className="flex h-48 flex-col items-center justify-center rounded-[var(--radius-md)] border border-dashed border-border/60 bg-void px-6 text-center"
+							className="flex min-h-[340px] flex-col items-center justify-center rounded-[var(--radius-md)] border border-dashed border-border/60 bg-void px-6 text-center"
 						>
 							<p className="text-[13.5px] font-semibold text-text-secondary">
 								{loading
@@ -95,9 +103,11 @@ export function UsageChart({
 				initial={{ opacity: 0, y: 20 }}
 				animate={{ opacity: 1, y: 0 }}
 				transition={{ ...springs.card, delay: 0.4 }}
+				className="h-full"
 			>
 				<DashboardCard
 					tone="info"
+					className="h-full"
 					title="Spend by model"
 					hint="Top models by cost"
 					flush
@@ -124,7 +134,7 @@ export function UsageChart({
 						<div
 							role="img"
 							aria-label="Spend by model. No billed spend in this range."
-							className="flex h-48 flex-col items-center justify-center rounded-[var(--radius-md)] border border-dashed border-border/60 bg-void px-6 text-center"
+							className="flex min-h-[340px] flex-col items-center justify-center rounded-[var(--radius-md)] border border-dashed border-border/60 bg-void px-6 text-center"
 						>
 							<p className="text-[13.5px] font-semibold text-text-secondary">
 								{loading ? "Loading models…" : "No billed spend in this range"}
@@ -164,5 +174,5 @@ function buildDonutLabel(data: ModelData[]): string {
 	const top = [...data].sort((a, b) => b.value - a.value)[0];
 	if (!top) return "Model breakdown chart.";
 	const pct = total > 0 ? Math.round((top.value / total) * 100) : 0;
-	return `Spend by model, ${data.length} slices. Top ${top.name} at ${pct}% of $${total.toFixed(2)}.`;
+	return `Spend by model, ${data.length} slices. Top ${top.name} at ${pct}% of ${formatUsdPrecise(total)}.`;
 }

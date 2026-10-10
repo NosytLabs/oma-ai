@@ -64,6 +64,7 @@ export function ProviderBreakdown({ usage, loading, summary }: ProviderBreakdown
 	}, [usage, summary]);
 
 	const totalCost = providerStats.reduce((sum, p) => sum + p.totalCost, 0);
+	const totalRequests = providerStats.reduce((sum, p) => sum + p.requests, 0);
 
 	if (loading && usage.length === 0) {
 		return (
@@ -81,7 +82,7 @@ export function ProviderBreakdown({ usage, loading, summary }: ProviderBreakdown
 	if (providerStats.length === 0) {
 		return (
 			<div className="p-6 border border-[var(--color-border)] bg-[var(--color-surface)]/30 rounded-[var(--radius-xl)] shadow-[var(--shadow-md)] transition-colors duration-200 ease-out hover:border-[var(--color-accent)]/40">
-				<h3 className="text-[14.5px] font-bold text-text-bright tracking-tight mb-2">
+				<h3 className="font-sans text-[14.5px] font-bold text-text-bright tracking-tight mb-2">
 					Provider breakdown
 				</h3>
 				<p className="text-[12.5px] text-text-muted leading-relaxed">No provider data yet.</p>
@@ -92,18 +93,19 @@ export function ProviderBreakdown({ usage, loading, summary }: ProviderBreakdown
 	return (
 		<div className="border border-[var(--color-border)] bg-[var(--color-surface)]/30 rounded-[var(--radius-xl)] shadow-[var(--shadow-md)] overflow-hidden h-full transition-[border-color,background-color] hover:border-[var(--color-accent)]/40 hover:bg-[var(--color-surface)]/50">
 			<div className="p-6 border-b border-[var(--color-border)]/50 bg-[var(--color-void)]/50">
-				<h3 className="text-[14.5px] font-bold text-text-bright tracking-tight">
+				<h3 className="font-sans text-[14.5px] font-bold text-text-bright tracking-tight">
 					Provider breakdown
 				</h3>
 				<p className="text-[11px] font-mono text-text-muted uppercase tracking-wider mt-1.5 opacity-80">
 					{providerStats.length} provider{providerStats.length !== 1 ? "s" : ""}{" "}
 					· {formatUsdPrecise(totalCost)} charged, excluding refunds
 				</p>
+				<p className="mt-1 text-xs text-text-muted">Bars show share of requests, including free chat.</p>
 			</div>
 			<div className="p-6 bg-void/30 h-full max-h-[400px] overflow-y-auto chat-scrollbar">
 				<div className="space-y-6">
 					{providerStats.map((stat, i) => {
-						const pct = totalCost > 0 ? (stat.totalCost / totalCost) * 100 : 0;
+						const pct = totalRequests > 0 ? (stat.requests / totalRequests) * 100 : 0;
 						return (
 							<m.div
 								key={stat.provider}
@@ -137,7 +139,7 @@ export function ProviderBreakdown({ usage, loading, summary }: ProviderBreakdown
 								<div className="w-full h-1.5 bg-[var(--color-surface-elevated)] rounded-full overflow-hidden shadow-inner relative">
 									{/* scaleX instead of width — compositor-only, no per-frame layout */}
 									<m.div
-										className="absolute inset-y-0 left-0 rounded-full origin-left transition-[background-color,border-color,box-shadow,color,transform] duration-200 ease-out"
+										className="absolute inset-y-0 left-0 w-full rounded-full origin-left transition-[background-color,border-color,box-shadow,color,transform] duration-200 ease-out"
 										style={{ backgroundColor: getProviderColor(stat.provider) }}
 										initial={{ scaleX: 0 }}
 										animate={{ scaleX: pct / 100 }}

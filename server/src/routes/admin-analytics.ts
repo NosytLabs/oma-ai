@@ -46,7 +46,7 @@ adminAnalyticsRoutes.get("/v1/admin/usage/timeline", sessionOrBearerAuth, requir
 					COUNT(*) FILTER (WHERE status = 'free_tier')::int AS free_requests,
 					COUNT(*) FILTER (WHERE requested_model IS NOT NULL AND requested_model <> model)::int AS failed_over,
 					COUNT(*) FILTER (WHERE provider = 'oma-ai')::int AS unknown_cost_requests,
-					COALESCE(SUM(input_tokens + output_tokens), 0)::bigint AS tokens,
+					COALESCE(SUM(input_tokens::bigint + output_tokens::bigint), 0)::bigint AS tokens,
 					COALESCE(SUM(total_cents) FILTER (WHERE refunded_at IS NULL), 0)::numeric AS billed_cents,
 					COALESCE(SUM(cost_cents) FILTER (WHERE provider <> 'oma-ai'), 0)::numeric AS known_upstream_cents,
 					percentile_cont(0.95) WITHIN GROUP (ORDER BY latency_ms) AS p95_latency_ms

@@ -73,7 +73,7 @@ function CreditBalanceCardComponent({
 								aria-busy="true"
 							/>
 						) : !balance ? (
-							<span className="text-text-muted">0 credits</span>
+							<span className="text-xl text-text-muted">Balance unavailable</span>
 						) : (
 							<div className="flex items-baseline gap-2">
 								{/* balanceCents is integer-cent credits (1 credit = $0.01).
@@ -100,7 +100,7 @@ function CreditBalanceCardComponent({
 						? `Credits added: ${Math.round(totalDepositedCents)} (${(totalDepositedCents / 100).toLocaleString(undefined, { style: "currency", currency: "USD" })})`
 						: loading
 							? "Loading credits…"
-							: "Credits added: 0 credits"}
+							: "Credit history unavailable"}
 				</div>
 
 				{/* 7-day spend sparkline — visual depth without competing with the

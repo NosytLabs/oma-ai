@@ -79,10 +79,6 @@ export function DangerZoneSection({
 				</p>
 			</div>
 
-			<p className="rounded-[var(--radius-md)] border border-border bg-surface/30 px-5 py-3 text-xs text-text-muted">
-				Export your data above first if you might need it later. Deletion forfeits remaining credits.
-			</p>
-
 			{/* Wipe History */}
 			<div className="mt-6 rounded-[var(--radius-md)] border border-border bg-surface/30 p-5 transition-colors duration-200 ease-out hover:border-accent/30">
 				<div className="flex items-start gap-4">
