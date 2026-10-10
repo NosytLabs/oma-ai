@@ -29,6 +29,8 @@ import { creditsRoutes } from "./routes/credits.js";
 import { exportRoutes } from "./routes/export.js";
 import { dailyUsageRoutes } from "./routes/daily-usage.js";
 import { usageRoutes } from "./routes/usage.js";
+import { usageSummaryRoutes } from "./routes/usage-summary.js";
+import { adminTreasuryRoutes } from "./routes/admin-treasury.js";
 import { openapiRoutes } from "./routes/openapi.js";
 import { polarRoutes } from "./routes/polar.js";
 import { adminRoutes } from "./routes/admin.js";
@@ -485,6 +487,8 @@ app.route("/", x402Routes);
 // Daily usage / quota endpoint for the website chat free-tier counter.
 app.route("/", dailyUsageRoutes);
 app.route("/", usageRoutes);
+app.route("/", usageSummaryRoutes);
+app.route("/", adminTreasuryRoutes);
 
 // Polar.sh checkout + webhook (no auth on webhook routes; signature-verified).
 // polarRoutes dual-mounts POST /webhooks/polar and POST /api/webhook/polar

@@ -30,10 +30,10 @@ const STEPS = [
 		body: (
 			<>
 				Open the <Link href="/chat" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">chat playground</Link> and send a
-				message. Guests get 20 free messages a day across the three OMA-AI
+				message. Guests get 20 free messages a day across available OMA-AI
 				website-chat models, and 100 a day once you sign in. No credit card,
-				nothing to install. The free set currently includes DeepSeek V4 Flash,
-				MiniMax M2.7, and GLM-5.3 Flash.
+				nothing to install. MiniMax M2.7 is the default. Check the model catalog
+				for current availability; paused routes cannot accept requests.
 			</>
 		),
 	},

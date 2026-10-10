@@ -16,6 +16,8 @@ export type StreamDelta = {
 	reasoning?: string;
 	/** Real token total, from the final usage frame. Absent when unreported. */
 	totalTokens?: number;
+	inputTokens?: number;
+	outputTokens?: number;
 	/** Upstream finish_reason. "length" means the answer was cut short. */
 	finishReason?: string;
 };
@@ -40,7 +42,7 @@ export function parseStreamData(raw: string): StreamDelta | null {
 			};
 			finish_reason?: unknown;
 		}>;
-		usage?: { total_tokens?: unknown };
+		usage?: { total_tokens?: unknown; prompt_tokens?: unknown; completion_tokens?: unknown };
 	};
 
 	try {
@@ -57,19 +59,21 @@ export function parseStreamData(raw: string): StreamDelta | null {
 	// Reasoning models (DeepSeek R1, Claude extended thinking) emit
 	// `reasoning_content`; some emit plain `reasoning`. Prefer the former so
 	// the thinking phase stays visible instead of rendering blank.
-	const reasoning =
-		(choice?.delta?.reasoning_content as string | undefined) ??
-		(choice?.delta?.reasoning as string | undefined);
-	if (reasoning) delta.reasoning = reasoning;
+	const reasoning = choice?.delta?.reasoning_content ?? choice?.delta?.reasoning;
+	if (typeof reasoning === "string" && reasoning) delta.reasoning = reasoning;
 
-	const content = choice?.delta?.content as string | undefined;
-	if (content) delta.content = content;
+	const content = choice?.delta?.content;
+	if (typeof content === "string" && content) delta.content = content;
 
 	// Prefer the provider's real count over our text-length estimate. A zero
 	// means "not reported", so it is treated as absent, matching the previous
 	// truthy check.
 	const total = parsed.usage?.total_tokens;
-	if (typeof total === "number" && total > 0) delta.totalTokens = total;
+	if (typeof total === "number" && Number.isSafeInteger(total) && total > 0) delta.totalTokens = total;
+	const input = parsed.usage?.prompt_tokens;
+	const output = parsed.usage?.completion_tokens;
+	if (typeof input === "number" && Number.isSafeInteger(input) && input >= 0) delta.inputTokens = input;
+	if (typeof output === "number" && Number.isSafeInteger(output) && output >= 0) delta.outputTokens = output;
 
 	const reason = choice?.finish_reason;
 	if (typeof reason === "string" && reason.length > 0) {

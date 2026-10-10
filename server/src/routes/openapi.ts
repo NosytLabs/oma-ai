@@ -315,6 +315,7 @@ const spec = {
 		"/v1/usage": {
 			get: {
 				summary: "Paginated per-request usage history (model, provider, API key, token counts, cents)",
+				description: "Private account history. Treat next_cursor as opaque and pass it unchanged. Totals cover every record matching the filters, independent of the cursor. totalCents is the original charge; billedCents is zero after a refund, with refundedAt preserving its timestamp. Monetary values are decimal-string cents.",
 				parameters: [
 					{ in: "query", name: "model", schema: { type: "string" } },
 					{ in: "query", name: "provider", schema: { type: "string", enum: ["venice", "oma-ai"] } },
@@ -325,8 +326,21 @@ const spec = {
 					{ in: "query", name: "cursor", schema: { type: "string" } },
 				],
 				responses: {
-					"200": { description: "Paginated usage records" },
+					"200": { description: "{object, data, next_cursor, totals: {requests, input_tokens, output_tokens, cost_cents}}. cost_cents excludes refunded charges." },
+					"400": { description: "Invalid filters or cursor" },
+					"401": { description: "Authentication required" },
 				},
+			},
+		},
+		"/v1/usage/summary": {
+			get: {
+				summary: "Complete account statistics, model/provider breakdowns and chart buckets",
+				description: "Full-range aggregates, independent of request pagination. range is a rolling window; last24h always covers the preceding 24 hours. Billed cents exclude refunded charges, errors and cancellations are counted separately. Timeline includes zero buckets in the requested IANA timezone; all uses monthly buckets. Response contains range, timezone, bucket, from (null for all), to, lifetimeRequests, totals, last24h, models, providers and timeline. Each totals object includes requests, errors, aborted, free_requests, active_models, input_tokens, output_tokens, billed_cents (decimal string) and avg_latency_ms. Use from/to as since/until when loading the matching request history.",
+				parameters: [
+					{ in: "query", name: "range", schema: { type: "string", enum: ["24h", "7d", "30d", "all"], default: "7d" } },
+					{ in: "query", name: "timezone", schema: { type: "string", default: "UTC" }, description: "IANA timezone, e.g. America/Moncton" },
+				],
+				responses: { "200": { description: "Private, uncached usage summary" }, "400": { description: "Invalid range or timezone" }, "401": { description: "Authentication required" } },
 			},
 		},
 		"/v1/keys": {

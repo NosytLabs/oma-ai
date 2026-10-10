@@ -450,7 +450,9 @@ export function useStreamingChat(
 				const reader = response.body.getReader();
 				let accumulated = "";
 				let accumulatedReasoning = "";
-				let realTokenCount = 0;
+				let realTokenCount: number | undefined;
+				let realInputTokens: number | undefined;
+				let realOutputTokens: number | undefined;
 				let lastUpdateTime = 0;
 				let lastFlushedContent = "";
 				let lastFlushedReasoning = "";
@@ -478,13 +480,15 @@ export function useStreamingChat(
 						lastFlushedReasoning = accumulatedReasoning;
 						// Use the real usage count once it arrives in the final chunk;
 						// otherwise approximate from accumulated text.
-						const tokenCount = realTokenCount || estimateTokens(accumulated);
+						const estimatedOutput = estimateTokens(accumulated + accumulatedReasoning);
+						const tokenCount = realTokenCount ?? realOutputTokens ?? estimatedOutput;
 						updateAssistant((message) => ({
 							...message,
 							content: accumulated,
 							reasoning: accumulatedReasoning || undefined,
 							tokens: tokenCount,
-							outputTokens: realTokenCount || estimateTokens(accumulated),
+							inputTokens: realInputTokens,
+							outputTokens: realOutputTokens ?? estimatedOutput,
 							latency: now - startTime,
 							truncated: finishReason === "length",
 							degenerate: isDegenerateResponse(accumulated),
@@ -531,6 +535,8 @@ export function useStreamingChat(
 					if (d.totalTokens !== undefined) {
 						realTokenCount = d.totalTokens;
 					}
+					if (d.inputTokens !== undefined) realInputTokens = d.inputTokens;
+					if (d.outputTokens !== undefined) realOutputTokens = d.outputTokens;
 					if (d.finishReason) {
 						finishReason = d.finishReason as typeof finishReason;
 					}

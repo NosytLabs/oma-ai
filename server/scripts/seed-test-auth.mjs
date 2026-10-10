@@ -1,17 +1,9 @@
 import crypto from "node:crypto";
 import pg from "pg";
+import { localTestContext } from "./local-test-context.mjs";
 
-const blockedEnvironments = new Set(["production", "staging", "preview"]);
-if (blockedEnvironments.has(process.env.NODE_ENV)) {
-	throw new Error("Refusing to seed test auth identities outside development/test.");
-}
-
-const appOrigin = process.env.TEST_APP_ORIGIN ?? process.env.PUBLIC_APP_URL ?? "http://localhost:3000";
-const localHosts = new Set(["localhost", "127.0.0.1", "[::1]"]);
-if (!process.env.DATABASE_URL || !localHosts.has(new URL(process.env.DATABASE_URL).hostname) || !localHosts.has(new URL(appOrigin).hostname)) {
-	throw new Error("Test auth seeding requires a local database and local app origin.");
-}
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+const { databaseUrl, appOrigin } = localTestContext();
+const pool = new pg.Pool({ connectionString: databaseUrl.toString() });
 const credits = process.env.OMA_TEST_AUTH_CREDITS ?? "10000";
 const identities = [
 	{

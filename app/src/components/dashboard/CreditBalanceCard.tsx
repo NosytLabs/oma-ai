@@ -6,6 +6,7 @@ import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
 import { Sparkline } from "@/components/ui/Sparkline";
 import type { BalanceResponse, CreditBatch, UsageRecord } from "@/lib/api";
 import { toDollars } from "@/lib/utils";
+import { usageBilledDollars } from "@/lib/dashboard-aggregate";
 import { DashboardCard } from "./DashboardCard";
 
 interface CreditBalanceCardProps {
@@ -13,9 +14,8 @@ interface CreditBalanceCardProps {
 	loading: boolean;
 	/** Last 7 days of usage, oldest → newest. Drives the inline sparkline. */
 	recentUsage?: UsageRecord[];
-	/** Active USDC credit batches. Their issued amounts count toward lifetime
-		deposits alongside card-funded `totalDepositedCents` — otherwise the
-		"Total deposited" line under-reports for USDC-funded accounts. */
+	spendTrend?: number[];
+	/** Legacy compatibility only; the aggregate ledger includes every credit grant. */
 	creditBatches?: CreditBatch[];
 }
 
@@ -23,15 +23,14 @@ function CreditBalanceCardComponent({
 	balance,
 	loading,
 	recentUsage = [],
-	creditBatches = [],
+	spendTrend,
 }: CreditBalanceCardProps) {
-	// Lifetime deposits = card ledger total + issued USDC batch amounts.
-	const totalDepositedCents =
-		(balance ? parseFloat(balance.totalDepositedCents) || 0 : 0) +
-		creditBatches.reduce((sum, b) => sum + (parseFloat(b.amountCents) || 0), 0);
+	// All payment rails write this ledger. Legacy batches must not be added again.
+	const totalDepositedCents = balance ? parseFloat(balance.totalDepositedCents) || 0 : 0;
 	// Sparkline: 7-day spend totals, oldest → newest. Group by ISO date so a
 	// sparse day still produces a zero point on the line.
 	const sparkPoints = (() => {
+		if (spendTrend) return spendTrend;
 		if (recentUsage.length === 0) return [];
 		const byDay = new Map<string, number>();
 		for (let i = 6; i >= 0; i--) {
@@ -47,7 +46,7 @@ function CreditBalanceCardComponent({
 				// sub-cent. `toDollars` returns 0 for null/undefined/garbage.
 				byDay.set(
 					day,
-					byDay.get(day)! + toDollars(u.totalCents ?? u.costCents),
+					byDay.get(day)! + usageBilledDollars(u),
 				);
 		}
 		return Array.from(byDay.values());
@@ -98,10 +97,10 @@ function CreditBalanceCardComponent({
 						aria-hidden="true"
 					/>
 					{balance
-						? `Total deposited: ${Math.round(totalDepositedCents)} credits (${(totalDepositedCents / 100).toLocaleString(undefined, { style: "currency", currency: "USD" })})`
+						? `Credits added: ${Math.round(totalDepositedCents)} (${(totalDepositedCents / 100).toLocaleString(undefined, { style: "currency", currency: "USD" })})`
 						: loading
 							? "Loading credits…"
-							: "Total deposited: 0 credits"}
+							: "Credits added: 0 credits"}
 				</div>
 
 				{/* 7-day spend sparkline — visual depth without competing with the
@@ -112,11 +111,11 @@ function CreditBalanceCardComponent({
 							values={sparkPoints}
 							heightClass="h-10"
 							tone="neutral"
-							ariaLabel="7-day spend trend"
+							ariaLabel={spendTrend ? "Spend in selected range" : "7-day spend trend"}
 						/>
 						<div className="mt-2 flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-text-muted">
-							<span>7d ago</span>
-							<span>Today</span>
+							<span>{spendTrend ? "Selected range" : "7d ago"}</span>
+							<span>Now</span>
 						</div>
 					</div>
 				)}
@@ -149,7 +148,7 @@ export const CreditBalanceCard = memo(
 			prev.balance === next.balance &&
 			prev.loading === next.loading &&
 			prev.recentUsage === next.recentUsage &&
-			prev.creditBatches === next.creditBatches
+			prev.spendTrend === next.spendTrend
 		);
 	},
 );

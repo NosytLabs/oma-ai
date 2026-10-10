@@ -13,6 +13,12 @@ import { routeRequestWithFallback } from "../proxy.js";
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 describe("upstream tool round trip", () => {
+	it("requests upstream token totals for streamed billing", async () => {
+		const fetchMock = vi.fn().mockResolvedValue(new Response('data: [DONE]\n\n', { status: 200 }));
+		vi.stubGlobal("fetch", fetchMock);
+		await routeRequestWithFallback({ modelId: "minimax-m2-7", messages: [{ role: "user", content: "Hello" }], stream: true, userId: "test-user", requestId: "test-stream-usage" });
+		expect(JSON.parse(fetchMock.mock.calls[0]![1].body as string)).toMatchObject({ stream: true, stream_options: { include_usage: true } });
+	});
 	it("preserves assistant calls and tool result IDs in the actual provider payload", async () => {
 		const fetchMock = vi.fn().mockResolvedValue(new Response('{"choices":[]}', { status: 200 }));
 		vi.stubGlobal("fetch", fetchMock);

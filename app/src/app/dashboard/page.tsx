@@ -11,6 +11,7 @@ import { useToast } from "@/components/ui/Toast";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { type ApiKey, type ApiKeyWithSecret, api } from "@/lib/api";
 import { log } from "@/lib/logger";
+import { toDollars } from "@/lib/utils";
 import { selectAvailableModels } from "@/lib/model-availability";
 import { type TabId, type TimeRangeId } from "./_constants";
 import { TABS } from "./_constants";
@@ -69,7 +70,7 @@ export default function DashboardPage() {
 }
 
 function DashboardPageInner() {
-	const { isAuthenticated, isDemo, isReady, evmAddress } = useAuth();
+	const { isAuthenticated, isDemo, isReady, evmAddress, user } = useAuth();
 	const toast = useToast();
 	const queryClient = useQueryClient();
 	const searchParams = useSearchParams();
@@ -83,7 +84,8 @@ function DashboardPageInner() {
 			? (searchParams?.get("tab") as TabId)
 			: "overview";
 
-	const live = useDashboardData({ isAuthenticated: canLoadDashboard });
+	const [timeRange, setTimeRange] = useState<TimeRangeId>("7d");
+	const live = useDashboardData({ isAuthenticated: canLoadDashboard, userId: user?.id, timeRange });
 	const demoUsage = useMemo(
 		() => (isDemoView ? buildDemoUsage() : []),
 		[isDemoView],
@@ -108,7 +110,7 @@ function DashboardPageInner() {
 	const [copied, setCopied] = useState<string | null>(null);
 	const [refreshTick, setRefreshTick] = useState(0);
 	const [activeTab, setActiveTab] = useState<TabId>(initialTab);
-	const [timeRange, setTimeRange] = useState<TimeRangeId>("7d");
+	useEffect(() => { setPage(1); }, [timeRange, user?.id]);
 
 	useEffect(() => {
 		const raw = searchParams?.get("tab");
@@ -138,15 +140,25 @@ function DashboardPageInner() {
 
 	const handleRefresh = useCallback(async () => {
 		setRefreshTick((n) => n + 1);
+		setPage(1);
 		await refresh();
 	}, [refresh]);
 
+	const handlePageChange = async (next: number) => {
+		if (live.loadingMoreUsage) return;
+		if (!isDemoView && next * RECENT_REQUESTS_LIMIT > usage.length && live.hasMoreUsage) {
+			const result = await live.loadMoreUsage();
+			if (result.isError) return;
+		}
+		setPage(next);
+	};
+
 	useDashboardKeyboard({
 		setActiveTab: handleTabChange,
-		setPage,
+		setPage: updater => { void handlePageChange(updater(page)); },
 		activeTab,
 		page,
-		hasMorePages: usage.length > page * RECENT_REQUESTS_LIMIT,
+		hasMorePages: usage.length > page * RECENT_REQUESTS_LIMIT || (!isDemoView && live.hasMoreUsage),
 		onRefresh: handleRefresh,
 	});
 
@@ -204,7 +216,7 @@ function DashboardPageInner() {
 				);
 				log.error("installKeyCookie failed", err);
 			});
-			queryClient.setQueryData<{ keys: ApiKey[] }>(["apiKeys"], (prev) => ({
+			queryClient.setQueryData<{ keys: ApiKey[] }>(["apiKeys", user?.id], (prev) => ({
 				keys: [
 					...(prev?.keys ?? []),
 					{
@@ -222,14 +234,14 @@ function DashboardPageInner() {
 		} finally {
 			setCreating(false);
 		}
-	}, [newKeyName, queryClient, toast]);
+	}, [newKeyName, queryClient, toast, user?.id]);
 
 	const handleRevokeKey = useCallback(
 		async (keyId: string) => {
 			setRevokingId(keyId);
 			try {
 				await api.auth.deleteKey(keyId);
-				queryClient.setQueryData<{ keys: ApiKey[] }>(["apiKeys"], (prev) => ({
+				queryClient.setQueryData<{ keys: ApiKey[] }>(["apiKeys", user?.id], (prev) => ({
 					keys: (prev?.keys ?? []).filter((k) => k.id !== keyId),
 				}));
 			} catch (e: unknown) {
@@ -239,7 +251,7 @@ function DashboardPageInner() {
 				setRevokingId(null);
 			}
 		},
-		[queryClient, toast],
+		[queryClient, toast, user?.id],
 	);
 
 	const hasAnyData = Boolean(balance) || apiKeys.length > 0 || usage.length > 0;
@@ -326,20 +338,21 @@ function DashboardPageInner() {
 					<DashboardGrid
 						balance={balance}
 						apiKeys={apiKeys}
-						usage={filteredUsage}
-						hasAnyUsage={usage.length > 0}
+						usage={isDemoView ? filteredUsage : usage}
+						hasAnyUsage={isDemoView ? usage.length > 0 : (live.summary?.lifetimeRequests ?? 0) > 0}
 						creditBatches={creditBatches}
 						transactions={transactions}
 						isDemo={isDemoView}
 						loading={loading}
 						error={error}
 						backendUnavailable={backendUnavailable}
-						todayRequests={todayUsage.length}
-						todayCost={todayCost}
-						activeModels={activeModels}
-						totalTokens={totalTokens}
-						avgLatencyMs={avgLatency}
-						errorCount={todayErrorCount}
+						summary={isDemoView ? null : live.summary}
+						todayRequests={isDemoView ? todayUsage.length : live.summary?.last24h.requests ?? 0}
+						todayCost={isDemoView ? todayCost : toDollars(live.summary?.last24h.billed_cents)}
+						activeModels={isDemoView ? activeModels : live.summary?.last24h.active_models ?? 0}
+						totalTokens={isDemoView ? totalTokens : (live.summary?.last24h.input_tokens ?? 0) + (live.summary?.last24h.output_tokens ?? 0)}
+						avgLatencyMs={isDemoView ? avgLatency : live.summary?.last24h.avg_latency_ms ?? 0}
+						errorCount={isDemoView ? todayErrorCount : live.summary?.last24h.errors ?? 0}
 						creating={creating}
 						showCreateForm={showCreateForm}
 						newKeyName={newKeyName}
@@ -352,7 +365,9 @@ function DashboardPageInner() {
 						setNewKeyName={setNewKeyName}
 						page={page}
 						limit={RECENT_REQUESTS_LIMIT}
-						onPageChange={setPage}
+						onPageChange={handlePageChange}
+						hasMoreUsage={!isDemoView && live.hasMoreUsage}
+						loadingMoreUsage={live.loadingMoreUsage}
 						createdKey={createdKey}
 						onDismissCreatedKey={() => setCreatedKey(null)}
 						onRefresh={handleRefresh}

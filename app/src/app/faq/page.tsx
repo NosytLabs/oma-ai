@@ -66,7 +66,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "Do I need to know how to code?",
-				a: "No. You can try AI immediately in the free chat playground at /chat — no account needed. Guests can use the three OMA-AI website-chat models (DeepSeek V4 Flash, MiniMax M2.7, and GLM-5.3 Flash) with a daily message cap. You only need the API (and an API key) when you want to build something, like an app or a script.",
+				a: "No. You can try AI immediately in the free chat playground at /chat — no account needed. Guests can use available OMA-AI website-chat models with a daily message cap. MiniMax M2.7 is the default; check the model catalog for current availability. You only need the API (and an API key) when you want to build something, like an app or a script.",
 			},
 			{
 				q: "How do I start using it?",

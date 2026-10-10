@@ -28,6 +28,8 @@ interface UsageChartProps {
 	modelData: ModelData[];
 	timeRange?: string;
 	loading?: boolean;
+	bucket?: "day" | "month";
+	timezone?: string;
 }
 
 const TIME_LABELS: Record<string, string> = {
@@ -42,9 +44,11 @@ export function UsageChart({
 	modelData,
 	timeRange = "7d",
 	loading = false,
+	bucket = "day",
+	timezone,
 }: UsageChartProps) {
-	const hasUsageData = !loading && usageData.length > 0;
-	const hasModelData = !loading && modelData.length > 0;
+	const hasUsageData = !loading && usageData.some(p => (p.requests ?? 0) > 0);
+	const hasModelData = !loading && modelData.some(p => p.value > 0);
 	const areaLabel = buildAreaLabel(usageData, timeRange);
 	const donutLabel = buildDonutLabel(modelData);
 	const rangeLabel = TIME_LABELS[timeRange] || timeRange;
@@ -59,12 +63,12 @@ export function UsageChart({
 				<DashboardCard
 					tone="accent"
 					title={`Usage (${rangeLabel})`}
-					hint="Requests per day"
+					hint={`Requests per ${bucket}${timezone ? ` · ${timezone.replaceAll("_", " ")}` : ""}`}
 					flush
 				>
 					{hasUsageData ? (
 						<div role="img" aria-label={areaLabel} className="rounded-[var(--radius-md)] border border-border/50 bg-void p-4">
-							<AreaChartComponent data={usageData} tickPattern="MMM d" />
+							<AreaChartComponent data={usageData} tickPattern={bucket === "month" ? "MMM yyyy" : "MMM d"} />
 						</div>
 					) : (
 						<div
@@ -119,11 +123,11 @@ export function UsageChart({
 					) : (
 						<div
 							role="img"
-							aria-label="Model breakdown chart placeholder. No data yet."
+							aria-label="Spend by model. No billed spend in this range."
 							className="flex h-48 flex-col items-center justify-center rounded-[var(--radius-md)] border border-dashed border-border/60 bg-void px-6 text-center"
 						>
 							<p className="text-[13.5px] font-semibold text-text-secondary">
-								{loading ? "Loading models…" : "No model usage data yet"}
+								{loading ? "Loading models…" : "No billed spend in this range"}
 							</p>
 							<p className="mt-2 font-mono text-[11px] text-text-muted">
 								{loading

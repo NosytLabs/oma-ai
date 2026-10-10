@@ -5,6 +5,7 @@ import { AlertTriangle, History, Loader2, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { api } from "@/lib/api";
+import { useAuth } from "@/lib/hooks/useAuth";
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
 
 interface DangerZoneSectionProps {
@@ -24,11 +25,12 @@ export function DangerZoneSection({
 }: DangerZoneSectionProps) {
 	const toast = useToast();
 	const queryClient = useQueryClient();
+	const { user, isAuthenticated, isReady } = useAuth();
 	const balanceQuery = useQuery({
-		queryKey: ["balance"],
+		queryKey: ["balance", user?.id],
 		queryFn: () => api.balance.get(),
 		staleTime: 30_000,
-		enabled: !readOnly,
+		enabled: !readOnly && isReady && isAuthenticated && !!user?.id,
 	});
 	const balanceDollars = readOnly ? Number.NaN : Number(balanceQuery.data?.balanceCents ?? Number.NaN) / 100;
 	const [showConfirm, setShowConfirm] = useState(false);
@@ -46,6 +48,7 @@ export function DangerZoneSection({
 					`Wiped ${res.deleted.usageRecords} usage records & ${res.deleted.auditLogs} logs.`,
 				);
 				void queryClient.invalidateQueries({ queryKey: ["usage"] });
+				void queryClient.invalidateQueries({ queryKey: ["usageSummary"] });
 				void queryClient.invalidateQueries({ queryKey: ["balance"] });
 				void queryClient.invalidateQueries({ queryKey: ["recentTransactions"] });
 				void queryClient.invalidateQueries({ queryKey: ["creditBatches"] });

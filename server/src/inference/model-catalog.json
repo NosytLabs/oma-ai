@@ -358,6 +358,7 @@
   },
   {
     "id": "minimax-m2-7",
+    "description": "Budget model for chat and coding prompts. Tool-result continuation is currently unreliable on this Gonka route.",
     "provider": "oma-ai",
     "upstream": "openbroker",
     "omaAiId": "MiniMaxAI/MiniMax-M2.7",
@@ -383,7 +384,7 @@
   },
   {
     "id": "deepseek-v4-flash-0731-openbroker",
-    "disabledReason": "Temporarily paused after repeated upstream output. Please choose MiniMax M2.7 or GLM-5.3 Flash.",
+    "disabledReason": "Temporarily paused after repeated upstream output. Please choose MiniMax M2.7.",
     "provider": "oma-ai",
     "upstream": "openbroker",
     "omaAiId": "deepseek-ai/DeepSeek-V4-Flash-0731",
@@ -409,6 +410,7 @@
   },
   {
     "id": "zai-org-glm-5-3",
+    "disabledReason": "Temporarily paused after repeated upstream output. Please choose MiniMax M2.7.",
     "provider": "oma-ai",
     "upstream": "openbroker",
     "omaAiId": "zai-org/GLM-5.3-Flash",

@@ -20,19 +20,20 @@ import { isAuthError } from "@/lib/api/client";
 export function useBalance(): {
 	balance: BalanceResponse | null;
 	loading: boolean;
+	error?: Error | null;
 	refresh: () => Promise<void>;
 } {
-	const { isAuthenticated, isDemo, isReady } = useAuth();
-	const canLoadBalance = isReady && isAuthenticated && !isDemo;
+	const { isAuthenticated, isDemo, isReady, user } = useAuth();
+	const canLoadBalance = isReady && isAuthenticated && !isDemo && !!user?.id;
 	const toast = useToast();
 
 	const query = useQuery({
-		queryKey: ["balance"],
+		queryKey: ["balance", user?.id],
 		queryFn: () => api.balance.get(),
 		enabled: canLoadBalance,
 		// Slower polling (120s) and stop on auth errors — the old 30s +
 		// auto-refetch-on-fail created an infinite 401 loop.
-		refetchInterval: 120_000,
+		refetchInterval: query => isAuthError(query.state.error) ? false : 120_000,
 		staleTime: 120_000,
 		retry: false,
 	});
@@ -66,7 +67,7 @@ export function useBalance(): {
 		await query.refetch();
 	};
 
-	return { balance, loading, refresh };
+	return { balance, loading, refresh, error: query.error };
 }
 
 /** Convert a BalanceResponse (cents string) to a numeric dollar value. */

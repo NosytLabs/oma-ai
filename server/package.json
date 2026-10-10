@@ -12,6 +12,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:seed-test-auth": "node --env-file=.env scripts/seed-test-auth.mjs",
+    "db:cleanup-local": "node --env-file=.env scripts/cleanup-local-data.mjs",
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

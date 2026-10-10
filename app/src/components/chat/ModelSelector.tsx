@@ -28,6 +28,7 @@ import {
 } from "@/lib/model-utils";
 import { type TierFilter, useSharedLiveModels } from "./chat-message-shared";
 import { ModelLogo } from "@/components/ui/model-logo";
+import { isModelAvailable } from "@/lib/model-availability";
 
 interface ModelSelectorProps {
 	model: string;
@@ -149,11 +150,13 @@ export function ModelSelector({
 	// of locked, non-actionable options.
 	const isFreeModel = (m: { id: string; provider?: string }) =>
 		isFreeChatModel(m.id, m.provider);
-	const unavailableModelCount = MODELS.filter((item) => !isFreeModel(item)).length;
+	const unavailableModelCount = MODELS.filter((item) => isModelAvailable(item) && !isFreeModel(item)).length;
+	const pausedModelCount = MODELS.filter((item) => !isModelAvailable(item)).length;
 
 	const filtered = useMemo(() => {
 		const q = search.toLowerCase();
 		return MODELS.filter((m) => {
+			if (!isModelAvailable(m)) return false;
 			if (!isAuthenticated && !isFreeModel(m)) return false;
 			const name = displayName(m.id, m.name);
 			const matchesSearch =
@@ -187,7 +190,7 @@ export function ModelSelector({
 		() => MODELS.find((m) => m.id === model),
 		[model, MODELS],
 	);
-	const isStaleSelection = !selectedModel;
+	const isStaleSelection = !selectedModel || !isModelAvailable(selectedModel);
 	const selectedName = selectedModel
 		? displayName(selectedModel.id, selectedModel.name)
 		: null;
@@ -243,7 +246,7 @@ export function ModelSelector({
 						isStaleSelection ? "text-[var(--color-warning)]" : "text-text-bright"
 					}`}
 				>
-					{selectedShortName ||
+					{(!isStaleSelection && selectedShortName) ||
 						(isStaleSelection ? "MODEL UNAVAILABLE" : "SELECT MODEL")}
 				</span>
 				<ChevronDown
@@ -463,6 +466,12 @@ export function ModelSelector({
 								})
 							)}
 						</div>
+						{pausedModelCount > 0 && (
+							<p className="border-t border-border/50 px-3 py-2 text-xs text-text-muted">
+								{pausedModelCount} {pausedModelCount === 1 ? "model is" : "models are"} temporarily unavailable.
+								{" "}<Link href="/models" className="text-accent underline">View model status</Link>
+							</p>
+						)}
 					</m.div>
 				)}
 			</AnimatePresence>

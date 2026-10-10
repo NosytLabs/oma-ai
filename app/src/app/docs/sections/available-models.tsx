@@ -80,6 +80,7 @@ export function AvailableModelsSection() {
 					<p className="text-sm text-text-muted">
 						Text and reasoning models from Venice (frontier/premium/mid/budget)
 						and OMA-AI (MiniMax M2.7, DeepSeek V4 Flash, GLM-5.3 Flash).
+						Availability is shown below; catalog membership does not mean a route is accepting requests.
 					</p>
 				</div>
 				<div className="rounded-[var(--radius-xl)] border border-border bg-panel p-4 shadow-[var(--shadow-md)] transition-transform duration-200 ease-out hover:border-accent/40 active:scale-[0.97]">

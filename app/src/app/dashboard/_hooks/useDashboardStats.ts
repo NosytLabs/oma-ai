@@ -2,11 +2,8 @@
 
 import { useMemo } from "react";
 import type { UsageRecord } from "@/lib/api";
-import { toDollars } from "@/lib/utils";
+import { usageBilledDollars } from "@/lib/dashboard-aggregate";
 import type { TimeRangeId } from "../_constants";
-
-/** Usage statuses that represent a successful (non-error) request. */
-const SUCCESS_STATUSES = new Set(["completed", "free_tier"]);
 
 interface UseDashboardStatsResult {
 	todayUsage: UsageRecord[];
@@ -31,8 +28,8 @@ export function useDashboardStats(
 ): UseDashboardStatsResult {
 	// Aggregates that drive the QuickStatsCard and the recent-requests table.
 	const todayUsage = useMemo(() => {
-		const today = new Date().toDateString();
-		return usage.filter((u) => new Date(u.createdAt).toDateString() === today);
+		const now = Date.now();
+		return usage.filter((u) => { const at = Date.parse(u.createdAt); return at >= now - 86_400_000 && at <= now; });
 	}, [usage]);
 
 	// Time-range filtered usage for charts
@@ -61,7 +58,7 @@ export function useDashboardStats(
 		// `toDollars` returns 0 for null/undefined/garbage.
 		() =>
 			todayUsage.reduce(
-				(sum, u) => sum + toDollars(u.totalCents ?? u.costCents),
+				(sum, u) => sum + usageBilledDollars(u),
 				0,
 			),
 		[todayUsage],
@@ -72,8 +69,8 @@ export function useDashboardStats(
 	// has actually called. Honors the time-range filter so switching
 	// 24h/7d/30d/all updates the count alongside the chart.
 	const activeModels = useMemo(
-		() => new Set(filteredUsage.map((u) => u.model)).size,
-		[filteredUsage],
+		() => new Set(todayUsage.map((u) => u.model)).size,
+		[todayUsage],
 	);
 
 	const totalTokens = useMemo(
@@ -85,13 +82,11 @@ export function useDashboardStats(
 		[todayUsage],
 	);
 
-	// Count of today's requests that ended in a non-success status. Drives
-	// the error-rate metric in QuickStatsCard. "completed" and "free_tier"
-	// are both successful outcomes — anything else counts as an error.
+	// Cancellation is a separate outcome, not a request error.
 	const todayErrorCount = useMemo(
 		() =>
 			todayUsage.filter(
-				(u) => u.status && !SUCCESS_STATUSES.has(u.status),
+				(u) => u.status === "error",
 			).length,
 		[todayUsage],
 	);

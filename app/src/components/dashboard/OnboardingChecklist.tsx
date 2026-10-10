@@ -17,7 +17,7 @@ interface OnboardingChecklistProps {
 	walletConnected: boolean;
 	/** Whether the user has at least one API key. */
 	hasApiKey: boolean;
-	/** Whether the user has made at least one API call. */
+	/** Whether the account has made a chat or API request. */
 	hasUsage: boolean;
 	/** Callback to create an API key (navigates to API Keys tab). */
 	onCreateKey?: () => void;
@@ -95,8 +95,8 @@ export const OnboardingChecklist = memo(function OnboardingChecklist({
 	},
 	{
 	id: "first-call",
-	label: "Make your first API call",
-	description: "Test the gateway with a simple request.",
+	label: "Make your first request",
+	description: "Try the chat playground or send an API request.",
 	icon: Terminal,
 	done: hasUsage,
 	action: !hasUsage ? (

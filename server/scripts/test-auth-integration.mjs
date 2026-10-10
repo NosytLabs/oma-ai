@@ -200,8 +200,16 @@ try {
 	pass("revoke-other-sessions preserves the current session; export and history clearing preserve the account and balance");
 
 	await request("/v1/admin/usage/timeline", { cookie: first.cookie, expected: 403 });
+	await request("/v1/admin/treasury", { cookie: first.cookie, expected: 403 });
+	await request("/v1/admin/treasury", { expected: 401 });
 	await request("/v1/admin/usage/logs", { expected: 401 });
 	await pool.query("UPDATE \"user\" SET role = 'admin' WHERE id = $1", [profile.id]);
+	const treasury = await request("/v1/admin/treasury", { cookie: first.cookie });
+	assert.equal(treasury.response.headers.get("cache-control"), "no-store");
+	assert.equal(treasury.data.mode, "mock");
+	assert.equal(treasury.data.wallets.length, 3);
+	assert.ok(treasury.data.wallets.every(wallet => wallet.eth === null && wallet.usdc === null));
+	assert.ok(!JSON.stringify(treasury.data).includes("privateKey"));
 	await request("/v1/admin/site-settings", { method: "POST", cookie: first.cookie, body: { maintenanceMode: true, maintenanceMessage: "Local integration maintenance" } });
 	const adminSettings = (await request("/v1/admin/site-settings", { cookie: first.cookie })).data;
 	assert.equal(adminSettings.maintenanceMessage, "Local integration maintenance");
@@ -248,6 +256,57 @@ try {
 	await request("/v1/admin/usage/timeline?days=999", { cookie: first.cookie, expected: 400 });
 	await pool.query("UPDATE \"user\" SET role = 'user' WHERE id = $1", [profile.id]);
 	pass("admin analytics enforce roles, fill empty buckets, exclude refunds, retain failover and unknown costs, and paginate searchable metadata logs");
+
+	await request("/v1/usage/summary", { expected: 401 });
+	await pool.query(`INSERT INTO usage_records (request_id, user_id, model, provider, input_tokens, output_tokens, cost_cents, markup_cents, total_cents, status, created_at)
+	 SELECT 'user-bulk-' || n, $1, 'minimax-m2-7', 'oma-ai', CASE WHEN n<=2 THEN 2000000000 ELSE 2 END, 1, 0, 0, 0, 'free_tier',
+	 date_trunc('milliseconds', now()-interval '22 hours') + n * interval '1 microsecond' FROM generate_series(1,2001) n`, [profile.id]);
+	await pool.query(`INSERT INTO usage_records (request_id, user_id, model, provider, input_tokens, output_tokens, cost_cents, markup_cents, total_cents, status, refunded_at, created_at)
+	 VALUES ('user-tiny', $1, 'minimax-m2-7', 'oma-ai', 1, 2, 0, 0, 0.00000600, 'completed', NULL, now()-interval '22 hours'),
+	 ('user-refund', $1, 'claude-opus-5', 'venice', 1, 1, 0, 0, 2, 'completed', now(), now()-interval '22 hours'),
+	 ('user-cancel', $1, 'minimax-m2-7', 'oma-ai', 0, 0, 0, 0, 0, 'aborted', NULL, now()-interval '22 hours'),
+	 ('user-error', $1, 'minimax-m2-7', 'oma-ai', 0, 0, 0, 0, 0, 'error', NULL, now()-interval '22 hours'),
+	 ('user-old', $1, 'minimax-m2-7', 'oma-ai', 0, 0, 0, 0, 5, 'completed', NULL, now()-interval '45 days'),
+	 ('other-user-private', 'admin-test-target', 'claude-opus-5', 'venice', 1, 1, 0, 0, 9999, 'completed', NULL, now())`, [profile.id]);
+	const userSummaryResult = await request("/v1/usage/summary?range=7d&timezone=America%2FMoncton", { cookie: first.cookie });
+	const userSummary = userSummaryResult.data;
+	assert.equal(userSummaryResult.response.headers.get("cache-control"), "no-store");
+	assert.equal(userSummary.totals.requests, 2008, "Summary must include more than the old 2000-record cap");
+	assert.ok(userSummary.totals.input_tokens > 2147483647, "Token totals must not overflow PostgreSQL int32");
+	assert.equal(userSummary.last24h.requests, 2008, "Rolling 24h includes yesterday's recent requests");
+	assert.equal(userSummary.last24h.errors, 2);
+	assert.equal(userSummary.last24h.aborted, 1);
+	assert.equal(Number(userSummary.totals.billed_cents), 4.000006);
+	assert.equal(userSummary.lifetimeRequests, 2009);
+	assert.equal(userSummary.timeline.reduce((sum,r)=>sum+r.requests,0), 2008);
+	assert.equal(userSummary.models.reduce((sum,r)=>sum+r.requests,0), 2008);
+	assert.equal(userSummary.providers.reduce((sum,r)=>sum+r.requests,0), 2008);
+	assert.equal((await request("/v1/usage/summary?range=all", { cookie: first.cookie })).data.totals.requests, 2009);
+	await request("/v1/usage/summary?range=invalid", { cookie: first.cookie, expected: 400 });
+	await request("/v1/usage/summary?timezone=invalid", { cookie: first.cookie, expected: 400 });
+	await request("/v1/usage?cursor=invalid", { cookie: first.cookie, expected: 400 });
+	await request("/v1/usage?since=2026-02-02T00:00:00Z&until=2026-01-01T00:00:00Z", { cookie: first.cookie, expected: 400 });
+	const seen = new Set();
+	let usageCursor;
+	do {
+		const qs = new URLSearchParams({ limit: '500' });
+		if (usageCursor) qs.set('cursor', usageCursor);
+		const usagePage = (await request(`/v1/usage?${qs}`, { cookie: first.cookie })).data;
+		assert.equal(usagePage.totals.requests, 2009, "Totals cannot shrink with the cursor");
+		assert.equal(Number(usagePage.totals.cost_cents), 9.000006);
+		for (const row of usagePage.data) {
+			assert.ok(!seen.has(row.id), "No repeated rows across cursor pages"); seen.add(row.id);
+			assert.notEqual(row.requestId, 'other-user-private');
+			if (row.refundedAt) assert.equal(Number(row.billedCents), 0);
+		}
+		usageCursor = usagePage.next_cursor;
+	} while (usageCursor);
+	assert.equal(seen.size, 2009, "Microsecond cursor pagination must not skip rows");
+	const activity = (await request("/v1/credits/transactions?limit=200", { cookie: first.cookie })).data.transactions;
+	assert.ok(activity.some(t=>t.type==='usage' && t.amountCents<0), "Usage is a debit");
+	assert.ok(activity.some(t=>t.type==='refund' && t.amountCents>0), "Refunds are separate credits");
+	await request("/v1/credits/transactions?limit=invalid", { cookie: first.cookie, expected: 400 });
+	pass("customer statistics cover the full range, preserve tiny charges, separate cancellations/refunds, isolate accounts and paginate every microsecond row");
 
 	const signedOut = await request("/api/auth/sign-out", { method: "POST", cookie: first.cookie, body: {} });
 	assert.ok(signedOut.response.headers.getSetCookie().some((cookie) => /oma\.session_token=;.*Max-Age=0/i.test(cookie)));

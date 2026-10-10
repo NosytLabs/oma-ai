@@ -13,7 +13,8 @@ import { Suspense, useMemo, useState } from "react";
 import { CreditBalanceCard } from "@/components/dashboard/CreditBalanceCard";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { OnboardingChecklist } from "@/components/dashboard/OnboardingChecklist";
-import { buildTopModels, buildUsageByDay } from "@/lib/dashboard-aggregate";
+import { buildSummaryModels, buildTopModels, buildUsageByDay } from "@/lib/dashboard-aggregate";
+import { toDollars } from "@/lib/utils";
 import type {
 	ApiKey,
 	ApiKeyWithSecret,
@@ -21,6 +22,7 @@ import type {
 	CreditBatch,
 	CreditTransaction,
 	UsageRecord,
+	UsageSummary,
 } from "@/lib/api";
 import type { TabId, TimeRangeId } from "../_constants";
 import { QuickActions } from "./QuickActions";
@@ -154,6 +156,9 @@ interface DashboardGridProps {
 	balance: BalanceResponse | null;
 	apiKeys: ApiKey[];
 	usage: UsageRecord[];
+	summary?: UsageSummary | null;
+	hasMoreUsage?: boolean;
+	loadingMoreUsage?: boolean;
 	creditBatches: CreditBatch[];
 	transactions: CreditTransaction[];
 	loading: boolean;
@@ -225,6 +230,9 @@ export function DashboardGrid(props: DashboardGridProps) {
 		balance,
 		apiKeys,
 		usage,
+		summary,
+		hasMoreUsage = false,
+		loadingMoreUsage = false,
 		creditBatches,
 		transactions,
 		loading,
@@ -262,8 +270,8 @@ export function DashboardGrid(props: DashboardGridProps) {
 
 	// `usage` is already time-range filtered by the page (`filteredUsage`).
 	// Derive the chart datasets via the shared aggregate helpers.
-	const usageData = useMemo(() => buildUsageByDay(usage ?? []), [usage]);
-	const modelData = useMemo(() => buildTopModels(usage ?? []), [usage]);
+	const usageData = useMemo(() => summary ? summary.timeline.map(p => ({ date: p.date, requests: p.requests, cost: toDollars(p.billed_cents) })) : buildUsageByDay(usage ?? []), [summary, usage]);
+	const modelData = useMemo(() => summary ? buildSummaryModels(summary) : buildTopModels(usage ?? []), [summary, usage]);
 
 	return (
 		<>
@@ -300,13 +308,14 @@ export function DashboardGrid(props: DashboardGridProps) {
 
 						{/* Primary row — three user-facing panels of equal weight. */}
 						<div
-							className={`mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 [&>*]:min-h-[12rem] lg:grid-cols-3`}
+							className="mb-6 grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 [&>*]:min-h-[12rem]"
 						>
 							<WidgetErrorBoundary title="Credits">
 								<CreditBalanceCard
 									balance={balance}
 									loading={loading}
 									recentUsage={usage}
+									spendTrend={summary?.timeline.map(p => toDollars(p.billed_cents))}
 									creditBatches={creditBatches}
 								/>
 							</WidgetErrorBoundary>
@@ -329,6 +338,8 @@ export function DashboardGrid(props: DashboardGridProps) {
 									usageData={usageData}
 									modelData={modelData}
 									timeRange={timeRange}
+									bucket={summary?.bucket}
+									timezone={summary?.timezone}
 									loading={loading}
 								/>
 							</WidgetErrorBoundary>
@@ -376,6 +387,8 @@ export function DashboardGrid(props: DashboardGridProps) {
 											usageData={usageData}
 											modelData={modelData}
 											timeRange={timeRange}
+											bucket={summary?.bucket}
+											timezone={summary?.timezone}
 											loading={loading}
 										/>
 									</WidgetErrorBoundary>
@@ -383,10 +396,10 @@ export function DashboardGrid(props: DashboardGridProps) {
 
 								<div className="mb-8 grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-2">
 									<WidgetErrorBoundary title="Model usage">
-										<LazyModelUsageTable usage={usage} loading={loading} />
+										<LazyModelUsageTable usage={usage} summary={summary?.models} loading={loading} />
 									</WidgetErrorBoundary>
 									<WidgetErrorBoundary title="Provider breakdown">
-										<LazyProviderBreakdown usage={usage} loading={loading} />
+										<LazyProviderBreakdown usage={usage} summary={summary?.providers} loading={loading} />
 									</WidgetErrorBoundary>
 								</div>
 
@@ -399,6 +412,9 @@ export function DashboardGrid(props: DashboardGridProps) {
 											page={page}
 											limit={limit}
 											onPageChange={onPageChange}
+											totalCount={summary?.totals.requests}
+											hasMore={hasMoreUsage}
+											loadingMore={loadingMoreUsage}
 										/>
 									</WidgetErrorBoundary>
 								</div>

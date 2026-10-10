@@ -18,7 +18,7 @@ function mockGateway(ready: boolean, defaultModelAvailable = true) {
 			checks: { database: { ok: true }, redis: { ok: ready } },
 		}, { status: ready ? 200 : 503 });
 		return Response.json({ data: [
-			{ id: "zai-org-glm-5-3", provider: "oma-ai", available: defaultModelAvailable },
+			{ id: "minimax-m2-7", provider: "oma-ai", available: defaultModelAvailable },
 			{ id: "deepseek-v4-flash-0731-openbroker", provider: "oma-ai", available: true },
 		] });
 	}));

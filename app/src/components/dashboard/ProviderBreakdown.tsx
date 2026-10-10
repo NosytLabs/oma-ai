@@ -4,12 +4,14 @@ import { m } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";
 import { useMemo } from "react";
 import { providerColor } from "@/components/ui/charts/shared";
-import type { UsageRecord } from "@/lib/api";
+import type { UsageRecord, UsageSummary } from "@/lib/api";
 import { formatUsdPrecise, toDollars } from "@/lib/utils";
+import { usageBilledDollars } from "@/lib/dashboard-aggregate";
 
 interface ProviderBreakdownProps {
 	usage: UsageRecord[];
 	loading: boolean;
+	summary?: UsageSummary["providers"];
 }
 
 interface ProviderStats {
@@ -28,8 +30,10 @@ function getProviderColor(provider: string): string {
 	return providerColor(provider || "default");
 }
 
-export function ProviderBreakdown({ usage, loading }: ProviderBreakdownProps) {
+export function ProviderBreakdown({ usage, loading, summary }: ProviderBreakdownProps) {
 	const providerStats = useMemo(() => {
+		if (summary) return summary.filter(p => p.provider !== "surplus").map(p => ({
+			provider: p.provider, requests: p.requests, totalCost: toDollars(p.billed_cents) }));
 		const statsMap = new Map<string, ProviderStats>();
 
 		usage.forEach((record) => {
@@ -41,7 +45,7 @@ export function ProviderBreakdown({ usage, loading }: ProviderBreakdownProps) {
 			const provider = record.provider || "unknown";
 			const existing = statsMap.get(provider);
 			// Billed amount (cost + markup); decimal-string cents, may be sub-cent.
-			const cost = toDollars(record.totalCents ?? record.costCents);
+			const cost = usageBilledDollars(record);
 			if (existing) {
 				existing.requests++;
 				existing.totalCost += cost;
@@ -57,7 +61,7 @@ export function ProviderBreakdown({ usage, loading }: ProviderBreakdownProps) {
 		return Array.from(statsMap.values()).sort(
 			(a, b) => b.totalCost - a.totalCost,
 		);
-	}, [usage]);
+	}, [usage, summary]);
 
 	const totalCost = providerStats.reduce((sum, p) => sum + p.totalCost, 0);
 
@@ -93,7 +97,7 @@ export function ProviderBreakdown({ usage, loading }: ProviderBreakdownProps) {
 				</h3>
 				<p className="text-[11px] font-mono text-text-muted uppercase tracking-wider mt-1.5 opacity-80">
 					{providerStats.length} provider{providerStats.length !== 1 ? "s" : ""}{" "}
-					· ${totalCost.toFixed(2)} total cost
+					· {formatUsdPrecise(totalCost)} charged, excluding refunds
 				</p>
 			</div>
 			<div className="p-6 bg-void/30 h-full max-h-[400px] overflow-y-auto chat-scrollbar">

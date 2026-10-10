@@ -9,6 +9,7 @@ import { logger } from "../lib/logger.js";
 import catalogData from "./model-catalog.json" with { type: "json" };
 
 export interface ModelDef {
+		description?: string;
 		id: string;
 		provider: string;
 		inputPricePer1M: number;

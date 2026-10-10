@@ -1,181 +1,85 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import React from 'react';
-import { useDashboardData } from '../useDashboardData';
-import { api, BackendUnavailableError } from '@/lib/api';
-import { useBalance } from '@/components/chat/useBalance';
+import React from "react";
+import { act, renderHook, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { api, BackendUnavailableError, type UsageSummary } from "@/lib/api";
+import { useBalance } from "@/components/chat/useBalance";
+import { useDashboardData } from "../useDashboardData";
 
-// Mock dependencies
-vi.mock('@/lib/api', () => ({
-		api: {
-				auth: { listKeys: vi.fn() },
-				usage: { get: vi.fn(), getAll: vi.fn() },
-				credits: { getBatches: vi.fn() },
-				models: { list: vi.fn() },
-				creditHistory: { list: vi.fn() }
-		},
-		BackendUnavailableError: class BackendUnavailableError extends Error {
-				constructor() {
-						super('Backend unavailable');
-						this.name = 'BackendUnavailableError';
-				}
-		}
+vi.mock("@/lib/api", () => ({
+	api: {
+		auth: { listKeys: vi.fn() },
+		usage: { get: vi.fn(), summary: vi.fn() },
+		models: { list: vi.fn() },
+		creditHistory: { list: vi.fn() },
+	},
+	BackendUnavailableError: class extends Error {},
 }));
+vi.mock("@/components/chat/useBalance", () => ({ useBalance: vi.fn() }));
 
-vi.mock('@/components/chat/useBalance', () => ({
-		useBalance: vi.fn()
-}));
-
-const createWrapper = () => {
-		const queryClient = new QueryClient({
-				defaultOptions: {
-						queries: {
-								retry: false,
-						},
-				},
-		});
-		return ({ children }: { children: React.ReactNode }) => (
-				React.createElement(QueryClientProvider, { client: queryClient }, children)
-		);
+const summary: UsageSummary = {
+	range: "7d", timezone: "UTC", bucket: "day", from: "2026-10-03T00:00:00Z", to: "2026-10-10T00:00:00Z",
+	lifetimeRequests: 3000, totals: { requests: 2500, errors: 0, aborted: 0, free_requests: 0,
+		active_models: 1, input_tokens: 2500, output_tokens: 2500, billed_cents: "0.05", avg_latency_ms: 100 },
+	last24h: { requests: 2500, errors: 0, aborted: 0, free_requests: 0,
+		active_models: 1, input_tokens: 2500, output_tokens: 2500, billed_cents: "0.05", avg_latency_ms: 100 },
+	models: [], providers: [], timeline: [],
 };
-
-describe('useDashboardData', () => {
-		beforeEach(() => {
-				vi.clearAllMocks();
-		});
-
-		it('returns empty/null data when not authenticated', () => {
-				vi.mocked(useBalance).mockReturnValue({ balance: null, loading: false, refresh: async () => {} });
-
-				const { result } = renderHook(() => useDashboardData({ isAuthenticated: false }), {
-						wrapper: createWrapper()
-				});
-
-				expect(result.current.balance).toBeNull();
-				expect(result.current.apiKeys).toEqual([]);
-				expect(result.current.usage).toEqual([]);
-				expect(result.current.creditBatches).toEqual([]);
-				expect(result.current.models).toEqual([]);
-				expect(result.current.transactions).toEqual([]);
-				expect(result.current.loading).toBe(false);
-				expect(result.current.error).toBeNull();
-				expect(result.current.backendUnavailable).toBe(false);
-
-				// None of the API endpoints should be called
-				expect(api.auth.listKeys).not.toHaveBeenCalled();
-				expect(api.usage.get).not.toHaveBeenCalled();
-				expect(api.usage.getAll).not.toHaveBeenCalled();
-				expect(api.credits.getBatches).not.toHaveBeenCalled();
-				expect(api.models.list).not.toHaveBeenCalled();
-				expect(api.creditHistory.list).not.toHaveBeenCalled();
-		});
-
-		it('loads data successfully when authenticated', async () => {
-				const mockBalance = { available: 100, currency: 'USD' };
-				const mockKeys = [{ id: '1', key: 'sk-1' }];
-				const mockUsage = [{ id: 'u1', cost: 0.05 }];
-				const mockBatches = [{ id: 'b1', amount: 10 }];
-				const mockModels = [{ id: 'm1', name: 'GPT-4' }];
-				const mockTransactions = [{ id: 't1', amount: 10 }];
-
-				vi.mocked(useBalance).mockReturnValue({ balance: mockBalance as any, loading: false, refresh: async () => {} });
-				vi.mocked(api.auth.listKeys).mockResolvedValue({ keys: mockKeys } as any);
-				vi.mocked(api.usage.getAll).mockResolvedValue({ records: mockUsage } as any);
-				vi.mocked(api.credits.getBatches).mockResolvedValue({ activeBatches: mockBatches } as any);
-				vi.mocked(api.models.list).mockResolvedValue({ data: mockModels } as any);
-				vi.mocked(api.creditHistory.list).mockResolvedValue({ transactions: mockTransactions } as any);
-
-				const { result } = renderHook(() => useDashboardData({ isAuthenticated: true }), {
-						wrapper: createWrapper()
-				});
-
-				expect(result.current.loading).toBe(true);
-
-				await waitFor(() => {
-						expect(result.current.loading).toBe(false);
-				});
-
-				expect(result.current.balance).toEqual(mockBalance);
-				expect(result.current.apiKeys).toEqual(mockKeys);
-				expect(result.current.usage).toEqual(mockUsage);
-				expect(result.current.creditBatches).toEqual(mockBatches);
-				expect(result.current.models).toEqual(mockModels);
-				expect(result.current.transactions).toEqual(mockTransactions);
-				expect(result.current.error).toBeNull();
-				expect(result.current.backendUnavailable).toBe(false);
-		});
-
-		it('handles standard errors', async () => {
-				vi.mocked(useBalance).mockReturnValue({ balance: null, loading: false, refresh: async () => {} });
-				vi.mocked(api.auth.listKeys).mockRejectedValue(new Error('Network error'));
-				
-				// Default resolve for others so they don't throw uncaught promises
-				vi.mocked(api.usage.getAll).mockResolvedValue({ records: [] } as any);
-				vi.mocked(api.credits.getBatches).mockResolvedValue({ activeBatches: [] } as any);
-				vi.mocked(api.models.list).mockResolvedValue({ data: [] } as any);
-				vi.mocked(api.creditHistory.list).mockResolvedValue({ transactions: [] } as any);
-
-				const { result } = renderHook(() => useDashboardData({ isAuthenticated: true }), {
-						wrapper: createWrapper()
-				});
-
-				await waitFor(() => {
-						expect(result.current.loading).toBe(false);
-				});
-
-expect(result.current.error).toBeInstanceOf(Error);
-			expect((result.current.error as Error).message).toBe('Network error');
-			expect(result.current.backendUnavailable).toBe(false);
-		});
-
-		it('detects backend unavailable errors', async () => {
-				vi.mocked(useBalance).mockReturnValue({ balance: null, loading: false, refresh: async () => {} });
-				vi.mocked(api.auth.listKeys).mockRejectedValue(new BackendUnavailableError());
-				
-				// Default resolve for others
-				vi.mocked(api.usage.getAll).mockResolvedValue({ records: [] } as any);
-				vi.mocked(api.credits.getBatches).mockResolvedValue({ activeBatches: [] } as any);
-				vi.mocked(api.models.list).mockResolvedValue({ data: [] } as any);
-				vi.mocked(api.creditHistory.list).mockResolvedValue({ transactions: [] } as any);
-
-				const { result } = renderHook(() => useDashboardData({ isAuthenticated: true }), {
-						wrapper: createWrapper()
-				});
-
-				await waitFor(() => {
-						expect(result.current.loading).toBe(false);
-				});
-
-expect(result.current.backendUnavailable).toBe(true);
-			expect(result.current.error).toBeInstanceOf(BackendUnavailableError);
-		});
-		
-		it('provides a working refresh function', async () => {
-				vi.mocked(useBalance).mockReturnValue({ balance: null, loading: false, refresh: async () => {} });
-				vi.mocked(api.auth.listKeys).mockResolvedValue({ keys: [] } as any);
-				vi.mocked(api.usage.getAll).mockResolvedValue({ records: [] } as any);
-				vi.mocked(api.credits.getBatches).mockResolvedValue({ activeBatches: [] } as any);
-				vi.mocked(api.models.list).mockResolvedValue({ data: [] } as any);
-				vi.mocked(api.creditHistory.list).mockResolvedValue({ transactions: [] } as any);
-
-				const { result } = renderHook(() => useDashboardData({ isAuthenticated: true }), {
-						wrapper: createWrapper()
-				});
-
-				await waitFor(() => {
-						expect(result.current.loading).toBe(false);
-				});
-
-				// Clear call counts
-				vi.clearAllMocks();
-
-				await result.current.refresh();
-				
-				// Invalidate queries will trigger refetch for active queries
-				// They are triggered async, so we'll wait for the mock to be called
-				await waitFor(() => {
-							expect(api.auth.listKeys).toHaveBeenCalled();
-				});
-		});
+function wrapper() {
+	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	return ({ children }: { children: React.ReactNode }) => React.createElement(QueryClientProvider, { client }, children);
+}
+beforeEach(() => {
+	vi.resetAllMocks();
+	vi.mocked(useBalance).mockReturnValue({ balance: null, loading: false, refresh: async () => {} });
+	vi.mocked(api.auth.listKeys).mockResolvedValue({ keys: [] });
+	vi.mocked(api.usage.summary).mockResolvedValue(summary);
+	vi.mocked(api.usage.get).mockResolvedValue({ records: [], count: 0, nextCursor: null, totalCount: 2500 });
+	vi.mocked(api.models.list).mockResolvedValue({ object: "list", data: [] });
+	vi.mocked(api.creditHistory.list).mockResolvedValue({ transactions: [] });
+});
+describe("useDashboardData", () => {
+	it("does not fetch private data without an authenticated identity", () => {
+		const { result } = renderHook(() => useDashboardData({ isAuthenticated: false }), { wrapper: wrapper() });
+		expect(result.current.usage).toEqual([]);
+		expect(result.current.summary).toBeNull();
+		expect(result.current.loading).toBe(false);
+		expect(api.usage.summary).not.toHaveBeenCalled();
+	});
+	it("gets full-range statistics separately from on-demand request pages", async () => {
+		vi.mocked(api.usage.get).mockResolvedValueOnce({ records: [], count: 0, nextCursor: "next", totalCount: 2500 });
+		const { result } = renderHook(() => useDashboardData({ isAuthenticated: true, userId: "user-a" }), { wrapper: wrapper() });
+		await waitFor(() => expect(result.current.loading).toBe(false));
+		expect(result.current.summary?.totals.requests).toBe(2500);
+		expect(result.current.hasMoreUsage).toBe(true);
+		expect(api.usage.get).toHaveBeenCalledTimes(1);
+		await act(async () => { await result.current.loadMoreUsage(); });
+		expect(api.usage.get).toHaveBeenLastCalledWith(expect.objectContaining({ cursor: "next", limit: 100 }));
+	});
+	it("cannot show another account's cached keys after switching identity or signing out", async () => {
+		vi.mocked(api.auth.listKeys).mockResolvedValueOnce({ keys: [{ id: "a", name: "A", prefix: "oma_sk_a", createdAt: "", lastUsedAt: null }] });
+		const { result, rerender } = renderHook(({ userId, isAuthenticated }) =>
+			useDashboardData({ isAuthenticated, userId }), { wrapper: wrapper(), initialProps: { userId: "a", isAuthenticated: true } });
+		await waitFor(() => expect(result.current.apiKeys).toHaveLength(1));
+		rerender({ userId: "b", isAuthenticated: true });
+		expect(result.current.apiKeys).toEqual([]);
+		await waitFor(() => expect(api.auth.listKeys).toHaveBeenCalledTimes(2));
+		rerender({ userId: "b", isAuthenticated: false });
+		expect(result.current.apiKeys).toEqual([]);
+		expect(result.current.summary).toBeNull();
+	});
+	it("surfaces a failed balance instead of claiming that the account has zero credits", async () => {
+		vi.mocked(useBalance).mockReturnValue({ balance: null, loading: false, refresh: async () => {}, error: new BackendUnavailableError() });
+		const { result } = renderHook(() => useDashboardData({ isAuthenticated: true, userId: "a" }), { wrapper: wrapper() });
+		await waitFor(() => expect(result.current.loading).toBe(false));
+		expect(result.current.backendUnavailable).toBe(true);
+		expect(result.current.error).toBeInstanceOf(BackendUnavailableError);
+	});
+	it("refreshes the actual statistics and balance sources", async () => {
+		const { result } = renderHook(() => useDashboardData({ isAuthenticated: true, userId: "a" }), { wrapper: wrapper() });
+		await waitFor(() => expect(result.current.loading).toBe(false));
+		vi.mocked(api.usage.summary).mockClear();
+		await act(async () => { await result.current.refresh(); });
+		expect(api.usage.summary).toHaveBeenCalled();
+	});
 });

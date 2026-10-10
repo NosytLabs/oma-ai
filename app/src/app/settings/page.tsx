@@ -6,6 +6,7 @@ import {
 	AlertTriangle,
 	type LucideIcon,
 	Palette,
+	RefreshCw,
 	User as UserIcon,
 	X,
 } from "lucide-react";
@@ -99,7 +100,7 @@ function SettingsPageContent() {
 	const searchParams = useSearchParams();
 	const isDemoView = searchParams?.get("demo") === "1" || isDemo;
 
-	const [error, setError] = useState<string | null>(null);
+	const [actionError, setError] = useState<string | null>(null);
 	const sessionsQuery = useQuery({
 		queryKey: ["sessions", isDemoView ? "demo" : user?.id],
 		queryFn: () => api.auth.listSessions(),
@@ -107,7 +108,8 @@ function SettingsPageContent() {
 		staleTime: 60_000,
 	});
 	const sessions = sessionsQuery.data?.sessions ?? [];
-	const loading = !isReady || sessionsQuery.isLoading;
+	const loading = !isReady || sessionsQuery.isFetching;
+	const error = actionError ?? (sessionsQuery.error instanceof Error ? sessionsQuery.error.message : null);
 
 	const [deleting, setDeleting] = useState(false);
 	const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
@@ -148,15 +150,6 @@ function SettingsPageContent() {
 		const parsed = parseSettingsTab(raw) ?? parseSettingsTab(hash);
 		if (parsed) setActiveTab(parsed);
 	}, [searchParams, router]);
-
-	useEffect(() => {
-		if (!sessionsQuery.error) return;
-		setError(
-			sessionsQuery.error instanceof Error
-				? sessionsQuery.error.message
-				: "Failed to load sessions",
-		);
-	}, [sessionsQuery.error]);
 
 	const handleLogout = async () => {
 		if (isDemoView || !hasRealSession) return;
@@ -258,6 +251,7 @@ function SettingsPageContent() {
 									: "Up to date"}
 					</p>
 				</m.div>
+				{!isDemoView && <button type="button" disabled={sessionsQuery.isFetching} onClick={() => { setError(null); void sessionsQuery.refetch(); }} className="inline-flex min-h-11 items-center gap-2 self-start rounded-lg border border-border px-3 text-sm text-text-secondary disabled:opacity-50"><RefreshCw className={`h-4 w-4 ${sessionsQuery.isFetching ? "animate-spin" : ""}`} aria-hidden="true" />Refresh sessions</button>}
 			</div>
 
 			<AnimatePresence>

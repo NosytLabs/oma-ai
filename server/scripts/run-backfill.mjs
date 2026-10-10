@@ -5,9 +5,9 @@
  * UPDATE from its section 3 (single-wallet, primary, unambiguous only) inside
  * a transaction and prints the rows it touched.
  *
- * Pass --dry-run to report without writing.
+ * Defaults to a dry run. --apply explicitly enables the guarded transaction.
  *
- * Usage: node --env-file=.env scripts/run-backfill.mjs [--dry-run]
+ * Usage: node --env-file=.env scripts/run-backfill.mjs [--apply]
  */
 import { Client } from "pg";
 
@@ -16,7 +16,10 @@ if (!url) {
 	console.error("DATABASE_URL is not set. Run with --env-file=.env");
 	process.exit(1);
 }
-const dryRun = process.argv.includes("--dry-run");
+const dryRun = !process.argv.includes("--apply");
+if (process.argv.includes("--apply") && process.argv.includes("--dry-run")) {
+	throw new Error("Choose --apply or --dry-run, not both.");
+}
 
 const client = new Client({ connectionString: url });
 await client.connect();

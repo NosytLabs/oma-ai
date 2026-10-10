@@ -69,6 +69,15 @@ describe("parseStreamData", () => {
 		expect(d).toEqual({ finishReason: "length" });
 	});
 
+	it("keeps input and output counts separate from total tokens, including a real zero", () => {
+		expect(parseStreamData('{"choices":[],"usage":{"prompt_tokens":21,"completion_tokens":80,"total_tokens":101}}')).toEqual({ inputTokens: 21, outputTokens: 80, totalTokens: 101 });
+		expect(parseStreamData('{"choices":[],"usage":{"prompt_tokens":21,"completion_tokens":0,"total_tokens":21}}')).toEqual({ inputTokens: 21, outputTokens: 0, totalTokens: 21 });
+	});
+
+	it("ignores invalid token counts and non-string provider deltas", () => {
+		expect(parseStreamData('{"choices":[{"delta":{"content":{},"reasoning":[]}}],"usage":{"total_tokens":-2,"completion_tokens":1.5,"prompt_tokens":"20"}}')).toBeNull();
+	});
+
 	it("ignores a null finish_reason on intermediate frames", () => {
 		const d = parseStreamData(
 			'{"choices":[{"delta":{"content":"x"},"finish_reason":null}]}',

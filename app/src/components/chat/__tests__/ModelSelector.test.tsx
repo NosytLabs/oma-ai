@@ -20,6 +20,15 @@ const { liveModels } = vi.hoisted(() => ({
 			inputPer1M: 7.5,
 			provider: "venice",
 		},
+		{
+			id: "zai-org-glm-5-3",
+			name: "GLM-5.3 Flash",
+			category: "budget",
+			ctx: "1M",
+			inputPer1M: 0.02,
+			provider: "oma-ai",
+			available: false,
+		},
 	],
 }));
 
@@ -32,6 +41,16 @@ vi.mock("@/components/ui/model-logo", () => ({
 }));
 
 describe("ModelSelector", () => {
+	it("excludes paused free models from selection and available counts", () => {
+		const setModel = vi.fn();
+		render(<ModelSelector model="zai-org-glm-5-3" setModel={setModel} isAuthenticated />);
+		expect(screen.getByText("MODEL UNAVAILABLE")).toBeVisible();
+		fireEvent.click(screen.getByRole("button", { name: /select ai model/i }));
+		expect(screen.queryByRole("menuitemradio", { name: /glm-5.3/i })).not.toBeInTheDocument();
+		expect(screen.getByTestId("model-count-summary")).toHaveTextContent("2 models available");
+		expect(screen.getByText(/1 model is temporarily unavailable/i)).toBeVisible();
+		expect(setModel).not.toHaveBeenCalled();
+	});
 	it("shows guests only usable models and a single sign-in route", () => {
 		render(
 			<ModelSelector

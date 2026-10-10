@@ -16,7 +16,7 @@ const fixtures = vi.hoisted(() => ({
 	exportChatHistory: vi.fn(),
 	models: [
 		{ id: "claude-opus-5", display_name: "Claude Opus 5", provider: "Venice", category: "frontier", context_length: 1000000, available: true, pricing: { prompt: "7.5", completion: "37.5" } },
-		{ id: "zai-org-glm-5-3", display_name: "GLM-5.3 Flash", provider: "OMA-AI", category: "budget", context_length: 200000, available: true, pricing: { prompt: "0.1", completion: "0.2" } },
+		{ id: "minimax-m2-7", display_name: "MiniMax M2.7", provider: "OMA-AI", category: "budget", context_length: 200000, available: true, pricing: { prompt: "0.1", completion: "0.2" } },
 	],
 }));
 vi.mock("next/navigation", () => ({
@@ -114,11 +114,11 @@ describe("guest chat model access", () => {
 					customTitle: false,
 					messages,
 					draft: "",
-					model: "zai-org-glm-5-3",
+					model: "minimax-m2-7",
 				}],
 			}),
 		);
-		fixtures.searchParams = new URLSearchParams("model=zai-org-glm-5-3");
+		fixtures.searchParams = new URLSearchParams("model=minimax-m2-7");
 		renderChat();
 		await screen.findByText("Export this thread");
 
@@ -181,7 +181,7 @@ describe("guest chat model access", () => {
 		fireEvent.change(composer, { target: { value: "Keep me when switching" } });
 		fireEvent.click(await screen.findByRole("button", { name: /try .* free/i }));
 		expect(composer).toHaveValue("Keep me when switching");
-		await waitFor(() => expect(screen.getByRole("button", { name: /select ai model/i })).toHaveTextContent(/GLM/));
+		await waitFor(() => expect(screen.getByRole("button", { name: /select ai model/i })).toHaveTextContent(/MiniMax/));
 		expect(screen.getByText("19 free left")).toBeInTheDocument();
 		expect(screen.getByText("Free chat")).toBeInTheDocument();
 	});
@@ -197,7 +197,7 @@ describe("guest chat model access", () => {
 	});
 
 	it("still sends a selected free model after preflight", async () => {
-		fixtures.searchParams = new URLSearchParams("model=zai-org-glm-5-3");
+		fixtures.searchParams = new URLSearchParams("model=minimax-m2-7");
 		renderChat();
 		const composer = await screen.findByRole("textbox", { name: "Enter your message" });
 		fireEvent.change(composer, { target: { value: "An allowed free request" } });
@@ -205,7 +205,7 @@ describe("guest chat model access", () => {
 		await waitFor(() => {
 			const request = fixtures.fetch.mock.calls.find(([url]) => String(url).includes("chat/completions"));
 			expect(request).toBeDefined();
-			expect(JSON.parse(request?.[1].body).model).toBe("zai-org-glm-5-3");
+			expect(JSON.parse(request?.[1].body).model).toBe("minimax-m2-7");
 		});
 		expect(screen.queryByRole("dialog", { name: "Sign in to access this model" })).not.toBeInTheDocument();
 	});
@@ -213,7 +213,7 @@ describe("guest chat model access", () => {
 	it("shows free website billing for a signed-in session too", async () => {
 		fixtures.auth.isAuthenticated = true;
 		fixtures.auth.user = { id: "user-a" };
-		fixtures.searchParams = new URLSearchParams("model=zai-org-glm-5-3");
+		fixtures.searchParams = new URLSearchParams("model=minimax-m2-7");
 		renderChat();
 		expect(await screen.findByText("Free chat")).toBeInTheDocument();
 		expect(screen.queryByText(/free left/i)).not.toBeInTheDocument();
@@ -254,7 +254,7 @@ describe("guest chat model access", () => {
 		clickSignIn(screen.getByRole("link", { name: "Sign in to use this model" }));
 		first.unmount();
 		if (reason === "expired") vi.spyOn(Date, "now").mockReturnValue(Date.now() + 16 * 60_000);
-		else fixtures.searchParams = new URLSearchParams("model=zai-org-glm-5-3");
+		else fixtures.searchParams = new URLSearchParams("model=minimax-m2-7");
 		fixtures.auth.isAuthenticated = true;
 		fixtures.auth.user = { id: "user-a" };
 		renderChat();

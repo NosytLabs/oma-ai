@@ -4,7 +4,7 @@
 	*/
 
 import { getCached, STALE_TTL, setCache } from "./client.js";
-import type { BalanceResponse, ModelsResponse, UsageRecord } from "./types.js";
+import type { BalanceResponse, ModelsResponse, UsageRecord, UsageSummary } from "./types.js";
 
 type RawUsageRecord = UsageRecord & {
 	inputTokens?: number;
@@ -61,33 +61,43 @@ async function cachedResource<T>(cacheKey: string, ttl: number, fetcher: () => P
 
 export const balance = {
 	get() {
-		return cachedResource<BalanceResponse>("/v1/balance", 120_000, async () => {
+		// React Query owns account-scoped caching. A second URL-only cache
+		// would leak stale balances across sign-ins and defeat manual refresh.
+		return (async () => {
 			const { request } = await import("./client.js");
 			return request<BalanceResponse>("/v1/balance");
-		});
+		})();
 	},
 };
 
 export const usage = {
-	get(options?: { limit?: number; cursor?: string; apiKeyId?: string }) {
+	get(options?: { limit?: number; cursor?: string; apiKeyId?: string; since?: string; until?: string }) {
 		const limit = options?.limit ?? 50;
 		const qs = new URLSearchParams({ limit: String(limit) });
 		if (options?.cursor) qs.set("cursor", options.cursor);
 		if (options?.apiKeyId) qs.set("api_key_id", options.apiKeyId);
+		if (options?.since) qs.set("since", options.since);
+		if (options?.until) qs.set("until", options.until);
 		return import("./client.js").then(({ request }) =>
 			request<{
 				object: string;
 				data: RawUsageRecord[];
 				next_cursor: string | null;
+				totals?: { requests: number };
 			}>(`/v1/usage?${qs.toString()}`).then((body) => {
 				const records = (body.data ?? []).map(normalizeUsageRecord);
 				return {
 					records,
 					count: records.length,
 					nextCursor: body.next_cursor ?? null,
+					totalCount: body.totals?.requests ?? records.length,
 				};
 			}),
 		);
+	},
+	summary(range: UsageSummary["range"], timezone = "UTC") {
+		const qs = new URLSearchParams({ range, timezone });
+		return import("./client.js").then(({ request }) => request<UsageSummary>(`/v1/usage/summary?${qs}`));
 	},
 	async getAll(options?: { pageSize?: number; maxRecords?: number }) {
 		const { collectUsagePages } = await import("./collect-usage.js");

@@ -65,6 +65,8 @@ exportRoutes.get("/v1/export/usage", sessionAuth, async (c) => {
 						cost_cents: usageRecords.costCents,
 						markup_cents: usageRecords.markupCents,
 						total_cents: usageRecords.totalCents,
+						billed_cents: sql<string>`CASE WHEN ${usageRecords.refundedAt} IS NULL THEN ${usageRecords.totalCents} ELSE 0 END::text`,
+						refunded_at: usageRecords.refundedAt,
 						status: usageRecords.status,
 						created_at: usageRecords.createdAt,
 				})
@@ -122,7 +124,7 @@ exportRoutes.get("/v1/export/summary", sessionAuth, async (c) => {
 						total_requests: sql<number>`count(*)::int`,
 						total_input_tokens: sql<number>`coalesce(sum(${usageRecords.inputTokens}), 0)::int`,
 						total_output_tokens: sql<number>`coalesce(sum(${usageRecords.outputTokens}), 0)::int`,
-						total_cost_cents: sql<string>`coalesce(sum(${usageRecords.totalCents}), 0)::numeric`,
+						total_cost_cents: sql<string>`coalesce(sum(${usageRecords.totalCents}) FILTER (WHERE ${usageRecords.refundedAt} IS NULL), 0)::numeric`,
 				})
 				.from(usageRecords)
 				.where(eq(usageRecords.userId, userId));

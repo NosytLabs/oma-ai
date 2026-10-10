@@ -98,6 +98,8 @@ const FALLBACK_MODELS: ModelOption[] = MODELS.map((m) => {
 		name: m.name,
 		category: cat,
 		provider,
+		available: m.available,
+		unavailableReason: m.unavailableReason,
 		inputPer1M: m.inputPricePer1M,
 		outputPer1M: m.outputPricePer1M,
 		ctx: m.contextLength,
@@ -105,7 +107,7 @@ const FALLBACK_MODELS: ModelOption[] = MODELS.map((m) => {
 });
 
 const LIVE_MODELS_TTL_MS = 5 * 60 * 1000;
-const LIVE_MODELS_CACHE_VERSION = 4; // bump to invalidate stale caches after display-name fix
+const LIVE_MODELS_CACHE_VERSION = 5; // preserve paused routes in both live and fallback catalogs
 let liveModelsCache: { data: ModelOption[]; ts: number; v: number } | null = null;
 // Dedupes concurrent mounts: while a fetch is in flight, further consumers
 // subscribe to the same promise instead of firing their own request.

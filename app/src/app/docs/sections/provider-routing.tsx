@@ -49,8 +49,9 @@ export function ProviderRoutingSection() {
 					</div>
 					<p className="text-sm text-text-muted">
 						Budget-tier models branded as OMA-AI — MiniMax M2.7, DeepSeek
-						V4 Flash, and GLM-5.3 Flash on Gonka/OpenBroker. Same billing
-						surface and API contract as the rest of the catalog.
+						V4 Flash, and GLM-5.3 Flash on Gonka/OpenBroker. MiniMax is the
+						current free-chat default; check the live catalog for paused routes.
+						Same billing surface and API contract as the rest of the catalog.
 					</p>
 					<div className="mt-3 flex flex-wrap gap-1">
 						<span className="rounded-[var(--radius-sm)] bg-surface px-1.5 py-0.5 text-[10px] text-text-muted border border-border/50">chat</span>

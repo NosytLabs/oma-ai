@@ -86,6 +86,7 @@ data/
 
 # Local UX audit screenshot dump (not product assets)
 .screenshots/
+.artifacts/
 *.old
 
 # Accidental Playwright path dumps (page.screenshot with undefined path)
