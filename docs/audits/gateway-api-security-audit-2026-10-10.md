@@ -477,3 +477,27 @@ The remaining upstream tool-continuation, paused models, Venice inference,
 WalletConnect, mainnet/facilitator funding, credit-allocation/refund policy and
 support-transport limitations above remain open. This receipt does not claim
 every model, payment flow or generated page is fully verified.
+
+### Final quota correction release
+
+Vercel `dpl_BQwXhoT1o3kRGruF4PNwp8Gj4Zbw` is READY and the canonical
+`www.oma-ai.com` lookup resolves to source
+`adf20340a7a4093274f4f0bee84409e337324670`. The lockfile workflow passed
+that exact commit. The final run passed all 791 frontend tests in 117 files,
+lint and the production build with type checking. Neon remains on deployment
+80/source `29430af31ddb14c54c7f3410f106dabab6cd8dbf`; no backend code changed.
+
+The fresh production guest request returned exactly `OMA_QUOTA_OK` from
+MiniMax in 34.0 seconds, with 140 total tokens and 90 output tokens. The
+allowance changed from 20 to 19 and stayed at 19 after reloading the page.
+Three quota reads, including forged client forwarding headers, consistently
+reported one used and 19 remaining with shared Redis/private, no-store.
+Readiness again reported healthy Postgres and Redis. The settled browser
+has one H1, no horizontal overflow, no cost pill and no captured warnings or
+errors. The final screenshot is
+`.screenshots/account-audit-2026-10-10/chat-production-verified.jpg`.
+
+This verifies the formerly failing reload flow after preserving the platform
+identity. It does not make an IP quota an account identity or eliminate abuse
+through multiple genuine IP addresses. No mainnet transaction was performed.
+Later receipt commits update documentation only; PR #30 stays open.
