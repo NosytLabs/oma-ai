@@ -86,12 +86,16 @@ upstream capacity errors. Provider errors inside successful HTTP JSON or SSE
 responses are recorded as failed and remain uncharged. Homepage/status/docs
 labels describe the enabled catalog instead of implying tested provider health, and
 the footer describes actual funding/free-chat behavior with larger mobile links.
+Bookmarked docs sections now scroll after the streamed page mounts instead of
+remaining at the hero. A failing regression preceded the fix; the rebuilt
+390px browser reached Rate Limits below the sticky header. Default limit notes
+wrap within the mobile table; wider model tables remain keyboard-scrollable.
 
 Validation passed 639 API tests in 78 files, including previously skipped real
 Postgres payment checks, and 25 real HTTP/authentication groups. These cover
 scoped/revoked keys, signup, SIWE, account deletion, ownership isolation,
 concurrent inference admission, metering and account-wide emergency limits.
-Frontend validation passed 832 tests in 123 files with two workers. Types, lint,
+Frontend validation passed 836 tests in 124 files with two workers. Types, lint,
 production builds and frozen-lockfile installation passed. The production
 dependency audit found no known vulnerabilities across 888 dependencies; the
 development-only braces advisory below remains. All 10 maintained Markdown
