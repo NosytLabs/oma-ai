@@ -73,7 +73,7 @@ A plain Redis daemon cannot serve this client. The database helper starts
 Postgres without starting an unused Redis service. Sample environments do not
 advertise a TCP Redis URL or duplicate optional blank settings.
 
-Full validation passed: 797 frontend tests in 119 files and 605 API tests in
+Full validation passed: 799 frontend tests in 120 files and 605 API tests in
 76 passing files, with six explicit API skips; types, lint and both production
 builds passed. All 22 real HTTP/Postgres groups passed, including selected-range
 exports, ownership isolation, precision and refunds. Production dependency
@@ -82,14 +82,21 @@ database-helper shell syntax check passed. An initial run exposed a download
 metadata type error and a missing canonical OpenAPI link in the condensed
 README; both were corrected. Under heavy machine load, the account harness
 failed at startup before reaching flows; its bounded startup wait is now
-60 seconds and the complete rerun passed.
+60 seconds and the complete rerun passed. A later frontend run under machine
+contention hit chat and worker startup deadlines; all 799 tests passed with
+two workers, preserving the same assertions and test time limits.
 
 A signed-in local user downloaded 28 CSV records, matching the 24-hour summary.
 The file retained tiny charges, all 15 column headers and UTC timestamps.
 At 1280px and 390px the page had one H1 and no horizontal overflow; mobile had
 no duplicate IDs. Demo export remained disabled with a real session present.
-Console capture returned no warnings/errors. Credit amounts now say "credits"
-and use a coin icon, with the USD equivalent separately labeled; final frontend
+Console capture returned no warnings/errors. Recent-activity usage links retain
+demo mode; a regression reproduced the lost flag before the correction. The
+final local browser click reached `tab=usage&demo=1`, retained the preview banner
+and disabled export. A repeat fixture sign-in was blocked by the browser client;
+this final navigation check was unauthenticated, distinct from the earlier
+signed-in export and demo-isolation checks.
+Credit amounts now say "credits" and use a coin icon, with the USD equivalent separately labeled; final frontend
 lint/build and the mobile browser check passed after that cosmetic change.
 Screenshots are under `.screenshots/cleanup-2026-10-11/`.
 

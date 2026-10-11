@@ -15,6 +15,7 @@ import { formatTime, formatUsdPrecise, toDollars } from "@/lib/utils";
 
 interface RecentTransactionsProps {
 	transactions: CreditTransaction[];
+	isDemo?: boolean;
 }
 
 const TX_ICONS: Record<string, typeof ArrowDownLeft> = {
@@ -40,7 +41,7 @@ const TX_LABELS: Record<string, string> = {
 	* Always renders — when the list is empty, shows a call-to-action instead of
 	* collapsing the row (which would leave a noticeable gap on the Overview tab).
 	*/
-export function RecentTransactions({ transactions }: RecentTransactionsProps) {
+export function RecentTransactions({ transactions, isDemo = false }: RecentTransactionsProps) {
 	// Preserve descending order for API and demo records alike.
 	const sorted = useMemo(
 		() =>
@@ -58,7 +59,7 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
 				</h2>
 				{transactions.length > 0 && (
 					<Link
-						href="/dashboard?tab=usage"
+						href={isDemo ? "/dashboard?tab=usage&demo=1" : "/dashboard?tab=usage"}
 						className="text-[11px] font-mono font-bold uppercase tracking-widest text-accent hover:text-accent-hover transition-colors duration-200 ease-out active:scale-[0.97]"
 					>
 						Usage details <span aria-hidden="true">&rarr;</span>

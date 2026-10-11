@@ -358,7 +358,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 
 						<QuickActions isDemo={_isDemo} />
 
-						<RecentTransactions transactions={transactions} />
+						<RecentTransactions transactions={transactions} isDemo={_isDemo} />
 					</m.div>
 				)}
 
