@@ -96,11 +96,33 @@ final local browser click reached `tab=usage&demo=1`, retained the preview banne
 and disabled export. A repeat fixture sign-in was blocked by the browser client;
 this final navigation check was unauthenticated, distinct from the earlier
 signed-in export and demo-isolation checks.
-Credit amounts now say "credits" and use a coin icon, with the USD equivalent separately labeled; final frontend
+Credit amounts now say "credits" and use a coin icon, with the USD equivalent
+separately labeled; final frontend
 lint/build and the mobile browser check passed after that cosmetic change.
 Screenshots are under `.screenshots/cleanup-2026-10-11/`.
 
-Production release verification for this cleanup is pending.
+## Cleanup release verification
+
+| Service | Source | Deployment | Observed state |
+| --- | --- | --- | --- |
+| Vercel website | `57dee4a6688bb1ca3e357391c5aaab39d23661fa` | `dpl_9VRLXdP1Xxj4YbYJkMJ1W65RnAai` | READY; canonical `www.oma-ai.com` matched |
+| Neon API | `cc3d2a088c9a5b6229caeeec82787dee83f1d8a8` | `omaapi` 81 | Current/active, completed; Node 24, 2048 MiB |
+
+All 40 API environment values match the pre-release snapshot. Both enabled
+every-minute recovery jobs retained their configuration. The navigation-only
+website follow-up did not redeploy the API.
+Native and same-origin `/ready` returned 200 with healthy Postgres and Redis.
+`/api/v1/export/usage` returned 401 without a session; `/.env` returned 404.
+`/api/openapi.json` returned OpenAPI 3.1 with no admin, internal or website-chat
+paths. The [release-source lockfile check](https://github.com/NosytLabs/oma-ai/actions/runs/38110908054)
+passed.
+
+The live preview's recent-activity link reached
+`/dashboard?tab=usage&demo=1`, with Usage selected, the preview banner present
+and export disabled. The 1280px check had one H1, no horizontal overflow and
+no captured console warnings/errors. A temporary developer viewport resolved
+the browser's zero-size automation surface; it was cleared after saving
+`.screenshots/cleanup-2026-10-11/production-demo-usage.jpg`.
 
 ## Previous verified release
 
