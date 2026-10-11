@@ -67,7 +67,7 @@ export function AvailableModelsSection() {
 				subtitle={
 					availableCount === models.length
 						? `${models.length} curated chat models across four tiers, plus web search in the playground. Check the live catalog before making a request.`
-						: `${availableCount} of ${models.length} curated chat models are accepting requests right now. The rest are listed for reference and are marked below.`
+						: `${availableCount} of ${models.length} curated chat models are enabled in the current catalog. Paused routes are marked below; provider availability can vary.`
 				}
 			/>
 

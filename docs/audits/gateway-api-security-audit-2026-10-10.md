@@ -83,8 +83,8 @@ The degraded token limiter now counts requested tokens. Its emergency five-
 request-per-minute allowance is shared by the authenticated account, so rotating
 API keys does not refresh it. Docs distinguish requests, tokens, bursts and
 upstream capacity errors. Provider errors inside successful HTTP JSON or SSE
-responses are recorded as failed and remain uncharged. Homepage/status labels
-describe the enabled catalog instead of implying tested provider health, and
+responses are recorded as failed and remain uncharged. Homepage/status/docs
+labels describe the enabled catalog instead of implying tested provider health, and
 the footer describes actual funding/free-chat behavior with larger mobile links.
 
 Validation passed 639 API tests in 78 files, including previously skipped real

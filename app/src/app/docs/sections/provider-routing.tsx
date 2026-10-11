@@ -8,14 +8,14 @@ export function ProviderRoutingSection() {
 				id="provider-routing"
 				icon={<GitBranch className="h-5 w-5" />}
 				title="Provider Routing"
-				subtitle="OMA routes each request through the best available provider — automatically."
+				subtitle="Each model uses its configured provider, with compatible fallback routes where available."
 			/>
 
 			<div className="rounded-[var(--radius-xl)] border border-accent/20 bg-accent/5 p-5 mb-6">
 				<div className="flex items-start gap-3">
 					<GitBranch className="h-5 w-5 text-accent mt-0.5 shrink-0" />
 					<div>
-						<h3 className="font-semibold text-accent">Intelligent Request Routing</h3>
+						<h3 className="font-semibold text-accent">Model-based routing</h3>
 						<p className="mt-1 text-sm text-text-muted">
 							Every model id resolves to an upstream provider. OMA routes each
 							request to the model&apos;s catalog-mapped provider based on
@@ -34,7 +34,8 @@ export function ProviderRoutingSection() {
 					</div>
 					<p className="text-sm text-text-muted">
 						Primary provider for the curated chat catalog. Handles
-						chat and multimodal-input workloads with low-latency inference.
+						chat and supported multimodal-input workloads. Latency depends on
+						the model and provider load.
 					</p>
 					<div className="mt-3 flex flex-wrap gap-1">
 						<span className="rounded-[var(--radius-sm)] bg-surface px-1.5 py-0.5 text-[10px] text-text-muted border border-border/50">chat</span>
