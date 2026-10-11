@@ -46,6 +46,7 @@ async function proxyToAuth(req: NextRequest, { params }: { params: Promise<{ pat
 
 		// Same trust policy as the main proxy — shared so the two cannot drift.
 		applyTrustedProxyHeaders({
+			get: (name) => headers[name] ?? null,
 			keys: () => Object.keys(headers),
 			set: (name, value) => {
 				headers[name] = value;

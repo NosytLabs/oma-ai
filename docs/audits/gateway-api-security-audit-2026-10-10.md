@@ -373,7 +373,7 @@ local scroll, with no page overflow. Mobile account profile, usage and sessions
 rendered successfully at 390px; a browser socket failure recovered in a fresh
 tab while the local HTTP service remained healthy.
 
-Current validation: 784 frontend tests and 591 backend tests passed (six API
+Current validation: 791 frontend tests and 591 backend tests passed (six API
 tests explicitly skipped); lint, types and production builds passed. The 21
 real HTTP/Postgres groups passed twice, including signup, returning login,
 SIWE/replay, key scope/expiry/revocation, cross-account isolation, admin denial,
@@ -422,3 +422,58 @@ Nonstreaming browser responses now preserve explicit zero input/output usage
 instead of replacing it with estimates. The hook regression first reproduced
 an undefined input count and an invented two-token output for a zero-usage
 response, then passed with both counts retained as zero.
+
+## Release and quota verification — 2026-10-11
+
+Vercel production deployment `dpl_7rW9Y2qMmmbkjPHDJb9C93JP9Ky6` is READY.
+Looking up `www.oma-ai.com` resolves to that deployment and source commit
+`24889d146f2d884930debd5192f087c9d7252125`; the apex alias is attached too.
+GitHub's Deployment lockfile workflow passed on this exact source commit.
+The final frontend run passed 784 tests in 117 files, lint and the production
+build, including Next.js type checking. No backend source changed in this
+last release.
+
+Neon `omaapi` deployment 80 remains current/active and completed, released
+from `29430af31ddb14c54c7f3410f106dabab6cd8dbf`. It runs Node 24 with 2048 MiB
+and retains all 40 environment variables from the preceding deployment.
+Both `oma-deposit-recovery` and `oma-settlement-dlq` remain enabled every
+minute. Production `/api/ready` reports healthy Postgres and Redis.
+
+Live negative checks: an unauthenticated SDK request with copied website
+headers returns 401, website/internal backend paths through the generic
+frontend proxy return 404, and a cross-origin request to the dedicated website
+chat handler returns 403. OpenAPI returns 3.1.0 with no admin/internal/website
+paths. `/x402/info` returns v2 with no-store; quota reads advertise shared Redis
+and private, no-store caching. These boundary checks do not send inference or
+wallet transactions.
+
+Production chat still displays the verified `OMA_WEBSITE_OK` conversation,
+has one H1, no horizontal overflow, no captured console warnings/errors and
+no fabricated cost pill. Screenshots:
+`.screenshots/account-audit-2026-10-10/chat-production-verified.jpg` and
+`.screenshots/account-audit-2026-10-10/docs-quickstart-production-pass.jpg`.
+The response initially reduced the guest allowance from 20 to 19; a later
+reload displayed 20. This exposed a separate proxy identity regression:
+the trust helper stripped Vercel's own client IP along with visitor-supplied
+forwarding headers, leaving backend quota reads and writes tied to changing
+gateway socket addresses. The frontend helper now preserves only a single
+valid platform IP, only on Vercel and with the configured proxy secret. Other
+forwarding headers and all Neon runtime headers are still removed. The auth
+proxy shares this exact policy. New failing route tests reproduced the lost
+IPv4/IPv6 identity for quota, chat and auth before the correction; malformed
+values, chains, missing proxy authentication and non-Vercel spoofing are rejected.
+[Vercel's request-header contract](https://vercel.com/docs/headers/request-headers)
+identifies its platform client-IP header and its edge spoofing protection.
+
+Local frontend/API processes now use the final checkout. Local docs return
+200 and Postgres connects; local readiness explicitly reports Redis degraded
+because shared Redis credentials are missing. Production Redis is healthy.
+Removed only the expired local fixture-login link file in this pass, retaining
+accounts and financial records. The previously authorized production cleanup
+remains limited to expired auth records. PR #30 remains open; subsequent
+receipt commits affect documentation only.
+
+The remaining upstream tool-continuation, paused models, Venice inference,
+WalletConnect, mainnet/facilitator funding, credit-allocation/refund policy and
+support-transport limitations above remain open. This receipt does not claim
+every model, payment flow or generated page is fully verified.

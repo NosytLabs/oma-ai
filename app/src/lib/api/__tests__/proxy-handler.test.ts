@@ -6,6 +6,51 @@ import { proxy } from "../proxy-handler";
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.restoreAllMocks(); });
 
 describe("gateway proxy cancellation", () => {
+	it.each(["/api/v1/usage/today", "/api/chat/completions"])("retains Vercel's platform client IP for quota path %s", async path => {
+		vi.stubEnv("VERCEL", "1");
+		vi.stubEnv("INTERNAL_PROXY_SECRET", "server-owned-secret");
+		const fetchMock = vi.fn().mockResolvedValue(Response.json({}));
+		vi.stubGlobal("fetch", fetchMock);
+		await proxy(new NextRequest(`https://www.oma-ai.com${path}`, { headers: {
+			Origin: "https://www.oma-ai.com", "x-vercel-forwarded-for": "203.0.113.42",
+			"x-forwarded-for": "198.51.100.99", "x-real-ip": "198.51.100.99",
+		} }), { websiteChat: path === "/api/chat/completions" });
+		const headers = fetchMock.mock.calls[0][1].headers as Headers;
+		expect(headers.get("x-vercel-forwarded-for")).toBe("203.0.113.42");
+		expect(headers.has("x-forwarded-for")).toBe(false);
+		expect(headers.has("x-real-ip")).toBe(false);
+		expect(headers.get("x-oma-proxy-secret")).toBe("server-owned-secret");
+	});
+	it("never authenticates caller-provided IP headers outside Vercel", async () => {
+		vi.stubEnv("VERCEL", "");
+		vi.stubEnv("INTERNAL_PROXY_SECRET", "server-owned-secret");
+		const fetchMock = vi.fn().mockResolvedValue(Response.json({}));
+		vi.stubGlobal("fetch", fetchMock);
+		await proxy(new NextRequest("https://www.oma-ai.com/api/v1/usage/today", { headers: {
+			"x-vercel-forwarded-for": "203.0.113.42", "x-forwarded-for": "203.0.113.42",
+		} }));
+		const headers = fetchMock.mock.calls[0][1].headers as Headers;
+		expect(headers.has("x-vercel-forwarded-for")).toBe(false);
+		expect(headers.has("x-forwarded-for")).toBe(false);
+	});
+	it.each(["invalid", "203.0.113.42, 198.51.100.99"])("does not forward malformed platform IP %s", async ip => {
+		vi.stubEnv("VERCEL", "1");
+		vi.stubEnv("INTERNAL_PROXY_SECRET", "server-owned-secret");
+		const fetchMock = vi.fn().mockResolvedValue(Response.json({}));
+		vi.stubGlobal("fetch", fetchMock);
+		await proxy(new NextRequest("https://www.oma-ai.com/api/v1/usage/today", { headers: { "x-vercel-forwarded-for": ip } }));
+		expect((fetchMock.mock.calls[0][1].headers as Headers).has("x-vercel-forwarded-for")).toBe(false);
+	});
+	it("does not forward platform identity without proxy authentication", async () => {
+		vi.stubEnv("VERCEL", "1");
+		vi.stubEnv("INTERNAL_PROXY_SECRET", "");
+		const fetchMock = vi.fn().mockResolvedValue(Response.json({}));
+		vi.stubGlobal("fetch", fetchMock);
+		await proxy(new NextRequest("https://www.oma-ai.com/api/v1/usage/today", { headers: { "x-vercel-forwarded-for": "203.0.113.42" } }));
+		const headers = fetchMock.mock.calls[0][1].headers as Headers;
+		expect(headers.has("x-vercel-forwarded-for")).toBe(false);
+		expect(headers.has("x-oma-proxy-secret")).toBe(false);
+	});
 	it("forwards same-origin website chat with server-owned sponsorship", async () => {
 		const fetchMock = vi.fn().mockResolvedValue(Response.json({}));
 		vi.stubGlobal("fetch", fetchMock);
