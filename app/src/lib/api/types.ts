@@ -29,11 +29,13 @@ export interface ApiKey {
 	lastUsedAt: string | null;
 	expiresAt?: string | null;
 	allowedModels?: string[] | null;
+	ipAllowlist?: string[] | null;
 }
 
 export interface ApiKeyCreateOptions {
 	expiresInDays?: number;
 	allowedModels?: string[];
+	ipAllowlist?: string[];
 }
 
 export interface ApiKeyWithSecret extends ApiKey {

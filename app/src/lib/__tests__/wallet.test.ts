@@ -292,12 +292,32 @@ describe("wallet", () => {
 		const request = vi.fn(async ({ method }: Request) => {
 			if (method === "eth_chainId") return "0x2105";
 			if (method === "eth_accounts") return [ADDRESS];
-			if (method === "eth_sendTransaction") throw new Error("Wallet disconnected");
+			if (method === "eth_sendTransaction") throw Object.assign(new Error("Wallet RPC overloaded"), { code: -32005 });
 			return [];
 		});
 		install({ request });
 		await expect(sendUsdcTransfer({ to: "0x0000000000000000000000000000000000000002", from: ADDRESS, amountUsd: 10 })).rejects.toThrow();
 		expect(request.mock.calls.filter(([args]) => args.method === "eth_sendTransaction")).toHaveLength(1);
+	});
+
+	it.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY, 0.0000001, 1.0000001])("rejects invalid USDC amount %s before contacting a wallet", async amountUsd => {
+		const { provider, calls } = makeProvider();
+		install(provider);
+		await expect(sendUsdcTransfer({ to: "0x0000000000000000000000000000000000000002", from: ADDRESS, amountUsd })).rejects.toThrow(/amount/i);
+		expect(calls).toHaveLength(0);
+	});
+
+	it("rechecks the sending account after the chain-switch prompt", async () => {
+		let switched = false;
+		const request = vi.fn(async ({ method }: Request) => {
+			if (method === "eth_chainId") return switched ? "0x2105" : "0x1";
+			if (method === "eth_accounts") return [switched ? "0x0000000000000000000000000000000000000001" : ADDRESS];
+			if (method === "wallet_switchEthereumChain") { switched = true; return null; }
+			return `0x${"a".repeat(64)}`;
+		});
+		install({ request });
+		await expect(sendUsdcTransfer({ to: "0x0000000000000000000000000000000000000002", from: ADDRESS, amountUsd: 10 })).rejects.toThrow(/account changed/i);
+		expect(request.mock.calls.some(([args]) => args.method === "eth_sendTransaction")).toBe(false);
 	});
 
 	it("blocks a transfer if the authorized account changed since the form was filled", async () => {

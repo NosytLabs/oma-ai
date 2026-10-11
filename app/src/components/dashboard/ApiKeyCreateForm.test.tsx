@@ -4,6 +4,13 @@ import { ApiKeyCreateForm } from "./ApiKeyCreateForm";
 
 afterEach(cleanup);
 describe("API key controls", () => {
+	it("submits distinct IPv4 and IPv6 restrictions separated by commas or newlines", () => {
+		const create = vi.fn();
+		render(<ApiKeyCreateForm name="Server only" setName={vi.fn()} creating={false} onCreate={create} onCancel={vi.fn()} />);
+		fireEvent.change(screen.getByRole("textbox", { name: "Allowed IP addresses (optional)" }), { target: { value: " 192.0.2.0/24,192.0.2.0/24\n2001:db8::1 " } });
+		fireEvent.click(screen.getByRole("button", { name: "Create key" }));
+		expect(create).toHaveBeenCalledExactlyOnceWith({ expiresInDays: 90, ipAllowlist: ["192.0.2.0/24", "2001:db8::1"] });
+	});
 	it("submits the selected expiry and deduplicated model scope through the form", () => {
 		const create = vi.fn();
 		render(<ApiKeyCreateForm name="Coding" setName={vi.fn()} creating={false} onCreate={create} onCancel={vi.fn()} />);

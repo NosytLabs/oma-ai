@@ -96,6 +96,7 @@ func main() {
 							<code className="text-warning font-mono">oma_sk_</code> prefix.
 							Only the SHA-256 hash is stored. Keep your key secret and never
 							commit it to version control.
+							{" "}The dashboard lets you set an expiry, allowed model IDs and up to 20 IP addresses or CIDR ranges. IP restrictions use your application’s public outbound address; requests outside those ranges receive 403. Leave the IP field blank if your address changes. Revoke and replace a key to change its restrictions.
 						</p>
 					</div>
 				</div>

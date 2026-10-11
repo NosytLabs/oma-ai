@@ -97,8 +97,8 @@ function normalizeIpOrCidr(s: string): string {
 		return noZone.trim();
 }
 
-function isValidIpOrCidr(s: string): boolean {
-		if (typeof s !== "string" || s.length === 0) return false;
+export function isValidIpOrCidr(s: string): boolean {
+		if (typeof s !== "string" || s.length === 0 || s.includes("%")) return false;
 		const norm = normalizeIpOrCidr(s);
 		if (!norm) return false;
 		const slashIdx = norm.indexOf("/");
@@ -120,6 +120,13 @@ function ipToBits(ip: string, family: 4 | 6): bigint {
 				return ip.split(".").reduce((acc, p) => (acc << 8n) | BigInt(Number(p)), 0n);
 		}
 		// IPv6
+		// An embedded dotted IPv4 tail represents TWO hextets, not one.
+		// Dropping its high bits lets different IPv4 subnets match the same CIDR.
+		const tail = ip.match(/\d+\.\d+\.\d+\.\d+$/)?.[0];
+		if (tail) {
+			const bits = ipToBits(tail, 4);
+			ip = `${ip.slice(0, -tail.length)}${(bits >> 16n).toString(16)}:${(bits & 0xffffn).toString(16)}`;
+		}
 		const dcIdx = ip.indexOf("::");
 		let halves: [string, string];
 		if (dcIdx === -1) { halves = [ip, ""]; } else { halves = [ip.slice(0, dcIdx), ip.slice(dcIdx + 2)]; }
@@ -144,9 +151,10 @@ export function isIpAllowedByList(
 		const ipN = ipToBits(ip, ipFamily);
 		for (const entry of list) {
 				const norm = normalizeIpOrCidr(entry);
+				if (!isValidIpOrCidr(norm)) continue;
 				const slashIdx = norm.indexOf("/");
 				if (slashIdx === -1) {
-						if (netIsIp(norm) === ipFamily && norm === ip) return true;
+						if (netIsIp(norm) === ipFamily && ipToBits(norm, ipFamily) === ipN) return true;
 						continue;
 				}
 				const cidrIp = norm.slice(0, slashIdx);
@@ -281,6 +289,7 @@ export async function listApiKeys(userId: string, includeRevoked = false) {
 				expiresAt: apiKeys.expiresAt,
 				createdAt: apiKeys.createdAt,
 				allowedModels: apiKeys.allowedModels,
+				ipAllowlist: apiKeys.ipAllowlist,
 		};
 		if (includeRevoked) {
 				return db.select(baseSelect).from(apiKeys).where(eq(apiKeys.userId, userId));

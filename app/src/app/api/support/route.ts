@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { withRateLimit } from "@/lib/rate-limit-middleware";
 import { generalLimiter } from "@/lib/rate-limiter";
+import { BodyTooLargeError, readTextWithinLimit } from "@/lib/read-body";
 
 /**
 	* POST /api/support
@@ -41,8 +42,11 @@ function ticketId(): string {
 async function supportPost(request: Request): Promise<NextResponse> {
 	let body: SupportPayload;
 	try {
-		body = (await request.json()) as SupportPayload;
-	} catch {
+		body = JSON.parse(await readTextWithinLimit(request, 64 * 1024)) as SupportPayload;
+	} catch (error) {
+		if (error instanceof BodyTooLargeError) return NextResponse.json({ error: {
+			message:"Support request is too large.", type:"payload_too_large",
+		} }, { status:413 });
 		return NextResponse.json(
 			{ error: { message: "Invalid JSON body", type: "validation_error" } },
 			{ status: 400 },

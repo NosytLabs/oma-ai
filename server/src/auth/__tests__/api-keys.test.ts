@@ -40,6 +40,19 @@ vi.mock("../../lib/redis-client.js", () => ({
 }));
 
 describe("isIpAllowedByList", () => {
+	it("compares equivalent IPv6 addresses by their bits", () => {
+		expect(isIpAllowedByList("2001:db8::1", ["2001:0db8:0000:0000:0000:0000:0000:0001"])).toBe(true);
+		expect(isIpAllowedByList("::ffff:192.0.2.1", ["::ffff:c000:201"])).toBe(true);
+	});
+	it("restricts embedded IPv4 addresses to their actual IPv6 CIDR subnet", () => {
+		expect(isIpAllowedByList("::ffff:10.1.2.3", ["::ffff:10.0.0.0/104"])).toBe(true);
+		expect(isIpAllowedByList("::ffff:11.1.2.3", ["::ffff:10.0.0.0/104"])).toBe(false);
+		expect(isIpAllowedByList("::ffff:10.2.2.3", ["::ffff:10.1.0.0/112"])).toBe(false);
+		expect(isIpAllowedByList("::ffff:192.0.2.1", ["::ffff:c000:200/120"])).toBe(true);
+	});
+	it.each(["::/bad", "::/999", "::/-1", "not-an-ip/0"])("denies malformed persisted range %s", range => {
+		expect(isIpAllowedByList("::1", [range])).toBe(false);
+	});
 				it("returns true for empty or null list", () => {
 								expect(isIpAllowedByList("1.2.3.4", null)).toBe(true);
 								expect(isIpAllowedByList("1.2.3.4", [])).toBe(true);

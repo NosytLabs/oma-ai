@@ -34,6 +34,13 @@ export interface ProxyHeaderSink {
 	keys(): Iterable<string>;
 }
 
+/** Only Vercel's single platform connection address can identify a visitor. */
+export function getTrustedPlatformIp(headers: Pick<ProxyHeaderSink, "get">): string | undefined {
+	if (process.env.VERCEL !== "1") return undefined;
+	const ip = headers.get("x-vercel-forwarded-for")?.trim();
+	return ip && isIP(ip) ? ip : undefined;
+}
+
 /**
  * Apply the authenticated-proxy trust policy to an outgoing header container.
  *
@@ -45,9 +52,7 @@ export function applyTrustedProxyHeaders(headers: ProxyHeaderSink): void {
 	// hosts cannot authenticate a browser-provided forwarding value.
 	// Read before deletion so both chat/quota and auth use the same visitor
 	// identity rather than a changing Vercel egress address.
-	const platformIp = process.env.VERCEL === "1"
-		? headers.get("x-vercel-forwarded-for")?.trim()
-		: undefined;
+	const platformIp = getTrustedPlatformIp(headers);
 	// Runtime provenance headers must never originate from a website visitor.
 	for (const name of [...headers.keys()]) {
 		if (name.toLowerCase().startsWith("x-neon-")) headers.delete(name);

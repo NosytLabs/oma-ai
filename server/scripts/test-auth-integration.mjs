@@ -187,6 +187,18 @@ try {
 	await request("/v1/usage", { headers: keyHeaders, expected: 401 });
 	pass("API keys require a session to mint, persist expiry/scope, deny unauthorized models on both APIs and reject expired or revoked credentials");
 
+	const localKey = (await request("/v1/keys", { method: "POST", cookie: first.cookie, body: { name: "Local IP restriction", ipAllowlist: [" 127.0.0.1/32 ", "::1/128", "127.0.0.1/32"] } })).data;
+	assert.deepEqual(localKey.ipAllowlist, ["127.0.0.1/32", "::1/128"]);
+	assert.deepEqual((await request("/v1/keys", { cookie: first.cookie })).data.keys.find(key => key.id === localKey.id).ipAllowlist, localKey.ipAllowlist);
+	await request("/v1/usage", { headers: { Authorization: `Bearer ${localKey.key}` } });
+	const remoteKey = (await request("/v1/keys", { method: "POST", cookie: first.cookie, body: { name: "Other IP restriction", ipAllowlist: ["192.0.2.0/24"] } })).data;
+	for (const forged of [{}, { "x-forwarded-for": "192.0.2.1", "x-real-ip": "192.0.2.1", "x-vercel-forwarded-for": "192.0.2.1" }]) {
+		await request("/v1/usage", { headers: { Authorization: `Bearer ${remoteKey.key}`, ...forged }, expected: 403 });
+	}
+	await request("/v1/keys", { method: "POST", cookie: first.cookie, body: { ipAllowlist: ["::/129"] }, expected: 400 });
+	for (const key of [localKey, remoteKey]) await request(`/v1/keys/${key.id}`, { method: "DELETE", cookie: first.cookie });
+	pass("IP-restricted keys allow real loopback callers, reject foreign addresses despite forged proxy headers and validate CIDR ranges");
+
 	const other = await magicSignIn("other-auth@local.test");
 	const otherProfile = (await request("/user", { cookie: other.cookie })).data;
 	const otherSession = (await request("/api/auth/get-session", { cookie: other.cookie })).data.session;

@@ -195,16 +195,8 @@ function DashboardPageInner() {
 			setCreatedKey(key);
 			setNewKeyName("");
 			setShowCreateForm(false);
-			// Install the raw key as the HttpOnly oma_api_key cookie so the
-			// browser-direct SSE chat can authenticate against the backend.
-			// Don't silently swallow failures — surface a toast so users
-			// know if their browser blocked the cookie write.
-			api.auth.installKeyCookie(key.key).catch((err) => {
-				toast.error(
-					"Couldn't store your API key cookie. If chat doesn't load, check browser cookie settings.",
-				);
-				log.error("installKeyCookie failed", err);
-			});
+			// Website chat uses the account session. Programmatic credentials
+			// (including server-only IP restrictions) stay in the one-time modal.
 			queryClient.setQueryData<{ keys: ApiKey[] }>(["apiKeys", user?.id], (prev) => ({
 				keys: [
 					...(prev?.keys ?? []),
@@ -216,6 +208,7 @@ function DashboardPageInner() {
 						lastUsedAt: key.lastUsedAt,
 						expiresAt: key.expiresAt,
 						allowedModels: key.allowedModels,
+						ipAllowlist: key.ipAllowlist,
 					},
 				],
 			}));

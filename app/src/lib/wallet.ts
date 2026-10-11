@@ -15,7 +15,7 @@
  *   const { address } = await connectWallet();
  *   const { message, signature } = await signSiweMessage(address, nonce, "oma-ai.com");
  */
-import { createWalletClient, custom, encodeFunctionData, getAddress, type WalletClient } from "viem";
+import { createWalletClient, custom, encodeFunctionData, getAddress, parseUnits, type WalletClient } from "viem";
 import { base } from "viem/chains";
 import { SiweMessage } from "siwe";
 
@@ -391,17 +391,25 @@ export async function sendUsdcTransfer({
 	amountUsd: number;
 	from: `0x${string}`;
 }): Promise<{ txHash: `0x${string}` }> {
+	// Never round a customer's transfer upward or silently send zero USDC.
+	const decimal = String(amountUsd);
+	if (!Number.isFinite(amountUsd) || amountUsd <= 0 || !/^\d+(\.\d{1,6})?$/.test(decimal)) {
+		throw new Error("Amount must be positive USDC with at most six decimal places.");
+	}
+	const value = parseUnits(decimal, 6);
 	const eth = getProvider();
 	if (!eth) {
 		throw new Error(NO_WALLET);
 	}
 	await requireSendingAccount(from);
 	await ensureBaseChain();
+	// A chain-switch prompt can also change the wallet's selected account.
+	await requireSendingAccount(from);
+	if (getProvider() !== eth) throw new Error("Wallet changed. Reconnect the original sending wallet and try again.");
 	const client = createWalletClient({
 		chain: base,
-		transport: custom(eth as never),
+		transport: custom(eth as never, { retryCount: 0 }),
 	});
-	const value = BigInt(Math.round(amountUsd * 1_000_000)); // USDC is 6 decimals.
 	const txHash = await client.sendTransaction({
 		account: from,
 		to: USDC_BASE,

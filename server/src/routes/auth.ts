@@ -21,6 +21,7 @@ import {
 		validateApiKey,
 		createApiKeyCookieHeader,
 		createLogoutCookieHeader,
+		isValidIpOrCidr,
 } from "../auth/api-keys.js";
 import { auth, authBaseURL } from "../auth.js";
 import { SESSION_FRESH_AGE_SECONDS } from "../auth/session-policy.js";
@@ -287,14 +288,14 @@ authRoutes.delete(
 
 // ============================================================
 // /v1/keys — API key CRUD.
-// Used by the dashboard to mint a key for browser-direct SSE chat
-// (Authorization: Bearer oma_sk_… or HttpOnly oma_api_key cookie).
+// Used by the dashboard to mint credentials for programmatic inference.
 // All endpoints require a Better Auth session.
 // ============================================================
 const createKeySchema = z.object({
 		name: z.string().trim().min(1).max(64).default("default"),
 		expiresInDays: z.number().int().min(1).max(365).optional(),
 		allowedModels: z.array(z.string().trim().min(1).refine(id => !!getModelById(id), "Unknown model ID")).min(1).max(30).optional(),
+		ipAllowlist: z.array(z.string().trim().min(1).max(64).refine(isValidIpOrCidr, "Invalid IPv4, IPv6 or CIDR range")).min(1).max(20).optional(),
 });
 
 // GET /v1/keys — list active keys for the current user.
@@ -310,6 +311,7 @@ authRoutes.get("/v1/keys", sessionAuth, async (c) => {
 						lastUsedAt: k.lastUsedAt?.toISOString() ?? null,
 						expiresAt: k.expiresAt?.toISOString() ?? null,
 						allowedModels: k.allowedModels ?? null,
+						ipAllowlist: k.ipAllowlist ?? null,
 				})),
 		});
 });
@@ -338,13 +340,14 @@ authRoutes.post(
 				const result = await createApiKey(userId, parsed.data.name, {
 					...(parsed.data.expiresInDays !== undefined ? { expiresAt: new Date(Date.now() + parsed.data.expiresInDays * 86_400_000) } : {}),
 					...(parsed.data.allowedModels ? { allowedModels: [...new Set(parsed.data.allowedModels)] } : {}),
+					...(parsed.data.ipAllowlist ? { ipAllowlist: [...new Set(parsed.data.ipAllowlist)] } : {}),
 				});
 				await auditLog({
 						userId,
 						action: "API_KEY_CREATED",
 						resource: "api_keys",
 						resourceId: result.id,
-						metadata: { name: result.name, expiresAt: result.expiresAt, allowedModels: result.allowedModels },
+						metadata: { name: result.name, expiresAt: result.expiresAt, allowedModels: result.allowedModels, ipAllowlist: result.ipAllowlist },
 				});
 				return c.json({
 						id: result.id,
@@ -353,6 +356,7 @@ authRoutes.post(
 						createdAt: result.createdAt.toISOString(),
 						expiresAt: result.expiresAt?.toISOString() ?? null,
 						allowedModels: result.allowedModels ?? null,
+						ipAllowlist: result.ipAllowlist ?? null,
 						key: result.rawKey,
 				});
 		},

@@ -126,6 +126,18 @@ export function X402Section() {
           and configured treasury. Settlement accepts networkId base or eip155:8453 and
           derives the amount from verified payment evidence rather than a caller-supplied amount.
         </p>
+        <h3 className="mt-5 font-display text-lg font-semibold text-text">Your wallet and the treasury</h3>
+        <p className="mt-2 text-sm text-text-muted">
+          OMA does not create or hold a wallet for you. Use your own wallet for sign-in and
+          USDC funding. The website supports installed browser wallets such as MetaMask,
+          Rabby and Coinbase Wallet; WalletConnect QR and mobile sessions are not yet supported.
+        </p>
+        <p className="mt-2 text-sm text-text-muted">
+          Direct USDC deposits use the address shown on the deposit page and require Base
+          gas in your sending wallet. x402 uses the recipient advertised by /x402/info,
+          with gas paid by the facilitator. A confirmed payment becomes prepaid account
+          credits; it does not give the treasury access to your wallet or API key.
+        </p>
       </div>
     </AnimatedSection>
   );

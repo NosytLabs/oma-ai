@@ -51,6 +51,67 @@ Current behavior lives in [Platform](../PLATFORM.md),
   Removed unused provider metadata, stale route diagnostics and duplicate docs
   while preserving migrations and historical financial/provider records.
 
+## Wallet, RPC and API-key follow-up — October 11
+
+Context7 references for Better Auth, viem and x402 were compared with the
+installed implementation. Runtime packages are current. Next 16.4.0,
+Better Auth 1.7.7 and viem 2.57.4 need no new version bump in this follow-up;
+Node 24 typings and TypeScript 6 remain intentional compatibility choices.
+Production dependency audit found zero known vulnerabilities across 671
+runtime dependencies. The existing development-only braces limitation below
+still applies.
+
+API key creation now accepts and displays `ipAllowlist`, previously available
+only inside the server helper. Up to 20 IPv4/IPv6 addresses or CIDR ranges are
+validated, trimmed and deduplicated; invalid masks and zone identifiers return
+400 before a credential is created. Key listings return restrictions without
+the raw secret. IPv6 matching now compares address bits and correctly expands
+embedded IPv4 tails; malformed persisted ranges are skipped instead of throwing.
+The old automatic API-key cookie installation was removed from dashboard
+creation because website chat authenticates with the account session.
+
+Wallet transfers reject zero, negative, non-finite and over-precision amounts
+before opening a wallet prompt. They use exact six-decimal units and recheck
+the selected account/provider after a chain-switch prompt. The transport
+explicitly disables retries; installed viem already disables automatic retries
+inside `sendTransaction`, so this is an explicit policy plus real amount/account
+guards, not a claim that viem previously duplicated transfers.
+
+The website Base RPC proxy falls back from a configured service to public Base
+and PublicNode endpoints for read failures. Any broadcast or mixed batch gets
+one attempt. Requests are capped at 16 KiB and replies at 1 MiB while streaming;
+empty batches, wrong JSON-RPC versions and HTTP subscription methods are denied.
+Transient upstream errors may fail over, contract reverts are preserved, and
+upstream credentials stay out of client errors. Support uses the same bounded
+reader with a 64 KiB request cap. Both website route limiters now share the
+Vercel platform-IP trust policy; arbitrary forwarding headers or an unverified
+custom-proxy setting cannot refresh a visitor's budget. These local guards
+remain per-instance, not globally durable limits.
+
+Public authentication/OpenAPI docs describe IP restrictions. Funding docs
+explain the customer wallet, treasury recipient and facilitator gas role,
+and explicitly identify WalletConnect QR/mobile support as missing. Existing
+maintained references were updated rather than creating another audit file;
+all nine maintained Markdown files passed local link validation.
+
+Validation: 824 frontend tests in 122 files and 619 API tests in 76 passing
+files, with six explicit API skips. Types, lint and both production builds
+passed. The 23 real HTTP/Postgres groups include IP-restricted keys, forged
+forwarding headers, two-account isolation, expired/revoked credentials,
+signup/sign-out/deletion and real local SIWE signatures. Regression tests
+failed before the wallet/RPC/IP corrections and passed afterward.
+
+Actual model calls used a one-day scoped key and real local account. MiniMax
+passed OpenAI and Messages formats with `OMA_API_OK`, 49 input/208 output
+tokens each, and a combined 0.001028-cent charge matching the persisted usage
+and balance deduction. The key was revoked (401) and test session removed.
+Venice Gemma failed both formats with an upstream authentication error; a
+present local credential is not proof it is valid, and production Venice
+inference remains unverified. MiniMax emitted a valid `add` function call
+with `{a:2,b:2}`; continuation repeated `4` until the 512-token limit and
+failed the strict result assertion. Neither provider issue is hidden by
+weaker assertions or fabricated success.
+
 ## Cleanup and usage downloads — October 11
 
 Usage export now uses the selected dashboard dates and summary snapshot end.

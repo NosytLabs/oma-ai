@@ -134,6 +134,7 @@ function ApiKeyManagerComponent({
 			<span>Last used: {key.lastUsedAt ? new Date(key.lastUsedAt).toLocaleString() : "Never"}</span>
 		</div>
 		<p className="mt-1 break-all text-xs text-text-muted">{key.allowedModels?.length ? `Models: ${key.allowedModels.join(", ")}` : "All models"}</p>
+		<p className="mt-1 break-all text-xs text-text-muted">{key.ipAllowlist?.length ? `Allowed IPs: ${key.ipAllowlist.join(", ")}` : "Any IP address"}</p>
 		</div>
 		<div className="flex items-center gap-2">
 		<div className="text-[11px] font-mono text-text-muted hidden sm:block mr-4 opacity-70 group-hover:opacity-100 transition-opacity duration-200 ease-out tabular-nums">

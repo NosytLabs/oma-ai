@@ -150,7 +150,7 @@ The user account has one home at `/dashboard`: Overview, Usage, API Keys and Set
 
 Usage downloads use the selected dashboard range and the summary's UTC snapshot end. The session-authenticated `/v1/export/usage` accepts optional ISO-8601 `since` and `until` filters and `format=csv|json`. It returns at most 10,000 requests with `X-Export-Row-Count` and `X-Export-Truncated`; the dashboard reports truncation and suggests a smaller range. Exports include request/key IDs, requested/served models, tokens, latency, original and billed cents, refund time and UTC timestamps. Numeric amounts retain sub-cent precision; CSV text is escaped and neutralizes spreadsheet formulas. Demo views cannot export, duplicate clicks are blocked, and account changes cancel pending downloads. These private responses use `no-store`.
 
-API key creation, listing and revocation require a Better Auth session; a bearer key cannot manage credentials. Keys expire after 90 days by default. Creation accepts `expiresInDays` from 1 to 365 and an optional `allowedModels` list of catalog IDs. The list constrains the primary model and all client/server fallback routes on both inference APIs. Metadata includes expiry and last use; expired keys cannot authenticate even if still listed. `max_tokens` cannot exceed the selected model's published output limit; smaller-limit fallbacks are skipped. Provider credential failures are gateway errors, not customer authentication failures.
+API key creation, listing and revocation require a Better Auth session; a bearer key cannot manage credentials. Keys expire after 90 days by default. Creation accepts `expiresInDays` from 1 to 365 and an optional `allowedModels` list of catalog IDs. The list constrains the primary model and all client/server fallback routes on both inference APIs. Optional `ipAllowlist` accepts up to 20 IPv4/IPv6 addresses or CIDR ranges; callers outside those ranges receive 403. Omit it for unrestricted access. Use the application's public outbound address, not its private network address. Restrictions cannot be edited; revoke and replace the key. Metadata includes expiry, last use and restrictions; expired keys cannot authenticate even if still listed. Website chat uses the account session, so creating a key does not install it in a browser cookie. `max_tokens` cannot exceed the selected model's published output limit; smaller-limit fallbacks are skipped. Provider credential failures are gateway errors, not customer authentication failures.
 
 Key validity is read from Postgres on each request, with only concurrent in-flight reads shared. Positive Redis records do not authorize a revoked, expired or deleted key. Explicit invalid API credentials return 401 rather than becoming guest chat requests. Protected requests also require an existing, active account; failure to verify account status returns a safe 503. User IDs in query strings or request bodies never select the owner for personal keys, sessions, usage, exports or account deletion. On mixed session/key usage endpoints, the authenticated browser session takes precedence.
 
@@ -239,6 +239,16 @@ For Base:
 - `USDC_DEPOSIT_NETWORK=base`
 - `USDC_DEPOSIT_MIN_CENTS` and `USDC_DEPOSIT_MAX_CENTS`
 - `BASE_CHAIN_ID=8453`
+
+The website's `/api/rpc/base` and `/api/rpc/base-sepolia` handlers prefer
+server-only `BASE_RPC_URL` / `BASE_SEPOLIA_RPC_URL`, then public Base and
+PublicNode endpoints for read failures. Public services have their own limits;
+fallbacks do not guarantee availability. Broadcasts, including mixed batches,
+get one attempt so a lost response never triggers an automatic replay.
+Requests and responses have streamed byte limits, and unsupported HTTP
+subscription/debug methods are rejected. These website guards use a bounded
+per-instance limiter and Vercel's platform IP; custom hosts without verified
+client provenance share the unknown-IP bucket. API rate limits remain separate.
 
 ### x402 settlement
 

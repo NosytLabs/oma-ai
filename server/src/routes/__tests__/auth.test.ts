@@ -65,7 +65,8 @@ const mockCreateApiKey = vi.hoisted(() => vi.fn());
 const mockListApiKeys = vi.hoisted(() => vi.fn());
 const mockRevokeApiKey = vi.hoisted(() => vi.fn());
 const mockValidateApiKey = vi.hoisted(() => vi.fn());
-vi.mock("../../auth/api-keys.js", () => ({
+vi.mock("../../auth/api-keys.js", async (importOriginal) => ({
+	...(await importOriginal<typeof import("../../auth/api-keys.js")>()),
 	createApiKey: mockCreateApiKey,
 	listApiKeys: mockListApiKeys,
 	revokeApiKey: mockRevokeApiKey,
@@ -262,6 +263,23 @@ describe("auth routes", () => {
 	});
 
 	describe("POST /v1/keys", () => {
+		it("persists normalized IP restrictions and includes them in key metadata", async () => {
+			mockCreateApiKey.mockImplementationOnce(async (_user, name, options) => ({ id: "key_ip", name, prefix: "oma_sk_prefix", rawKey: "oma_sk_secret", createdAt: new Date(), ...options }));
+			const res = await authReq("post", "/v1/keys", { name: "Server only", ipAllowlist: [" 192.0.2.0/24 ", "192.0.2.0/24", "2001:db8::1"] }, authedHeaders);
+			expect(res.status).toBe(200);
+			const data = await res.json();
+			expect(data.ipAllowlist).toEqual(["192.0.2.0/24", "2001:db8::1"]);
+			expect(mockCreateApiKey).toHaveBeenCalledWith("user_1", "Server only", { ipAllowlist: data.ipAllowlist });
+			mockListApiKeys.mockResolvedValueOnce([{ ...data, keyPrefix: data.prefix, createdAt: new Date(), lastUsedAt: null }]);
+			const listing = await authReq("get", "/v1/keys", undefined, authedHeaders);
+			expect((await listing.json()).keys[0].ipAllowlist).toEqual(data.ipAllowlist);
+		});
+
+		it.each([[], ["not-an-ip"], ["192.0.2.0/33"], ["::/129"], ["::/bad"], ["::1%eth0"], Array(21).fill("192.0.2.1")].map(ipAllowlist => ({ ipAllowlist })))("rejects invalid IP restrictions %j without creating a credential", async ({ ipAllowlist }) => {
+			expect((await authReq("post", "/v1/keys", { ipAllowlist }, authedHeaders)).status).toBe(400);
+			expect(mockCreateApiKey).not.toHaveBeenCalled();
+		});
+
 		it("applies bounded expiry and deduplicated model restrictions", async () => {
 			const now = Date.now();
 			mockCreateApiKey.mockImplementationOnce(async (_user, name, options) => ({ id: "key_scoped", name, prefix: "oma_sk_prefix", rawKey: "oma_sk_secret", createdAt: new Date(), ...options }));

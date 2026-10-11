@@ -350,7 +350,7 @@ const spec = {
 			get: {
 				summary: "List active API keys",
 				security: [{ SessionCookie: [] }],
-				description: "Lists key metadata including expiresAt and allowedModels. Expired keys can remain listed until revoked; they cannot authenticate. Never returns a raw key.",
+				description: "Lists key metadata including expiresAt, allowedModels and ipAllowlist. Expired keys can remain listed until revoked; they cannot authenticate. Never returns a raw key.",
 				responses: { "200": { description: "Keys" } },
 			},
 			post: {
@@ -361,8 +361,9 @@ const spec = {
 					name: { type: "string", minLength: 1, maxLength: 64, default: "default" },
 					expiresInDays: { type: "integer", minimum: 1, maximum: 365, default: 90 },
 					allowedModels: { type: "array", minItems: 1, maxItems: 30, items: { type: "string" }, description: "OMA catalog IDs. Omit to allow all models." },
+					ipAllowlist: { type: "array", minItems: 1, maxItems: 20, items: { type: "string", maxLength: 64 }, description: "IPv4/IPv6 addresses or CIDR ranges. Only matching callers can use the key. Include your server's public outbound IP. Omit for unrestricted access." },
 				} } } } },
-				responses: { "200": { description: "New key, expiresAt and allowedModels" }, "400": { description: "Invalid JSON, name, expiry or model ID" }, "401": { description: "Session required" } },
+				responses: { "200": { description: "New key, expiresAt, allowedModels and ipAllowlist" }, "400": { description: "Invalid JSON, name, expiry, model ID or IP restriction" }, "401": { description: "Session required" } },
 			},
 		},
 		"/v1/keys/{id}": {
