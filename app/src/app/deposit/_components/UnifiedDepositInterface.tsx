@@ -208,7 +208,7 @@ export function UnifiedDepositInterface({
 			setError("Enter the deposit amount in USD");
 			return;
 		}
-		if (!Number.isFinite(amount) || !/^\d+(?:\.\d{0,2})?$/.test(amountUsd)) {
+		if (!Number.isFinite(amount) || !/^(?:\d+(?:\.\d{0,2})?|\.\d{1,2})$/.test(amountUsd)) {
 			setError("Use at most two decimal places for a USD deposit.");
 			return;
 		}

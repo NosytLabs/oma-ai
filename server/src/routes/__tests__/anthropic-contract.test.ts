@@ -85,6 +85,17 @@ describe("Anthropic customer contract", () => {
 		expect(text).toContain('"output_tokens":0');
 		await vi.waitFor(() => expect(mocks.record).toHaveBeenCalledWith(expect.objectContaining({ promptTokens: 0, outputTokens: 0, apiKeyId: "key-a" })));
 	});
+	it("continues past malformed upstream events without losing text, final usage or the stop event", async () => {
+		const sse = 'data: {"choices":[{"delta":{"content":"Hello"}}]}\n\ndata: {broken JSON}\n\ndata: null\n\ndata: {"choices":[{"delta":{"content":" world"},"finish_reason":"stop"}]}\n\ndata: {"choices":[],"usage":{"prompt_tokens":8,"completion_tokens":3}}\n\ndata: [DONE]\n\n';
+		mocks.route.mockResolvedValue({ actualModelId: body.model, response: new Response(sse) });
+		const text = await (await send({ ...body, stream: true })).text();
+		expect(text).toContain('"text":"Hello"');
+		expect(text).toContain('"text":" world"');
+		expect(text).toContain('"output_tokens":3');
+		expect(text).not.toContain("event: error");
+		expect(text.match(/event: message_stop/g)).toHaveLength(1);
+		expect(mocks.record).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ promptTokens: 8, outputTokens: 3, status: "completed" }));
+	});
 	it("cancels the provider and records an aborted API-key request exactly once", async () => {
 		const cancel = vi.fn();
 		mocks.route.mockResolvedValue({ actualModelId: body.model, response: new Response(new ReadableStream({

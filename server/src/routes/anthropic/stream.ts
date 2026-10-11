@@ -21,7 +21,11 @@ export function createAnthropicStream(upstream: Response, model: string, id: str
 	function consume(controller: ReadableStreamDefaultController<Uint8Array>, line: string) {
 		if (!line.startsWith("data:")) return;
 		const payload = line.slice(5).trim(); if (!payload || payload === "[DONE]") return;
-		const chunk = JSON.parse(payload);
+		let chunk;
+		try { chunk = JSON.parse(payload); } catch { return; }
+		// Match the shared meter's tolerance for malformed provider frames.
+		// Explicit provider errors still terminate the stream below.
+		if (!chunk || typeof chunk !== "object" || Array.isArray(chunk)) return;
 		if (chunk.error) throw new Error("Upstream stream failed");
 		if (Number.isSafeInteger(chunk.usage?.completion_tokens) && chunk.usage.completion_tokens >= 0) outputTokens = chunk.usage.completion_tokens;
 		if (!started) {

@@ -117,6 +117,15 @@ describe("USDC broadcast recovery", () => {
   expect(mocks.send).not.toHaveBeenCalled();
  });
 
+ it("accepts a leading-dot decimal and applies the configured minimum instead of a precision error", async () => {
+  render(<UnifiedDepositInterface />);
+  fireEvent.change(await screen.findByLabelText("Amount (USD)"), { target: { value: ".50" } });
+  fireEvent.click(await screen.findByRole("button", { name: "Send .50 USDC" }));
+  expect(await screen.findByText("Minimum deposit is $1.00")).toBeVisible();
+  expect(screen.queryByText(/at most two decimal places/i)).toBeNull();
+  expect(mocks.send).not.toHaveBeenCalled();
+ });
+
  it("connects the wallet the depositor selects instead of the first extension", async () => {
   mocks.connected = false;
   render(<UnifiedDepositInterface />);

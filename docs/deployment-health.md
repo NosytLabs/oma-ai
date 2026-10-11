@@ -61,3 +61,23 @@ Check the existing deployment before starting another build.
 The chat browser fixtures exercise local UI behavior without paid inference.
 A fixture-backed test is not evidence that an external provider or a live paid
 account flow succeeded.
+
+## Build-output cleanup
+
+Keep the logs for the current website/API sources and the latest main-branch
+validation. Superseded CI/build logs can be removed without deleting their
+workflow run records:
+
+```bash
+gh api --method DELETE repos/NosytLabs/oma-ai/actions/runs/RUN_ID/logs
+```
+
+Inspect each Vercel candidate's project, state and aliases first. Remove only
+obsolete canceled/failed builds by explicit ID, with alias protection:
+
+```bash
+vercel remove DEPLOYMENT_ID --safe --yes --scope nosyt
+```
+
+Keep ready production deployments for rollback and retain payment/recovery
+records. Never pass a project name to `vercel remove` for routine log cleanup.
