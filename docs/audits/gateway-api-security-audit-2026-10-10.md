@@ -290,3 +290,39 @@ the aggregate balance rather than the unused remainder of the refunded grant.
 A per-grant allocation/refund policy and ledger migration are still needed;
 this pass does not invent expiry dates or alter real balances to conceal it.
 Support form delivery requires a configured, verified webhook.
+
+### Published codebase follow-up
+
+Both services are published from source commit
+`cb479d0d33e6292dfd8472c90acdfcc9c0174e03`:
+
+| Service | Deployment | Verified state |
+| --- | --- | --- |
+| Vercel frontend | `dpl_D4DhfQZV1BR5tMtdtv9CpW536CVy` | READY; canonical `www.oma-ai.com` lookup matches this deployment and commit |
+| Neon `omaapi` | 78, Node.js 24 | Current and active deployments completed; native readiness reports healthy Postgres and Redis |
+
+The code-only API release retains the existing environment names and both
+every-minute recovery schedules. Production quota reads returned the new
+`shared-redis` policy and `private, no-store`; two consecutive reads retained
+the same usage. Website health, models, x402 info and OpenAPI returned 200;
+anonymous key management returned 401 and `/.env` returned 404. The live
+OpenAPI documents optional quota authentication and all five quota fields.
+
+Browser metadata checks covered `/`, pricing, models, docs, getting-started,
+FAQ, about, contact, privacy, terms, changelog, status, glossary and chat.
+All 14 have titles, descriptions, their own canonical URLs, one settled H1
+and no page overflow at the default desktop width. Status first renders a
+loading state, then its live heading; it deliberately declares noindex/follow.
+Robots and sitemap return 200; the sitemap has 65 URLs, all on the canonical
+host. These are structural/metadata checks, not an assertion that every
+generated glossary/model page received a manual visual/content review.
+
+Local mobile checks also covered profile, sessions and data controls. The
+actual account JSON download succeeded and contained key metadata/public
+prefixes, not raw keys, hashes or session tokens. After the final build, 142
+browser JavaScript files were scanned against three configured non-placeholder
+local server values, with no matches. This sample does not prove absence of
+every possible secret. The published quota contract was checked in the browser
+with no captured warnings/errors or duplicate IDs. Screenshot:
+`.screenshots/account-audit-2026-10-10/quota-docs-live-codebase-pass.jpg`.
+Later receipt commits change documentation only; PR #30 remains open.
