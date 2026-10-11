@@ -174,7 +174,8 @@ export async function bearerAuth(c: Context<OmaEnv>, next: Next) {
 								/(?:^|;\s*)(?:__Host-)?oma_api_key=([^;]+)/,
 						);
 						if (match) {
-								rawKey = decodeURIComponent(match[1]);
+								try { rawKey = decodeURIComponent(match[1]); }
+								catch { /* Invalid cookie encoding is an invalid credential, not a server failure. */ }
 								keySource = "cookie";
 						}
 				}

@@ -1,9 +1,9 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
-import { GET } from "@/app/api/auth/[...path]/route";
+import { GET, POST } from "@/app/api/auth/[...path]/route";
 
-afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
+afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 
 describe("auth callback proxy", () => {
 	it("retains the platform IP behind the authenticated Vercel auth proxy", async () => {
@@ -46,5 +46,71 @@ describe("auth callback proxy", () => {
 		expect(response.headers.get("location")).toBe("/dashboard");
 		expect(response.headers.has("content-encoding")).toBe(false);
 		expect(response.headers.has("content-length")).toBe(false);
+	});
+
+	it.each([true, false])("rejects oversized auth bodies before calling the backend (declared length: %s)", async (declared) => {
+		const fetchMock = vi.fn().mockResolvedValue(Response.json({ status: true }));
+		vi.stubGlobal("fetch", fetchMock);
+		const bytes = new Uint8Array(65_537).fill(97);
+		const body = new ReadableStream({ start(controller) { controller.enqueue(bytes); controller.close(); } });
+		const req = new NextRequest("https://www.oma-ai.com/api/auth/sign-in/magic-link", {
+			method: "POST", body, duplex: "half",
+			headers: declared ? { "content-length": "65537" } : {},
+		});
+		const response = await POST(req, { params: Promise.resolve({ path: ["sign-in", "magic-link"] }) });
+		expect(response.status).toBe(413);
+		expect(fetchMock).not.toHaveBeenCalled();
+	});
+
+	it("forwards a normal sign-in body unchanged", async () => {
+		const body = JSON.stringify({ email: "user@example.com", callbackURL: "/dashboard" });
+		const fetchMock = vi.fn().mockResolvedValue(Response.json({ status: true }));
+		vi.stubGlobal("fetch", fetchMock);
+		const response = await POST(new NextRequest("https://www.oma-ai.com/api/auth/sign-in/magic-link", {
+			method: "POST", body, headers: { "Content-Type": "application/json" },
+		}), { params: Promise.resolve({ path: ["sign-in", "magic-link"] }) });
+		expect(response.status).toBe(200);
+		expect(fetchMock.mock.calls[0][1].body).toBe(body);
+	});
+
+	it("ends a stalled auth request when its deadline expires", async () => {
+		const deadline = new AbortController();
+		vi.spyOn(AbortSignal, "timeout").mockReturnValue(deadline.signal);
+		const fetchMock = vi.fn((_url: string, options: RequestInit) => new Promise<Response>((_resolve, reject) => {
+			options.signal?.addEventListener("abort", () => reject(options.signal?.reason), { once: true });
+		}));
+		vi.stubGlobal("fetch", fetchMock);
+		const pending = GET(new NextRequest("https://www.oma-ai.com/api/auth/get-session"), { params: Promise.resolve({ path: ["get-session"] }) });
+		await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledOnce());
+		deadline.abort(new DOMException("The operation timed out", "TimeoutError"));
+		expect((await pending).status).toBe(504);
+	});
+
+	it("bounds a stalled request upload before contacting the auth backend", async () => {
+		const deadline = new AbortController();
+		const timeout = vi.spyOn(AbortSignal, "timeout").mockReturnValue(deadline.signal);
+		const canceled = vi.fn();
+		const fetchMock = vi.fn().mockResolvedValue(Response.json({ status: true }));
+		vi.stubGlobal("fetch", fetchMock);
+		const pending = POST(new NextRequest("https://www.oma-ai.com/api/auth/sign-in/magic-link", {
+			method: "POST", body: new ReadableStream({ cancel: canceled }), duplex: "half",
+		}), { params: Promise.resolve({ path: ["sign-in", "magic-link"] }) });
+		await vi.waitFor(() => expect(timeout).toHaveBeenCalled());
+		deadline.abort(new DOMException("The operation timed out", "TimeoutError"));
+		expect((await pending).status).toBe(504);
+		expect(canceled).toHaveBeenCalledOnce();
+		expect(fetchMock).not.toHaveBeenCalled();
+	});
+
+	it("cancels upstream auth work when the browser cancels", async () => {
+		const caller = new AbortController();
+		const fetchMock = vi.fn((_url: string, options: RequestInit) => new Promise<Response>((_resolve, reject) => {
+			options.signal?.addEventListener("abort", () => reject(options.signal?.reason), { once: true });
+		}));
+		vi.stubGlobal("fetch", fetchMock);
+		const pending = GET(new NextRequest("https://www.oma-ai.com/api/auth/get-session", { signal: caller.signal }), { params: Promise.resolve({ path: ["get-session"] }) });
+		await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledOnce());
+		caller.abort();
+		expect((await pending).status).toBe(499);
 	});
 });

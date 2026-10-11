@@ -182,6 +182,12 @@ try {
 	});
 	pass("anonymous access, malformed email, and untrusted sign-in origins are rejected");
 
+	for (const cookie of ["oma_api_key=%", "__Host-oma_api_key=%E0%A4%A"]) {
+		const rejected = await request("/v1/usage", { cookie, expected: 401 });
+		assert.equal(rejected.data.error.type, "authentication_error");
+	}
+	pass("malformed API-key cookies return authentication errors without server failures");
+
 	const email = "account-flow@local.test";
 	const first = await magicSignIn(email);
 	const profile = (await request("/user", { cookie: first.cookie })).data;

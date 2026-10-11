@@ -142,6 +142,23 @@ describe("bearerAuth cookie key/session binding", () => {
 		expect(context.json).toHaveBeenCalledWith(expect.any(Object), 401);
 	});
 
+	it.each(["oma_api_key=%", "__Host-oma_api_key=%E0%A4%A"])(
+		"rejects malformed cookie encoding without failing the request: %s",
+		async (cookie) => {
+			const context = makeContext({ Cookie: cookie });
+			const next = vi.fn();
+			const response = await bearerAuth(
+				context as unknown as Parameters<typeof bearerAuth>[0], next,
+			);
+			expect(response?.status).toBe(401);
+			expect(await response?.json()).toEqual({
+				error: expect.objectContaining({ type: "authentication_error" }),
+			});
+			expect(next).not.toHaveBeenCalled();
+			expect(mockValidateApiKey).not.toHaveBeenCalled();
+		},
+	);
+
 	it.each([
 		["Authorization", "Bearer oma_sk_account_a"],
 		["x-api-key", "oma_sk_account_a"],

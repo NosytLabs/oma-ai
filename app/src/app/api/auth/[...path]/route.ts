@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { buildAuthEndpoint, resolveAuthBackend } from '@/lib/auth-proxy';
 import { applyTrustedProxyHeaders } from '@/lib/api/proxy-headers';
 import { proxyResponse } from '@/lib/api/proxy-response';
+import { BodyTooLargeError, readTextWithinLimit } from '@/lib/read-body';
+
+const AUTH_MAX_BODY_BYTES = 64 * 1024;
+const AUTH_TIMEOUT_MS = 30_000;
 
 /**
 	* Proxy for Better Auth — handles all /api/auth/* requests, forwarding to the real backend.
@@ -61,21 +65,39 @@ async function proxyToAuth(req: NextRequest, { params }: { params: Promise<{ pat
 				headers['cookie'] = req.headers.get('cookie')!;
 		}
 
-		let body = undefined;
-		if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
-				body = await req.text();
-		}
-
+		const signal = AbortSignal.any([req.signal, AbortSignal.timeout(AUTH_TIMEOUT_MS)]);
 		try {
+				signal.throwIfAborted();
+				let body;
+				if (!['GET', 'HEAD'].includes(req.method)) {
+					try {
+						body = await readTextWithinLimit(req, AUTH_MAX_BODY_BYTES, signal);
+					} catch (err) {
+						if (err instanceof BodyTooLargeError) {
+							return NextResponse.json({ error: 'Auth request too large' }, { status: 413 });
+						}
+						if (signal.aborted) throw err;
+						return NextResponse.json({ error: 'Invalid auth request' }, { status: 400 });
+					}
+					// The decoded/re-encoded body owns its length, not the incoming header.
+					delete headers['content-length'];
+				}
 				const resp = await fetch(url, {
 						method: req.method,
 						headers,
 						body,
 						redirect: 'manual',
+						signal,
 				});
 
 				return proxyResponse(resp);
 		} catch {
+				if (req.signal.aborted) {
+					return NextResponse.json({ error: 'Auth request canceled' }, { status: 499 });
+				}
+				if (signal.aborted) {
+					return NextResponse.json({ error: 'Auth request timed out' }, { status: 504 });
+				}
 				return NextResponse.json(
 						{ error: 'Auth backend unavailable' },
 						{ status: 502 }

@@ -191,6 +191,17 @@ describe("api client", () => {
 			await expect(request("/test")).rejects.toThrowError(BackendUnavailableError);
 		});
 
+		it.each([[502, "upstream_unreachable"], [504, "upstream_timeout"]])(
+			"offers connection recovery for a proxy transport failure (%s)", async (status, code) => {
+				fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ error: { code, message: "Backend unreachable" } }), { status: Number(status) }));
+				await expect(request("/v1/usage/summary")).rejects.toThrowError(BackendUnavailableError);
+			});
+
+		it("preserves a provider error instead of classifying it as a lost account connection", async () => {
+			fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ error: { code: "provider_auth_error", message: "Model provider authentication failed" } }), { status: 502 }));
+			await expect(request("/v1/chat/completions")).rejects.toMatchObject({ name: "ApiError", status: 502 });
+		});
+
 		it("throws ApiError on non-ok responses with parsed message", async () => {
 			fetchMock.mockResolvedValueOnce({
 				ok: false,

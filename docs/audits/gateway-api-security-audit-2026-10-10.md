@@ -4,6 +4,54 @@ Consolidated evidence for the account, API, website and infrastructure work.
 Current behavior lives in [Platform](../PLATFORM.md),
 [Deployment](../DEPLOYMENT.md) and [Chat UI](../chat-ui.md).
 
+## Authentication and dashboard follow-up — October 11
+
+Malformed API-key cookie encoding reproduced a 500 on an authenticated API
+route; it now returns 401 without a key lookup or account access. The Better
+Auth website proxy now bounds input to 64 KiB and gives body upload plus
+upstream work a 30-second deadline. Oversized bodies return 413; stalled
+requests return 504; browser cancellation stays separate. Normal request
+bodies, callback redirects and separate session cookies still pass through.
+
+A real mobile dashboard outage reproduced a generic error without Retry:
+the browser reached the website, but the website could not reach the API.
+Explicit proxy transport failures now use the connection-recovery banner.
+Provider authentication failures keep their own error classification. The
+banner stacks actions on narrow screens, removes operator configuration
+instructions, and distinguishes prepaid API credits from free website quota.
+Removed unused test mocks for packages no longer installed.
+
+Validation on Node 24.19.0, matching production's runtime family: 846 frontend
+tests in 124 files, 642 API tests in 78 files with Postgres suites active, all
+26 real HTTP/authentication groups, types, lint and both production builds.
+The new cookie, auth-input/deadline and connection-recovery regressions failed
+before their fixes. Frozen install and runtime dependency audit passed; zero
+known runtime vulnerabilities across 888 packages. The compatible dependency
+versions and development advisory below are unchanged.
+
+Fresh scoped, expiring-key MiniMax inference succeeded in both formats (2/2),
+with final answer `OMA_API_OK`, 49 input / 100 output tokens each. End-to-end
+times were 126.4 and 3.7 seconds. Its inline reasoning was preserved and the
+final answer assessed separately. Persisted charges totaled 0.000596 cents,
+matched the balance deduction and belonged to the test key. Revocation then
+returned 401; temporary keys were revoked and test sessions removed.
+
+Venice Gemma inference failed provider authentication (0/1, safe 502), without
+a charge. A public catalog 200 is not proof the credential works. Two MiniMax
+tool-stream checks reached the 180-second provider deadline before a complete
+first tool-call result; strict continuation remains unresolved. Latest reports
+are in `.artifacts/provider-audit/auth-followup-minimax-results.json` and
+`.artifacts/provider-audit/live-api-results.json`. Live WalletConnect still
+needs a public Reown project ID. No mainnet payment was signed.
+
+Browser checks covered real local sign-in, usage/key attribution, unified
+profile/sessions/settings, key scope/expiry controls and a regular user's
+denied admin access. The 390px outage banner showed Retry without horizontal
+overflow; Retry restored current usage when the API returned. Evidence is in
+`.screenshots/auth-followup-2026-10-11/`. Removed two additional obsolete
+canceled Vercel builds with alias protection; aliased and ready/rollback
+deployments remain. No additional production database records were deleted.
+
 ## Main integration and cleanup — October 11
 
 [PR #30](https://github.com/NosytLabs/oma-ai/pull/30) is merged into `main` at
@@ -44,11 +92,11 @@ returned 20 models, 18 configured as available, with MiniMax priced at $0.02 per
 million input/output tokens and limits of 200,000 context / 16,384 output tokens.
 Gonka DeepSeek/GLM remain paused. Base RPC returned chain ID `0x2105`.
 
-Fresh calls with a temporary scoped, expiring API key returned upstream 408
+At the PR #30 release, calls with a temporary scoped, expiring API key returned upstream 408
 timeouts in both OpenAI and Anthropic formats (0/2 successful). Neither charged
 credits; persisted billing matched, revocation returned 401 and the harness
-session was removed. Historical successful inference below does not replace
-this latest result. Provider capacity and tool-continuation quality remain
+session was removed. The follow-up above records the subsequent 2/2 success;
+provider latency/capacity and tool-continuation quality remain
 unresolved, along with the missing public Reown project ID and failing local
 Venice credential. No mainnet payment or facilitator gas transaction was signed.
 

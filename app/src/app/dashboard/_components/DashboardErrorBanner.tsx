@@ -48,7 +48,7 @@ export function DashboardErrorBanner({
 		<div
 			role="alert"
 			aria-live="polite"
-			className="mb-6 flex items-center justify-between gap-4 rounded-[var(--radius-xl)] border border-error/30 bg-error/5 p-4"
+			className="mb-6 flex flex-col items-start justify-between gap-4 rounded-[var(--radius-xl)] border border-error/30 bg-error/5 p-4 sm:flex-row sm:items-center"
 		>
 			<div className="flex items-center gap-3 text-sm text-text">
 				{backendUnavailable ? (
@@ -56,10 +56,10 @@ export function DashboardErrorBanner({
 						<WifiOff className="h-4 w-4 shrink-0 text-error" />
 						<div>
 							<div className="font-medium text-error">
-								Backend unavailable
+								Connection interrupted
 							</div>
 							<div className="text-xs text-text-muted mt-0.5">
-								Make sure the API server is reachable (configured via NEXT_PUBLIC_API_URL).
+								We couldn’t refresh your account. Please try again shortly.
 							</div>
 						</div>
 					</>
@@ -80,7 +80,7 @@ export function DashboardErrorBanner({
 							<span className="font-medium text-warning">
 								Payment required
 							</span>{" "}
-							<span className="text-text-muted">. You have reached a block requiring a paid wallet transaction.</span>
+							<span className="text-text-muted">. Add prepaid credits to continue using the API.</span>
 						</span>
 					</>
 				) : isQuota ? (
@@ -90,7 +90,7 @@ export function DashboardErrorBanner({
 							<span className="font-medium text-warning">
 								Quota exceeded
 							</span>{" "}
-							<span className="text-text-muted">. Your free tier daily usage limit was reached. Deposit credits to continue.</span>
+							<span className="text-text-muted">. Your daily free chat allowance resets at midnight UTC. API-key requests use credits and separate limits.</span>
 						</span>
 					</>
 				) : (
