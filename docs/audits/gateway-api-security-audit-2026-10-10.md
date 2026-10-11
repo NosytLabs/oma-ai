@@ -112,6 +112,16 @@ with `{a:2,b:2}`; continuation repeated `4` until the 512-token limit and
 failed the strict result assertion. Neither provider issue is hidden by
 weaker assertions or fabricated success.
 
+The rebuilt signed-in key form passed 1280px and 390px browser checks: one H1,
+no horizontal overflow and no captured console warnings/errors. The local
+user's session list revoked four old fixture sessions while preserving this
+device. That user received Access denied at `/admin`; a fresh local admin
+fixture opened the real console and its usage/treasury controls. The revenue
+chart still rounded sub-cent tick values to `$0`; it now shares the dashboard's
+small-value currency formatter and has room for those labels. Current captures
+are under `.screenshots/platform-audit-2026-10-11/`. The consumed local
+fixture-link file was removed.
+
 ## Cleanup and usage downloads — October 11
 
 Usage export now uses the selected dashboard dates and summary snapshot end.
