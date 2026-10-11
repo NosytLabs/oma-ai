@@ -13,6 +13,17 @@ import { rateLimit } from "../sliding-window.js";
 afterEach(() => vi.useRealTimers());
 
 describe("configured auth budgets survive Redis outages", () => {
+	it("isolates unrelated default route budgets while keeping dynamic IDs in one bucket", async () => {
+		getRedisClient.mockResolvedValue(null); isRedisReady.mockReturnValue(false);
+		const app = new Hono();
+		app.post("/key-scope-create", rateLimit({ maxRequests: 2, windowMs: 60_000 }), c => c.json({ ok: true }));
+		app.delete("/key-scope-account/:id", rateLimit({ maxRequests: 1, windowMs: 60_000 }), c => c.json({ ok: true }));
+		for (let i = 0; i < 2; i++) expect((await app.request("/key-scope-create", { method: "POST" })).status).toBe(200);
+		expect((await app.request("/key-scope-create", { method: "POST" })).status).toBe(429);
+		expect((await app.request("/key-scope-account/one", { method: "DELETE" })).status).toBe(200);
+		expect((await app.request("/key-scope-account/two", { method: "DELETE" })).status).toBe(429);
+	});
+
 	for (const state of ["unavailable", "command error"] as const) {
 		it(`enforces the configured count and window after a Redis ${state}`, async () => {
 			vi.useFakeTimers();

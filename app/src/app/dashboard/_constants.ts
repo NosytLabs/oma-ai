@@ -5,13 +5,14 @@
 	* unions via the derived `TabId` / `TimeRangeId` aliases below. Adding a
 	* new tab or range here automatically propagates through both.
 	*/
-import { Clock, Zap } from "lucide-react";
+import { Clock, Settings, Zap } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export const TABS = [
 	{ id: "overview", label: "Overview", icon: Zap },
 	{ id: "usage", label: "Usage", icon: Clock },
 	{ id: "api-keys", label: "API Keys", icon: null },
+	{ id: "settings", label: "Settings", icon: Settings },
 ] as const satisfies ReadonlyArray<{
 	id: string;
 	label: string;

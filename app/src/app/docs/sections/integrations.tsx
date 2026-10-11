@@ -120,7 +120,7 @@ export OPENAI_MODEL="${model}"
 					Claude Code
 				</h3>
 				<p className="mb-3 text-sm text-text-muted">
-					Claude Code talks the Anthropic Messages API. OMA exposes a compatible{" "}
+					Claude Code uses the Anthropic Messages API. OMA supports its text and function-tool request format at{" "}
 					<code className="font-mono text-xs">POST /v1/messages</code> that rewrites to the
 					same catalog. Configure a custom Anthropic base URL + key:
 				</p>
@@ -158,6 +158,12 @@ curl https://www.oma-ai.com/api/v1/messages \\
 					Prefer one auth style consistently. Streaming: set{" "}
 					<code className="font-mono">stream: true</code> — OMA returns Anthropic-shaped SSE.
 					List models: <code className="font-mono">GET /v1/models</code> with the same key.
+				</p>
+				<p className="mt-3 text-xs text-text-muted">
+					This is a compatibility adapter. Image/document blocks, extended thinking,
+					prompt caching and Anthropic beta features are not supported. Check your client&apos;s
+					feature requirements before relying on it for a coding workflow. MiniMax via Gonka/OpenBroker
+					can emit stray content after a tool result; its tool-result quality is not yet reliable.
 				</p>
 			</div>
 

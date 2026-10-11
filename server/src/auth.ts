@@ -7,8 +7,7 @@
 	*                 user row and recovers ENS names + avatars via viem.
 	*   - admin:      Self-hosted admin — roles, ban/unban, impersonation, user management.
 	*   - emailOTP:   One-time passwords for sign-in, email verification, and password reset.
-	*   - agentAuth:  Agent-level auth with delegated/autonomous capability execution.
-	*   - apiKey:     API key management for programmatic access (create, verify, list, revoke).
+	* OMA API keys are implemented in auth/api-keys.ts and routes/auth.ts.
 	*
 	* Mounted by index.ts at `/api/auth/*`. Hono wraps the Fetch-style handler
 	* directly. Server-side session reads in non-handler code use
@@ -35,6 +34,7 @@ import { config } from "./config.js";
 import { logger } from "./lib/logger.js";
 
 import { getRedisClient } from "./lib/redis-client.js";
+import { SESSION_FRESH_AGE_SECONDS } from "./auth/session-policy.js";
 
 const RESEND_FROM = config.RESEND_FROM ?? "OMA-AI <noreply@oma-ai.com>";
 
@@ -456,6 +456,7 @@ user: {
 		session: {
 				expiresIn: 60 * 60 * 24 * 7, // 7 days
 				updateAge: 60 * 60 * 24, // refresh once per day
+				freshAge: SESSION_FRESH_AGE_SECONDS,
 				// Settings can revoke sessions and delete accounts at any time.
 				// Always consult the session store so a copied cookie cannot remain
 				// authenticated after revocation (including Better Auth endpoints).

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { privateKeyToAccount } from "viem/accounts";
 import { hexToBytes, verifyMessage } from "viem";
 import {
@@ -10,6 +10,9 @@ import {
 	listWallets,
 	resetWalletDiscoveryForTests,
 	signSiweMessage,
+	subscribeWallets,
+	subscribeWalletAccount,
+	sendUsdcTransfer,
 } from "../wallet";
 
 /**
@@ -246,6 +249,105 @@ describe("wallet", () => {
 		expect(OMA_CHAIN_ID).toBe(8453);
 	});
 
+	it("does not retry a failing signature prompt automatically", async () => {
+		const request = vi.fn(async ({ method }: { method: string }) => {
+			if (method === "personal_sign") throw new Error("Wallet disconnected");
+			return [];
+		});
+		install({ request });
+		await expect(signSiweMessage(ADDRESS, "a1b2c3d4e5f6a7b8", "oma-ai.com")).rejects.toThrow();
+		expect(request.mock.calls.filter(([args]) => args.method === "personal_sign")).toHaveLength(1);
+	});
+
+	it("keeps providers with the same wallet brand distinct by EIP-6963 UUID", () => {
+		const first = makeProvider();
+		const second = makeProvider();
+		listWallets();
+		for (const [uuid, provider] of [["wallet-one", first.provider], ["wallet-two", second.provider]] as const) {
+			window.dispatchEvent(new CustomEvent("eip6963:announceProvider", { detail: { info: { uuid, rdns: "io.example", name: "Example" }, provider } }));
+		}
+		expect(listWallets().filter(wallet => wallet.name === "Example").map(wallet => wallet.id)).toEqual(["wallet-one", "wallet-two"]);
+	});
+
+	it("discovers synchronously announced wallets without recursively announcing forever", () => {
+		const { provider } = makeProvider();
+		const onRequest = () => window.dispatchEvent(new CustomEvent("eip6963:announceProvider", { detail: { info: { uuid: "sync-wallet", name: "Example" }, provider } }));
+		window.addEventListener("eip6963:requestProvider", onRequest);
+		const seen: string[][] = [];
+		let unsubscribe: (() => void) | undefined;
+		try {
+			unsubscribe = subscribeWallets(() => {
+				if (seen.length > 3) throw new Error("Recursive wallet discovery");
+				seen.push(listWallets().map(wallet => wallet.id));
+			});
+			expect(seen.some(ids => ids.includes("sync-wallet"))).toBe(true);
+			listWallets();
+			expect(seen.length).toBeLessThanOrEqual(2);
+		} finally {
+			unsubscribe?.(); window.removeEventListener("eip6963:requestProvider", onRequest);
+		}
+	});
+
+	it("does not automatically retry a failed transfer prompt", async () => {
+		const request = vi.fn(async ({ method }: Request) => {
+			if (method === "eth_chainId") return "0x2105";
+			if (method === "eth_accounts") return [ADDRESS];
+			if (method === "eth_sendTransaction") throw Object.assign(new Error("Wallet RPC overloaded"), { code: -32005 });
+			return [];
+		});
+		install({ request });
+		await expect(sendUsdcTransfer({ to: "0x0000000000000000000000000000000000000002", from: ADDRESS, amountUsd: 10 })).rejects.toThrow();
+		expect(request.mock.calls.filter(([args]) => args.method === "eth_sendTransaction")).toHaveLength(1);
+	});
+
+	it.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY, 0.0000001, 1.0000001])("rejects invalid USDC amount %s before contacting a wallet", async amountUsd => {
+		const { provider, calls } = makeProvider();
+		install(provider);
+		await expect(sendUsdcTransfer({ to: "0x0000000000000000000000000000000000000002", from: ADDRESS, amountUsd })).rejects.toThrow(/amount/i);
+		expect(calls).toHaveLength(0);
+	});
+
+	it("rechecks the sending account after the chain-switch prompt", async () => {
+		let switched = false;
+		const request = vi.fn(async ({ method }: Request) => {
+			if (method === "eth_chainId") return switched ? "0x2105" : "0x1";
+			if (method === "eth_accounts") return [switched ? "0x0000000000000000000000000000000000000001" : ADDRESS];
+			if (method === "wallet_switchEthereumChain") { switched = true; return null; }
+			return `0x${"a".repeat(64)}`;
+		});
+		install({ request });
+		await expect(sendUsdcTransfer({ to: "0x0000000000000000000000000000000000000002", from: ADDRESS, amountUsd: 10 })).rejects.toThrow(/account changed/i);
+		expect(request.mock.calls.some(([args]) => args.method === "eth_sendTransaction")).toBe(false);
+	});
+
+	it("blocks a transfer if the authorized account changed since the form was filled", async () => {
+		const { provider, calls } = makeProvider({ accounts: ["0x0000000000000000000000000000000000000001"] });
+		install(provider);
+		await expect(sendUsdcTransfer({ to: "0x0000000000000000000000000000000000000002", from: ADDRESS, amountUsd: 10 })).rejects.toThrow(/account changed/i);
+		expect(calls.some(call => call.method === "eth_sendTransaction")).toBe(false);
+	});
+
+	it("updates the displayed account when the selected wallet changes or disconnects", async () => {
+		let current = ADDRESS;
+		const handlers = new Map<string, (...args: unknown[]) => void>();
+		install({
+			request: async () => [current],
+			on: (event: string, handler: (...args: unknown[]) => void) => handlers.set(event, handler),
+			removeListener: (event: string) => handlers.delete(event),
+		});
+		const seen: Array<string | null> = [];
+		const unsubscribe = subscribeWalletAccount(address => seen.push(address));
+		try {
+			await vi.waitFor(() => expect(seen.at(-1)).toBe(ADDRESS));
+			current = "0x0000000000000000000000000000000000000001";
+			handlers.get("accountsChanged")?.([current]);
+			await vi.waitFor(() => expect(seen.at(-1)).toBe(current));
+			handlers.get("disconnect")?.();
+			expect(seen.at(-1)).toBeNull();
+		} finally { unsubscribe(); }
+		expect(handlers.size).toBe(0);
+	});
+
 	it("connects an EIP-6963 wallet when window.ethereum is absent", async () => {
 		const { provider } = makeProvider();
 		const onRequest = () => {
@@ -262,7 +364,7 @@ describe("wallet", () => {
 		try {
 			const { address } = await connectWallet();
 			expect(address).toBe(ADDRESS);
-			expect(listWallets().some((wallet) => wallet.id === "io.metamask")).toBe(true);
+		expect(listWallets().some((wallet) => wallet.id === "mm")).toBe(true);
 		} finally {
 			window.removeEventListener("eip6963:requestProvider", onRequest);
 		}
@@ -284,6 +386,16 @@ describe("wallet", () => {
 		expect(address).toBe("0x0000000000000000000000000000000000000001");
 	});
 
+	it("keeps the chosen provider when reconnecting from the deposit form", async () => {
+		const first = makeProvider();
+		const second = makeProvider({ accounts: ["0x0000000000000000000000000000000000000001"] });
+		install({ ...first.provider, providers: [first.provider, second.provider] });
+		const chosen = listWallets().find(wallet => wallet.provider === second.provider)!;
+		await connectWallet(chosen.id);
+		expect((await connectWallet()).address).toBe("0x0000000000000000000000000000000000000001");
+		expect(first.calls.some(call => call.method === "eth_requestAccounts")).toBe(false);
+	});
+
 	it("signs with the connected provider, not a later window.ethereum overwrite", async () => {
 		const real = makeProvider();
 		const onRequest = () => {
@@ -298,7 +410,7 @@ describe("wallet", () => {
 		};
 		window.addEventListener("eip6963:requestProvider", onRequest);
 		try {
-			await connectWallet("io.rabby");
+			await connectWallet("rb");
 			(window as unknown as { ethereum?: unknown }).ethereum = {
 				request: async () => {
 					throw new Error("decoy");

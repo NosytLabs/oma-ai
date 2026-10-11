@@ -15,11 +15,12 @@
  *   const { address } = await connectWallet();
  *   const { message, signature } = await signSiweMessage(address, nonce, "oma-ai.com");
  */
-import { createWalletClient, custom, encodeFunctionData, getAddress, type WalletClient } from "viem";
+import { createWalletClient, custom, encodeFunctionData, getAddress, parseUnits, type WalletClient } from "viem";
 import { base } from "viem/chains";
 import { SiweMessage } from "siwe";
+import { getWalletConnectWallet } from "./wallet-connect";
 
-type Eip1193Provider = {
+export type Eip1193Provider = {
 	request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
 	on?: (event: string, handler: (...args: unknown[]) => void) => void;
 	removeListener?: (event: string, handler: (...args: unknown[]) => void) => void;
@@ -47,11 +48,13 @@ const NO_WALLET =
 
 const announced = new Map<string, DiscoveredWallet>();
 const walletListeners = new Set<() => void>();
+const providerListeners = new Set<() => void>();
 let listening = false;
 let activeProvider: Eip1193Provider | undefined;
 
 function notifyWallets() {
 	for (const listener of walletListeners) listener();
+	for (const listener of providerListeners) listener();
 }
 
 function installEip6963Listener() {
@@ -66,10 +69,13 @@ function installEip6963Listener() {
 		).detail;
 		const provider = detail?.provider;
 		if (!provider || typeof provider.request !== "function") return;
-		const id = detail.info?.rdns || detail.info?.uuid || `eip6963-${announced.size}`;
+		const id = detail.info?.uuid || detail.info?.rdns || `eip6963-${announced.size}`;
+		const previous = announced.get(id);
+		const name = detail.info?.name || "Wallet";
+		if (previous?.provider === provider && previous.name === name) return;
 		announced.set(id, {
 			id,
-			name: detail.info?.name || "Wallet",
+			name,
 			provider,
 		});
 		notifyWallets();
@@ -84,8 +90,10 @@ export function requestWalletDiscovery(): void {
 }
 
 export function subscribeWallets(listener: () => void): () => void {
-	requestWalletDiscovery();
 	walletListeners.add(listener);
+	requestWalletDiscovery();
+	// Legacy providers do not announce; publish the initial inventory too.
+	listener();
 	return () => {
 		walletListeners.delete(listener);
 	};
@@ -122,6 +130,8 @@ export function listWallets(): DiscoveredWallet[] {
 		const name = legacyName(provider);
 		out.push({ id: `${name}-${index}`, name, provider });
 	});
+	const walletConnect = getWalletConnectWallet();
+	if (walletConnect) out.push(walletConnect);
 	return out;
 }
 
@@ -150,13 +160,14 @@ export interface WalletState {
  */
 export async function connectWallet(walletId?: string): Promise<WalletState> {
 	const wallets = listWallets();
-	const chosen = walletId ? wallets.find((wallet) => wallet.id === walletId) : wallets[0];
+	const chosen = walletId
+		? wallets.find((wallet) => wallet.id === walletId)
+		: wallets.find(wallet => wallet.provider === activeProvider) ?? wallets[0];
 	if (!chosen) {
 		throw new Error(
 			walletId ? "That wallet is no longer available. Reload and try again." : NO_WALLET,
 		);
 	}
-	activeProvider = chosen.provider;
 	const accounts = (await chosen.provider.request({
 		method: "eth_requestAccounts",
 	})) as string[];
@@ -174,6 +185,8 @@ export async function connectWallet(walletId?: string): Promise<WalletState> {
 	} catch {
 		throw new Error("Wallet returned a malformed address — please try a different account");
 	}
+	activeProvider = chosen.provider;
+	for (const listener of providerListeners) listener();
 	return { address, chainId };
 }
 
@@ -182,7 +195,8 @@ function viemWalletClient(): WalletClient {
 	if (!eth) throw new Error("No wallet available");
 	return createWalletClient({
 		chain: base,
-		transport: custom(eth as never),
+		// A wallet prompt must be explicitly retried by the user, never automatically.
+		transport: custom(eth as never, { retryCount: 0 }),
 	});
 }
 
@@ -222,7 +236,7 @@ export async function signSiweMessage(
 	return { message, signature };
 }
 
-/** True iff the browser has any EIP-1193 wallet injected. */
+/** True when an injected wallet or configured WalletConnect connector is available. */
 export function hasWallet(): boolean {
 	return listWallets().length > 0;
 }
@@ -244,6 +258,45 @@ export async function getConnectedAccount(): Promise<`0x${string}` | null> {
 		}
 	} catch {
 		return null;
+	}
+}
+
+/** Observe the selected wallet without requesting new permissions. */
+export function subscribeWalletAccount(listener: (address: `0x${string}` | null) => void): () => void {
+	let provider: Eip1193Provider | undefined;
+	let disposed = false;
+	let revision = 0;
+	const refresh = () => {
+		const current = ++revision;
+		void getConnectedAccount().then(address => {
+			if (!disposed && current === revision) listener(address);
+		});
+	};
+	const disconnected = () => { ++revision; listener(null); };
+	const detach = () => {
+		provider?.removeListener?.("accountsChanged", refresh);
+		provider?.removeListener?.("chainChanged", refresh);
+		provider?.removeListener?.("disconnect", disconnected);
+	};
+	const bind = () => {
+		const next = getProvider();
+		if (next !== provider) {
+			detach(); provider = next;
+			provider?.on?.("accountsChanged", refresh);
+			provider?.on?.("chainChanged", refresh);
+			provider?.on?.("disconnect", disconnected);
+		}
+		refresh();
+	};
+	providerListeners.add(bind);
+	bind();
+	return () => { disposed = true; ++revision; detach(); providerListeners.delete(bind); };
+}
+
+async function requireSendingAccount(address: `0x${string}`): Promise<void> {
+	const current = await getConnectedAccount();
+	if (!current || current.toLowerCase() !== address.toLowerCase()) {
+		throw new Error("Wallet account changed. Reconnect the original sending wallet and try again.");
 	}
 }
 
@@ -299,6 +352,7 @@ export async function signDepositMessage(args: {
 	txHash?: string;
 	amountUsd?: number | string;
 }): Promise<string> {
+	await requireSendingAccount(args.fromAddress);
 	const client = viemWalletClient();
 	const message = buildDepositSignMessage({
 		fromAddress: args.fromAddress,
@@ -340,16 +394,25 @@ export async function sendUsdcTransfer({
 	amountUsd: number;
 	from: `0x${string}`;
 }): Promise<{ txHash: `0x${string}` }> {
+	// Never round a customer's transfer upward or silently send zero USDC.
+	const decimal = String(amountUsd);
+	if (!Number.isFinite(amountUsd) || amountUsd <= 0 || !/^\d+(\.\d{1,6})?$/.test(decimal)) {
+		throw new Error("Amount must be positive USDC with at most six decimal places.");
+	}
+	const value = parseUnits(decimal, 6);
 	const eth = getProvider();
 	if (!eth) {
 		throw new Error(NO_WALLET);
 	}
+	await requireSendingAccount(from);
 	await ensureBaseChain();
+	// A chain-switch prompt can also change the wallet's selected account.
+	await requireSendingAccount(from);
+	if (getProvider() !== eth) throw new Error("Wallet changed. Reconnect the original sending wallet and try again.");
 	const client = createWalletClient({
 		chain: base,
-		transport: custom(eth as never),
+		transport: custom(eth as never, { retryCount: 0 }),
 	});
-	const value = BigInt(Math.round(amountUsd * 1_000_000)); // USDC is 6 decimals.
 	const txHash = await client.sendTransaction({
 		account: from,
 		to: USDC_BASE,
@@ -361,4 +424,3 @@ export async function sendUsdcTransfer({
 	});
 	return { txHash };
 }
-

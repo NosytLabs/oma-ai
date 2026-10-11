@@ -35,24 +35,24 @@ describe("useDashboardStats", () => {
 		expect(result.current.activeModels).toBe(1);
 	});
 
-	it("applies time-range filter to activeModels (7d window)", () => {
+	it("keeps the 24h card's model count independent of the chart range", () => {
 		const usage: UsageRecord[] = [
 			rec("old-model", 30),
 			rec("new-model", 0),
 			rec("week-model", 5),
 		];
 		const { result } = renderHook(() => useDashboardStats(usage, "7d"));
-		expect(result.current.activeModels).toBe(2);
+		expect(result.current.activeModels).toBe(1);
 	});
 
-	it("activeModels equals full set on 'all'", () => {
+	it("keeps the 24h card's model count independent of lifetime history", () => {
 		const usage: UsageRecord[] = [
 			rec("a", 60),
 			rec("b", 30),
 			rec("c", 0),
 		];
 		const { result } = renderHook(() => useDashboardStats(usage, "all"));
-		expect(result.current.activeModels).toBe(3);
+		expect(result.current.activeModels).toBe(1);
 	});
 
 	it("todayCost and totalTokens stay anchored to today, not the filter", () => {

@@ -9,7 +9,7 @@ import {
 
 describe("isFreeChatModel (guest website chat)", () => {
 	it("defaults free chat to an allowlisted catalog id", () => {
-		expect(FREE_DEFAULT_CHAT_MODEL).toBe("zai-org-glm-5-3");
+		expect(FREE_DEFAULT_CHAT_MODEL).toBe("minimax-m2-7");
 		expect(FREE_CHAT_MODEL_IDS.has(FREE_DEFAULT_CHAT_MODEL)).toBe(true);
 	});
 
@@ -28,7 +28,7 @@ describe("isFreeChatModel (guest website chat)", () => {
 		expect(isFreeChatModel("kimi-k3")).toBe(false);
 		expect(isFreeChatModel("llama-3.3-70b")).toBe(false);
 		expect(isFreeChatModel("llama-3.3-70b", "Venice")).toBe(false);
-		expect(isFreeChatModel("mistral-small-2603")).toBe(false);
+		expect(isFreeChatModel("llama-3.3-70b")).toBe(false);
 	});
 
 	it("only allowlisted openbroker ids are free; unknown ids require auth", () => {

@@ -11,10 +11,11 @@ import {
 import Link from "next/link";
 import type { CreditTransaction } from "@/lib/api";
 import { resolveModelDisplayName } from "@/lib/dashboard-aggregate";
-import { formatTime, toDollars } from "@/lib/utils";
+import { formatTime, formatUsdPrecise, toDollars } from "@/lib/utils";
 
 interface RecentTransactionsProps {
 	transactions: CreditTransaction[];
+	isDemo?: boolean;
 }
 
 const TX_ICONS: Record<string, typeof ArrowDownLeft> = {
@@ -40,12 +41,8 @@ const TX_LABELS: Record<string, string> = {
 	* Always renders — when the list is empty, shows a call-to-action instead of
 	* collapsing the row (which would leave a noticeable gap on the Overview tab).
 	*/
-export function RecentTransactions({ transactions }: RecentTransactionsProps) {
-	// Sort by createdAt descending using Date.parse so the newest is always on
-	// top. Server returns rows in insertion order (deposit then usage), which
-	// puts an older deposit above a newer usage — the previous lexicographic
-	// string compare on ISO timestamps worked for YYYY-MM-DD slices but
-	// silently mis-ordered full ISO strings with sub-second precision.
+export function RecentTransactions({ transactions, isDemo = false }: RecentTransactionsProps) {
+	// Preserve descending order for API and demo records alike.
 	const sorted = useMemo(
 		() =>
 			[...transactions].sort(
@@ -62,10 +59,10 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
 				</h2>
 				{transactions.length > 0 && (
 					<Link
-						href="/dashboard?tab=usage"
+						href={isDemo ? "/dashboard?tab=usage&demo=1" : "/dashboard?tab=usage"}
 						className="text-[11px] font-mono font-bold uppercase tracking-widest text-accent hover:text-accent-hover transition-colors duration-200 ease-out active:scale-[0.97]"
 					>
-						View all <span aria-hidden="true">&rarr;</span>
+						Usage details <span aria-hidden="true">&rarr;</span>
 					</Link>
 				)}
 			</div>
@@ -91,11 +88,12 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
 					const Icon = TX_ICONS[tx.type] ?? ArrowDownLeft;
 					const iconStyle =
 						TX_ICON_STYLES[tx.type] ?? { text: "text-text-muted", hoverBorder: "" };
-					const label = TX_LABELS[tx.type] ?? tx.type;
+					const label = (TX_LABELS[tx.type] ?? tx.type) + (tx.type === "deposit" && tx.status !== "completed" ? ` · ${tx.status}` : "");
 						// Sign comes from the actual amount, not the type — a refund shows
 						// as +$X (money back in), a negative usage as -$X.
-						const isCredit = tx.amountCents > 0;
-						const sign = isCredit ? "+" : "-";
+						const posted = tx.type !== "deposit" || tx.status === "completed";
+						const isCredit = tx.amountCents > 0 && posted;
+						const sign = !posted || tx.amountCents === 0 ? "" : isCredit ? "+" : "−";
 						const amountClass = isCredit
 							? "text-success"
 							: "text-text-secondary";
@@ -127,7 +125,7 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
 										{formatTime(tx.createdAt)}
 									</div>
 									<span className={`text-[14px] font-mono tracking-tight font-bold ${amountClass}`}>
-										{sign}${toDollars(Math.abs(tx.amountCents)).toFixed(2)}
+										{sign}{formatUsdPrecise(toDollars(Math.abs(tx.amountCents)))}
 									</span>
 								</div>
 							</div>

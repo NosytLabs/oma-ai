@@ -8,6 +8,7 @@ import { MODEL_COUNT } from "@/lib/models-data";
 import { useDialog } from "@/lib/use-dialog";
 import { DocsSearch } from "./_components/DocsSearch";
 import { NAV_ITEMS } from "./_lib/nav-data";
+import { useInitialDocAnchor } from "./_lib/use-initial-doc-anchor";
 
 import { AuthenticationSection } from "./sections/authentication";
 import { AvailableModelsSection } from "./sections/available-models";
@@ -126,6 +127,7 @@ function Sidebar({ activeId }: { activeId: string }) {
 
 export function DocsContent() {
 	const [activeId, setActiveId] = useState("quickstart");
+	useInitialDocAnchor();
 
 	useEffect(() => {
 		const observer = new IntersectionObserver(

@@ -15,6 +15,7 @@ import { drainSettlementDlq, getSettlementDlqLength } from "./lib/dlq.js";
 import { auth } from "./auth.js";
 import { initAuth } from "./auth/middleware.js";
 import { ensureCatalogLoaded } from "./inference/models.js";
+import { ProviderError } from "./inference/provider-route.js";
 import { authRoutes } from "./routes/auth.js";
 import { modelRoutes } from "./routes/models.js";
 import { healthRoutes } from "./routes/health.js";
@@ -29,6 +30,8 @@ import { creditsRoutes } from "./routes/credits.js";
 import { exportRoutes } from "./routes/export.js";
 import { dailyUsageRoutes } from "./routes/daily-usage.js";
 import { usageRoutes } from "./routes/usage.js";
+import { usageSummaryRoutes } from "./routes/usage-summary.js";
+import { adminTreasuryRoutes } from "./routes/admin-treasury.js";
 import { openapiRoutes } from "./routes/openapi.js";
 import { polarRoutes } from "./routes/polar.js";
 import { adminRoutes } from "./routes/admin.js";
@@ -285,6 +288,7 @@ app.use("*", async (c, next) => {
 // every /v1 mutation: deposit, checkout, keys, account, credits,
 // admin, chat, etc. without per-route edits).
 app.use("/v1/*", demoModeGuard);
+app.use("/website/*", demoModeGuard);
 
 // Public operational routes.
 app.route("/", healthRoutes);
@@ -305,11 +309,14 @@ app.route("/", openapiRoutes);
 // X-Neon-Trigger-Invocation-Id header (Neon strips client-set X-Neon-* headers,
 // so its presence proves the call came from Neon's scheduler, which sends no
 // credentials).
+// Only trust that provenance inside the Neon runtime. Website proxy requests
+// cannot qualify as scheduled invocations; local HTTP operators need the token.
 // ---------------------------------------------------------------------
 app.post("/internal/recover-deposits", async (c) => {
 	const token = c.req.header("Authorization")?.replace(/^Bearer\s+/i, "") ?? "";
 	const expected = process.env.RECOVERY_TOKEN;
-	const fromNeonScheduler = Boolean(c.req.header("x-neon-trigger-invocation-id"));
+	const fromNeonScheduler = process.env.NEON_FUNCTION === "1" &&
+		!c.req.header("x-oma-proxy-secret") && Boolean(c.req.header("x-neon-trigger-invocation-id"));
 	const authorized = fromNeonScheduler || (Boolean(expected) && token === expected);
 	if (!authorized) {
 		return c.json({ error: { message: "forbidden", type: "forbidden" } }, 403);
@@ -359,7 +366,8 @@ app.post("/internal/recover-deposits", async (c) => {
 app.post("/internal/drain-settlement-dlq", async (c) => {
 	const token = c.req.header("Authorization")?.replace(/^Bearer\s+/i, "") ?? "";
 	const expected = process.env.RECOVERY_TOKEN;
-	const fromNeonScheduler = Boolean(c.req.header("x-neon-trigger-invocation-id"));
+	const fromNeonScheduler = process.env.NEON_FUNCTION === "1" &&
+		!c.req.header("x-oma-proxy-secret") && Boolean(c.req.header("x-neon-trigger-invocation-id"));
 	const authorized = fromNeonScheduler || (Boolean(expected) && token === expected);
 	if (!authorized) {
 		return c.json({ error: { message: "forbidden", type: "forbidden" } }, 403);
@@ -485,6 +493,8 @@ app.route("/", x402Routes);
 // Daily usage / quota endpoint for the website chat free-tier counter.
 app.route("/", dailyUsageRoutes);
 app.route("/", usageRoutes);
+app.route("/", usageSummaryRoutes);
+app.route("/", adminTreasuryRoutes);
 
 // Polar.sh checkout + webhook (no auth on webhook routes; signature-verified).
 // polarRoutes dual-mounts POST /webhooks/polar and POST /api/webhook/polar
@@ -512,7 +522,7 @@ app.onError((err, c) => {
 		// request timed out", "All model providers failed: ..."). Hiding them
 		// as "Internal server error" leaves chat users staring at a silent
 		// failure with no way to recover.
-		if (status >= 500 && errWithStatus.message && errWithStatus.message !== "Internal server error") {
+		if (status >= 500 && err instanceof ProviderError) {
 				return c.json({ error: { message: errWithStatus.message, type: "server_error", correlationId } }, status as ContentfulStatusCode);
 		}
 		if (status >= 500) {

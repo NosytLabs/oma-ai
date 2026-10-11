@@ -48,6 +48,7 @@ import { db } from "../db/client.js";
 import { sql } from "drizzle-orm";
 
 const app = new Hono().route("/", x402Routes);
+let schemaCreated = false;
 const query = (text: string) => db.execute(sql.raw(text));
 async function addUser(id: string) {
 	await db.execute(sql`insert into "user" (id, name, email, evm_address) values (${id}, ${id}, ${`${id}@example.com`}, ${fixture.payer})`);
@@ -65,7 +66,9 @@ async function balance(userId: string) {
 
 describe.skipIf(!fixture.url)("durable credit claims (Postgres)", () => {
 	beforeAll(async () => {
+		if (!fixture.url || !["localhost", "127.0.0.1", "[::1]"].includes(new URL(fixture.url).hostname)) throw new Error("Use local Postgres only");
 		await query(`create schema "${fixture.schema}"`);
+		schemaCreated = true;
 		const journal = JSON.parse(await readFile(new URL("../db/migrations/meta/_journal.json", import.meta.url), "utf8"));
 		for (const migration of journal.entries) {
 			const source = await readFile(new URL(`../db/migrations/${migration.tag}.sql`, import.meta.url), "utf8");
@@ -81,7 +84,7 @@ describe.skipIf(!fixture.url)("durable credit claims (Postgres)", () => {
 		await addUser("original");
 	});
 	afterAll(async () => {
-		await query(`drop schema "${fixture.schema}" cascade`);
+		if (schemaCreated) await query(`drop schema "${fixture.schema}" cascade`);
 		const { testPool } = await import("../db/client.js") as unknown as { testPool: { end(): Promise<void> } };
 		await testPool.end();
 	});
@@ -118,8 +121,13 @@ describe.skipIf(!fixture.url)("durable credit claims (Postgres)", () => {
 
 	it("credits concurrent retries once and returns success for both", async () => {
 		const replies = await Promise.all([settle("original"), settle("original")]);
-		expect(replies.map(response => response.status)).toEqual([200, 200]);
+		const bodies = await Promise.all(replies.map(response => response.json()));
+		expect(replies.map(response => response.status), JSON.stringify(bodies)).toEqual([200, 200]);
 		expect(await balance("original")).toBe(123.4567);
+		settlementCache.clear();
+		expect((await settle("original")).status).toBe(200);
+		expect(await balance("original")).toBe(123.4567);
+		expect((await query("select * from payment_credit_claims")).rows).toHaveLength(1);
 	});
 
 	it("requires reconciliation for an old transfer without a surviving credit record", async () => {
@@ -127,6 +135,19 @@ describe.skipIf(!fixture.url)("durable credit claims (Postgres)", () => {
 		const response = await settle("original");
 		expect(response.status).toBe(409);
 		expect(await response.text()).toMatch(/reconciliation/i);
+		expect(await balance("original")).toBe(0);
+	});
+
+	it("keeps internal credit failures private and retryable on every recovery path", async () => {
+		await query("delete from payment_credit_policy");
+		for (const resetCache of [false, false, true]) {
+			if (resetCache) settlementCache.clear();
+			const response = await settle("original");
+			expect(response.status).toBe(500);
+			const body = await response.json();
+			expect(body.error).toMatchObject({ code: "x402_credit_failed", retryable: true });
+			expect(body.error.message).not.toMatch(/policy|migration|select|insert|postgres/i);
+		}
 		expect(await balance("original")).toBe(0);
 	});
 });

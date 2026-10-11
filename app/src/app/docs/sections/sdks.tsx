@@ -37,7 +37,9 @@ const response = await client.chat.completions.create({
 	],
 	temperature: 0.7,
 	max_tokens: 256,
-});`;
+});
+
+console.log(response.choices[0]?.message.content);`;
 
 	const curlChatCode = `curl https://www.oma-ai.com/api/v1/chat/completions \\
 	-H "Authorization: Bearer oma_sk_your_key_here" \\
@@ -104,8 +106,8 @@ stream = client.chat.completions.create(
 )
 
 for chunk in stream:
-	if chunk.choices[0].delta.content:
-	print(chunk.choices[0].delta.content, end="")`;
+	if chunk.choices and chunk.choices[0].delta.content:
+		print(chunk.choices[0].delta.content, end="", flush=True)`;
 
 	const tsStreamCode = `import { OpenAI } from "openai";
 
@@ -125,7 +127,7 @@ for await (const chunk of stream) {
 	if (content) process.stdout.write(content);
 }`;
 
-	const curlStreamCode = `curl https://www.oma-ai.com/api/v1/chat/completions \\
+	const curlStreamCode = `curl -N https://www.oma-ai.com/api/v1/chat/completions \\
 	-H "Authorization: Bearer oma_sk_your_key_here" \\
 	-H "Content-Type: application/json" \\
 	-d '{
@@ -141,7 +143,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 )
@@ -177,10 +178,22 @@ func main() {
 		if data == "[DONE]" {
 			break
 		}
-		var chunk map[string]any
-		json.Unmarshal([]byte(data), &chunk)
-		// Extract delta.content from chunk
-		fmt.Print(data)
+		var chunk struct {
+			Choices []struct {
+				Delta struct {
+					Content string \`json:"content"\`
+				} \`json:"delta"\`
+			} \`json:"choices"\`
+		}
+		if err := json.Unmarshal([]byte(data), &chunk); err != nil {
+			panic(err)
+		}
+		for _, choice := range chunk.Choices {
+			fmt.Print(choice.Delta.Content)
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		panic(err)
 	}
 }`;
 
@@ -194,7 +207,7 @@ client = OpenAI(
 
 models = client.models.list()
 for model in models.data:
-	print(f"{model.id} ({model.get('category', 'chat')})")`;
+	print(model.id)`;
 
 	const tsModelsCode = `import { OpenAI } from "openai";
 
@@ -205,7 +218,7 @@ const client = new OpenAI({
 
 const models = await client.models.list();
 for (const model of models.data) {
-	// Do something with model.id
+	console.log(model.id);
 }`;
 
 	const curlModelsCode = `curl https://www.oma-ai.com/api/v1/models \\
@@ -249,7 +262,7 @@ func main() {
 				id="sdks"
 				icon={<Package className="h-5 w-5" />}
 				title="SDKs & Examples"
-				subtitle="Complete, working examples in every major language. OMA is fully OpenAI-compatible — just swap the base URL."
+				subtitle="Chat Completions, streaming and model discovery with the OpenAI SDKs and standard HTTP clients. Choose an enabled model from the catalog."
 			/>
 
 			{/* Install commands */}
@@ -273,7 +286,7 @@ func main() {
 						<Terminal className="h-4 w-4 text-accent" />
 						<span className="font-mono text-sm font-medium text-text">Go</span>
 					</div>
-					<code className="text-xs text-accent">go get github.com/sashabaranov/go-openai</code>
+					<code className="text-xs text-text-muted">Standard library (no SDK required)</code>
 				</div>
 				<div className="rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] p-4">
 					<div className="mb-2 flex items-center gap-2">
@@ -365,7 +378,10 @@ func main() {
 					Vercel AI SDK
 				</h3>
 				<p className="mb-4 text-sm text-text-muted">
-					For Next.js and React apps, use the Vercel AI SDK with OMA as the provider:
+					Install <code className="font-mono text-accent">ai @ai-sdk/openai</code> and use
+					{" "}<code className="font-mono text-accent">oma.chat()</code> for Chat Completions.
+					The default OpenAI provider uses the Responses API, which OMA does not provide.
+					Keep your API key on the server.
 				</p>
 				<CodeBlock
 					code={`import { generateText } from 'ai';
@@ -377,9 +393,12 @@ const oma = createOpenAI({
 });
 
 const { text } = await generateText({
-	model: oma('llama-3.3-70b'),
+	model: oma.chat('llama-3.3-70b'),
 	prompt: 'Explain quantum computing in one sentence.',
-});`}
+	maxOutputTokens: 256,
+});
+
+console.log(text);`}
 					lang="javascript"
 				/>
 			</div>

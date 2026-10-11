@@ -263,7 +263,7 @@ export default function PricingPage() {
 	}, [pricedModels, availabilityStatus]);
 
 	return (
-		<div className="relative overflow-x-clip bg-void">
+		<div className="relative isolate overflow-x-clip bg-void">
 			<BreadcrumbListJsonLd
 				items={[
 					{ name: "Home", url: "/" },
@@ -288,14 +288,15 @@ export default function PricingPage() {
 			</div>
 
 			<div className="container-page">
-				<div className="page-hero">
+				<div className="page-hero gap-4 pt-8 pb-8 before:hidden sm:pt-10 sm:pb-10 lg:gap-5 lg:pt-12 lg:pb-12">
 					<span className="section-eyebrow-caps">AI API pricing</span>
 					<h1 className="h1-page text-text-bright max-w-4xl">Pricing for every model.</h1>
-					<p className="page-intro">
+					<p className="page-intro mt-0">
 						See model costs first, then choose how to pay. OMA bills from
 						prepaid credits per token, with no subscriptions and no lock-in.
 						Listed prices are what you pay: Venice-routed models include a
-						25% platform fee; OMA-AI models are priced at 2x Gonka wholesale.
+						50% markup on Venice catalog rates; OMA-AI models cost $0.02 per
+						million input tokens and $0.02 per million output tokens.
 					</p>
 					<div className="meta-strip">
 						<span role="status">
@@ -319,7 +320,7 @@ export default function PricingPage() {
 						<m.div
 							whileHover={{ y: -4 }}
 							transition={springs.card}
-							className="surface-card flex flex-col p-5 rounded-[var(--radius-xl)] border border-transparent transition-[border-color,box-shadow] duration-200 ease-out hover:border-[var(--color-accent)]/30 hover:shadow-[var(--shadow-md)]"
+							className="surface-card flex flex-col p-5 rounded-[var(--radius-xl)] border border-border transition-[border-color,box-shadow] duration-200 ease-out hover:border-accent/30 hover:shadow-[var(--shadow-md)]"
 						>
 							<p className="text-[11px] font-mono uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
 								Starts at
@@ -340,12 +341,12 @@ export default function PricingPage() {
 						<m.div
 							whileHover={{ y: -4 }}
 							transition={springs.card}
-							className="surface-card flex flex-col p-5 rounded-[var(--radius-xl)] border border-transparent transition-[border-color,box-shadow] duration-200 ease-out hover:border-[var(--color-accent)]/30 hover:shadow-[var(--shadow-md)]"
+							className="surface-card flex flex-col p-5 rounded-[var(--radius-xl)] border border-border transition-[border-color,box-shadow] duration-200 ease-out hover:border-accent/30 hover:shadow-[var(--shadow-md)]"
 						>
 							<p className="text-[11px] font-mono uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
 								Pay your way
 							</p>
-							<p className="mt-3 text-3xl font-semibold text-[var(--color-text-bright)]">USDC · optional card</p>
+							<p className="mt-3 text-2xl sm:text-3xl font-semibold text-[var(--color-text-bright)]">USDC · optional card</p>
 							<p className="mt-2 min-h-12 text-sm leading-relaxed text-[var(--color-text)]">
 								Top up with USDC on Base, or buy with card via Polar when checkout is
 								enabled.
@@ -490,7 +491,7 @@ export default function PricingPage() {
 													<Icon className="h-5 w-5 text-accent" />
 												</div>
 												<div className="flex-1 min-w-0">
-													<h3 className="text-sm font-semibold text-text-bright truncate">
+													<h3 className="text-sm font-semibold text-text-bright">
 														{method.title}
 													</h3>
 													<p className="mt-2 text-xs text-text-secondary leading-relaxed">
@@ -525,7 +526,7 @@ export default function PricingPage() {
 								<Link2 className="h-5 w-5 text-accent" />
 							</div>
 							<div>
-								<div className="flex items-center gap-3">
+								<div className="flex flex-wrap items-center gap-3">
 									{/* text-sm, was text-base: this h3 was 15px against
 									    three sibling payment-method h3s at 13px, so the
 									    level carried two sizes. The accent colour and

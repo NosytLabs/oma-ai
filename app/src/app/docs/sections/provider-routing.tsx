@@ -8,14 +8,14 @@ export function ProviderRoutingSection() {
 				id="provider-routing"
 				icon={<GitBranch className="h-5 w-5" />}
 				title="Provider Routing"
-				subtitle="OMA routes each request through the best available provider — automatically."
+				subtitle="Each model uses its configured provider, with compatible fallback routes where available."
 			/>
 
 			<div className="rounded-[var(--radius-xl)] border border-accent/20 bg-accent/5 p-5 mb-6">
 				<div className="flex items-start gap-3">
 					<GitBranch className="h-5 w-5 text-accent mt-0.5 shrink-0" />
 					<div>
-						<h3 className="font-semibold text-accent">Intelligent Request Routing</h3>
+						<h3 className="font-semibold text-accent">Model-based routing</h3>
 						<p className="mt-1 text-sm text-text-muted">
 							Every model id resolves to an upstream provider. OMA routes each
 							request to the model&apos;s catalog-mapped provider based on
@@ -34,7 +34,8 @@ export function ProviderRoutingSection() {
 					</div>
 					<p className="text-sm text-text-muted">
 						Primary provider for the curated chat catalog. Handles
-						chat and multimodal-input workloads with low-latency inference.
+						chat and supported multimodal-input workloads. Latency depends on
+						the model and provider load.
 					</p>
 					<div className="mt-3 flex flex-wrap gap-1">
 						<span className="rounded-[var(--radius-sm)] bg-surface px-1.5 py-0.5 text-[10px] text-text-muted border border-border/50">chat</span>
@@ -49,8 +50,9 @@ export function ProviderRoutingSection() {
 					</div>
 					<p className="text-sm text-text-muted">
 						Budget-tier models branded as OMA-AI — MiniMax M2.7, DeepSeek
-						V4 Flash, and GLM-5.3 Flash on Gonka/OpenBroker. Same billing
-						surface and API contract as the rest of the catalog.
+						V4 Flash, and GLM-5.3 Flash on Gonka/OpenBroker. MiniMax is the
+						current free-chat default; check the live catalog for paused routes.
+						Same billing surface and API contract as the rest of the catalog.
 					</p>
 					<div className="mt-3 flex flex-wrap gap-1">
 						<span className="rounded-[var(--radius-sm)] bg-surface px-1.5 py-0.5 text-[10px] text-text-muted border border-border/50">chat</span>
@@ -68,7 +70,7 @@ export function ProviderRoutingSection() {
 						<li>OMA looks up the model→provider mapping in the catalog</li>
 						<li>The model&apos;s primary provider handles the request</li>
 						<li>On failure, the circuit breaker may retry a configured fallback for that mapped model</li>
-						<li>The public model id and customer price remain stable across that retry</li>
+						<li>Check x-actual-model for the model served; paid requests use that model&apos;s listed price</li>
 					</ol>
 				</div>
 				<div className="rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] p-4">
@@ -80,6 +82,8 @@ export function ProviderRoutingSection() {
 						<div>
 							<span className="text-accent">x-provider</span>: venice | oma-ai
 						</div>
+						<div><span className="text-accent">x-actual-model</span>: model served</div>
+						<div><span className="text-accent">x-oma-fallback</span>: 1 when a fallback is used</div>
 					</div>
 				</div>
 			</div>
@@ -88,8 +92,10 @@ export function ProviderRoutingSection() {
 				A mapped model may also have a compatible fallback provider configured.
 				If a primary provider fails and that fallback is used,
 				request content must be forwarded to the inference service that actually
-				handles the retry. The public model id and listed customer price do not
-				change. See <a href="/privacy" className="text-accent underline underline-offset-2">Privacy</a> for data-flow details.
+				handles the retry. A fallback can serve another model; its ID appears in
+				x-actual-model and usage history. Paid usage is charged at the served model&apos;s
+				listed price. Free website requests fall back only to eligible Gonka/OpenBroker models.
+				See <a href="/privacy" className="text-accent underline underline-offset-2">Privacy</a> for data-flow details.
 			</p>
 		</AnimatedSection>
 	);

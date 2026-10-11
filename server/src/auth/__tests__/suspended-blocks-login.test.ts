@@ -56,10 +56,17 @@ vi.mock("../../auth.js", () => ({
 		},
 }));
 
+vi.mock("../../auth/api-keys.js", () => ({
+	validateApiKey: vi.fn().mockResolvedValue({ id: "key-test", userId: "usr_test", active: true, expiresAt: null }),
+	isIpAllowedByList: vi.fn().mockReturnValue(true),
+	shouldRecommendRotation: vi.fn().mockReturnValue(false),
+}));
+
 import {
 		sessionAuth,
 		sessionOrBearerAuth,
 		bearerAuth,
+		optionalAuth,
 } from "../../auth/middleware.js";
 
 // Minimal Hono context stub. We only need .req (for header reads) and
@@ -214,11 +221,7 @@ describe("auth middleware — suspension enforcement (Slice 6)", () => {
 				const result = await bearerAuth(ctx as unknown as Parameters<typeof bearerAuth>[0], next);
 
 				expect(result).toBeDefined();
-				// If the key validates, we expect the suspended check to fire. If the
-				// key is invalid (the more common path with this mock), the middleware
-				// returns 401 first — which is also a "blocked" result. Either is
-				// a valid rejection; we just need to confirm the user can't reach
-				// next() while suspended.
+				expect(ctx.json).toHaveBeenCalledWith(expect.objectContaining({ error: expect.objectContaining({ code: "account_suspended" }) }), 403);
 				expect(next).not.toHaveBeenCalled();
 		});
 
@@ -229,5 +232,38 @@ describe("auth middleware — suspension enforcement (Slice 6)", () => {
 				await bearerAuth(ctx as unknown as Parameters<typeof bearerAuth>[0], next);
 
 				expect(next).not.toHaveBeenCalled();
+		});
+
+		it.each([sessionAuth, sessionOrBearerAuth, optionalAuth])("rejects a session whose account no longer exists", async middleware => {
+			mockDb = buildMockDbWithUser(null);
+			const { auth } = await import("../../auth.js");
+			vi.mocked(auth.api.getSession).mockResolvedValueOnce({ user: { id: "deleted" }, session: { id: "stale" } } as never);
+			const ctx = makeCtx({ sessionCookie: "oma_session=abc" });
+			const next = vi.fn();
+			await middleware(ctx as unknown as Parameters<typeof sessionAuth>[0], next);
+			expect(ctx.json).toHaveBeenCalledWith(expect.anything(), 401);
+			expect(next).not.toHaveBeenCalled();
+		});
+
+		it.each([sessionAuth, sessionOrBearerAuth, optionalAuth, bearerAuth])("blocks requests when account status cannot be verified", async middleware => {
+			mockDb = buildMockDbWithUser(null);
+			mockDb.select.mockImplementation(() => { throw new Error("private database diagnostic"); });
+			const { auth } = await import("../../auth.js");
+			vi.mocked(auth.api.getSession).mockResolvedValueOnce({ user: { id: "active" }, session: { id: "session" } } as never);
+			const ctx = makeCtx(middleware === bearerAuth ? { bearerHeader: "Bearer oma_sk_status_test" } : { sessionCookie: "oma_session=abc" });
+			const next = vi.fn();
+			await middleware(ctx as unknown as Parameters<typeof sessionAuth>[0], next);
+			expect(ctx.json).toHaveBeenCalledWith({ error: { message: "Authentication temporarily unavailable", type: "server_error", code: "auth_state_unavailable" } }, 503);
+			expect(next).not.toHaveBeenCalled();
+		});
+
+		it("never downgrades an invalid explicit API key to guest access", async () => {
+			const { validateApiKey } = await import("../../auth/api-keys.js");
+			vi.mocked(validateApiKey).mockResolvedValueOnce(null);
+			const ctx = makeCtx({ bearerHeader: "Bearer oma_sk_revoked" });
+			const next = vi.fn();
+			await optionalAuth(ctx as unknown as Parameters<typeof optionalAuth>[0], next);
+			expect(ctx.json).toHaveBeenCalledWith(expect.anything(), 401);
+			expect(next).not.toHaveBeenCalled();
 		});
 });

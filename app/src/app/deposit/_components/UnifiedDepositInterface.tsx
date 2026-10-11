@@ -27,36 +27,19 @@ import {
 import { useCallback, useEffect, useId, useState } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { useAuth } from "@/lib/hooks/useAuth";
-import { request } from "@/lib/api";
+import { deposit, type DepositInstructions, type UserDeposit } from "@/lib/api/deposit";
 import { isAuthError } from "@/lib/api/client";
+import { readPendingDeposit, savePendingDeposit, type BroadcastDeposit } from "@/lib/deposit-recovery";
 import {
 	connectWallet,
 	ensureBaseChain,
-	getConnectedAccount,
-	hasWallet,
+	listWallets,
 	sendUsdcTransfer,
 	signDepositMessage,
+	subscribeWalletAccount,
+	subscribeWallets,
+	type DiscoveredWallet,
 } from "@/lib/wallet";
-
-interface DepositInstructions {
-	depositAddress: string;
-	network: string;
-	chainId: number;
-	usdcContract: string;
-	minDepositCents: number;
-	maxDepositCents: number;
-	creditsPerCent: number;
-}
-
-interface UserDeposit {
-	id: string;
-	status: "pending" | "settling" | "completed" | "failed" | "refunded" | "expired";
-	amountUsd: string;
-	txHash: string | null;
-	depositAddress: string | null;
-	createdAt: string;
-	completedAt: string | null;
-}
 
 export interface PendingDeposit {
 	id: string;
@@ -65,13 +48,6 @@ export interface PendingDeposit {
 	createdAt: string;
 }
 
-type BroadcastDeposit = {
-	amountUsd: number;
-	txHash: string;
-	fromAddress: `0x${string}`;
-	challengeToken: string;
-	signature: string;
-};
 function shortAddr(a: string): string {
 	if (a.length <= 12) return a;
 	return `${a.slice(0, 6)}…${a.slice(-4)}`;
@@ -80,6 +56,27 @@ function shortAddr(a: string): string {
 function shortTx(t: string): string {
 	if (t.length <= 14) return t;
 	return `${t.slice(0, 10)}…${t.slice(-6)}`;
+}
+
+function WalletConnectionControls({ wallets, selectedId, onSelect, connecting, onConnect }: {
+	wallets: DiscoveredWallet[]; selectedId: string; onSelect: (id: string) => void;
+	connecting: boolean; onConnect: () => void;
+}) {
+	const id = useId();
+	const selected = wallets.find(wallet => wallet.id === selectedId) ?? wallets[0];
+	return <div className="space-y-2 text-left">
+		{wallets.length > 1 && <>
+			<label htmlFor={id} className="block text-xs text-text-secondary">Wallet to connect</label>
+			<select id={id} value={selected?.id ?? ""} onChange={event => onSelect(event.target.value)} disabled={connecting}
+				className="min-h-11 w-full rounded-[var(--radius-md)] border border-border-bright bg-surface px-3 text-sm text-text-primary">
+				{wallets.map(wallet => <option key={wallet.id} value={wallet.id}>{wallet.name}</option>)}
+			</select>
+		</>}
+		<button type="button" onClick={onConnect} disabled={connecting || !selected}
+			className="btn-primary flex min-h-11 w-full items-center justify-center gap-2 rounded-full px-4 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-50">
+			{connecting ? <><Loader2 className="h-4 w-4 animate-spin" /> Connecting…</> : <><Wallet className="h-4 w-4" aria-hidden="true" /> {selected ? `Connect ${selected.name}` : "Connect wallet to pay"}</>}
+		</button>
+	</div>;
 }
 
 export function UnifiedDepositInterface({
@@ -98,15 +95,25 @@ export function UnifiedDepositInterface({
 	const [loadingInstructions, setLoadingInstructions] = useState(true);
 	const [connectedAddress, setConnectedAddress] = useState<`0x${string}` | null>(null);
 	const [connecting, setConnecting] = useState(false);
+	const [wallets, setWallets] = useState<DiscoveredWallet[]>([]);
+	const [selectedWalletId, setSelectedWalletId] = useState("");
 	const [broadcastDeposit, setBroadcastDeposit] = useState<BroadcastDeposit | null>(null);
 	const toast = useToast();
 	const id = useId();
-	const { isAuthenticated, isDemo } = useAuth();
+	const { isAuthenticated, isDemo, user } = useAuth();
+	const userId = user?.id;
+
+	useEffect(() => {
+		const pending = userId ? readPendingDeposit(userId) : null;
+		setBroadcastDeposit(pending);
+		setStep(pending ? "error" : "select");
+		setError(pending ? "This transfer still needs registration. Connect its sending wallet and retry below; do not send another transfer." : "");
+	}, [userId]);
 
 	const fetchInstructions = useCallback(async () => {
 		setLoadingInstructions(true);
 		try {
-			const data = await requestDepositInstructions();
+			const data = await deposit.instructions();
 			setInstructions(data);
 		} catch (err) {
 			// Demo sessions hit the backend with a cookie the deposit route
@@ -127,7 +134,7 @@ export function UnifiedDepositInterface({
 
 	const fetchRecent = useCallback(async () => {
 		try {
-			const data = await requestDepositStatus();
+			const data = await deposit.list();
 			setRecent(data.deposits);
 		} catch {
 			// Guest/demo sessions can't reach this endpoint — swallow quietly.
@@ -147,13 +154,11 @@ export function UnifiedDepositInterface({
 	// Prefill the already-authorized account without popping the wallet.
 	useEffect(() => {
 		if (!isAuthenticated || isDemo) return;
-		let cancelled = false;
-		void getConnectedAccount().then((addr) => {
-			if (!cancelled && addr) setConnectedAddress(addr);
-		});
-		return () => {
-			cancelled = true;
-		};
+		return subscribeWalletAccount(setConnectedAddress);
+	}, [isAuthenticated, isDemo]);
+	useEffect(() => {
+		if (!isAuthenticated || isDemo) return;
+		return subscribeWallets(() => setWallets(listWallets()));
 	}, [isAuthenticated, isDemo]);
 
 	const handleAmountChange = (value: string) => {
@@ -164,7 +169,8 @@ export function UnifiedDepositInterface({
 		setConnecting(true);
 		setError("");
 		try {
-			const wallet = await connectWallet();
+			const walletId = wallets.find(wallet => wallet.id === selectedWalletId)?.id ?? wallets[0]?.id;
+			const wallet = await connectWallet(walletId);
 			await ensureBaseChain();
 			setConnectedAddress(wallet.address);
 			toast.success("Wallet connected");
@@ -173,13 +179,37 @@ export function UnifiedDepositInterface({
 		} finally {
 			setConnecting(false);
 		}
-	}, [toast]);
+	}, [toast, wallets, selectedWalletId]);
+
+	const registerTransfer = useCallback(async (transfer: BroadcastDeposit, challenge?: { token: string }) => {
+		setProcessingStep("Signing deposit proof…");
+		const freshChallenge = challenge ?? await deposit.challenge(transfer.fromAddress);
+		const signature = await signDepositMessage({
+			fromAddress: transfer.fromAddress,
+			challengeToken: freshChallenge.token,
+			depositAddress: transfer.depositAddress,
+			txHash: transfer.txHash,
+			amountUsd: transfer.amountUsd,
+		});
+		setProcessingStep("Submitting deposit for verification…");
+		const result = await deposit.usdc({ amountUsd: transfer.amountUsd, txHash: transfer.txHash, fromAddress: transfer.fromAddress, challengeToken: freshChallenge.token, signature });
+		if (userId) savePendingDeposit(userId, null);
+		setBroadcastDeposit(null);
+		toast.success(`Deposit recorded. ${result.status === "pending" ? "Awaiting on-chain confirmation." : ""}`);
+		onDeposit?.({ id: result.depositId, status: result.status, amountCents: String(result.amountCents), createdAt: new Date().toISOString() });
+		void fetchRecent();
+		setStep("complete");
+	}, [fetchRecent, onDeposit, toast, userId]);
 
 	const handlePay = useCallback(async () => {
 		setError("");
 		const amount = parseFloat(amountUsd);
 		if (!amount || amount <= 0) {
 			setError("Enter the deposit amount in USD");
+			return;
+		}
+		if (!Number.isFinite(amount) || !/^(?:\d+(?:\.\d{0,2})?|\.\d{1,2})$/.test(amountUsd)) {
+			setError("Use at most two decimal places for a USD deposit.");
 			return;
 		}
 		if (!instructions) {
@@ -202,9 +232,12 @@ export function UnifiedDepositInterface({
 		}
 
 		setStep("processing");
-		setProcessingStep("Confirm the USDC transfer in your wallet…");
+		setProcessingStep("Preparing deposit verification…");
 		let txSent = false;
 		try {
+			// Check account-bound verification before any funds can leave the wallet.
+			const challenge = await deposit.challenge(connectedAddress);
+			setProcessingStep("Confirm the USDC transfer in your wallet…");
 			const { txHash } = await sendUsdcTransfer({
 				to: instructions.depositAddress as `0x${string}`,
 				amountUsd: amount,
@@ -212,45 +245,16 @@ export function UnifiedDepositInterface({
 			});
 			txSent = true;
 
-			// SECURITY: prove wallet ownership before registering the deposit.
-			// Mint a user-bound challenge, sign the canonical deposit message with
-			// the sending wallet, and submit both — the server verifies the
-			// recovered signer equals fromAddress.
-			setProcessingStep("Signing deposit proof…");
-			const challenge = await requestDepositChallenge(connectedAddress);
-			// Sign AFTER the tx is broadcast so the proof binds the real txHash
-			// and the declared amount, not just the addresses (replay guard).
-			const signature = await signDepositMessage({
-				fromAddress: connectedAddress,
-				challengeToken: challenge.token,
-				depositAddress: instructions.depositAddress,
-				txHash,
-				amountUsd: amount,
-			});
-
 			const pendingDeposit = {
 				amountUsd: amount,
 				txHash,
 				fromAddress: connectedAddress,
-				challengeToken: challenge.token,
-				signature,
+				depositAddress: instructions.depositAddress,
 			};
+			// Retain the transaction before the next wallet prompt can fail.
+			if (userId) savePendingDeposit(userId, pendingDeposit);
 			setBroadcastDeposit(pendingDeposit);
-
-			setProcessingStep("Submitting deposit for verification…");
-			const result = await submitDeposit(pendingDeposit);
-			setBroadcastDeposit(null);
-			toast.success(
-				`Deposit recorded. ${result.status === "pending" ? "Awaiting on-chain confirmation." : ""}`,
-			);
-			onDeposit?.({
-				id: result.depositId,
-				status: result.status,
-				amountCents: String(result.amountCents),
-				createdAt: new Date().toISOString(),
-			});
-			void fetchRecent();
-			setStep("complete");
+			await registerTransfer(pendingDeposit, challenge);
 		} catch (e) {
 			const errMsg = e instanceof Error ? e.message : "Deposit failed";
 			// Distinguish a wallet popup rejection (nothing left the account)
@@ -269,27 +273,21 @@ export function UnifiedDepositInterface({
 				setStep("error");
 			}
 		}
-	}, [amountUsd, instructions, connectedAddress, toast, onDeposit, fetchRecent]);
+	}, [amountUsd, instructions, connectedAddress, toast, registerTransfer, userId]);
 
 	const handleRetryRegistration = useCallback(async () => {
 		if (!broadcastDeposit) return;
+		if (connectedAddress?.toLowerCase() !== broadcastDeposit.fromAddress.toLowerCase()) {
+			setError("Connect the wallet that sent this transfer before retrying registration.");
+			return;
+		}
 		setError("");
 		setStep("processing");
 		setProcessingStep("Retrying deposit registration…");
 		try {
-			const result = await submitDeposit(broadcastDeposit);
-			setBroadcastDeposit(null);
-			toast.success(
-				`Deposit recorded. ${result.status === "pending" ? "Awaiting on-chain confirmation." : ""}`,
-			);
-			onDeposit?.({
-				id: result.depositId,
-				status: result.status,
-				amountCents: String(result.amountCents),
-				createdAt: new Date().toISOString(),
-			});
-			void fetchRecent();
-			setStep("complete");
+			// A proof may have expired or been refused. Retry with a fresh nonce
+			// and signature for this same transaction, never another transfer.
+			await registerTransfer(broadcastDeposit);
 		} catch (err) {
 			setError(
 				err instanceof Error
@@ -298,15 +296,18 @@ export function UnifiedDepositInterface({
 			);
 			setStep("error");
 		}
-	}, [broadcastDeposit, fetchRecent, onDeposit, toast]);
+	}, [broadcastDeposit, connectedAddress, registerTransfer]);
 
 	const handleReset = () => {
 		setStep("select");
 		setAmountUsd("");
 		setError("");
 		setProcessingStep("");
+		if (userId) savePendingDeposit(userId, null);
 		setBroadcastDeposit(null);
 	};
+	const walletControls = <WalletConnectionControls wallets={wallets} selectedId={selectedWalletId} onSelect={setSelectedWalletId}
+		connecting={connecting} onConnect={() => void handleConnect()} />;
 
 	if (!isAuthenticated || isDemo) {
 		return (
@@ -408,30 +409,11 @@ export function UnifiedDepositInterface({
 								<div className="rounded-[var(--radius-sm)] border border-warning/30 bg-warning/10 p-3 text-sm text-warning">
 									<AlertTriangle className="mr-2 inline h-4 w-4" />
 									{error ||
-										"Deposit receiver address is not configured. Set USDC_DEPOSIT_ADDRESS in the server env."}
+										"Wallet deposits are temporarily unavailable. Please try again later or choose another available payment method."}
 								</div>
 							) : (
 								<>
-									{!connectedAddress && (
-										<button
-											type="button"
-											onClick={() => void handleConnect()}
-											disabled={connecting}
-											className="btn-primary flex w-full items-center justify-center gap-2 rounded-full py-4 text-sm disabled:cursor-not-allowed disabled:opacity-50"
-										>
-											{connecting ? (
-												<>
-													<Loader2 className="h-4 w-4 animate-spin" />
-													Connecting…
-												</>
-											) : (
-												<>
-													<Wallet className="h-4 w-4" aria-hidden="true" />
-													Connect wallet to pay
-												</>
-											)}
-										</button>
-									)}
+									{!connectedAddress && walletControls}
 
 									{connectedAddress && (
 										<div className="flex items-center justify-between gap-2 rounded-[var(--radius-lg)] border border-success/25 bg-success/5 px-4 py-3">
@@ -441,11 +423,12 @@ export function UnifiedDepositInterface({
 												</div>
 												<button
 													type="button"
-													onClick={() => void handleConnect()}
+													onClick={() => setConnectedAddress(null)}
 													className="mt-0.5 font-mono text-sm text-text-bright tabular-nums hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-													title="Switch wallet account"
+													title="Change wallet"
 												>
 													{shortAddr(connectedAddress)}
+													<span className="ml-2 font-sans text-xs text-accent">Change wallet</span>
 												</button>
 											</div>
 											<span className="shrink-0 rounded-[var(--radius-sm)] bg-success/10 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-success">
@@ -454,11 +437,11 @@ export function UnifiedDepositInterface({
 										</div>
 									)}
 
-									{!hasWallet() && (
+									{wallets.length === 0 && (
 										<div className="rounded-[var(--radius-sm)] border border-warning/30 bg-warning/10 p-3 text-sm text-warning">
 											<AlertTriangle className="mr-2 inline h-4 w-4" />
 											No wallet detected. Install MetaMask, Rabby, or Coinbase
-											Wallet to pay with USDC — or use the Card tab.
+											Wallet to pay with USDC, or choose another available payment method.
 										</div>
 									)}
 
@@ -610,23 +593,29 @@ export function UnifiedDepositInterface({
 								Deposit submission failed
 							</h3>
 							<p className="mt-1 text-sm text-text-secondary">{error}</p>
+							{broadcastDeposit && connectedAddress?.toLowerCase() !== broadcastDeposit.fromAddress.toLowerCase() && <div className="mt-4 space-y-2">
+								<p className="text-xs text-text-secondary">Connect the sending wallet: <span className="font-mono">{shortAddr(broadcastDeposit.fromAddress)}</span></p>
+								{walletControls}
+							</div>}
+							{broadcastDeposit && <a href={`https://basescan.io/tx/${broadcastDeposit.txHash}`} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-1 text-sm text-accent underline">View transfer on BaseScan <ExternalLink className="h-3 w-3" aria-hidden="true" /></a>}
 							<div className="mt-4 flex flex-wrap justify-center gap-2">
 								{broadcastDeposit ? (
 									<button
 										type="button"
 										onClick={() => void handleRetryRegistration()}
-										className="inline-flex h-10 items-center justify-center rounded-[var(--radius-md)] border border-accent bg-accent px-4 text-sm font-semibold text-void transition-colors duration-200 ease-out hover:bg-accent-bright active:scale-[0.97]"
+										disabled={connecting || connectedAddress?.toLowerCase() !== broadcastDeposit.fromAddress.toLowerCase()}
+										className="inline-flex h-10 items-center justify-center rounded-[var(--radius-md)] border border-accent bg-accent px-4 text-sm font-semibold text-void transition-colors duration-200 ease-out hover:bg-accent-bright active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
 									>
 										Retry registration
 									</button>
 								) : null}
-								<button
+								{!broadcastDeposit && <button
 									type="button"
 									onClick={handleReset}
 									className="inline-flex h-10 items-center justify-center rounded-[var(--radius-md)] border border-border bg-surface px-4 text-sm font-medium text-text-secondary transition-colors duration-200 ease-out hover:border-accent hover:text-accent active:scale-[0.97]"
 								>
-									{broadcastDeposit ? "Start over" : "Try again"}
-								</button>
+									Try again
+								</button>}
 							</div>
 						</div>
 					)}
@@ -634,48 +623,4 @@ export function UnifiedDepositInterface({
 			</AnimatePresence>
 		</div>
 	);
-}
-
-async function requestDepositInstructions(): Promise<DepositInstructions> {
-	return request<DepositInstructions>("/v1/deposit/usdc");
-}
-
-async function requestDepositStatus(): Promise<{ deposits: UserDeposit[] }> {
-	return request<{ deposits: UserDeposit[] }>("/v1/deposit/status");
-}
-
-async function requestDepositChallenge(
-	fromAddress: `0x${string}`,
-): Promise<{ token: string; nonce: string; expiresAt: number }> {
-	return request("/v1/deposit/usdc/challenge", {
-		method: "POST",
-		body: JSON.stringify({ fromAddress }),
-	});
-}
-
-async function submitDeposit(args: {
-	amountUsd: number;
-	txHash: string;
-	fromAddress: `0x${string}`;
-	challengeToken: string;
-	signature: string;
-}): Promise<{
-	depositId: string;
-	status: UserDeposit["status"];
-	amountCents: number;
-	txHash: string;
-	network: string;
-	message: string;
-}> {
-	return request("/v1/deposit/usdc", {
-		method: "POST",
-		body: JSON.stringify({
-			amountUsd: args.amountUsd,
-			txHash: args.txHash,
-			fromAddress: args.fromAddress,
-			challengeToken: args.challengeToken,
-			signature: args.signature,
-			network: "base",
-		}),
-	});
 }

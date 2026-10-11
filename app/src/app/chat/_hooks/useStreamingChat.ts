@@ -26,7 +26,7 @@ import { appendCapped, parseStreamData } from "./stream-parser";
 // Same-origin /api proxy so the Better Auth cookie is sent. Hitting
 // :3001 directly drops the session (cross-origin) and playground
 // usage never lands in the dashboard. proxy-response keeps SSE streamed.
-const CHAT_ENDPOINT = "/api/v1/chat/completions";
+const CHAT_ENDPOINT = "/api/chat/completions";
 const SEARCH_ENDPOINT = "/api/v1/search";
 
 /**
@@ -370,7 +370,6 @@ export function useStreamingChat(
 					headers: {
 						"Content-Type": "application/json",
 						Accept: live.stream ? "text/event-stream" : "application/json",
-						"X-OMA-Source": "website", // Identify website chat for free tier
 					},
 					body: JSON.stringify({
 						model: useModel,
@@ -396,6 +395,9 @@ export function useStreamingChat(
 				});
 			};
 
+			// Measure from dispatch so provider queueing and key-repair retries
+			// are visible, rather than reporting only the response body's read time.
+			const startTime = Date.now();
 			let response = await doFetch();
 			assertRequestActive(request);
 
@@ -444,13 +446,13 @@ export function useStreamingChat(
 				live.setError(null);
 			}
 
-			const startTime = Date.now();
-
 			if (live.stream && response.body) {
 				const reader = response.body.getReader();
 				let accumulated = "";
 				let accumulatedReasoning = "";
-				let realTokenCount = 0;
+				let realTokenCount: number | undefined;
+				let realInputTokens: number | undefined;
+				let realOutputTokens: number | undefined;
 				let lastUpdateTime = 0;
 				let lastFlushedContent = "";
 				let lastFlushedReasoning = "";
@@ -478,13 +480,15 @@ export function useStreamingChat(
 						lastFlushedReasoning = accumulatedReasoning;
 						// Use the real usage count once it arrives in the final chunk;
 						// otherwise approximate from accumulated text.
-						const tokenCount = realTokenCount || estimateTokens(accumulated);
+						const estimatedOutput = estimateTokens(accumulated + accumulatedReasoning);
+						const tokenCount = realTokenCount ?? realOutputTokens ?? estimatedOutput;
 						updateAssistant((message) => ({
 							...message,
 							content: accumulated,
 							reasoning: accumulatedReasoning || undefined,
 							tokens: tokenCount,
-							outputTokens: realTokenCount || estimateTokens(accumulated),
+							inputTokens: realInputTokens,
+							outputTokens: realOutputTokens ?? estimatedOutput,
 							latency: now - startTime,
 							truncated: finishReason === "length",
 							degenerate: isDegenerateResponse(accumulated),
@@ -531,6 +535,8 @@ export function useStreamingChat(
 					if (d.totalTokens !== undefined) {
 						realTokenCount = d.totalTokens;
 					}
+					if (d.inputTokens !== undefined) realInputTokens = d.inputTokens;
+					if (d.outputTokens !== undefined) realOutputTokens = d.outputTokens;
 					if (d.finishReason) {
 						finishReason = d.finishReason as typeof finishReason;
 					}
@@ -569,8 +575,8 @@ export function useStreamingChat(
 					content,
 					reasoning: reasoning || undefined,
 					tokens: usage?.total_tokens || 0,
-					inputTokens: usage?.prompt_tokens || message.inputTokens,
-					outputTokens: usage?.completion_tokens || estimateTokens(content),
+					inputTokens: usage?.prompt_tokens ?? message.inputTokens,
+					outputTokens: usage?.completion_tokens ?? estimateTokens(content),
 					latency: Date.now() - startTime,
 					degenerate: isDegenerateResponse(content),
 					model: bodyModel,

@@ -3,8 +3,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import { ProfileSection } from "./_components/ProfileSection";
-import SettingsPage from "./page";
+import { ProfileSection } from "./settings/ProfileSection";
+import AccountSettings from "./AccountSettings";
 
 const mocks = vi.hoisted(() => ({
 	params: new URLSearchParams(),
@@ -54,7 +54,7 @@ vi.mock("@/lib/framer-motion-client", () => {
 function renderSettings(cachedBalanceCents?: number) {
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	if (cachedBalanceCents !== undefined) client.setQueryData(["balance"], { balanceCents: cachedBalanceCents });
-	return render(<QueryClientProvider client={client}><ThemeProvider><SettingsPage /></ThemeProvider></QueryClientProvider>);
+	return render(<QueryClientProvider client={client}><ThemeProvider><AccountSettings /></ThemeProvider></QueryClientProvider>);
 }
 
 beforeEach(() => {
@@ -75,11 +75,11 @@ describe("settings demo isolation", () => {
 		fireEvent.keyDown(screen.getByRole("textbox", { name: "Display name" }), { key: "Enter" });
 		expect(mocks.updateUser).not.toHaveBeenCalled();
 		expect(mocks.listSessions).not.toHaveBeenCalled();
-		expect(screen.getByRole("link", { name: "Exit demo" })).toHaveAttribute("href", "/settings");
+		expect(screen.getByRole("link", { name: "Exit demo" })).toHaveAttribute("href", "/dashboard?tab=settings&section=profile");
 	});
 
 	it("disables data export, clear history, and account deletion without fetching real balance", async () => {
-		mocks.params = new URLSearchParams("demo=1&tab=danger");
+		mocks.params = new URLSearchParams("demo=1&tab=settings&section=danger");
 		renderSettings(12345);
 		for (const name of ["Download JSON", "Clear usage history", "Delete account"]) {
 			const button = await screen.findByRole("button", { name });
@@ -94,7 +94,7 @@ describe("settings demo isolation", () => {
 	});
 
 	it("keeps appearance preferences read-only in the demo", async () => {
-		mocks.params = new URLSearchParams("demo=1&tab=appearance");
+		mocks.params = new URLSearchParams("demo=1&tab=settings&section=appearance");
 		renderSettings();
 		for (const radio of await screen.findAllByRole("radio")) expect(radio).toBeDisabled();
 		expect(screen.getByRole("checkbox")).toBeDisabled();
@@ -106,15 +106,9 @@ describe("settings demo isolation", () => {
 		mocks.params = new URLSearchParams("demo=1&source=tour");
 		renderSettings();
 		fireEvent.click(screen.getByRole("tab", { name: /Sessions/ }));
-		expect(mocks.router.replace).toHaveBeenLastCalledWith("/settings?demo=1&source=tour&tab=sessions", { scroll: false });
+		expect(mocks.router.replace).toHaveBeenLastCalledWith("/dashboard?demo=1&source=tour&tab=settings&section=sessions", { scroll: false });
 		fireEvent.keyDown(screen.getByRole("tablist"), { key: "End" });
-		expect(mocks.router.replace).toHaveBeenLastCalledWith("/settings?demo=1&source=tour&tab=danger", { scroll: false });
-	});
-
-	it.each([["privacy", "/settings?demo=1&tab=danger"], ["keys", "/dashboard?demo=1&tab=api-keys"]])("preserves demo for the legacy %s link", async (tab, expected) => {
-		mocks.params = new URLSearchParams(`demo=1&tab=${tab}`);
-		renderSettings();
-		await waitFor(() => expect(mocks.router.replace.mock.calls[0][0]).toBe(expected));
+		expect(mocks.router.replace).toHaveBeenLastCalledWith("/dashboard?demo=1&source=tour&tab=settings&section=danger", { scroll: false });
 	});
 });
 

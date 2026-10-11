@@ -8,18 +8,19 @@
 	* Usage:
 	* ```ts
 	* import { withRateLimit } from '@/lib/rate-limit-middleware'
-	* import { authLimiter } from '@/lib/rate-limiter'
+	* import { generalLimiter } from '@/lib/rate-limiter'
 	*
 	* export const runtime = 'nodejs'
 	*
 	* export const POST = withRateLimit(async (req) => {
 	*   // … your handler
-	* }, { limiter: authLimiter, route: '/api/auth/sign-in/email' })
+	* }, { limiter: generalLimiter, route: '/api/example' })
 	* ```
 	*/
 
 import { type NextRequest, NextResponse } from "next/server";
 import type { RateLimiter, RateLimitResult } from "./rate-limiter";
+import { getTrustedPlatformIp } from "./api/proxy-headers";
 
 export interface RateLimitOptions {
 	/** The RateLimiter instance to use (determines limit/window). */
@@ -31,22 +32,12 @@ export interface RateLimitOptions {
 /**
 	* Extract the client IP for rate-limit keys.
 	*
-	* SEC: Client-controlled proxy headers are only trusted when:
-	*   - Running on Vercel (`VERCEL=1`), where the edge sets x-forwarded-for, or
-	*   - `TRUSTED_PROXY_IPS` is set (non-empty) for other reverse proxies.
-	* Otherwise return "unknown" so spoofed XFF cannot bypass per-IP limits.
-	* Local dev collapsing to one bucket is acceptable.
+	* Vercel's platform connection header supplies the visitor identity.
+	* Arbitrary forwarding headers and a configured-but-unverified custom proxy
+	* cannot establish it. Other hosts share the conservative "unknown" bucket.
 	*/
 function getClientIp(req: NextRequest | Request): string {
-	const trustProxyHeaders =
-		process.env.VERCEL === "1" || Boolean(process.env.TRUSTED_PROXY_IPS?.trim());
-	if (!trustProxyHeaders) return "unknown";
-
-	const xff = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-	if (xff) return xff;
-	const realIp = req.headers.get("x-real-ip")?.trim();
-	if (realIp) return realIp;
-	return "unknown";
+	return getTrustedPlatformIp(req.headers) ?? "unknown";
 }
 
 /**

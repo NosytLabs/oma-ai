@@ -28,7 +28,9 @@ const envelopeCode = `{
     "network": "eip155:8453",
     "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
     "amount": "1000000",
-    "payTo": "<configured treasury address>"
+    "payTo": "<payTo from /x402/info>",
+    "maxTimeoutSeconds": 300,
+    "extra": { "name": "USD Coin", "version": "2" }
   },
   "payload": {
     "signature": "<0x-prefixed 65-byte signature>",
@@ -71,7 +73,7 @@ export function X402Section() {
       <div id="x402-flow" className="scroll-mt-24">
         <h3 className="font-display text-lg font-semibold text-text">How funding works</h3>
         <ol className="mt-3 space-y-3 text-sm text-text-muted">
-          <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-accent" />Sign in via SIWE with the USDC payer wallet. Read the current treasury from /api/v1/deposit/usdc, then sign the intended amount and a fresh nonce.</li>
+          <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-accent" />Sign in via SIWE with the USDC payer wallet. Read payTo from /x402/info, then sign that recipient, the intended amount, and a fresh nonce. The direct-deposit address can differ.</li>
           <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-accent" />POST the signed envelope to /x402/verify. The facilitator pays gas and transfers the authorized USDC; save the returned transaction hash.</li>
           <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-accent" />POST the hash and network to /x402/settle with the paying wallet’s session cookie. This credits the confirmed payment once, preserving fractional credits. An API key does not authenticate this endpoint.</li>
           <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-accent" />Use the account’s API key for inference against the prepaid balance. Ordinary chat requests do not issue a mid-request x402 challenge.</li>
@@ -115,6 +117,11 @@ export function X402Section() {
           Base receipt before authorizing another payment. Once confirmed, settle that hash.
           If no hash was returned, reconcile the signed nonce and wallet activity first.
         </p>
+        <p className="mt-2 text-sm text-text-muted">
+          A 409 payment_already_credited or payment_reconciliation_required response is
+          not retryable. Contact support with the transaction hash if reconciliation
+          is required. Do not authorize a replacement payment to resolve that conflict.
+        </p>
       </div>
 
       <div id="x402-where" className="mt-8 rounded-[var(--radius-xl)] border border-border bg-surface p-4 scroll-mt-24">
@@ -123,6 +130,19 @@ export function X402Section() {
           Base mainnet only (eip155:8453), using USDC. The service pins the USDC contract
           and configured treasury. Settlement accepts networkId base or eip155:8453 and
           derives the amount from verified payment evidence rather than a caller-supplied amount.
+        </p>
+        <h3 className="mt-5 font-display text-lg font-semibold text-text">Your wallet and the treasury</h3>
+        <p className="mt-2 text-sm text-text-muted">
+          OMA does not create or hold a wallet for you. Use your own wallet for sign-in and
+          USDC funding. The website supports installed browser wallets such as MetaMask,
+          Rabby and Coinbase Wallet. Choose a wallet offered by sign-in or Buy credits;
+          mobile and QR pairing is available when WalletConnect is listed.
+        </p>
+        <p className="mt-2 text-sm text-text-muted">
+          Direct USDC deposits use the address shown on the deposit page and require Base
+          gas in your sending wallet. x402 uses the recipient advertised by /x402/info,
+          with gas paid by the facilitator. A confirmed payment becomes prepaid account
+          credits; it does not give the treasury access to your wallet or API key.
         </p>
       </div>
     </AnimatedSection>

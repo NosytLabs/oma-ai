@@ -1,0 +1,16 @@
+# Database and account tooling
+
+Run the account tools from `server/`. Never use production credentials for local fixtures.
+
+`deploy-neon.sh` is a separate production release tool: export the deployment API key, then run it from any directory. It deploys code only to the explicit production function/branch, retaining remote secrets and scheduled triggers. It no longer loads or copies development/production `.env` files or reconciles infrastructure implicitly. See [deployment instructions](../../docs/DEPLOYMENT.md) for deliberate configuration changes.
+
+- `pnpm db:seed-test-auth`: creates or refreshes the current local user/admin fixtures and one-time magic links. Only accepts loopback app/database hosts in development or test.
+- `pnpm db:cleanup-local`: previews a fixed list of historical local test identities plus expired authentication records. `pnpm db:cleanup-local --apply` first saves a full PostgreSQL backup under `.artifacts/database-backups/`. It preserves current fixtures and refuses cleanup when financial records are present. This is not a production cleanup tool.
+- `pnpm test:auth:integration`: builds a temporary local database from migrations, starts the real API, exercises authentication, admin controls, treasury permissions, complete customer statistics, pagination, sessions and account deletion, then drops its own database. It never calls a paid model or signs a mainnet payment.
+- `node --env-file=.env scripts/test-live-model-tools.mjs --run`: opt-in streaming tool-call and continuation check through the running local gateway. Requires the current local user fixture and a configured OpenBroker key. Uses two sponsored website requests, requests upstream usage totals, and removes its temporary login session. `--direct-openbroker` compares the same request directly with the configured provider (provider credits apply); `--omit-assistant-content` isolates returned reasoning in the continuation. Both keep strict result/finish assertions. Without `--run`, it only explains the check.
+- `node --env-file=.env scripts/test-live-api.mjs --run --models=minimax-m2-7 --formats=chat,messages`: opt-in paid API check through the local same-origin gateway. Select models explicitly to avoid probing an entire catalog with missing provider credentials. Creates a temporary one-day key limited to those models, requests at most 512 output tokens per model, verifies actual-model headers, usage attribution and credit deductions, and revokes the key/session. It respects rate-limit retry headers. Without `--run`, no provider request occurs. Reports contain synthetic output and metadata, never the key or cookie; actual inference charges remain in the ledger.
+- `check-admin-binding.mjs`: read-only inspection of admin wallet binding.
+- `backfill-evm-address.sql` / `check-backfill-sql.mjs`: review historical wallet-binding candidates and the guarded query.
+- `run-backfill.mjs`: dry-run report by default. Only `--apply` executes the guarded wallet binding transaction. Review candidates and obtain authorization for the target database first.
+
+Backups may contain private account data. Keep them outside version control and restrict access. See [the cleanup receipt](../../docs/audits/database-cleanup-2026-10-10.md) for the separately approved production authentication cleanup.

@@ -20,14 +20,14 @@
 import { Hono } from "hono";
 import type { Context, Next, MiddlewareHandler } from "hono";
 import { config, isProductionEnv } from "../config.js";
-import { buildV2Challenge, buildXPaymentResponse, parsePaymentSignatureHeader, parseXPaymentHeader } from "./v2.js";
+import { buildV2Challenge, buildXPaymentResponse, CAIP2_BASE_MAINNET, parsePaymentSignatureHeader, parseXPaymentHeader } from "./v2.js";
 import type { OmaEnv } from "../types.js";
 import { sessionAuth } from "../auth/middleware.js";
 import { db } from "../db/client.js";
 import { deposits, settlements, user as userTable } from "../db/schema.js";
 import { eq, and } from "drizzle-orm";
 import { rateLimit } from "../middleware/rate-limit.js";
-import { USDC_BASE } from "../constants.js";
+import { USDC_BASE, USDC_DECIMALS } from "../constants.js";
 import {
 	isSupportedSettlementAsset,
 	resolveSettlementNetwork,
@@ -42,9 +42,9 @@ import {
 } from "./settlement-cache.js";
 import { settlePaymentAsync } from "./settle.js";
 import { SERVER_TREASURY } from "./treasury.js";
-import { readTreasuryTransfer } from "./funding-recovery.js";
+import { paymentCreditAmounts, readTreasuryTransfer } from "./funding-recovery.js";
 import { getPublicClient } from "../lib/rpc-client.js";
-import { creditConfirmedUsdcPayment } from "../lib/payment-credit.js";
+import { creditConfirmedUsdcPayment, PaymentCreditConflictError } from "../lib/payment-credit.js";
 import { verifyPayment } from "./verify.js";
 import {
 		PAYMENT_WINDOW_SECONDS,
@@ -130,7 +130,27 @@ function paymentError(
 		return { error: { code, message, retryable, type: "payment_error" } };
 }
 
+function settlementFailure(c: Context<OmaEnv>, err: unknown) {
+	if (err instanceof PaymentCreditConflictError) {
+		return c.json(paymentError(err.code, err.message, false), err.status);
+	}
+	logger.error({ err }, "[FACILITATOR] settlement credit pending");
+	return c.json(paymentError("x402_credit_failed", "Payment confirmed but credit is pending. Retry settlement with the same transaction hash.", true), 500);
+}
+
 export const x402Routes = new Hono<OmaEnv>();
+
+x402Routes.get("/x402/info", (c) => {
+		c.header("Cache-Control", "no-store");
+		if (!SERVER_TREASURY) {
+			return c.json(paymentError("funding_unconfigured", "Funding recipient is not configured", false), 503);
+		}
+		return c.json({
+			x402Version: 2, scheme: "exact", network: CAIP2_BASE_MAINNET,
+			asset: USDC_BASE, decimals: USDC_DECIMALS, payTo: SERVER_TREASURY,
+			maxTimeoutSeconds: PAYMENT_WINDOW_SECONDS, extra: { name: "USD Coin", version: "2" },
+		});
+});
 
 x402Routes.post("/x402/verify", rateLimit({ windowMs: 60_000, maxRequests: 10 }), async (c) => {
 		const headerVal = c.req.header("PAYMENT-SIGNATURE") ?? c.req.header("X-PAYMENT");
@@ -324,11 +344,7 @@ x402Routes.post("/x402/settle", sessionAuth, async (c) => {
 					if (result.settled) c.header("PAYMENT-RESPONSE", buildXPaymentResponse({ txHash: body.txHash, payer: cached.payFrom }));
 					return c.json(result, result.settled ? 200 : 422);
 				} catch (err) {
-						const message = err instanceof Error ? err.message : "Failed to credit settlement";
-						return c.json(
-							{ error: { message, type: "payment_error", code: "x402_credit_failed" } },
-							message.includes("another account") ? 409 : 500,
-						);
+						return settlementFailure(c, err);
 				}
 		}
 
@@ -359,7 +375,7 @@ x402Routes.post("/x402/settle", sessionAuth, async (c) => {
 										hash: body.txHash as `0x${string}`,
 								});
 								const transfer = readTreasuryTransfer(receipt, expectedPayee);
-								if (transfer && parseUsdcAtomic(transfer.amount) === parseUsdcAtomic(existingSettlement[0].amount)) senderAddr = transfer.payFrom;
+								if (transfer && transfer.amount === paymentCreditAmounts(existingSettlement[0].amount).amountUsd) senderAddr = transfer.payFrom;
 						} catch (chainErr) {
 								logger.warn(
 										{ err: chainErr, txHash: body.txHash },
@@ -411,11 +427,7 @@ x402Routes.post("/x402/settle", sessionAuth, async (c) => {
 								200,
 						);
 				} catch (err) {
-						const message = err instanceof Error ? err.message : "Failed to credit settlement";
-						return c.json(
-								{ error: { message, type: "payment_error", code: "x402_credit_failed" } },
-								message.includes("another account") ? 409 : 500,
-						);
+						return settlementFailure(c, err);
 				}
 		}
 
@@ -435,8 +447,7 @@ x402Routes.post("/x402/settle", sessionAuth, async (c) => {
 				if (result.settled) c.header("PAYMENT-RESPONSE", buildXPaymentResponse({ txHash: body.txHash, payer: recovered.payFrom }));
 				return c.json(result, result.settled ? 200 : 422);
 			} catch (err) {
-				logger.error({ err, txHash: body.txHash }, "[FACILITATOR] recovered payment credit failed");
-				return c.json(paymentError("x402_credit_failed", "Payment confirmed but credit is pending. Retry settlement with the same transaction hash.", true), 500);
+				return settlementFailure(c, err);
 			}
 		}
 
@@ -522,47 +533,9 @@ x402Routes.post("/x402/middleware-test", async (c) => {
 
 // Houdini/crosschain deposit flow removed — /v1/x402/proxy/chat/completions no longer exists.
 
-// =============================================================================
-// x402 SPEC NOTE (post-2026-07-02 audit fix):
-//
-// As of audit-x402-eip3009-fix-2026-07-02, the V1 verify path now uses
-// EIP-3009 transferWithAuthorization (gasless for the user, facilitator pays
-// gas). The canonical Coinbase x402 v2 spec lives at
-//   https://github.com/coinbase/x402/blob/main/specs/x402-specification-v2.md
-//   (transport: https://github.com/coinbase/x402/blob/main/specs/transports-v2/http.md)
-//
-// V1 wire shape (now EIP-3009-aligned; was: receipt-check of pre-paid transfer):
-//   * x402Version: string ("1"|"2"). V2 spec uses number (2); v2.ts adapts
-//     the v2 wire (base64 PAYMENT-SIGNATURE / X-PAYMENT) onto this envelope.
-//   * Transport header: PAYMENT-SIGNATURE (JSON-encoded PaymentSignature).
-//   * signature     = 65-byte EIP-712 sig over TransferWithAuthorization typed data.
-//   * authorization = JSON { from, to, value, validAfter, validBefore, nonce }.
-//   * payload       = { scheme, networkId, asset, amount, payee, payFrom,
-//                      maxAmountRequired, validBefore, validAfter, nonce? }.
-//   * Legacy back-compat: if authorization is not a JSON EIP-3009 tuple, the
-//     verify path falls through to `verifyUsdcTransferReceipt` which decodes
-//     `transfer`/`transferFrom` calldata from a tx hash (pre-paid flow).
-//
-// EIP-3009 verify path (verifyEip3009Payment):
-//   1. Consume nonce (CRIT-2 replay protection).
-//   2. Parse + shape-check the authorization tuple.
-//   3. Pin payee to SERVER_TREASURY (reject mismatches).
-//   4. Pin amount >= payload.maxAmountRequired.
-//   5. Validate validAfter <= now < validBefore.
-//   6. Recover EIP-712 signer via viem.recoverTypedDataAddress; reject if
-//      recovered != authorization.from.
-//   7. Simulate via eth_call (catches double-spend attempts where the
-//      contract would revert because the nonce is already used).
-//   8. Settle: if FACILITATOR_PRIVATE_KEY is configured, submit the real
-//      transferWithAuthorization tx (facilitator pays gas). Otherwise emit
-//      a deterministic synthetic txHash (keccak256 of tuple+sig) so the
-//      verify+settle cache key still works for dev/preview deployments.
-//
-// Canonical chain IDs: Base mainnet = eip155:8453, USDC = 0x833589…29913;
-// Base Sepolia = eip155:84532, USDC = 0x036CbD…CF7e (matches v2 spec).
-// Only mainnet is supported today.
-//
-// =============================================================================
+// Public funding endpoints accept the v2 wire envelope and bind credited
+// payments to the SIWE payer. The middleware below supports development
+// protocol tests; production inference spends prepaid account credits.
 
 // ============================================================
 // Payment Middleware

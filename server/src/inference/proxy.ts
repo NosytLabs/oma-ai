@@ -33,11 +33,11 @@ export {
 // Re-export for existing test/route imports that pull helpers from proxy.
 export { FALLBACK_MAP, buildFallbackChain, rewriteSseModelField } from "./fallback.js";
 
-import { ProviderError, resolveProvider } from "./provider-route.js";
+import { ProviderAuthenticationError, ProviderError, resolveProvider } from "./provider-route.js";
 
 export interface CallProviderOptions {
 		modelId: string;
-		messages: Array<{ role: string; content: string | unknown[]; name?: string }>;
+		messages: Array<{ role: string; content: string | unknown[] | null; name?: string; tool_calls?: unknown[]; tool_call_id?: string }>;
 		stream: boolean;
 		max_tokens?: number;
 		temperature?: number;
@@ -46,6 +46,8 @@ export interface CallProviderOptions {
 		tool_choice?: unknown;
 		userId: string;
 		requestId: string;
+		/** Cancel queued inference and retries when the caller disconnects. */
+		signal?: AbortSignal;
 		/** Skip credit deduction for free website chat */
 		skipBilling?: boolean;
 		/**
@@ -53,6 +55,8 @@ export interface CallProviderOptions {
 			* before the server FALLBACK_MAP peers). Invalid/unknown ids are ignored.
 			*/
 		clientFallbacks?: string[];
+		/** Restrict both primary and fallback routes to the caller's key scope. */
+		allowedModels?: string[] | null;
 }
 
 /**
@@ -83,8 +87,11 @@ async function callProvider(opts: CallProviderOptions): Promise<Response> {
 						role: m.role,
 						content: m.content,
 						...(m.name ? { name: m.name } : {}),
+						...(m.tool_calls ? { tool_calls: m.tool_calls } : {}),
+						...(m.tool_call_id ? { tool_call_id: m.tool_call_id } : {}),
 				})),
 				stream,
+				...(stream ? { stream_options: { include_usage: true } } : {}),
 				...(max_tokens ? { max_tokens } : {}),
 				...(temperature !== undefined ? { temperature } : {}),
 				...(top_p !== undefined ? { top_p } : {}),
@@ -92,15 +99,13 @@ async function callProvider(opts: CallProviderOptions): Promise<Response> {
 				...(tool_choice ? { tool_choice } : {}),
 		});
 
-		// Hard timeout so a hung upstream cannot pin a worker forever.
-		// Abort → 408 so the router retries / failovers; plain network fail → 502.
-		const upstreamController = new AbortController();
-		const timeoutMs = stream ? 120_000 : 60_000;
-		let timedOut = false;
-		const timeoutId = setTimeout(() => {
-				timedOut = true;
-				upstreamController.abort();
-		}, timeoutMs);
+		// OpenBroker host selection can take several minutes. Keep both headers
+		// and response-body reads bounded, within the router's overall budget.
+		const timeoutMs = provider === "oma-ai" ? 180_000 : stream ? 120_000 : 60_000;
+		const timeoutSignal = AbortSignal.timeout(timeoutMs);
+		const upstreamSignal = opts.signal
+			? AbortSignal.any([opts.signal, timeoutSignal])
+			: timeoutSignal;
 		let fetchError: unknown = null;
 		const upstreamResp = await fetch(upstreamUrl, {
 				method: "POST",
@@ -109,18 +114,17 @@ async function callProvider(opts: CallProviderOptions): Promise<Response> {
 						Authorization: `Bearer ${route.apiKey}`,
 				},
 				body: JSON.stringify(upstreamBody),
-				signal: upstreamController.signal,
+				signal: upstreamSignal,
 		}).catch((err) => {
 				fetchError = err;
-				logger.error({ err, provider: route.providerLabel, timedOut }, "[proxy] upstream fetch failed");
+				if (!opts.signal?.aborted) logger.error({ err, provider: route.providerLabel, timedOut: timeoutSignal.aborted }, "[proxy] upstream fetch failed");
 				return null;
-		}).finally(() => {
-				clearTimeout(timeoutId);
 		});
 
 		if (!upstreamResp) {
+				opts.signal?.throwIfAborted();
 				if (
-						timedOut ||
+						timeoutSignal.aborted ||
 						(fetchError instanceof Error &&
 								(fetchError.name === "AbortError" || /aborted|timeout/i.test(fetchError.message)))
 				) {
@@ -134,9 +138,11 @@ async function callProvider(opts: CallProviderOptions): Promise<Response> {
 
 		if (!upstreamResp.ok) {
 				const status = upstreamResp.status as number;
-				const errBody = await upstreamResp.text().catch(() => "");
+				// Error bodies can echo prompts or provider account information.
+				// Release the response without retaining its contents in logs.
+				await upstreamResp.body?.cancel().catch(() => {});
 				logger.warn(
-						{ status, model: modelId, errBody: errBody.slice(0, 300) },
+						{ status, model: modelId, provider: route.providerLabel },
 						"[proxy] upstream returned non-2xx",
 				);
 				const safeStatus = status >= 500 ? 502 : status;
@@ -144,10 +150,7 @@ async function callProvider(opts: CallProviderOptions): Promise<Response> {
 				// expired, or out of credits). Surface an actionable message instead
 				// of the raw upstream body, which is often just `{"error":"Authentication failed"}`.
 				if (status === 401) {
-						throw new ProviderError(
-								"Model provider authentication failed (provider API key invalid or out of credits). Contact support.",
-								401,
-						);
+						throw new ProviderAuthenticationError();
 				}
 				// 429 = upstream rate-limited / concurrency cap. Raw upstream bodies
 				// are noise for end users; keep the detail in the server log instead.
@@ -158,14 +161,8 @@ async function callProvider(opts: CallProviderOptions): Promise<Response> {
 						);
 				}
 				// SECURITY: never forward the raw upstream body. For non-5xx
-				// errors that body can contain provider account identifiers,
-				// internal model/route names, or fragments of another tenant's
-				// response. Status codes are the only part safe to surface;
-				// the detail belongs in the server log.
-				logger.warn(
-					{ status, errBody: errBody.slice(0, 200) },
-					"[proxy] upstream returned an error status",
-				);
+				// errors that body can contain sensitive provider data or prompts.
+				// Retain status and routing metadata only.
 				throw new ProviderError(
 					status >= 500
 						? "Inference provider temporarily unavailable"
@@ -196,6 +193,23 @@ export async function routeRequestWithFallback(
 	attemptCount: number;
 }> {
 	const modelId = opts.modelId;
+	if (opts.allowedModels && !opts.allowedModels.includes(modelId)) {
+		throw new ProviderError("This API key does not allow the requested model", 403);
+	}
+	const requested = getModelById(modelId);
+	if (requested?.disabledReason) throw new ProviderError(requested.disabledReason, 503);
+	if (requested?.maxOutputTokens && opts.max_tokens && opts.max_tokens > requested.maxOutputTokens) {
+		throw new ProviderError(`max_tokens exceeds this model's limit of ${requested.maxOutputTokens}`, 400);
+	}
+	// One budget across all models and retries, including the returned body.
+	// The frontend waits 270 seconds, leaving time to return an actionable error.
+	const deadline = AbortSignal.timeout(240_000);
+	const signal = opts.signal ? AbortSignal.any([opts.signal, deadline]) : deadline;
+	function assertActive() {
+		opts.signal?.throwIfAborted();
+		if (deadline.aborted) throw new ProviderError("Inference request exceeded the 240-second gateway limit", 504);
+	}
+	assertActive();
 	// Cumulative attempts across every model in the chain, not just this one.
 	let totalAttempts = 0;
 		const freeOnly = opts.skipBilling === true;
@@ -203,10 +217,13 @@ export async function routeRequestWithFallback(
 				modelId,
 				opts.clientFallbacks ?? [],
 				freeOnly,
-		);
+		).filter(id => !opts.allowedModels || opts.allowedModels.includes(id));
 
 		let lastError: unknown = null;
 		const errorLog: unknown[] = [];
+		// A provider shares one operator credential across its models. Once
+		// rejected, further same-provider calls cannot repair it in this request.
+		const rejectedProviders = new Set<string>();
 
 		/** Narrow an `unknown` thrown value to the error fields we actually use. */
 		function readError(e: unknown): { status?: number; message?: string; name?: string } {
@@ -227,15 +244,20 @@ export async function routeRequestWithFallback(
 				// next free peer quickly (OpenRouter-style model layer). Paid API keeps
 				// a slightly deeper retry budget for transient 5xx/429.
 				const maxRetries = freeOnly ? 1 : 2;
-				const modelDef = getModelById(currentModelId);
-				if (!modelDef) continue;
+			const modelDef = getModelById(currentModelId);
+			if (!modelDef) continue;
+			if (rejectedProviders.has(modelDef.provider)) continue;
+			// A fallback with a smaller output ceiling cannot satisfy this request.
+			if (modelDef.maxOutputTokens && opts.max_tokens && opts.max_tokens > modelDef.maxOutputTokens) continue;
 
 				while (attempt <= maxRetries) {
+						assertActive();
 						try {
 							totalAttempts++;
 							const response = await callProvider({
 										...opts,
 										modelId: currentModelId,
+										signal,
 								});
 
 								if (currentModelId !== modelId) {
@@ -247,6 +269,7 @@ export async function routeRequestWithFallback(
 
 								return { response, actualModelId: currentModelId, attemptCount: Math.max(1, totalAttempts) };
 						} catch (err) {
+								assertActive();
 								attempt++;
 								lastError = err;
 								errorLog.push(err);
@@ -256,10 +279,12 @@ export async function routeRequestWithFallback(
 								// Auth / not-found / bad request: never thrash the same model —
 								// jump straight to the next peer in the chain.
 								const isImmediateFailover =
+										err instanceof ProviderAuthenticationError ||
 										e.status === 401 ||
 										e.status === 403 ||
 										e.status === 404 ||
 										e.status === 400 ||
+										e.status === 408 ||
 										e.status === 503;
 
 								// Transient: 5xx, 408 request timeout, 429 rate limit, or network.
@@ -276,6 +301,7 @@ export async function routeRequestWithFallback(
 														e.message.includes("ECONNRESET") ||
 														e.message.includes("ETIMEDOUT")));
 
+								if (err instanceof ProviderAuthenticationError) rejectedProviders.add(modelDef.provider);
 								if (
 										!isImmediateFailover &&
 										attempt <= maxRetries &&

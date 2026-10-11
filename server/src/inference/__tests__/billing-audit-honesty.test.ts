@@ -81,12 +81,50 @@ describe("recordUsage audit honesty", () => {
 		insertReturning.mockResolvedValue([{ requestId: "req_1" }]);
 	});
 
+	it("keeps provider cost for free requests without claiming a credit deduction", async () => {
+		await recordUsage({ ...baseArgs, promptTokens: 1_000_000, outputTokens: 0,
+			pricing: { inputPer1M: 3, outputPer1M: 6, markup: 0, costInputPer1M: 2, costOutputPer1M: 4 },
+			skipBilling: true });
+		expect(insertValues).toHaveBeenCalledWith(expect.objectContaining({ costCents: "200.00000000", markupCents: "-200.00000000", totalCents: "0" }));
+		expect(update).not.toHaveBeenCalled();
+		expect(auditLog).not.toHaveBeenCalled();
+	});
+
+	it.each(["aborted", "error"] as const)("does not claim customer revenue or deduction for %s requests", async (status) => {
+		await recordUsage({ ...baseArgs, status });
+		expect(insertValues).toHaveBeenCalledWith(expect.objectContaining({ totalCents: "0" }));
+		expect(update).not.toHaveBeenCalled();
+		expect(auditLog).not.toHaveBeenCalled();
+	});
+
+	it.each(["aborted", "error"] as const)("preserves the actual outcome of a free %s request", async (status) => {
+		await recordUsage({ ...baseArgs, status, skipBilling: true });
+		expect(insertValues).toHaveBeenCalledWith(expect.objectContaining({ status, totalCents: "0" }));
+	});
+
+	it("retains the catalog cost basis while charging an administrative retail override", async () => {
+		updateReturning.mockResolvedValue([{ userId: "u1" }]);
+		await recordUsage({ ...baseArgs, promptTokens: 1_000_000, outputTokens: 0,
+			pricing: { inputPer1M: 3, outputPer1M: 6, markup: 0, costInputPer1M: 2, costOutputPer1M: 4 } });
+		expect(insertValues).toHaveBeenCalledWith(expect.objectContaining({ costCents: "200.00000000", markupCents: "100.00000000", totalCents: "300.00000000" }));
+	});
+
 	it("records CREDIT_DEDUCTED when the ledger row was actually updated", async () => {
 		updateReturning.mockResolvedValue([{ userId: "u1" }]);
 		await recordUsage(baseArgs);
 		expect(auditLog).toHaveBeenCalledWith(
 			expect.objectContaining({ action: "CREDIT_DEDUCTED" }),
 		);
+	});
+
+	it("preserves short Gonka charges instead of rounding them to free requests", async () => {
+		updateReturning.mockResolvedValue([{ userId: "u1" }]);
+		await recordUsage({ ...baseArgs, model: "minimax-m2-7", provider: "oma-ai", promptTokens: 1, outputTokens: 2,
+			pricing: { inputPer1M: 0.02, outputPer1M: 0.02, markup: 0, costKnown: false } });
+		expect(insertValues).toHaveBeenCalledWith(expect.objectContaining({ totalCents: "0.00000600" }));
+		const deduction = (updateSet.mock.calls as unknown as Array<[Record<"balanceCents" | "totalUsedCents", { queryChunks: unknown[] }>]>)[0][0];
+		expect(deduction.balanceCents.queryChunks).toContain("0.00000600");
+		expect(deduction.totalUsedCents.queryChunks).toContain("0.00000600");
 	});
 
 	it("records CREDIT_DEDUCTION_REJECTED when no row was updated (free-inference race)", async () => {
@@ -102,6 +140,8 @@ describe("recordUsage audit honesty", () => {
 		expect(auditLog).not.toHaveBeenCalledWith(
 			expect.objectContaining({ action: "CREDIT_DEDUCTED" }),
 		);
+		// Analytics must also show zero customer charges when no debit happened.
+		expect(updateSet).toHaveBeenCalledWith(expect.objectContaining({ totalCents: "0", markupCents: "-20000.00000000" }));
 	});
 
 	it("does NOT deduct when the requestId was already recorded", async () => {
@@ -131,6 +171,6 @@ describe("recordUsage audit honesty", () => {
 		// reconcilable after the fact rather than simply lost revenue.
 		expect(entry.resourceId).toBe("req_1");
 		// $1/1M input + $2/1M output, 0% markup => 20,000.00 cents.
-		expect(entry.metadata.costCents).toBe("20000.0000");
+		expect(entry.metadata.costCents).toBe("20000.00000000");
 	});
 });

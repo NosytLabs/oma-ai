@@ -26,11 +26,14 @@ export function ContactForm() {
 		e.preventDefault();
 		setStatus("sending");
 		setDetail(null);
+		const controller = new AbortController();
+		const timer = window.setTimeout(() => controller.abort(), 30_000);
 		try {
 			const res = await fetch("/api/support", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ topic, email, message }),
+				signal: controller.signal,
 			});
 			const body = (await res.json().catch(() => null)) as {
 				ticket?: string;
@@ -44,13 +47,15 @@ export function ContactForm() {
 			setStatus("ok");
 			setDetail(
 				body?.ticket
-					? `Queued as ${body.ticket}. We reply within one business day for outages.`
-					: "Message queued.",
+					? `Support request received. Reference: ${body.ticket}.`
+					: "Support request received.",
 			);
 			setMessage("");
 		} catch {
 			setStatus("err");
 			setDetail("Network error. Email support@nosytlabs.com instead.");
+		} finally {
+			window.clearTimeout(timer);
 		}
 	};
 
@@ -85,6 +90,7 @@ export function ContactForm() {
 					<input
 						type="email"
 						required
+						maxLength={254}
 						value={email}
 						onChange={(e) => setEmail(e.target.value)}
 						className="mt-1.5 min-h-11 w-full rounded-[var(--radius-md)] border border-border bg-void px-3 py-2.5 text-sm text-text-bright focus:border-accent/50 focus:outline-none"
@@ -97,6 +103,7 @@ export function ContactForm() {
 				<textarea
 					required
 					minLength={10}
+					maxLength={10_000}
 					rows={5}
 					value={message}
 					onChange={(e) => setMessage(e.target.value)}
@@ -120,6 +127,7 @@ export function ContactForm() {
 						{detail}
 					</p>
 				)}
+				{status === "err" && <a href="mailto:support@nosytlabs.com" className="text-sm text-accent underline underline-offset-2">Contact support by email</a>}
 			</div>
 		</form>
 	);

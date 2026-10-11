@@ -2,10 +2,12 @@
 	* RATE LIMIT FAIL-OPEN vs FAIL-CLOSED DESIGN:
 	* =============================================
 	*
-	* `rateLimit()` and `tokenBucket()` (used for inference/auth routes):
-	*   -> FAILS CLOSED (returns 503 when Redis is down)
-	*   Rationale: Security > availability. Auth and inference endpoints must
-	*   not allow unlimited requests when rate limiting infrastructure fails.
+	* `rateLimit()` defaults to a bounded per-instance request counter.
+	* Explicit failClosed routes return 503 when Redis is unavailable.
+	* Inference token buckets use an emergency five-request/minute allowance
+	* shared across an account's keys; anonymous traffic remains IP-scoped.
+	* Script failures preserve request/token weights in bounded local counters.
+	* These fallbacks do not provide a distributed quota across workers.
 	*
 	* `checkSessionRateLimit()` and `createSessionRateLimitMiddleware()`:
 	*   -> FAILS OPEN (allows requests when Redis is down)

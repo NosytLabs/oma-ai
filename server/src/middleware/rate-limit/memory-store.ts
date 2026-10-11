@@ -33,7 +33,7 @@ function cleanupFallbackCounters() {
 }
 
 /**
- * Count one hit against `key` in a fixed window, returning an honest
+ * Count a request or token weight against `key` in a fixed window, returning an honest
  * `remaining`. Used wherever Redis is unavailable but the cap must still be
  * enforced locally — a missing cache dependency should degrade enforcement,
  * not remove it.
@@ -42,7 +42,9 @@ export function checkMemoryCounter(
 	key: string,
 	limit: number,
 	windowMs: number,
+	requested: number = 1,
 ): { allowed: boolean; remaining: number; resetMs: number } {
+	if (!Number.isSafeInteger(requested) || requested < 1) throw new RangeError("Rate limit weight must be a positive integer");
 	cleanupFallbackCounters();
 
 	const now = Date.now();
@@ -63,11 +65,11 @@ export function checkMemoryCounter(
 
 	const resetMs = Math.max(windowMs - (now - entry.windowStart), 0);
 
-	if (entry.count >= limit) {
+	if (entry.count + requested > limit) {
 		return { allowed: false, remaining: 0, resetMs };
 	}
 
-	entry.count++;
+	entry.count += requested;
 	return { allowed: true, remaining: limit - entry.count, resetMs };
 }
 

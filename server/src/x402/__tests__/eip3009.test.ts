@@ -110,6 +110,7 @@ vi.mock('viem/chains', () => ({
 		base: { id: 8453, name: 'Base' },
 }))
 vi.mock('../../lib/rpc-client.js', () => ({
+		createBaseTransport: vi.fn(),
 		getPublicClient: vi.fn(() => ({
 			call: callMock,
 			// Settlement waits for the receipt before reporting success, so a

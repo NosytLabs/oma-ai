@@ -103,6 +103,12 @@ vi.mock("../../auth/middleware.js", async () => {
 
 import { adminRoutes } from "../admin.js";
 
+function mockLockedBalance(balanceCents?: string) {
+	const lock = vi.fn().mockResolvedValue(balanceCents === undefined ? [] : [{ balanceCents }]);
+	mockDb.select.mockReturnValueOnce({ from: vi.fn().mockReturnValue({ where: vi.fn().mockReturnValue({ for: lock }) }) });
+	return lock;
+}
+
 function adminRequest(
 		method: "get" | "post",
 		path: string,
@@ -130,6 +136,24 @@ beforeEach(() => {
 });
 
 describe("admin routes", () => {
+		it("keeps full-range usage totals when only one group is returned and flags unknown costs", async () => {
+				mockDb.execute.mockResolvedValueOnce([{
+					key: "venice", requests: 2, upstream_cents: "100", total_cents: "150",
+					unknown_cost_requests: 0, range_requests: 5, range_input_tokens: 200,
+					range_output_tokens: 100, range_upstream_cents: "100", range_markup_cents: "50",
+					range_total_cents: "160", range_unknown_cost_requests: 3,
+				}]);
+				const res = await adminRequest("get", "/v1/admin/usage/summary?limit=1");
+				expect(res.status).toBe(200);
+				const json = await res.json();
+				expect(json.items).toHaveLength(1);
+				expect(json.items[0].unknownCostRequests).toBe(0);
+				expect(json.totals).toEqual({
+					requests: 5, inputTokens: 200, outputTokens: 100, upstreamCents: 100,
+					markupCents: 50, totalCents: 160, unknownCostRequests: 3,
+				});
+		});
+
 		describe("POST /v1/admin/site-settings", () => {
 				it("rejects invalid body", async () => {
 						const res = await adminRequest("post", "/v1/admin/site-settings", {
@@ -219,7 +243,7 @@ describe("admin routes", () => {
 										action: "CREDIT_ADJUSTED",
 										resource: "credit_balance",
 										resourceId: "u_target",
-										metadata: expect.objectContaining({ deltaCents: 500, reason: "support credit" }),
+										metadata: expect.objectContaining({ requestedDeltaCents: 500, reason: "support credit" }),
 								}),
 						);
 				});
@@ -232,15 +256,44 @@ describe("admin routes", () => {
 										}),
 								}),
 						});
+						const lock = mockLockedBalance("500");
 						const res = await adminRequest("post", "/v1/admin/credit-adjust", {
 								userId: "u_target",
 								deltaCents: -250,
 								reason: "refund clawback",
 						});
 						expect(res.status).toBe(200);
+						expect(await res.json()).toMatchObject({ deltaCents: -250, requestedDeltaCents: -250, capped: false });
+						expect(lock).toHaveBeenCalledWith("update");
 						expect(mockAuditLog).toHaveBeenCalledWith(
-								expect.objectContaining({ action: "CREDIT_DEDUCTED" }),
+								expect.objectContaining({ action: "CREDIT_DEDUCTED", metadata: expect.objectContaining({ appliedDeltaCents: -250, deductionCappedAtBalance: false }) }),
 						);
+				});
+
+				it.each([undefined, "0"])("rejects deductions without an available balance (%s)", async balance => {
+					mockDb.select.mockReturnValueOnce({ from: vi.fn().mockReturnValue({ where: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([{ id: "u_target" }]) }) }) });
+					mockLockedBalance(balance);
+					const res = await adminRequest("post", "/v1/admin/credit-adjust", { userId: "u_target", deltaCents: -250, reason: "No available credit" });
+					expect(res.status).toBe(400);
+					expect(mockDb.insert).not.toHaveBeenCalled();
+					expect(mockDb.update).not.toHaveBeenCalled();
+					expect(mockAuditLog).not.toHaveBeenCalled();
+				});
+
+				it("reports only the applied deduction when the balance caps it", async () => {
+					mockDb.select.mockReturnValueOnce({ from: vi.fn().mockReturnValue({ where: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([{ id: "u_target" }]) }) }) });
+					mockLockedBalance("100.12500000");
+					const res = await adminRequest("post", "/v1/admin/credit-adjust", { userId: "u_target", deltaCents: -250, reason: "Partial deduction" });
+					expect(res.status).toBe(200);
+					expect(await res.json()).toMatchObject({ deltaCents: -100.125, requestedDeltaCents: -250, capped: true });
+					expect(mockAuditLog).toHaveBeenCalledWith(expect.objectContaining({ metadata: expect.objectContaining({ appliedDeltaCents: -100.125, deductionCappedAtBalance: true }) }));
+				});
+
+				it("rejects a zero adjustment without writing an audit or ledger row", async () => {
+					const res = await adminRequest("post", "/v1/admin/credit-adjust", { userId: "u_target", deltaCents: 0, reason: "No operation" });
+					expect(res.status).toBe(400);
+					expect(mockDb.transaction).not.toHaveBeenCalled();
+					expect(mockAuditLog).not.toHaveBeenCalled();
 				});
 		});
 

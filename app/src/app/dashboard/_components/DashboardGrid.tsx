@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";
 import {
@@ -13,20 +14,26 @@ import { Suspense, useMemo, useState } from "react";
 import { CreditBalanceCard } from "@/components/dashboard/CreditBalanceCard";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { OnboardingChecklist } from "@/components/dashboard/OnboardingChecklist";
-import { buildTopModels, buildUsageByDay } from "@/lib/dashboard-aggregate";
+import { buildSummaryModels, buildTopModels, buildUsageByDay } from "@/lib/dashboard-aggregate";
+import { toDollars } from "@/lib/utils";
 import type {
 	ApiKey,
 	ApiKeyWithSecret,
+	ApiKeyCreateOptions,
 	BalanceResponse,
 	CreditBatch,
 	CreditTransaction,
 	UsageRecord,
+	UsageSummary,
 } from "@/lib/api";
 import type { TabId, TimeRangeId } from "../_constants";
 import { QuickActions } from "./QuickActions";
 import { QuickStatsCard } from "./QuickStatsCard";
 import { RecentTransactions } from "./RecentTransactions";
 import { DashboardErrorBanner } from "./DashboardErrorBanner";
+const AccountSettings = dynamic(() => import("./AccountSettings"), {
+	loading: () => <p role="status" className="py-8 text-text-muted">Loading account settings…</p>,
+});
 import {
 	LazyApiKeyManager,
 	LazyCreatedKeyModal,
@@ -154,6 +161,9 @@ interface DashboardGridProps {
 	balance: BalanceResponse | null;
 	apiKeys: ApiKey[];
 	usage: UsageRecord[];
+	summary?: UsageSummary | null;
+	hasMoreUsage?: boolean;
+	loadingMoreUsage?: boolean;
 	creditBatches: CreditBatch[];
 	transactions: CreditTransaction[];
 	loading: boolean;
@@ -178,7 +188,7 @@ interface DashboardGridProps {
 	copied: string | null;
 	revokingId: string | null;
 	onCopy: (text: string, id: string) => void;
-	onCreateKey: () => void;
+	onCreateKey: (options?: ApiKeyCreateOptions) => void;
 	onRevokeKey: (keyId: string) => void;
 	setShowCreateForm: (show: boolean) => void;
 	setNewKeyName: (name: string) => void;
@@ -225,6 +235,9 @@ export function DashboardGrid(props: DashboardGridProps) {
 		balance,
 		apiKeys,
 		usage,
+		summary,
+		hasMoreUsage = false,
+		loadingMoreUsage = false,
 		creditBatches,
 		transactions,
 		loading,
@@ -262,18 +275,24 @@ export function DashboardGrid(props: DashboardGridProps) {
 
 	// `usage` is already time-range filtered by the page (`filteredUsage`).
 	// Derive the chart datasets via the shared aggregate helpers.
-	const usageData = useMemo(() => buildUsageByDay(usage ?? []), [usage]);
-	const modelData = useMemo(() => buildTopModels(usage ?? []), [usage]);
+	const usageData = useMemo(() => summary ? summary.timeline.map(p => ({ date: p.date, requests: p.requests, cost: toDollars(p.billed_cents) })) : buildUsageByDay(usage ?? []), [summary, usage]);
+	const modelData = useMemo(() => summary ? buildSummaryModels(summary) : buildTopModels(usage ?? []), [summary, usage]);
 
 	return (
 		<>
-			<DashboardErrorBanner
+			{activeTab !== "settings" && <DashboardErrorBanner
 				error={error}
 				backendUnavailable={backendUnavailable}
 				onRefresh={onRefresh}
-			/>
+			/>}
 
 			<AnimatePresence mode="wait">
+				{activeTab === "settings" && (
+					<m.div key="settings" id="panel-settings" role="tabpanel" aria-labelledby="tab-settings"
+						variants={tabContentVariants} initial="hidden" animate="visible" exit="exit">
+						<WidgetErrorBoundary title="Account settings"><AccountSettings /></WidgetErrorBoundary>
+					</m.div>
+				)}
 				{/* Overview Tab */}
 				{activeTab === "overview" && (
 					<m.div
@@ -300,13 +319,14 @@ export function DashboardGrid(props: DashboardGridProps) {
 
 						{/* Primary row — three user-facing panels of equal weight. */}
 						<div
-							className={`mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 [&>*]:min-h-[12rem] lg:grid-cols-3`}
+							className="mb-6 grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 [&>*]:min-h-[12rem]"
 						>
 							<WidgetErrorBoundary title="Credits">
 								<CreditBalanceCard
 									balance={balance}
 									loading={loading}
 									recentUsage={usage}
+									spendTrend={summary?.timeline.map(p => toDollars(p.billed_cents))}
 									creditBatches={creditBatches}
 								/>
 							</WidgetErrorBoundary>
@@ -329,14 +349,16 @@ export function DashboardGrid(props: DashboardGridProps) {
 									usageData={usageData}
 									modelData={modelData}
 									timeRange={timeRange}
+									bucket={summary?.bucket}
+									timezone={summary?.timezone}
 									loading={loading}
 								/>
 							</WidgetErrorBoundary>
 						</div>
 
-						<QuickActions />
+						<QuickActions isDemo={_isDemo} />
 
-						<RecentTransactions transactions={transactions} />
+						<RecentTransactions transactions={transactions} isDemo={_isDemo} />
 					</m.div>
 				)}
 
@@ -376,17 +398,19 @@ export function DashboardGrid(props: DashboardGridProps) {
 											usageData={usageData}
 											modelData={modelData}
 											timeRange={timeRange}
+											bucket={summary?.bucket}
+											timezone={summary?.timezone}
 											loading={loading}
 										/>
 									</WidgetErrorBoundary>
 								</div>
 
-								<div className="mb-8 grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-2">
+								<div className="mb-8 grid min-w-0 grid-cols-1 gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
 									<WidgetErrorBoundary title="Model usage">
-										<LazyModelUsageTable usage={usage} loading={loading} />
+										<LazyModelUsageTable usage={usage} summary={summary?.models} loading={loading} />
 									</WidgetErrorBoundary>
 									<WidgetErrorBoundary title="Provider breakdown">
-										<LazyProviderBreakdown usage={usage} loading={loading} />
+										<LazyProviderBreakdown usage={usage} summary={summary?.providers} loading={loading} />
 									</WidgetErrorBoundary>
 								</div>
 
@@ -399,6 +423,9 @@ export function DashboardGrid(props: DashboardGridProps) {
 											page={page}
 											limit={limit}
 											onPageChange={onPageChange}
+											totalCount={summary?.totals.requests}
+											hasMore={hasMoreUsage}
+											loadingMore={loadingMoreUsage}
 										/>
 									</WidgetErrorBoundary>
 								</div>

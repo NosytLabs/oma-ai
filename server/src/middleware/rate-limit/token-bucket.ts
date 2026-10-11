@@ -9,6 +9,7 @@ import { estimateTokens, flattenMessageContent } from "../../inference/token-uti
 import {
 	getModelLimits,
 	getRateLimitKey,
+	getUserRateLimitKey,
 	extractClientIp,
 	isCountableUserId,
 	readApiKeyId,
@@ -83,10 +84,8 @@ export async function checkTpmLimit(
 		};
 	} catch (err) {
 		logger.error({ err }, "TPM limit script error");
-		// Never fail open (see checkRpmLimit). The memory store counts
-		// requests, not tokens, so it is charged the request as a single unit
-		// — weaker than true TPM but still a real bound.
-		const fb = checkMemoryCounter(key, Math.max(1, maxTokens), windowSec * 1000);
+		// Preserve token weights even when the distributed script is unavailable.
+		const fb = checkMemoryCounter(key, Math.max(1, maxTokens), windowSec * 1000, requestedTokens);
 		return {
 			allowed: fb.allowed,
 			remaining: fb.remaining,
@@ -129,7 +128,7 @@ export async function checkTokenBucket(
 					// behind an error log nobody was reading. Degrade to the bounded
 					// per-process counter instead and flag it, so enforcement survives
 					// at instance scope and the response is labelled honestly.
-					const fb = checkMemoryCounter(key, config.bucketSize, 60_000);
+					const fb = checkMemoryCounter(key, config.bucketSize, 60_000, requested);
 					return {
 						allowed: fb.allowed,
 						remaining: fb.remaining,
@@ -156,6 +155,7 @@ export function tokenBucket(options: TokenBucketOptions = {}) {
 				checkRpm = true,
 				rpmLimit = 60
 		} = options;
+		let degradedWarned = false;
 
 		return async (c: Context<OmaEnv>, next: Next) => {
 				const rateLimitKey = getRateLimitKey(c, keyPrefix);
@@ -163,19 +163,19 @@ export function tokenBucket(options: TokenBucketOptions = {}) {
 				const redis = await getRedisClient();
 				const ready = isRedisReady();
 
-				// Fail-closed: Reject requests when Redis is unavailable (inference routes)
+				// A bounded emergency allowance remains available per account/instance.
 				if (!redis || !ready) {
-						logger.error("Redis unavailable -- failing CLOSED for inference route (rate limiting required)");
-						const fallback = checkFallbackLimit(rateLimitKey);
+						if (!degradedWarned) { logger.warn("Redis unavailable -- inference limited to the per-account emergency budget"); degradedWarned = true; }
+						const fallback = checkFallbackLimit(getUserRateLimitKey(c, keyPrefix) ?? rateLimitKey);
 						
 						const resetTime = Math.ceil((Date.now() + fallback.resetMs) / 1000);
 						c.header("X-RateLimit-Limit", String(FALLBACK_BURST_LIMIT));
 						c.header("X-RateLimit-Remaining", String(fallback.remaining));
 						c.header("X-RateLimit-Reset", String(resetTime));
-						c.header("X-RateLimit-Policy", "limiter");
-						c.header("Retry-After", String(Math.ceil(fallback.resetMs / 1000)));
+						c.header("X-RateLimit-Policy", "degraded-memory");
 						
 						if (!fallback.allowed) {
+								c.header("Retry-After", String(Math.max(1, Math.ceil(fallback.resetMs / 1000))));
 								return c.json(
 										{ error: { message: "Rate limit temporarily unavailable. Please try again later.", type: "rate_limit_error", code: "rate_limit_unavailable" } },
 										503
@@ -278,6 +278,7 @@ export interface ModelRateLimitOptions extends TokenBucketOptions {
 
 export function modelRateLimit(options: ModelRateLimitOptions = {}) {
 	const baseRateLimit = tokenBucket(options);
+	let degradedWarned = false;
 
 	return async (c: Context<OmaEnv>, next: Next) => {
 		let model: string | undefined;
@@ -315,25 +316,25 @@ export function modelRateLimit(options: ModelRateLimitOptions = {}) {
 		const modelLimits = getModelLimits(model);
 
 		if (!modelLimits) {
-			await baseRateLimit(c, next);
-			return;
+			return baseRateLimit(c, next);
 		}
 
 		const redis = await getRedisClient();
 		const ready = isRedisReady();
 
 		if (!redis || !ready) {
-			logger.error("Redis unavailable -- failing CLOSED for model rate limiting");
-			const fallback = checkFallbackLimit(getRateLimitKey(c, `tb:model:${model}`));
+			if (!degradedWarned) { logger.warn("Redis unavailable -- model limited to the per-account emergency budget"); degradedWarned = true; }
+			const prefix = `tb:model:${model}`;
+			const fallback = checkFallbackLimit(getUserRateLimitKey(c, prefix) ?? getRateLimitKey(c, prefix));
 
 			const resetTime = Math.ceil((Date.now() + fallback.resetMs) / 1000);
 			c.header("X-RateLimit-Limit", String(FALLBACK_BURST_LIMIT));
 			c.header("X-RateLimit-Remaining", String(fallback.remaining));
 			c.header("X-RateLimit-Reset", String(resetTime));
-			c.header("X-RateLimit-Policy", "limiter");
-			c.header("Retry-After", String(Math.ceil(fallback.resetMs / 1000)));
+			c.header("X-RateLimit-Policy", "degraded-memory");
 
 			if (!fallback.allowed) {
+				c.header("Retry-After", String(Math.max(1, Math.ceil(fallback.resetMs / 1000))));
 				return c.json(
 					{ error: { message: `Rate limit temporarily unavailable for model '${model}'. Please try again later.`, type: "rate_limit_error", code: "rate_limit_unavailable" } },
 					503
@@ -511,5 +512,4 @@ export function modelRateLimit(options: ModelRateLimitOptions = {}) {
 		}
 	};
 }
-
 

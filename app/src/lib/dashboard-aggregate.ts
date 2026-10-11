@@ -1,5 +1,6 @@
 import { MODEL_NAME_OVERRIDES, MODELS, type Model } from "@/lib/models-data"
-import type { UsageRecord } from "@/lib/api"
+import type { UsageRecord, UsageSummary } from "@/lib/api"
+import { toDollars } from "@/lib/utils"
 
 export interface UsageByDay {
 	date: string
@@ -17,6 +18,20 @@ export interface ModelSlice {
 // the long tail (brand rule: no orange/red as primary data colors).
 const MODEL_PALETTE = ["#46d39a", "#2dd4bf", "#3b82f6", "#a855f7", "#ec4899", "#f59e0b"]
 const TOP_MODELS = 5
+
+export function usageBilledDollars(record: UsageRecord): number {
+	return record.refundedAt ? 0 : toDollars(record.billedCents ?? record.totalCents ?? record.costCents)
+}
+
+export function buildSummaryModels(summary: UsageSummary): ModelSlice[] {
+	const sorted = summary.models.filter(m => Number(m.billed_cents) > 0)
+	const result = sorted.slice(0, TOP_MODELS).map((m, i) => ({
+		name: resolveModelDisplayName(m.model), value: toDollars(m.billed_cents), color: MODEL_PALETTE[i],
+	}))
+	if (sorted.length > TOP_MODELS) result.push({ name: `Other (${sorted.length - TOP_MODELS})`,
+		value: sorted.slice(TOP_MODELS).reduce((sum, m) => sum + toDollars(m.billed_cents), 0), color: MODEL_PALETTE[TOP_MODELS] })
+	return result
+}
 
 function localDayKey(iso: string): string {
 	const d = new Date(iso)
@@ -67,7 +82,7 @@ export function buildUsageByDay(usage: UsageRecord[]): UsageByDay[] {
 		const day = localDayKey(r.createdAt)
 		const prev = byDay.get(day) ?? { date: day, requests: 0, cost: 0 }
 		prev.requests += 1
-		prev.cost += Number(r.totalCents ?? "0") / 100
+		prev.cost += usageBilledDollars(r)
 		byDay.set(day, prev)
 	}
 	return Array.from(byDay.values()).sort((a, b) => (a.date < b.date ? -1 : 1))
@@ -83,7 +98,7 @@ export function buildTopModels(usage: UsageRecord[]): ModelSlice[] {
 		const displayName = resolveModelDisplayName(r.model)
 		const prev = byModel.get(displayName) ?? { name: displayName, value: 0, cost: 0 }
 		prev.value += 1
-		prev.cost += Number(r.totalCents ?? "0") / 100
+		prev.cost += usageBilledDollars(r)
 		byModel.set(displayName, prev)
 	}
 	// Sort by cost (not request count) so the "expensive" models surface

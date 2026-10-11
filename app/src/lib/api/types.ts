@@ -27,6 +27,15 @@ export interface ApiKey {
 	prefix: string;
 	createdAt: string;
 	lastUsedAt: string | null;
+	expiresAt?: string | null;
+	allowedModels?: string[] | null;
+	ipAllowlist?: string[] | null;
+}
+
+export interface ApiKeyCreateOptions {
+	expiresInDays?: number;
+	allowedModels?: string[];
+	ipAllowlist?: string[];
 }
 
 export interface ApiKeyWithSecret extends ApiKey {
@@ -43,7 +52,7 @@ export interface BalanceResponse {
 }
 
 /**
-	* One row from GET /v1/usage/recent.
+	* One row from GET /v1/usage.
 	* Token counts are numbers; all cents fields are decimal strings (may be
 	* sub-cent, e.g. "0.03"). `latencyMs` is null for in-flight/failed requests.
 	*/
@@ -54,6 +63,10 @@ export interface UsageRecord {
 	apiKeyId: string | null;
 	model: string;
 	provider: string;
+	requestedModel?: string | null;
+	/** Original charge is totalCents; billedCents excludes refunded charges. */
+	billedCents?: string;
+	refundedAt?: string | null;
 	promptTokens: number;
 	completionTokens: number;
 	/** Upstream provider cost in cents (decimal string). */
@@ -66,6 +79,41 @@ export interface UsageRecord {
 	/** "completed" | "error" | "free_tier" | future values. */
 	status: string;
 	createdAt: string;
+}
+
+export interface UsageTotals {
+	requests: number;
+	errors: number;
+	aborted: number;
+	free_requests: number;
+	active_models: number;
+	input_tokens: number;
+	output_tokens: number;
+	billed_cents: string;
+	avg_latency_ms: number | null;
+}
+
+export interface UsageModelSummary {
+	model: string;
+	requests: number;
+	input_tokens: number;
+	output_tokens: number;
+	billed_cents: string;
+	avg_latency_ms: number | null;
+}
+
+export interface UsageSummary {
+	range: "24h" | "7d" | "30d" | "all";
+	timezone: string;
+	bucket: "day" | "month";
+	from: string | null;
+	to: string;
+	lifetimeRequests: number;
+	totals: UsageTotals;
+	last24h: UsageTotals;
+	models: UsageModelSummary[];
+	providers: Array<{ provider: string; requests: number; billed_cents: string }>;
+	timeline: Array<{ date: string; requests: number; billed_cents: string }>;
 }
 
 export interface CreditBatch {

@@ -26,6 +26,44 @@ describe("api client", () => {
 	});
 
 	describe("request() core logic", () => {
+		it.each([
+			new Headers({ authorization: "Bearer test-key", accept: "text/csv" }),
+			[["authorization", "Bearer test-key"], ["accept", "text/csv"]] as [string, string][],
+			{ authorization: "Bearer test-key", accept: "text/csv" },
+		])("preserves standard HeadersInit inputs and case-insensitive overrides: %j", async headers => {
+			let received!: Headers;
+			fetchMock.mockImplementationOnce((_url: string, init: RequestInit) => {
+				received = new Headers(init.headers);
+				return Promise.resolve(new Response("{}", { status: 200 }));
+			});
+			await request("/test", { headers });
+			expect(received.get("Authorization")).toBe("Bearer test-key");
+			expect(received.get("Accept")).toBe("text/csv");
+			expect(received.get("Content-Type")).toBe("application/json");
+		});
+
+		it.each(["json", "blob"] as const)("times out a stalled %s body after response headers arrive", async responseType => {
+			vi.useFakeTimers();
+			const caller = new AbortController();
+			fetchMock.mockImplementationOnce((_url: string, init: RequestInit) => {
+				const body = new ReadableStream({
+					start(controller) {
+						init.signal?.addEventListener("abort", () => controller.error(init.signal?.reason), { once: true });
+					},
+				});
+				return Promise.resolve(new Response(body, { status: 200 }));
+			});
+			let result: unknown = "still pending";
+			const pending = request("/test", { responseType, signal: caller.signal }).catch(error => { result = error; });
+			await vi.advanceTimersByTimeAsync(30_000);
+			try {
+				expect(result).toMatchObject({ name: "AbortError" });
+			} finally {
+				caller.abort();
+				await pending;
+			}
+		});
+
 		it("composes caller cancellation with the request timeout", async () => {
 			const caller = new AbortController();
 			let completeFetch!: (response: Response) => void;
@@ -141,11 +179,10 @@ describe("api client", () => {
 			});
 
 			const options = fetchMock.mock.calls[0][1];
-			expect(options.headers).toEqual({
-				"Content-Type": "application/json",
-				Accept: "text/csv", // Overridden
-				"X-Custom": "val",
-			});
+			const received = new Headers(options.headers);
+			expect(received.get("Content-Type")).toBe("application/json");
+			expect(received.get("Accept")).toBe("text/csv");
+			expect(received.get("X-Custom")).toBe("val");
 		});
 
 		it("throws BackendUnavailableError if fetch throws a TypeError indicating fetch failed", async () => {

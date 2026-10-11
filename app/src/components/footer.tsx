@@ -49,7 +49,7 @@ export function Footer() {
 				<div className="grid gap-10 py-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
 					<div className="flex max-w-sm flex-col gap-3">
 						<Link href="/" prefetch={false} aria-label="OMA home" className="inline-flex min-h-11 w-fit items-center rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"><OmaNavLockup size="sm" /></Link>
-						<p className="text-[13px] leading-relaxed text-text-secondary">One gateway. Every model. No lock-in. OpenAI-compatible inference paid with USDC on Base, x402, or card when enabled.</p>
+						<p className="text-[13px] leading-relaxed text-text-secondary">One gateway for a curated model catalog. OpenAI-compatible APIs, prepaid credits with USDC on Base, and free website chat for eligible models.</p>
 					</div>
 					<nav aria-label="Footer navigation" className="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-4">
 						{sections.map((section) => <div key={section.title} className="min-w-0">
@@ -58,7 +58,7 @@ export function Footer() {
 								{section.links.map((link) => {
 									const active = isCurrentNavLink(pathname, link.href);
 									return <li key={link.href}><Link href={link.href} prefetch={false} aria-current={active ? "page" : undefined}
-										className={`inline-flex min-h-8 items-center rounded-sm py-1 text-xs leading-relaxed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${active ? "text-accent" : "text-text-secondary hover:text-accent"}`}>{link.label}</Link></li>;
+										className={`inline-flex min-h-11 min-w-11 items-center rounded-sm py-1 text-xs leading-relaxed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:min-h-8 ${active ? "text-accent" : "text-text-secondary hover:text-accent"}`}>{link.label}</Link></li>;
 								})}
 							</ul>
 						</div>)}

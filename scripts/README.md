@@ -13,7 +13,7 @@ Tooling for local development and operations.
 
 ```bash
 ./scripts/dev/start-dev.sh          # app + server
-./scripts/dev/local-db-up.sh        # Postgres 16 + Redis
+./scripts/dev/local-db-up.sh        # local Postgres 16
 ./scripts/dev/start-chrome-debug.sh # Chrome CDP for browser harness
 ./scripts/dev/screenshot-audit.mjs  # full-page Playwright screenshots for visual review
 ```
@@ -30,7 +30,7 @@ Tooling for local development and operations.
 From repo root:
 
 ```bash
-pnpm run validate           # app + server: typecheck, lint, tests
+pnpm run validate           # app + server: typecheck, lint, tests, production builds
 pnpm run validate:app
 pnpm run validate:server
 pnpm run validate:typecheck

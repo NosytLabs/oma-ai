@@ -13,11 +13,11 @@ export function RateLimitsSection() {
 				id="rate-limits"
 				icon={<Gauge className="h-5 w-5" />}
 				title="Rate Limits"
-				subtitle="One set of limits for every key — no plan tiers. Enforced per API key (or per IP for unauthenticated requests)."
+				subtitle="No plan tiers. Account, API-key and client-IP limits apply together; creating another key does not bypass the account limit."
 			/>
 
 			<div id="rl-limits" className="mb-6 overflow-x-auto overscroll-x-contain rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] scroll-mt-24">
-				<table className="w-full min-w-[24rem] text-left text-sm" aria-label="Default rate limits">
+				<table className="w-full text-left text-sm" aria-label="Default rate limits">
 					<thead>
 						<tr className="border-b border-border bg-panel">
 							<th className="px-4 py-3 font-medium text-text-muted">Limit</th>
@@ -44,7 +44,7 @@ export function RateLimitsSection() {
 				</table>
 			</div>
 
-			<div id="rl-models" className="mb-6 overflow-x-auto overscroll-x-contain rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] scroll-mt-24">
+			<div id="rl-models" tabIndex={0} role="region" aria-label="Model rate limits. Scroll horizontally to view all columns." className="mb-6 overflow-x-auto overscroll-x-contain rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] scroll-mt-24">
 				<div className="border-b border-border bg-panel px-4 py-3">
 					<h3 className="font-semibold text-text text-sm">
 						Per-Model Overrides
@@ -103,12 +103,17 @@ export function RateLimitsSection() {
 					<h3 className="mb-2 font-semibold text-text">Rate Limit Headers</h3>
 					<div className="space-y-1 font-mono text-xs text-text-muted">
 						<div>
-							<span className="text-accent">X-RateLimit-Limit</span> - Requests
-							per minute
+						<span className="text-accent">X-RateLimit-Limit</span> - Budget
+							for the reported policy
 						</div>
 						<div>
 							<span className="text-accent">X-RateLimit-Remaining</span> -
-							Requests left
+							Budget left (requests or tokens)
+						</div>
+						<div>
+							<span className="text-accent">X-RateLimit-Policy</span> -
+							model-rpm counts requests; model-tpm counts tokens;
+							degraded-memory is enforced per instance
 						</div>
 						<div>
 							<span className="text-accent">X-RateLimit-Reset</span> - Unix
@@ -119,6 +124,12 @@ export function RateLimitsSection() {
 							before retrying (sent on 429/503)
 						</div>
 					</div>
+					<p className="mt-3 text-sm text-text-muted">
+						Respect Retry-After on 429/503 and use backoff with jitter. During a
+						limiter outage, creating another key does not reset your account’s
+						emergency allowance. Provider capacity limits may also reject requests;
+						a listed model is not a reservation of upstream capacity.
+					</p>
 				</div>
 			</div>
 		</AnimatedSection>

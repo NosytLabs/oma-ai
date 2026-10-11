@@ -10,6 +10,7 @@ on:
       - app/package.json
       - server/package.json
       - pnpm-lock.yaml
+      - patches/**
       - pnpm-workspace.yaml
       - .npmrc
       - .nvmrc
@@ -20,6 +21,7 @@ on:
       - app/package.json
       - server/package.json
       - pnpm-lock.yaml
+      - patches/**
       - pnpm-workspace.yaml
       - .npmrc
       - .nvmrc

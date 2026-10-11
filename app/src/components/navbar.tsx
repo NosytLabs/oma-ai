@@ -52,7 +52,7 @@ function NavbarContent({ search }: { search: string }) {
 	}, []);
 
 	return (
-		<header className="sticky top-0 z-50 border-b border-border bg-void/95 font-mono backdrop-blur-md">
+		<header className={`sticky top-0 z-50 border-b border-border bg-void/95 font-mono backdrop-blur-md ${pathname === "/pricing" ? "bg-[linear-gradient(110deg,var(--color-accent-dim),transparent_70%)]" : ""}`}>
 			<nav aria-label="Main navigation" className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
 				<div className="flex min-w-0 items-center gap-4 lg:gap-6">
 					<Link href="/" aria-label="OMA home" className="inline-flex min-h-11 shrink-0 items-center rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">

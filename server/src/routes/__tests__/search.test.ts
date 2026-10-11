@@ -5,7 +5,7 @@
 	* Pins rate-limit budget, HTML + Instant Answer paths, caps, and
 	* graceful empty results (never 5xx to the chat UI).
 	*/
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Hono } from "hono";
 
 const state = vi.hoisted(() => ({
@@ -57,8 +57,32 @@ beforeEach(() => {
 	vi.clearAllMocks();
 	vi.stubGlobal("fetch", state.fetchMock);
 });
+afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
 
 describe("/v1/search", () => {
+	it.each(["html", "instant"])("bounds a stalled %s response body instead of hanging web search", async stalled => {
+		vi.useFakeTimers();
+		let abortBody!: () => void;
+		state.fetchMock.mockImplementation(async (url: string, init: RequestInit) => {
+			const isHtml = String(url).includes("html.duckduckgo.com");
+			if ((stalled === "html") === isHtml) {
+				return new Response(new ReadableStream({ start(controller) {
+					abortBody = () => controller.error(new Error("test cleanup"));
+					init.signal?.addEventListener("abort", () => controller.error(init.signal?.reason), { once: true });
+				} }), { status: 200 });
+			}
+			return new Response(isHtml ? "" : JSON.stringify({ AbstractText: "Fallback answer", AbstractURL: "https://example.test", Heading: "Fallback" }), { status: 200 });
+		});
+		let response: Response | undefined;
+		const pending = Promise.resolve(request("/v1/search?query=test")).then(res => { response = res; });
+		await vi.advanceTimersByTimeAsync(8000);
+		try {
+			expect(response?.status).toBe(200);
+			const body = await response!.json();
+			expect(body.results).toHaveLength(stalled === "html" ? 1 : 0);
+		} finally { if (!response) abortBody(); await pending; }
+	});
+
 	it("is rate-limited with a modest anonymous budget", () => {
 		expect(state.tokenBucketOpts).toEqual({
 			refillRate: 2,

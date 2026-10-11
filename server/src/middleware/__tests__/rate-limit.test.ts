@@ -61,21 +61,17 @@ describe('rate-limit middleware', () => {
 						expect(MODEL_LIMITS['kimi-k3']).toEqual({ rpm: 60, tpm: 120000 })
 						expect(MODEL_LIMITS['llama-3.3-70b']).toEqual({ rpm: 60, tpm: 120000 })
 						expect(MODEL_LIMITS['deepseek-v4-flash-0731-openbroker']).toEqual({ rpm: 60, tpm: 120000 })
-						expect(MODEL_LIMITS['llama-3.2-3b']).toEqual({ rpm: 120, tpm: 240000 })
+						expect(MODEL_LIMITS['llama-3.2-3b']).toBeUndefined()
 				})
 
-				it('should have reasonable limits for different model tiers', () => {
+				it('should have reasonable limits for current standard models', () => {
 						const standardModels = ['kimi-k3', 'llama-3.3-70b', 'deepseek-v4-flash-0731-openbroker']
-						const fastModels = ['llama-3.2-3b']
 
 						standardModels.forEach(model => {
 								expect(MODEL_LIMITS[model].rpm).toBeGreaterThanOrEqual(30)
 								expect(MODEL_LIMITS[model].rpm).toBeLessThanOrEqual(60)
 						})
 
-						fastModels.forEach(model => {
-								expect(MODEL_LIMITS[model].rpm).toBeGreaterThan(60)
-						})
 				})
 		})
 
@@ -177,6 +173,14 @@ describe('rate-limit middleware', () => {
 			expect(res.allowed).toBe(true)
 			expect(res.degraded).toBe(true)
 		})
+
+		it('preserves token weights when Redis scripts fail', async () => {
+			mockRedisClient.eval.mockRejectedValue(new Error('NOSCRIPT'))
+			const first = await checkTpmLimit(mockRedisClient as any, 'weighted-fallback-unique', 120_000, 80_000)
+			expect(first.remaining).toBe(40_000)
+			const second = await checkTpmLimit(mockRedisClient as any, 'weighted-fallback-unique', 120_000, 50_000)
+			expect(second.allowed).toBe(false)
+		})
 	})
 
 		describe('checkRpmLimit', () => {
@@ -201,6 +205,17 @@ describe('rate-limit middleware', () => {
 		})
 
 		describe('tokenBucket middleware', () => {
+				it('shares the emergency budget across API keys on one account', async () => {
+					const { isRedisReady } = await import('../../lib/redis-client.js')
+					vi.mocked(isRedisReady).mockReturnValueOnce(false).mockReturnValueOnce(false).mockReturnValueOnce(false).mockReturnValueOnce(false).mockReturnValueOnce(false).mockReturnValueOnce(false)
+					let credential = 0
+					mockContext.get = vi.fn((key: string) => key === 'userId' ? 'emergency-account-unique' : key === 'apiKey' ? { id: `rotating-key-${credential}` } : undefined)
+					const middleware = tokenBucket()
+					for (credential = 0; credential < 6; credential++) await middleware(mockContext, mockNext)
+					expect(mockNext).toHaveBeenCalledTimes(5)
+					expect(mockContext.json).toHaveBeenCalledWith(expect.objectContaining({error: expect.objectContaining({code:'rate_limit_unavailable'})}),503)
+					expect(mockContext.header).toHaveBeenCalledWith('X-RateLimit-Policy','degraded-memory')
+				})
 				it('should allow request when under rate limit', async () => {
 						mockRedisClient.eval.mockResolvedValue([1, 50, 0])
 
@@ -354,7 +369,7 @@ describe('rate-limit middleware', () => {
 					// `ttl` must never be called individually.
 					mockRedisClient.eval.mockResolvedValue([1, 1, 59999])
 
-					const middleware = rateLimit({ windowMs: 60000, maxRequests: 60 })
+					const middleware = rateLimit({ windowMs: 60000, keyPrefix: 'rl', maxRequests: 60 })
 					await middleware(mockContext as any, mockNext)
 
 					expect(mockRedisClient.eval).toHaveBeenCalledWith(
@@ -373,7 +388,7 @@ describe('rate-limit middleware', () => {
 				it('should reject when over limit', async () => {
 					mockRedisClient.eval.mockResolvedValue([0, 61, 45000])
 
-					const middleware = rateLimit({ windowMs: 60000, maxRequests: 60 })
+					const middleware = rateLimit({ windowMs: 60000, keyPrefix: 'rl', maxRequests: 60 })
 					await middleware(mockContext as any, mockNext)
 
 					expect(mockNext).not.toHaveBeenCalled()
@@ -396,7 +411,7 @@ describe('rate-limit middleware', () => {
 						return null
 					})
 
-					const middleware = rateLimit({ windowMs: 60000, maxRequests: 60 })
+					const middleware = rateLimit({ windowMs: 60000, keyPrefix: 'rl', maxRequests: 60 })
 					await middleware(mockContext as any, mockNext)
 
 					const keys = mockRedisClient.eval.mock.calls.map((call) => call[1][0])
@@ -411,7 +426,7 @@ describe('rate-limit middleware', () => {
 					// store, never to "allowed with a full budget".
 					mockRedisClient.eval.mockRejectedValue(new Error('NOSCRIPT'))
 
-					const middleware = rateLimit({ windowMs: 60000, maxRequests: 2 })
+					const middleware = rateLimit({ windowMs: 60000, keyPrefix: 'rl', maxRequests: 2 })
 					await middleware(mockContext as any, mockNext)
 					await middleware(mockContext as any, mockNext)
 					expect(mockNext).toHaveBeenCalledTimes(2)

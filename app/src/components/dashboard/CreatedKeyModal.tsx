@@ -3,7 +3,8 @@
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";
 import { AlertTriangle, Check, Copy, Eye, EyeOff, Key } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useFocusTrap } from "@/lib/hooks/useFocusTrap";
 import type { ApiKeyWithSecret } from "@/lib/api";
 
 interface CreatedKeyModalProps {
@@ -19,17 +20,17 @@ export function CreatedKeyModal({
 	onCopy,
 	onDismiss,
 }: CreatedKeyModalProps) {
-	const [revealed, setRevealed] = useState(false);
-	const [autoHideTimer, setAutoHideTimer] = useState<ReturnType<
-		typeof setTimeout
-	> | null>(null);
+	const [revealedKeyId, setRevealedKeyId] = useState<string | null>(null);
+	const revealed = !!createdKey && revealedKeyId === createdKey.id;
+	const panelRef = useRef<HTMLDivElement>(null);
+	const dismiss = () => { setRevealedKeyId(null); onDismiss(); };
+	useFocusTrap({ active: !!createdKey, containerRef: panelRef, onClose: dismiss });
 
 	useEffect(() => {
 		if (revealed) {
 			const timer = setTimeout(() => {
-				setRevealed(false);
+				setRevealedKeyId(null);
 			}, 10000);
-			setAutoHideTimer(timer);
 			return () => {
 				if (timer) clearTimeout(timer);
 			};
@@ -37,8 +38,7 @@ export function CreatedKeyModal({
 	}, [revealed]);
 
 	const handleReveal = () => {
-		if (autoHideTimer) clearTimeout(autoHideTimer);
-		setRevealed(!revealed);
+		setRevealedKeyId(revealed ? null : createdKey?.id ?? null);
 	};
 
 	if (!createdKey) return null;
@@ -52,6 +52,11 @@ export function CreatedKeyModal({
 				exit={{ opacity: 0 }}
 			>
 				<m.div
+					ref={panelRef}
+					role="dialog"
+					aria-modal="true"
+					aria-labelledby="created-key-title"
+					aria-describedby="key-warning"
 					className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto border border-accent/20 bg-void p-6"
 					initial={{ scale: 0.9, opacity: 0 }}
 					animate={{ scale: 1, opacity: 1 }}
@@ -63,7 +68,7 @@ export function CreatedKeyModal({
 							<Key className="h-6 w-6" />
 						</div>
 						<div>
-							<h3 className="text-lg font-bold text-text-bright">
+							<h3 id="created-key-title" className="text-lg font-bold text-text-bright">
 								API key created
 							</h3>
 							<p className="text-xs text-text-muted">
@@ -136,11 +141,11 @@ export function CreatedKeyModal({
 
 					<button
 						type="button"
-						onClick={onDismiss}
+						onClick={dismiss}
 						aria-describedby="key-warning"
 						className="w-full border border-accent bg-accent/10 py-3 text-sm font-semibold text-accent transition-colors duration-200 ease-out hover:bg-accent/20 focus-ring active:translate-y-[1px] active:scale-[0.97]"
 					>
-						I have copied this key
+						Done — dismiss key
 					</button>
 				</m.div>
 			</m.div>

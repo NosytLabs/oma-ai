@@ -46,7 +46,7 @@ export interface UsePlaygroundStateOptions {
 	 * Override the default model. Useful for tests and for callers that
 	 * already resolved the search-param-derived value elsewhere. Defaults
 	 * to `?model=<value>` from the current URL, falling back to
-	 * `FREE_DEFAULT_CHAT_MODEL` (free OMA-AI / GLM-5.3 on Gonka/OpenBroker).
+	 * `FREE_DEFAULT_CHAT_MODEL` (free OMA-AI / MiniMax on Gonka/OpenBroker).
 	 */
 	defaultModel?: string;
 	/**

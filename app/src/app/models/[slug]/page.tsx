@@ -136,7 +136,7 @@ export default async function ModelDetailPage({
 	const live = await fetchLiveModel(slug);
 	const model = withLiveModelDetails(staticModel, live);
 	// A failed lookup is unknown, not an outage. Keep the reference page indexable.
-	const available = live ? isModelAvailable(live) : null;
+	const available = model.unavailableReason ? false : live ? isModelAvailable(live) : null;
 	return (
 		<>
 			<BreadcrumbListJsonLd

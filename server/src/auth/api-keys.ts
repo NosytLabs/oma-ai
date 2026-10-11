@@ -10,7 +10,6 @@ import { getRedisClient } from "../lib/redis-client.js";
 import { logger } from "../lib/logger.js";
 
 const KEY_ROTATION_WARNING_DAYS = 60;
-const API_KEY_CACHE_TTL_SECONDS = 300;
 const MAX_CIDR_RANGES = 20;
 
 const pendingLastUsedUpdates = new Set<string>();
@@ -98,8 +97,8 @@ function normalizeIpOrCidr(s: string): string {
 		return noZone.trim();
 }
 
-function isValidIpOrCidr(s: string): boolean {
-		if (typeof s !== "string" || s.length === 0) return false;
+export function isValidIpOrCidr(s: string): boolean {
+		if (typeof s !== "string" || s.length === 0 || s.includes("%")) return false;
 		const norm = normalizeIpOrCidr(s);
 		if (!norm) return false;
 		const slashIdx = norm.indexOf("/");
@@ -121,6 +120,13 @@ function ipToBits(ip: string, family: 4 | 6): bigint {
 				return ip.split(".").reduce((acc, p) => (acc << 8n) | BigInt(Number(p)), 0n);
 		}
 		// IPv6
+		// An embedded dotted IPv4 tail represents TWO hextets, not one.
+		// Dropping its high bits lets different IPv4 subnets match the same CIDR.
+		const tail = ip.match(/\d+\.\d+\.\d+\.\d+$/)?.[0];
+		if (tail) {
+			const bits = ipToBits(tail, 4);
+			ip = `${ip.slice(0, -tail.length)}${(bits >> 16n).toString(16)}:${(bits & 0xffffn).toString(16)}`;
+		}
 		const dcIdx = ip.indexOf("::");
 		let halves: [string, string];
 		if (dcIdx === -1) { halves = [ip, ""]; } else { halves = [ip.slice(0, dcIdx), ip.slice(dcIdx + 2)]; }
@@ -145,9 +151,10 @@ export function isIpAllowedByList(
 		const ipN = ipToBits(ip, ipFamily);
 		for (const entry of list) {
 				const norm = normalizeIpOrCidr(entry);
+				if (!isValidIpOrCidr(norm)) continue;
 				const slashIdx = norm.indexOf("/");
 				if (slashIdx === -1) {
-						if (netIsIp(norm) === ipFamily && norm === ip) return true;
+						if (netIsIp(norm) === ipFamily && ipToBits(norm, ipFamily) === ipN) return true;
 						continue;
 				}
 				const cidrIp = norm.slice(0, slashIdx);
@@ -248,62 +255,22 @@ export async function createApiKey(
 }
 
 export async function validateApiKey(rawKey: string): Promise<ApiKey | null> {
-		if (typeof rawKey !== "string" || !rawKey) {
-				return null;
-		}
-		const keyHash = crypto.createHash("sha256").update(rawKey).digest("hex");
-		const now = new Date();
-
-		const redis = await getRedisClient();
-		if (redis) {
-				try {
-						const cached = await redis.get(`apikey:${keyHash}`);
-						if (cached) {
-								const apiKey = JSON.parse(cached as string) as ApiKey;
-								const rawPrefix = rawKey.slice(0, 12);
-								if (!timingSafeEqual(apiKey.keyPrefix, rawPrefix)) return null;
-								if (apiKey.active === false) {
-										await redis.del(`apikey:${keyHash}`);
-										return null;
-								}
-								if (apiKey.expiresAt && new Date(apiKey.expiresAt) < now) {
-										return { ...apiKey, expired: true };
-								}
-								await redis.setex(`apikey:${keyHash}`, API_KEY_CACHE_TTL_SECONDS, JSON.stringify(apiKey));
-								return apiKey;
-						}
-				} catch { /* ignore cache errors */ }
-		}
-
-		// Neon HTTP transport does not support transactions; run the read directly.
-		// The previous `for("update")` row lock was guarding against a race where the
-		// key's `active` flag flips between the SELECT and a subsequent write — but
-		// we never write to apiKeys in this path (lastUsedAt is queued fire-and-forget
-		// below). A read-committed SELECT is sufficient.
-		const [apiKey] = await db.select().from(apiKeys).where(
-				and(
-						eq(apiKeys.keyHash, keyHash),
-						eq(apiKeys.active, true),
-						or(isNull(apiKeys.expiresAt), gt(apiKeys.expiresAt, now))
-				)
-		).limit(1);
-
-		if (!apiKey) return null;
-		queueLastUsedUpdate(apiKey.id);
-
-		const rawPrefix = rawKey.slice(0, 12);
-		if (!timingSafeEqual(apiKey.keyPrefix, rawPrefix)) return null;
-		if (apiKey.expiresAt && new Date(apiKey.expiresAt) < now) {
-				return { ...apiKey, expired: true };
-		}
-
-		if (redis) {
-				try {
-						await redis.setex(`apikey:${keyHash}`, API_KEY_CACHE_TTL_SECONDS, JSON.stringify(apiKey));
-				} catch { /* ignore cache errors */ }
-		}
-
-		return apiKey;
+	if (typeof rawKey !== "string" || !rawKey) return null;
+	const keyHash = crypto.createHash("sha256").update(rawKey).digest("hex");
+	const now = new Date();
+	// Credential validity is authoritative in Postgres. A positive Redis
+	// cache can survive failed revocation/deletion and was refreshed on every
+	// hit. In-flight middleware deduplication still shares concurrent reads.
+	const [apiKey] = await db.select().from(apiKeys).where(and(
+		eq(apiKeys.keyHash, keyHash),
+		eq(apiKeys.active, true),
+		or(isNull(apiKeys.expiresAt), gt(apiKeys.expiresAt, now)),
+	)).limit(1);
+	if (!apiKey || apiKey.active === false || !timingSafeEqual(apiKey.keyPrefix, rawKey.slice(0, 12))) return null;
+	const expiry = apiKey.expiresAt == null ? null : new Date(apiKey.expiresAt).getTime();
+	if (expiry !== null && (!Number.isFinite(expiry) || expiry <= now.getTime())) return null;
+	queueLastUsedUpdate(apiKey.id);
+	return apiKey;
 }
 
 export function shouldRecommendRotation(createdAt: Date): boolean {
@@ -322,6 +289,7 @@ export async function listApiKeys(userId: string, includeRevoked = false) {
 				expiresAt: apiKeys.expiresAt,
 				createdAt: apiKeys.createdAt,
 				allowedModels: apiKeys.allowedModels,
+				ipAllowlist: apiKeys.ipAllowlist,
 		};
 		if (includeRevoked) {
 				return db.select(baseSelect).from(apiKeys).where(eq(apiKeys.userId, userId));

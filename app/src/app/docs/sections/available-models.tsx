@@ -67,7 +67,7 @@ export function AvailableModelsSection() {
 				subtitle={
 					availableCount === models.length
 						? `${models.length} curated chat models across four tiers, plus web search in the playground. Check the live catalog before making a request.`
-						: `${availableCount} of ${models.length} curated chat models are accepting requests right now. The rest are listed for reference and are marked below.`
+						: `${availableCount} of ${models.length} curated chat models are enabled in the current catalog. Paused routes are marked below; provider availability can vary.`
 				}
 			/>
 
@@ -80,6 +80,7 @@ export function AvailableModelsSection() {
 					<p className="text-sm text-text-muted">
 						Text and reasoning models from Venice (frontier/premium/mid/budget)
 						and OMA-AI (MiniMax M2.7, DeepSeek V4 Flash, GLM-5.3 Flash).
+						Availability is shown below; catalog membership does not mean a route is accepting requests.
 					</p>
 				</div>
 				<div className="rounded-[var(--radius-xl)] border border-border bg-panel p-4 shadow-[var(--shadow-md)] transition-transform duration-200 ease-out hover:border-accent/40 active:scale-[0.97]">

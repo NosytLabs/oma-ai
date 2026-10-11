@@ -8,7 +8,7 @@ import { creditBalances, usageRecords } from "../db/schema.js";
 import { auditLog } from "../middleware/audit.js";
 import { logger } from "../lib/logger.js";
 import { and, eq, sql } from "drizzle-orm";
-import { getModelPricing } from "./billing-service.js";
+import { getModelPricing, pricingForContext } from "./billing-service.js";
 import { ProviderError } from "./provider-route.js";
 
 export type UsageProvider = "venice" | "litellm" | "tinyfish" | "surplus" | "oma-ai";
@@ -54,6 +54,7 @@ function estimateUserCostCents(
 		maxOutputTokens?: number,
 ): number {
 		const outputTokens = Math.max(0, maxOutputTokens ?? 0);
+		pricing = pricingForContext(pricing, promptTokens);
 		const upstreamCostCents =
 				((promptTokens / 1_000_000) * pricing.inputPer1M +
 						(outputTokens / 1_000_000) * pricing.outputPer1M) *
@@ -100,7 +101,8 @@ export async function deductCreditsIfSufficient(
 		tx: Parameters<Parameters<typeof db.transaction>[0]>[0] = db as never,
 ): Promise<boolean> {
 		if (costCents <= 0) return true;
-		const cost = costCents.toFixed(4);
+		// Match numeric(18,8); four decimals erase short $0.02/M requests.
+		const cost = costCents.toFixed(8);
 		const updated = await tx
 				.update(creditBalances)
 				.set({
@@ -145,13 +147,13 @@ export async function recordUsage(args: RecordUsageArgs): Promise<void> {
 					? Math.max(0, Date.now() - startedAt)
 					: null;
 		// Pricing fields are in DOLLARS per 1M tokens; multiply by 100 for cents.
-		const upstreamCostCents =
-				((promptTokens / 1_000_000) * pricing.inputPer1M +
-						(outputTokens / 1_000_000) * pricing.outputPer1M) *
-				100;
-		const markupMultiplier = 1 + pricing.markup / 100;
-		const userCostCents = upstreamCostCents * markupMultiplier;
-		const markupCents = userCostCents - upstreamCostCents;
+		const appliedPricing = pricingForContext(pricing, promptTokens);
+		const upstreamCostCents = appliedPricing.costKnown === false ? 0 :
+			((promptTokens / 1_000_000) * (appliedPricing.costInputPer1M ?? appliedPricing.inputPer1M) +
+			 (outputTokens / 1_000_000) * (appliedPricing.costOutputPer1M ?? appliedPricing.outputPer1M)) * 100;
+		const userCostCents = estimateUserCostCents(appliedPricing, promptTokens, outputTokens);
+		const shouldCharge = status === "completed" && !skipBilling;
+		const markupCents = appliedPricing.costKnown === false ? 0 : (shouldCharge ? userCostCents : 0) - upstreamCostCents;
 
 		// Anonymous free-tier requests have no BetterAuth user. The DB schema
 		// enforces a FK on usage_records.user_id, and there's no credit balance
@@ -196,11 +198,11 @@ export async function recordUsage(args: RecordUsageArgs): Promise<void> {
 								attemptCount: attemptCount ?? 1,
 								inputTokens: promptTokens,
 								outputTokens,
-								costCents: skipBilling ? "0" : upstreamCostCents.toFixed(4),
-								markupCents: skipBilling ? "0" : markupCents.toFixed(4),
-								totalCents: skipBilling ? "0" : userCostCents.toFixed(4),
+								costCents: upstreamCostCents.toFixed(8),
+								markupCents: markupCents.toFixed(8),
+								totalCents: shouldCharge ? userCostCents.toFixed(8) : "0",
 								latencyMs,
-								status: skipBilling ? "free_tier" : status,
+								status: skipBilling && status === "completed" ? "free_tier" : status,
 							})
 							.onConflictDoNothing({ target: usageRecords.requestId })
 							.returning({ requestId: usageRecords.requestId });
@@ -216,7 +218,7 @@ export async function recordUsage(args: RecordUsageArgs): Promise<void> {
 											return;
 										}
 
-						if (status === "completed" && !skipBilling) {
+						if (shouldCharge) {
 							const deducted = await deductCreditsIfSufficient(
 								userId,
 								userCostCents,
@@ -226,11 +228,15 @@ export async function recordUsage(args: RecordUsageArgs): Promise<void> {
 								// Stream/completion already finished; do not invent balance.
 								// Log so ops can reconcile — concurrent callers lost the race.
 								deductionRejected = true;
+								await tx.update(usageRecords).set({
+									totalCents: "0",
+									markupCents: appliedPricing.costKnown === false ? "0" : (-upstreamCostCents).toFixed(8),
+								}).where(eq(usageRecords.requestId, requestId));
 								logger.error(
 									{
 										userId,
 										requestId,
-										costCents: userCostCents.toFixed(4),
+										costCents: userCostCents.toFixed(8),
 									},
 									"[billing] deduction skipped: insufficient balance (race or missing ledger row)",
 								);
@@ -247,7 +253,9 @@ export async function recordUsage(args: RecordUsageArgs): Promise<void> {
 								// charged, so it must not log CREDIT_DEDUCTED either — that
 								// would invent a charge in the audit trail that the ledger
 								// never saw.
-								await auditLog({
+								// Free/failed/aborted requests are already recorded in usageRecords.
+								// Only paid completion deductions and duplicates need ledger audit events.
+								if (!isAnonymous && (shouldCharge || duplicateRecord)) await auditLog({
 									userId,
 									action: duplicateRecord
 										? "USAGE_RECORD_DUPLICATE"
@@ -265,7 +273,8 @@ export async function recordUsage(args: RecordUsageArgs): Promise<void> {
 										promptTokens,
 										outputTokens,
 										totalTokens,
-										costCents: userCostCents.toFixed(4),
+										costCents: shouldCharge ? userCostCents.toFixed(8) : "0",
+										upstreamCostKnown: appliedPricing.costKnown !== false,
 										latencyMs,
 										status,
 									},

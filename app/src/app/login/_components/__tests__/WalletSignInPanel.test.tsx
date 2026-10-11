@@ -55,7 +55,7 @@ describe("WalletSignInPanel", () => {
 
 	it("offers install links and a magic-link fallback when no wallet is present", () => {
 		renderPanel();
-		for (const name of ["MetaMask", "Rabby", "Coinbase Wallet", "WalletConnect"]) {
+		for (const name of ["MetaMask", "Rabby", "Coinbase Wallet"]) {
 			expect(screen.getByRole("link", { name })).toBeTruthy();
 		}
 		expect(

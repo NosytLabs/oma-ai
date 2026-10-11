@@ -36,12 +36,14 @@ interface ChatErrorBannerProps {
 	onDismiss: () => void;
 	onRetry?: () => void;
 	loginHref?: string;
+	isAuthenticated?: boolean;
 }
 
 interface ErrorClassification {
 	type: "auth" | "network" | "rateLimit" | "model" | "credits" | "unknown";
 	label: string;
 	suggestion: string;
+	dailyQuota?: boolean;
 	action?: {
 		label: string;
 		href?: string;
@@ -52,6 +54,7 @@ interface ErrorClassification {
 function classifyError(
 	error: string,
 	onRetry?: () => void,
+	isAuthenticated = false,
 ): ErrorClassification {
 	const lower = error.toLowerCase();
 
@@ -98,13 +101,16 @@ function classifyError(
 				if (m2) return parseInt(m2[1], 10) * 60_000;
 				return null;
 			})();
+			const cap = error.match(/\((\d+)\s+(?:requests|messages)\/day\)/i)?.[1];
+			const quota = cap ? `Your ${cap} free requests for today are used.` : "Your daily free quota is used.";
 			return {
 				type: "rateLimit",
+				dailyQuota: true,
 				label: "DAILY LIMIT REACHED",
-				suggestion: resetMs
-					? `Your 20 free messages for today are used. Sign in for 100/day, or upgrade for unlimited. Resets in ~${Math.round(resetMs / 3600_000)}h.`
-					: "Your 20 free messages for today are used. Sign in for 100/day, or upgrade for unlimited.",
-				action: { label: "SIGN IN", href: "/login" },
+				suggestion: `${quota} ${isAuthenticated ? "" : "Sign in for 100/day. "}Use a funded API key for more requests; API rate limits still apply.${resetMs ? ` Resets in ~${Math.ceil(resetMs / 3600_000)}h.` : ""}`,
+				action: isAuthenticated
+					? { label: "API keys", href: "/dashboard?tab=api-keys" }
+					: { label: "Sign in", href: "/login" },
 			};
 		}
 		// Transient rate limit — per-minute / per-second throttle.
@@ -253,12 +259,15 @@ export function ChatErrorBanner({
 	onDismiss,
 	onRetry,
 	loginHref: returnToLogin,
+	isAuthenticated = false,
 }: ChatErrorBannerProps) {
 	const pathname = usePathname();
 	const [retrying, setRetrying] = useState(false);
 	const [countdown, setCountdown] = useState<number | null>(null);
 
-	const classification = error ? classifyError(error, onRetry) : null;
+	const classification = error ? classifyError(error, onRetry, isAuthenticated) : null;
+	const errorType = classification?.type;
+	const dailyQuotaError = classification?.dailyQuota === true;
 	const styles = classification ? TYPE_STYLES[classification.type] : null;
 	const Icon = classification ? TYPE_ICONS[classification.type] : AlertCircle;
 
@@ -266,12 +275,12 @@ export function ChatErrorBanner({
 
 	// Auto-countdown only for transient per-minute rate limits (not daily quota).
 	useEffect(() => {
-		if (classification?.type !== "rateLimit" || !error) {
+		if (errorType !== "rateLimit" || !error) {
 			setCountdown(null);
 			return;
 		}
 		// Daily free quota uses a Sign-in CTA — no retry countdown.
-		if (classification.action?.href === "/login") {
+		if (dailyQuotaError) {
 			setCountdown(null);
 			return;
 		}
@@ -289,7 +298,7 @@ export function ChatErrorBanner({
 			});
 		}, 1000);
 		return () => clearInterval(interval);
-	}, [classification, error]);
+	}, [errorType, dailyQuotaError, error]);
 
 	const handleRetry = useCallback(() => {
 		if (classification?.type === "auth" && classification.action?.href) return; // handled by Link
@@ -364,11 +373,11 @@ export function ChatErrorBanner({
 							)}
 
 						{/* Daily free-quota exhausted → sign in (not a useless RETRY) */}
-						{classification.type === "rateLimit" &&
-							classification.action?.href === "/login" && (
+						{dailyQuotaError && (
 								<>
 									<Link
-										href={loginHref} onClick={() => saveChatDraftForSignIn()}
+										href={isAuthenticated ? classification.action!.href! : loginHref}
+										onClick={isAuthenticated ? undefined : () => saveChatDraftForSignIn()}
 										prefetch={false}
 										className="
 	inline-flex items-center gap-1 px-3 py-1.5
@@ -376,7 +385,7 @@ export function ChatErrorBanner({
 	hover:bg-accent-hover transition-colors duration-200 ease-out active:scale-[0.97] focus-ring min-h-[32px]
 	"
 									>
-										{classification.action.label || "Sign in"}
+										{classification.action!.label}
 										<ArrowRight className="w-3 h-3" />
 									</Link>
 									<Link
@@ -397,10 +406,7 @@ export function ChatErrorBanner({
 						{/* Retry — only for recoverable errors (not daily quota) */}
 						{classification.type !== "auth" &&
 							classification.type !== "credits" &&
-							!(
-								classification.type === "rateLimit" &&
-								classification.action?.href === "/login"
-							) &&
+							!dailyQuotaError &&
 							onRetry && (
 								<button
 									type="button"

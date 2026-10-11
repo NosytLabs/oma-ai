@@ -3,9 +3,35 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { GET } from "@/app/api/auth/[...path]/route";
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 
 describe("auth callback proxy", () => {
+	it("retains the platform IP behind the authenticated Vercel auth proxy", async () => {
+		vi.stubEnv("VERCEL", "1");
+		vi.stubEnv("INTERNAL_PROXY_SECRET", "server-owned-secret");
+		const fetchMock = vi.fn().mockResolvedValue(Response.json(null));
+		vi.stubGlobal("fetch", fetchMock);
+		await GET(new NextRequest("https://www.oma-ai.com/api/auth/get-session", { headers: {
+			"x-vercel-forwarded-for": "2001:db8::42", "x-real-ip": "198.51.100.99",
+		} }), { params: Promise.resolve({ path: ["get-session"] }) });
+		const headers = fetchMock.mock.calls[0][1].headers;
+		expect(headers["x-vercel-forwarded-for"]).toBe("2001:db8::42");
+		expect(headers["x-real-ip"]).toBeUndefined();
+		expect(headers["x-oma-proxy-secret"]).toBe("server-owned-secret");
+	});
+	it("removes caller-supplied Neon runtime headers on auth requests", async () => {
+		const fetchMock = vi.fn().mockResolvedValue(Response.json(null));
+		vi.stubGlobal("fetch", fetchMock);
+		await GET(new NextRequest("https://www.oma-ai.com/api/auth/get-session", { headers: { "x-neon-trigger-invocation-id": "forged", "x-neon-custom": "forged" } }), { params: Promise.resolve({ path: ["get-session"] }) });
+		expect(Object.keys(fetchMock.mock.calls[0][1].headers).some(key => key.startsWith("x-neon-"))).toBe(false);
+	});
+
+	it("does not expose upstream connection diagnostics to the browser", async () => {
+		vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("postgres://private-credential@private-db")));
+		const response = await GET(new NextRequest("https://www.oma-ai.com/api/auth/get-session"), { params: Promise.resolve({ path: ["get-session"] }) });
+		expect(response.status).toBe(502);
+		expect(await response.json()).toEqual({ error: "Auth backend unavailable" });
+	});
 	it("preserves separate session cookies and the callback redirect", async () => {
 		const cookies = [
 			"oma.session_token=token; Path=/; HttpOnly; SameSite=Lax",

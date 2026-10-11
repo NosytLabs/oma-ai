@@ -1,6 +1,6 @@
 # pnpm 9 workspace — only `packages` is read here. Dependabot/security
-# `overrides` and the `onlyBuiltDependencies` build allowlist live as top-level
-# keys in the root package.json (pnpm-workspace.yaml settings keys are
+# `overrides` and the `onlyBuiltDependencies` build allowlist live under `pnpm`
+# in the root package.json (pnpm-workspace.yaml settings keys are
 # pnpm 10+ only), and the hoist/linker layout is set in the root .npmrc.
 packages:
   - app

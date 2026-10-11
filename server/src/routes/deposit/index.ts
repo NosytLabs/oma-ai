@@ -42,6 +42,7 @@ export const depositRoutes = new Hono<OmaEnv>();
 // ─── GET /v1/balance ─────────────────────────────────────────────────────────
 
 depositRoutes.get("/v1/balance", sessionOrBearerAuth, async (c) => {
+		c.header("Cache-Control", "no-store");
 		const userId = c.get("userId");
 		try {
 				const [row] = await db
@@ -54,6 +55,7 @@ depositRoutes.get("/v1/balance", sessionOrBearerAuth, async (c) => {
 						balanceCents: row?.balanceCents ?? "0",
 						totalDepositedCents: row?.totalDepositedCents ?? "0",
 						totalUsedCents: row?.totalUsedCents ?? "0",
+						lastActivityAt: row?.lastActivityAt?.toISOString() ?? null,
 				});
 		} catch (err) {
 				logger.error({ err, userId }, "[deposit] balance fetch failed");
@@ -480,4 +482,3 @@ depositRoutes.get("/v1/deposit/status", sessionOrBearerAuth, async (c) => {
 				);
 		}
 });
-

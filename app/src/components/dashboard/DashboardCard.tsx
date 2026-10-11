@@ -77,7 +77,7 @@ export function DashboardCard({
 				<div className="flex items-start justify-between gap-3 px-6 pt-6 pb-4">
 					<div className="min-w-0">
 						{title && (
-							<h2 className="text-[14.5px] font-bold text-text-bright tracking-tight">
+							<h2 className="font-sans text-[14.5px] font-bold text-text-bright tracking-tight">
 								{title}
 							</h2>
 						)}

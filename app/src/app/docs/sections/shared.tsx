@@ -73,6 +73,11 @@ export const RATE_LIMIT_ROWS: RateLimitRow[] = [
 		value: "60 RPM",
 		desc: "Sliding-window requests-per-minute ceiling.",
 	},
+	{
+		name: "Emergency allowance",
+		value: "5 RPM",
+		desc: "During limiter outages: per account and instance (per IP for guests), shared across that account's keys. Further requests return 503.",
+	},
 ];
 
 // Per-model overrides — mirrors MODEL_LIMITS in
@@ -81,8 +86,6 @@ export const MODEL_RATE_OVERRIDES: ModelRateOverride[] = [
 			{ model: "llama-3.3-70b", rpm: 60, tpm: 120000 },
 	{ model: "deepseek-v4-flash-0731-openbroker", rpm: 60, tpm: 120000 },
 	{ model: "kimi-k3", rpm: 60, tpm: 120000 },
-	// Still defined on the server; not always in the curated public catalog.
-	{ model: "llama-3.2-3b", rpm: 120, tpm: 240000 },
 ];
 
 export const MODEL_PRICING_ROWS: ModelPricing[] = MODELS.map((m) => ({
@@ -94,29 +97,46 @@ export const MODEL_PRICING_ROWS: ModelPricing[] = MODELS.map((m) => ({
 }));
 
 export const ENDPOINTS: EndpointInfo[] = [
+	{ method: "GET", path: "/user", anchor: "ep-user", title: "Current Account",
+		desc: "Returns the signed-in profile, linked wallet, and admin status.", auth: "Session cookie",
+		response: `{ "id": "user_…", "email": "you@example.com", "name": "You", "evmAddress": null, "isAdmin": false }` },
+	{ method: "GET", path: "/sessions", anchor: "ep-sessions", title: "Active Sessions",
+		desc: "Lists active sessions with device details and isCurrent.", auth: "Session cookie",
+		response: `{ "sessions": [{ "id": "session_…", "isCurrent": true, "createdAt": "2026-10-10T00:00:00Z", "expiresAt": "2026-10-17T00:00:00Z" }] }` },
+	{ method: "DELETE", path: "/sessions/:id", anchor: "ep-session-revoke", title: "Revoke Remote Session",
+		desc: "Revokes an owned remote session. Use sign-out for the current session.", auth: "Session cookie",
+		response: `{ "success": true, "id": "session_…" }` },
+	{ method: "DELETE", path: "/sessions", anchor: "ep-sessions-revoke", title: "Revoke Other Sessions",
+		desc: "Revokes all other active sessions and keeps the current one.", auth: "Session cookie",
+		response: `{ "success": true, "revokedCount": 2 }` },
+	{ method: "DELETE", path: "/v1/history", anchor: "ep-history-clear", title: "Clear Usage History",
+		desc: "Deletes usage and previous audit logs, then records the clearing event. Preserves identity, sessions, keys, and balances.", auth: "Session cookie",
+		response: `{ "success": true, "deleted": { "usageRecords": 4, "auditLogs": 2 } }` },
+	{ method: "DELETE", path: "/account", anchor: "ep-account-delete", title: "Delete Account",
+		desc: "Permanently deletes identity, sessions, keys, and usage, and forfeits remaining credits. Payment and security audit records remain with the account ID detached. Requires sign-in within the last 24 hours; HTTP 400 session_not_fresh means sign in again.", auth: "Fresh session cookie; API keys are not accepted",
+		response: `{ "success": true }` },
 	{
 		method: "POST",
 		path: "/v1/chat/completions",
 		anchor: "ep-chat",
 		title: "Chat Completions",
-		desc: "OpenAI-compatible multi-turn chat. The endpoint you will hit 95% of the time. Supports SSE streaming.",
+		desc: "OpenAI-compatible multi-turn chat with SSE streaming. Key model restrictions apply to fallback routes too. Use an Idempotency-Key (up to 512 UTF-8 bytes) for retries. Concurrent duplicates return 409 request_in_progress with Retry-After; completed keys return 409 already_processed. Keep your original response; completion bodies are not retained for replay.",
 		auth: "Bearer token (API key); requests spend prepaid credits",
 		body: {
 			model:
-				'string (required). Any model id from /v1/models, e.g. "llama-3.3-70b"',
+				'string (required). An available model ID from /v1/models, e.g. "minimax-m2-7"',
 			messages:
 				"array of { role, content }. role is system, user, assistant, or tool",
 			temperature: "number 0 to 2 (optional, default from upstream)",
-			max_tokens: "integer. Cap on completion length",
+			max_tokens: "positive integer (optional). Must not exceed the model's max_output_tokens",
 			stream: "boolean. Server-Sent Events when true (text/event-stream)",
 			tools: "array of tool definitions (optional)",
-			response_format: 'object (optional), e.g. { type: "json_object" }',
 		},
 		response: `{
 	"id": "chatcmpl-9f3k2a",
 	"object": "chat.completion",
 	"created": 1717194000,
-	"model": "llama-3.3-70b",
+	"model": "minimax-m2-7",
 	"choices": [
 	{
 	"index": 0,
@@ -132,13 +152,15 @@ export const ENDPOINTS: EndpointInfo[] = [
 		path: "/v1/messages",
 		anchor: "ep-messages",
 		title: "Anthropic Messages",
-		desc: "Anthropic-compatible Messages API for Claude Code and the Anthropic SDK. Same catalog and billing as chat completions. Auth: Bearer oma_sk_… or x-api-key.",
+		desc: "Anthropic request format for text and function tools, including tool-result continuations and SSE. Same catalog and prepaid billing as chat completions. Image/document blocks, extended thinking, prompt caching and beta features are not supported. Auth: Bearer oma_sk_… or x-api-key.",
 		auth: "Bearer token (API key) or x-api-key",
 		body: {
 			model: 'string (required). OMA catalog id, e.g. "kimi-k3"',
-			messages: "array of { role: user|assistant, content }",
+			messages: "array of { role: user|assistant, content }. Text, assistant tool_use and user tool_result blocks are supported",
 			max_tokens: "integer (required by Anthropic clients)",
-			system: "string or content blocks (optional)",
+			system: "string or text blocks (optional)",
+			tools: "array of { name, description?, input_schema } (optional). Tool quality depends on the selected model",
+			tool_choice: "{ type: auto|any|none } or { type: tool, name } (optional)",
 			stream: "boolean. SSE when true",
 			temperature: "number (optional)",
 		},
@@ -174,7 +196,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 		path: "/v1/models",
 		anchor: "ep-models",
 		title: "List Models",
-		desc: "Returns the curated catalog, including currently unavailable models. Check the available flag before calling a model. No auth required.",
+		desc: "Returns the curated catalog, including currently unavailable models. Check available, context_length, and max_output_tokens. Prices are USD per million tokens. pricing.extended applies when input tokens exceed its context_token_threshold. No auth required.",
 		auth: "None",
 		response: `{
 	"object": "list",
@@ -187,7 +209,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 	"permission": [],
 	"root": "llama-3.3-70b",
 	"parent": null,
-		"pricing": { "prompt": "0.875", "completion": "3.50" },
+		"pricing": { "prompt": 1.05, "completion": 4.20 },
 		"category": "mid",
 		"context_length": 128000
 	},
@@ -196,7 +218,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 "object": "model",
 "created": 1717194000,
 "owned_by": "oma-ai",
-"pricing": { "prompt": "0.50000000", "completion": "0.50000000" },
+"pricing": { "prompt": 0.02, "completion": 0.02 },
 "category": "budget",
 "context_length": 400000
 }
@@ -221,7 +243,8 @@ export const ENDPOINTS: EndpointInfo[] = [
 	"context_length": 128000,
 		"supports_streaming": true,
 		"supports_tools": true,
-		"pricing": { "prompt": "0.875", "completion": "3.50" }
+		"pricing": { "prompt": 1.05, "completion": 4.20 },
+		"max_output_tokens": 4096
 }`,
 	},
 	{
@@ -273,15 +296,16 @@ export const ENDPOINTS: EndpointInfo[] = [
 		method: "GET",
 		path: "/v1/usage/today",
 		anchor: "ep-usage-today",
-		title: "Daily Free-Tier Usage",
-		desc: "How many free messages you have left today. 20/day for anonymous (IP-keyed Redis), 100/day for authenticated users.",
-		auth: "Bearer token (API key) — anonymous allowed",
+		title: "Daily Free-Chat Quota",
+		desc: "Free-chat attempts admitted today: 20/day per guest IP or 100/day per signed-in account. Includes attempts that later fail upstream. Reads do not consume quota; the allowance resets at midnight UTC. Paid API-key inference uses credits instead.",
+		auth: "Optional session cookie or API key; guests allowed",
 		body: undefined,
 		response: `{
 	"used": 12,
 	"limit": 20,
 	"remaining": 8,
-	"resetMs": 12345678
+	"resetMs": 12345678,
+	"policy": "shared-redis"
 }`,
 	},
 	{
@@ -307,16 +331,28 @@ export const ENDPOINTS: EndpointInfo[] = [
 	},
 	{
 		method: "POST",
+		path: "/v1/deposit/usdc/challenge",
+		anchor: "ep-deposit-challenge",
+		title: "Deposit Ownership Challenge",
+		desc: "Issue a short-lived challenge bound to your account and sending wallet before broadcasting. After the transfer, sign the deposit authorization message including this token, recipient, transaction hash and declared amount. A retry needs a fresh challenge and signature for the same transfer.",
+		auth: "Session cookie or bearer token (API key)",
+		body: { fromAddress: "string (required). Sending wallet 0x address" },
+		response: `{ "token": "…", "nonce": "…", "expiresAt": 1791676800 }`,
+	},
+	{
+		method: "POST",
 		path: "/v1/deposit/usdc",
 		anchor: "ep-deposit-submit",
 		title: "Record USDC Deposit",
-		desc: "Records a pending USDC deposit after you send funds to the deposit address from /v1/deposit/usdc (GET). The on-chain watcher credits your balance once the transfer confirms.",
-		auth: "Bearer token (API key)",
+		desc: "Register a Base USDC transfer with its account-bound challenge and wallet ownership signature. The on-chain watcher checks the actual sender, recipient and amount before issuing credits. Retry registration for the same transaction if proof signing or submission fails; do not send another transfer.",
+		auth: "Session cookie or bearer token (API key)",
 		body: {
 			amountUsd: "number (required). USD amount, up to $10,000",
 			txHash: "string (required). 0x-prefixed 64-char transaction hash",
 			network: "string (optional). \"base\" (default)",
 			fromAddress: "string (required). Sender wallet 0x address; must match the on-chain sender",
+			challengeToken: "string (required). Unexpired token from POST /v1/deposit/usdc/challenge",
+			signature: "string (required). EIP-191 signature over the canonical deposit message, including txHash and amountUsd",
 		},
 		response: `{
 	"depositId": "dep_…",
@@ -355,20 +391,12 @@ export const ENDPOINTS: EndpointInfo[] = [
 		method: "GET",
 		path: "/v1/credits/balance",
 		anchor: "ep-credits-balance",
-		title: "Credit Batches",
+		title: "Credit Balance Details",
 		desc: "Returns your aggregate balance (authoritative) plus any credit batches. activeBatches is currently always empty: per-batch records are not yet written, so use balanceCents.",
 		auth: "Bearer token (API key)",
 		body: undefined,
 		response: `{
-	"activeBatches": [
-		{
-			"id": "cb_…",
-			"amountCents": "10000",
-			"remainingCents": "7650",
-			"expiresAt": "2026-08-01T00:00:00.000Z",
-			"paymentMethod": "usdc"
-		}
-	],
+	"activeBatches": [],
 	"balanceCents": "7650"
 }`,
 	},
@@ -403,7 +431,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 		anchor: "ep-keys-list",
 		title: "List API Keys",
 		desc: "Lists your active API keys. Raw key values are never returned — only metadata.",
-		auth: "Bearer token (API key) or session cookie",
+		auth: "Better Auth session cookie",
 		body: undefined,
 		response: `{
 	"keys": [
@@ -412,7 +440,9 @@ export const ENDPOINTS: EndpointInfo[] = [
 			"name": "default",
 			"prefix": "oma_sk_…",
 			"createdAt": "2026-08-01T00:00:00.000Z",
-			"lastUsedAt": null
+			"lastUsedAt": null,
+			"expiresAt": "2026-10-30T00:00:00.000Z",
+			"allowedModels": ["minimax-m2-7"]
 		}
 	]
 }`,
@@ -422,14 +452,16 @@ export const ENDPOINTS: EndpointInfo[] = [
 		path: "/v1/keys",
 		anchor: "ep-keys-create",
 		title: "Create API Key",
-		desc: "Mints a new API key. The raw key is returned exactly once — store it immediately (only the hash is kept server-side).",
-		auth: "Bearer token (API key) or session cookie",
-		body: { name: "string (optional). Key label, max 64 chars, default \"default\"" },
+		desc: "Mints a new API key. Store the returned secret immediately; only its hash is kept. Model restrictions apply to fallback routes too. Keys expire after 90 days by default.",
+		auth: "Better Auth session cookie",
+		body: { name: "string (optional). Key label, 1–64 characters, default \"default\"", expiresInDays: "integer (optional). 1–365 days, default 90", allowedModels: "string[] (optional). 1–30 OMA model IDs; omit to allow all models" },
 		response: `{
 	"id": "key_…",
 	"name": "default",
 	"prefix": "oma_sk_…",
 	"createdAt": "2026-08-01T00:00:00.000Z",
+	"expiresAt": "2026-10-30T00:00:00.000Z",
+	"allowedModels": null,
 	"key": "oma_sk_…"
 }`,
 	},
@@ -439,7 +471,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 		anchor: "ep-keys-revoke",
 		title: "Revoke API Key",
 		desc: "Revokes an API key by id, immediately invalidating it. The key stops working on all future requests.",
-		auth: "Bearer token (API key) or session cookie",
+		auth: "Better Auth session cookie",
 		body: undefined,
 		response: `{ "success": true, "id": "key_…" }`,
 	},
@@ -501,7 +533,7 @@ export const ERROR_CODES: ErrorInfo[] = [
 	{
 		code: 401,
 		type: "authentication_error",
-		desc: "Missing or invalid API key.",
+		desc: "Missing, invalid, expired or revoked API key, or no valid session on a session-only endpoint. Invalid explicit credentials cannot become guest access.",
 	},
 	{
 		code: 402,
@@ -521,7 +553,7 @@ export const ERROR_CODES: ErrorInfo[] = [
 	{
 		code: 409,
 		type: "conflict",
-		desc: "Request conflicts with current state (e.g. settle already applied to another account).",
+		desc: "Request conflicts with current state. Concurrent Idempotency-Key reuse returns request_in_progress: wait Retry-After, then retry the same key. Completed keys return already_processed without another charge: use your saved response. Retry keys are shared by both inference APIs and all keys on your account. Settlement owned by another account is also rejected.",
 	},
 	{
 		code: 422,
@@ -539,9 +571,14 @@ export const ERROR_CODES: ErrorInfo[] = [
 		desc: "Unexpected server error (also server_error). Contact support if persistent.",
 	},
 	{
+		code: 502,
+		type: "provider_error",
+		desc: "Upstream provider failed, including an invalid operator provider credential. Contact support for provider authentication failures; replacing your OMA key will not repair them.",
+	},
+	{
 		code: 503,
 		type: "service_unavailable",
-		desc: "All upstream providers down. Try again shortly.",
+		desc: "A required service is temporarily unavailable, a model is paused, or maintenance is active. Account-status verification failures return auth_state_unavailable. Honor Retry-After when present.",
 	},
 ];
 
@@ -555,14 +592,14 @@ export const QUICK_START_STEPS = [
 	{
 		n: "2",
 		id: "qs-step-request",
-		title: "Add to Headers",
-		desc: "Include your key in the Authorization header: Bearer oma_sk_...",
+		title: "Fund Your Balance",
+		desc: "Add prepaid credits using USDC on Base or card checkout when available.",
 	},
 	{
 		n: "3",
 		id: "qs-step-response",
 		title: "Start Building",
-		desc: "Use the OpenAI SDK with base_url=https://www.oma-ai.com/api/v1",
+		desc: "Send your key in the Authorization header and select an available model from the catalog.",
 	},
 ];
 

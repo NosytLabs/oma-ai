@@ -4,37 +4,10 @@ import { dirname, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { MODELS } from "./models-data";
 
-/**
- * Cross-package catalog parity.
- *
- * `app/src/lib/models-data.ts` ships a static FALLBACK_CATALOG because SSR
- * metadata and generateStaticParams cannot await /v1/models. That fallback
- * duplicates the authoritative server catalog on purpose: the server holds
- * the RAW upstream rate plus a `markupPercent`, and the app holds the rate
- * AFTER markup, so a visitor's SSR price matches what they are billed.
- *
- * The existing guard in models-data.ts only checks that the fallback's length
- * equals MODEL_COUNT. It cannot catch the failure that actually matters:
- * someone edits a price or markupPercent on the server, the count still
- * matches 20, the build still passes, and the website goes on quoting a price
- * the server no longer charges.
- *
- * So assert the actual invariant, per model:
- *   app.inputPricePer1M === server.inputPricePer1M * (1 + markupPercent/100)
- *
- * A model present on only one side is a failure too: a fallback entry the
- * server cannot route 404s, and a server model with no fallback is invisible
- * to SSR metadata.
- *
- * The server side is read as source text rather than imported. Importing it
- * would pull `config.ts` and `lib/logger.ts` into the app's TypeScript
- * program, where the server's wider env union (it permits NODE_ENV=staging)
- * meets the app's narrower one and reports a false error in code this test
- * never runs. Reading the file keeps the test out of both compilers.
- */
+/** SSR prices must match the shared catalog, including fixed retail rates. */
 const SERVER_MODELS = resolve(
 	dirname(fileURLToPath(import.meta.url)),
-	"../../../server/src/inference/models.ts",
+	"../../../server/src/inference/model-catalog.json",
 );
 
 type ServerEntry = {
@@ -42,40 +15,12 @@ type ServerEntry = {
 	inputPricePer1M: number;
 	outputPricePer1M: number;
 	markupPercent: number;
+	customerInputPricePer1M?: number;
+	customerOutputPricePer1M?: number;
 };
 
 function readServerCatalog(): ServerEntry[] {
-	const source = readFileSync(SERVER_MODELS, "utf8");
-	const entries: ServerEntry[] = [];
-
-	// Each catalog entry is an object literal starting with `id: "..."`.
-	// Splitting on that anchor stops a field bleeding across entries.
-	const anchors = [...source.matchAll(/\bid:\s*"([a-z0-9.-]+)"/g)];
-	expect(
-		anchors.length,
-		`found no catalog entries in ${SERVER_MODELS}. If the server catalog ` +
-			"format changed, update readServerCatalog() rather than weakening " +
-			"this assertion.",
-	).toBeGreaterThan(0);
-
-	for (let i = 0; i < anchors.length; i++) {
-		const start = anchors[i].index ?? 0;
-		const end = anchors[i + 1]?.index ?? source.length;
-		const block = source.slice(start, end);
-
-		const num = (key: string) => {
-			const m = block.match(new RegExp(`${key}:\\s*([0-9][0-9_]*(?:\\.[0-9]+)?)`));
-			return m ? Number(m[1].replace(/_/g, "")) : Number.NaN;
-		};
-
-		entries.push({
-			id: anchors[i][1],
-			inputPricePer1M: num("inputPricePer1M"),
-			outputPricePer1M: num("outputPricePer1M"),
-			markupPercent: num("markupPercent"),
-		});
-	}
-	return entries;
+	return JSON.parse(readFileSync(SERVER_MODELS, "utf8")) as ServerEntry[];
 }
 
 const server = readServerCatalog();
@@ -114,9 +59,9 @@ describe("app fallback catalog matches the server catalog", () => {
 				return {
 					id: s.id,
 					markupPercent: s.markupPercent,
-					expectedInput: s.inputPricePer1M * factor,
+					expectedInput: s.customerInputPricePer1M ?? s.inputPricePer1M * factor,
 					actualInput: a.inputPricePer1M,
-					expectedOutput: s.outputPricePer1M * factor,
+					expectedOutput: s.customerOutputPricePer1M ?? s.outputPricePer1M * factor,
 					actualOutput: a.outputPricePer1M,
 				};
 			})

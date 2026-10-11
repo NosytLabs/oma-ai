@@ -68,14 +68,15 @@ export function ModelDetail({ model, availability, supportedParameters, supports
 
 				{availability !== true && (
 					<p role="status" className={`mb-6 rounded-[var(--radius-lg)] border px-4 py-3 text-sm leading-relaxed ${unavailable ? "border-amber/25 bg-amber/5 text-text-secondary" : "border-border bg-panel text-text-muted"}`}>
-						{unavailable ? "This model is not accepting requests right now. Pricing and API examples remain available for reference." : "Live availability could not be confirmed. Catalog details are shown for reference; availability is checked when you start a chat."}
+						{unavailable ? model.unavailableReason ?? "This model is not accepting requests right now. Pricing and API examples remain available for reference." : "Live availability could not be confirmed. Catalog details are shown for reference; availability is checked when you start a chat."}
 					</p>
 				)}
 
-				<div className="mb-3 grid gap-3 sm:grid-cols-3">
+				<div className="mb-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
 					<Stat label="Input price" value={formatPricePerMillion(model.inputPricePer1M)} unit="USD per 1M tokens" />
 					<Stat label="Output price" value={formatPricePerMillion(model.outputPricePer1M)} unit="USD per 1M tokens" />
 					<Stat label="Context window" value={model.contextLength} unit={`${model.contextTokens.toLocaleString("en-US")} tokens`} />
+					<Stat label="Maximum output" value={model.maxOutputTokens?.toLocaleString("en-US") ?? "Not specified"} unit="tokens per response" />
 				</div>
 				<p className="mb-8 text-xs leading-relaxed text-text-muted">
 					{isFreeChatModel(model.id) ? "Free in website chat within the daily limit. API usage is billed at the rates above." : "Pay for the tokens you use. Chat and API usage draw from your account credits."}
@@ -94,6 +95,7 @@ export function ModelDetail({ model, availability, supportedParameters, supports
 							<dl className="mt-6 space-y-3 border-t border-border pt-5 text-sm">
 								<div className="flex items-start justify-between gap-4"><dt className="text-text-muted">Input</dt><dd className="text-right capitalize text-text-secondary">{(model.inputModalities ?? ["text"]).join(", ") || "Not specified"}</dd></div>
 								<div className="flex items-start justify-between gap-4"><dt className="text-text-muted">Output</dt><dd className="text-right capitalize text-text-secondary">{(model.outputModalities ?? ["text"]).join(", ") || "Not specified"}</dd></div>
+								{model.extendedPricing && <div className="flex items-start justify-between gap-4"><dt className="text-text-muted">Above {model.extendedPricing.contextTokenThreshold.toLocaleString("en-US")} input tokens</dt><dd className="text-right text-text-secondary">{formatPricePerMillion(model.extendedPricing.inputPricePer1M)}/M input · {formatPricePerMillion(model.extendedPricing.outputPricePer1M)}/M output</dd></div>}
 							</dl>
 						</section>
 						<section aria-labelledby="model-id-heading" className="min-w-0 rounded-[var(--radius-xl)] border border-border bg-panel p-5 sm:p-6">

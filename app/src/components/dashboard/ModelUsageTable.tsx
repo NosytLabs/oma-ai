@@ -3,12 +3,14 @@
 import { m } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";
 import { useMemo } from "react";
-import type { UsageRecord } from "@/lib/api";
+import type { UsageRecord, UsageModelSummary } from "@/lib/api";
 import { formatUsdPrecise, toDollars } from "@/lib/utils";
+import { resolveModelDisplayName, usageBilledDollars } from "@/lib/dashboard-aggregate";
 
 interface ModelUsageTableProps {
 	usage: UsageRecord[];
 	loading: boolean;
+	summary?: UsageModelSummary[];
 }
 
 interface ModelStats {
@@ -30,8 +32,11 @@ interface ModelStatsAccumulator extends ModelStats {
 	_latencyCount: number;
 }
 
-export function ModelUsageTable({ usage, loading }: ModelUsageTableProps) {
+export function ModelUsageTable({ usage, loading, summary }: ModelUsageTableProps) {
 	const modelStats = useMemo(() => {
+		if (summary) return summary.map(m => ({ model: m.model, requests: m.requests,
+			totalInputTokens: m.input_tokens, totalOutputTokens: m.output_tokens,
+			totalCost: toDollars(m.billed_cents), avgLatency: m.avg_latency_ms ?? 0 }));
 		const statsMap = new Map<string, ModelStatsAccumulator>();
 
 		usage.forEach((record) => {
@@ -45,9 +50,7 @@ export function ModelUsageTable({ usage, loading }: ModelUsageTableProps) {
 				Number.isFinite(record.latencyMs);
 			// Billed amount (cost + markup) as decimal-string cents; may be
 			// sub-cent. `toDollars` tolerates null/undefined/garbage → 0.
-			const billedDollars = toDollars(
-				record.totalCents ?? record.costCents,
-			);
+			const billedDollars = usageBilledDollars(record);
 			if (existing) {
 				existing.requests++;
 				existing.totalInputTokens += record.promptTokens ?? 0;
@@ -75,9 +78,8 @@ export function ModelUsageTable({ usage, loading }: ModelUsageTableProps) {
 				...stat,
 				avgLatency: _latencyCount > 0 ? stat.avgLatency / _latencyCount : 0,
 			}))
-			.sort((a, b) => b.totalCost - a.totalCost)
-			.slice(0, 10);
-	}, [usage]);
+			.sort((a, b) => b.totalCost - a.totalCost);
+	}, [usage, summary]);
 
 	const totalCost = modelStats.reduce((sum, m) => sum + m.totalCost, 0);
 	const totalRequests = modelStats.reduce((sum, m) => sum + m.requests, 0);
@@ -103,7 +105,7 @@ export function ModelUsageTable({ usage, loading }: ModelUsageTableProps) {
 	if (modelStats.length === 0) {
 		return (
 			<div className="p-6 border border-border bg-surface/30 rounded-[var(--radius-xl)] shadow-[var(--shadow-md)] transition-colors duration-200 ease-out hover:border-accent/40">
-				<h3 className="text-[14.5px] font-bold text-text-bright tracking-tight mb-2">
+				<h3 className="font-sans text-[14.5px] font-bold text-text-bright tracking-tight mb-2">
 					Model usage breakdown
 				</h3>
 				<p className="text-[12.5px] text-text-muted leading-relaxed">
@@ -116,12 +118,11 @@ export function ModelUsageTable({ usage, loading }: ModelUsageTableProps) {
 	return (
 		<div className="border border-border bg-surface/30 rounded-[var(--radius-xl)] shadow-[var(--shadow-md)] overflow-hidden transition-colors duration-200 ease-out hover:border-accent/40">
 			<div className="p-6 border-b border-border/50 bg-void/50">
-				<h3 className="text-[14.5px] font-bold text-text-bright tracking-tight">
+				<h3 className="font-sans text-[14.5px] font-bold text-text-bright tracking-tight">
 					Model usage breakdown
 				</h3>
 				<p className="text-[11px] font-mono text-text-muted uppercase tracking-wider mt-1.5 opacity-80">
-					{totalRequests.toLocaleString()} total requests · $
-					{totalCost.toFixed(2)} total cost
+					{totalRequests.toLocaleString()} requests · {formatUsdPrecise(totalCost)} charged, excluding refunds
 				</p>
 			</div>
 			<div className="min-w-0 max-w-full overflow-x-auto overscroll-x-contain">
@@ -162,7 +163,7 @@ export function ModelUsageTable({ usage, loading }: ModelUsageTableProps) {
 								scope="col"
 								className="px-6 py-4 text-[10.5px] font-bold text-text-muted uppercase tracking-wider text-right"
 							>
-								% of Total
+								% of requests
 							</th>
 						</tr>
 					</thead>
@@ -176,15 +177,15 @@ export function ModelUsageTable({ usage, loading }: ModelUsageTableProps) {
 								transition={{ delay: i * 0.03, ...springs.soft }}
 							>
 								<td className="px-6 py-4 text-[13px] font-bold text-accent font-mono transition-colors duration-200 ease-out group-hover:text-accent-hover">
-									{stat.model}
+									{resolveModelDisplayName(stat.model)}
 								</td>
 								<td className="px-6 py-4 text-[13px] text-text-secondary text-right font-mono transition-colors duration-200 ease-out group-hover:text-text-bright">
 									{stat.requests.toLocaleString()}
 								</td>
 								<td className="px-6 py-4 text-[13px] text-text-secondary text-right font-mono transition-colors duration-200 ease-out group-hover:text-text-bright">
 									<div className="flex flex-col">
-										<span className="text-text-bright" title="Input Tokens">{(stat.totalInputTokens / 1000).toFixed(1)}k <span className="text-text-muted text-[10px] ml-1">IN</span></span>
-										<span className="text-text-secondary mt-0.5" title="Output Tokens">{(stat.totalOutputTokens / 1000).toFixed(1)}k <span className="text-text-muted/50 text-[10px] ml-1">OUT</span></span>
+										<span className="text-text-bright" title="Input Tokens">{stat.totalInputTokens.toLocaleString()} <span className="text-text-muted text-[10px] ml-1">IN</span></span>
+										<span className="text-text-secondary mt-0.5" title="Output Tokens">{stat.totalOutputTokens.toLocaleString()} <span className="text-text-muted/50 text-[10px] ml-1">OUT</span></span>
 									</div>
 								</td>
 								<td className="px-6 py-4 text-[13px] font-bold text-text-bright text-right font-mono">
@@ -199,13 +200,13 @@ export function ModelUsageTable({ usage, loading }: ModelUsageTableProps) {
 											<div
 												className="h-full bg-accent rounded-full transition-[background-color,border-color,box-shadow,color,transform] duration-500"
 												style={{
-													width: `${totalCost > 0 ? (stat.totalCost / totalCost) * 100 : 0}%`,
+													width: `${totalRequests > 0 ? (stat.requests / totalRequests) * 100 : 0}%`,
 												}}
 											/>
 										</div>
 										<span className="text-[11.5px] font-bold text-text-secondary w-10 text-right font-mono transition-colors duration-200 ease-out group-hover:text-text-bright">
-											{totalCost > 0
-												? ((stat.totalCost / totalCost) * 100).toFixed(1)
+											{totalRequests > 0
+												? ((stat.requests / totalRequests) * 100).toFixed(1)
 												: "0.0"}
 											%
 										</span>

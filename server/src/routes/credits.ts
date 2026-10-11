@@ -16,7 +16,7 @@
 	*/
 import { Hono } from "hono";
 import { z } from "zod";
-import { and, desc, eq, gt, isNull } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, isNotNull } from "drizzle-orm";
 import type { OmaEnv } from "../types.js";
 import { sessionOrBearerAuth } from "../auth/middleware.js";
 import { db } from "../db/client.js";
@@ -33,6 +33,7 @@ export const creditsRoutes = new Hono<OmaEnv>();
 // ─── GET /v1/credits/balance ────────────────────────────────────────────────
 
 creditsRoutes.get("/v1/credits/balance", sessionOrBearerAuth, async (c) => {
+		c.header("Cache-Control", "no-store");
 		const userId = c.get("userId");
 
 		const [batches, balances] = await Promise.all([
@@ -75,15 +76,18 @@ creditsRoutes.get(
 		sessionOrBearerAuth,
 		async (c) => {
 				const userId = c.get("userId");
-				const limit = z.coerce
+				c.header("Cache-Control", "no-store");
+				const parsedLimit = z.coerce
 						.number()
 						.int()
 						.min(1)
 						.max(200)
 						.default(50)
-						.parse(c.req.query("limit"));
+						.safeParse(c.req.query("limit"));
+				if (!parsedLimit.success) return c.json({ error: { message: "Limit must be between 1 and 200." } }, 400);
+				const limit = parsedLimit.data;
 
-				const [depositRows, usageRows] = await Promise.all([
+				const [depositRows, usageRows, refundRows] = await Promise.all([
 						db
 								.select()
 								.from(deposits)
@@ -96,6 +100,9 @@ creditsRoutes.get(
 								.where(eq(usageRecords.userId, userId))
 								.orderBy(desc(usageRecords.createdAt))
 								.limit(limit),
+						db.select().from(usageRecords)
+							.where(and(eq(usageRecords.userId, userId), isNotNull(usageRecords.refundedAt)))
+							.orderBy(desc(usageRecords.refundedAt)).limit(limit),
 				]);
 
 				const transactions = [
@@ -111,11 +118,13 @@ creditsRoutes.get(
 						...usageRows.map((u) => ({
 								id: u.id,
 								type: "usage" as const,
-								amountCents: Number(u.totalCents),
+								amountCents: -Number(u.totalCents),
 								status: u.status,
 								createdAt: u.createdAt.toISOString(),
 								model: u.model,
-						})),
+							})),
+						...refundRows.map(u => ({ id: `${u.id}-refund`, type: "refund" as const,
+							amountCents: Number(u.totalCents), status: "completed", createdAt: u.refundedAt!.toISOString(), model: u.model })),
 				]
 						.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
 						.slice(0, limit);

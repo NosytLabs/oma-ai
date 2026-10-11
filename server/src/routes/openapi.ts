@@ -82,7 +82,7 @@ const spec = {
 			SessionCookie: {
 				type: "apiKey", in: "cookie",
 				name: ["development", "test"].includes(config.NODE_ENV) ? "oma.session_token" : "__Secure-oma.session_token",
-				description: "Better Auth session established by SIWE with the wallet that paid. API keys do not authenticate settlement.",
+				description: "Better Auth session from magic-link or wallet sign-in. x402 settlement additionally requires the session wallet to own the payment.",
 			},
 		},
 		schemas: {
@@ -95,6 +95,7 @@ const spec = {
 					created: { type: "integer" },
 					owned_by: { type: "string" },
 					context_length: { type: "integer" },
+					max_output_tokens: { type: "integer", description: "Maximum response token budget, distinct from the context window" },
 					supports_streaming: { type: "boolean" },
 					supports_tools: { type: "boolean" },
 					capabilities: {
@@ -108,6 +109,11 @@ const spec = {
 						properties: {
 							prompt: { type: "number", description: "USD per 1M input tokens" },
 							completion: { type: "number", description: "USD per 1M output tokens" },
+							extended: { type: "object", properties: {
+								context_token_threshold: { type: "integer", description: "Higher rates apply when input tokens exceed this threshold" },
+								prompt: { type: "number", description: "USD per 1M input tokens" },
+								completion: { type: "number", description: "USD per 1M output tokens" },
+							} },
 						},
 					},
 				},
@@ -117,7 +123,7 @@ const spec = {
 				required: ["role", "content"],
 				properties: {
 					role: { type: "string", enum: ["system", "user", "assistant", "tool"] },
-					content: { type: "string" },
+					content: { type: ["string", "array", "null"] },
 					name: { type: "string" },
 					tool_call_id: { type: "string" },
 					tool_calls: { type: "array" },
@@ -170,6 +176,31 @@ const spec = {
 	},
 	security: [{ BearerAuth: [] }],
 	paths: {
+		"/user": { get: {
+			summary: "Current account and admin status", security: [{ SessionCookie: [] }],
+			responses: { "200": { description: "Current account profile" }, "401": { description: "Sign in required" } },
+		} },
+		"/sessions": {
+			get: { summary: "List active sessions", security: [{ SessionCookie: [] }],
+				responses: { "200": { description: "Sessions with isCurrent, expiry, and device details" }, "401": { description: "Sign in required" } } },
+			delete: { summary: "Revoke all other sessions, retaining the current session", security: [{ SessionCookie: [] }],
+				responses: { "200": { description: "success and revokedCount" }, "401": { description: "Sign in required" } } },
+		},
+		"/sessions/{id}": { delete: {
+			summary: "Revoke an owned remote session", security: [{ SessionCookie: [] }],
+			parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+			responses: { "200": { description: "Session revoked" }, "400": { description: "Use sign-out for the current session" }, "401": { description: "Sign in required" }, "404": { description: "Session not found or not owned" } },
+		} },
+		"/account": { delete: {
+			summary: "Permanently delete the current account", security: [{ SessionCookie: [] }],
+			description: "Requires a session created within the last 24 hours. Deletes identity, sessions, API keys, and usage; forfeits remaining credits. Payment and security audit records are retained with the account ID detached. Clears session and installed API-key cookies.",
+			responses: { "200": { description: "Account deleted and cookies cleared" }, "400": { description: "session_not_fresh: sign in again; session must be younger than 24 hours" }, "401": { description: "Sign in required" } },
+		} },
+		"/v1/history": { delete: {
+			summary: "Clear usage history and previous audit logs", security: [{ SessionCookie: [] }],
+			description: "Preserves identity, API keys, sessions, and balances. Records a new HISTORY_CLEARED audit event.",
+			responses: { "200": { description: "success and deleted usageRecords/auditLogs counts" }, "401": { description: "Sign in required" } },
+		} },
 		"/v1/models": {
 			get: {
 				summary: "List the model catalog",
@@ -194,6 +225,8 @@ const spec = {
 		"/v1/chat/completions": {
 			post: {
 				summary: "OpenAI-compatible chat completion (streaming + tool calls)",
+				description: "API key model restrictions apply to primary and fallback routes. max_tokens cannot exceed the model's published max_output_tokens. Idempotency-Key prevents concurrent upstream calls across both API formats; completed keys return 409 without another call or charge. Completion bodies are not retained for replay.",
+				parameters: [{ name: "Idempotency-Key", in: "header", required: false, schema: { type: "string", minLength: 1, maxLength: 512 }, description: "Account-scoped retry key, at most 512 UTF-8 bytes. Use a new key for a new request; retain your original response." }],
 				requestBody: {
 					required: true,
 					content: {
@@ -216,6 +249,8 @@ const spec = {
 					},
 					"401": { description: "Missing or invalid API key" },
 					"402": { description: "Insufficient credit balance" },
+					"403": { description: "Model outside API key scope" },
+					"409": { description: "request_in_progress (Retry-After: 5) or already_processed (use your saved response)" },
 					"429": { description: "Rate limited" },
 					"502": { description: "Upstream provider error" },
 				},
@@ -225,7 +260,8 @@ const spec = {
 			post: {
 				summary: "Anthropic-compatible Messages API (Claude Code, Anthropic SDKs)",
 				description:
-					"Accepts Anthropic Messages request shape; routes through the same OMA catalog and billing as chat completions. Auth: Bearer oma_sk_… or x-api-key.",
+					"Accepts Anthropic Messages request shape; routes through the same OMA catalog and billing as chat completions. Auth: Bearer oma_sk_… or x-api-key. Idempotency-Key is shared with chat completions on the same account, including requests made with another key.",
+				parameters: [{ name: "Idempotency-Key", in: "header", required: false, schema: { type: "string", minLength: 1, maxLength: 512 }, description: "Account-scoped retry key, at most 512 UTF-8 bytes. Completed responses are not retained for replay." }],
 				requestBody: {
 					required: true,
 					content: {
@@ -262,6 +298,7 @@ const spec = {
 					"401": { description: "Missing or invalid API key" },
 					"402": { description: "Insufficient credit balance" },
 					"404": { description: "Unknown model id" },
+					"409": { description: "request_in_progress (Retry-After: 5) or already_processed (use your saved response)" },
 					"502": { description: "Upstream provider error" },
 				},
 			},
@@ -284,6 +321,7 @@ const spec = {
 		"/v1/usage": {
 			get: {
 				summary: "Paginated per-request usage history (model, provider, API key, token counts, cents)",
+				description: "Private account history. Treat next_cursor as opaque and pass it unchanged. Totals cover every record matching the filters, independent of the cursor. totalCents is the original charge; billedCents is zero after a refund, with refundedAt preserving its timestamp. Monetary values are decimal-string cents.",
 				parameters: [
 					{ in: "query", name: "model", schema: { type: "string" } },
 					{ in: "query", name: "provider", schema: { type: "string", enum: ["venice", "oma-ai"] } },
@@ -294,23 +332,47 @@ const spec = {
 					{ in: "query", name: "cursor", schema: { type: "string" } },
 				],
 				responses: {
-					"200": { description: "Paginated usage records" },
+					"200": { description: "{object, data, next_cursor, totals: {requests, input_tokens, output_tokens, cost_cents}}. cost_cents excludes refunded charges." },
+					"400": { description: "Invalid filters or cursor" },
+					"401": { description: "Authentication required" },
 				},
+			},
+		},
+		"/v1/usage/summary": {
+			get: {
+				summary: "Complete account statistics, model/provider breakdowns and chart buckets",
+				description: "Full-range aggregates, independent of request pagination. range is a rolling window; last24h always covers the preceding 24 hours. Billed cents exclude refunded charges, errors and cancellations are counted separately. Timeline includes zero buckets in the requested IANA timezone; all uses monthly buckets. Response contains range, timezone, bucket, from (null for all), to, lifetimeRequests, totals, last24h, models, providers and timeline. Each totals object includes requests, errors, aborted, free_requests, active_models, input_tokens, output_tokens, billed_cents (decimal string) and avg_latency_ms. Use from/to as since/until when loading the matching request history.",
+				parameters: [
+					{ in: "query", name: "range", schema: { type: "string", enum: ["24h", "7d", "30d", "all"], default: "7d" } },
+					{ in: "query", name: "timezone", schema: { type: "string", default: "UTC" }, description: "IANA timezone, e.g. America/Moncton" },
+				],
+				responses: { "200": { description: "Private, uncached usage summary" }, "400": { description: "Invalid range or timezone" }, "401": { description: "Authentication required" } },
 			},
 		},
 		"/v1/keys": {
 			get: {
 				summary: "List active API keys",
+				security: [{ SessionCookie: [] }],
+				description: "Lists key metadata including expiresAt, allowedModels and ipAllowlist. Expired keys can remain listed until revoked; they cannot authenticate. Never returns a raw key.",
 				responses: { "200": { description: "Keys" } },
 			},
 			post: {
 				summary: "Mint a new API key (returned once)",
-				responses: { "200": { description: "New key" } },
+				security: [{ SessionCookie: [] }],
+				description: "Requires a Better Auth session, not an API bearer key. Raw key is returned once. Restrictions apply to both primary models and fallback routes. Default expiry is 90 days.",
+				requestBody: { required: true, content: { "application/json": { schema: { type: "object", properties: {
+					name: { type: "string", minLength: 1, maxLength: 64, default: "default" },
+					expiresInDays: { type: "integer", minimum: 1, maximum: 365, default: 90 },
+					allowedModels: { type: "array", minItems: 1, maxItems: 30, items: { type: "string" }, description: "OMA catalog IDs. Omit to allow all models." },
+					ipAllowlist: { type: "array", minItems: 1, maxItems: 20, items: { type: "string", maxLength: 64 }, description: "IPv4/IPv6 addresses or CIDR ranges. Only matching callers can use the key. Include your server's public outbound IP. Omit for unrestricted access." },
+				} } } } },
+				responses: { "200": { description: "New key, expiresAt, allowedModels and ipAllowlist" }, "400": { description: "Invalid JSON, name, expiry, model ID or IP restriction" }, "401": { description: "Session required" } },
 			},
 		},
 		"/v1/keys/{id}": {
 			delete: {
 				summary: "Revoke an API key",
+				security: [{ SessionCookie: [] }],
 				parameters: [
 					{ in: "path", name: "id", required: true, schema: { type: "string" } },
 				],
@@ -329,8 +391,23 @@ const spec = {
 		},
 		"/v1/usage/today": {
 			get: {
-				summary: "Today's free-tier usage counter (anon IP, authed user)",
-				responses: { "200": { description: "Counter" } },
+				summary: "Today's free-chat quota (guest IP or signed-in account)",
+				description: "Optional session or API-key authentication. Counts admitted free-chat attempts, including upstream failures; this read does not consume quota. Resets at midnight UTC. Paid API-key inference uses prepaid credits instead. Redis outages use bounded, process-local counters retaining observed usage; these are not durable across restarts.",
+				security: [{ SessionCookie: [] }, { BearerAuth: [] }, {}],
+				responses: { "200": {
+					description: "Private, non-cacheable quota snapshot",
+					content: { "application/json": { schema: {
+						type: "object",
+						required: ["used", "limit", "remaining", "resetMs", "policy"],
+						properties: {
+							used: { type: "integer", minimum: 0 },
+							limit: { type: "integer", enum: [20, 100] },
+							remaining: { type: "integer", minimum: 0 },
+							resetMs: { type: "integer", minimum: 0, description: "Milliseconds until midnight UTC" },
+							policy: { type: "string", enum: ["shared-redis", "degraded-memory"] },
+						},
+					} } },
+				} },
 			},
 		},
 		"/v1/search": {
@@ -351,105 +428,6 @@ const spec = {
 					"200": {
 						description: "Search results (may be empty)",
 					},
-				},
-			},
-		},
-		"/v1/site-settings": {
-			get: {
-				summary: "Public rail/config status (card + crypto toggles, treasury + Polar configured flags)",
-				description:
-					"Lets the frontend render honest rail statuses. When the DB is unreachable the endpoint falls back to env-derived defaults so the deposit page never 5xxs for an anonymous visitor.",
-				security: [],
-				responses: {
-					"200": {
-						description: "Settings snapshot",
-						content: {
-							"application/json": {
-								schema: {
-									type: "object",
-									properties: {
-										maintenanceMode: { type: "boolean" },
-										cardPaymentsEnabled: { type: "boolean" },
-										cryptoPaymentsEnabled: { type: "boolean" },
-										usdcDepositConfigured: { type: "boolean" },
-										polarConfigured: { type: "boolean" },
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		"/v1/admin/site-settings": {
-			post: {
-				summary: "Toggle site-level kill switches (maintenance, card, crypto)",
-				description:
-					"Admin-only. Mutations write an audit log row tagged SITE_SETTINGS_UPDATED.",
-				responses: {
-					"200": { description: "Updated settings echoed" },
-					"400": { description: "Invalid body" },
-					"401": { description: "Not authenticated" },
-					"403": { description: "Not an admin" },
-				},
-			},
-		},
-		"/v1/admin/credit-adjust": {
-			post: {
-				summary: "Add or deduct credits for a user (cents)",
-				description:
-					"Admin-only. Server clamps delta to ±$1k per operation. Writes CREDIT_ADJUSTED or CREDIT_DEDUCTED audit row.",
-				responses: {
-					"200": { description: "OK" },
-					"400": { description: "Invalid body" },
-					"404": { description: "User not found" },
-					"401": { description: "Not authenticated" },
-					"403": { description: "Not an admin" },
-				},
-			},
-		},
-		"/v1/admin/user-suspend": {
-			post: {
-				summary: "Flip the user.suspended flag",
-				description:
-					"Admin-only. Writes USER_SUSPENDED or USER_UNSUSPENDED audit row with reason.",
-				responses: {
-					"200": { description: "OK" },
-					"400": { description: "Invalid body" },
-					"404": { description: "User not found" },
-					"401": { description: "Not authenticated" },
-					"403": { description: "Not admin" },
-				},
-			},
-		},
-		"/v1/admin/rate-limit-override": {
-			post: {
-				summary: "Set or clear a per-user rate-limit override",
-				description:
-					"Admin-only. Pass maxRequestsPerMinute: null to clear. Writes RATE_LIMIT_OVERRIDE_SET or _REMOVED audit row.",
-				responses: {
-					"200": { description: "OK" },
-					"400": { description: "Invalid body" },
-					"404": { description: "User not found" },
-					"401": { description: "Not authenticated" },
-					"403": { description: "Not admin" },
-				},
-			},
-		},
-		"/v1/admin/users": {
-			get: {
-				summary: "Paginated user list with balance",
-				description:
-					"Admin-only. Cursor-based pagination over (id ASC). Optional q filter searches email + name ILIKE.",
-				parameters: [
-					{ in: "query", name: "limit", schema: { type: "integer", minimum: 1, maximum: 100, default: 20 } },
-					{ in: "query", name: "cursor", schema: { type: "string" } },
-					{ in: "query", name: "q", schema: { type: "string", maxLength: 100 } },
-				],
-				responses: {
-					"200": { description: "{ items: AdminUser[], nextCursor: string|null }" },
-					"401": { description: "Not authenticated" },
-					"403": { description: "Not admin" },
 				},
 			},
 		},
@@ -532,21 +510,9 @@ const spec = {
 	},
 };
 
-const INTERNAL_DOCUMENTATION_PATHS = new Set([
-	"/v1/site-settings",
-	"/v1/admin/site-settings",
-	"/v1/admin/credit-adjust",
-	"/v1/admin/user-suspend",
-	"/v1/admin/rate-limit-override",
-	"/v1/admin/users",
-]);
-
+/** This module contains customer endpoints only; operator contracts live in docs/PLATFORM.md. */
 export function getPublicOpenApiSpec() {
-	const paths = { ...spec.paths };
-	for (const path of INTERNAL_DOCUMENTATION_PATHS) {
-		delete paths[path as keyof typeof paths];
-	}
-	return { ...spec, paths };
+	return spec;
 }
 
 openapiRoutes.get("/openapi.json", (c) => c.json(getPublicOpenApiSpec()));

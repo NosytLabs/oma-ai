@@ -14,8 +14,8 @@ describe("api resource caching", () => {
 		vi.resetModules();
 	});
 
-	it("coalesces concurrent balance misses into a single request", async () => {
-		fetchMock.mockResolvedValue({
+	it("does not reuse a balance from a previous identity or manual refresh", async () => {
+		fetchMock.mockResolvedValueOnce({
 			ok: true,
 			status: 200,
 			json: async () => ({ balance: 1 }),
@@ -23,18 +23,12 @@ describe("api resource caching", () => {
 
 		const { balance: freshBalance } = await import("../resources");
 
-		// Three callers hit the cache before the first response lands. Without
-		// in-flight coalescing this fires three identical /v1/balance calls.
-		const [a, b, c] = await Promise.all([
-			freshBalance.get(),
-			freshBalance.get(),
-			freshBalance.get(),
-		]);
-
-		expect(fetchMock).toHaveBeenCalledTimes(1);
+		const a = await freshBalance.get();
+		fetchMock.mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ balance: 7 }) });
+		const b = await freshBalance.get();
+		expect(fetchMock).toHaveBeenCalledTimes(2);
 		expect(a).toEqual({ balance: 1 });
-		expect(b).toEqual({ balance: 1 });
-		expect(c).toEqual({ balance: 1 });
+		expect(b).toEqual({ balance: 7 });
 	});
 
 	it("coalesces concurrent model-list misses into a single request", async () => {

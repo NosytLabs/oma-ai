@@ -4,7 +4,7 @@ export const revalidate = 3600;
 
 const BODY = `# OMA AI — Agent Setup
 
-> OpenAI-compatible inference with prepaid credits. Discover current model availability before making requests. Browser chat has a separate daily free allowance on eligible models.
+> OpenAI-compatible inference with prepaid credits. Discover current model availability before making requests. Free chat is only on the OMA website for eligible Gonka/OpenBroker models. Programmatic API requests always require credits.
 
 ## Public endpoints
 
@@ -15,6 +15,7 @@ Use \`https://www.oma-ai.com/api/v1\` as the SDK base URL. The public website pr
 | \`GET https://www.oma-ai.com/api/v1/models\` | Catalog, availability, and prices |
 | \`POST https://www.oma-ai.com/api/v1/chat/completions\` | OpenAI-compatible inference |
 | \`POST https://www.oma-ai.com/api/v1/messages\` | Anthropic-compatible inference |
+| \`GET https://www.oma-ai.com/x402/info\` | Current x402 recipient, asset, network, and signing domain |
 | \`POST https://www.oma-ai.com/x402/verify\` | Validate and broadcast a signed USDC transfer, then wait for confirmation |
 | \`POST https://www.oma-ai.com/x402/settle\` | Credit the confirmed payment to the authenticated payer's account |
 
@@ -55,7 +56,7 @@ Ordinary chat requests do not issue a mid-request x402 challenge. A 402 for insu
 
 ## 4. Optional x402 funding: transfer, credit, spend
 
-OMA supports USDC on Base mainnet (\`eip155:8453\`), contract \`0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\`. Read the current treasury address from authenticated \`GET https://www.oma-ai.com/api/v1/deposit/usdc\` before signing. Sign in with the same wallet that owns the USDC before starting the transfer.
+OMA supports USDC on Base mainnet (\`eip155:8453\`), contract \`0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\`. Read \`GET https://www.oma-ai.com/x402/info\` before signing and use its \`payTo\`, \`asset\`, \`network\`, \`maxTimeoutSeconds\`, and \`extra\`. The direct-deposit address can differ from the x402 recipient. Sign in with the same wallet that owns the USDC before starting the transfer.
 
 Prepare an EIP-712 \`TransferWithAuthorization\` signature over the EIP-3009 authorization tuple. The USDC domain is \`name: "USD Coin"\`, \`version: "2"\`, \`chainId: 8453\`, and the USDC contract above as \`verifyingContract\`. The tuple has \`from\`, \`to\`, \`value\`, \`validAfter\`, \`validBefore\`, and a fresh 32-byte \`nonce\`. \`value\` is in atomic USDC units (6 decimals); times are Unix seconds. The payer signs, and the facilitator broadcasts and pays transaction gas.
 
@@ -69,7 +70,9 @@ Send a base64-encoded JSON v2 envelope in \`PAYMENT-SIGNATURE\`:
     "network": "eip155:8453",
     "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
     "amount": "1000000",
-    "payTo": "<configured treasury address>"
+    "payTo": "<payTo from /x402/info>",
+    "maxTimeoutSeconds": 300,
+    "extra": { "name": "USD Coin", "version": "2" }
   },
   "payload": {
     "signature": "<0x-prefixed 65-byte signature>",
@@ -129,6 +132,8 @@ If a transfer succeeded but credits are pending, retry settlement rather than ma
 | 502 / 503 | Upstream or service unavailable; consult live status |
 
 Browser guest chat and signed-in free chat have daily allowances. API-key limits are separate. Read [rate limits](https://www.oma-ai.com/docs#rate-limits) and live usage responses for current limits.
+
+Use only the customer endpoints listed here or in the public OpenAPI schema. Website-only chat, operator/admin controls, and deployment recovery jobs are not an agent API. Do not copy website headers to bypass authentication or billing. Treat API keys, session cookies, and wallet signing as separate permissions; obtain the wallet owner's approval for the exact recipient and amount before authorizing a transfer.
 
 ## References
 

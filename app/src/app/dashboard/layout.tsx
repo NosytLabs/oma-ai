@@ -5,16 +5,16 @@ import type { Metadata } from "next";
 import { MotionProvider } from "@/lib/animation/MotionProvider";
 
 export const metadata: Metadata = {
-	title: "Dashboard — keys, usage & credits",
+	title: "Dashboard — account, usage & credits",
 	description:
-		"Manage your API keys, view usage statistics, and deposit credits.",
+		"Manage account settings, API keys, usage statistics and prepaid credits.",
 	alternates: { canonical: "/dashboard" },
 	robots: { index: false, follow: false },
 	openGraph: {
 		locale: "en_US",
 		title: "Dashboard · OMA",
 		description:
-			"Manage your API keys, view usage statistics, and deposit credits.",
+			"Manage account settings, API keys, usage statistics and prepaid credits.",
 		url: "/dashboard",
 		images: [
 			{
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
 		card: "summary_large_image",
 		title: "Dashboard · OMA",
 		description:
-			"Manage your API keys, view usage statistics, and deposit credits.",
+			"Manage account settings, API keys, usage statistics and prepaid credits.",
 	},
 };
 

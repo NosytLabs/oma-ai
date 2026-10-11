@@ -51,7 +51,6 @@ describe("FALLBACK_MAP (inference router)", () => {
 			"kimi-k3",
 			"llama-3.3-70b",
 			"minimax-m2-7",
-			"mistral-small-2603",
 			"openai-gpt-56-sol",
 			"qwen-3-7-plus",
 			"qwen-3-8-max",
@@ -70,11 +69,11 @@ describe("FALLBACK_MAP (inference router)", () => {
 
 describe("buildFallbackChain", () => {
 	it.each<[string, string[]]>([
-		["minimax-m2-7", ["minimax-m2-7", "zai-org-glm-5-3"]],
+		["minimax-m2-7", ["minimax-m2-7"]],
 		["zai-org-glm-5-3", ["zai-org-glm-5-3", "minimax-m2-7"]],
 		[
 			"deepseek-v4-flash-0731-openbroker",
-			["deepseek-v4-flash-0731-openbroker", "zai-org-glm-5-3", "minimax-m2-7"],
+			["deepseek-v4-flash-0731-openbroker", "minimax-m2-7"],
 		],
 	])("keeps %s free and skips unhealthy automatic peers even with stale client hints", (primary, expected) => {
 		const chain = buildFallbackChain(primary, [
@@ -88,6 +87,7 @@ describe("buildFallbackChain", () => {
 		expect(chain).toEqual(expected);
 		expect(chain.slice(1)).not.toContain(primary);
 		expect(chain.slice(1)).not.toContain("deepseek-v4-flash-0731-openbroker");
+		expect(chain.slice(1)).not.toContain("zai-org-glm-5-3");
 		for (const id of chain) {
 			expect(isFreeWebsiteModel(id)).toBe(true);
 			expect(getModelById(id)?.upstream).toBe("openbroker");
@@ -96,7 +96,7 @@ describe("buildFallbackChain", () => {
 
 	it("provides the preferred free peer when a client sends no fallback hints", () => {
 		expect(buildFallbackChain("minimax-m2-7", [], true)).toEqual([
-			"minimax-m2-7", "zai-org-glm-5-3",
+			"minimax-m2-7",
 		]);
 		expect(buildFallbackChain("zai-org-glm-5-3", [], true)).toEqual([
 			"zai-org-glm-5-3", "minimax-m2-7",
@@ -148,8 +148,8 @@ describe("buildFallbackChain", () => {
 	});
 
 	it("lets a Venice free-list model fail over to Gonka peers", () => {
-		const chain = buildFallbackChain("mistral-small-2603", [], true);
-		expect(chain[0]).toBe("mistral-small-2603");
+		const chain = buildFallbackChain("gemini-3-6-flash", [], true);
+		expect(chain[0]).toBe("gemini-3-6-flash");
 		const gonka = chain.filter((id) => getModelById(id)?.upstream === "openbroker");
 		expect(gonka.length).toBeGreaterThan(0);
 	});

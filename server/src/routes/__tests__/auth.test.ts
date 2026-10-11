@@ -65,7 +65,8 @@ const mockCreateApiKey = vi.hoisted(() => vi.fn());
 const mockListApiKeys = vi.hoisted(() => vi.fn());
 const mockRevokeApiKey = vi.hoisted(() => vi.fn());
 const mockValidateApiKey = vi.hoisted(() => vi.fn());
-vi.mock("../../auth/api-keys.js", () => ({
+vi.mock("../../auth/api-keys.js", async (importOriginal) => ({
+	...(await importOriginal<typeof import("../../auth/api-keys.js")>()),
 	createApiKey: mockCreateApiKey,
 	listApiKeys: mockListApiKeys,
 	revokeApiKey: mockRevokeApiKey,
@@ -262,6 +263,47 @@ describe("auth routes", () => {
 	});
 
 	describe("POST /v1/keys", () => {
+		it("persists normalized IP restrictions and includes them in key metadata", async () => {
+			mockCreateApiKey.mockImplementationOnce(async (_user, name, options) => ({ id: "key_ip", name, prefix: "oma_sk_prefix", rawKey: "oma_sk_secret", createdAt: new Date(), ...options }));
+			const res = await authReq("post", "/v1/keys", { name: "Server only", ipAllowlist: [" 192.0.2.0/24 ", "192.0.2.0/24", "2001:db8::1"] }, authedHeaders);
+			expect(res.status).toBe(200);
+			const data = await res.json();
+			expect(data.ipAllowlist).toEqual(["192.0.2.0/24", "2001:db8::1"]);
+			expect(mockCreateApiKey).toHaveBeenCalledWith("user_1", "Server only", { ipAllowlist: data.ipAllowlist });
+			mockListApiKeys.mockResolvedValueOnce([{ ...data, keyPrefix: data.prefix, createdAt: new Date(), lastUsedAt: null }]);
+			const listing = await authReq("get", "/v1/keys", undefined, authedHeaders);
+			expect((await listing.json()).keys[0].ipAllowlist).toEqual(data.ipAllowlist);
+		});
+
+		it.each([[], ["not-an-ip"], ["192.0.2.0/33"], ["::/129"], ["::/bad"], ["::1%eth0"], Array(21).fill("192.0.2.1")].map(ipAllowlist => ({ ipAllowlist })))("rejects invalid IP restrictions %j without creating a credential", async ({ ipAllowlist }) => {
+			expect((await authReq("post", "/v1/keys", { ipAllowlist }, authedHeaders)).status).toBe(400);
+			expect(mockCreateApiKey).not.toHaveBeenCalled();
+		});
+
+		it("applies bounded expiry and deduplicated model restrictions", async () => {
+			const now = Date.now();
+			mockCreateApiKey.mockImplementationOnce(async (_user, name, options) => ({ id: "key_scoped", name, prefix: "oma_sk_prefix", rawKey: "oma_sk_secret", createdAt: new Date(), ...options }));
+			const res = await authReq("post", "/v1/keys", { name: "  Coding  ", expiresInDays: 7, allowedModels: [" minimax-m2-7 ", "minimax-m2-7"] }, authedHeaders);
+			expect(res.status).toBe(200);
+			const data = await res.json();
+			expect(data.name).toBe("Coding");
+			expect(data.allowedModels).toEqual(["minimax-m2-7"]);
+			expect(new Date(data.expiresAt).getTime() - now).toBeGreaterThanOrEqual(7 * 86_400_000);
+			expect(new Date(data.expiresAt).getTime() - now).toBeLessThan(7 * 86_400_000 + 1000);
+			expect(mockCreateApiKey).toHaveBeenCalledWith("user_1", "Coding", expect.objectContaining({ allowedModels: ["minimax-m2-7"] }));
+		});
+
+		it.each([{ name: " " }, { expiresInDays: 0 }, { expiresInDays: 366 }, { expiresInDays: 1.5 }, { allowedModels: [] }, { allowedModels: ["fake-model"] }])("rejects invalid key controls %j without creating a credential", async body => {
+			expect((await authReq("post", "/v1/keys", body, authedHeaders)).status).toBe(400);
+			expect(mockCreateApiKey).not.toHaveBeenCalled();
+		});
+
+		it("rejects malformed JSON rather than creating a default credential", async () => {
+			const app = new Hono(); app.route("/", authRoutes);
+			const res = await app.request("/v1/keys", { method: "POST", headers: { ...authedHeaders, "Content-Type": "application/json" }, body: "{" });
+			expect(res.status).toBe(400);
+			expect(mockCreateApiKey).not.toHaveBeenCalled();
+		});
 		it("creates a key with default name when body is empty", async () => {
 			mockCreateApiKey.mockResolvedValueOnce({
 				id: "key_def",
@@ -423,7 +465,7 @@ describe("auth routes", () => {
 		it("deletes the account and writes audit logs", async () => {
 			mockAuthApi.getSession.mockResolvedValueOnce({
 				user: { id: "user_1" },
-				session: { id: "s1" },
+				session: { id: "s1", createdAt: new Date() },
 			});
 			mockDb.delete.mockReturnValue({
 				where: vi.fn().mockResolvedValue({ rowCount: 1 }),
@@ -435,10 +477,30 @@ describe("auth routes", () => {
 			expect(res.status).toBe(200);
 			const data = await res.json();
 			expect(data.success).toBe(true);
+			const cookies = res.headers.getSetCookie();
+			expect(cookies).toEqual(expect.arrayContaining([
+				expect.stringMatching(/^oma\.session_token=;.*Max-Age=0/),
+				expect.stringMatching(/^__Secure-oma\.session_token=;.*Max-Age=0/),
+			]));
 			// ACCOUNT_DELETE_REQUESTED is written before the user row is deleted.
 			expect(auditLog).toHaveBeenCalledWith(
 				expect.objectContaining({ action: "ACCOUNT_DELETE_REQUESTED" }),
 			);
 		});
+
+		it.each([new Date(Date.now() - 25 * 60 * 60 * 1000), "invalid", undefined])(
+			"rejects stale or malformed session creation time %s before deletion",
+			async (createdAt) => {
+				mockAuthApi.getSession.mockResolvedValueOnce({
+					user: { id: "user_1" },
+					session: { id: "s1", createdAt, updatedAt: new Date() },
+				});
+				const res = await authReq("delete", "/account", undefined, authedHeaders);
+				expect(res.status).toBe(400);
+				expect(await res.json()).toMatchObject({ error: { type: "session_not_fresh" } });
+				expect(mockDb.delete).not.toHaveBeenCalled();
+				expect(auditLog).not.toHaveBeenCalled();
+			},
+		);
 	});
 });

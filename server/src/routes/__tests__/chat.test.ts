@@ -7,7 +7,7 @@
  *   - model-not-found rejection
  *   - auth enforcement (non-free models require a userId)
  *   - free-website-model bypass (anonymous allowed when X-OMA-Source=website)
- *   - idempotency-key replay (returns cached usage, empty assistant content)
+ * Retry admission is exercised against real Postgres in inference-idempotency-integration.test.ts.
  *   - ProviderError mapping to upstream status codes
  *   - unexpected error → 500
  *
@@ -63,10 +63,12 @@ vi.mock("../../middleware/rate-limit.js", () => ({
 vi.mock("../../middleware/daily-limit.js", () => ({
 	dailyUsageLimit: () => async (_c: unknown, next: () => Promise<void>) => next(),
 }));
+vi.mock("../../middleware/inference-idempotency.js", () => ({ inferenceIdempotency: () => async (_c: unknown, next: () => Promise<void>) => next() }));
 
 // Auth middleware: optionalAuth sets userId when a Bearer header is present.
 vi.mock("../../auth/middleware.js", () => ({
 	optionalAuth: async (c: { req: { header: (n: string) => string | undefined }; set: (k: string, v: unknown) => void }, next: () => Promise<void>) => {
+		if (c.req.header("Cookie") === "local-fixture=session") c.set("userId", "user_123");
 		const auth = c.req.header("Authorization");
 		if (auth && auth.startsWith("Bearer ")) {
 			c.set("userId", "user_123");
@@ -79,27 +81,6 @@ vi.mock("../../auth/middleware.js", () => ({
 // Logger mock so error paths don't spam the test output.
 vi.mock("../../lib/logger.js", () => ({
 	logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn(), fatal: vi.fn() },
-}));
-
-// DB mock: usageRecords select returns [] by default (no idempotency hit).
-const mockDb = vi.hoisted(() => ({
-	select: vi.fn().mockReturnValue({
-		from: vi.fn().mockReturnValue({
-			where: vi.fn().mockReturnValue({
-				limit: vi.fn().mockResolvedValue([]),
-			}),
-		}),
-	}),
-}));
-vi.mock("../../db/client.js", () => ({ db: mockDb }));
-vi.mock("../../db/schema.js", () => ({
-	usageRecords: {
-		userId: "userId",
-		requestId: "requestId",
-		status: "status",
-		inputTokens: "inputTokens",
-		outputTokens: "outputTokens",
-	},
 }));
 
 // Inference proxy mock — routeRequestWithFallback returns a fake upstream.
@@ -126,11 +107,11 @@ import { chatRoutes } from "../chat/index.js";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-function chatRequest(body: unknown, headers: Record<string, string> = {}) {
+function chatRequest(body: unknown, headers: Record<string, string> = {}, path = "/v1/chat/completions") {
 	const app = new Hono();
 	app.route("/", chatRoutes);
 	return app.request(
-		new Request("http://localhost/v1/chat/completions", {
+		new Request(`http://localhost${path}`, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
@@ -149,19 +130,35 @@ const baseBody = {
 
 beforeEach(() => {
 	vi.clearAllMocks();
-	// Reset default db select to return [] (no idempotency cache hit).
-	mockDb.select.mockReturnValue({
-		from: vi.fn().mockReturnValue({
-			where: vi.fn().mockReturnValue({
-				limit: vi.fn().mockResolvedValue([]),
-			}),
-		}),
-	});
+	mockRouteRequest.mockReset();
+	mockParseNonStreaming.mockReset();
 });
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
 describe("POST /v1/chat/completions", () => {
+	it("asks old signed-in free-chat clients to reload rather than charging them as API requests", async () => {
+		mockRouteRequest.mockResolvedValueOnce({ response: new Response("{}"), actualModelId: baseBody.model });
+		mockParseNonStreaming.mockResolvedValueOnce({ data: { ok: true } });
+		// The updated public proxy has already stripped the old source header.
+		const res = await chatRequest(baseBody, { Cookie: "local-fixture=session", Origin: "http://localhost:3000" });
+		expect(res.status).toBe(409);
+		expect((await res.json()).error.code).toBe("website_chat_moved");
+		expect(mockRouteRequest).not.toHaveBeenCalled();
+		expect(mockParseNonStreaming).not.toHaveBeenCalled();
+	});
+	it("forwards assistant tool calls and tool results for a coding follow-up", async () => {
+		const messages = [
+			{ role: "user", content: "Read the file." },
+			{ role: "assistant", content: null, tool_calls: [{ id: "call_1", type: "function", function: { name: "read_file", arguments: '{"path":"README.md"}' } }] },
+			{ role: "tool", content: "The file contents.", tool_call_id: "call_1" },
+		];
+		mockRouteRequest.mockResolvedValueOnce({ response: new Response("{}"), actualModelId: baseBody.model });
+		mockParseNonStreaming.mockResolvedValueOnce({ data: { ok: true } });
+		const res = await chatRequest({ ...baseBody, messages }, { Authorization: "Bearer test-key" });
+		expect(res.status).toBe(200);
+		expect(mockRouteRequest).toHaveBeenCalledWith(expect.objectContaining({ messages }));
+	});
 	describe("request validation", () => {
 		it("rejects invalid JSON body with 400", async () => {
 			const res = await chatRequest("not json", {});
@@ -198,6 +195,15 @@ describe("POST /v1/chat/completions", () => {
 	});
 
 	describe("authentication enforcement", () => {
+		it("does not sponsor public API calls with copied website headers", async () => {
+			mockRouteRequest.mockResolvedValueOnce({ response: Response.json({}), actualModelId: baseBody.model });
+			mockParseNonStreaming.mockResolvedValueOnce({ data: { ok: true } });
+			const response = await chatRequest(baseBody, {
+				"X-OMA-Source": "website", Origin: "http://localhost:3000",
+			});
+			expect(response.status).toBe(401);
+			expect(mockRouteRequest).not.toHaveBeenCalled();
+		});
 		it("requires auth for paid models (no userId → 401)", async () => {
 			const res = await chatRequest(
 				{ ...baseBody, model: "llama-3.3-70b" },
@@ -208,7 +214,7 @@ describe("POST /v1/chat/completions", () => {
 			expect(data.error.code).toBe("auth_required");
 		});
 
-		it("allows free website models without auth (X-OMA-Source=website)", async () => {
+		it("allows free models on the separate local website route", async () => {
 			mockRouteRequest.mockResolvedValueOnce({
 				response: new Response("{}", { status: 200 }),
 				actualModelId: "deepseek-v4-flash-0731-openbroker",
@@ -218,7 +224,7 @@ describe("POST /v1/chat/completions", () => {
 			const res = await chatRequest(baseBody, {
 				"X-OMA-Source": "website",
 				Origin: "http://localhost:3000",
-			});
+			}, "/website/chat/completions");
 			expect(res.status).toBe(200);
 		});
 
@@ -231,8 +237,8 @@ describe("POST /v1/chat/completions", () => {
 			const res = await chatRequest(baseBody, {
 				"X-OMA-Source": "website",
 				Origin: "https://evil.example.com",
-			});
-			expect(res.status).toBe(401);
+			}, "/website/chat/completions");
+			expect(res.status).toBe(403);
 		});
 
 		it("bills API-key callers for free models even with website headers", async () => {
@@ -255,41 +261,6 @@ describe("POST /v1/chat/completions", () => {
 				expect.anything(),
 				expect.objectContaining({ skipBilling: false }),
 			);
-		});
-	});
-
-	describe("idempotency replay", () => {
-		it("replays cached usage when Idempotency-Key matches a prior completed request", async () => {
-			// Simulate a prior completed request for this user + key.
-			mockDb.select.mockReturnValueOnce({
-				from: vi.fn().mockReturnValue({
-					where: vi.fn().mockReturnValue({
-						limit: vi.fn().mockResolvedValue([
-							{
-								requestId: "idem-user_123-replay-key",
-								status: "completed",
-								inputTokens: 42,
-								outputTokens: 58,
-							},
-						]),
-					}),
-				}),
-			});
-
-			const res = await chatRequest(baseBody, {
-				Authorization: "Bearer test-key",
-				"Idempotency-Key": "replay-key",
-			});
-
-			expect(res.status).toBe(200);
-			const data = await res.json();
-			expect(data.object).toBe("chat.completion");
-			expect(data.note).toBe("idempotency-replay");
-			expect(data.usage.prompt_tokens).toBe(42);
-			expect(data.usage.completion_tokens).toBe(58);
-			expect(data.usage.total_tokens).toBe(100);
-			// Must NOT have called the upstream.
-			expect(mockRouteRequest).not.toHaveBeenCalled();
 		});
 	});
 
@@ -345,7 +316,7 @@ describe("POST /v1/chat/completions", () => {
 			const res = await chatRequest(baseBody, {
 				"X-OMA-Source": "website",
 				Origin: "http://localhost:3000",
-			});
+			}, "/website/chat/completions");
 			expect(res.status).toBe(200);
 			expect(res.headers.get("x-provider")).toBe("oma-ai");
 			expect(res.headers.get("x-actual-model")).toBe("deepseek-v4-flash-0731-openbroker");
@@ -361,7 +332,7 @@ describe("POST /v1/chat/completions", () => {
 			const res = await chatRequest(baseBody, {
 				"X-OMA-Source": "website",
 				Origin: "http://localhost:3000",
-			});
+			}, "/website/chat/completions");
 			expect(res.headers.get("x-oma-fallback")).toBe("1");
 			expect(res.headers.get("x-oma-requested-model")).toBe("deepseek-v4-flash-0731-openbroker");
 		});

@@ -9,7 +9,7 @@
 	* installer that powers browser-direct SSE chat.
 	*/
 import { request } from "./client.js";
-import type { ApiKey, ApiKeyWithSecret, Session, User } from "./types.js";
+import type { ApiKey, ApiKeyCreateOptions, ApiKeyWithSecret, Session, User } from "./types.js";
 
 /**
 	* Fetch the current user via Better Auth's session lookup.
@@ -48,10 +48,10 @@ export const auth = {
 				return request<{ keys: ApiKey[] }>("/v1/keys", { signal });
 		},
 
-		createKey(name: string, signal?: AbortSignal): Promise<ApiKeyWithSecret> {
+		createKey(name: string, signal?: AbortSignal, options: ApiKeyCreateOptions = {}): Promise<ApiKeyWithSecret> {
 				return request<ApiKeyWithSecret>("/v1/keys", {
 						method: "POST",
-						body: JSON.stringify({ name }),
+						body: JSON.stringify({ name, ...options }),
 						signal,
 				});
 		},

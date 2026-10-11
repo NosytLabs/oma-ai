@@ -5,16 +5,6 @@
  *   - "venice"   — direct Venice AI (api.venice.ai)
  *   - "oma-ai"   — OpenBroker (api.openbroker.gonka.gg)
  *
- * Plus one *hidden procurement fallback*:
- *   - "surplus"  — Surplus Intelligence marketplace
- *                  (api.surplusintelligence.ai). Never user-visible.
- *                  Only invoked by the proxy when the primary upstream
- *                  fails AND the model has a surplusId configured AND
- *                  SURPLUS_API_KEY is set. The customer-facing
- *                  providerLabel stays the same ("venice" or "oma-ai")
- *                  so Surplus procurement is invisible.
- *
- * (Zyloo was previously a sister upstream of "oma-ai"; removed 2026-08-17.)
  */
 import { config } from "../config.js";
 import type { ModelDef } from "./models.js";
@@ -27,25 +17,14 @@ export interface ProviderRoute {
 	 * Translate OMA model id → upstream model id.
 	 * @param omaModelId — the model.id from the catalog (fallback)
 	 * @param omaAiId    — the OMA-AI upstream id (OpenBroker)
-	 * @param surplusId  — the Surplus marketplace id
 	 */
-	upstreamModel: (omaModelId: string, omaAiId?: string, surplusId?: string) => string;
+	upstreamModel: (omaModelId: string, omaAiId?: string) => string;
 	/** Strip provider-only fields the upstream doesn't accept. */
 	extraBody: (body: Record<string, unknown>) => Record<string, unknown>;
-	/**
-	 * User-facing provider label. Surplus returns the SAME label as the
-	 * primary route it's procuring for ("venice" or "oma-ai") — Surplus
-	 * is never surfaced to users.
-	 */
+	/** Provider label used for customer usage and billing. */
 	providerLabel: "venice" | "oma-ai";
-	/**
-	 * Internal-only routing tag. Lets the proxy + audit log distinguish
-	 * "this request was served by Surplus under the venice label" from
-	 * "this request was served by Venice directly". Surfaced in
-	 * x-oma-routed-via header but never in the user-facing provider
-	 * field.
-	 */
-	routedVia: "venice" | "oma-ai" | "surplus";
+	/** Internal route metadata retained for usage accounting. */
+	routedVia: "venice" | "oma-ai";
 }
 
 export class ProviderError extends Error {
@@ -55,6 +34,13 @@ export class ProviderError extends Error {
 	) {
 		super(message);
 		this.name = "ProviderError";
+	}
+}
+
+/** A rejected operator credential is a gateway failure, not a customer's 401. */
+export class ProviderAuthenticationError extends ProviderError {
+	constructor() {
+		super("Model provider authentication failed. Contact support.", 502);
 	}
 }
 
@@ -95,8 +81,8 @@ export function resolveProvider(provider: string, _modelDef?: ModelDef): Provide
 		apiKey: config.VENICE_API_KEY,
 		// Send the catalog's `veniceId` when it declares one, else the public
 		// id. A few entries keep a stable public id that differs from their
-		// Venice id (e.g. public `mistral-small-2603` -> Venice
-		// `mistral-small-3-2-24b-instruct`); without this the public id went
+		// Venice id (e.g. public `public-deepseek-alias` -> Venice
+		// `deepseek-v4-flash-0731`); without this the public id went
 		// upstream verbatim and 404'd.
 		upstreamModel: (id) => _modelDef?.veniceId ?? id,
 		extraBody: (body) => ({

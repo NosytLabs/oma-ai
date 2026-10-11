@@ -5,6 +5,7 @@ import { AlertTriangle, History, Loader2, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { api } from "@/lib/api";
+import { useAuth } from "@/lib/hooks/useAuth";
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
 
 interface DangerZoneSectionProps {
@@ -24,11 +25,12 @@ export function DangerZoneSection({
 }: DangerZoneSectionProps) {
 	const toast = useToast();
 	const queryClient = useQueryClient();
+	const { user, isAuthenticated, isReady } = useAuth();
 	const balanceQuery = useQuery({
-		queryKey: ["balance"],
+		queryKey: ["balance", user?.id],
 		queryFn: () => api.balance.get(),
 		staleTime: 30_000,
-		enabled: !readOnly,
+		enabled: !readOnly && isReady && isAuthenticated && !!user?.id,
 	});
 	const balanceDollars = readOnly ? Number.NaN : Number(balanceQuery.data?.balanceCents ?? Number.NaN) / 100;
 	const [showConfirm, setShowConfirm] = useState(false);
@@ -46,6 +48,7 @@ export function DangerZoneSection({
 					`Wiped ${res.deleted.usageRecords} usage records & ${res.deleted.auditLogs} logs.`,
 				);
 				void queryClient.invalidateQueries({ queryKey: ["usage"] });
+				void queryClient.invalidateQueries({ queryKey: ["usageSummary"] });
 				void queryClient.invalidateQueries({ queryKey: ["balance"] });
 				void queryClient.invalidateQueries({ queryKey: ["recentTransactions"] });
 				void queryClient.invalidateQueries({ queryKey: ["creditBatches"] });
@@ -76,10 +79,6 @@ export function DangerZoneSection({
 				</p>
 			</div>
 
-			<p className="rounded-[var(--radius-md)] border border-border bg-surface/30 px-5 py-3 text-xs text-text-muted">
-				Export your data above first if you might need it later. Deletion forfeits remaining credits.
-			</p>
-
 			{/* Wipe History */}
 			<div className="mt-6 rounded-[var(--radius-md)] border border-border bg-surface/30 p-5 transition-colors duration-200 ease-out hover:border-accent/30">
 				<div className="flex items-start gap-4">
@@ -94,7 +93,7 @@ export function DangerZoneSection({
 							Clear usage history
 						</h3>
 						<p className="mt-1 text-xs text-text-muted">
-							Wipe usage records, audit logs, and prompt telemetry. Your
+							Remove usage records and your audit history. A record of this action is kept. Your
 							identity, API keys, sessions, and credit balances are preserved.
 						</p>
 
@@ -128,7 +127,7 @@ export function DangerZoneSection({
 											aria-hidden="true"
 										/>
 										<span className="text-sm font-semibold text-text-bright">
-											Clear telemetry &amp; logs?
+											Clear usage history &amp; logs?
 										</span>
 									</div>
 									<p className="mb-4 text-xs text-text-muted">
@@ -189,7 +188,7 @@ export function DangerZoneSection({
 						</h3>
 						<p className="mt-1 text-xs text-text-muted">
 							Permanently delete your OMA account, API keys, and credits. This
-							cannot be undone. Credits are non-redeemable and will be
+							cannot be undone and requires a sign-in within the last 24 hours. Payment-security audit records are retained with your account ID detached. Credits are non-redeemable and will be
 							forfeited
 							{Number.isFinite(balanceDollars)
 								? ` (about $${balanceDollars.toFixed(2)} remaining)`
@@ -236,7 +235,7 @@ export function DangerZoneSection({
 											DELETE
 										</code>
 										{" "}
-										below to confirm. All data will be permanently destroyed.
+										below to confirm account deletion. Remaining credits are forfeited. Payment-security records are retained without your account ID.
 									</p>
 									<input
 										type="text"

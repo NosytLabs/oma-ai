@@ -143,7 +143,7 @@ export default async function StatusPage() {
 			.filter((provider): provider is string => provider !== null),
 	);
 	const providers: ServiceState = {
-		name: "Model providers",
+		name: "Model catalog",
 		ok: modelRows.length > 0 && availableModels.length > 0,
 		detail:
 			modelsJson === null
@@ -152,7 +152,7 @@ export default async function StatusPage() {
 					? "No models are currently published by the gateway."
 					: availableModels.length === 0
 						? `0/${modelRows.length} models available — provider credentials or upstream capacity need attention.`
-						: `${availableModels.length}/${modelRows.length} models available across ${availableProviders.size} provider${availableProviders.size === 1 ? "" : "s"}.`,
+						: `${availableModels.length}/${modelRows.length} models enabled across ${availableProviders.size} provider${availableProviders.size === 1 ? "" : "s"}. Catalog configuration does not verify provider credentials or live inference.`,
 	};
 
 	const freeChatModel = modelRows.find(

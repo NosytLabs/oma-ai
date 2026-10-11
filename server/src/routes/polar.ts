@@ -26,7 +26,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { Polar } from "@polar-sh/sdk";
+import { createPolar, type Polar } from "@polar-sh/sdk/2026-10";
 import { eq, sql } from "drizzle-orm";
 import type { Context } from "hono";
 import type { OmaEnv } from "../types.js";
@@ -68,9 +68,9 @@ const PLAN_CREDITS: Record<
 
 function getPolarClient(): Polar | null {
 		if (!config.POLAR_ACCESS_TOKEN) return null;
-		return new Polar({
+		return createPolar({
 				accessToken: config.POLAR_ACCESS_TOKEN,
-				server: config.POLAR_SERVER,
+				environment: config.POLAR_SERVER,
 		});
 }
 
@@ -196,7 +196,7 @@ polarRoutes.post(
 				const userId = c.get("userId");
 				const session = await polar.checkouts.create({
 						products: [String(productId)],
-						successUrl:
+						success_url:
 								parsed.data.successUrl && isAllowedCheckoutOrigin(parsed.data.successUrl)
 										? parsed.data.successUrl
 										: `${config.PUBLIC_APP_URL}/dashboard?checkout=success`,

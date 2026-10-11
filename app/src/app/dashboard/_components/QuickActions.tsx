@@ -17,7 +17,6 @@ interface QuickAction {
 	label: string;
 	description: string;
 	icon: LucideIcon;
-	external?: boolean;
 }
 
 /** Common next steps after sign-in. Image/video generation was removed
@@ -40,10 +39,9 @@ const ACTIONS: QuickAction[] = [
 		label: "Read the docs",
 		description: "REST + x402 reference",
 		icon: BookOpen,
-		external: true,
 	},
 	{
-		href: "/settings?tab=danger",
+		href: "/dashboard?tab=settings&section=danger",
 		label: "Privacy & data",
 		description: "Export, clear history",
 		icon: Shield,
@@ -52,13 +50,14 @@ const ACTIONS: QuickAction[] = [
 
 interface QuickActionsProps {
 	className?: string;
+	isDemo?: boolean;
 }
 
 /**
 	* Compact "what can I do next" row for the dashboard overview. Reduces the
 	* "I have an account, now what?" gap between sign-in and first request.
 	*/
-export function QuickActions({ className = "" }: QuickActionsProps) {
+export function QuickActions({ className = "", isDemo = false }: QuickActionsProps) {
 	return (
 		<div className={`mb-8 bg-surface/30 border border-border rounded-[var(--radius-xl)] shadow-[var(--shadow-md)] relative overflow-hidden transition-colors duration-200 ease-out hover:border-accent/40 ${className}`}>
 			<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-accent/40 via-accent/20 to-transparent" />
@@ -76,6 +75,7 @@ export function QuickActions({ className = "" }: QuickActionsProps) {
 				<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
 					{ACTIONS.map((action, i) => {
 						const Icon = action.icon;
+						const href = isDemo && action.href.startsWith("/dashboard?") ? `${action.href}&demo=1` : action.href;
 						const inner = (
 							<div className="group flex h-full flex-col gap-3 rounded-[var(--radius-md)] border border-border bg-void p-5 transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:border-accent/40 hover:bg-surface/50 hover:shadow-[0_4px_20px_-10px_var(--color-accent-glow)] active:scale-[0.97]">
 								<div className="flex items-center gap-2">
@@ -104,25 +104,13 @@ export function QuickActions({ className = "" }: QuickActionsProps) {
 								animate={{ opacity: 1, y: 0, scale: 1 }}
 								transition={{ delay: 0.05 * i, ...springs.soft }}
 							>
-								{action.external ? (
-									<a
-										href={action.href}
-										target="_blank"
-										rel="noopener noreferrer"
-										aria-label={`${action.label} (opens in new tab)`}
-										className="block h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void rounded-[var(--radius-md)]"
-									>
-										{inner}
-									</a>
-								) : (
 									<Link
-										href={action.href}
+										href={href}
 										aria-label={action.label}
 										className="block h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void rounded-[var(--radius-md)]"
 									>
 										{inner}
 									</Link>
-								)}
 							</m.div>
 						);
 					})}

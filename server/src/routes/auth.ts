@@ -21,12 +21,15 @@ import {
 		validateApiKey,
 		createApiKeyCookieHeader,
 		createLogoutCookieHeader,
+		isValidIpOrCidr,
 } from "../auth/api-keys.js";
 import { auth, authBaseURL } from "../auth.js";
+import { SESSION_FRESH_AGE_SECONDS } from "../auth/session-policy.js";
 import { ADMIN_WALLET_ADDRESSES_SET, config } from "../config.js";
 import type { OmaEnv } from "../types.js";
 import { extractClientIpOrNull } from "../middleware/rate-limit/utils.js";
 import { getAddress } from "viem";
+import { getModelById } from "../inference/models.js";
 import {
 	SiweVerificationError,
 	assertSelfContainedMessage,
@@ -214,6 +217,18 @@ authRoutes.delete(
 				);
 		}
 		const userId = session.user.id;
+		// Refreshing expiry must not authorize a sensitive operation: freshness
+		// is tied to creation time, as in Better Auth's fresh-session checks.
+		const createdAt = new Date(session.session.createdAt).getTime();
+		const age = Date.now() - createdAt;
+		if (!Number.isFinite(age) || age < 0 || age >= SESSION_FRESH_AGE_SECONDS * 1_000) {
+			return c.json({
+				error: {
+					message: "Sign in again before deleting your account. Your last sign-in is older than 24 hours.",
+					type: "session_not_fresh",
+				},
+			}, 400);
+		}
 		const ipAddress = extractClientIpOrNull(c) ?? undefined;
 		const userAgent = c.req.header("user-agent") ?? undefined;
 		// Audit BEFORE deletion — the FK on audit_logs.user_id is `set null`
@@ -260,17 +275,27 @@ authRoutes.delete(
 		// (cascade) but the cookie would still be sent on subsequent
 		// requests until it expires (7 days).
 		c.header("Set-Cookie", createLogoutCookieHeader());
+		// This custom deletion bypasses Better Auth's logout handler. Expire
+		// its session cookies too, including either environment's cookie name.
+		for (const prefix of ["oma.", "__Secure-oma."]) {
+			for (const name of ["session_token", "session_data", "dont_remember"]) {
+				const secure = prefix.startsWith("__Secure-") ? "; Secure" : "";
+				c.header("Set-Cookie", `${prefix}${name}=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax${secure}`, { append: true });
+			}
+		}
 		return c.json({ success: true });
 });
 
 // ============================================================
 // /v1/keys — API key CRUD.
-// Used by the dashboard to mint a key for browser-direct SSE chat
-// (Authorization: Bearer oma_sk_… or HttpOnly oma_api_key cookie).
+// Used by the dashboard to mint credentials for programmatic inference.
 // All endpoints require a Better Auth session.
 // ============================================================
 const createKeySchema = z.object({
-		name: z.string().min(1).max(64).default("default"),
+		name: z.string().trim().min(1).max(64).default("default"),
+		expiresInDays: z.number().int().min(1).max(365).optional(),
+		allowedModels: z.array(z.string().trim().min(1).refine(id => !!getModelById(id), "Unknown model ID")).min(1).max(30).optional(),
+		ipAllowlist: z.array(z.string().trim().min(1).max(64).refine(isValidIpOrCidr, "Invalid IPv4, IPv6 or CIDR range")).min(1).max(20).optional(),
 });
 
 // GET /v1/keys — list active keys for the current user.
@@ -284,6 +309,9 @@ authRoutes.get("/v1/keys", sessionAuth, async (c) => {
 						prefix: k.keyPrefix,
 						createdAt: k.createdAt.toISOString(),
 						lastUsedAt: k.lastUsedAt?.toISOString() ?? null,
+						expiresAt: k.expiresAt?.toISOString() ?? null,
+						allowedModels: k.allowedModels ?? null,
+						ipAllowlist: k.ipAllowlist ?? null,
 				})),
 		});
 });
@@ -295,7 +323,7 @@ authRoutes.post(
 		sessionAuth,
 		async (c) => {
 				const userId = c.get("userId");
-				const body = await c.req.json().catch(() => ({}));
+				const body = await c.req.json().catch(() => null);
 				const parsed = createKeySchema.safeParse(body);
 				if (!parsed.success) {
 						return c.json(
@@ -309,19 +337,26 @@ authRoutes.post(
 								400,
 						);
 				}
-				const result = await createApiKey(userId, parsed.data.name);
+				const result = await createApiKey(userId, parsed.data.name, {
+					...(parsed.data.expiresInDays !== undefined ? { expiresAt: new Date(Date.now() + parsed.data.expiresInDays * 86_400_000) } : {}),
+					...(parsed.data.allowedModels ? { allowedModels: [...new Set(parsed.data.allowedModels)] } : {}),
+					...(parsed.data.ipAllowlist ? { ipAllowlist: [...new Set(parsed.data.ipAllowlist)] } : {}),
+				});
 				await auditLog({
 						userId,
 						action: "API_KEY_CREATED",
 						resource: "api_keys",
 						resourceId: result.id,
-						metadata: { name: result.name },
+						metadata: { name: result.name, expiresAt: result.expiresAt, allowedModels: result.allowedModels, ipAllowlist: result.ipAllowlist },
 				});
 				return c.json({
 						id: result.id,
 						name: result.name,
 						prefix: result.prefix,
 						createdAt: result.createdAt.toISOString(),
+						expiresAt: result.expiresAt?.toISOString() ?? null,
+						allowedModels: result.allowedModels ?? null,
+						ipAllowlist: result.ipAllowlist ?? null,
 						key: result.rawKey,
 				});
 		},

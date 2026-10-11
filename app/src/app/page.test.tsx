@@ -44,7 +44,6 @@ vi.mock("@/lib/framer-motion-client", () => {
 				return ({
 					children,
 					className,
-					..._props
 				}: {
 					children?: React.ReactNode;
 					className?: string;

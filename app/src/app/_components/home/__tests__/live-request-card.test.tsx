@@ -76,7 +76,7 @@ describe("LiveRequestCard reduced motion", () => {
 		act(() => {
 			vi.advanceTimersByTime(3300);
 		});
-		expect(container.textContent).toContain("deepseek-v4-flash");
+		expect(container.textContent).toContain("minimax-m2-7");
 		expect(container.textContent).not.toBe(first);
 
 		// And the third, wrapping back round 1 — all 3 rounds are reachable,

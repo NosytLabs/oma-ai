@@ -1,164 +1,76 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
-import {
-	type ApiKey,
-	api,
-	BackendUnavailableError,
-	type BalanceResponse,
-	type CreditBatch,
-	type CreditTransaction,
-	type Model,
-	type UsageRecord,
-} from "@/lib/api";
+import { api, BackendUnavailableError } from "@/lib/api";
 import { useBalance } from "@/components/chat/useBalance";
+import type { TimeRangeId } from "../_constants";
 
-interface UseDashboardDataOptions {
+interface Options {
 	isAuthenticated: boolean;
+	userId?: string;
+	timeRange?: TimeRangeId;
+	analyticsEnabled?: boolean;
 }
 
-interface UseDashboardDataResult {
-	balance: BalanceResponse | null;
-	apiKeys: ApiKey[];
-	usage: UsageRecord[];
-	creditBatches: CreditBatch[];
-	models: Model[];
-	transactions: CreditTransaction[];
-	loading: boolean;
-	/**
-		* The raw error (Error instance) from the first failing query, or
-		* null when every query succeeded. Consumers classify it with the
-		* `is*Error` helpers in `@/lib/api/client` (suspended / payment /
-		* quota) instead of matching on message text.
-		*/
-	error: Error | null;
-	backendUnavailable: boolean;
-	refresh: () => Promise<void>;
-}
-
-const STALE_DEFAULT = 60_000;
-const STALE_MODELS = 300_000;
-
-/**
-	* Aggregated dashboard data hook.
-	* React Query against live APIs (auth + key + usage + batches + models +
-	* recent transactions). Returns null balance and empty arrays when
-	* unauthenticated so the page can render the sign-in wall without
-	* noisy loading skeletons.
-	*/
-export function useDashboardData({
-	isAuthenticated,
-}: UseDashboardDataOptions): UseDashboardDataResult {
+/** Full-range aggregates and on-demand history; all private caches include identity. */
+export function useDashboardData({ isAuthenticated, userId, timeRange = "7d", analyticsEnabled = true }: Options) {
 	const queryClient = useQueryClient();
-	const enabled = isAuthenticated;
-
-	const { balance: balanceData, loading: balanceLoading } = useBalance();
+	const enabled = isAuthenticated && !!userId;
+	const analytics = enabled && analyticsEnabled;
+	const timezone = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC", []);
+	const balanceQuery = useBalance({ enabled });
 	const keysQuery = useQuery({
-		queryKey: ["apiKeys"],
-		queryFn: () => api.auth.listKeys(),
-		enabled,
-		staleTime: STALE_DEFAULT,
+		queryKey: ["apiKeys", userId], queryFn: () => api.auth.listKeys(), enabled, staleTime: 60_000,
 	});
-	const usageQuery = useQuery({
-		queryKey: ["usage"],
-		queryFn: () => api.usage.getAll({ pageSize: 200, maxRecords: 2000 }),
-		enabled,
-		staleTime: STALE_DEFAULT,
+	const summaryQuery = useQuery({
+		queryKey: ["usageSummary", userId, timeRange, timezone],
+		queryFn: () => api.usage.summary(timeRange, timezone), enabled: analytics, staleTime: 60_000,
 	});
-	const batchesQuery = useQuery({
-		queryKey: ["creditBatches"],
-		queryFn: () => api.credits.getBatches(),
-		enabled,
-		staleTime: STALE_DEFAULT,
+	const summary = enabled ? summaryQuery.data ?? null : null;
+	const usageQuery = useInfiniteQuery({
+		queryKey: ["usage", userId, timeRange, summary?.from, summary?.to],
+		queryFn: ({ pageParam }) => api.usage.get({
+			limit: 100, cursor: pageParam, since: summary?.from ?? undefined, until: summary?.to,
+		}),
+		initialPageParam: undefined as string | undefined,
+		getNextPageParam: page => page.nextCursor ?? undefined,
+		enabled: analytics && !!summary, staleTime: 60_000,
 	});
 	const modelsQuery = useQuery({
-		queryKey: ["models"],
-		queryFn: () => api.models.list(),
-		enabled,
-		staleTime: STALE_MODELS,
+		queryKey: ["models"], queryFn: () => api.models.list(), enabled: analytics, staleTime: 300_000,
 	});
 	const transactionsQuery = useQuery({
-		queryKey: ["recentTransactions"],
-		queryFn: () => api.creditHistory.list(5),
-		enabled,
-		staleTime: STALE_DEFAULT,
+		queryKey: ["recentTransactions", userId],
+		queryFn: () => api.creditHistory.list(5), enabled: analytics, staleTime: 60_000,
 	});
-
-	const apiKeys = useMemo<ApiKey[]>(() => keysQuery.data?.keys ?? [], [keysQuery.data?.keys]);
-	const usage = useMemo<UsageRecord[]>(
-		() => usageQuery.data?.records ?? [],
-		[usageQuery.data?.records],
-	);
-	const creditBatches = useMemo<CreditBatch[]>(
-		() => batchesQuery.data?.activeBatches ?? [],
-		[batchesQuery.data?.activeBatches],
-	);
-	const models = useMemo<Model[]>(
-		() => modelsQuery.data?.data ?? [],
-		[modelsQuery.data?.data],
-	);
-	const transactions = useMemo<CreditTransaction[]>(
-		() => transactionsQuery.data?.transactions ?? [],
-		[transactionsQuery.data?.transactions],
-	);
-
-	const balance: BalanceResponse | null = balanceData;
-	const loading = enabled
-		? balanceLoading ||
-			keysQuery.isLoading ||
-			usageQuery.isLoading ||
-			batchesQuery.isLoading ||
-			modelsQuery.isLoading ||
-			transactionsQuery.isLoading
-		: false;
-
-	const anyError = enabled
-		? keysQuery.error ||
-			usageQuery.error ||
-			batchesQuery.error ||
-			modelsQuery.error ||
-			transactionsQuery.error
-		: null;
-
-	const backendUnavailable =
-		enabled &&
-		[
-			keysQuery.error,
-			usageQuery.error,
-			batchesQuery.error,
-			modelsQuery.error,
-			transactionsQuery.error,
-		].some((e) => e instanceof BackendUnavailableError);
-
-	const error: Error | null = anyError instanceof Error
-		? anyError
-		: anyError
-			? new Error("Failed to load dashboard data")
-			: null;
-
+	const usage = useMemo(() => enabled ? usageQuery.data?.pages.flatMap(p => p.records) ?? [] : [],
+		[enabled, usageQuery.data]);
+	const errors = enabled ? [balanceQuery.error, keysQuery.error, ...(analytics ? [summaryQuery.error, usageQuery.error,
+		modelsQuery.error, transactionsQuery.error] : [])] : [];
+	const error = errors.find(e => e instanceof Error) as Error | undefined;
 	const refresh = useCallback(async () => {
 		if (!enabled) return;
-		await Promise.all([
-			queryClient.invalidateQueries({ queryKey: ["apiKeys"] }),
-			queryClient.invalidateQueries({ queryKey: ["usage"] }),
-			queryClient.invalidateQueries({ queryKey: ["creditBatches"] }),
-			queryClient.invalidateQueries({ queryKey: ["models"] }),
-			queryClient.invalidateQueries({ queryKey: ["recentTransactions"] }),
-			queryClient.invalidateQueries({ queryKey: ["balance"] }),
-		]);
+		await Promise.all(["apiKeys", "usageSummary", "usage", "models", "recentTransactions", "balance"]
+			.map(key => queryClient.invalidateQueries({ queryKey: [key] })));
 	}, [enabled, queryClient]);
 
 	return {
-		balance,
-		apiKeys,
+		balance: enabled ? balanceQuery.balance : null,
+		apiKeys: enabled ? keysQuery.data?.keys ?? [] : [],
 		usage,
-		creditBatches,
-		models,
-		transactions,
-		loading,
-		error,
-		backendUnavailable,
+		summary,
+		// Legacy batch storage is not a funding source; the balance ledger is authoritative.
+		creditBatches: [],
+		models: enabled ? modelsQuery.data?.data ?? [] : [],
+		transactions: enabled ? transactionsQuery.data?.transactions ?? [] : [],
+		loading: enabled && (balanceQuery.loading || keysQuery.isLoading || (analytics && (summaryQuery.isLoading ||
+			usageQuery.isLoading || modelsQuery.isLoading || transactionsQuery.isLoading))),
+		error: error ?? null,
+		backendUnavailable: errors.some(e => e instanceof BackendUnavailableError),
+		hasMoreUsage: enabled && usageQuery.hasNextPage,
+		loadingMoreUsage: usageQuery.isFetchingNextPage,
+		loadMoreUsage: usageQuery.fetchNextPage,
 		refresh,
 	};
 }

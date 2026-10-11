@@ -1,13 +1,9 @@
 import crypto from "node:crypto";
 import pg from "pg";
+import { localTestContext } from "./local-test-context.mjs";
 
-const blockedEnvironments = new Set(["production", "staging", "preview"]);
-if (blockedEnvironments.has(process.env.NODE_ENV)) {
-	throw new Error("Refusing to seed test auth identities outside development/test.");
-}
-
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-const appOrigin = process.env.TEST_APP_ORIGIN ?? process.env.PUBLIC_APP_URL ?? "http://localhost:3000";
+const { databaseUrl, appOrigin } = localTestContext();
+const pool = new pg.Pool({ connectionString: databaseUrl.toString() });
 const credits = process.env.OMA_TEST_AUTH_CREDITS ?? "10000";
 const identities = [
 	{
@@ -55,8 +51,8 @@ try {
 			 VALUES ($1, $2, $3, $4, NOW(), NOW())`,
 			[
 				crypto.randomBytes(16).toString("hex"),
-				tokenHash,
-				JSON.stringify({ email: identity.email, name: identity.name }),
+				`magic-link:${tokenHash}`,
+				JSON.stringify({ type: "magic-link", email: identity.email, name: identity.name }),
 				new Date(Date.now() + 10 * 60 * 1000),
 			],
 		);

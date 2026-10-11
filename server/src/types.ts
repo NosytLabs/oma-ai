@@ -15,6 +15,8 @@ export type OmaEnv = {
 				rateLimit?: { remaining: number; reset: number };
 				apiKey: ApiKey | null;
 				correlationId?: string;
+				inferenceRequestId?: string;
+				inferenceOutcome?: "completed" | "error" | "aborted";
 				payment?: { txHash?: string; amount: string; networkId: string };
 				teamRole?: string;
 				// Set by route handlers when using the audit middleware factories

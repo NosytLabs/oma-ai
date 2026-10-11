@@ -147,7 +147,7 @@ export function ChatToolbar({
 					</div>
 				)}
 			</div>
-			{messagesLength > 0 && <div className="hidden shrink-0 xl:block"><LazyStatsBar messages={deferredMessages} model={model} /></div>}
+			{messagesLength > 0 && <div className="hidden shrink-0 xl:block"><LazyStatsBar messages={deferredMessages} /></div>}
 			{isAuthenticated && (
 				balance ? (
 					<Link href="/deposit" aria-label={`Credit balance: ${Math.round(parseFloat(balance.balanceCents))} credits. Add credits.`} data-state={isLowBalance ? "low" : "ok"} className={`${toolbarButtonClass} hidden sm:inline-flex data-[state=low]:!border-warning/40 data-[state=low]:!bg-warning/10 data-[state=low]:!text-warning`} title="Add credits">

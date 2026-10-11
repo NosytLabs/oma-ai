@@ -25,6 +25,7 @@ export interface ModelOption {
 	ctx: string;
 	/** false when the serving provider key is missing/placeholder (server-reported) */
 	available?: boolean;
+	unavailableReason?: string;
 	/** Only true when both prices were present and valid in the live response. */
 	pricingAvailable?: boolean;
 }

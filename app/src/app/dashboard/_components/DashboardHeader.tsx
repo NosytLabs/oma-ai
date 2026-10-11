@@ -6,7 +6,6 @@ import {
 	Download,
 	Keyboard,
 	RefreshCw,
-	Settings,
 	Zap,
 } from "lucide-react";
 import { m } from "@/lib/framer-motion-client";
@@ -31,6 +30,8 @@ interface DashboardHeaderProps {
 	onRefresh?: () => void;
 	/** Export callback. */
 	onExport?: () => void;
+	exporting?: boolean;
+	exportDisabled?: boolean;
 	/** Active tab for tab navigation. */
 	activeTab?: TabId;
 	/** Tab change callback. */
@@ -41,6 +42,8 @@ interface DashboardHeaderProps {
 	onTimeRangeChange?: (range: TimeRangeId) => void;
 	/** Whether authenticated notification data may be fetched. */
 	notificationsEnabled?: boolean;
+	/** Failed requests must not be presented as a successful sync. */
+	hasError?: boolean;
 }
 
 /** Auto-poll interval (ms). Picked to be low enough that "live" feels live
@@ -59,11 +62,14 @@ export function DashboardHeader({
 	refreshTick,
 	onRefresh,
 	onExport,
+	exporting = false,
+	exportDisabled = false,
 	activeTab = "overview",
 	onTabChange,
 	timeRange = "7d",
 	onTimeRangeChange,
 	notificationsEnabled = true,
+	hasError = false,
 }: DashboardHeaderProps) {
 	const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 	const [isRefreshing, setIsRefreshing] = useState(false);
@@ -83,19 +89,19 @@ export function DashboardHeader({
 	}, []);
 
 	useEffect(() => {
-		if (hasAnyData) markRefreshed();
-	}, [hasAnyData, markRefreshed]);
+		if (hasAnyData && !loading && !hasError) markRefreshed();
+	}, [hasAnyData, loading, hasError, markRefreshed]);
 
 	useEffect(() => {
-		if (refreshTick && refreshTick > 0) markRefreshed();
-	}, [refreshTick, markRefreshed]);
+		if (refreshTick && refreshTick > 0 && !hasError) markRefreshed();
+	}, [refreshTick, hasError, markRefreshed]);
 
 	// Drive the countdown from a single 1-second interval that reads the next-
 	// refresh timestamp out of a ref. This removes the "0s lingers for a full
 	// second" bug from the old `(prev) => prev - 1` math and keeps the timer
 	// and the refresh in lockstep.
 	useEffect(() => {
-		if (!onRefresh || !hasAnyData) return;
+		if (!onRefresh || !hasAnyData || activeTab === "settings") return;
 
 		let nextRefreshAt = Date.now() + POLL_INTERVAL_MS;
 		refreshInFlightRef.current = false;
@@ -111,7 +117,6 @@ export function DashboardHeader({
 				.finally(() => {
 					nextRefreshAt = Date.now() + POLL_INTERVAL_MS;
 					refreshInFlightRef.current = false;
-					setLastUpdated(new Date());
 					setAutoRefreshCountdown(120);
 				});
 		};
@@ -137,20 +142,19 @@ export function DashboardHeader({
 			clearInterval(tick);
 			document.removeEventListener("visibilitychange", onVisibilityChange);
 		};
-	}, [onRefresh, hasAnyData]);
+	}, [onRefresh, hasAnyData, activeTab]);
 
 	const handleRefresh = useCallback(async () => {
 		if (!onRefresh || refreshInFlightRef.current) return;
 		refreshInFlightRef.current = true;
 		setIsRefreshing(true);
-		markRefreshed();
 		try {
 			await onRefresh();
 		} finally {
 			setIsRefreshing(false);
 			refreshInFlightRef.current = false;
 		}
-	}, [onRefresh, markRefreshed]);
+	}, [onRefresh]);
 
 	const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
@@ -213,24 +217,25 @@ export function DashboardHeader({
 						<Zap className="h-5 w-5 shrink-0 text-accent drop-shadow-[0_0_8px_var(--color-accent)]" aria-hidden="true" />
 						Dashboard
 					</h1>
+					<p className="mt-2 text-sm text-text-secondary">Credits, usage, API keys and account settings.</p>
 					<div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] text-text-muted font-mono tracking-wide">
-						<span className="flex items-center gap-1.5 bg-surface/50 px-2 py-0.5 rounded-[var(--radius-sm)] border border-border/50">
+						{activeTab !== "settings" && <span className="flex items-center gap-1.5 bg-surface/50 px-2 py-0.5 rounded-[var(--radius-sm)] border border-border/50">
 							<span
 								aria-hidden="true"
-								className={`inline-block h-1.5 w-1.5 rounded-full ${loading ? "bg-warning animate-pulse" : "bg-success shadow-[0_0_5px_var(--color-success)]"}`}
+								className={`inline-block h-1.5 w-1.5 rounded-full ${hasError ? "bg-error" : loading ? "bg-warning animate-pulse" : lastUpdated ? "bg-success" : "bg-text-muted"}`}
 							/>
-							{loading
+							{hasError ? "SYNC FAILED" : loading
 								? "SYNCING..."
 								: lastUpdated
 									? `UPDATED ${formatTime(lastUpdated.toISOString())}`
 									: "AWAITING DATA"}
-						</span>
+						</span>}
 						<span
 							className="hidden items-center gap-1.5 text-text-secondary/80 md:flex bg-surface/50 px-2 py-0.5 rounded-[var(--radius-sm)] border border-border/50"
-							title="Keyboard shortcuts: R = refresh, 1-4 = switch tabs"
+							title={`Keyboard shortcuts: ${activeTab === "settings" ? "" : "R = refresh, "}1-${TABS.length} = switch tabs`}
 						>
 							<Keyboard className="h-3 w-3" aria-hidden="true" />
-							<span>R · 1-4</span>
+							<span>{activeTab === "settings" ? "" : "R · "}1-{TABS.length}</span>
 						</span>
 						{modelsAvailable > 0 && (
 							<span className="flex items-center gap-1.5 whitespace-nowrap text-text-muted/70">
@@ -238,10 +243,10 @@ export function DashboardHeader({
 									aria-hidden="true"
 									className="inline-block h-1 w-1 bg-text-muted/50"
 								/>
-								{modelsAvailable} {modelsAvailable === 1 ? "model" : "models"} online
+								{modelsAvailable} {modelsAvailable === 1 ? "model" : "models"} available
 							</span>
 						)}
-						{hasAnyData && autoRefreshCountdown > 0 && (
+						{activeTab !== "settings" && hasAnyData && autoRefreshCountdown > 0 && (
 							<span className="hidden items-center gap-1.5 text-text-muted/50 sm:flex">
 								<Clock className="h-3 w-3" aria-hidden="true" />
 								NEXT IN {autoRefreshCountdown}s
@@ -260,18 +265,10 @@ export function DashboardHeader({
 								onTimeRangeChange={onTimeRangeChange}
 							/>
 						)}
-					<Link
-						href="/settings"
-						className="flex items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-border bg-surface px-3 py-2 min-h-11 text-[11px] font-bold uppercase tracking-widest text-text-muted transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-surface-elevated hover:border-accent/40 hover:text-text-bright active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-						aria-label="Settings"
-					>
-						<Settings className="h-3.5 w-3.5" aria-hidden="true" />
-						<span className="hidden sm:inline">Settings</span>
-					</Link>
-					<button
+					{activeTab !== "settings" && <button
 						type="button"
 						onClick={handleRefresh}
-						disabled={isRefreshing}
+						disabled={isRefreshing || loading}
 						aria-label="Refresh dashboard"
 						className="flex items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-border bg-surface px-3 py-2 min-h-11 text-[11px] font-bold uppercase tracking-widest text-text-muted transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-surface-elevated hover:border-accent/40 hover:text-text-bright active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 					>
@@ -282,26 +279,29 @@ export function DashboardHeader({
 						<span className="hidden sm:inline">
 							{isRefreshing ? "SYNCING" : "REFRESH"}
 						</span>
-					</button>
+					</button>}
 					{onExport && (activeTab === "usage" || activeTab === "overview") && (
 						<button
 							type="button"
 							onClick={onExport}
-							aria-label="Export usage data"
-							className="flex items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-border bg-surface px-3 py-2 min-h-11 text-[11px] font-bold uppercase tracking-widest text-text-muted transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-surface-elevated hover:border-accent/40 hover:text-text-bright active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+							disabled={exporting || exportDisabled}
+							aria-label={exporting ? "Exporting usage data" : `Export usage data for ${timeRange === "all" ? "all time" : timeRange}`}
+							aria-busy={exporting}
+							title={exportDisabled ? "Available after account usage loads. Demo exports are disabled." : "Download up to 10,000 requests in the selected date range"}
+							className="flex items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-border bg-surface px-3 py-2 min-h-11 text-[11px] font-bold uppercase tracking-widest text-text-muted transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-surface-elevated hover:border-accent/40 hover:text-text-bright active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 						>
 							<Download className="h-3.5 w-3.5" aria-hidden="true" />
-							<span className="hidden sm:inline">EXPORT</span>
+							<span className="hidden sm:inline">{exporting ? "EXPORTING…" : `EXPORT ${timeRange === "all" ? "ALL" : timeRange.toUpperCase()}`}</span>
 						</button>
 					)}
 				</div>
 			</div>
 
-			{/* Tab Navigation — scrollable on mobile, no page overflow */}
+			{/* Keep every section visible on small screens. */}
 			{onTabChange && (
 				<div
 					role="tablist"
-					className="-mx-1 flex gap-2 overflow-x-auto border-b border-border/50 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+					className="flex border-b border-border/50 sm:gap-2"
 					aria-label="Dashboard sections"
 					onKeyDown={handleTabKeyDown}
 				>
@@ -318,15 +318,15 @@ export function DashboardHeader({
 							aria-controls={`panel-${tab.id}`}
 							tabIndex={activeTab === tab.id ? 0 : -1}
 							onClick={() => onTabChange(tab.id)}
-							className={`relative shrink-0 px-4 py-3 text-[11.5px] font-bold uppercase tracking-widest transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset sm:px-6 ${
+							className={`relative min-w-0 flex-1 px-1 py-3 text-[10px] font-bold uppercase tracking-wide transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset sm:flex-none sm:px-6 sm:text-[11.5px] sm:tracking-widest ${
 								activeTab === tab.id
 									? "text-text-bright"
 									: "text-text-muted hover:text-text-secondary hover:bg-surface/30 rounded-t-[var(--radius-sm)]"
 							}`}
 						>
-							<span className="flex items-center gap-2">
+							<span className="flex items-center justify-center sm:gap-2">
 								{tab.icon && (
-									<tab.icon className={`h-3.5 w-3.5 ${activeTab === tab.id ? "text-accent" : "opacity-70"}`} aria-hidden="true" />
+									<tab.icon className={`hidden h-3.5 w-3.5 sm:block ${activeTab === tab.id ? "text-accent" : "opacity-70"}`} aria-hidden="true" />
 								)}
 								{tab.label}
 							</span>

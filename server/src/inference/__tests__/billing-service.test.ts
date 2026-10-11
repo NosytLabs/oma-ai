@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { getModelPricing } from "../billing-service.js";
+import { getModelPricing, userFacingFor } from "../billing-service.js";
 
 const mockGetModelById = vi.hoisted(() => vi.fn());
 const mockReadModelPricingOverrides = vi.hoisted(() => vi.fn().mockReturnValue({}));
@@ -41,6 +41,25 @@ describe("getModelPricing", () => {
 		});
 	});
 
+	it("charges a fixed retail price without fabricating an unknown provider cost", () => {
+		mockGetModelById.mockReturnValue({
+			id: "flat-price", inputPricePer1M: 0, outputPricePer1M: 0,
+			markupPercent: 500, customerInputPricePer1M: 0.02,
+			customerOutputPricePer1M: 0.02, upstreamCostKnown: false,
+		});
+		expect(userFacingFor("flat-price")).toEqual({ inputPer1M: 0.02, outputPer1M: 0.02 });
+		expect(getModelPricing("flat-price")).toMatchObject({ costKnown: false });
+	});
+
+	it("applies the long-context rate only after its input threshold", () => {
+		mockGetModelById.mockReturnValue({
+			id: "long-context", inputPricePer1M: 5, outputPricePer1M: 25, markupPercent: 50,
+			extendedPricing: { contextTokenThreshold: 272_000, inputPricePer1M: 10, outputPricePer1M: 37.5 },
+		});
+		expect(userFacingFor("long-context", 272_000)).toEqual({ inputPer1M: 7.5, outputPer1M: 37.5 });
+		expect(userFacingFor("long-context", 272_001)).toEqual({ inputPer1M: 15, outputPer1M: 56.25 });
+	});
+
 	it("returns override pricing with 0 markup if override exists", () => {
 		mockGetModelById.mockReturnValue({
 			id: "override-model",
@@ -57,11 +76,12 @@ describe("getModelPricing", () => {
 		});
 
 		const pricing = getModelPricing("override-model");
-		expect(pricing).toEqual({
+		expect(pricing).toMatchObject({
 			inputPer1M: 5,
 			outputPer1M: 10,
 			markup: 0,
 		});
+		expect(pricing).toMatchObject({ costInputPer1M: 10, costOutputPer1M: 20 });
 	});
 	
 	it("caches overrides (TTL logic)", () => {

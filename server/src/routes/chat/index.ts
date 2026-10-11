@@ -22,18 +22,15 @@
 	*             default). OpenAI-compatible. Used as the cost-effective tier for
 	*             large-context / tool-use requests.
 	*/
-import { createHash } from "node:crypto";
 import { Hono } from "hono";
 import { z } from "zod";
-import { and, eq } from "drizzle-orm";
 import type { OmaEnv } from "../../types.js";
 import { optionalAuth } from "../../auth/middleware.js";
 import { modelRateLimit, rateLimit } from "../../middleware/rate-limit.js";
 import { dailyUsageLimit } from "../../middleware/daily-limit.js";
+import { inferenceIdempotency } from "../../middleware/inference-idempotency.js";
 import { getModelById } from "../../inference/models.js";
 import { getModelPricing } from "../../inference/billing-service.js";
-import { usageRecords } from "../../db/schema.js";
-import { db } from "../../db/client.js";
 import {
 		assertSufficientBalance,
 		createStreamingProxy,
@@ -45,7 +42,7 @@ import {
 		} from "../../inference/proxy.js";
 		import type { UsageProvider } from "../../inference/billing.js";
 import { logger } from "../../lib/logger.js";
-import { config } from "../../config.js";
+import { isWebsiteChatRequest, WEBSITE_CHAT_PATH } from "../../inference/website-chat-request.js";
 import { isFreeWebsiteModel } from "../../inference/free-website-model.js";
 
 /**
@@ -74,8 +71,10 @@ const chatSchema = z.object({
 				.array(
 						z.object({
 								role: z.enum(["system", "user", "assistant", "tool"]),
-								content: z.string().or(z.array(z.any())),
+								content: z.string().or(z.array(z.any())).nullable(),
 								name: z.string().optional(),
+								tool_calls: z.array(z.unknown()).optional(),
+								tool_call_id: z.string().optional(),
 						}),
 				)
 				.min(1),
@@ -89,8 +88,8 @@ const chatSchema = z.object({
 
 export const chatRoutes = new Hono<OmaEnv>();
 
-chatRoutes.post(
-		"/v1/chat/completions",
+for (const path of ["/v1/chat/completions", WEBSITE_CHAT_PATH]) chatRoutes.post(
+		path,
 		rateLimit({
 			windowMs: 60_000,
 			maxRequests: 60,
@@ -121,6 +120,7 @@ chatRoutes.post(
 				// caller's own budget, not the shared IP bucket.
 				modelRateLimit(),
 				dailyUsageLimit(),
+				inferenceIdempotency(),
 				async (c) => {
 						// Captured before any upstream work so usage_records.latency_ms
 						// measures the full round-trip (queue + provider + stream).
@@ -160,24 +160,13 @@ chatRoutes.post(
 				}
 
 				const userId = c.get("userId");
-				const source = c.req.header("X-OMA-Source");
-				const origin = c.req.header("Origin") || c.req.header("Referer") || "";
-				const allowedOrigins = [
-					config.PUBLIC_APP_URL,
-					"http://localhost:3000",
-					"http://127.0.0.1:3000",
-				].filter(Boolean) as string[];
-					// Exact match or path-prefix match only. A bare `startsWith(allowed)`
-					// would also accept attacker-controlled origins like
-					// `http://localhost:3000.evil.com`, letting them dodge auth/billing
-					// and take the anonymous free-chat path for any free-tier model.
-					// NOTE: local QA on scratch ports (e.g. :3108) and Vercel
-					// previews legitimately serve the site on other origins —
-					// whitelist those via PUBLIC_APP_URL, not hardcoded here.
-				const originOk = allowedOrigins.some(
-					(allowed) => origin === allowed || origin.startsWith(`${allowed}/`),
-				);
-			const isWebsiteRequest = source === "website" && originOk;
+				if (modelDef.disabledReason) {
+					return c.json({ error: { message: modelDef.disabledReason, type: "model_unavailable" } }, 503);
+				}
+			const isWebsiteRequest = isWebsiteChatRequest(c);
+			if (c.req.path === WEBSITE_CHAT_PATH && !isWebsiteRequest) {
+				return c.json({ error: { message: "Website chat requires the trusted website proxy", code: "website_chat_only" } }, 403);
+			}
 			const isFreeModel = isFreeWebsiteModel(model);
 			// API-key callers always pay, even on free-tier models: the free
 			// path is session/guest website chat only. The auth middleware
@@ -186,8 +175,14 @@ chatRoutes.post(
 
 			// Website chat with free OMA-AI models: allow anonymous, skip billing
 			// API requests or non-free models: require auth and bill credits
-			const apiKey = c.get("apiKey") as { id?: string } | undefined;
+			const apiKey = c.get("apiKey");
 			const apiKeyId = apiKey?.id ?? null;
+			// Older website tabs used the SDK path; the current proxy strips
+			// their source header. A session-only request to an eligible free
+			// model must use the website handler or an explicit paid API key.
+			if (c.req.path === "/v1/chat/completions" && isFreeModel && userId && !apiKey) {
+				return c.json({ error: { message: "Website chat has been updated. Reload this page and send your message again.", code: "website_chat_moved" } }, 409);
+			}
 			const isFreeWebsiteChat = isWebsiteRequest && isFreeModel && !apiKey;
 				
 				if (!isFreeWebsiteChat && !userId) {
@@ -203,66 +198,9 @@ chatRoutes.post(
 						);
 				}
 
-				// 2026-07-30: idempotency-key support. If the client sends an
-				// Idempotency-Key header (OpenAI / Anthropic convention) or
-				// `idempotency_key` in the JSON body, and we've already processed
-				// a request with that key from the same user, replay the cached
-				// response (saves the upstream call, prevents double-billing).
-				const idempotencyKey =
-					c.req.header("Idempotency-Key")?.trim() ||
-					(body as { idempotency_key?: string } | undefined)?.idempotency_key;
-				// SECURITY (audit 2026-09-27 / P2): hash, don't truncate. The old
-				// slice(0,200) let two long keys sharing a ~163-char prefix collide
-				// on the same requestId — the cache-hit branch then replayed the
-				// OTHER request's usage. A cryptographic digest is collision-free
-				// for input lengths we accept and fits comfortably in the column.
-				const requestId = idempotencyKey
-					? `idem-${userId}-${createHash("sha256").update(idempotencyKey).digest("hex").slice(0, 64)}`
-					: `chatcmpl-${crypto.randomUUID()}`;
+				const requestId = c.get("inferenceRequestId") ?? `chatcmpl-${crypto.randomUUID()}`;
 
 				try {
-						if (idempotencyKey && userId) {
-								const prior = await db
-										.select()
-										.from(usageRecords)
-										.where(
-												and(
-														eq(usageRecords.userId, userId),
-														eq(usageRecords.requestId, requestId),
-														eq(usageRecords.status, "completed"),
-												),
-										)
-										.limit(1);
-						if (prior.length > 0) {
-								// Cache hit — return the recorded usage data. Full response body
-								// replay is deferred to v2 (requires storing the complete payload).
-								// For now, return a structured completion with usage stats so
-								// clients like Claude Code can read token counts.
-								logger.info(
-										{ userId, idempotencyKey, requestId },
-										"[chat] idempotency cache hit; replaying",
-								);
-								return c.json({
-										object: "chat.completion",
-										id: requestId,
-										note: "idempotency-replay",
-										model,
-										choices: [
-												{
-														index: 0,
-														message: { role: "assistant", content: "" },
-														finish_reason: "stop",
-												},
-										],
-										usage: {
-												prompt_tokens: prior[0].inputTokens,
-												completion_tokens: prior[0].outputTokens,
-												total_tokens: (prior[0].inputTokens ?? 0) + (prior[0].outputTokens ?? 0),
-										},
-								});
-						}
-				}
-
 				const promptText = messages.map((m) => flattenMessageContent(m.content)).join("\n");
 				const promptTokens = estimateTokens(promptText);
 
@@ -296,11 +234,8 @@ chatRoutes.post(
 					await routeRequestWithFallback({
 								modelId: model,
 								clientFallbacks: clientModels,
-								messages: messages.map((m) => ({
-										role: m.role,
-										content: m.content,
-										...(m.name ? { name: m.name } : {}),
-								})),
+								allowedModels: apiKey?.allowedModels,
+								messages,
 								stream,
 								max_tokens,
 								temperature,
@@ -309,6 +244,7 @@ chatRoutes.post(
 								tool_choice,
 								userId: userId ?? "anonymous",
 								requestId,
+								signal: c.req.raw.signal,
 								skipBilling: isFreeWebsiteChat, // Don't deduct credits for free website chat
 						});
 
@@ -336,6 +272,7 @@ chatRoutes.post(
 								c.header("Cache-Control", "no-cache, no-transform");
 								c.header("X-Accel-Buffering", "no");
 								const proxyStream = createStreamingProxy(upstreamResp, {
+										onFinalized: status => c.set("inferenceOutcome", status),
 										userId: userId ?? "anonymous",
 										model: actualModelId,
 										requestedModel: model,

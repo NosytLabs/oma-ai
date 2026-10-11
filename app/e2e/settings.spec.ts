@@ -1,32 +1,20 @@
 import { test, expect } from "@playwright/test";
 
-/**
- * Settings page userflow.
- *
- * The settings page requires authentication. This spec covers the
- * unauthenticated redirect path and verifies the page doesn't crash.
- */
-test.describe("Settings Page Userflow", () => {
-  test("redirects unauthenticated users to login", async ({ page }) => {
-    await page.goto("/settings");
-    await page.waitForURL(/\/login|\/settings/, { timeout: 10000 }).catch(() => {});
-    const url = page.url();
-    if (url.includes("/settings")) {
-      const authPrompt = page
-        .locator("text=/sign in/i, text=/log in/i, [data-testid*='auth']")
-        .first();
-      if (await authPrompt.isVisible({ timeout: 3000 }).catch(() => false)) {
-        await expect(authPrompt).toBeVisible();
-      }
-    } else {
-      expect(url).toContain("/login");
-    }
+test.describe("Unified account settings", () => {
+  test("preserves demo isolation through legacy settings bookmarks", async ({ page }) => {
+    await page.goto("/settings?demo=1&tab=privacy");
+    await expect(page).toHaveURL(/\/dashboard\?.*tab=settings.*section=danger/);
+    await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Delete account", exact: true })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Download JSON" })).toBeDisabled();
+    await page.getByRole("tab", { name: "Overview", exact: true }).click();
+    await expect(page.getByRole("tab", { name: "Overview", exact: true })).toHaveAttribute("aria-selected", "true");
+    await expect(page).toHaveURL(/demo=1/);
   });
 
-  test("settings route does not crash (no 500)", async ({ page }) => {
-    const response = await page.goto("/settings");
-    if (response) {
-      expect(response.status()).toBeLessThan(500);
-    }
+  test("opens API key bookmarks in their dashboard tab", async ({ page }) => {
+    await page.goto("/settings?demo=1&tab=keys");
+    await expect(page).toHaveURL(/\/dashboard\?.*tab=api-keys/);
+    await expect(page.getByRole("tab", { name: "API Keys", exact: true })).toHaveAttribute("aria-selected", "true");
   });
 });

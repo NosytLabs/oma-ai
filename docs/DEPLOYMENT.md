@@ -4,8 +4,13 @@ Canonical deployment facts for OMA-AI. Other docs link here rather than
 restating them — this file is the single source of truth so a deploy
 instruction can't drift between documents.
 
-Production topology was verified on 2026-10-08. See
+Production topology was verified on 2026-10-10. See
 [deployment verification](deployment-health.md) for release checks and failure diagnosis.
+
+The [gateway API and authentication audit](audits/gateway-api-security-audit-2026-10-10.md)
+records the release receipt and remaining limitations. Deployment targets below
+describe the platform topology; historical audit receipts retain their original
+deployment IDs.
 
 ## Canonical host
 
@@ -26,10 +31,12 @@ GET  https://www.oma-ai.com/api/v1/models
 POST https://www.oma-ai.com/api/v1/chat/completions
 POST https://www.oma-ai.com/api/v1/messages
 GET  https://www.oma-ai.com/api/v1/openapi.json
+GET  https://www.oma-ai.com/x402/info
 POST https://www.oma-ai.com/x402/verify
 POST https://www.oma-ai.com/x402/settle
 GET  https://www.oma-ai.com/api/v1/search
 GET  https://www.oma-ai.com/api/v1/usage
+GET  https://www.oma-ai.com/api/v1/usage/summary
 GET  https://www.oma-ai.com/api/v1/usage/today
 GET  https://www.oma-ai.com/api/v1/balance
 GET  https://www.oma-ai.com/api/v1/keys

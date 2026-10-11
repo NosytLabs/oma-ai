@@ -47,31 +47,19 @@ const envSchema = z.object({
 		GONKA_API_KEY: z.string().min(1).optional(),
 		OBK_API_KEY: z.string().min(1).optional(),
 		OPENBROKER_API_URL: z.string().url().optional().default("https://api.openbroker.gonka.gg"),
-		// Surplus Intelligence (https://api.surplusintelligence.ai) — marketplace
-		// resale upstream. Opt-in: leave SURPLUS_API_KEY unset to disable the Surplus
-		// catalog entirely (provider is never selected for real traffic).
-		SURPLUS_API_KEY: z.string().min(1).optional(),
-		SURPLUS_API_URL: z.string().url().optional().default("https://api.surplusintelligence.ai"),
 		// Allow Venice non-private mode. By default all Venice requests set
 		// venice_parameters.private=true. Set OMMA_ALLOW_NON_PRIVATE_VENICE=true to
-		// let callers opt out per-request (private:false) for non-sensitive traffic.
+		// use non-private mode for this deployment. Callers cannot override it.
 		// Production should leave this unset (defaults to false).
 		OMMA_ALLOW_NON_PRIVATE_VENICE: envBoolean.default(false),
-		// Surplus Intelligence (api.surplusintelligence.ai) is the only opt-in
-		// non-private resale upstream. It's gated behind SURPLUS_API_KEY — when unset,
-		// Surplus catalog entries are not selected for traffic. Trust/security notes
-		// live in the header comment of src/inference/models.ts.
-		// Primary Base mainnet RPC. Default = QuickNode multichain endpoint (active
-		// production endpoint). Set to https://base-rpc.publicnode.com or another
-		// provider for dev/test environments.
+		// Optional configured Base primary. The RPC client also supplies public
+		// Base fallbacks; no authenticated vendor endpoint is hardcoded here.
 		// SECURITY (A12): No empty-string default. Callers must handle undefined.
 		// Production requires CHAIN_RPC_URL (or the QUICKNODE_RPC_URL alias below).
 		CHAIN_RPC_URL: z.string().min(1).optional(),
 		CHAIN_RPC_URL_FALLBACK: z.string().optional(),
 
-		// 2026-07-30: dedicated Ethereum mainnet RPC for ENS lookups
-		// (SIWE plugin). viem's default mainnet transport is unreliable;
-		// cloudflare-eth.com is a safer default.
+		// Dedicated Ethereum mainnet RPC for ENS/SIWE lookups.
 		ETH_RPC_URL: z.string().url().optional(),
 		// QuickNode aliases — folded into CHAIN_RPC_URL* after parse (alias wins).
 		QUICKNODE_RPC_URL: z.string().url().optional(),
@@ -99,8 +87,7 @@ const envSchema = z.object({
 		// and as the default for sign-in message headers. Set in production; tests
 		// and dev default to a permissive value.
 		PRIMARY_DOMAIN: z.string().min(1).default("oma-ai.com"),
-		// Public-facing API URL. Used by OpenAPI spec, SSO SAML entity/ACS URLs, and any
-		// server-rendered surface that surfaces the public endpoint to clients.
+		// Public-facing API URL used by OpenAPI and discovery documentation.
 		// Falls back to the production domain; production deployments can override
 		// (e.g. staging environments).
 		PUBLIC_API_URL: z.string().url().default("https://www.oma-ai.com/api"),

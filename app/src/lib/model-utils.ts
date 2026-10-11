@@ -12,7 +12,7 @@ import { isModelAvailable } from "@/lib/model-availability";
 /**
  * Free catalog ids (upstream=openbroker — OMA-AI on Gonka.AI).
  * Mirrors server-side logic in `server/src/inference/free-website-model.ts`.
- * Only zero-upstream-cost OpenBroker models qualify as free in /chat.
+ * OMA sponsors these models within the daily website quota; API calls pay.
  */
 export const FREE_CHAT_MODEL_IDS = new Set<string>([
 	"zai-org-glm-5-3",
@@ -22,15 +22,11 @@ export const FREE_CHAT_MODEL_IDS = new Set<string>([
 
 /**
  * Default free website-chat model. Backed by OMA-AI's Gonka.AI upstream
- * (GLM-5.3 Flash) — see catalog entry in models.ts.
- *
- * 2026-09-27: switched the default away from DeepSeek V4 Flash, whose
- * OpenBroker vLLM backend is loop-degenerating (it repeats the first
- * answer token forever, e.g. "PONG PONG PONG…" to finish_reason=length).
- * GLM-5.3 verified clean on the same probe (finish_reason=stop, "PONG").
- * DeepSeek stays selectable in case the backend recovers.
+ * (MiniMax M2.7). October 10 browser and direct upstream checks found
+ * repeated output on GLM and DeepSeek; both routes are temporarily paused.
+ * MiniMax completed the authenticated browser probe cleanly.
  */
-export const FREE_DEFAULT_CHAT_MODEL = "zai-org-glm-5-3";
+export const FREE_DEFAULT_CHAT_MODEL = "minimax-m2-7";
 
 export const FREE_TIER_LABELS: Record<string, { label: string; tooltip: string }> = {
 	"zai-org-glm-5-3": {
@@ -56,7 +52,6 @@ export const DOCS_EXAMPLE_MODEL = "llama-3.3-70b";
 	* the upstream server is stale.
 	*/
 function liveDisplayName(
-	id: string,
 	rawName: string | undefined,
 ): string | undefined {
 	// Reserved for future client-side canonicalisation overrides when the
@@ -178,6 +173,7 @@ export interface LiveModelRaw {
 	provider?: string;
 	/** false when the provider's API key is missing/placeholder server-side */
 	available?: boolean;
+	unavailable_reason?: string;
 	/** Modality bucket — "chat", "image", "video", etc. */
 	modality?: string;
 	pricing?: { prompt?: string | number; completion?: string | number };
@@ -194,6 +190,7 @@ function formatCtx(n: number): string {
 	* Map a raw live-model object from the `/v1/models` API to a `ModelOption`.
 	*/
 export function mapLiveModel(m: LiveModelRaw): ModelOption {
+	const catalogModel = MODELS.find((model) => model.id === m.id);
 	const validCats: ModelOption["category"][] = [
 		"frontier",
 		"premium",
@@ -211,10 +208,11 @@ export function mapLiveModel(m: LiveModelRaw): ModelOption {
 
 	return {
 		id: m.id,
-		name: liveDisplayName(m.id, m.display_name) || humanizeModelId(m.id),
+		name: liveDisplayName(m.display_name) || humanizeModelId(m.id),
 		category: cat,
 		provider,
-		available: isModelAvailable(m),
+		available: isModelAvailable(m) && isModelAvailable(catalogModel ?? {}),
+		unavailableReason: m.unavailable_reason ?? catalogModel?.unavailableReason,
 		inputPer1M: m.pricing?.prompt
 			? Number(m.pricing.prompt)
 			: 0,

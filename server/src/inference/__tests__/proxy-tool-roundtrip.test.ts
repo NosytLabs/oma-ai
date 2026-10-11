@@ -1,0 +1,107 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("../../config.js", () => ({ config: {
+	OPENBROKER_API_KEY: "test-openbroker-key-123456789",
+	OPENBROKER_API_URL: "https://api.openbroker.gonka.gg",
+	VENICE_API_KEY: "test-venice-key",
+	VENICE_API_URL: "https://api.venice.ai",
+} }));
+vi.mock("../../lib/logger.js", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
+vi.mock("../billing.js", () => ({ assertSufficientBalance: vi.fn(), recordUsage: vi.fn() }));
+vi.mock("../streaming.js", () => ({ createStreamingProxy: vi.fn(), parseNonStreamingResponse: vi.fn() }));
+
+import { routeRequestWithFallback } from "../proxy.js";
+
+afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
+
+describe("upstream tool round trip", () => {
+	const base = { modelId: "openai-gpt-56-sol", messages: [{ role: "user", content: "Hello" }], stream: false, userId: "test-user", requestId: "test-scope" };
+	 it("rejects an unauthorized primary, including an explicitly empty scope, before contacting providers", async () => {
+		const fetchMock = vi.fn(); vi.stubGlobal("fetch", fetchMock);
+		for (const allowedModels of [[], ["minimax-m2-7"]]) await expect(routeRequestWithFallback({ ...base, allowedModels })).rejects.toMatchObject({ status: 403 });
+		expect(fetchMock).not.toHaveBeenCalled();
+	});
+
+	it("does not escape the key's scope through automatic or client fallbacks", async () => {
+		const fetchMock = vi.fn().mockResolvedValue(new Response("", { status: 404 })); vi.stubGlobal("fetch", fetchMock);
+		await expect(routeRequestWithFallback({ ...base, allowedModels: [base.modelId], clientFallbacks: ["minimax-m2-7"] })).rejects.toMatchObject({ status: 404 });
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+	});
+
+	it("allows a fallback explicitly included in the key scope", async () => {
+		const fetchMock = vi.fn().mockResolvedValueOnce(new Response("", { status: 404 })).mockResolvedValueOnce(new Response('{"choices":[]}', { status: 200 })); vi.stubGlobal("fetch", fetchMock);
+		const result = await routeRequestWithFallback({ ...base, allowedModels: [base.modelId, "minimax-m2-7"] });
+		expect(result.actualModelId).toBe("minimax-m2-7");
+		expect(fetchMock).toHaveBeenCalledTimes(2);
+	});
+
+	it("reports a provider credential rejection as a gateway error without retrying the same credential on peers", async () => {
+		const fetchMock = vi.fn().mockResolvedValue(new Response("", { status: 401 })); vi.stubGlobal("fetch", fetchMock);
+		await expect(routeRequestWithFallback({ ...base, modelId: "claude-opus-5" })).rejects.toMatchObject({ status: 502, message: expect.stringContaining("provider authentication failed") });
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+	});
+
+	it("rejects output limits above the primary model's ceiling before sending a request", async () => {
+		const fetchMock = vi.fn(); vi.stubGlobal("fetch", fetchMock);
+		await expect(routeRequestWithFallback({ ...base, modelId: "google-gemma-4-31b-it", max_tokens: 1_000_000 })).rejects.toMatchObject({ status: 400 });
+		expect(fetchMock).not.toHaveBeenCalled();
+	});
+
+	it("requests upstream token totals for streamed billing", async () => {
+		const fetchMock = vi.fn().mockResolvedValue(new Response('data: [DONE]\n\n', { status: 200 }));
+		vi.stubGlobal("fetch", fetchMock);
+		await routeRequestWithFallback({ modelId: "minimax-m2-7", messages: [{ role: "user", content: "Hello" }], stream: true, userId: "test-user", requestId: "test-stream-usage" });
+		expect(JSON.parse(fetchMock.mock.calls[0]![1].body as string)).toMatchObject({ stream: true, stream_options: { include_usage: true } });
+	});
+	it("preserves assistant calls and tool result IDs in the actual provider payload", async () => {
+		const fetchMock = vi.fn().mockResolvedValue(new Response('{"choices":[]}', { status: 200 }));
+		vi.stubGlobal("fetch", fetchMock);
+		const messages = [
+			{ role: "user", content: "Add 17 and 25 using the tool." },
+			{ role: "assistant", content: null, tool_calls: [{ id: "call_add", type: "function", function: { name: "add", arguments: '{"a":17,"b":25}' } }] },
+			{ role: "tool", content: "42", tool_call_id: "call_add", name: "add" },
+		];
+		await routeRequestWithFallback({ modelId: "minimax-m2-7", messages, stream: false, userId: "test-user", requestId: "test-roundtrip" });
+		const [, request] = fetchMock.mock.calls[0]!;
+		expect(JSON.parse(request.body as string).messages).toEqual(messages);
+	});
+
+	it("rejects a paused primary before sending any provider request", async () => {
+		const fetchMock = vi.fn();
+		vi.stubGlobal("fetch", fetchMock);
+		await expect(routeRequestWithFallback({ modelId: "deepseek-v4-flash-0731-openbroker", messages: [{ role: "user", content: "Hello" }], stream: false, userId: "test-user", requestId: "test-paused" })).rejects.toMatchObject({ status: 503 });
+		expect(fetchMock).not.toHaveBeenCalled();
+	});
+
+	it("cancels the upstream without retries or fallback when the caller disconnects", async () => {
+		const caller = new AbortController();
+		const fetchMock = vi.fn((_url: string, request: RequestInit) => new Promise<Response>((_resolve, reject) => {
+			request.signal!.addEventListener("abort", () => reject(request.signal!.reason), { once: true });
+		}));
+		vi.stubGlobal("fetch", fetchMock);
+		const pending = routeRequestWithFallback({ modelId: "minimax-m2-7", messages: [{ role: "user", content: "Hello" }], stream: false, userId: "test-user", requestId: "test-cancel", signal: caller.signal });
+		const assertion = expect(pending).rejects.toMatchObject({ name: "AbortError" });
+		caller.abort();
+		await assertion;
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+	});
+
+	it("bounds the entire retry chain and allows OpenBroker a longer host-selection wait", async () => {
+		const deadline = new AbortController();
+		const timeouts: number[] = [];
+		vi.spyOn(AbortSignal, "timeout").mockImplementation((ms) => {
+			timeouts.push(ms);
+			return ms === 240_000 ? deadline.signal : new AbortController().signal;
+		});
+		const fetchMock = vi.fn((_url: string, request: RequestInit) => new Promise<Response>((_resolve, reject) => {
+			request.signal!.addEventListener("abort", () => reject(request.signal!.reason), { once: true });
+		}));
+		vi.stubGlobal("fetch", fetchMock);
+		const pending = routeRequestWithFallback({ modelId: "minimax-m2-7", messages: [{ role: "user", content: "Hello" }], stream: false, userId: "test-user", requestId: "test-deadline" });
+		const assertion = expect(pending).rejects.toMatchObject({ status: 504 });
+		deadline.abort(new DOMException("Request timed out", "TimeoutError"));
+		await assertion;
+		expect(timeouts).toEqual([240_000, 180_000]);
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+	});
+});

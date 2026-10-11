@@ -299,7 +299,7 @@
 	color-scheme: dark;
 	/* Prevent long code lines / decorative blurs from causing page-level
 	horizontal scroll on mobile (especially / and /docs). */
-	overflow-x: hidden;
+	overflow-x: clip;
 	max-width: 100%;
 	}
 
@@ -313,7 +313,9 @@
 		min-height: 100dvh;
 		display: flex;
 		flex-direction: column;
-		overflow-x: hidden;
+		/* Clip horizontal decoration without creating a new scroll container:
+		   sticky site navigation must follow the viewport's vertical scroll. */
+		overflow-x: clip;
 		max-width: 100%;
 	}
 

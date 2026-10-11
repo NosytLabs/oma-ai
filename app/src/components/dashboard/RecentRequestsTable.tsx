@@ -6,7 +6,9 @@ import { springs } from "@/lib/animation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import type { UsageRecord } from "@/lib/api";
-import { formatTime, formatUsdPrecise, toDollars } from "@/lib/utils";
+import { formatTime, formatUsdPrecise } from "@/lib/utils";
+import { useToast } from "@/components/ui/Toast";
+import { resolveModelDisplayName, usageBilledDollars } from "@/lib/dashboard-aggregate";
 
 interface RecentRequestsTableProps {
 	usage: UsageRecord[];
@@ -14,6 +16,9 @@ interface RecentRequestsTableProps {
 	page: number;
 	limit: number;
 	onPageChange: (page: number) => void;
+	totalCount?: number;
+	hasMore?: boolean;
+	loadingMore?: boolean;
 }
 
 export const RecentRequestsTable = memo(function RecentRequestsTable({
@@ -22,19 +27,24 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 	page,
 	limit,
 	onPageChange,
+	totalCount = usage.length,
+	hasMore = false,
+	loadingMore = false,
 }: RecentRequestsTableProps) {
-	const totalPages = Math.ceil(usage.length / limit);
+	const toast = useToast();
+	const totalPages = Math.ceil(totalCount / limit);
+	const currentPage = Math.min(page, Math.max(1, Math.ceil(usage.length / limit)));
 
 	return (
 		<div className="flex flex-col h-full border border-border bg-surface/30 rounded-[var(--radius-xl)] shadow-[var(--shadow-md)] transition-colors duration-200 ease-out hover:border-accent/40">
 			<div className="p-6 border-b border-border/50">
 				<div className="flex items-center justify-between">
-					<h2 className="text-[14.5px] font-bold text-text-bright tracking-tight">
+					<h2 className="font-sans text-[14.5px] font-bold text-text-bright tracking-tight">
 						Recent requests
 					</h2>
 					{!loading && usage.length > 0 && (
 						<span className="text-[11px] font-mono uppercase tracking-wider text-text-muted">
-							{usage.length} total
+							{totalCount.toLocaleString()} in range
 						</span>
 					)}
 				</div>
@@ -65,7 +75,7 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 								scope="col"
 								className="px-6 py-4 text-[10.5px] font-bold text-text-muted uppercase tracking-wider text-right"
 							>
-								Cost
+								Charge / outcome
 							</th>
 							<th
 								scope="col"
@@ -110,7 +120,7 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 								</td>
 							</tr>
 						) : (
-							usage.slice((page - 1) * limit, page * limit).map((row, i) => (
+							usage.slice((currentPage - 1) * limit, currentPage * limit).map((row, i) => (
 								<m.tr
 									key={row.id}
 									className="group border-b border-border/40 transition-colors duration-200 ease-out hover:bg-surface/60 last:border-0"
@@ -119,7 +129,19 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 									transition={{ delay: i * 0.03, ...springs.soft }}
 								>
 									<td className="px-6 sm:px-7 py-4 text-[13px] font-bold text-accent font-mono transition-colors duration-200 ease-out group-hover:text-accent-hover">
-										{row.model}
+										<details className="min-w-[10rem] max-w-[18rem]">
+											<summary className="cursor-pointer rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">{resolveModelDisplayName(row.model)}</summary>
+											<div className="mt-3 space-y-2 text-xs font-normal text-text-secondary">
+												<p>Request ID <code className="block break-all select-all text-text-bright">{row.requestId}</code></p>
+												<button type="button" className="min-h-9 rounded border border-border px-2 text-accent" onClick={() => {
+													void navigator.clipboard.writeText(row.requestId).then(() => toast.success("Request ID copied"), () => toast.error("Could not copy. Select the request ID to copy it."));
+												}}>Copy request ID</button>
+												{row.requestedModel && row.requestedModel !== row.model && <p>Requested: <span className="break-all">{row.requestedModel}</span></p>}
+												<p>Served: <span className="break-all">{row.model}</span></p>
+												<p>Provider: {row.provider || "Unknown"}</p>
+												<p><time dateTime={row.createdAt}>{new Date(row.createdAt).toLocaleString()}</time></p>
+											</div>
+										</details>
 									</td>
 									<td className="px-6 py-4 text-[13px] text-text-secondary text-right font-mono transition-colors duration-200 ease-out group-hover:text-text-bright">
 										{(row.promptTokens ?? 0).toLocaleString()}
@@ -131,16 +153,17 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 										{/* Billed amount (cost + markup); decimal-string cents, may be sub-cent.
 										 Guard against NaN so a malformed cost row never renders "$NaN". */}
 										{(() => {
-											const dollars = toDollars(row.totalCents ?? row.costCents);
+											const dollars = usageBilledDollars(row);
 											return Number.isFinite(dollars)
 												? formatUsdPrecise(dollars)
 												: "—";
 										})()}
+										<span className="mt-1 block text-[10px] font-normal text-text-muted">{row.refundedAt ? "Refunded" : row.status === "free_tier" ? "Free chat" : row.status === "aborted" ? "Canceled" : row.status === "error" ? "Error" : "Completed"}</span>
 									</td>
 									<td className="px-6 py-4 text-[12.5px] text-text-secondary text-right font-mono transition-colors duration-200 ease-out group-hover:text-text-bright">
 										{typeof row.latencyMs === "number" &&
 										Number.isFinite(row.latencyMs)
-											? `${Math.round(row.latencyMs)}ms`
+											? row.latencyMs >= 1000 ? `${(row.latencyMs / 1000).toFixed(1)}s` : `${Math.round(row.latencyMs)}ms`
 											: "—"}
 									</td>
 								<td className="px-6 py-4 text-[11.5px] font-mono text-text-muted/80 transition-colors duration-200 ease-out group-hover:text-text-secondary">
@@ -158,7 +181,7 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 									)}
 								</td>
 								<td className="px-6 sm:px-7 py-4 text-[11.5px] font-mono text-text-muted/80 transition-colors duration-200 ease-out group-hover:text-text-secondary">
-									{formatTime(row.createdAt)}
+									<time dateTime={row.createdAt} title={new Date(row.createdAt).toLocaleString()}>{formatTime(row.createdAt)}</time>
 								</td>
 								</m.tr>
 							))
@@ -166,29 +189,29 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 					</tbody>
 				</table>
 			</div>
-			{!loading && usage.length > limit && (
-				<div className="flex items-center justify-between px-6 sm:px-7 py-4 border-t border-border/50 bg-surface/20">
+			{!loading && (usage.length > limit || hasMore) && (
+				<div className="flex flex-wrap items-center justify-between gap-3 px-6 sm:px-7 py-4 border-t border-border/50 bg-surface/20">
 					<span className="text-[11px] font-mono text-text-muted uppercase tracking-wider">
-						Showing {(page - 1) * limit + 1}–
-						{Math.min(page * limit, usage.length)} of {usage.length}
+						Showing {(currentPage - 1) * limit + 1}–
+						{Math.min(currentPage * limit, usage.length)} of {totalCount.toLocaleString()}
 					</span>
 					<div className="flex items-center gap-2">
 						<button
 							type="button"
-							onClick={() => onPageChange(Math.max(1, page - 1))}
-							disabled={page === 1}
+							onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+							disabled={currentPage === 1 || loadingMore}
 							aria-label="Go to previous page"
 							className="flex items-center justify-center rounded-[var(--radius-sm)] border border-border bg-surface w-8 h-8 text-text-secondary transition-[color,background-color,border-color,transform] duration-200 ease-out hover:border-accent/40 hover:text-text-bright hover:bg-surface-elevated active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 						>
 							<ChevronLeft className="h-4 w-4" />
 						</button>
 						<span className="text-[11px] font-mono text-text-secondary px-2 uppercase tracking-wider" aria-current="page">
-							Page <span className="font-bold text-text-bright">{page}</span> of {totalPages}
+							Page <span className="font-bold text-text-bright">{currentPage}</span> of {totalPages}
 						</span>
 						<button
 							type="button"
-							onClick={() => onPageChange(Math.min(totalPages, page + 1))}
-							disabled={page >= totalPages}
+							onClick={() => onPageChange(currentPage + 1)}
+							disabled={loadingMore || (currentPage * limit >= usage.length && !hasMore)}
 							aria-label="Go to next page"
 							className="flex items-center justify-center rounded-[var(--radius-sm)] border border-border bg-surface w-8 h-8 text-text-secondary transition-[color,background-color,border-color,transform] duration-200 ease-out hover:border-accent/40 hover:text-text-bright hover:bg-surface-elevated active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 						>

@@ -2,6 +2,7 @@
 
 import { format, parse } from "date-fns";
 import { useId } from "react";
+import { formatUsdPrecise } from "@/lib/utils";
 import {
 	Area,
 	AreaChart,
@@ -62,7 +63,7 @@ const CustomTooltip = ({
 				)}
 				{costEntry && (
 					<p className="text-sm font-semibold text-[var(--color-secondary)]">
-						${costEntry.value.toFixed(2)}
+						{formatUsdPrecise(costEntry.value)} charged
 					</p>
 				)}
 			</div>
@@ -95,7 +96,7 @@ export function AreaChartComponent({
 	}
 	const totalRequests = data.reduce((sum, d) => sum + d.requests, 0);
 	const totalCost = data.reduce((sum, d) => sum + d.cost, 0);
-	const chartDescription = `Area chart showing ${data.length} days of usage data. Total requests: ${totalRequests.toLocaleString()}. Total cost: $${totalCost.toFixed(2)}`;
+	const chartDescription = `Area chart showing ${data.length} usage buckets. Total requests: ${totalRequests.toLocaleString()}. Total charges: ${formatUsdPrecise(totalCost)}`;
 
 	return (
 		<ChartContainer heightClass="h-[300px]">
@@ -148,6 +149,7 @@ export function AreaChartComponent({
 					/>
 					<YAxis
 						yAxisId="requests"
+						allowDecimals={false}
 						stroke="var(--color-text-tertiary)"
 						fontSize={11}
 						tickLine={false}
@@ -161,12 +163,13 @@ export function AreaChartComponent({
 					{showCostArea && (
 						<YAxis
 							yAxisId="cost"
+							domain={[0, (max: number) => max > 0 ? max * 1.1 : 1]}
 							orientation="right"
 							stroke="var(--color-text-tertiary)"
 							fontSize={11}
 							tickLine={false}
 							axisLine={false}
-							tickFormatter={(value) => `$${Number(value).toFixed(2)}`}
+							tickFormatter={(value) => formatUsdPrecise(Number(value))}
 						/>
 					)}
 					<Tooltip content={<CustomTooltip showCost={showCostArea} />} />

@@ -11,9 +11,8 @@
 	*      completions, tokens, latency, and errors.
 	*   3. Live process/runtime facts: uptime, memory, DB round-trip latency.
 	*
-	* Time-series charts on the page (24h volume, latency trend) are NOT
-	* served from here — there is no historical store — and are labelled as
-	* illustrative on the client.
+	* Durable time-series charts are served separately by admin-analytics.ts.
+	* Worker HTTP counters here reset on restart.
 	*/
 import { Hono } from "hono";
 import { gte, sql } from "drizzle-orm";
@@ -37,6 +36,8 @@ interface Chat24h {
 		errors: number;
 		p95LatencyMs: number | null;
 		topModels: { model: string; requests: number; tokens: number }[];
+		activeModels: number;
+		available: boolean;
 }
 
 async function fetchChat24h(): Promise<Chat24h> {
@@ -48,6 +49,8 @@ async function fetchChat24h(): Promise<Chat24h> {
 				errors: 0,
 				p95LatencyMs: null,
 				topModels: [],
+				activeModels: 0,
+				available: false,
 		};
 		try {
 				const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -55,9 +58,10 @@ async function fetchChat24h(): Promise<Chat24h> {
 				const [agg] = await db
 						.select({
 								completions: sql<number>`count(*)::int`,
-								inputTokens: sql<number>`coalesce(sum(${usageRecords.inputTokens}), 0)::int`,
-								outputTokens: sql<number>`coalesce(sum(${usageRecords.outputTokens}), 0)::int`,
-								errors: sql<number>`count(*) filter (where ${usageRecords.status} <> 'completed')::int`,
+								inputTokens: sql<string>`coalesce(sum(${usageRecords.inputTokens}), 0)::text`,
+								outputTokens: sql<string>`coalesce(sum(${usageRecords.outputTokens}), 0)::text`,
+								errors: sql<number>`count(*) filter (where ${usageRecords.status} = 'error')::int`,
+								activeModels: sql<number>`count(distinct ${usageRecords.model})::int`,
 								p95LatencyMs: sql<number | null>`percentile_cont(0.95) within group (order by ${usageRecords.latencyMs})::int`,
 						})
 						.from(usageRecords)
@@ -67,7 +71,7 @@ async function fetchChat24h(): Promise<Chat24h> {
 						.select({
 								model: usageRecords.model,
 								requests: sql<number>`count(*)::int`,
-								tokens: sql<number>`coalesce(sum(${usageRecords.inputTokens} + ${usageRecords.outputTokens}), 0)::int`,
+								tokens: sql<string>`coalesce(sum(${usageRecords.inputTokens}::bigint + ${usageRecords.outputTokens}::bigint), 0)::text`,
 						})
 						.from(usageRecords)
 						.where(gte(usageRecords.createdAt, since))
@@ -75,9 +79,11 @@ async function fetchChat24h(): Promise<Chat24h> {
 						.orderBy(sql`count(*) desc`)
 						.limit(5);
 
-				const inputTokens = agg?.inputTokens ?? 0;
-				const outputTokens = agg?.outputTokens ?? 0;
+				const inputTokens = Number(agg?.inputTokens ?? 0);
+				const outputTokens = Number(agg?.outputTokens ?? 0);
 				return {
+						available: true,
+						activeModels: agg?.activeModels ?? 0,
 						completions: agg?.completions ?? 0,
 						inputTokens,
 						outputTokens,
@@ -87,7 +93,7 @@ async function fetchChat24h(): Promise<Chat24h> {
 						topModels: topModels.map((m) => ({
 								model: m.model,
 								requests: m.requests,
-								tokens: m.tokens,
+								tokens: Number(m.tokens),
 						})),
 				};
 		} catch (err) {
@@ -97,8 +103,9 @@ async function fetchChat24h(): Promise<Chat24h> {
 }
 
 opsRoutes.get("/v1/ops/snapshot", sessionOrBearerAuth, requireAdmin(), async (c) => {
+		c.header("Cache-Control", "no-store");
 		const dbStart = Date.now();
-		let dbLatencyMs: number | null = null;
+		let dbLatencyMs: number | null;
 		try {
 				await db.execute(sql`select 1`);
 				dbLatencyMs = Date.now() - dbStart;
@@ -111,7 +118,7 @@ opsRoutes.get("/v1/ops/snapshot", sessionOrBearerAuth, requireAdmin(), async (c)
 		const mem = process.memoryUsage();
 
 		return c.json({
-				status: dbLatencyMs != null ? "ok" : "degraded",
+				status: dbLatencyMs != null && chat24h.available ? "ok" : "degraded",
 				version: VERSION,
 				env: config.NODE_ENV,
 				uptimeSec: Math.round(process.uptime()),

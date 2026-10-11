@@ -189,7 +189,7 @@ export default function WalletSignInPanel({
 										Check your wallet…
 									</>
 								) : (
-						"Connect wallet"
+						wallets[0] ? `Connect ${wallets[0].name}` : "Connect wallet"
 					)}
 				</button>
 			)}
@@ -236,16 +236,6 @@ export default function WalletSignInPanel({
 								className="text-accent underline underline-offset-2 hover:opacity-80"
 							>
 								Coinbase Wallet
-							</a>
-						</li>
-						<li>
-							<a
-								href="https://www.walletconnect.com/"
-								target="_blank"
-								rel="noopener noreferrer"
-								className="text-accent underline underline-offset-2 hover:opacity-80"
-							>
-								WalletConnect
 							</a>
 						</li>
 					</ul>

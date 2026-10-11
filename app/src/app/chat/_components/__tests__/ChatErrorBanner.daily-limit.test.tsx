@@ -10,6 +10,17 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("ChatErrorBanner daily free limit", () => {
+	it("offers API-key recovery without asking an authenticated user to sign in again", () => {
+		render(<ChatErrorBanner
+			error="Daily free limit reached (100 requests/day). Use prepaid API credits for more requests. Resets in ~2h."
+			isAuthenticated
+			onDismiss={vi.fn()} onRetry={vi.fn()}
+		/>);
+		expect(screen.queryByRole("link", { name: /sign in/i })).toBeNull();
+		expect(screen.getByRole("link", { name: /API keys/i })).toHaveAttribute("href", "/dashboard?tab=api-keys");
+		expect(screen.queryByRole("button", { name: /^retry$/i })).toBeNull();
+	});
+
 	it("classifies daily free limit and shows Sign in CTA", () => {
 		render(
 			<ChatErrorBanner

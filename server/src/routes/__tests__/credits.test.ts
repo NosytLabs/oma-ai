@@ -158,15 +158,19 @@ describe("credits routes", () => {
 			expect(data.transactions).toHaveLength(2);
 			// Usage row (Sep 2) should come before deposit row (Sep 1)
 			expect(data.transactions[0].type).toBe("usage");
+			expect(data.transactions[0].amountCents).toBe(-50);
 			expect(data.transactions[1].type).toBe("deposit");
 		});
 
 		it("rejects limit > 200 with 400", async () => {
 			const res = await creditRequest("get", "/v1/credits/transactions?limit=999");
-			// z.coerce.number().max(200) throws → 500 by default in Hono unless caught
-			// The route does .parse() which throws on invalid — Hono surfaces as 500.
-			// This documents current behaviour (no try/catch around the parse).
-			expect([400, 500]).toContain(res.status);
+			expect(res.status).toBe(400);
+		});
+
+		it("includes a recent refund even when its original request is outside recent history", async () => {
+			mockSelectReturns([], [], [{ id: "old-request", totalCents: "0.000006", model: "minimax-m2-7", refundedAt: new Date("2026-10-10T22:00:00Z") }]);
+			const res = await creditRequest("get", "/v1/credits/transactions?limit=5");
+			expect((await res.json()).transactions).toEqual([expect.objectContaining({ id: "old-request-refund", type: "refund", amountCents: 0.000006 })]);
 		});
 	});
 

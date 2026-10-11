@@ -1,4 +1,5 @@
 import { timingSafeEqual } from "node:crypto";
+import { isIP } from "node:net";
 import type { Context } from "hono";
 import { getConnInfo } from "@hono/node-server/conninfo";
 import type { OmaEnv } from "../../types.js";
@@ -8,8 +9,8 @@ import { logger } from "../../lib/logger.js";
 const TRUSTED_PROXIES_ENV = config.TRUSTED_PROXY_IPS || "";
 const TRUSTED_PROXIES: Set<string> = new Set(
 	TRUSTED_PROXIES_ENV.split(",")
-		.map((ip) => ip.trim())
-		.filter((ip) => ip.length > 0)
+		.map(normalizeIp)
+		.filter((ip): ip is string => ip !== null)
 );
 
 /**
@@ -37,7 +38,7 @@ const INTERNAL_PROXY_SECRET_BUF = INTERNAL_PROXY_SECRET
 	? Buffer.from(INTERNAL_PROXY_SECRET, "utf8")
 	: null;
 
-function proxyIsAuthenticated(headers: {
+export function proxyIsAuthenticated(headers: {
 	header: (k: string) => string | undefined;
 }): boolean {
 	// An unset/empty configured secret must never match, or an attacker
@@ -55,9 +56,8 @@ function proxyIsAuthenticated(headers: {
 	return timingSafeEqual(providedBuf, INTERNAL_PROXY_SECRET_BUF);
 }
 
-// C3: Production warning when no trusted proxies are configured
-if (TRUSTED_PROXIES.size === 0 && config.NODE_ENV === "production") {
-		logger.warn("[SECURITY] TRUSTED_PROXY_IPS is empty in production. Rate limiting by IP may be bypassed via x-forwarded-for spoofing. Set TRUSTED_PROXY_IPS to your reverse proxy IPs.");
+if (TRUSTED_PROXIES.size === 0 && !INTERNAL_PROXY_SECRET_BUF && config.NODE_ENV === "production") {
+	logger.warn("No authenticated proxy or trusted socket peers configured; forwarded client IPs are ignored. Configure proxy authentication to keep visitors in separate rate-limit buckets.");
 }
 
 // Model-specific limits (requests per minute). Keys must match a real
@@ -70,12 +70,15 @@ export const MODEL_LIMITS: Record<string, { rpm: number; tpm: number }> = {
 		"llama-3.3-70b": { rpm: 60, tpm: 120000 },
 		"deepseek-v4-flash-0731-openbroker": { rpm: 60, tpm: 120000 },
 		"kimi-k3": { rpm: 60, tpm: 120000 },
-		// Legacy/fast row (not always public; keep for override tests)
-		"llama-3.2-3b": { rpm: 120, tpm: 240000 },
 };
 
 function isTrustedProxy(ip: string): boolean {
 		return TRUSTED_PROXIES.has(ip);
+}
+
+function normalizeIp(value: string | undefined): string | null {
+	const ip = value?.trim().replace(/^::ffff:/i, "").toLowerCase();
+	return ip && isIP(ip) ? ip : null;
 }
 
 /**
@@ -87,10 +90,7 @@ function socketRemoteAddress(c: Context<OmaEnv>): string | null {
 		try {
 				// getConnInfo throws if c.env.incoming is missing (app.request in tests).
 				const addr = getConnInfo(c as never)?.remote?.address;
-				if (typeof addr === "string" && addr.length > 0) {
-						// Strip IPv6-mapped IPv4 prefix so redis keys stay stable.
-						return addr.startsWith("::ffff:") ? addr.slice(7) : addr;
-				}
+				if (typeof addr === "string") return normalizeIp(addr);
 		} catch {
 				/* not a Node request (app.request in tests, edge, etc.) */
 		}
@@ -98,7 +98,8 @@ function socketRemoteAddress(c: Context<OmaEnv>): string | null {
 }
 
 export function extractClientIp(c: Context<OmaEnv>): string {
-	const xRealIp = c.req.header("x-real-ip");
+	const peer = socketRemoteAddress(c);
+	const xRealIp = normalizeIp(c.req.header("x-real-ip"));
 
 	// Authenticated Vercel -> Neon hop. Vercel OVERWRITES x-forwarded-for
 	// with the real client IP (per Vercel's own docs) to prevent spoofing, so
@@ -111,39 +112,25 @@ export function extractClientIp(c: Context<OmaEnv>): string {
 		const forwarded =
 			c.req.header("x-vercel-forwarded-for") ?? c.req.header("x-forwarded-for");
 		if (forwarded) {
-			const first = forwarded.split(",")[0]?.trim();
+			const first = normalizeIp(forwarded.split(",")[0]);
 			if (first) return first;
 		}
-		return xRealIp || socketRemoteAddress(c) || "unknown";
+		return xRealIp || peer || "unknown";
 	}
 
-	// H2 — when TRUSTED_PROXY_IPS is empty (the production-safe
-		// default), REFUSE to read x-forwarded-for/x-real-ip entirely. These
-		// headers are equally client-spoofable; trusting x-real-ip here let an
-		// attacker rotate buckets per request and defeat the 20/day free tier
-		// (audit 2026-09-27 / B-7). Direct TCP peer is the only truth we have;
-		// operators behind a reverse proxy MUST set TRUSTED_PROXY_IPS.
-		if (TRUSTED_PROXIES.size === 0) {
-				return socketRemoteAddress(c) || "unknown";
+	// A header cannot authenticate its own sender. Start with the actual
+	// socket peer, then walk only the trusted suffix of a forwarded chain.
+	if (!peer || !isTrustedProxy(peer)) return peer || "unknown";
+	const forwarded = c.req.header("x-forwarded-for");
+	if (forwarded) {
+		const ips = forwarded.split(",").map(normalizeIp);
+		if (ips.some(ip => ip === null)) return peer;
+		for (let i = ips.length - 1; i >= 0; i--) {
+			const ip = ips[i]!;
+			if (!isTrustedProxy(ip) || i === 0) return ip;
 		}
-
-		const xForwardedFor = c.req.header("x-forwarded-for");
-		if (xForwardedFor) {
-				const ips = xForwardedFor.split(",").map((s) => s.trim()).filter(Boolean);
-				if (ips.length > 0) {
-						const firstIp = ips[0];
-						const lastIp = ips[ips.length - 1];
-						// SECURITY: When trusted proxies are configured, only trust the first
-						// IP if the LAST IP in the chain is one of our trusted proxies.
-						// Otherwise the header is potentially client-spoofed.
-						if (isTrustedProxy(lastIp)) {
-								return firstIp;
-						}
-						// Last IP is not a trusted proxy — fall through to x-real-ip / socket.
-				}
-		}
-
-		return xRealIp || socketRemoteAddress(c) || "unknown";
+	}
+	return xRealIp || peer;
 }
 
 /**
