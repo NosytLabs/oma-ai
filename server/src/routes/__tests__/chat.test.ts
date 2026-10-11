@@ -67,6 +67,7 @@ vi.mock("../../middleware/daily-limit.js", () => ({
 // Auth middleware: optionalAuth sets userId when a Bearer header is present.
 vi.mock("../../auth/middleware.js", () => ({
 	optionalAuth: async (c: { req: { header: (n: string) => string | undefined }; set: (k: string, v: unknown) => void }, next: () => Promise<void>) => {
+		if (c.req.header("Cookie") === "local-fixture=session") c.set("userId", "user_123");
 		const auth = c.req.header("Authorization");
 		if (auth && auth.startsWith("Bearer ")) {
 			c.set("userId", "user_123");
@@ -164,6 +165,16 @@ beforeEach(() => {
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
 describe("POST /v1/chat/completions", () => {
+	it("asks old signed-in free-chat clients to reload rather than charging them as API requests", async () => {
+		mockRouteRequest.mockResolvedValueOnce({ response: new Response("{}"), actualModelId: baseBody.model });
+		mockParseNonStreaming.mockResolvedValueOnce({ data: { ok: true } });
+		// The updated public proxy has already stripped the old source header.
+		const res = await chatRequest(baseBody, { Cookie: "local-fixture=session", Origin: "http://localhost:3000" });
+		expect(res.status).toBe(409);
+		expect((await res.json()).error.code).toBe("website_chat_moved");
+		expect(mockRouteRequest).not.toHaveBeenCalled();
+		expect(mockParseNonStreaming).not.toHaveBeenCalled();
+	});
 	it("forwards assistant tool calls and tool results for a coding follow-up", async () => {
 		const messages = [
 			{ role: "user", content: "Read the file." },

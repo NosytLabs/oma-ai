@@ -179,6 +179,12 @@ for (const path of ["/v1/chat/completions", WEBSITE_CHAT_PATH]) chatRoutes.post(
 			// API requests or non-free models: require auth and bill credits
 			const apiKey = c.get("apiKey");
 			const apiKeyId = apiKey?.id ?? null;
+			// Older website tabs used the SDK path; the current proxy strips
+			// their source header. A session-only request to an eligible free
+			// model must use the website handler or an explicit paid API key.
+			if (c.req.path === "/v1/chat/completions" && isFreeModel && userId && !apiKey) {
+				return c.json({ error: { message: "Website chat has been updated. Reload this page and send your message again.", code: "website_chat_moved" } }, 409);
+			}
 			const isFreeWebsiteChat = isWebsiteRequest && isFreeModel && !apiKey;
 				
 				if (!isFreeWebsiteChat && !userId) {

@@ -239,7 +239,9 @@ try {
 	pass("forged scheduler headers cannot invoke privileged local jobs and invalid explicit keys never become anonymous chat requests");
 	await request("/v1/chat/completions", { method: "POST", headers: { "X-OMA-Source": "website", Origin: "http://localhost:3000" }, expected: 401, body: { model: "minimax-m2-7", messages: [{ role: "user", content: "No public API sponsorship" }], max_tokens: 16 } });
 	await request("/website/chat/completions", { method: "POST", cookie: first.cookie, headers: { "X-OMA-Source": "website", Origin: "https://evil.example" }, expected: 403, body: { model: "minimax-m2-7", messages: [{ role: "user", content: "No cross-origin sponsorship" }], max_tokens: 16 } });
-	pass("public SDK requests cannot select website sponsorship and a signed-in account cannot use cross-origin website chat");
+	const legacyChat = await request("/v1/chat/completions", { method: "POST", cookie: first.cookie, body: { model: "minimax-m2-7", messages: [{ role: "user", content: "Do not charge an old free-chat tab" }], max_tokens: 16 }, expected: 409 });
+	assert.equal(legacyChat.data.error.code, "website_chat_moved");
+	pass("public SDK requests cannot select website sponsorship, cross-origin website chat is denied, and old free-chat sessions are not charged");
 
 	await request("/api/auth/update-user", { method: "POST", cookie: first.cookie, body: { name: "Saved Display Name" } });
 	assert.equal((await request("/api/auth/get-session", { cookie: first.cookie })).data.user.name, "Saved Display Name");

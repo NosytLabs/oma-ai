@@ -373,7 +373,7 @@ local scroll, with no page overflow. Mobile account profile, usage and sessions
 rendered successfully at 390px; a browser socket failure recovered in a fresh
 tab while the local HTTP service remained healthy.
 
-Current validation: 782 frontend tests and 590 backend tests passed (six API
+Current validation: 783 frontend tests and 591 backend tests passed (six API
 tests explicitly skipped); lint, types and production builds passed. The 21
 real HTTP/Postgres groups passed twice, including signup, returning login,
 SIWE/replay, key scope/expiry/revocation, cross-account isolation, admin denial,
@@ -401,3 +401,19 @@ fabricated and no assertion is weakened. [OpenBroker's current contract](https:/
 forwards tools and messages without rewriting; it does not guarantee model
 tool quality. The public guide now explains this limitation. DeepSeek and GLM
 remain paused; no production Venice inference or mainnet settlement is claimed.
+
+An additional compatibility guard rejects session-only requests to website-free
+models on the public SDK path with a reload message. Old website tabs used that
+path, and the updated proxy strips their old source header; those requests must
+not silently deduct prepaid credits. Explicit API keys remain billed normally.
+The guard is verified before any provider call or billing operation.
+
+The production guest flow returned `OMA_WEBSITE_OK` from MiniMax, displayed
+the response and full 6.8-second latency, and reduced the allowance from 20
+to 19 without browser console warnings/errors. It also exposed an unrelated
+toolbar estimate that priced every historical message at the currently selected
+model's list rate, including free website responses. Removed that misleading
+cost pill and its fabricated fallback price. Chat retains message/token counts
+and its live composer pricing/free label; dashboard Usage remains the source
+for actual charges. A regression reproduces the cost pill on a free response
+before its removal.
