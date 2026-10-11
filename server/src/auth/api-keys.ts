@@ -10,7 +10,6 @@ import { getRedisClient } from "../lib/redis-client.js";
 import { logger } from "../lib/logger.js";
 
 const KEY_ROTATION_WARNING_DAYS = 60;
-const API_KEY_CACHE_TTL_SECONDS = 300;
 const MAX_CIDR_RANGES = 20;
 
 const pendingLastUsedUpdates = new Set<string>();
@@ -248,62 +247,22 @@ export async function createApiKey(
 }
 
 export async function validateApiKey(rawKey: string): Promise<ApiKey | null> {
-		if (typeof rawKey !== "string" || !rawKey) {
-				return null;
-		}
-		const keyHash = crypto.createHash("sha256").update(rawKey).digest("hex");
-		const now = new Date();
-
-		const redis = await getRedisClient();
-		if (redis) {
-				try {
-						const cached = await redis.get(`apikey:${keyHash}`);
-						if (cached) {
-								const apiKey = JSON.parse(cached as string) as ApiKey;
-								const rawPrefix = rawKey.slice(0, 12);
-								if (!timingSafeEqual(apiKey.keyPrefix, rawPrefix)) return null;
-								if (apiKey.active === false) {
-										await redis.del(`apikey:${keyHash}`);
-										return null;
-								}
-								if (apiKey.expiresAt && new Date(apiKey.expiresAt) < now) {
-										return { ...apiKey, expired: true };
-								}
-								await redis.setex(`apikey:${keyHash}`, API_KEY_CACHE_TTL_SECONDS, JSON.stringify(apiKey));
-								return apiKey;
-						}
-				} catch { /* ignore cache errors */ }
-		}
-
-		// Neon HTTP transport does not support transactions; run the read directly.
-		// The previous `for("update")` row lock was guarding against a race where the
-		// key's `active` flag flips between the SELECT and a subsequent write — but
-		// we never write to apiKeys in this path (lastUsedAt is queued fire-and-forget
-		// below). A read-committed SELECT is sufficient.
-		const [apiKey] = await db.select().from(apiKeys).where(
-				and(
-						eq(apiKeys.keyHash, keyHash),
-						eq(apiKeys.active, true),
-						or(isNull(apiKeys.expiresAt), gt(apiKeys.expiresAt, now))
-				)
-		).limit(1);
-
-		if (!apiKey) return null;
-		queueLastUsedUpdate(apiKey.id);
-
-		const rawPrefix = rawKey.slice(0, 12);
-		if (!timingSafeEqual(apiKey.keyPrefix, rawPrefix)) return null;
-		if (apiKey.expiresAt && new Date(apiKey.expiresAt) < now) {
-				return { ...apiKey, expired: true };
-		}
-
-		if (redis) {
-				try {
-						await redis.setex(`apikey:${keyHash}`, API_KEY_CACHE_TTL_SECONDS, JSON.stringify(apiKey));
-				} catch { /* ignore cache errors */ }
-		}
-
-		return apiKey;
+	if (typeof rawKey !== "string" || !rawKey) return null;
+	const keyHash = crypto.createHash("sha256").update(rawKey).digest("hex");
+	const now = new Date();
+	// Credential validity is authoritative in Postgres. A positive Redis
+	// cache can survive failed revocation/deletion and was refreshed on every
+	// hit. In-flight middleware deduplication still shares concurrent reads.
+	const [apiKey] = await db.select().from(apiKeys).where(and(
+		eq(apiKeys.keyHash, keyHash),
+		eq(apiKeys.active, true),
+		or(isNull(apiKeys.expiresAt), gt(apiKeys.expiresAt, now)),
+	)).limit(1);
+	if (!apiKey || apiKey.active === false || !timingSafeEqual(apiKey.keyPrefix, rawKey.slice(0, 12))) return null;
+	const expiry = apiKey.expiresAt == null ? null : new Date(apiKey.expiresAt).getTime();
+	if (expiry !== null && (!Number.isFinite(expiry) || expiry <= now.getTime())) return null;
+	queueLastUsedUpdate(apiKey.id);
+	return apiKey;
 }
 
 export function shouldRecommendRotation(createdAt: Date): boolean {

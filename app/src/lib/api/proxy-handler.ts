@@ -24,6 +24,14 @@ import { applyTrustedProxyHeaders } from "@/lib/api/proxy-headers";
  */
 export async function proxy(req: NextRequest) {
 	const path = req.nextUrl.pathname.replace(/^\/api/, "");
+	// Recovery and settlement jobs are invoked directly by operators or Neon.
+	// They must never be reachable through the public website proxy.
+	let normalizedPath: string;
+	try { normalizedPath = decodeURIComponent(path); }
+	catch { return NextResponse.json({ error: "Invalid path" }, { status: 400 }); }
+	if (/^\/internal(?:\/|$)/i.test(normalizedPath)) {
+		return NextResponse.json({ error: "Not found" }, { status: 404 });
+	}
 	const url = new URL(`${API_URL}${path}${req.nextUrl.search}`);
 
 	const headers = new Headers(req.headers);

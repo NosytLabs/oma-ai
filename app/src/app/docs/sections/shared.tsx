@@ -117,15 +117,15 @@ export const ENDPOINTS: EndpointInfo[] = [
 		path: "/v1/chat/completions",
 		anchor: "ep-chat",
 		title: "Chat Completions",
-		desc: "OpenAI-compatible multi-turn chat. The endpoint you will hit 95% of the time. Supports SSE streaming.",
+		desc: "OpenAI-compatible multi-turn chat with SSE streaming. Key model restrictions apply to fallback routes too. Repeating a completed Idempotency-Key returns 409 already_processed; completion bodies are not retained for replay.",
 		auth: "Bearer token (API key); requests spend prepaid credits",
 		body: {
 			model:
-				'string (required). Any model id from /v1/models, e.g. "llama-3.3-70b"',
+				'string (required). An available model ID from /v1/models, e.g. "minimax-m2-7"',
 			messages:
 				"array of { role, content }. role is system, user, assistant, or tool",
 			temperature: "number 0 to 2 (optional, default from upstream)",
-			max_tokens: "integer. Cap on completion length",
+			max_tokens: "positive integer (optional). Must not exceed the model's max_output_tokens",
 			stream: "boolean. Server-Sent Events when true (text/event-stream)",
 			tools: "array of tool definitions (optional)",
 			response_format: 'object (optional), e.g. { type: "json_object" }',
@@ -134,7 +134,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 	"id": "chatcmpl-9f3k2a",
 	"object": "chat.completion",
 	"created": 1717194000,
-	"model": "llama-3.3-70b",
+	"model": "minimax-m2-7",
 	"choices": [
 	{
 	"index": 0,
@@ -422,7 +422,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 		anchor: "ep-keys-list",
 		title: "List API Keys",
 		desc: "Lists your active API keys. Raw key values are never returned — only metadata.",
-		auth: "Bearer token (API key) or session cookie",
+		auth: "Better Auth session cookie",
 		body: undefined,
 		response: `{
 	"keys": [
@@ -431,7 +431,9 @@ export const ENDPOINTS: EndpointInfo[] = [
 			"name": "default",
 			"prefix": "oma_sk_…",
 			"createdAt": "2026-08-01T00:00:00.000Z",
-			"lastUsedAt": null
+			"lastUsedAt": null,
+			"expiresAt": "2026-10-30T00:00:00.000Z",
+			"allowedModels": ["minimax-m2-7"]
 		}
 	]
 }`,
@@ -441,14 +443,16 @@ export const ENDPOINTS: EndpointInfo[] = [
 		path: "/v1/keys",
 		anchor: "ep-keys-create",
 		title: "Create API Key",
-		desc: "Mints a new API key. The raw key is returned exactly once — store it immediately (only the hash is kept server-side).",
-		auth: "Bearer token (API key) or session cookie",
-		body: { name: "string (optional). Key label, max 64 chars, default \"default\"" },
+		desc: "Mints a new API key. Store the returned secret immediately; only its hash is kept. Model restrictions apply to fallback routes too. Keys expire after 90 days by default.",
+		auth: "Better Auth session cookie",
+		body: { name: "string (optional). Key label, 1–64 characters, default \"default\"", expiresInDays: "integer (optional). 1–365 days, default 90", allowedModels: "string[] (optional). 1–30 OMA model IDs; omit to allow all models" },
 		response: `{
 	"id": "key_…",
 	"name": "default",
 	"prefix": "oma_sk_…",
 	"createdAt": "2026-08-01T00:00:00.000Z",
+	"expiresAt": "2026-10-30T00:00:00.000Z",
+	"allowedModels": null,
 	"key": "oma_sk_…"
 }`,
 	},
@@ -458,7 +462,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 		anchor: "ep-keys-revoke",
 		title: "Revoke API Key",
 		desc: "Revokes an API key by id, immediately invalidating it. The key stops working on all future requests.",
-		auth: "Bearer token (API key) or session cookie",
+		auth: "Better Auth session cookie",
 		body: undefined,
 		response: `{ "success": true, "id": "key_…" }`,
 	},
@@ -520,7 +524,7 @@ export const ERROR_CODES: ErrorInfo[] = [
 	{
 		code: 401,
 		type: "authentication_error",
-		desc: "Missing or invalid API key.",
+		desc: "Missing, invalid, expired or revoked API key, or no valid session on a session-only endpoint. Invalid explicit credentials cannot become guest access.",
 	},
 	{
 		code: 402,
@@ -540,7 +544,7 @@ export const ERROR_CODES: ErrorInfo[] = [
 	{
 		code: 409,
 		type: "conflict",
-		desc: "Request conflicts with current state (e.g. settle already applied to another account).",
+		desc: "Request conflicts with current state. Completed Idempotency-Key reuse returns idempotency_conflict / already_processed without another charge; keep your original response. Settlement owned by another account is also rejected.",
 	},
 	{
 		code: 422,
@@ -558,9 +562,14 @@ export const ERROR_CODES: ErrorInfo[] = [
 		desc: "Unexpected server error (also server_error). Contact support if persistent.",
 	},
 	{
+		code: 502,
+		type: "provider_error",
+		desc: "Upstream provider failed, including an invalid operator provider credential. Contact support for provider authentication failures; replacing your OMA key will not repair them.",
+	},
+	{
 		code: 503,
 		type: "service_unavailable",
-		desc: "All upstream providers down. Try again shortly.",
+		desc: "A required service is temporarily unavailable, a model is paused, or maintenance is active. Account-status verification failures return auth_state_unavailable. Honor Retry-After when present.",
 	},
 ];
 

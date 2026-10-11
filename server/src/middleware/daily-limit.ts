@@ -11,7 +11,7 @@
 	* This is ONLY for the website chat page. API usage always costs credits.
 	*
 	* No balance bypass: everyone shares the same small daily free quota.
-	* Funded users who exhaust it switch to paid API usage (unlimited).
+	* Funded users who exhaust it can switch to prepaid API usage.
 	* A bypass would let a $1 deposit unlock unlimited free inference.
 	*/
 import type { Context, Next } from "hono";
@@ -47,16 +47,9 @@ async function checkDailyUsageLimit(
 		const redis = await getRedisClient();
 		const ready = isRedisReady();
 
-		// Fail open if Redis is down (availability > strict limits for free tier).
-		// A quota-store outage must not brick the free website chat demo.
-		//
-		// But "fail open" must mean *degrade enforcement*, not *drop* it. This
-		// used to return `allowed: true, remaining: 0` unconditionally, which
-		// made the anonymous 20/day cap completely unenforced in production
-		// (there are no working Upstash credentials there) AND told every caller
-		// they had 0 left while happily serving them. Degrade to a bounded
-		// per-process counter instead, same policy the rate limiter already uses
-		// for its `degraded-memory` mode.
+		// A quota-store outage degrades to a bounded per-process counter, never
+		// unlimited free inference. This bound resets with the process and is
+		// weaker than durable shared Redis enforcement.
 		if (!redis || !ready) {
 			logger.warn("Redis unavailable for daily free-tier limit — enforcing a bounded in-memory cap (degraded)");
 			const mem = checkMemoryCounter(identifier, limit, 86_400_000);
@@ -86,8 +79,9 @@ async function checkDailyUsageLimit(
 						resetMs,
 				};
 		} catch (err) {
-				logger.error({ err }, "Daily usage limit check failed — allowing request (fail open)");
-				return { available: true, allowed: true, remaining: 0, limit, resetMs: 0 };
+				logger.error({ err }, "Daily usage limit check failed — enforcing a bounded in-memory cap");
+				const mem = checkMemoryCounter(identifier, limit, 86_400_000);
+				return { available: true, allowed: mem.allowed, remaining: mem.remaining, limit, resetMs: mem.resetMs };
 		}
 }
 
@@ -102,6 +96,9 @@ export function dailyUsageLimit() {
 				if (source !== "website") {
 						return next();
 				}
+				// Explicit API keys use prepaid billing even on website-free models.
+				// Their requests must not consume or be blocked by the free quota.
+				if (c.get("apiKey")) return next();
 
 				// Check if this is a free OMA-AI model.
 				// Hono caches c.req.json() across middleware and the handler. The
@@ -152,14 +149,15 @@ export function dailyUsageLimit() {
 				}
 
 				if (!result.allowed) {
+						c.header("Retry-After", String(Math.max(1, Math.ceil(result.resetMs / 1000))));
 						const retryAfterHours = Math.ceil(result.resetMs / 3600000);
 						return c.json(
 								{
 										error: {
 												message: `Daily free limit reached (${limit} requests/day). ${
 														userId
-																? "Upgrade for unlimited API access."
-																: "Sign in for 100 requests/day, or upgrade for unlimited API access."
+																? "Use prepaid API credits for more requests."
+																: "Sign in for 100 requests/day, or use prepaid API credits."
 												} Resets in ~${retryAfterHours}h.`,
 												type: "rate_limit_exceeded",
 												code: "daily_limit_exceeded",

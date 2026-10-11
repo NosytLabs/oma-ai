@@ -191,7 +191,7 @@ chatRoutes.post(
 
 			// Website chat with free OMA-AI models: allow anonymous, skip billing
 			// API requests or non-free models: require auth and bill credits
-			const apiKey = c.get("apiKey") as { id?: string } | undefined;
+			const apiKey = c.get("apiKey");
 			const apiKeyId = apiKey?.id ?? null;
 			const isFreeWebsiteChat = isWebsiteRequest && isFreeModel && !apiKey;
 				
@@ -211,8 +211,8 @@ chatRoutes.post(
 				// 2026-07-30: idempotency-key support. If the client sends an
 				// Idempotency-Key header (OpenAI / Anthropic convention) or
 				// `idempotency_key` in the JSON body, and we've already processed
-				// a request with that key from the same user, replay the cached
-				// response (saves the upstream call, prevents double-billing).
+				// a request with that key from the same user, return an explicit
+				// conflict without another upstream call or charge.
 				const idempotencyKey =
 					c.req.header("Idempotency-Key")?.trim() ||
 					(body as { idempotency_key?: string } | undefined)?.idempotency_key;
@@ -239,32 +239,16 @@ chatRoutes.post(
 										)
 										.limit(1);
 						if (prior.length > 0) {
-								// Cache hit — return the recorded usage data. Full response body
-								// replay is deferred to v2 (requires storing the complete payload).
-								// For now, return a structured completion with usage stats so
-								// clients like Claude Code can read token counts.
-								logger.info(
-										{ userId, idempotencyKey, requestId },
-										"[chat] idempotency cache hit; replaying",
-								);
+								// We retain billing metadata, not completion bodies. Do not
+								// fabricate a successful empty assistant answer on a repeat.
 								return c.json({
-										object: "chat.completion",
-										id: requestId,
-										note: "idempotency-replay",
-										model,
-										choices: [
-												{
-														index: 0,
-														message: { role: "assistant", content: "" },
-														finish_reason: "stop",
-												},
-										],
-										usage: {
-												prompt_tokens: prior[0].inputTokens,
-												completion_tokens: prior[0].outputTokens,
-												total_tokens: (prior[0].inputTokens ?? 0) + (prior[0].outputTokens ?? 0),
-										},
-								});
+									error: {
+										message: "This idempotency key was already processed. Completion bodies are not retained for replay; use the response saved by your client.",
+										type: "idempotency_conflict",
+										code: "already_processed",
+										request_id: requestId,
+									},
+								}, 409);
 						}
 				}
 
@@ -301,6 +285,7 @@ chatRoutes.post(
 					await routeRequestWithFallback({
 								modelId: model,
 								clientFallbacks: clientModels,
+								allowedModels: apiKey?.allowedModels,
 								messages,
 								stream,
 								max_tokens,

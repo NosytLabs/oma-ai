@@ -262,6 +262,30 @@ describe("auth routes", () => {
 	});
 
 	describe("POST /v1/keys", () => {
+		it("applies bounded expiry and deduplicated model restrictions", async () => {
+			const now = Date.now();
+			mockCreateApiKey.mockImplementationOnce(async (_user, name, options) => ({ id: "key_scoped", name, prefix: "oma_sk_prefix", rawKey: "oma_sk_secret", createdAt: new Date(), ...options }));
+			const res = await authReq("post", "/v1/keys", { name: "  Coding  ", expiresInDays: 7, allowedModels: [" minimax-m2-7 ", "minimax-m2-7"] }, authedHeaders);
+			expect(res.status).toBe(200);
+			const data = await res.json();
+			expect(data.name).toBe("Coding");
+			expect(data.allowedModels).toEqual(["minimax-m2-7"]);
+			expect(new Date(data.expiresAt).getTime() - now).toBeGreaterThanOrEqual(7 * 86_400_000);
+			expect(new Date(data.expiresAt).getTime() - now).toBeLessThan(7 * 86_400_000 + 1000);
+			expect(mockCreateApiKey).toHaveBeenCalledWith("user_1", "Coding", expect.objectContaining({ allowedModels: ["minimax-m2-7"] }));
+		});
+
+		it.each([{ name: " " }, { expiresInDays: 0 }, { expiresInDays: 366 }, { expiresInDays: 1.5 }, { allowedModels: [] }, { allowedModels: ["fake-model"] }])("rejects invalid key controls %j without creating a credential", async body => {
+			expect((await authReq("post", "/v1/keys", body, authedHeaders)).status).toBe(400);
+			expect(mockCreateApiKey).not.toHaveBeenCalled();
+		});
+
+		it("rejects malformed JSON rather than creating a default credential", async () => {
+			const app = new Hono(); app.route("/", authRoutes);
+			const res = await app.request("/v1/keys", { method: "POST", headers: { ...authedHeaders, "Content-Type": "application/json" }, body: "{" });
+			expect(res.status).toBe(400);
+			expect(mockCreateApiKey).not.toHaveBeenCalled();
+		});
 		it("creates a key with default name when body is empty", async () => {
 			mockCreateApiKey.mockResolvedValueOnce({
 				id: "key_def",

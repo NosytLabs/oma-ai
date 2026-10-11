@@ -9,7 +9,7 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import { UnauthCallout } from "@/components/shared/UnauthCallout";
 import { useToast } from "@/components/ui/Toast";
 import { useAuth } from "@/lib/hooks/useAuth";
-import { type ApiKey, type ApiKeyWithSecret, api } from "@/lib/api";
+import { type ApiKey, type ApiKeyCreateOptions, type ApiKeyWithSecret, api } from "@/lib/api";
 import { log } from "@/lib/logger";
 import { toDollars } from "@/lib/utils";
 import { selectAvailableModels } from "@/lib/model-availability";
@@ -198,11 +198,11 @@ function DashboardPageInner() {
 		}
 	}, [toast]);
 
-	const handleCreateKey = useCallback(async () => {
+	const handleCreateKey = useCallback(async (options: ApiKeyCreateOptions = {}) => {
 		if (!newKeyName.trim()) return;
 		setCreating(true);
 		try {
-			const key = await api.auth.createKey(newKeyName.trim());
+			const key = await api.auth.createKey(newKeyName.trim(), undefined, options);
 			setCreatedKey(key);
 			setNewKeyName("");
 			setShowCreateForm(false);
@@ -225,6 +225,8 @@ function DashboardPageInner() {
 						prefix: key.prefix,
 						createdAt: key.createdAt,
 						lastUsedAt: key.lastUsedAt,
+						expiresAt: key.expiresAt,
+						allowedModels: key.allowedModels,
 					},
 				],
 			}));

@@ -46,6 +46,7 @@ async function proxyToAuth(req: NextRequest, { params }: { params: Promise<{ pat
 
 		// Same trust policy as the main proxy — shared so the two cannot drift.
 		applyTrustedProxyHeaders({
+			keys: () => Object.keys(headers),
 			set: (name, value) => {
 				headers[name] = value;
 			},
@@ -73,10 +74,9 @@ async function proxyToAuth(req: NextRequest, { params }: { params: Promise<{ pat
 				});
 
 				return proxyResponse(resp);
-		} catch (e: unknown) {
-				const errorMsg = e instanceof Error ? e.message : String(e);
+		} catch {
 				return NextResponse.json(
-						{ error: 'Auth backend unavailable', detail: errorMsg },
+						{ error: 'Auth backend unavailable' },
 						{ status: 502 }
 				);
 		}

@@ -7,8 +7,7 @@
 	*                 user row and recovers ENS names + avatars via viem.
 	*   - admin:      Self-hosted admin — roles, ban/unban, impersonation, user management.
 	*   - emailOTP:   One-time passwords for sign-in, email verification, and password reset.
-	*   - agentAuth:  Agent-level auth with delegated/autonomous capability execution.
-	*   - apiKey:     API key management for programmatic access (create, verify, list, revoke).
+	* OMA API keys are implemented in auth/api-keys.ts and routes/auth.ts.
 	*
 	* Mounted by index.ts at `/api/auth/*`. Hono wraps the Fetch-style handler
 	* directly. Server-side session reads in non-handler code use

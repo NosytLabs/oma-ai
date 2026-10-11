@@ -6,6 +6,19 @@ import { GET } from "@/app/api/auth/[...path]/route";
 afterEach(() => vi.unstubAllGlobals());
 
 describe("auth callback proxy", () => {
+	it("removes caller-supplied Neon runtime headers on auth requests", async () => {
+		const fetchMock = vi.fn().mockResolvedValue(Response.json(null));
+		vi.stubGlobal("fetch", fetchMock);
+		await GET(new NextRequest("https://www.oma-ai.com/api/auth/get-session", { headers: { "x-neon-trigger-invocation-id": "forged", "x-neon-custom": "forged" } }), { params: Promise.resolve({ path: ["get-session"] }) });
+		expect(Object.keys(fetchMock.mock.calls[0][1].headers).some(key => key.startsWith("x-neon-"))).toBe(false);
+	});
+
+	it("does not expose upstream connection diagnostics to the browser", async () => {
+		vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("postgres://private-credential@private-db")));
+		const response = await GET(new NextRequest("https://www.oma-ai.com/api/auth/get-session"), { params: Promise.resolve({ path: ["get-session"] }) });
+		expect(response.status).toBe(502);
+		expect(await response.json()).toEqual({ error: "Auth backend unavailable" });
+	});
 	it("preserves separate session cookies and the callback redirect", async () => {
 		const cookies = [
 			"oma.session_token=token; Path=/; HttpOnly; SameSite=Lax",

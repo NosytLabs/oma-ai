@@ -360,6 +360,7 @@ anthropicRoutes.post(
 						const { response: upstreamResp, actualModelId, attemptCount } =
 							await routeRequestWithFallback({
 								modelId: model,
+								allowedModels: c.get("apiKey")?.allowedModels,
 								messages: openAIMessages,
 								stream,
 								max_tokens,

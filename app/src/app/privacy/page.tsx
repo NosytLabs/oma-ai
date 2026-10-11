@@ -536,11 +536,6 @@ export default function PrivacyPage() {
 									"Inference",
 									"request content is processed by the Gonka/OpenBroker-backed model that serves the call",
 								],
-								[
-									"Surplus Intelligence (if enabled)",
-									"Fallback inference",
-									"mapped models may be retried through this optional fallback after a primary-provider failure",
-								],
 								["Base", "Settlement", "on-chain transaction verification"],
 							].map(([name, role, note]) => (
 								<li

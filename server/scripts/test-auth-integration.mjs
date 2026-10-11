@@ -171,6 +171,73 @@ try {
 	assert.doesNotMatch(replay.cookie, /session_token=[^;]/);
 	pass("magic-link signup creates a verified user and one trial grant; used links are rejected");
 
+	await request("/v1/keys", { method: "POST", expected: 401, body: { name: "No session" } });
+	const scopedKey = (await request("/v1/keys", { method: "POST", cookie: first.cookie, body: { name: "Integration scope", expiresInDays: 1, allowedModels: ["minimax-m2-7", "minimax-m2-7"] } })).data;
+	assert.deepEqual(scopedKey.allowedModels, ["minimax-m2-7"]);
+	assert.ok(Math.abs(new Date(scopedKey.expiresAt).getTime() - Date.now() - 86_400_000) < 10_000);
+	const keyHeaders = { Authorization: `Bearer ${scopedKey.key}` };
+	assert.equal((await request("/v1/keys", { cookie: first.cookie })).data.keys[0].expiresAt, scopedKey.expiresAt);
+	await request("/v1/keys", { headers: keyHeaders, expected: 401 });
+	await request("/v1/chat/completions", { method: "POST", headers: keyHeaders, expected: 403, body: { model: "google-gemma-4-31b-it", messages: [{ role: "user", content: "Scope check" }], max_tokens: 16 } });
+	await request("/v1/messages", { method: "POST", headers: keyHeaders, expected: 403, body: { model: "google-gemma-4-31b-it", messages: [{ role: "user", content: "Scope check" }], max_tokens: 16 } });
+	await pool.query("UPDATE api_keys SET expires_at=now()-interval '1 second' WHERE id=$1", [scopedKey.id]);
+	await request("/v1/chat/completions", { method: "POST", headers: keyHeaders, expected: 401, body: { model: "minimax-m2-7", messages: [{ role: "user", content: "Expired key check" }], max_tokens: 16 } });
+	await request(`/v1/keys/${scopedKey.id}`, { method: "DELETE", cookie: first.cookie });
+	await request("/v1/usage", { headers: keyHeaders, expected: 401 });
+	pass("API keys require a session to mint, persist expiry/scope, deny unauthorized models on both APIs and reject expired or revoked credentials");
+
+	const other = await magicSignIn("other-auth@local.test");
+	const otherProfile = (await request("/user", { cookie: other.cookie })).data;
+	const otherSession = (await request("/api/auth/get-session", { cookie: other.cookie })).data.session;
+	const otherKey = (await request("/v1/keys", { method: "POST", cookie: other.cookie, body: { name: "Other private key" } })).data;
+	const otherHeaders = { Authorization: `Bearer ${otherKey.key}` };
+	for (const [path, method, body] of [["/v1/keys", "POST", { name: "Cross-site attempt" }], [`/sessions/${otherSession.id}`, "DELETE", undefined], ["/account", "DELETE", undefined]]) {
+		await request(path, { method, cookie: other.cookie, body, headers: { Origin: "https://untrusted.example" }, expected: 403 });
+	}
+	await pool.query(`INSERT INTO usage_records (request_id, user_id, api_key_id, model, provider, input_tokens, output_tokens, cost_cents, markup_cents, total_cents, status)
+	 VALUES ('cross-account-private', $1, $2, 'minimax-m2-7', 'oma-ai', 2, 3, 0, 0, 0, 'completed')`, [otherProfile.id, otherKey.id]);
+	assert.ok(!(await request(`/v1/keys?userId=${otherProfile.id}`, { cookie: first.cookie })).data.keys.some(key => key.id === otherKey.id));
+	await request(`/v1/keys/${otherKey.id}`, { method: "DELETE", cookie: first.cookie, expected: 404 });
+	const deniedInstall = await request("/v1/keys/install", { method: "POST", cookie: first.cookie, body: { key: otherKey.key }, expected: 403 });
+	assert.equal(deniedInstall.response.headers.getSetCookie().length, 0);
+	await request(`/sessions/${otherSession.id}`, { method: "DELETE", cookie: first.cookie, expected: 404 });
+	assert.equal((await request("/user", { cookie: other.cookie })).data.id, otherProfile.id);
+	for (const suffix of [`?userId=${otherProfile.id}`, `?api_key_id=${otherKey.id}`]) {
+		assert.equal((await request(`/v1/usage${suffix}`, { cookie: first.cookie })).data.data.length, 0);
+	}
+	assert.equal((await request(`/v1/usage?model=${encodeURIComponent("' OR 1=1 --")}`, { cookie: first.cookie })).data.data.length, 0, "SQL-like filter text remains a literal model filter");
+	await request(`/v1/usage?api_key_id=${encodeURIComponent("' OR 1=1 --")}`, { cookie: first.cookie, expected: 400 });
+	assert.equal((await request("/v1/usage", { cookie: first.cookie, headers: otherHeaders })).data.data.length, 0, "Mixed-auth usage must resolve to the browser session owner");
+	assert.equal((await request("/v1/usage", { headers: otherHeaders })).data.data[0].requestId, "cross-account-private");
+	const isolatedExport = (await request(`/v1/export/account?userId=${otherProfile.id}`, { cookie: first.cookie })).data;
+	assert.equal(isolatedExport.profile.id, profile.id);
+	assert.ok(!JSON.stringify(isolatedExport).includes("cross-account-private"));
+	assert.ok(!JSON.stringify(isolatedExport).includes(otherKey.id));
+	assert.ok(!JSON.stringify(isolatedExport).includes(otherKey.key));
+	await request("/api/auth/update-user", { method: "POST", cookie: first.cookie, expected: 400, body: { role: "admin" } });
+	await request("/api/auth/update-user", { method: "POST", cookie: first.cookie, expected: 400, body: { evmAddress: "0x1111111111111111111111111111111111111111" } });
+	const protectedIdentity = (await pool.query('SELECT role, evm_address FROM "user" WHERE id=$1', [profile.id])).rows[0];
+	assert.equal(protectedIdentity.role, "user");
+	assert.equal(protectedIdentity.evm_address, null);
+	assert.equal((await request("/user", { cookie: other.cookie })).data.name, otherProfile.name);
+	await request("/api/auth/admin/list-users", { cookie: first.cookie, expected: 403 });
+	await request("/api/auth/admin/set-role", { method: "POST", cookie: first.cookie, body: { userId: profile.id, role: "admin" }, expected: 403 });
+	await request("/api/auth/admin/revoke-user-sessions", { method: "POST", cookie: first.cookie, body: { userId: otherProfile.id }, expected: 403 });
+	await request("/v1/admin/user-suspend", { method: "POST", cookie: first.cookie, body: { userId: otherProfile.id, suspended: true, reason: "Denied authorization check" }, expected: 403 });
+	await request("/v1/admin/credit-adjust", { method: "POST", headers: otherHeaders, body: { userId: profile.id, deltaCents: 100, reason: "Denied authorization check" }, expected: 403 });
+	pass("two real accounts cannot revoke or install each other's keys, revoke sessions, read usage/exports or self-promote to admin");
+	await request("/account", { method: "DELETE", cookie: other.cookie, body: { userId: profile.id } });
+	await request("/user", { cookie: first.cookie });
+	await request("/user", { cookie: other.cookie, expected: 401 });
+	await request("/v1/usage", { headers: otherHeaders, expected: 401 });
+	assert.equal((await pool.query('SELECT 1 FROM "user" WHERE id=$1', [otherProfile.id])).rowCount, 0);
+	pass("account deletion ignores caller-supplied owner IDs and immediately invalidates that account's active keys and cookies");
+	for (const path of ["/internal/recover-deposits", "/internal/drain-settlement-dlq"]) {
+		await request(path, { method: "POST", headers: { "x-neon-trigger-invocation-id": "forged-by-client" }, expected: 403 });
+	}
+	await request("/v1/chat/completions", { method: "POST", headers: { Authorization: "Bearer oma_sk_invalid_credential", "X-OMA-Source": "website" }, expected: 401, body: { model: "minimax-m2-7", messages: [{ role: "user", content: "No guest downgrade" }], max_tokens: 16 } });
+	pass("forged scheduler headers cannot invoke privileged local jobs and invalid explicit keys never become anonymous chat requests");
+
 	await request("/api/auth/update-user", { method: "POST", cookie: first.cookie, body: { name: "Saved Display Name" } });
 	assert.equal((await request("/api/auth/get-session", { cookie: first.cookie })).data.user.name, "Saved Display Name");
 	const remote = await otpSignIn(email);

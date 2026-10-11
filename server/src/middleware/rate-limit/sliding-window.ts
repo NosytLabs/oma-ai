@@ -1,4 +1,5 @@
 import type { Context, Next } from "hono";
+import { routePath } from "hono/route";
 import type { OmaEnv } from "../../types.js";
 import { getRedisClient, isRedisReady } from "../../lib/redis-client.js";
 import { FIXED_WINDOW_SCRIPT, RPM_LIMIT_SCRIPT } from "./lua-scripts.js";
@@ -115,7 +116,7 @@ export interface RateLimitOptions {
 }
 
 export function rateLimit(options: RateLimitOptions) {
-	const { windowMs, maxRequests, keyPrefix = "rl", failClosed = false } = options;
+	const { windowMs, maxRequests, keyPrefix, failClosed = false } = options;
 	// Per-limiter-instance, not per-process: each configured route gets its
 	// own one-shot warning instead of the first one silencing the rest.
 	let degradedWarned = false;
@@ -124,7 +125,11 @@ export function rateLimit(options: RateLimitOptions) {
 		// Per-user AND per-key AND per-IP. See rateLimitKeyLayers(): keying
 		// only on apiKeyId let one user mint N keys and multiply the cap N
 		// times for a single account.
-		const keyLayers = rateLimitKeyLayers(c as unknown as Context<OmaEnv>, keyPrefix);
+		// Independent route budgets must not share the old default "rl"
+		// counter. Use the registered pattern, never the raw URL or its IDs.
+		// An explicit prefix still supports intentionally shared budgets.
+		const prefix = keyPrefix ?? `rl:${c.req.method}:${routePath(c, -1)}`;
+		const keyLayers = rateLimitKeyLayers(c as unknown as Context<OmaEnv>, prefix);
 		// Kept for the degraded paths, which fall back to a single counter.
 		const rateLimitKey = keyLayers[0]!;
 

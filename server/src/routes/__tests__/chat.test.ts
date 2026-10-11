@@ -7,7 +7,7 @@
  *   - model-not-found rejection
  *   - auth enforcement (non-free models require a userId)
  *   - free-website-model bypass (anonymous allowed when X-OMA-Source=website)
- *   - idempotency-key replay (returns cached usage, empty assistant content)
+ *   - repeated idempotency key (explicit conflict, no fabricated completion)
  *   - ProviderError mapping to upstream status codes
  *   - unexpected error → 500
  *
@@ -273,7 +273,7 @@ describe("POST /v1/chat/completions", () => {
 	});
 
 	describe("idempotency replay", () => {
-		it("replays cached usage when Idempotency-Key matches a prior completed request", async () => {
+		it("returns a conflict instead of a fabricated answer for an already processed Idempotency-Key", async () => {
 			// Simulate a prior completed request for this user + key.
 			mockDb.select.mockReturnValueOnce({
 				from: vi.fn().mockReturnValue({
@@ -295,13 +295,11 @@ describe("POST /v1/chat/completions", () => {
 				"Idempotency-Key": "replay-key",
 			});
 
-			expect(res.status).toBe(200);
+			expect(res.status).toBe(409);
 			const data = await res.json();
-			expect(data.object).toBe("chat.completion");
-			expect(data.note).toBe("idempotency-replay");
-			expect(data.usage.prompt_tokens).toBe(42);
-			expect(data.usage.completion_tokens).toBe(58);
-			expect(data.usage.total_tokens).toBe(100);
+			expect(data.error.code).toBe("already_processed");
+			expect(data.error.request_id).toMatch(/^idem-user_123-/);
+			expect(data.choices).toBeUndefined();
 			// Must NOT have called the upstream.
 			expect(mockRouteRequest).not.toHaveBeenCalled();
 		});

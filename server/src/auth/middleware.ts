@@ -75,9 +75,8 @@ export function initAuth(): void {
 }
 
 // SEC-7: singleflight dedup. Concurrent requests for the same key share
-// one in-flight validateApiKey() promise so the underlying DB transaction
-// (with its SELECT ... FOR UPDATE + lastUsedAt write) runs at most once
-// per key.
+// one in-flight validateApiKey() promise. Finished requests never reuse a
+// positive authentication result: revocation must take effect immediately.
 type SingleflightRecord = {
 		promise: Promise<unknown>;
 		timer: ReturnType<typeof setTimeout>;
@@ -123,11 +122,8 @@ async function singleflight<T>(
 	* has either the legacy `banned` flag or the Slice-6 `suspended` flag, or
 	* `undefined` when the user is clear to proceed.
 	*
-	* SECURITY (audit 1.6 / MEDIUM): On DB failure we still fail open (the
-	* session/API key was already validated upstream, and a transient DB blip
-	* must not lock out every user), but we now log at `fatal` so an SRE
-	* alert fires. The `error` level was previously silent in normal alerting
-	* configs.
+	* Missing accounts and database failures block protected requests. A valid
+	* session alone cannot establish that its owner still exists or is active.
 	*
 	* Keep the 403 payload identical across all three callers so the contract
 	* can't drift.
@@ -143,16 +139,18 @@ async function rejectIfSuspended(
 						.from(user)
 						.where(eq(user.id, userId))
 						.limit(1);
-				if (u?.banned || u?.suspended) {
+				if (!u) {
+						return c.json({ error: { message: "Unauthorized", type: "authentication_error" } }, 401);
+				}
+				if (u.banned || u.suspended) {
 						return c.json(SUSPENDED_PAYLOAD, 403);
 				}
 		} catch (err) {
-				// fatal (not error) so monitoring alerts trip — the suspension gate
-				// is a security control and "DB blip" must surface immediately.
-				logger.fatal(
+				logger.error(
 						{ err, userId, source },
-						`[SECURITY] ${source}: failed to check banned/suspended — fail-open path active`,
+						`[SECURITY] ${source}: failed to verify account status`,
 				);
+				return c.json({ error: { message: "Authentication temporarily unavailable", type: "server_error", code: "auth_state_unavailable" } }, 503);
 		}
 		return undefined;
 }
@@ -161,8 +159,8 @@ export async function bearerAuth(c: Context<OmaEnv>, next: Next) {
 		let rawKey: string | null = null;
 		let keySource: "authorization" | "x-api-key" | "cookie" | null = null;
 		const authHeader = c.req.header("Authorization");
-		if (authHeader && authHeader.startsWith("Bearer ")) {
-				rawKey = authHeader.slice(7);
+		if (authHeader && /^Bearer\s+/i.test(authHeader)) {
+				rawKey = authHeader.replace(/^Bearer\s+/i, "").trim();
 				keySource = "authorization";
 		} else {
 				// Anthropic SDK / Claude Code send `x-api-key: sk-…`
@@ -363,41 +361,12 @@ export async function sessionOrBearerAuth(
 }
 
 export async function optionalAuth(c: Context<OmaEnv>, next: Next) {
-	const authHeader = c.req.header("Authorization");
-	if (authHeader && authHeader.startsWith("Bearer ")) {
-		const rawKey = authHeader.slice(7);
-		let apiKey: ApiKey | null;
-		try {
-			apiKey = (await singleflight(`apikey:${rawKey}`, () =>
-				validateApiKey(rawKey!),
-			)) as ApiKey | null;
-		} catch {
-			await next();
-			return;
-		}
-		if (apiKey) {
-			// SECURITY (audit 2026-09-27 / P1): suspension check here too. Without
-			// it, an admin-suspended user keeps full chat access via Bearer on the
-			// optional-auth routes (POST /v1/chat/completions, /v1/usage/today).
-			const suspended = await rejectIfSuspended(c, apiKey.userId, "bearer");
-			if (suspended) return suspended;
-			if (
-				apiKey.ipAllowlist &&
-				Array.isArray(apiKey.ipAllowlist) &&
-				apiKey.ipAllowlist.length > 0
-			) {
-				const clientIp = extractClientIp(c);
-				if (!isIpAllowedByList(clientIp, apiKey.ipAllowlist)) {
-					await next();
-					return;
-				}
-			}
-			c.set("apiKey", apiKey);
-			c.set("userId", apiKey.userId);
-		}
-		return next();
+	// Explicit credentials must be accepted or rejected, never downgraded to
+	// anonymous free-tier access. Reuse the same expiry, IP and suspension gates.
+	if (c.req.header("Authorization") || c.req.header("x-api-key")) {
+		return bearerAuth(c, next);
 	}
-	// No Bearer — check for session cookie
+	// Without explicit credentials, website chat may use a session or guest access.
 	const headers = new Headers();
 	for (const [k, v] of c.req.raw.headers) headers.set(k, v);
 	const session = await auth.api.getSession({ headers });

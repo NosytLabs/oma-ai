@@ -39,7 +39,7 @@ Agent-native USDC funding powered by EIP-3009. Agents sign the payment envelope,
 Requests use a shared timeout budget and configured fallback peers. Paused models are excluded, and caller cancellation stops further retries. Responses identify the actual model and whether fallback occurred; catalog availability is not a continuous live provider health check.
 
 ### 📊 Developer Dashboard
-Manage API keys, monitor real-time usage and spend, inspect request logs, and configure model preferences—all from a polished, real-time dashboard.
+Manage API keys, review recorded usage and spend, inspect request logs, and manage account settings in one dashboard. Chat preferences live in the playground.
 
 ### 🤖 OpenAI & Anthropic Compatible
 
@@ -136,7 +136,7 @@ Runs type checking, linting, tests, and production builds across `app/` and `ser
 | [Deployment](docs/DEPLOYMENT.md) | Production topology and deployment procedures |
 | [Brand](BRAND.md) | Visual tokens, typography, navigation, and product language |
 | [Settlement runbook](docs/settlement-runbook.md) | Payment recovery and settlement operations |
-| [October 10 audit](docs/audit-2026-10-10.md) | Verified fixes, test coverage, and remaining operational limits |
+| [Documentation index](docs/README.md) | Maintained references and dated audit receipts |
 | [Public docs](https://www.oma-ai.com/docs) | Customer quickstart, API usage, and integrations |
 
 Keep implementation details in these references and link to them from summaries so parallel copies do not drift.
@@ -160,7 +160,7 @@ oma-ai/
 ├── scripts/
 │   ├── dev/               # Local dev helpers (DB, Chrome debug)
 │   └── ops/               # Prod launch helpers
-├── deploy/                 # Release status + self-host notes (Coolify/Compose unused in prod)
+├── deploy/                 # Self-host notes (Coolify/Compose unused in prod)
 ├── docker-compose*.yml     # Self-host compose (NOT the production path — see docs/DEPLOYMENT.md)
 ├── server/neon.ts          # Neon IaC manifest (functions, cron, schema)
 ├── BRAND.md               # Design tokens, voice, logo rules

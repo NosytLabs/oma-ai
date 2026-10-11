@@ -36,12 +36,6 @@ export interface ModelDef {
 		 * routable — every live oma-ai entry must declare this explicitly.
 		 */
 		upstream?: "openbroker";
-		/**
-			* Surplus Intelligence marketplace id, used as a fallback procurement
-			* route. INVISIBLE to users — the catalog entry's `provider` field
-			* stays "venice" or "oma-ai". Mapped from the live Surplus catalog.
-			*/
-		surplusId?: string;
 }
 
 let _catalog: ModelDef[] | null = null;
@@ -73,9 +67,6 @@ export function getModelById(id: string): ModelDef | undefined {
 	* models report unavailable when VENICE_API_KEY is missing or a known
 	* placeholder so clients can grey them out instead of surfacing a raw
 	* upstream 401. OMA-AI models check their specific upstream key.
-	* Surplus is invisible — it never gates a model's availability (the
-	* primary Venice/OMA-AI upstream does). Surplus only kicks in as a
-	* fallback inside the router when the primary upstream fails.
 	*/
 export function providerAvailable(m: ModelDef): boolean {
 	if (m.disabledReason) return false;

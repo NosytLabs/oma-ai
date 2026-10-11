@@ -225,6 +225,7 @@ const spec = {
 		"/v1/chat/completions": {
 			post: {
 				summary: "OpenAI-compatible chat completion (streaming + tool calls)",
+				description: "API key model restrictions apply to primary and fallback routes. max_tokens cannot exceed the model's published max_output_tokens. An already completed Idempotency-Key returns 409 without a new call or charge; completion bodies are not retained for replay.",
 				requestBody: {
 					required: true,
 					content: {
@@ -247,6 +248,8 @@ const spec = {
 					},
 					"401": { description: "Missing or invalid API key" },
 					"402": { description: "Insufficient credit balance" },
+					"403": { description: "Model outside API key scope" },
+					"409": { description: "Idempotency key already processed; use your saved response" },
 					"429": { description: "Rate limited" },
 					"502": { description: "Upstream provider error" },
 				},
@@ -346,16 +349,26 @@ const spec = {
 		"/v1/keys": {
 			get: {
 				summary: "List active API keys",
+				security: [{ SessionCookie: [] }],
+				description: "Lists key metadata including expiresAt and allowedModels. Expired keys can remain listed until revoked; they cannot authenticate. Never returns a raw key.",
 				responses: { "200": { description: "Keys" } },
 			},
 			post: {
 				summary: "Mint a new API key (returned once)",
-				responses: { "200": { description: "New key" } },
+				security: [{ SessionCookie: [] }],
+				description: "Requires a Better Auth session, not an API bearer key. Raw key is returned once. Restrictions apply to both primary models and fallback routes. Default expiry is 90 days.",
+				requestBody: { required: true, content: { "application/json": { schema: { type: "object", properties: {
+					name: { type: "string", minLength: 1, maxLength: 64, default: "default" },
+					expiresInDays: { type: "integer", minimum: 1, maximum: 365, default: 90 },
+					allowedModels: { type: "array", minItems: 1, maxItems: 30, items: { type: "string" }, description: "OMA catalog IDs. Omit to allow all models." },
+				} } } } },
+				responses: { "200": { description: "New key, expiresAt and allowedModels" }, "400": { description: "Invalid JSON, name, expiry or model ID" }, "401": { description: "Session required" } },
 			},
 		},
 		"/v1/keys/{id}": {
 			delete: {
 				summary: "Revoke an API key",
+				security: [{ SessionCookie: [] }],
 				parameters: [
 					{ in: "path", name: "id", required: true, schema: { type: "string" } },
 				],

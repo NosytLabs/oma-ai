@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { OmaEnv } from "../../types.js";
 
 const mocks = vi.hoisted(() => ({
 	getRedisClient: vi.fn(),
@@ -23,10 +24,11 @@ vi.mock("../../lib/logger.js", () => ({ logger: { error: vi.fn(), warn: vi.fn() 
 // constant value. A static top-level import would pin a single module graph
 // for the whole file, so the counter would leak across cases and the suite
 // would depend on execution order.
-async function makeApp(withModelLimiter = false) {
+async function makeApp(withModelLimiter = false, withKey = false) {
 	const { dailyUsageLimit } = await import("../daily-limit.js");
 	const { Hono } = await import("hono");
-	const app = new Hono();
+	const app = new Hono<OmaEnv>();
+	if (withKey) app.use("*", async (c, next) => { c.set("apiKey", { id: "paid-key" } as never); await next(); });
 	if (withModelLimiter) {
 		const { modelRateLimit } = await import("../rate-limit/token-bucket.js");
 		app.use("/v1/chat/completions", modelRateLimit());
@@ -46,6 +48,7 @@ const send = (app: Awaited<ReturnType<typeof makeApp>>) =>
 describe("dailyUsageLimit", () => {
 	beforeEach(() => {
 		vi.resetModules();
+		vi.clearAllMocks();
 		mocks.getModelById.mockReturnValue({ id: "minimax-m2-7" });
 		mocks.isFreeWebsiteModel.mockReturnValue(true);
 		mocks.getRedisClient.mockResolvedValue(null);
@@ -59,11 +62,10 @@ describe("dailyUsageLimit", () => {
 		expect(response.headers.get("X-DailyLimit-Remaining")).toBe("19");
 	});
 
-	it("fails OPEN for free website chat when the quota store is unavailable", async () => {
+	it("allows requests within the bounded fallback quota when the store is unavailable", async () => {
 		const app = await makeApp();
 
-		// Quota-store outage must not brick the free chat demo: the request
-		// passes through (fail open) so the headline free tier stays available.
+		// A quota-store outage still permits requests within the fallback cap.
 		const response = await send(app);
 
 		expect(response.status).toBe(200);
@@ -71,10 +73,7 @@ describe("dailyUsageLimit", () => {
 	});
 
 	it("still bounds the free tier when the quota store is unavailable", async () => {
-		// Fail-open must mean "degrade enforcement", NOT "no enforcement".
-		// Production has no working Upstash credentials, so before this fix
-		// the anonymous 20/day cap was not enforced at all and the free tier
-		// was effectively unmetered.
+		// Degraded enforcement must retain a finite quota.
 		const { DAILY_LIMIT_ANONYMOUS } = await import("../daily-limit.js");
 		const app = await makeApp();
 
@@ -86,6 +85,25 @@ describe("dailyUsageLimit", () => {
 		// First N pass, the one past the cap is refused.
 		expect(statuses.slice(0, DAILY_LIMIT_ANONYMOUS).every((s) => s === 200)).toBe(true);
 		expect(statuses[DAILY_LIMIT_ANONYMOUS]).toBe(429);
+	});
+
+	it.each(["incr", "expire", "ttl"])("retains the daily cap when a ready Redis %s command fails", async command => {
+		const redis = { incr: vi.fn().mockResolvedValue(1), expire: vi.fn().mockResolvedValue(1), ttl: vi.fn().mockResolvedValue(86400) };
+		redis[command as keyof typeof redis].mockRejectedValue(new Error("Redis connection lost"));
+		mocks.getRedisClient.mockResolvedValue(redis);
+		mocks.isRedisReady.mockReturnValue(true);
+		const app = await makeApp();
+		for (let i = 0; i < 20; i++) expect((await send(app)).status).toBe(200);
+		const denied = await send(app);
+		expect(denied.status).toBe(429);
+		expect(Number(denied.headers.get("Retry-After"))).toBeGreaterThan(0);
+	});
+
+	it("does not spend the free quota for a prepaid API-key request", async () => {
+		const response = await send(await makeApp(false, true));
+		expect(response.status).toBe(200);
+		expect(response.headers.has("X-DailyLimit-Remaining")).toBe(false);
+		expect(mocks.getRedisClient).not.toHaveBeenCalled();
 	});
 
 	it("does not report a 0 quota while still serving requests", async () => {

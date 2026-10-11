@@ -290,11 +290,11 @@ export function DashboardHeader({
 				</div>
 			</div>
 
-			{/* Tab Navigation — scrollable on mobile, no page overflow */}
+			{/* Keep every section visible on small screens. */}
 			{onTabChange && (
 				<div
 					role="tablist"
-					className="-mx-1 flex gap-2 overflow-x-auto border-b border-border/50 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+					className="flex border-b border-border/50 sm:gap-2"
 					aria-label="Dashboard sections"
 					onKeyDown={handleTabKeyDown}
 				>
@@ -311,15 +311,15 @@ export function DashboardHeader({
 							aria-controls={`panel-${tab.id}`}
 							tabIndex={activeTab === tab.id ? 0 : -1}
 							onClick={() => onTabChange(tab.id)}
-							className={`relative shrink-0 px-4 py-3 text-[11.5px] font-bold uppercase tracking-widest transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset sm:px-6 ${
+							className={`relative min-w-0 flex-1 px-1 py-3 text-[10px] font-bold uppercase tracking-wide transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset sm:flex-none sm:px-6 sm:text-[11.5px] sm:tracking-widest ${
 								activeTab === tab.id
 									? "text-text-bright"
 									: "text-text-muted hover:text-text-secondary hover:bg-surface/30 rounded-t-[var(--radius-sm)]"
 							}`}
 						>
-							<span className="flex items-center gap-2">
+							<span className="flex items-center justify-center sm:gap-2">
 								{tab.icon && (
-									<tab.icon className={`h-3.5 w-3.5 ${activeTab === tab.id ? "text-accent" : "opacity-70"}`} aria-hidden="true" />
+									<tab.icon className={`hidden h-3.5 w-3.5 sm:block ${activeTab === tab.id ? "text-accent" : "opacity-70"}`} aria-hidden="true" />
 								)}
 								{tab.label}
 							</span>

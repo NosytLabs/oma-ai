@@ -28,6 +28,7 @@ const PROXY_SECRET_HEADER = "x-oma-proxy-secret";
 export interface ProxyHeaderSink {
 	set(name: string, value: string): void;
 	delete(name: string): void;
+	keys(): Iterable<string>;
 }
 
 /**
@@ -37,6 +38,10 @@ export interface ProxyHeaderSink {
  * headers so a spoofed value can never survive alongside it.
  */
 export function applyTrustedProxyHeaders(headers: ProxyHeaderSink): void {
+	// Runtime provenance headers must never originate from a website visitor.
+	for (const name of [...headers.keys()]) {
+		if (name.toLowerCase().startsWith("x-neon-")) headers.delete(name);
+	}
 	for (const name of CLIENT_FORWARDING_HEADERS) {
 		headers.delete(name);
 	}

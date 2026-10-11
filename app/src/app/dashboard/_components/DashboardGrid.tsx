@@ -19,6 +19,7 @@ import { toDollars } from "@/lib/utils";
 import type {
 	ApiKey,
 	ApiKeyWithSecret,
+	ApiKeyCreateOptions,
 	BalanceResponse,
 	CreditBatch,
 	CreditTransaction,
@@ -187,7 +188,7 @@ interface DashboardGridProps {
 	copied: string | null;
 	revokingId: string | null;
 	onCopy: (text: string, id: string) => void;
-	onCreateKey: () => void;
+	onCreateKey: (options?: ApiKeyCreateOptions) => void;
 	onRevokeKey: (keyId: string) => void;
 	setShowCreateForm: (show: boolean) => void;
 	setNewKeyName: (name: string) => void;

@@ -308,11 +308,14 @@ app.route("/", openapiRoutes);
 // X-Neon-Trigger-Invocation-Id header (Neon strips client-set X-Neon-* headers,
 // so its presence proves the call came from Neon's scheduler, which sends no
 // credentials).
+// Only trust that provenance inside the Neon runtime. Website proxy requests
+// cannot qualify as scheduled invocations; local HTTP operators need the token.
 // ---------------------------------------------------------------------
 app.post("/internal/recover-deposits", async (c) => {
 	const token = c.req.header("Authorization")?.replace(/^Bearer\s+/i, "") ?? "";
 	const expected = process.env.RECOVERY_TOKEN;
-	const fromNeonScheduler = Boolean(c.req.header("x-neon-trigger-invocation-id"));
+	const fromNeonScheduler = process.env.NEON_FUNCTION === "1" &&
+		!c.req.header("x-oma-proxy-secret") && Boolean(c.req.header("x-neon-trigger-invocation-id"));
 	const authorized = fromNeonScheduler || (Boolean(expected) && token === expected);
 	if (!authorized) {
 		return c.json({ error: { message: "forbidden", type: "forbidden" } }, 403);
@@ -362,7 +365,8 @@ app.post("/internal/recover-deposits", async (c) => {
 app.post("/internal/drain-settlement-dlq", async (c) => {
 	const token = c.req.header("Authorization")?.replace(/^Bearer\s+/i, "") ?? "";
 	const expected = process.env.RECOVERY_TOKEN;
-	const fromNeonScheduler = Boolean(c.req.header("x-neon-trigger-invocation-id"));
+	const fromNeonScheduler = process.env.NEON_FUNCTION === "1" &&
+		!c.req.header("x-oma-proxy-secret") && Boolean(c.req.header("x-neon-trigger-invocation-id"));
 	const authorized = fromNeonScheduler || (Boolean(expected) && token === expected);
 	if (!authorized) {
 		return c.json({ error: { message: "forbidden", type: "forbidden" } }, 403);

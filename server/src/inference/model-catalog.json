@@ -2,7 +2,6 @@
   {
     "id": "openai-gpt-56-sol",
     "provider": "venice",
-    "surplusId": "gpt-5.6-sol",
     "inputPricePer1M": 5,
     "outputPricePer1M": 25,
     "markupPercent": 50,
@@ -27,7 +26,6 @@
   {
     "id": "claude-opus-5",
     "provider": "venice",
-    "surplusId": "claude-opus-5",
     "inputPricePer1M": 6,
     "outputPricePer1M": 30,
     "markupPercent": 50,
@@ -48,7 +46,6 @@
   {
     "id": "kimi-k3",
     "provider": "venice",
-    "surplusId": "kimi-k3",
     "inputPricePer1M": 3.75,
     "outputPricePer1M": 18.75,
     "markupPercent": 50,
@@ -69,7 +66,6 @@
   {
     "id": "zai-org-glm-5-2",
     "provider": "venice",
-    "surplusId": "glm-5.2",
     "inputPricePer1M": 1.4,
     "outputPricePer1M": 4.4,
     "markupPercent": 50,
@@ -89,7 +85,6 @@
   {
     "id": "deepseek-v4-pro",
     "provider": "venice",
-    "surplusId": "deepseek-v4-pro",
     "inputPricePer1M": 1.65,
     "outputPricePer1M": 3.301,
     "markupPercent": 50,
@@ -109,7 +104,6 @@
   {
     "id": "qwen-3-8-max",
     "provider": "venice",
-    "surplusId": "qwen-3-8-max",
     "inputPricePer1M": 2.5,
     "outputPricePer1M": 7.5,
     "markupPercent": 50,
@@ -130,7 +124,6 @@
   {
     "id": "grok-4-5",
     "provider": "venice",
-    "surplusId": "grok-4.5",
     "inputPricePer1M": 2.27,
     "outputPricePer1M": 6.8,
     "markupPercent": 50,
@@ -156,7 +149,6 @@
   {
     "id": "claude-sonnet-4-6",
     "provider": "venice",
-    "surplusId": "claude-sonnet-4.6",
     "inputPricePer1M": 3.6,
     "outputPricePer1M": 18,
     "markupPercent": 50,
@@ -177,7 +169,6 @@
   {
     "id": "gemini-3-6-flash",
     "provider": "venice",
-    "surplusId": "gemini-3.7-flash",
     "inputPricePer1M": 0.9375,
     "outputPricePer1M": 4.6875,
     "markupPercent": 50,
@@ -197,7 +188,6 @@
   {
     "id": "llama-3.3-70b",
     "provider": "venice",
-    "surplusId": "llama-3.3-70b-instruct",
     "inputPricePer1M": 0.7,
     "outputPricePer1M": 2.8,
     "markupPercent": 50,
@@ -215,7 +205,6 @@
   {
     "id": "hermes-3-llama-3.1-405b",
     "provider": "venice",
-    "surplusId": "hermes-3-llama-3.1-405b",
     "inputPricePer1M": 1.1,
     "outputPricePer1M": 3,
     "markupPercent": 50,
@@ -232,7 +221,6 @@
   {
     "id": "zai-org-glm-5-1",
     "provider": "venice",
-    "surplusId": "glm-5.1",
     "inputPricePer1M": 1.54,
     "outputPricePer1M": 4.84,
     "markupPercent": 50,
@@ -251,7 +239,6 @@
   {
     "id": "qwen-3-7-plus",
     "provider": "venice",
-    "surplusId": "qwen-3-7-plus",
     "inputPricePer1M": 0.5,
     "outputPricePer1M": 2,
     "markupPercent": 50,
@@ -277,7 +264,6 @@
   {
     "id": "venice-uncensored-1-2",
     "provider": "venice",
-    "surplusId": "venice-uncensored",
     "inputPricePer1M": 0.2,
     "outputPricePer1M": 0.9,
     "markupPercent": 50,
@@ -318,7 +304,6 @@
   {
     "id": "deepseek-v4-flash-0731",
     "provider": "venice",
-    "surplusId": "deepseek-v4-flash",
     "inputPricePer1M": 0.13,
     "outputPricePer1M": 0.26,
     "markupPercent": 50,
@@ -362,7 +347,6 @@
     "provider": "oma-ai",
     "upstream": "openbroker",
     "omaAiId": "MiniMaxAI/MiniMax-M2.7",
-    "surplusId": "minimax-m2.7",
     "inputPricePer1M": 0,
     "outputPricePer1M": 0,
     "markupPercent": 0,
@@ -388,7 +372,6 @@
     "provider": "oma-ai",
     "upstream": "openbroker",
     "omaAiId": "deepseek-ai/DeepSeek-V4-Flash-0731",
-    "surplusId": "deepseek-v4-flash-0731",
     "inputPricePer1M": 0,
     "outputPricePer1M": 0,
     "markupPercent": 0,
@@ -414,7 +397,6 @@
     "provider": "oma-ai",
     "upstream": "openbroker",
     "omaAiId": "zai-org/GLM-5.3-Flash",
-    "surplusId": "zai-org/glm-5.3-flash",
     "inputPricePer1M": 0,
     "outputPricePer1M": 0,
     "markupPercent": 0,

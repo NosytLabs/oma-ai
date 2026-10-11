@@ -2,23 +2,6 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { validateApiKey, isIpAllowedByList } from "../api-keys.js";
 import crypto from "node:crypto";
 
-// Mock timingSafeEqual properly before it gets used
-vi.mock("node:crypto", async (importOriginal) => {
-	const original = await importOriginal<typeof import("node:crypto")>();
-	return {
-		...original,
-		default: {
-			...original,
-			timingSafeEqual: vi.fn().mockReturnValue(true)
-		},
-		timingSafeEqual: vi.fn().mockReturnValue(true)
-	};
-});
-
-// Avoid the queue push doing real stuff
-vi.mock("../../jobs/queue.js", () => ({
-	queueLastUsedUpdate: vi.fn()
-}));
 
 const mockDb = vi.hoisted(() => {
 	const limitMock = vi.fn().mockReturnThis();
@@ -111,11 +94,10 @@ describe("validateApiKey", () => {
 
 		const result = await validateApiKey(rawKey);
 		expect(result).toEqual(dbRow);
-		// Should set cache
-		expect(mockRedis.setex).toHaveBeenCalledWith(`apikey:${keyHash}`, expect.any(Number), JSON.stringify(dbRow));
+		expect(mockRedis.setex).not.toHaveBeenCalled();
 	});
 
-	it("handles expired keys by returning expired=true without caching", async () => {
+	 it("rejects expired database keys without caching", async () => {
 		const rawKey = "oma_sk_expiredtestkeytestkey123456";
 		const keyHash = crypto.createHash("sha256").update(rawKey).digest("hex");
 		const pastDate = new Date(Date.now() - 10000);
@@ -131,11 +113,22 @@ describe("validateApiKey", () => {
 		mockDb.limitMock.mockResolvedValueOnce([dbRow]);
 
 		const result = await validateApiKey(rawKey);
-		expect(result).toEqual({ ...dbRow, expired: true });
+		expect(result).toBeNull();
 		expect(mockRedis.setex).not.toHaveBeenCalled();
 	});
 
-	it("retrieves valid keys from redis cache without DB query", async () => {
+	 it.each(["2000-01-01T00:00:00Z", "invalid", new Date()])("rejects database expiry %s even with a positive stale cache", async expiresAt => {
+		const rawKey = "oma_sk_expiredcachekeytestkey123456";
+		const keyHash = crypto.createHash("sha256").update(rawKey).digest("hex");
+		mockRedis.get.mockResolvedValue(JSON.stringify({ id: "expired-cache", active: true, keyPrefix: rawKey.slice(0, 12), expiresAt: null }));
+		mockDb.limitMock.mockResolvedValueOnce([{ id: "expired-cache", keyHash, active: true, keyPrefix: rawKey.slice(0, 12), expiresAt }]);
+		expect(await validateApiKey(rawKey)).toBeNull();
+		expect(mockRedis.get).not.toHaveBeenCalled();
+		expect(mockDb.select).toHaveBeenCalledOnce();
+		expect(mockRedis.setex).not.toHaveBeenCalled();
+	});
+
+	 it("rejects a revoked or deleted database key even when Redis still contains a valid credential", async () => {
 		const rawKey = "oma_sk_cachedtestkeytestkey123456";
 		const keyHash = crypto.createHash("sha256").update(rawKey).digest("hex");
 		const cachedRow = {
@@ -146,11 +139,12 @@ describe("validateApiKey", () => {
 			expiresAt: null
 		};
 		
-		mockRedis.get.mockResolvedValueOnce(JSON.stringify(cachedRow));
-		mockDb.limitMock.mockResolvedValueOnce([]); // Ensure DB isn't accidentally doing this
+		mockRedis.get.mockResolvedValue(JSON.stringify(cachedRow));
+		mockDb.limitMock.mockResolvedValueOnce([]);
 
 		const result = await validateApiKey(rawKey);
-		expect(result).toEqual(cachedRow);
-		expect(mockDb.select).not.toHaveBeenCalled();
+		expect(result).toBeNull();
+		expect(mockDb.select).toHaveBeenCalledOnce();
+		expect(mockRedis.get).not.toHaveBeenCalled();
 	});
 });

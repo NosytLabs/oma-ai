@@ -27,6 +27,13 @@ export interface ApiKey {
 	prefix: string;
 	createdAt: string;
 	lastUsedAt: string | null;
+	expiresAt?: string | null;
+	allowedModels?: string[] | null;
+}
+
+export interface ApiKeyCreateOptions {
+	expiresInDays?: number;
+	allowedModels?: string[];
 }
 
 export interface ApiKeyWithSecret extends ApiKey {

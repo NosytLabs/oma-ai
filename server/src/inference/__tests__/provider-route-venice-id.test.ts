@@ -7,8 +7,6 @@ vi.mock("../../config.js", () => ({
 		VENICE_API_KEY: "venice-test-key-not-a-placeholder",
 		VENICE_API_URL: "https://api.venice.ai",
 		OMMA_ALLOW_NON_PRIVATE_VENICE: false,
-		SURPLUS_API_KEY: "surplus-test-key",
-		SURPLUS_API_URL: "https://api.surplusintelligence.ai",
 	},
 }));
 

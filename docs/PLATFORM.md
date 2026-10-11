@@ -108,6 +108,14 @@ Website sessions support email magic-link authentication and SIWE wallet authent
 
 The user account has one home at `/dashboard`: Overview, Usage, API Keys and Settings. Settings sections use `?tab=settings&section=profile|appearance|sessions|danger`. `/settings` remains a compatibility redirect, preserving demo/query parameters and legacy section/hash bookmarks. Account controls do not depend on analytics loading. Demo controls are read-only. Usage model/provider percentages describe request share, including free chat; charges remain separate and preserve sub-cent values. Request details expose a copyable correlation ID, requested/served models and timestamp without storing prompt content.
 
+API key creation, listing and revocation require a Better Auth session; a bearer key cannot manage credentials. Keys expire after 90 days by default. Creation accepts `expiresInDays` from 1 to 365 and an optional `allowedModels` list of catalog IDs. The list constrains the primary model and all client/server fallback routes on both inference APIs. Metadata includes expiry and last use; expired keys cannot authenticate even if still listed. `max_tokens` cannot exceed the selected model's published output limit; smaller-limit fallbacks are skipped. Provider credential failures are gateway errors, not customer authentication failures.
+
+Key validity is read from Postgres on each request, with only concurrent in-flight reads shared. Positive Redis records do not authorize a revoked, expired or deleted key. Explicit invalid API credentials return 401 rather than becoming guest chat requests. Protected requests also require an existing, active account; failure to verify account status returns a safe 503. User IDs in query strings or request bodies never select the owner for personal keys, sessions, usage, exports or account deletion. On mixed session/key usage endpoints, the authenticated browser session takes precedence.
+
+Database URLs and provider/operator secrets belong only in server environment variables. The browser receives public API origins and account-scoped responses, not direct database access. Both website proxies discard incoming `x-neon-*` headers, and `/api/internal/*` is blocked. Internal recovery jobs accept the operator recovery token or a native Neon scheduler header only in the Neon runtime, never through the website proxy. Neon removes client-supplied runtime headers on the native function boundary; this platform behavior is documented in [Neon's scheduler guide](https://neon.com/blog/your-neon-functions-can-now-run-on-a-schedule).
+
+Completed OpenAI-compatible requests with the same `Idempotency-Key` return 409 `already_processed` without another provider call or charge. OMA retains billing metadata, not completion bodies, so clients must keep their original response. This does not provide full response replay or prevent simultaneous upstream calls before either has recorded usage.
+
 The OpenAPI document is served at:
 
 ```text
@@ -121,6 +129,8 @@ The OMA gateway does not persist prompt or completion content. It stores account
 The live model endpoint is the source of truth for current availability and prices. The bundled catalog is a fallback reference and must not be presented as a count of callable models. Website examples and animated request illustrations do not establish live availability.
 
 Inference shares a 240-second total time budget across retries, fallbacks, and response reads. OpenBroker attempts allow up to 180 seconds for host selection and completion; other provider attempts allow 60 seconds for JSON responses or 120 seconds for streams. The website proxy waits up to 270 seconds and declares a 300-second Vercel function limit. Caller cancellation propagates to the provider and stops further retries. SDK clients should allow at least 270 seconds and inspect the actual-model/fallback headers. OpenBroker can queue longer than OMA's budget; a catalog-enabled model is not a guarantee of immediate capacity.
+
+Free website quotas use a bounded per-process counter when Redis is unavailable or its commands fail. This degraded bound resets on restart and does not replace shared durable enforcement. Paid API-key calls do not consume the free quota, even with the website source header; prepaid balance and API rate limits still apply. Daily-cap responses include `Retry-After`.
 
 Settings opened with `?demo=1` are read-only previews, including when the visitor has a real session. The preview must preserve that flag while navigating, avoid fetching private account data, and disable profile changes, exports, session actions, preference changes, history clearing, and deletion.
 
@@ -160,7 +170,7 @@ Production requires durable Postgres and Redis-compatible rate-limit state, real
 - `PRIMARY_DOMAIN=www.oma-ai.com`
 - `BETTER_AUTH_URL=https://www.oma-ai.com`
 - `BETTER_AUTH_SECRET`: unique high-entropy secret, shared with the frontend deployment that verifies sessions.
-- `ENCRYPTION_KEY`: unique production encryption secret, at least 32 characters (enforced by config validation).
+- `ENCRYPTION_KEY`: unique production secret, at least 40 characters (enforced by config validation), used for deposit challenges.
 - `RESEND_API_KEY` and `RESEND_FROM`: required for production magic-link email.
 - `ADMIN_WALLET_ADDRESSES`: comma-separated admin addresses, if admin access is enabled.
 
@@ -172,7 +182,6 @@ Set the provider credentials required by the intended catalog routes:
 
 - `VENICE_API_KEY` for Venice routes.
 - `OPENBROKER_API_KEY` for OpenBroker/Gonka routes (`GONKA_API_KEY` and `OBK_API_KEY` are accepted aliases).
-- Optional `SURPLUS_API_KEY` and `SURPLUS_API_URL` only if Surplus routes are intentionally enabled.
 
 For Base:
 

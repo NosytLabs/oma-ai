@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("../../config.js", () => ({ config: {
 	OPENBROKER_API_KEY: "test-openbroker-key-123456789",
 	OPENBROKER_API_URL: "https://api.openbroker.gonka.gg",
+	VENICE_API_KEY: "test-venice-key",
+	VENICE_API_URL: "https://api.venice.ai",
 } }));
 vi.mock("../../lib/logger.js", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
 vi.mock("../billing.js", () => ({ assertSufficientBalance: vi.fn(), recordUsage: vi.fn() }));
@@ -13,6 +15,38 @@ import { routeRequestWithFallback } from "../proxy.js";
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 describe("upstream tool round trip", () => {
+	const base = { modelId: "openai-gpt-56-sol", messages: [{ role: "user", content: "Hello" }], stream: false, userId: "test-user", requestId: "test-scope" };
+	 it("rejects an unauthorized primary, including an explicitly empty scope, before contacting providers", async () => {
+		const fetchMock = vi.fn(); vi.stubGlobal("fetch", fetchMock);
+		for (const allowedModels of [[], ["minimax-m2-7"]]) await expect(routeRequestWithFallback({ ...base, allowedModels })).rejects.toMatchObject({ status: 403 });
+		expect(fetchMock).not.toHaveBeenCalled();
+	});
+
+	it("does not escape the key's scope through automatic or client fallbacks", async () => {
+		const fetchMock = vi.fn().mockResolvedValue(new Response("", { status: 404 })); vi.stubGlobal("fetch", fetchMock);
+		await expect(routeRequestWithFallback({ ...base, allowedModels: [base.modelId], clientFallbacks: ["minimax-m2-7"] })).rejects.toMatchObject({ status: 404 });
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+	});
+
+	it("allows a fallback explicitly included in the key scope", async () => {
+		const fetchMock = vi.fn().mockResolvedValueOnce(new Response("", { status: 404 })).mockResolvedValueOnce(new Response('{"choices":[]}', { status: 200 })); vi.stubGlobal("fetch", fetchMock);
+		const result = await routeRequestWithFallback({ ...base, allowedModels: [base.modelId, "minimax-m2-7"] });
+		expect(result.actualModelId).toBe("minimax-m2-7");
+		expect(fetchMock).toHaveBeenCalledTimes(2);
+	});
+
+	it("reports a provider credential rejection as a gateway error without retrying the same credential on peers", async () => {
+		const fetchMock = vi.fn().mockResolvedValue(new Response("", { status: 401 })); vi.stubGlobal("fetch", fetchMock);
+		await expect(routeRequestWithFallback({ ...base, modelId: "claude-opus-5" })).rejects.toMatchObject({ status: 502, message: expect.stringContaining("provider authentication failed") });
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+	});
+
+	it("rejects output limits above the primary model's ceiling before sending a request", async () => {
+		const fetchMock = vi.fn(); vi.stubGlobal("fetch", fetchMock);
+		await expect(routeRequestWithFallback({ ...base, modelId: "google-gemma-4-31b-it", max_tokens: 1_000_000 })).rejects.toMatchObject({ status: 400 });
+		expect(fetchMock).not.toHaveBeenCalled();
+	});
+
 	it("requests upstream token totals for streamed billing", async () => {
 		const fetchMock = vi.fn().mockResolvedValue(new Response('data: [DONE]\n\n', { status: 200 }));
 		vi.stubGlobal("fetch", fetchMock);

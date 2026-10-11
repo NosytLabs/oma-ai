@@ -2,7 +2,7 @@
 	* Shared viem public client with automatic RPC fallback.
 	*
 	* Transport order (viem tries each in sequence on failure):
-	*   1. QuickNode (paid, covered by $300 credit — fast, archive data)
+	*   1. Configured operator RPC (e.g. QuickNode)
 	*   2. Free public RPCs (mainnet.base.org, publicnode)
 	*
 	* Usage:
@@ -21,7 +21,7 @@ import { base } from "viem/chains";
 import { config } from "../config.js";
 import { logger } from "./logger.js";
 
-// Free public Base RPCs — no API key, rate-limited but reliable for reads.
+// Free public Base RPCs — no API key; availability and limits are independent.
 const FREE_BASE_RPCS = [
 		"https://mainnet.base.org",
 		"https://base-rpc.publicnode.com",

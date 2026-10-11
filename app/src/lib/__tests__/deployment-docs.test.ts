@@ -32,7 +32,7 @@ const DEPLOY_DOCS = [
 	"docs/DEPLOYMENT.md",
 	"docs/PLATFORM.md",
 	"docs/settlement-runbook.md",
-	"deploy/STATUS.md",
+	"docs/deployment-health.md",
 	"deploy/coolify/README.md",
 ] as const;
 

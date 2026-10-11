@@ -33,7 +33,7 @@ export {
 // Re-export for existing test/route imports that pull helpers from proxy.
 export { FALLBACK_MAP, buildFallbackChain, rewriteSseModelField } from "./fallback.js";
 
-import { ProviderError, resolveProvider } from "./provider-route.js";
+import { ProviderAuthenticationError, ProviderError, resolveProvider } from "./provider-route.js";
 
 export interface CallProviderOptions {
 		modelId: string;
@@ -55,6 +55,8 @@ export interface CallProviderOptions {
 			* before the server FALLBACK_MAP peers). Invalid/unknown ids are ignored.
 			*/
 		clientFallbacks?: string[];
+		/** Restrict both primary and fallback routes to the caller's key scope. */
+		allowedModels?: string[] | null;
 }
 
 /**
@@ -148,10 +150,7 @@ async function callProvider(opts: CallProviderOptions): Promise<Response> {
 				// expired, or out of credits). Surface an actionable message instead
 				// of the raw upstream body, which is often just `{"error":"Authentication failed"}`.
 				if (status === 401) {
-						throw new ProviderError(
-								"Model provider authentication failed (provider API key invalid or out of credits). Contact support.",
-								401,
-						);
+						throw new ProviderAuthenticationError();
 				}
 				// 429 = upstream rate-limited / concurrency cap. Raw upstream bodies
 				// are noise for end users; keep the detail in the server log instead.
@@ -194,8 +193,14 @@ export async function routeRequestWithFallback(
 	attemptCount: number;
 }> {
 	const modelId = opts.modelId;
+	if (opts.allowedModels && !opts.allowedModels.includes(modelId)) {
+		throw new ProviderError("This API key does not allow the requested model", 403);
+	}
 	const requested = getModelById(modelId);
 	if (requested?.disabledReason) throw new ProviderError(requested.disabledReason, 503);
+	if (requested?.maxOutputTokens && opts.max_tokens && opts.max_tokens > requested.maxOutputTokens) {
+		throw new ProviderError(`max_tokens exceeds this model's limit of ${requested.maxOutputTokens}`, 400);
+	}
 	// One budget across all models and retries, including the returned body.
 	// The frontend waits 270 seconds, leaving time to return an actionable error.
 	const deadline = AbortSignal.timeout(240_000);
@@ -212,10 +217,13 @@ export async function routeRequestWithFallback(
 				modelId,
 				opts.clientFallbacks ?? [],
 				freeOnly,
-		);
+		).filter(id => !opts.allowedModels || opts.allowedModels.includes(id));
 
 		let lastError: unknown = null;
 		const errorLog: unknown[] = [];
+		// A provider shares one operator credential across its models. Once
+		// rejected, further same-provider calls cannot repair it in this request.
+		const rejectedProviders = new Set<string>();
 
 		/** Narrow an `unknown` thrown value to the error fields we actually use. */
 		function readError(e: unknown): { status?: number; message?: string; name?: string } {
@@ -236,8 +244,11 @@ export async function routeRequestWithFallback(
 				// next free peer quickly (OpenRouter-style model layer). Paid API keeps
 				// a slightly deeper retry budget for transient 5xx/429.
 				const maxRetries = freeOnly ? 1 : 2;
-				const modelDef = getModelById(currentModelId);
-				if (!modelDef) continue;
+			const modelDef = getModelById(currentModelId);
+			if (!modelDef) continue;
+			if (rejectedProviders.has(modelDef.provider)) continue;
+			// A fallback with a smaller output ceiling cannot satisfy this request.
+			if (modelDef.maxOutputTokens && opts.max_tokens && opts.max_tokens > modelDef.maxOutputTokens) continue;
 
 				while (attempt <= maxRetries) {
 						assertActive();
@@ -268,6 +279,7 @@ export async function routeRequestWithFallback(
 								// Auth / not-found / bad request: never thrash the same model —
 								// jump straight to the next peer in the chain.
 								const isImmediateFailover =
+										err instanceof ProviderAuthenticationError ||
 										e.status === 401 ||
 										e.status === 403 ||
 										e.status === 404 ||
@@ -289,6 +301,7 @@ export async function routeRequestWithFallback(
 														e.message.includes("ECONNRESET") ||
 														e.message.includes("ETIMEDOUT")));
 
+								if (err instanceof ProviderAuthenticationError) rejectedProviders.add(modelDef.provider);
 								if (
 										!isImmediateFailover &&
 										attempt <= maxRetries &&

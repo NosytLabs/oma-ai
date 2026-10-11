@@ -315,8 +315,7 @@ export function modelRateLimit(options: ModelRateLimitOptions = {}) {
 		const modelLimits = getModelLimits(model);
 
 		if (!modelLimits) {
-			await baseRateLimit(c, next);
-			return;
+			return baseRateLimit(c, next);
 		}
 
 		const redis = await getRedisClient();
@@ -511,5 +510,4 @@ export function modelRateLimit(options: ModelRateLimitOptions = {}) {
 		}
 	};
 }
-
 

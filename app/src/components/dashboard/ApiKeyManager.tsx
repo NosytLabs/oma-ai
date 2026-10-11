@@ -2,7 +2,8 @@
 
 import { memo, useRef, useState } from "react";
 import { useFocusTrap } from "@/lib/hooks/useFocusTrap";
-import type { ApiKey } from "@/lib/api";
+import type { ApiKey, ApiKeyCreateOptions } from "@/lib/api";
+import { ApiKeyCreateForm } from "./ApiKeyCreateForm";
 import { maskKey } from "@/lib/utils";
 
 interface ApiKeyManagerProps {
@@ -15,7 +16,7 @@ interface ApiKeyManagerProps {
 	revokingId: string | null;
 	onCopy: (text: string, id: string) => void;
 	onRevokeKey: (keyId: string) => void;
-	onCreateKey: () => void;
+	onCreateKey: (options?: ApiKeyCreateOptions) => void;
 	setShowCreateForm: (show: boolean) => void;
 	setNewKeyName: (name: string) => void;
 }
@@ -75,60 +76,30 @@ function ApiKeyManagerComponent({
 	{keys.length} key{keys.length === 1 ? "" : "s"} on this account
 	</p>
 	</div>
-	<button
+	{!showCreateForm && <button
 	type="button"
 	onClick={() => setShowCreateForm(true)}
 	className="group flex items-center justify-center rounded-[var(--radius-sm)] border border-accent/40 bg-accent/10 px-4 py-2 min-h-[36px] text-xs font-semibold text-accent transition-[background-color,border-color,box-shadow,color,transform] duration-200 ease-out hover:bg-accent/20 hover:border-accent/60 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 	>
 	+ New key
-	</button>
+	</button>}
 	</div>
 
 		{showCreateForm && (
-		<div className="mb-6 rounded-[var(--radius-md)] border border-success/30 bg-success/10 p-5 shadow-[0_0_15px_-5px_var(--color-success-glow)]">
-		<div className="flex flex-col sm:flex-row gap-3">
-		<input
-		type="text"
-		value={newKeyName}
-		onChange={(e) => setNewKeyName(e.target.value)}
-		onKeyDown={(e) => e.key === "Enter" && onCreateKey()}
-		placeholder="Production, Staging, Dev..."
-		aria-label="API key name"
-		className="flex-1 rounded-[var(--radius-sm)] border border-border bg-void px-4 py-2.5 text-sm text-text placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/40 disabled:opacity-50 transition-shadow duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-		disabled={creating}
-		autoFocus
-		/>
-	<div className="flex gap-2">
-	<button
-	type="button"
-	onClick={onCreateKey}
-	disabled={creating || !newKeyName.trim()}
-	className="flex items-center justify-center rounded-[var(--radius-sm)] border border-accent bg-accent px-5 py-2.5 text-xs font-semibold text-text-inverse transition-[background-color,border-color,box-shadow,color,transform] duration-200 ease-out hover:bg-accent/90 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:pointer-events-none disabled:opacity-50"
-	>
-	{creating ? "Creating…" : "Create key"}
-	</button>
-	<button
-	type="button"
-	onClick={() => {
-	setShowCreateForm(false);
-	setNewKeyName("");
-	}}
-	className="flex items-center justify-center rounded-[var(--radius-sm)] border border-border bg-surface px-4 py-2.5 text-xs font-semibold text-text-secondary transition-[background-color,border-color,box-shadow,color,transform] duration-200 ease-out hover:bg-surface-elevated hover:text-text-bright hover:border-text-muted active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border disabled:pointer-events-none disabled:opacity-50"
-	disabled={creating}
-	>
-	Cancel
-	</button>
-	</div>
-	</div>
-	</div>
-	)}
-
+			<ApiKeyCreateForm
+				name={newKeyName}
+				setName={setNewKeyName}
+				creating={creating}
+				onCreate={onCreateKey}
+				onCancel={() => { setShowCreateForm(false); setNewKeyName(""); }}
+			/>
+		)}
 	{loading && keys.length === 0 ? (
 	<div className="rounded-[var(--radius-md)] border border-border bg-surface/30 p-6 text-sm font-medium text-text-muted flex items-center justify-center">
 	<span className="inline-block h-3 w-3 rounded-full bg-accent/60 animate-ping mr-3" />
 	Loading keys…
 	</div>
-	) : keys.length === 0 ? (
+	) : keys.length === 0 && !showCreateForm ? (
 	<div className="rounded-[var(--radius-md)] border border-dashed border-border bg-surface/20 p-10 text-center transition-colors duration-200 ease-out hover:bg-surface/30 hover:border-accent/30">
 	<div className="mb-2 text-sm font-semibold text-text-bright">
 	No API keys yet
@@ -144,7 +115,7 @@ function ApiKeyManagerComponent({
 	Create your first key
 	</button>
 	</div>
-		) : (
+		) : keys.length > 0 ? (
 		<div className="rounded-[var(--radius-md)] border border-border bg-void overflow-hidden shadow-sm">
 		{keys.map((key) => (
 		<div
@@ -158,6 +129,11 @@ function ApiKeyManagerComponent({
 		<div className="mt-1 text-xs text-text-muted font-mono bg-surface/50 inline-block px-2 py-0.5 rounded-[var(--radius-sm)] border border-border/50 tabular-nums">
 		{maskKey(key.prefix)}
 		</div>
+		<div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-text-muted">
+			<span>{key.expiresAt ? `${new Date(key.expiresAt).getTime() <= Date.now() ? "Expired" : "Expires"} ${new Date(key.expiresAt).toLocaleDateString()}` : "No expiry"}</span>
+			<span>Last used: {key.lastUsedAt ? new Date(key.lastUsedAt).toLocaleString() : "Never"}</span>
+		</div>
+		<p className="mt-1 break-all text-xs text-text-muted">{key.allowedModels?.length ? `Models: ${key.allowedModels.join(", ")}` : "All models"}</p>
 		</div>
 		<div className="flex items-center gap-2">
 		<div className="text-[11px] font-mono text-text-muted hidden sm:block mr-4 opacity-70 group-hover:opacity-100 transition-opacity duration-200 ease-out tabular-nums">
@@ -190,7 +166,7 @@ function ApiKeyManagerComponent({
 		</div>
 		))}
 		</div>
-	)}
+		) : null}
 	</div>
 
 		{confirmKeyId && keyToRevoke && (
@@ -244,14 +220,4 @@ function ApiKeyManagerComponent({
 	);
 }
 
-export const ApiKeyManager = memo(ApiKeyManagerComponent, (prev, next) => {
-	return (
-	prev.keys === next.keys &&
-	prev.loading === next.loading &&
-	prev.creating === next.creating &&
-	prev.showCreateForm === next.showCreateForm &&
-	prev.newKeyName === next.newKeyName &&
-	prev.copied === next.copied &&
-	prev.revokingId === next.revokingId
-	);
-});
+export const ApiKeyManager = memo(ApiKeyManagerComponent);
