@@ -52,6 +52,34 @@ overflow; Retry restored current usage when the API returned. Evidence is in
 canceled Vercel builds with alias protection; aliased and ready/rollback
 deployments remain. No additional production database records were deleted.
 
+[PR #31](https://github.com/NosytLabs/oma-ai/pull/31) merged into `main` at
+`928db788b34f0069789bd66bac2d72b0df6c660e`. The merged tree equals tested
+head `912608ccdd35576447e4959cfe783658a5fd1373` exactly. Its merged branch is
+removed; only `main` remains locally and remotely.
+
+| Service | Deployment | Verified state |
+| --- | --- | --- |
+| Vercel website | `dpl_wox96KXHLR6TYpRLnG5cafGcUBzg` | READY; canonical host serves the merged SHA |
+| Neon API | `omaapi` 85 | Current/active, completed; Node 24, 2048 MiB |
+
+The code-only API release preserved all 40 environment values and both recovery
+job IDs/configurations. Post-release native and same-origin readiness reported
+healthy Postgres/Redis. The first native malformed-cookie probe returned 500
+during rollout; subsequent native and canonical probes returned 401. The live
+auth proxy rejects oversized input with 413 and returns 200/null for an
+anonymous session. Keys, account export and admin settings/usage require
+authentication; private recovery paths and `/.env` return 404. OpenAPI retains
+20 customer paths and excludes operator/website routes. x402 advertises v2
+Base USDC funding; Base RPC returns `0x2105`. These read-only probes do not
+verify a mainnet transfer. Results: `.artifacts/release/auth-followup-live-smoke.json`.
+
+Production login, docs and mobile pricing browser checks passed. Docs and
+pricing had one H1, correct canonical URLs and no horizontal overflow; captured
+console warnings/errors were empty. Local sign-out returned to the public home
+page, and the private fixture-link file was removed. Full paid GitHub CI stays
+manual; local validation and Vercel builds passed. The optional external Kilo
+review was still queued at merge, with no published review comments observed.
+
 ## Main integration and cleanup — October 11
 
 [PR #30](https://github.com/NosytLabs/oma-ai/pull/30) is merged into `main` at
@@ -549,4 +577,4 @@ working copies with conflicting test counts and deployment receipts:
 - [Usage/treasury audit](https://github.com/NosytLabs/oma-ai/blob/3b4774e409d923c3689c0d6a60e6108e954bdf73/docs/audits/account-usage-audit-2026-10-10.md)
 - [Original platform audit](https://github.com/NosytLabs/oma-ai/blob/3b4774e409d923c3689c0d6a60e6108e954bdf73/docs/audits/audit-2026-10-10.md)
 
-PR #30 is merged. Subsequent receipt commits may change documentation only.
+PRs #30 and #31 are merged. Subsequent receipt commits may change documentation only.
