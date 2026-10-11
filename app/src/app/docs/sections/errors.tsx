@@ -11,17 +11,32 @@ export function ErrorsSection() {
 }`;
 
 	const retryCode = `import time
-from openai import OpenAI
-client = OpenAI(api_key="oma_sk_...", base_url="https://www.oma-ai.com/api/v1")
+from openai import OpenAI, RateLimitError
+
+# This loop owns retries; disable the SDK's automatic retries.
+client = OpenAI(
+	api_key="oma_sk_your_key_here",
+	base_url="https://www.oma-ai.com/api/v1",
+	max_retries=0,
+)
+
 for attempt in range(5):
 	try:
-	response = client.chat.completions.create(model="llama-3.3-70b", messages=[{"role": "user", "content": "Hi"}])
-	break
-	except Exception as e:
-	if hasattr(e, 'status_code') and e.status_code == 429:
-	time.sleep(2 ** attempt)
-	else:
-	raise`;
+		response = client.chat.completions.create(
+			model="llama-3.3-70b",
+			messages=[{"role": "user", "content": "Hi"}],
+			max_tokens=64,
+		)
+		print(response.choices[0].message.content)
+		break
+	except RateLimitError as error:
+		if attempt == 4:
+			raise
+		try:
+			delay = float(error.response.headers.get("retry-after"))
+		except (TypeError, ValueError):
+			delay = 2 ** attempt
+		time.sleep(max(0, delay))`;
 
 	return (
 		<AnimatedSection delay={600}>

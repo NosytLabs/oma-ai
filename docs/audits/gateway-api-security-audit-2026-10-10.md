@@ -137,6 +137,13 @@ instead of claiming full OpenAI compatibility. The current
 was checked through Context7. API keys stay server-side in the SDK guidance.
 The compiled Go model-discovery example also returned all 20 catalog IDs from
 the actual public endpoint. Frontend lint and the final production build passed.
+The sweep found the same indentation defect in the separate Streaming and
+Error Codes sections. All seven public Python examples now parse. Manual 429
+retries honor numeric `Retry-After`, turn off the SDK's own retry loop and raise
+the final failure; the
+[Python SDK reference](https://github.com/openai/openai-python/blob/main/README.md)
+confirmed the retry settings through Context7. Removed the unreferenced
+operator webhook component and an unsupported millisecond-latency promise.
 
 ## Cleanup and usage downloads — October 11
 

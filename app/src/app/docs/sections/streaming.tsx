@@ -2,7 +2,7 @@ import { Zap } from "lucide-react";
 import { AnimatedSection, CodeBlock, SectionHeading, TabbedCode } from "./shared";
 
 export function StreamingSection() {
-	const streamCode = `curl https://www.oma-ai.com/api/v1/chat/completions \\
+	const streamCode = `curl -N https://www.oma-ai.com/api/v1/chat/completions \\
 	-H "Authorization: Bearer oma_sk_your_key_here" \\
 	-H "Content-Type: application/json" \\
 	-d '{
@@ -34,8 +34,8 @@ stream = client.chat.completions.create(
 )
 
 for chunk in stream:
-	if chunk.choices[0].delta.content:
-	print(chunk.choices[0].delta.content, end="")`;
+	if chunk.choices and chunk.choices[0].delta.content:
+		print(chunk.choices[0].delta.content, end="", flush=True)`;
 
 	const jsStreamCode = `import { OpenAI } from "openai";
 const client = new OpenAI({
@@ -69,9 +69,9 @@ for await (const chunk of stream) {
 					<div>
 						<h3 className="font-semibold text-accent">Why Stream?</h3>
 						<p className="mt-1 text-sm text-text-muted">
-							Streaming provides real-time output as tokens are generated, reducing
-							perceived latency from seconds to milliseconds. Essential for chat
-							interfaces and interactive applications.
+							Streaming displays output as the model generates it, so users can read
+							the response before it finishes. Time to the first token depends on the
+							model and provider load.
 						</p>
 					</div>
 				</div>
