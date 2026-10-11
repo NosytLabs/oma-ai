@@ -173,6 +173,14 @@ describe('rate-limit middleware', () => {
 			expect(res.allowed).toBe(true)
 			expect(res.degraded).toBe(true)
 		})
+
+		it('preserves token weights when Redis scripts fail', async () => {
+			mockRedisClient.eval.mockRejectedValue(new Error('NOSCRIPT'))
+			const first = await checkTpmLimit(mockRedisClient as any, 'weighted-fallback-unique', 120_000, 80_000)
+			expect(first.remaining).toBe(40_000)
+			const second = await checkTpmLimit(mockRedisClient as any, 'weighted-fallback-unique', 120_000, 50_000)
+			expect(second.allowed).toBe(false)
+		})
 	})
 
 		describe('checkRpmLimit', () => {
@@ -197,6 +205,17 @@ describe('rate-limit middleware', () => {
 		})
 
 		describe('tokenBucket middleware', () => {
+				it('shares the emergency budget across API keys on one account', async () => {
+					const { isRedisReady } = await import('../../lib/redis-client.js')
+					vi.mocked(isRedisReady).mockReturnValueOnce(false).mockReturnValueOnce(false).mockReturnValueOnce(false).mockReturnValueOnce(false).mockReturnValueOnce(false).mockReturnValueOnce(false)
+					let credential = 0
+					mockContext.get = vi.fn((key: string) => key === 'userId' ? 'emergency-account-unique' : key === 'apiKey' ? { id: `rotating-key-${credential}` } : undefined)
+					const middleware = tokenBucket()
+					for (credential = 0; credential < 6; credential++) await middleware(mockContext, mockNext)
+					expect(mockNext).toHaveBeenCalledTimes(5)
+					expect(mockContext.json).toHaveBeenCalledWith(expect.objectContaining({error: expect.objectContaining({code:'rate_limit_unavailable'})}),503)
+					expect(mockContext.header).toHaveBeenCalledWith('X-RateLimit-Policy','degraded-memory')
+				})
 				it('should allow request when under rate limit', async () => {
 						mockRedisClient.eval.mockResolvedValue([1, 50, 0])
 

@@ -9,6 +9,8 @@ if (!process.argv.includes("--run")) {
 	process.exit(0);
 }
 const { databaseUrl, appOrigin } = localTestContext();
+const directOpenBroker = process.argv.includes("--direct-openbroker");
+if (directOpenBroker) assert.ok(process.env.OPENBROKER_API_KEY, "OPENBROKER_API_KEY is required for the direct provider diagnostic");
 const pool = new pg.Pool({ connectionString: databaseUrl.toString() });
 const verificationId = crypto.randomBytes(16).toString("hex");
 let sessionId;
@@ -25,8 +27,11 @@ try {
 	const headers = { Origin: appOrigin, Cookie: cookie, "Content-Type": "application/json", "X-OMA-Source": "website" };
 	async function completion(body) {
 		const start = Date.now();
-		const response = await fetch(`${appOrigin}/api/chat/completions`, { method: "POST", headers,
-			body: JSON.stringify({ model: "minimax-m2-7", max_tokens: 512, stream: true, ...body }), signal: AbortSignal.timeout(150_000) });
+		console.log(JSON.stringify({ check: "Request started", target: directOpenBroker ? "OpenBroker direct" : "OMA gateway", phase: body.messages.at(-1)?.role === "user" && body.messages.length > 1 ? "continuation" : "tool-call" }));
+		const endpoint = directOpenBroker ? `${process.env.OPENBROKER_API_URL || "https://openbroker.gonka.gg"}/v1/chat/completions` : `${appOrigin}/api/chat/completions`;
+		const requestHeaders = directOpenBroker ? { Authorization: `Bearer ${process.env.OPENBROKER_API_KEY}`, "Content-Type": "application/json" } : headers;
+		const response = await fetch(endpoint, { method: "POST", headers: requestHeaders,
+			body: JSON.stringify({ model: directOpenBroker ? "MiniMaxAI/MiniMax-M2.7" : "minimax-m2-7", max_tokens: 512, stream: true, stream_options: { include_usage: true }, ...body }), signal: AbortSignal.timeout(240_000) });
 		assert.equal(response.status, 200, `Model returned HTTP ${response.status}`);
 		const text = await response.text();
 		const tools = new Map();

@@ -7,7 +7,7 @@
  *   - model-not-found rejection
  *   - auth enforcement (non-free models require a userId)
  *   - free-website-model bypass (anonymous allowed when X-OMA-Source=website)
- *   - repeated idempotency key (explicit conflict, no fabricated completion)
+ * Retry admission is exercised against real Postgres in inference-idempotency-integration.test.ts.
  *   - ProviderError mapping to upstream status codes
  *   - unexpected error → 500
  *
@@ -63,6 +63,7 @@ vi.mock("../../middleware/rate-limit.js", () => ({
 vi.mock("../../middleware/daily-limit.js", () => ({
 	dailyUsageLimit: () => async (_c: unknown, next: () => Promise<void>) => next(),
 }));
+vi.mock("../../middleware/inference-idempotency.js", () => ({ inferenceIdempotency: () => async (_c: unknown, next: () => Promise<void>) => next() }));
 
 // Auth middleware: optionalAuth sets userId when a Bearer header is present.
 vi.mock("../../auth/middleware.js", () => ({
@@ -80,27 +81,6 @@ vi.mock("../../auth/middleware.js", () => ({
 // Logger mock so error paths don't spam the test output.
 vi.mock("../../lib/logger.js", () => ({
 	logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn(), fatal: vi.fn() },
-}));
-
-// DB mock: usageRecords select returns [] by default (no idempotency hit).
-const mockDb = vi.hoisted(() => ({
-	select: vi.fn().mockReturnValue({
-		from: vi.fn().mockReturnValue({
-			where: vi.fn().mockReturnValue({
-				limit: vi.fn().mockResolvedValue([]),
-			}),
-		}),
-	}),
-}));
-vi.mock("../../db/client.js", () => ({ db: mockDb }));
-vi.mock("../../db/schema.js", () => ({
-	usageRecords: {
-		userId: "userId",
-		requestId: "requestId",
-		status: "status",
-		inputTokens: "inputTokens",
-		outputTokens: "outputTokens",
-	},
 }));
 
 // Inference proxy mock — routeRequestWithFallback returns a fake upstream.
@@ -152,14 +132,6 @@ beforeEach(() => {
 	vi.clearAllMocks();
 	mockRouteRequest.mockReset();
 	mockParseNonStreaming.mockReset();
-	// Reset default db select to return [] (no idempotency cache hit).
-	mockDb.select.mockReturnValue({
-		from: vi.fn().mockReturnValue({
-			where: vi.fn().mockReturnValue({
-				limit: vi.fn().mockResolvedValue([]),
-			}),
-		}),
-	});
 });
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
@@ -289,39 +261,6 @@ describe("POST /v1/chat/completions", () => {
 				expect.anything(),
 				expect.objectContaining({ skipBilling: false }),
 			);
-		});
-	});
-
-	describe("idempotency replay", () => {
-		it("returns a conflict instead of a fabricated answer for an already processed Idempotency-Key", async () => {
-			// Simulate a prior completed request for this user + key.
-			mockDb.select.mockReturnValueOnce({
-				from: vi.fn().mockReturnValue({
-					where: vi.fn().mockReturnValue({
-						limit: vi.fn().mockResolvedValue([
-							{
-								requestId: "idem-user_123-replay-key",
-								status: "completed",
-								inputTokens: 42,
-								outputTokens: 58,
-							},
-						]),
-					}),
-				}),
-			});
-
-			const res = await chatRequest(baseBody, {
-				Authorization: "Bearer test-key",
-				"Idempotency-Key": "replay-key",
-			});
-
-			expect(res.status).toBe(409);
-			const data = await res.json();
-			expect(data.error.code).toBe("already_processed");
-			expect(data.error.request_id).toMatch(/^idem-user_123-/);
-			expect(data.choices).toBeUndefined();
-			// Must NOT have called the upstream.
-			expect(mockRouteRequest).not.toHaveBeenCalled();
 		});
 	});
 

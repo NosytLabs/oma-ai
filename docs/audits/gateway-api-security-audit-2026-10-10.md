@@ -28,7 +28,9 @@ Current behavior lives in [Platform](../PLATFORM.md),
   API-key ID, translates function tools/continuations and preserves explicit
   zero usage. Stream cancellation finalizes once, without customer deduction.
   Upstream credential failures are gateway errors, not customer login failures.
-- Completed chat idempotency reuse returns 409 without another charge.
+- Account-scoped inference claims prevent simultaneous calls across both API
+  formats and different keys owned by the same account. Completed reuse returns
+  409 without another call or charge; failed/canceled attempts can retry.
   The gateway does not fabricate response replay. Method/route-specific rate
   budgets prevent unrelated account actions from exhausting each other.
 - The user dashboard unifies Overview, Usage, API Keys and Settings.
@@ -50,6 +52,66 @@ Current behavior lives in [Platform](../PLATFORM.md),
 - Code-only Neon releases preserve secrets and scheduled recovery jobs.
   Removed unused provider metadata, stale route diagnostics and duplicate docs
   while preserving migrations and historical financial/provider records.
+
+## Wallet pairing, durable retries and rate limits — October 11
+
+WalletConnect Ethereum Provider 2.26.0 now loads only when selected. Its
+EIP-1193 adapter deduplicates pairing, forwards account changes and never
+automatically retries signatures or transfers. QR/mobile pairing is exposed
+only with a valid public Reown project ID. Deposit offers an explicit wallet
+selector and requires the original sending wallet before registering a saved
+transfer again. Missing local and production project IDs still prevent live
+QR validation; the adapter tests do not substitute for a real mobile wallet.
+
+Both inference formats now share atomic account-scoped Postgres claims.
+Simultaneous requests through different keys or workers cannot call the
+provider twice with the same idempotency key. Claims remain held while streaming
+and after a committed charge, including an ambiguous delivery failure. Failed
+unbilled attempts can retry; stale pending claims can recover after five minutes.
+Only hashes and request IDs are retained, without prompts or response replay.
+Migration `0005_inference_request_claims.sql` was applied additively to production
+and verified against its journal hash and account/uniqueness constraints.
+
+Real Postgres payment tests exposed recovery failures caused by eight-decimal
+database amounts being compared with six-decimal USDC units. Recovery now
+normalizes trailing zeroes without rounding. Deleted-account and legacy
+reconciliation conflicts return safe, non-retryable 409 errors; SQL and internal
+exception text stay in operator logs. Concurrent settlement retries credit once.
+No mainnet transfer or facilitator gas transaction was performed.
+
+The degraded token limiter now counts requested tokens. Its emergency five-
+request-per-minute allowance is shared by the authenticated account, so rotating
+API keys does not refresh it. Docs distinguish requests, tokens, bursts and
+upstream capacity errors. Provider errors inside successful HTTP JSON or SSE
+responses are recorded as failed and remain uncharged. Homepage/status labels
+describe the enabled catalog instead of implying tested provider health, and
+the footer describes actual funding/free-chat behavior with larger mobile links.
+
+Validation passed 639 API tests in 78 files, including previously skipped real
+Postgres payment checks, and 25 real HTTP/authentication groups. These cover
+scoped/revoked keys, signup, SIWE, account deletion, ownership isolation,
+concurrent inference admission, metering and account-wide emergency limits.
+Frontend validation passed 832 tests in 123 files with two workers. Types, lint,
+production builds and frozen-lockfile installation passed. The production
+dependency audit found no known vulnerabilities across 888 dependencies; the
+development-only braces advisory below remains. All 10 maintained Markdown
+files passed local link validation (32 links).
+
+Fresh actual MiniMax calls used a one-day scoped key. Messages returned 200,
+`OMA_API_OK`, 49 input/193 output tokens and a 0.000484-cent charge matching
+persisted usage and balance deduction. OpenAI chat timed out after 180 seconds
+and was not charged: one of two live checks passed. The key was revoked (401)
+and temporary session removed; actual financial records remain. A direct
+OpenBroker tool check produced a valid `add` call, but its continuation repeated
+the result with unwanted reasoning/text and failed the strict expected answer.
+This reproduces the upstream limitation outside OMA's proxy. Venice's current
+local credential still returns 401. Gonka DeepSeek/GLM remain paused.
+
+Fresh browser checks covered signed-in local user Overview/Usage/Settings,
+deposit guidance, admin usage/treasury, pricing and docs at 1280px and 390px.
+The checked views had one H1, no horizontal overflow and no captured console
+warnings/errors. These checks use local test accounts; they do not imply a
+successful mainnet purchase or working Venice/mobile pairing credentials.
 
 ## Wallet, RPC and API-key follow-up — October 11
 
@@ -90,7 +152,7 @@ remain per-instance, not globally durable limits.
 
 Public authentication/OpenAPI docs describe IP restrictions. Funding docs
 explain the customer wallet, treasury recipient and facilitator gas role,
-and explicitly identify WalletConnect QR/mobile support as missing. Existing
+and at that release identified WalletConnect QR/mobile support as missing. Existing
 maintained references were updated rather than creating another audit file;
 all nine maintained Markdown files passed local link validation.
 
@@ -300,16 +362,19 @@ Deprecated transitive tooling remains under its parent dependency contracts.
 - Venice metadata pricing/limits were compared, but the local inference
   credential failed upstream authentication. Authenticated production Venice
   inference remains unverified.
-- Injected EIP-1193/EIP-6963 wallets and real local SIWE signatures are covered;
-  WalletConnect QR/mobile sessions are not implemented.
+- Injected EIP-1193/EIP-6963 wallets and real local SIWE signatures are covered.
+  WalletConnect is now implemented and tested locally at the adapter boundary,
+  but live QR/mobile pairing needs a valid public Reown project ID and remains
+  unverified. Missing/placeholder IDs do not expose a broken connector.
 - x402 v2 uses OMA's custom funding contract: verification broadcasts, and
   settlement credits the SIWE-bound payer once. It is not a generic Coinbase
   facilitator or pay-per-inference route. Mainnet transfer, facilitator gas and
   successful live payment reconciliation remain unverified.
 - Credit balances remain aggregate. Per-grant allocation/refund policy and a
   ledger migration are needed; no fabricated expiry dates or financial cleanup.
-- Support needs a configured, verified webhook. Idempotency does not replay
-  responses or prevent simultaneous upstream calls before usage is recorded.
+- Support needs a configured, verified webhook. Idempotency now prevents
+  simultaneous upstream calls, but deliberately does not retain/replay response
+  bodies. Clients should save responses and use a new key for a new operation.
 - Messages supports text/function tools, not images/documents, extended
   thinking, caching or beta features. Full Claude Code parity is not claimed.
 - Local readiness remains degraded without HTTP Redis credentials; production

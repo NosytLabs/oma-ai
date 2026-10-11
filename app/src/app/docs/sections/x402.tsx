@@ -117,6 +117,11 @@ export function X402Section() {
           Base receipt before authorizing another payment. Once confirmed, settle that hash.
           If no hash was returned, reconcile the signed nonce and wallet activity first.
         </p>
+        <p className="mt-2 text-sm text-text-muted">
+          A 409 payment_already_credited or payment_reconciliation_required response is
+          not retryable. Contact support with the transaction hash if reconciliation
+          is required. Do not authorize a replacement payment to resolve that conflict.
+        </p>
       </div>
 
       <div id="x402-where" className="mt-8 rounded-[var(--radius-xl)] border border-border bg-surface p-4 scroll-mt-24">
@@ -130,7 +135,8 @@ export function X402Section() {
         <p className="mt-2 text-sm text-text-muted">
           OMA does not create or hold a wallet for you. Use your own wallet for sign-in and
           USDC funding. The website supports installed browser wallets such as MetaMask,
-          Rabby and Coinbase Wallet; WalletConnect QR and mobile sessions are not yet supported.
+          Rabby and Coinbase Wallet. Choose a wallet offered by sign-in or Buy credits;
+          mobile and QR pairing is available when WalletConnect is listed.
         </p>
         <p className="mt-2 text-sm text-text-muted">
           Direct USDC deposits use the address shown on the deposit page and require Base

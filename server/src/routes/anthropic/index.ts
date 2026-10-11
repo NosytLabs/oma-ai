@@ -23,6 +23,7 @@ import {
 import { anthropicSchema, toOpenAIMessages, toOpenAITools, toOpenAIToolChoice } from "./request.js";
 import { createAnthropicStream, anthropicStopReason } from "./stream.js";
 import { logger } from "../../lib/logger.js";
+import { inferenceIdempotency } from "../../middleware/inference-idempotency.js";
 
 
 /** Convert OpenAI non-streaming response → Anthropic message */
@@ -96,6 +97,7 @@ anthropicRoutes.post(
 		// use) could exceed MODEL_LIMITS entirely — an alternate door into the
 		// same unthrottled inference path.
 		modelRateLimit(),
+		inferenceIdempotency(),
 		async (c) => {
 				// Start of the request, persisted as usage_records.latency_ms so
 				// provider latency is finally observable on this route too.
@@ -130,7 +132,7 @@ anthropicRoutes.post(
 
 				const userId = c.get("userId");
 				const apiKeyId = c.get("apiKey")?.id ?? null;
-				const requestId = `msg_${crypto.randomUUID()}`;
+				const requestId = c.get("inferenceRequestId") ?? `msg_${crypto.randomUUID()}`;
 
 				const openAIMessages = toOpenAIMessages(messages, system);
 				const promptText = openAIMessages.map((m) => flattenMessageContent(m.content as string | unknown[])).join("\n");
@@ -171,6 +173,7 @@ anthropicRoutes.post(
 								c.header("Cache-Control", "no-cache, no-transform");
 								c.header("X-Accel-Buffering", "no");
 								const anthropicStream = createAnthropicStream(upstreamResp, actualModelId, requestId, {
+								onFinalized: status => c.set("inferenceOutcome", status),
 								userId,
 								apiKeyId,
 								model: actualModelId,

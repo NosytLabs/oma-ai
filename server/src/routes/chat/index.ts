@@ -22,18 +22,15 @@
 	*             default). OpenAI-compatible. Used as the cost-effective tier for
 	*             large-context / tool-use requests.
 	*/
-import { createHash } from "node:crypto";
 import { Hono } from "hono";
 import { z } from "zod";
-import { and, eq } from "drizzle-orm";
 import type { OmaEnv } from "../../types.js";
 import { optionalAuth } from "../../auth/middleware.js";
 import { modelRateLimit, rateLimit } from "../../middleware/rate-limit.js";
 import { dailyUsageLimit } from "../../middleware/daily-limit.js";
+import { inferenceIdempotency } from "../../middleware/inference-idempotency.js";
 import { getModelById } from "../../inference/models.js";
 import { getModelPricing } from "../../inference/billing-service.js";
-import { usageRecords } from "../../db/schema.js";
-import { db } from "../../db/client.js";
 import {
 		assertSufficientBalance,
 		createStreamingProxy,
@@ -123,6 +120,7 @@ for (const path of ["/v1/chat/completions", WEBSITE_CHAT_PATH]) chatRoutes.post(
 				// caller's own budget, not the shared IP bucket.
 				modelRateLimit(),
 				dailyUsageLimit(),
+				inferenceIdempotency(),
 				async (c) => {
 						// Captured before any upstream work so usage_records.latency_ms
 						// measures the full round-trip (queue + provider + stream).
@@ -200,50 +198,9 @@ for (const path of ["/v1/chat/completions", WEBSITE_CHAT_PATH]) chatRoutes.post(
 						);
 				}
 
-				// 2026-07-30: idempotency-key support. If the client sends an
-				// Idempotency-Key header (OpenAI / Anthropic convention) or
-				// `idempotency_key` in the JSON body, and we've already processed
-				// a request with that key from the same user, return an explicit
-				// conflict without another upstream call or charge.
-				const idempotencyKey =
-					c.req.header("Idempotency-Key")?.trim() ||
-					(body as { idempotency_key?: string } | undefined)?.idempotency_key;
-				// SECURITY (audit 2026-09-27 / P2): hash, don't truncate. The old
-				// slice(0,200) let two long keys sharing a ~163-char prefix collide
-				// on the same requestId — the cache-hit branch then replayed the
-				// OTHER request's usage. A cryptographic digest is collision-free
-				// for input lengths we accept and fits comfortably in the column.
-				const requestId = idempotencyKey
-					? `idem-${userId}-${createHash("sha256").update(idempotencyKey).digest("hex").slice(0, 64)}`
-					: `chatcmpl-${crypto.randomUUID()}`;
+				const requestId = c.get("inferenceRequestId") ?? `chatcmpl-${crypto.randomUUID()}`;
 
 				try {
-						if (idempotencyKey && userId) {
-								const prior = await db
-										.select()
-										.from(usageRecords)
-										.where(
-												and(
-														eq(usageRecords.userId, userId),
-														eq(usageRecords.requestId, requestId),
-														eq(usageRecords.status, "completed"),
-												),
-										)
-										.limit(1);
-						if (prior.length > 0) {
-								// We retain billing metadata, not completion bodies. Do not
-								// fabricate a successful empty assistant answer on a repeat.
-								return c.json({
-									error: {
-										message: "This idempotency key was already processed. Completion bodies are not retained for replay; use the response saved by your client.",
-										type: "idempotency_conflict",
-										code: "already_processed",
-										request_id: requestId,
-									},
-								}, 409);
-						}
-				}
-
 				const promptText = messages.map((m) => flattenMessageContent(m.content)).join("\n");
 				const promptTokens = estimateTokens(promptText);
 
@@ -315,6 +272,7 @@ for (const path of ["/v1/chat/completions", WEBSITE_CHAT_PATH]) chatRoutes.post(
 								c.header("Cache-Control", "no-cache, no-transform");
 								c.header("X-Accel-Buffering", "no");
 								const proxyStream = createStreamingProxy(upstreamResp, {
+										onFinalized: status => c.set("inferenceOutcome", status),
 										userId: userId ?? "anonymous",
 										model: actualModelId,
 										requestedModel: model,

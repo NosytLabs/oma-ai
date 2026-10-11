@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { UnifiedDepositInterface } from "../UnifiedDepositInterface";
 
-const mocks = vi.hoisted(() => ({ request: vi.fn(), send: vi.fn(), sign: vi.fn(), userId: "deposit-test-user", toast: { success: vi.fn(), error: vi.fn() } }));
+const mocks = vi.hoisted(() => ({ request: vi.fn(), send: vi.fn(), sign: vi.fn(), connect: vi.fn(), connected: true, userId: "deposit-test-user", toast: { success: vi.fn(), error: vi.fn() } }));
 const ADDRESS = "0x0000000000000000000000000000000000000001" as const;
 const RECEIVER = "0x0000000000000000000000000000000000000002";
 const TX = `0x${"a".repeat(64)}`;
@@ -12,11 +12,13 @@ vi.mock("@/components/ui/Toast", () => ({ useToast: () => mocks.toast }));
 // The external wallet cannot transact in jsdom. Keep the real component's
 // broadcast/proof/registration state transitions, replacing only these I/O calls.
 vi.mock("@/lib/wallet", () => ({
- connectWallet: vi.fn(async () => ({ address: ADDRESS, chainId: 8453 })),
+ connectWallet: mocks.connect,
  ensureBaseChain: vi.fn(async () => {}),
  getConnectedAccount: vi.fn(async () => ADDRESS), hasWallet: () => true,
  sendUsdcTransfer: mocks.send, signDepositMessage: mocks.sign,
- subscribeWalletAccount: (listener: (address: typeof ADDRESS) => void) => { listener(ADDRESS); return () => {}; },
+ subscribeWalletAccount: (listener: (address: typeof ADDRESS | null) => void) => { listener(mocks.connected ? ADDRESS : null); return () => {}; },
+ listWallets: () => [{ id: "rabby", name: "Rabby" }, { id: "walletconnect", name: "WalletConnect" }],
+ subscribeWallets: (listener: () => void) => { listener(); return () => {}; },
 }));
 vi.mock("@/lib/framer-motion-client", () => ({
  AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
@@ -34,7 +36,8 @@ async function pay() {
 
 describe("USDC broadcast recovery", () => {
  beforeEach(() => {
-  vi.resetAllMocks(); sessionStorage.clear(); mocks.userId = "deposit-test-user";
+  vi.resetAllMocks(); sessionStorage.clear(); mocks.userId = "deposit-test-user"; mocks.connected = true;
+  mocks.connect.mockResolvedValue({ address: ADDRESS, chainId: 8453 });
   mocks.send.mockResolvedValue({ txHash: TX }); mocks.sign.mockResolvedValue("0xproof");
   let nonce = 0;
   mocks.request.mockImplementation(async (path: string) => {
@@ -112,5 +115,27 @@ describe("USDC broadcast recovery", () => {
   fireEvent.click(await screen.findByRole("button", { name: "Send 1.005 USDC" }));
   expect(await screen.findByText(/at most two decimal places/i)).toBeVisible();
   expect(mocks.send).not.toHaveBeenCalled();
+ });
+
+ it("connects the wallet the depositor selects instead of the first extension", async () => {
+  mocks.connected = false;
+  render(<UnifiedDepositInterface />);
+  fireEvent.change(await screen.findByLabelText("Wallet to connect"), { target: { value: "walletconnect" } });
+  fireEvent.click(screen.getByRole("button", { name: "Connect WalletConnect" }));
+  await waitFor(() => expect(mocks.connect).toHaveBeenCalledExactlyOnceWith("walletconnect"));
+  expect(mocks.send).not.toHaveBeenCalled();
+ });
+
+ it("offers connection before retrying a saved transfer, without broadcasting again", async () => {
+  mocks.sign.mockRejectedValueOnce(new Error("User rejected proof"));
+  await pay(); await screen.findByRole("button", { name: "Retry registration" }); cleanup();
+  mocks.connected = false;
+  render(<UnifiedDepositInterface />);
+  const retry = await screen.findByRole("button", { name: "Retry registration" });
+  expect(retry).toBeDisabled();
+  fireEvent.change(screen.getByLabelText("Wallet to connect"), { target: { value: "walletconnect" } });
+  fireEvent.click(screen.getByRole("button", { name: "Connect WalletConnect" }));
+  await waitFor(() => expect(retry).toBeEnabled());
+  expect(mocks.send).toHaveBeenCalledOnce();
  });
 });

@@ -103,12 +103,17 @@ export function RateLimitsSection() {
 					<h3 className="mb-2 font-semibold text-text">Rate Limit Headers</h3>
 					<div className="space-y-1 font-mono text-xs text-text-muted">
 						<div>
-							<span className="text-accent">X-RateLimit-Limit</span> - Requests
-							per minute
+						<span className="text-accent">X-RateLimit-Limit</span> - Budget
+							for the reported policy
 						</div>
 						<div>
 							<span className="text-accent">X-RateLimit-Remaining</span> -
-							Requests left
+							Budget left (requests or tokens)
+						</div>
+						<div>
+							<span className="text-accent">X-RateLimit-Policy</span> -
+							model-rpm counts requests; model-tpm counts tokens;
+							degraded-memory is enforced per instance
 						</div>
 						<div>
 							<span className="text-accent">X-RateLimit-Reset</span> - Unix
@@ -119,6 +124,12 @@ export function RateLimitsSection() {
 							before retrying (sent on 429/503)
 						</div>
 					</div>
+					<p className="mt-3 text-sm text-text-muted">
+						Respect Retry-After on 429/503 and use backoff with jitter. During a
+						limiter outage, creating another key does not reset your account’s
+						emergency allowance. Provider capacity limits may also reject requests;
+						a listed model is not a reservation of upstream capacity.
+					</p>
 				</div>
 			</div>
 		</AnimatedSection>

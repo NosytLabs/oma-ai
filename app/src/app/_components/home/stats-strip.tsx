@@ -6,61 +6,15 @@
 	*/
 
 import { Reveal } from "@/app/_components/home/reveal";
-import { isAvailableChatModel } from "./catalog-availability";
-import { useEffect, useState } from "react";
-import {
-	MIN_INPUT_PRICE_LABEL,
-	loadRawModelEntries,
-} from "@/lib/models-data";
-
-/**
- * Count the models a visitor can actually call right now.
- *
- * The previous count filtered by modality only, so the "Models live" stat
- * reported the whole catalog (20) while the API was serving 2 as available
- * and 18 as unavailable — the same signal the /models and /pricing badges
- * already surface. An unavailable entry is not live, so it is excluded here
- * too; entries that omit the flag are counted, matching loadModels().
- */
-export function countLiveModels(
-	entries: readonly { modality?: string; category?: string; available?: boolean }[],
-): number {
-	return entries.filter(isAvailableChatModel).length;
-}
-
-function useLiveModelCount() {
-	const [count, setCount] = useState<number | null>(null);
-	useEffect(() => {
-		let alive = true;
-		loadRawModelEntries()
-			.then((entries) => {
-				if (!alive || !entries.length) return;
-				// Filter to chat-only so the "Models live" stat matches the
-				// "curated chat models" label even when the upstream catalog also
-				// exposes image / video / tts / embedding / asr / music / upscale
-				// / inpaint rows. Without this the live number is inflated by
-				// every modality bucket and the hero drifts from the static
-				// `MODEL_COUNT` claim. Unavailable entries are excluded by
-				// countLiveModels so the stat reports what can be called.
-				const chatCount = countLiveModels(entries);
-				setCount(chatCount);
-			})
-			.catch(() => {
-				/* Availability unknown — keep the placeholder instead of claiming the catalog is live. */
-			});
-		return () => {
-			alive = false;
-		};
-	}, []);
-	return count;
-}
+import { MIN_INPUT_PRICE_LABEL } from "@/lib/models-data";
+import { useLiveModelCount } from "./use-live-count";
 
 const STATS: { label: string; value: string; hint: string; live?: boolean }[] =
 	[
 	{
-		label: "Models live",
+		label: "Models enabled",
 		value: "—",
-		hint: "checking live availability",
+		hint: "loading the current catalog",
 		live: true,
 	},
 	{
@@ -84,7 +38,7 @@ export function StatsStrip() {
 	const liveCount = useLiveModelCount();
 	const stats = STATS.map((s) =>
 		s.live && liveCount != null
-			? { ...s, value: `${liveCount}`, hint: "live now · Venice + OMA-AI" }
+			? { ...s, value: `${liveCount}`, hint: "enabled in the current catalog" }
 			: s,
 	);
 	return (

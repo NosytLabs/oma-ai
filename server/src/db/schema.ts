@@ -43,6 +43,19 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
+/** Durable admission guard for concurrent API retries; completed keys remain blocked. */
+export const inferenceRequestClaims = pgTable("inference_request_claims", {
+	userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+	keyHash: text("key_hash").notNull(),
+	requestId: text("request_id").primaryKey(),
+	state: text("state").notNull().default("pending"),
+	expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, table => [
+	uniqueIndex("uq_inference_claim_user_key").on(table.userId, table.keyHash),
+	check("inference_claim_state", sql`${table.state} in ('pending', 'completed')`),
+]);
+
 // =============================================================================
 // Enums
 // =============================================================================

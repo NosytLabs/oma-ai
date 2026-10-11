@@ -42,9 +42,9 @@ import {
 } from "./settlement-cache.js";
 import { settlePaymentAsync } from "./settle.js";
 import { SERVER_TREASURY } from "./treasury.js";
-import { readTreasuryTransfer } from "./funding-recovery.js";
+import { paymentCreditAmounts, readTreasuryTransfer } from "./funding-recovery.js";
 import { getPublicClient } from "../lib/rpc-client.js";
-import { creditConfirmedUsdcPayment } from "../lib/payment-credit.js";
+import { creditConfirmedUsdcPayment, PaymentCreditConflictError } from "../lib/payment-credit.js";
 import { verifyPayment } from "./verify.js";
 import {
 		PAYMENT_WINDOW_SECONDS,
@@ -128,6 +128,14 @@ function paymentError(
 		retryable: boolean,
 ): { error: { code: string; message: string; retryable: boolean; type: string } } {
 		return { error: { code, message, retryable, type: "payment_error" } };
+}
+
+function settlementFailure(c: Context<OmaEnv>, err: unknown) {
+	if (err instanceof PaymentCreditConflictError) {
+		return c.json(paymentError(err.code, err.message, false), err.status);
+	}
+	logger.error({ err }, "[FACILITATOR] settlement credit pending");
+	return c.json(paymentError("x402_credit_failed", "Payment confirmed but credit is pending. Retry settlement with the same transaction hash.", true), 500);
 }
 
 export const x402Routes = new Hono<OmaEnv>();
@@ -336,11 +344,7 @@ x402Routes.post("/x402/settle", sessionAuth, async (c) => {
 					if (result.settled) c.header("PAYMENT-RESPONSE", buildXPaymentResponse({ txHash: body.txHash, payer: cached.payFrom }));
 					return c.json(result, result.settled ? 200 : 422);
 				} catch (err) {
-						const message = err instanceof Error ? err.message : "Failed to credit settlement";
-						return c.json(
-							{ error: { message, type: "payment_error", code: "x402_credit_failed" } },
-							message.includes("another account") ? 409 : 500,
-						);
+						return settlementFailure(c, err);
 				}
 		}
 
@@ -371,7 +375,7 @@ x402Routes.post("/x402/settle", sessionAuth, async (c) => {
 										hash: body.txHash as `0x${string}`,
 								});
 								const transfer = readTreasuryTransfer(receipt, expectedPayee);
-								if (transfer && parseUsdcAtomic(transfer.amount) === parseUsdcAtomic(existingSettlement[0].amount)) senderAddr = transfer.payFrom;
+								if (transfer && transfer.amount === paymentCreditAmounts(existingSettlement[0].amount).amountUsd) senderAddr = transfer.payFrom;
 						} catch (chainErr) {
 								logger.warn(
 										{ err: chainErr, txHash: body.txHash },
@@ -423,11 +427,7 @@ x402Routes.post("/x402/settle", sessionAuth, async (c) => {
 								200,
 						);
 				} catch (err) {
-						const message = err instanceof Error ? err.message : "Failed to credit settlement";
-						return c.json(
-								{ error: { message, type: "payment_error", code: "x402_credit_failed" } },
-								message.includes("another account") ? 409 : 500,
-						);
+						return settlementFailure(c, err);
 				}
 		}
 
@@ -447,8 +447,7 @@ x402Routes.post("/x402/settle", sessionAuth, async (c) => {
 				if (result.settled) c.header("PAYMENT-RESPONSE", buildXPaymentResponse({ txHash: body.txHash, payer: recovered.payFrom }));
 				return c.json(result, result.settled ? 200 : 422);
 			} catch (err) {
-				logger.error({ err, txHash: body.txHash }, "[FACILITATOR] recovered payment credit failed");
-				return c.json(paymentError("x402_credit_failed", "Payment confirmed but credit is pending. Retry settlement with the same transaction hash.", true), 500);
+				return settlementFailure(c, err);
 			}
 		}
 

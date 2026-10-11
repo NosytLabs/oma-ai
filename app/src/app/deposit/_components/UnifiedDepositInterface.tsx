@@ -33,10 +33,12 @@ import { readPendingDeposit, savePendingDeposit, type BroadcastDeposit } from "@
 import {
 	connectWallet,
 	ensureBaseChain,
-	hasWallet,
+	listWallets,
 	sendUsdcTransfer,
 	signDepositMessage,
 	subscribeWalletAccount,
+	subscribeWallets,
+	type DiscoveredWallet,
 } from "@/lib/wallet";
 
 export interface PendingDeposit {
@@ -56,6 +58,27 @@ function shortTx(t: string): string {
 	return `${t.slice(0, 10)}…${t.slice(-6)}`;
 }
 
+function WalletConnectionControls({ wallets, selectedId, onSelect, connecting, onConnect }: {
+	wallets: DiscoveredWallet[]; selectedId: string; onSelect: (id: string) => void;
+	connecting: boolean; onConnect: () => void;
+}) {
+	const id = useId();
+	const selected = wallets.find(wallet => wallet.id === selectedId) ?? wallets[0];
+	return <div className="space-y-2 text-left">
+		{wallets.length > 1 && <>
+			<label htmlFor={id} className="block text-xs text-text-secondary">Wallet to connect</label>
+			<select id={id} value={selected?.id ?? ""} onChange={event => onSelect(event.target.value)} disabled={connecting}
+				className="min-h-11 w-full rounded-[var(--radius-md)] border border-border-bright bg-surface px-3 text-sm text-text-primary">
+				{wallets.map(wallet => <option key={wallet.id} value={wallet.id}>{wallet.name}</option>)}
+			</select>
+		</>}
+		<button type="button" onClick={onConnect} disabled={connecting || !selected}
+			className="btn-primary flex min-h-11 w-full items-center justify-center gap-2 rounded-full px-4 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-50">
+			{connecting ? <><Loader2 className="h-4 w-4 animate-spin" /> Connecting…</> : <><Wallet className="h-4 w-4" aria-hidden="true" /> {selected ? `Connect ${selected.name}` : "Connect wallet to pay"}</>}
+		</button>
+	</div>;
+}
+
 export function UnifiedDepositInterface({
 	onDeposit,
 }: {
@@ -72,6 +95,8 @@ export function UnifiedDepositInterface({
 	const [loadingInstructions, setLoadingInstructions] = useState(true);
 	const [connectedAddress, setConnectedAddress] = useState<`0x${string}` | null>(null);
 	const [connecting, setConnecting] = useState(false);
+	const [wallets, setWallets] = useState<DiscoveredWallet[]>([]);
+	const [selectedWalletId, setSelectedWalletId] = useState("");
 	const [broadcastDeposit, setBroadcastDeposit] = useState<BroadcastDeposit | null>(null);
 	const toast = useToast();
 	const id = useId();
@@ -131,6 +156,10 @@ export function UnifiedDepositInterface({
 		if (!isAuthenticated || isDemo) return;
 		return subscribeWalletAccount(setConnectedAddress);
 	}, [isAuthenticated, isDemo]);
+	useEffect(() => {
+		if (!isAuthenticated || isDemo) return;
+		return subscribeWallets(() => setWallets(listWallets()));
+	}, [isAuthenticated, isDemo]);
 
 	const handleAmountChange = (value: string) => {
 		if (value === "" || /^\d*\.?\d*$/.test(value)) setAmountUsd(value);
@@ -140,7 +169,8 @@ export function UnifiedDepositInterface({
 		setConnecting(true);
 		setError("");
 		try {
-			const wallet = await connectWallet();
+			const walletId = wallets.find(wallet => wallet.id === selectedWalletId)?.id ?? wallets[0]?.id;
+			const wallet = await connectWallet(walletId);
 			await ensureBaseChain();
 			setConnectedAddress(wallet.address);
 			toast.success("Wallet connected");
@@ -149,7 +179,7 @@ export function UnifiedDepositInterface({
 		} finally {
 			setConnecting(false);
 		}
-	}, [toast]);
+	}, [toast, wallets, selectedWalletId]);
 
 	const registerTransfer = useCallback(async (transfer: BroadcastDeposit, challenge?: { token: string }) => {
 		setProcessingStep("Signing deposit proof…");
@@ -247,6 +277,10 @@ export function UnifiedDepositInterface({
 
 	const handleRetryRegistration = useCallback(async () => {
 		if (!broadcastDeposit) return;
+		if (connectedAddress?.toLowerCase() !== broadcastDeposit.fromAddress.toLowerCase()) {
+			setError("Connect the wallet that sent this transfer before retrying registration.");
+			return;
+		}
 		setError("");
 		setStep("processing");
 		setProcessingStep("Retrying deposit registration…");
@@ -262,7 +296,7 @@ export function UnifiedDepositInterface({
 			);
 			setStep("error");
 		}
-	}, [broadcastDeposit, registerTransfer]);
+	}, [broadcastDeposit, connectedAddress, registerTransfer]);
 
 	const handleReset = () => {
 		setStep("select");
@@ -272,6 +306,8 @@ export function UnifiedDepositInterface({
 		if (userId) savePendingDeposit(userId, null);
 		setBroadcastDeposit(null);
 	};
+	const walletControls = <WalletConnectionControls wallets={wallets} selectedId={selectedWalletId} onSelect={setSelectedWalletId}
+		connecting={connecting} onConnect={() => void handleConnect()} />;
 
 	if (!isAuthenticated || isDemo) {
 		return (
@@ -377,26 +413,7 @@ export function UnifiedDepositInterface({
 								</div>
 							) : (
 								<>
-									{!connectedAddress && (
-										<button
-											type="button"
-											onClick={() => void handleConnect()}
-											disabled={connecting}
-											className="btn-primary flex w-full items-center justify-center gap-2 rounded-full py-4 text-sm disabled:cursor-not-allowed disabled:opacity-50"
-										>
-											{connecting ? (
-												<>
-													<Loader2 className="h-4 w-4 animate-spin" />
-													Connecting…
-												</>
-											) : (
-												<>
-													<Wallet className="h-4 w-4" aria-hidden="true" />
-													Connect wallet to pay
-												</>
-											)}
-										</button>
-									)}
+									{!connectedAddress && walletControls}
 
 									{connectedAddress && (
 										<div className="flex items-center justify-between gap-2 rounded-[var(--radius-lg)] border border-success/25 bg-success/5 px-4 py-3">
@@ -406,11 +423,12 @@ export function UnifiedDepositInterface({
 												</div>
 												<button
 													type="button"
-													onClick={() => void handleConnect()}
+													onClick={() => setConnectedAddress(null)}
 													className="mt-0.5 font-mono text-sm text-text-bright tabular-nums hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-													title="Switch wallet account"
+													title="Change wallet"
 												>
 													{shortAddr(connectedAddress)}
+													<span className="ml-2 font-sans text-xs text-accent">Change wallet</span>
 												</button>
 											</div>
 											<span className="shrink-0 rounded-[var(--radius-sm)] bg-success/10 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-success">
@@ -419,7 +437,7 @@ export function UnifiedDepositInterface({
 										</div>
 									)}
 
-									{!hasWallet() && (
+									{wallets.length === 0 && (
 										<div className="rounded-[var(--radius-sm)] border border-warning/30 bg-warning/10 p-3 text-sm text-warning">
 											<AlertTriangle className="mr-2 inline h-4 w-4" />
 											No wallet detected. Install MetaMask, Rabby, or Coinbase
@@ -575,13 +593,18 @@ export function UnifiedDepositInterface({
 								Deposit submission failed
 							</h3>
 							<p className="mt-1 text-sm text-text-secondary">{error}</p>
+							{broadcastDeposit && connectedAddress?.toLowerCase() !== broadcastDeposit.fromAddress.toLowerCase() && <div className="mt-4 space-y-2">
+								<p className="text-xs text-text-secondary">Connect the sending wallet: <span className="font-mono">{shortAddr(broadcastDeposit.fromAddress)}</span></p>
+								{walletControls}
+							</div>}
 							{broadcastDeposit && <a href={`https://basescan.io/tx/${broadcastDeposit.txHash}`} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-1 text-sm text-accent underline">View transfer on BaseScan <ExternalLink className="h-3 w-3" aria-hidden="true" /></a>}
 							<div className="mt-4 flex flex-wrap justify-center gap-2">
 								{broadcastDeposit ? (
 									<button
 										type="button"
 										onClick={() => void handleRetryRegistration()}
-										className="inline-flex h-10 items-center justify-center rounded-[var(--radius-md)] border border-accent bg-accent px-4 text-sm font-semibold text-void transition-colors duration-200 ease-out hover:bg-accent-bright active:scale-[0.97]"
+										disabled={connecting || connectedAddress?.toLowerCase() !== broadcastDeposit.fromAddress.toLowerCase()}
+										className="inline-flex h-10 items-center justify-center rounded-[var(--radius-md)] border border-accent bg-accent px-4 text-sm font-semibold text-void transition-colors duration-200 ease-out hover:bg-accent-bright active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
 									>
 										Retry registration
 									</button>

@@ -80,7 +80,7 @@ export async function checkRpmLimit(
 			// enforcement (per-instance, not cluster-wide) but still enforced,
 			// and `degraded: true` propagates so the caller can label the
 			// response honestly.
-			const fb = checkMemoryCounter(key, limit, windowMs);
+		const fb = checkMemoryCounter(key, limit, windowMs, requested);
 			return {
 				allowed: fb.allowed,
 				remaining: fb.remaining,

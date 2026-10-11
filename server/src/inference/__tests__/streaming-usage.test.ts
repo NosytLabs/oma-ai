@@ -44,4 +44,13 @@ describe("upstream usage metering", () => {
 		const second = await parseNonStreamingResponse(Response.json({ choices: [{ message: { content: "", reasoning_content: "think", tool_calls: [{ function: { arguments: '{"a":2}' } }] } }], usage: { prompt_tokens: "21", completion_tokens: -1 } }), args);
 		expect(second).toMatchObject({ promptTokens: 99, outputTokens: estimateTokens("think") + estimateTokens('{"a":2}') });
 	});
+	it("records an upstream SSE error as failed instead of billing it as completed", async () => {
+		await expect(stream([frame({ choices: [{ delta: { content: "partial" } }] }), frame({ error: { message: "private provider detail" } })])).rejects.toThrow("Upstream stream failed");
+		expect(recordUsage).toHaveBeenCalledWith(expect.objectContaining({ status: "error" }));
+		expect(recordUsage).not.toHaveBeenCalledWith(expect.objectContaining({ status: "completed" }));
+	});
+	it("rejects a JSON error envelope even when the upstream status is 200", async () => {
+		await expect(parseNonStreamingResponse(Response.json({ error: { message: "private provider detail" } }), args)).rejects.toThrow("Upstream response failed");
+		expect(recordUsage).not.toHaveBeenCalled();
+	});
 });

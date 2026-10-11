@@ -76,7 +76,13 @@ Users can fund the same internal balance with USDC on Base mainnet. Direct depos
 
 The browser uses the customer's injected EIP-1193 wallet, discovered through
 EIP-6963 or legacy injection. It does not create a custodial OMA wallet or store
-the customer's private key. WalletConnect QR/mobile sessions are not implemented.
+the customer's private key. WalletConnect QR/mobile sessions are implemented and
+appear only when the website has a valid public `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID`
+from OMA's Reown project. Configure its allowed origins, including the canonical
+website host, before enabling it. The provider loads on an explicit connection
+action, uses `/api/rpc/base` for Base RPC, and forwards account/disconnect events.
+Discovery does not initialize the relay or open a pairing prompt. Until the ID is
+configured, injected wallets remain available and the QR connector is hidden.
 Magic-link users can sign in without a wallet and use card checkout when enabled.
 
 Direct deposits first request `/api/v1/deposit/usdc/challenge` for the account
@@ -87,7 +93,8 @@ proof/registration attempt. It never sends a second transfer on retry. This
 recovery survives a reload in the same tab while storage is available; it is not
 cross-device synchronization or evidence that funds confirmed. The sending
 account is checked before transfer/signing, and account/disconnect events update
-the form. See the [settlement runbook](settlement-runbook.md) for recovery.
+the form. Recovery requires the original sending account; the form offers wallet
+selection before enabling registration. See the [settlement runbook](settlement-runbook.md) for recovery.
 
 Programmatic direct-deposit registration uses the same EIP-191 message, joined
 with newline characters and no trailing newline:
@@ -126,7 +133,7 @@ The standard v2 header is base64-encoded JSON with `x402Version: 2`, `accepted: 
 
 A successful verify response returns top-level `{ valid: true, txHash, amount, networkId }`, with `amount` in decimal USDC. A successful settle response returns `{ settled: true, receipt, creditedCents }`; `receipt` is a signed string, and `PAYMENT-RESPONSE` is a base64 summary. Settlement accepts network `base` or `eip155:8453`, derives amounts from payment evidence, and preserves fractional credits.
 
-Crediting is idempotent by transaction hash. If the verification cache is lost after a server restart, settlement can recover a confirmed transfer from Base USDC Transfer logs and bind its payer to the session wallet. The transaction's gas payer is the facilitator and must not be confused with the USDC sender. If funds moved but crediting failed, retry settlement with the same hash and payer session. A verification timeout can return a hash with `valid: false`; reconcile its chain receipt before authorizing another payment. See [`settlement-runbook.md`](settlement-runbook.md) for recovery procedures.
+Crediting is idempotent by transaction hash. If the verification cache is lost after a server restart, settlement can recover a confirmed transfer from Base USDC Transfer logs and bind its payer to the session wallet. The transaction's gas payer is the facilitator and must not be confused with the USDC sender. If funds moved but crediting failed, retry settlement with the same hash and payer session. A 409 `payment_already_credited` or `payment_reconciliation_required` conflict is not retryable; use support reconciliation, without authorizing another payment. A verification timeout can return a hash with `valid: false`; reconcile its chain receipt before authorizing another payment. See [`settlement-runbook.md`](settlement-runbook.md) for recovery procedures.
 
 ## Why there are zero Polar meters
 
@@ -156,7 +163,17 @@ Key validity is read from Postgres on each request, with only concurrent in-flig
 
 Database URLs and provider/operator secrets belong only in server environment variables. The browser receives public API origins and account-scoped responses, not direct database access. Both website proxies discard incoming `x-neon-*` headers, and `/api/internal/*` is blocked. Internal recovery jobs accept the operator recovery token or a native Neon scheduler header only in the Neon runtime, never through the website proxy. Neon removes client-supplied runtime headers on the native function boundary; this platform behavior is documented in [Neon's scheduler guide](https://neon.com/blog/your-neon-functions-can-now-run-on-a-schedule).
 
-Completed OpenAI-compatible requests with the same `Idempotency-Key` return 409 `already_processed` without another provider call or charge. OMA retains billing metadata, not completion bodies, so clients must keep their original response. This does not provide full response replay or prevent simultaneous upstream calls before either has recorded usage.
+`Idempotency-Key` (or `idempotency_key` in the body) accepts at most 512 UTF-8 bytes.
+Both inference APIs share the same account-scoped key space, including calls made
+with different API keys. Postgres atomically admits one worker: concurrent duplicates
+return 409 `request_in_progress` and `Retry-After: 5`. The claim spans the response
+stream and token metering. Completed keys return 409 `already_processed` without
+another provider call or charge; clients must retain their response because OMA
+does not store completion bodies. Failed/cancelled attempts release the claim and
+use a new usage ID on retry, avoiding an old failed usage record suppressing billing.
+Abandoned pending worker claims expire after five minutes; completed billing records
+still prevent reclaiming them. Completed claim metadata is retained with the account;
+it contains a key hash and request ID, never raw keys or prompts.
 
 The OpenAPI document is served at:
 
@@ -173,6 +190,15 @@ The live model endpoint is the source of truth for current availability and pric
 Inference shares a 240-second total time budget across retries, fallbacks, and response reads. OpenBroker attempts allow up to 180 seconds for host selection and completion; other provider attempts allow 60 seconds for JSON responses or 120 seconds for streams. The website proxy waits up to 270 seconds and declares a 300-second Vercel function limit. Caller cancellation propagates to the provider and stops further retries. SDK clients should allow at least 270 seconds and inspect the actual-model/fallback headers. OpenBroker can queue longer than OMA's budget; a catalog-enabled model is not a guarantee of immediate capacity.
 
 Free website quotas count admitted attempts, including requests that later fail upstream: 20 per guest IP or 100 per signed-in account per UTC day. Enforcement and `GET /v1/usage/today` read the same counter; reading the snapshot never consumes quota. Both shared Redis and bounded per-process fallback counters reset at midnight UTC. The fallback retains usage already observed by that process, but resets on restart and does not replace shared durable enforcement. Paid API-key calls do not consume the free quota, even with the website source header; prepaid balance and API rate limits still apply. Daily-cap responses include `Retry-After`; quota snapshots are private and non-cacheable.
+
+Default inference limits allow a 60-request burst, refilling at 20 requests/second,
+under a 60-RPM ceiling. Model overrides can add token ceilings. Script failures
+preserve token weights in a per-process fixed window. When shared limiter state
+is unavailable, inference uses a five-request/minute emergency allowance per
+account/instance (IP for guests); rotating keys does not reset that allowance.
+Further requests return 503 and `Retry-After`. `X-RateLimit-Policy` identifies
+whether reported limit/remaining units are requests, tokens or degraded memory.
+Local fallback does not replace distributed enforcement or upstream capacity.
 
 The contact form delivers through `SUPPORT_WEBHOOK_URL`. It reports success only after that service acknowledges the request. There is no database queue or SMTP fallback: missing configuration returns 503, and a failed or timed-out delivery returns 502. The form preserves the message and offers the support email address on failure. Configure and verify the webhook before relying on form delivery.
 

@@ -30,4 +30,9 @@ describe("USDC funding credit precision", () => {
     expect(paymentCreditAmounts("1.234567")).toEqual({ amountUsd: "1.234567", credits: "123.4567", creditedCents: 123.4567 });
     expect(paymentCreditAmounts("1.00").creditedCents).toBe(100);
   });
+  it("accepts database padding without rounding fractional atomic units", () => {
+    expect(paymentCreditAmounts("1.23456700")).toEqual(paymentCreditAmounts("1.234567"));
+    expect(paymentCreditAmounts("0.00000100").creditedCents).toBe(0.0001);
+    expect(() => paymentCreditAmounts("1.23456701")).toThrow(/decimal places/);
+  });
 });

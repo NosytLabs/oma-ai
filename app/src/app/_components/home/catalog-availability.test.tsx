@@ -13,18 +13,18 @@ vi.mock("./reveal", () => ({ Reveal: ({ children }: { children: ReactNode }) => 
 beforeEach(() => vi.clearAllMocks());
 afterEach(cleanup);
 
-describe("homepage live availability", () => {
-	it("reports zero live chat models when every chat route is unavailable", async () => {
+describe("homepage catalog availability", () => {
+	it("reports zero enabled chat models when every chat route is unavailable", async () => {
 		loadEntries.mockResolvedValue([{ id: "offline", modality: "chat", available: false }, { id: "image", modality: "image", available: true }]);
 		render(<StatsStrip />);
-		const row = screen.getByText("Models live").closest("li")!;
+		const row = screen.getByText("Models enabled").closest("li")!;
 		await waitFor(() => expect(within(row).getByText("0")).toBeInTheDocument());
 	});
 
 	it("does not claim a fallback catalog is live when the API cannot be read", async () => {
 		loadEntries.mockResolvedValue([]);
 		render(<StatsStrip />);
-		const row = screen.getByText("Models live").closest("li")!;
+		const row = screen.getByText("Models enabled").closest("li")!;
 		await waitFor(() => expect(loadEntries).toHaveBeenCalled());
 		expect(within(row).getByText("—")).toBeInTheDocument();
 	});

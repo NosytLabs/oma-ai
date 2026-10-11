@@ -8,47 +8,15 @@
 
 import { ArrowRight, KeyRound, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { LiveRequestCard } from "./LiveRequestCard";
-import { models as modelsApi } from "@/lib/api/resources";
 import { MIN_INPUT_PRICE_LABEL } from "@/lib/models-data";
-import { isAvailableChatModel } from "./catalog-availability";
-
-/**
- * Home · Hero
- *
- * The hero previously interpolated MODEL_COUNT, a hardcoded static fallback
- * that does not know which providers are dark. It rendered "20 models" while
- * the catalog reported 2 available — a 10x overstatement in the first
- * sentence of the page. Omits the number until
- * the catalog resolves so static rendering cannot overstate availability.
- */
-function useLiveModelCount(): number | null {
-	const [count, setCount] = useState<number | null>(null);
-	useEffect(() => {
-		let cancelled = false;
-		modelsApi
-			.list()
-			.then((res) => {
-				if (cancelled) return;
-				const live = (res.data ?? []).filter(isAvailableChatModel).length;
-				setCount(live);
-			})
-			.catch(() => {
-				/* Omit the count while availability is unknown. */
-			});
-		return () => {
-			cancelled = true;
-		};
-	}, []);
-	return count;
-}
+import { useLiveModelCount } from "./use-live-count";
 
 export function Hero() {
 	const liveCount = useLiveModelCount();
 	// Until the catalog resolves, omit the number entirely rather than
 	// assert a static count we cannot currently stand behind.
-	const scale = liveCount === null ? "a curated model catalog" : `${liveCount} live ${liveCount === 1 ? "model" : "models"}`;
+	const scale = liveCount === null ? "a curated model catalog" : `${liveCount} enabled ${liveCount === 1 ? "model" : "models"}`;
 
 	return (
 		<section className="relative overflow-hidden">

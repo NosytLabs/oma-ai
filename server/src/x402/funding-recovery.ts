@@ -25,7 +25,12 @@ export function readTreasuryTransfer(receipt: {
 }
 
 export function paymentCreditAmounts(amount: string) {
-  const atomic = parseUsdcAtomic(amount);
+  // Postgres numeric columns pad to eight decimals; USDC has six. Remove
+  // only insignificant zeroes, never round away a fractional atomic unit.
+  const decimal = /^(\d+)\.(\d+)$/.exec(amount);
+  const fraction = decimal?.[2]?.replace(/0+$/, "");
+  const canonical = decimal ? `${decimal[1]}${fraction ? `.${fraction}` : ""}` : amount;
+  const atomic = parseUsdcAtomic(canonical);
   if (atomic <= 0n) throw new Error("x402 settlement amount must be positive");
   // The ledger supports fractional cents. Integer division discarded paid USDC.
   const credits = formatUnits(atomic, USDC_DECIMALS - 2);

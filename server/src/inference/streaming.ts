@@ -35,6 +35,8 @@ export interface StreamingProxyArgs {
 	skipBilling?: boolean;
 	/** API key row id for Bearer-auth callers (null for website sessions). */
 	apiKeyId?: string | null;
+	/** Signal the terminal inference outcome before an outer response guard sees EOF. */
+	onFinalized?: (status: "completed" | "error" | "aborted") => void;
 }
 
 /**
@@ -70,14 +72,18 @@ export function createStreamingProxy(
 				});
 			} catch (err) {
 				logger.warn({ err, status }, "[proxy] recordUsage failed");
+			} finally {
+				recordArgs.onFinalized?.(status);
 			}
 		}
 		function consumeLine(line: string) {
 			if (!line.startsWith("data:")) return;
 			const payload = line.slice(5).trim();
 			if (!payload || payload === "[DONE]") return;
+			let obj;
+			try { obj = JSON.parse(payload); } catch { return; }
+			if (obj?.error) throw new ProviderError("Upstream stream failed", 502);
 			try {
-				const obj = JSON.parse(payload);
 				const delta = obj.choices?.[0]?.delta;
 				if (typeof delta?.content === "string") contentText += delta.content;
 				// Providers can emit both aliases for the same reasoning. Count it once.
@@ -107,10 +113,11 @@ export function createStreamingProxy(
 												sseCarry = "";
 										}
 										terminated = true;
-										controller.close();
 										// Use upstream-reported usage when available (OMA-AI sends a final
 										// usage chunk at the end of the stream), falling back to estimates.
 										await finishUsage("completed");
+										// Admission guards must observe persisted usage before EOF.
+										controller.close();
 										return;
 								}
 								const text = sseCarry + decoder.decode(value, { stream: true });
@@ -126,10 +133,10 @@ export function createStreamingProxy(
 									if (terminated) return;
 									terminated = true;
 									logger.warn({ err }, "[proxy] stream read failed");
-									controller.error(err);
 									// Retain consumed-token cost estimates for operations. Failed
 									// completions are recorded without a customer credit deduction.
 									await finishUsage("error");
+									controller.error(err);
 									try {
 										await reader.cancel();
 									} catch (cancelErr) {
@@ -164,6 +171,7 @@ export async function parseNonStreamingResponse(
 		if (!data) {
 				throw new ProviderError("Invalid upstream response", 502);
 		}
+		if (data.error) throw new ProviderError("Upstream response failed", 502);
 
 		const message = data?.choices?.[0]?.message;
 		const completionText = flattenMessageContent(message?.content ?? "");

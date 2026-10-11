@@ -189,7 +189,7 @@ export default function WalletSignInPanel({
 										Check your wallet…
 									</>
 								) : (
-						"Connect wallet"
+						wallets[0] ? `Connect ${wallets[0].name}` : "Connect wallet"
 					)}
 				</button>
 			)}

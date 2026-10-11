@@ -10,6 +10,7 @@ import { randomBytes, createHash } from "node:crypto";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
 import { createServer } from "node:net";
+import { createServer as createHttpServer } from "node:http";
 import { userInfo } from "node:os";
 import { fileURLToPath } from "node:url";
 import { setTimeout as delay } from "node:timers/promises";
@@ -33,6 +34,23 @@ let backend;
 let logs = "";
 let databaseCreated = false;
 let passed = 0;
+let providerCalls = 0;
+let providerRelease;
+let providerEntered;
+const provider = createHttpServer(async (req, res) => {
+	let body = ""; for await (const chunk of req) body += chunk;
+	const input = JSON.parse(body); providerCalls++; providerEntered?.();
+	if (input.stream) {
+		res.writeHead(200, { "Content-Type": "text/event-stream" });
+		res.write(`data: ${JSON.stringify({ choices: [{ delta: { content: "LOCAL_OK" } }] })}\n\n`);
+		await new Promise(resolve => { providerRelease = resolve; });
+		res.end(`data: ${JSON.stringify({ choices: [{ delta: {}, finish_reason: "stop" }], usage: { prompt_tokens: 10, completion_tokens: 4 } })}\n\ndata: [DONE]\n\n`);
+	} else {
+		await new Promise(resolve => { providerRelease = resolve; });
+		res.writeHead(200, { "Content-Type": "application/json" });
+		res.end(JSON.stringify({ choices: [{ message: { role: "assistant", content: "LOCAL_OK" }, finish_reason: "stop" }], usage: { prompt_tokens: 10, completion_tokens: 4 } }));
+	}
+});
 
 const portProbe = createServer();
 portProbe.listen(0, "127.0.0.1");
@@ -112,6 +130,8 @@ async function assertSignedOut(cookie) {
 }
 
 try {
+	provider.listen(0, "127.0.0.1"); await once(provider, "listening");
+	const providerOrigin = `http://127.0.0.1:${provider.address().port}`;
 	await admin.query(`CREATE DATABASE "${databaseName}"`);
 	databaseCreated = true;
 	pool = new pg.Pool({ connectionString: databaseUrl.toString() });
@@ -137,6 +157,8 @@ try {
 			ETH_RPC_URL: "http://127.0.0.1:1",
 			LOG_LEVEL: "info",
 			OTEL_SDK_DISABLED: "true",
+			VENICE_API_URL: providerOrigin,
+			VENICE_API_KEY: "isolated-local-provider-fixture",
 		},
 		stdio: ["ignore", "pipe", "pipe"],
 	});
@@ -480,6 +502,39 @@ try {
 	assert.equal(Number(recreatedBalance.rows[0]?.balance_cents ?? 0), 0);
 	pass("account deletion revokes sessions and re-signup cannot claim a second trial");
 
+	const apiTester = await magicSignIn("api-retry-test@example.com");
+	const apiTesterId = (await request("/user", { cookie: apiTester.cookie })).data.id;
+	const retryKey = (await request("/v1/keys", { method: "POST", cookie: apiTester.cookie, body: { name: "Local retry tests", expiresInDays: 1, allowedModels: ["google-gemma-4-31b-it"] } })).data;
+	const retryHeaders = { Authorization: `Bearer ${retryKey.key}`, "Idempotency-Key": "concurrent-client-retry" };
+	const completionBody = { model: "google-gemma-4-31b-it", messages: [{ role: "user", content: "Return LOCAL_OK" }], max_tokens: 8, stream: false };
+	const providerStarted = new Promise(resolve => { providerEntered = resolve; });
+	const firstCall = request("/v1/chat/completions", { method: "POST", headers: retryHeaders, body: completionBody });
+	await providerStarted;
+	const inFlight = await request("/v1/messages", { method: "POST", headers: retryHeaders, body: completionBody, expected: 409 });
+	assert.equal(inFlight.data.error.code, "request_in_progress"); assert.equal(providerCalls, 1);
+	providerRelease(); assert.equal((await firstCall).data.choices[0].message.content, "LOCAL_OK");
+	const replayKey = (await request("/v1/keys", { method: "POST", cookie: apiTester.cookie, body: { name: "Local cross-key replay", expiresInDays: 1, allowedModels: ["google-gemma-4-31b-it"] } })).data;
+	const replayed = await request("/v1/chat/completions", { method: "POST", headers: { ...retryHeaders, Authorization: `Bearer ${replayKey.key}` }, body: completionBody, expected: 409 });
+	assert.equal(replayed.data.error.code, "already_processed"); assert.equal(providerCalls, 1);
+	const billed = await pool.query("SELECT request_id,total_cents FROM usage_records WHERE user_id=$1 AND status='completed'", [apiTesterId]);
+	assert.equal(billed.rowCount, 1); assert.ok(Number(billed.rows[0].total_cents) > 0);
+	pass("real API key concurrent retries across both endpoints make one upstream call and one ledger charge");
+
+	const streamHeaders = { ...retryHeaders, "Idempotency-Key": "stream-client-retry", "Content-Type": "application/json" };
+	const streamed = await fetch(`${origin}/v1/chat/completions`, { method: "POST", headers: streamHeaders, body: JSON.stringify({ ...completionBody, stream: true }), signal: AbortSignal.timeout(20_000) });
+	assert.equal(streamed.status, 200); const reader = streamed.body.getReader(); await reader.read();
+	assert.equal((await request("/v1/chat/completions", { method: "POST", headers: streamHeaders, body: completionBody, expected: 409 })).data.error.code, "request_in_progress");
+	providerRelease(); while (!(await reader.read()).done) { /* Consume the real SSE stream and its metering finalizer. */ }
+	// A second key cannot reset the five-call account emergency budget.
+	const cappedReplay = await request("/v1/messages", { method: "POST", headers: { ...streamHeaders, Authorization: `Bearer ${replayKey.key}` }, body: completionBody, expected: 503 });
+	assert.equal(cappedReplay.data.error.code, "rate_limit_unavailable");
+	assert.equal(providerCalls, 2);
+	assert.equal((await pool.query("SELECT count(*)::int n FROM usage_records WHERE user_id=$1 AND status='completed'", [apiTesterId])).rows[0].n, 2);
+	await request(`/v1/keys/${retryKey.id}`, { method: "DELETE", cookie: apiTester.cookie });
+	await request(`/v1/keys/${replayKey.id}`, { method: "DELETE", cookie: apiTester.cookie });
+	await request("/v1/chat/completions", { method: "POST", headers: retryHeaders, body: completionBody, expected: 401 });
+	pass("streamed API responses hold retry protection through token metering, and revoked test keys fail immediately");
+
 	const wallet = privateKeyToAccount(generatePrivateKey());
 	const nonce = (await request("/api/auth/siwe/nonce", { method: "POST", body: {} })).data.nonce;
 	const message = createSiweMessage({
@@ -511,6 +566,7 @@ try {
 	pass("seeded user/admin magic links authenticate against the real hashed-token verifier");
 	console.log(`All ${passed} real auth integration checks passed.`);
 } finally {
+	providerRelease?.(); provider.closeAllConnections(); await new Promise(resolve => provider.close(resolve));
 	if (backend && backend.exitCode === null) {
 		const stopped = once(backend, "exit");
 		backend.kill("SIGTERM");

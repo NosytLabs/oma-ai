@@ -225,7 +225,8 @@ const spec = {
 		"/v1/chat/completions": {
 			post: {
 				summary: "OpenAI-compatible chat completion (streaming + tool calls)",
-				description: "API key model restrictions apply to primary and fallback routes. max_tokens cannot exceed the model's published max_output_tokens. An already completed Idempotency-Key returns 409 without a new call or charge; completion bodies are not retained for replay.",
+				description: "API key model restrictions apply to primary and fallback routes. max_tokens cannot exceed the model's published max_output_tokens. Idempotency-Key prevents concurrent upstream calls across both API formats; completed keys return 409 without another call or charge. Completion bodies are not retained for replay.",
+				parameters: [{ name: "Idempotency-Key", in: "header", required: false, schema: { type: "string", minLength: 1, maxLength: 512 }, description: "Account-scoped retry key, at most 512 UTF-8 bytes. Use a new key for a new request; retain your original response." }],
 				requestBody: {
 					required: true,
 					content: {
@@ -249,7 +250,7 @@ const spec = {
 					"401": { description: "Missing or invalid API key" },
 					"402": { description: "Insufficient credit balance" },
 					"403": { description: "Model outside API key scope" },
-					"409": { description: "Idempotency key already processed; use your saved response" },
+					"409": { description: "request_in_progress (Retry-After: 5) or already_processed (use your saved response)" },
 					"429": { description: "Rate limited" },
 					"502": { description: "Upstream provider error" },
 				},
@@ -259,7 +260,8 @@ const spec = {
 			post: {
 				summary: "Anthropic-compatible Messages API (Claude Code, Anthropic SDKs)",
 				description:
-					"Accepts Anthropic Messages request shape; routes through the same OMA catalog and billing as chat completions. Auth: Bearer oma_sk_… or x-api-key.",
+					"Accepts Anthropic Messages request shape; routes through the same OMA catalog and billing as chat completions. Auth: Bearer oma_sk_… or x-api-key. Idempotency-Key is shared with chat completions on the same account, including requests made with another key.",
+				parameters: [{ name: "Idempotency-Key", in: "header", required: false, schema: { type: "string", minLength: 1, maxLength: 512 }, description: "Account-scoped retry key, at most 512 UTF-8 bytes. Completed responses are not retained for replay." }],
 				requestBody: {
 					required: true,
 					content: {
@@ -296,6 +298,7 @@ const spec = {
 					"401": { description: "Missing or invalid API key" },
 					"402": { description: "Insufficient credit balance" },
 					"404": { description: "Unknown model id" },
+					"409": { description: "request_in_progress (Retry-After: 5) or already_processed (use your saved response)" },
 					"502": { description: "Upstream provider error" },
 				},
 			},

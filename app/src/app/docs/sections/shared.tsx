@@ -73,6 +73,11 @@ export const RATE_LIMIT_ROWS: RateLimitRow[] = [
 		value: "60 RPM",
 		desc: "Sliding-window requests-per-minute ceiling.",
 	},
+	{
+		name: "Emergency allowance",
+		value: "5 RPM",
+		desc: "During limiter outages: per account and instance (per IP for guests), shared across that account's keys. Further requests return 503.",
+	},
 ];
 
 // Per-model overrides — mirrors MODEL_LIMITS in
@@ -115,7 +120,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 		path: "/v1/chat/completions",
 		anchor: "ep-chat",
 		title: "Chat Completions",
-		desc: "OpenAI-compatible multi-turn chat with SSE streaming. Key model restrictions apply to fallback routes too. Repeating a completed Idempotency-Key returns 409 already_processed; completion bodies are not retained for replay.",
+		desc: "OpenAI-compatible multi-turn chat with SSE streaming. Key model restrictions apply to fallback routes too. Use an Idempotency-Key (up to 512 UTF-8 bytes) for retries. Concurrent duplicates return 409 request_in_progress with Retry-After; completed keys return 409 already_processed. Keep your original response; completion bodies are not retained for replay.",
 		auth: "Bearer token (API key); requests spend prepaid credits",
 		body: {
 			model:
@@ -548,7 +553,7 @@ export const ERROR_CODES: ErrorInfo[] = [
 	{
 		code: 409,
 		type: "conflict",
-		desc: "Request conflicts with current state. Completed Idempotency-Key reuse returns idempotency_conflict / already_processed without another charge; keep your original response. Settlement owned by another account is also rejected.",
+		desc: "Request conflicts with current state. Concurrent Idempotency-Key reuse returns request_in_progress: wait Retry-After, then retry the same key. Completed keys return already_processed without another charge: use your saved response. Retry keys are shared by both inference APIs and all keys on your account. Settlement owned by another account is also rejected.",
 	},
 	{
 		code: 422,
