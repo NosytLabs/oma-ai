@@ -145,6 +145,35 @@ the final failure; the
 confirmed the retry settings through Context7. Removed the unreferenced
 operator webhook component and an unsupported millisecond-latency promise.
 
+### Verified follow-up release
+
+| Service | Source | Deployment | Observed state |
+| --- | --- | --- | --- |
+| Vercel website | `b484b1d171227abc46fb9060e901f6e475cebcee` | `dpl_ByA3axydFUbUDWPFiB4M2mwKqyzp` | READY; `www.oma-ai.com` matched |
+| Neon API | `576f47b3200a50792b9e2f359629598e03960128` | `omaapi` 82 | Current/active, completed; Node 24, 2048 MiB |
+
+The website-only chart/docs follow-up did not redeploy the API. Neon exposes the
+same 40 environment variable names; this check does not inspect secret values.
+Both existing every-minute recovery jobs remain enabled with their original
+trigger IDs, routes and schedules. Native and same-origin readiness returned
+200 with healthy Postgres/Redis. Production Base and Base Sepolia read-only RPC
+checks returned `0x2105` and `0x14a34` respectively; no payment was signed.
+
+Anonymous keys, usage export and admin settings returned 401; private recovery
+paths and `/.env` returned 404. Public OpenAPI 3.1 includes IP restrictions and
+no admin, internal or website-chat paths. After refreshing the existing live
+docs tab, the new SDK factory and retry settings were visible. The docs had a
+correct canonical, one H1, no page overflow at 1280px and no captured console
+warnings/errors. Local final docs also passed 390px layout checks. The desktop
+production SDK capture and both admin chart captures are in
+`.screenshots/platform-audit-2026-10-11/`.
+
+The [lockfile workflow](https://github.com/NosytLabs/oma-ai/actions/runs/38139464601)
+passed the final website source. A superseded in-progress docs deployment was
+canceled after the additional Python defects were found; it was never used as
+the final release. The interrupted chart build and subsequent final docs builds
+were rerun successfully. Receipt-only commits may follow this source.
+
 ## Cleanup and usage downloads — October 11
 
 Usage export now uses the selected dashboard dates and summary snapshot end.
