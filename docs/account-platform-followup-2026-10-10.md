@@ -12,6 +12,8 @@ Model/provider percentages measure request share, including free requests. Token
 
 Export, operations and admin token aggregates no longer overflow PostgreSQL's 32-bit integers. Unexpected server errors return a safe error and correlation ID; database statements and parameters are not exposed to customers. Controlled provider errors retain useful recovery messages.
 
+The public database health probe also keeps driver details in server logs and returns only its availability status. A regression check forces a driver failure containing private connection details and verifies the public response does not expose them.
+
 Admin deductions lock the balance and report the amount actually removed. Missing/empty balances and zero adjustments are rejected. Partial deductions carry an accurate cap flag in the response and audit record, and the console displays the applied amount. Regression checks include simultaneous deductions against one small balance.
 
 ## Dependency decisions
@@ -38,12 +40,16 @@ No mainnet transaction was executed. Facilitator gas readiness and a live settle
 ## Verification
 
 - Frontend: 731 tests passed in 111 files; lint and type checks passed; production build generated 79 routes. One cold lazy-loading chat test timed out while tests and a build competed for resources; the isolated 20-test file and subsequent full 731-test run passed. No assertion was weakened.
-- Backend: 521 tests passed, 6 skipped; lint, type checks and build passed. All 16 real HTTP/PostgreSQL integration groups passed, including SIWE, session revocation, account deletion, admin controls, concurrent capped deductions, multi-billion-token totals and database-error redaction. Each integration run uses a separate disposable local database.
+- Backend: 523 tests passed, 6 skipped; lint, type checks and build passed. All 16 real HTTP/PostgreSQL integration groups passed, including SIWE, session revocation, account deletion, admin controls, concurrent capped deductions, multi-billion-token totals and database-error redaction. Each integration run uses a separate disposable local database. The final health-probe change was followed by the full backend suite, lint and build; it does not change the previously verified account flows.
 - Dependency installation: frozen lockfile check passed; production audit reported zero vulnerabilities. The full audit retained the single mitigated development advisory described above.
-- Browser: authenticated profile save/restoration, session refresh, revocation of two other local sessions, account JSON download with eight usage records, deletion confirmation/cancel, appearance change/restoration, legacy bookmarks, read-only demo isolation, keyboard tab navigation and request-ID copying. Production account deletion and mainnet purchases were not executed. The two updated Playwright bookmark specifications were verified manually through the browser rather than run by the Playwright CLI.
+- Browser: authenticated profile save/restoration, session refresh, revocation of two other local sessions, account JSON download with eight usage records, deletion confirmation/cancel, appearance change/restoration, legacy bookmarks, read-only demo isolation, keyboard tab navigation and request-ID copying. A local admin deduction of $200 against $100 in test credits applied $100 and displayed the cap; the original $100 balance was restored afterward. Production account deletion and mainnet purchases were not executed. The two updated Playwright bookmark specifications were verified manually through the browser rather than run by the Playwright CLI.
 - Layout: desktop and 390px screenshots captured for unified settings and usage. Document width equaled the viewport at both sizes, and no duplicate element IDs were present. Final browser capture returned no warnings or errors. Artifacts remain ignored under `.screenshots/account-audit-2026-10-10/`.
 - Public SEO: the production sitemap audit checked all 65 URLs for HTTP status, canonical URL, unique title/description, one H1 and valid structured data; no findings. Private account routes retain `noindex`.
 
 ## Release receipt
 
-The tested changes are prepared for Vercel frontend and Neon API deployment. Deployment IDs and production probes will be appended after readiness is verified.
+- Vercel production deployment `dpl_E8XK8kDujJKZjMcxmVFLAXmb6iJN` reached `READY` for frontend commit `6f34a6dc4501cad9ef30594727264e0335e2a755`; aliases include `www.oma-ai.com` and `oma-ai.com`. The subsequent health-probe commit affects only the API.
+- Neon function deployment `76` completed with Node 24 and 2048 MiB for API commit `c919b683712f607829f5d309a8207da029bc0aff`. The Neon MCP confirmed deployment 76 was both current and active.
+- Production probes at 2026-10-11 00:00 UTC (October 10 locally): native and same-origin readiness returned 200 with database and Redis healthy. The public database health probe returned 200/reachable. Native and same-origin customer usage summary and admin treasury returned 401 without authentication.
+- The deployed pricing, docs, models, chat, dashboard, settings and admin pages returned 200. Dashboard, settings and admin retained `noindex, nofollow`. The public catalog returned 20 models, 18 available, with the two paused models and their reasons preserved; this is catalog availability, not a live inference test for every model. OpenAPI returned version 3.1.0; x402 info retained version 2, Base CAIP-2 network and `no-store`.
+- GitHub's frozen lockfile check passed on commit `6f34a6d`. Full application tests were run locally as recorded above; the full GitHub workflow remains manual. PR 30 contains the changes and remains open.
