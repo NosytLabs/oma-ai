@@ -16,14 +16,14 @@ async function makeApp() {
 	const { dailyUsageRoutes } = await import("../daily-usage.js");
 	const app = new Hono<OmaEnv>();
 	app.use("*", async (c, next) => { const id = c.req.header("test-user-id"); if (id) c.set("userId", id); await next(); });
-	app.post("/chat", dailyUsageLimit(), c => c.json({ error: "upstream unavailable" }, 502));
+	app.post("/website/chat/completions", dailyUsageLimit(), c => c.json({ error: "upstream unavailable" }, 502));
 	app.route("/", dailyUsageRoutes);
 	return app;
 }
 
 function send(app: Awaited<ReturnType<typeof makeApp>>, userId?: string) {
-	return app.request("/chat", { method: "POST", headers: {
-		"Content-Type": "application/json", "X-OMA-Source": "website", ...(userId ? { "test-user-id": userId } : {}),
+	return app.request("http://localhost/website/chat/completions", { method: "POST", headers: {
+		"Content-Type": "application/json", "X-OMA-Source": "website", Origin: "http://localhost:3000", ...(userId ? { "test-user-id": userId } : {}),
 	}, body: JSON.stringify({ model: "minimax-m2-7" }) });
 }
 

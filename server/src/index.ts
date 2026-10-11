@@ -288,6 +288,7 @@ app.use("*", async (c, next) => {
 // every /v1 mutation: deposit, checkout, keys, account, credits,
 // admin, chat, etc. without per-route edits).
 app.use("/v1/*", demoModeGuard);
+app.use("/website/*", demoModeGuard);
 
 // Public operational routes.
 app.route("/", healthRoutes);

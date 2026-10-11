@@ -427,105 +427,6 @@ const spec = {
 				},
 			},
 		},
-		"/v1/site-settings": {
-			get: {
-				summary: "Public rail/config status (card + crypto toggles, treasury + Polar configured flags)",
-				description:
-					"Lets the frontend render honest rail statuses. When the DB is unreachable the endpoint falls back to env-derived defaults so the deposit page never 5xxs for an anonymous visitor.",
-				security: [],
-				responses: {
-					"200": {
-						description: "Settings snapshot",
-						content: {
-							"application/json": {
-								schema: {
-									type: "object",
-									properties: {
-										maintenanceMode: { type: "boolean" },
-										cardPaymentsEnabled: { type: "boolean" },
-										cryptoPaymentsEnabled: { type: "boolean" },
-										usdcDepositConfigured: { type: "boolean" },
-										polarConfigured: { type: "boolean" },
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		"/v1/admin/site-settings": {
-			post: {
-				summary: "Toggle site-level kill switches (maintenance, card, crypto)",
-				description:
-					"Admin-only. Mutations write an audit log row tagged SITE_SETTINGS_UPDATED.",
-				responses: {
-					"200": { description: "Updated settings echoed" },
-					"400": { description: "Invalid body" },
-					"401": { description: "Not authenticated" },
-					"403": { description: "Not an admin" },
-				},
-			},
-		},
-		"/v1/admin/credit-adjust": {
-			post: {
-				summary: "Add or deduct credits for a user (cents)",
-				description:
-					"Admin-only. Rejects zero or amounts beyond ±$10k per operation. Deductions are limited to the available balance; empty balances are rejected. The response deltaCents and audit appliedDeltaCents report the amount actually applied; requestedDeltaCents retains the request and capped reports a partial deduction.",
-				responses: {
-					"200": { description: "Applied adjustment, requested amount and cap flag" },
-					"400": { description: "Invalid body or no credits available to deduct" },
-					"404": { description: "User not found" },
-					"401": { description: "Not authenticated" },
-					"403": { description: "Not an admin" },
-				},
-			},
-		},
-		"/v1/admin/user-suspend": {
-			post: {
-				summary: "Flip the user.suspended flag",
-				description:
-					"Admin-only. Writes USER_SUSPENDED or USER_UNSUSPENDED audit row with reason.",
-				responses: {
-					"200": { description: "OK" },
-					"400": { description: "Invalid body" },
-					"404": { description: "User not found" },
-					"401": { description: "Not authenticated" },
-					"403": { description: "Not admin" },
-				},
-			},
-		},
-		"/v1/admin/rate-limit-override": {
-			post: {
-				summary: "Set or clear a per-user rate-limit override",
-				description:
-					"Admin-only. Pass maxRequestsPerMinute: null to clear. Writes RATE_LIMIT_OVERRIDE_SET or _REMOVED audit row.",
-				responses: {
-					"200": { description: "OK" },
-					"400": { description: "Invalid body" },
-					"404": { description: "User not found" },
-					"401": { description: "Not authenticated" },
-					"403": { description: "Not admin" },
-				},
-			},
-		},
-		"/v1/admin/users": {
-			get: {
-				summary: "Paginated user list with balance",
-				description:
-					"Admin-only. Cursor-based pagination over (id ASC). Optional q filter searches email + name ILIKE.",
-				parameters: [
-					{ in: "query", name: "limit", schema: { type: "integer", minimum: 1, maximum: 100, default: 20 } },
-					{ in: "query", name: "cursor", schema: { type: "string" } },
-					{ in: "query", name: "q", schema: { type: "string", maxLength: 100 } },
-				],
-				responses: {
-					"200": { description: "{ items: AdminUser[], nextCursor: string|null }" },
-					"401": { description: "Not authenticated" },
-					"403": { description: "Not admin" },
-				},
-			},
-		},
 		"/x402/info": {
 			servers: fundingServers,
 			get: {
@@ -605,21 +506,9 @@ const spec = {
 	},
 };
 
-const INTERNAL_DOCUMENTATION_PATHS = new Set([
-	"/v1/site-settings",
-	"/v1/admin/site-settings",
-	"/v1/admin/credit-adjust",
-	"/v1/admin/user-suspend",
-	"/v1/admin/rate-limit-override",
-	"/v1/admin/users",
-]);
-
+/** This module contains customer endpoints only; operator contracts live in docs/PLATFORM.md. */
 export function getPublicOpenApiSpec() {
-	const paths = { ...spec.paths };
-	for (const path of INTERNAL_DOCUMENTATION_PATHS) {
-		delete paths[path as keyof typeof paths];
-	}
-	return { ...spec, paths };
+	return spec;
 }
 
 openapiRoutes.get("/openapi.json", (c) => c.json(getPublicOpenApiSpec()));

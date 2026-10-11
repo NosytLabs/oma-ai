@@ -126,7 +126,6 @@ export const ENDPOINTS: EndpointInfo[] = [
 			max_tokens: "positive integer (optional). Must not exceed the model's max_output_tokens",
 			stream: "boolean. Server-Sent Events when true (text/event-stream)",
 			tools: "array of tool definitions (optional)",
-			response_format: 'object (optional), e.g. { type: "json_object" }',
 		},
 		response: `{
 	"id": "chatcmpl-9f3k2a",
@@ -148,13 +147,15 @@ export const ENDPOINTS: EndpointInfo[] = [
 		path: "/v1/messages",
 		anchor: "ep-messages",
 		title: "Anthropic Messages",
-		desc: "Anthropic-compatible Messages API for Claude Code and the Anthropic SDK. Same catalog and billing as chat completions. Auth: Bearer oma_sk_… or x-api-key.",
+		desc: "Anthropic request format for text and function tools, including tool-result continuations and SSE. Same catalog and prepaid billing as chat completions. Image/document blocks, extended thinking, prompt caching and beta features are not supported. Auth: Bearer oma_sk_… or x-api-key.",
 		auth: "Bearer token (API key) or x-api-key",
 		body: {
 			model: 'string (required). OMA catalog id, e.g. "kimi-k3"',
-			messages: "array of { role: user|assistant, content }",
+			messages: "array of { role: user|assistant, content }. Text, assistant tool_use and user tool_result blocks are supported",
 			max_tokens: "integer (required by Anthropic clients)",
-			system: "string or content blocks (optional)",
+			system: "string or text blocks (optional)",
+			tools: "array of { name, description?, input_schema } (optional). Tool quality depends on the selected model",
+			tool_choice: "{ type: auto|any|none } or { type: tool, name } (optional)",
 			stream: "boolean. SSE when true",
 			temperature: "number (optional)",
 		},
@@ -586,14 +587,14 @@ export const QUICK_START_STEPS = [
 	{
 		n: "2",
 		id: "qs-step-request",
-		title: "Add to Headers",
-		desc: "Include your key in the Authorization header: Bearer oma_sk_...",
+		title: "Fund Your Balance",
+		desc: "Add prepaid credits using USDC on Base or card checkout when available.",
 	},
 	{
 		n: "3",
 		id: "qs-step-response",
 		title: "Start Building",
-		desc: "Use the OpenAI SDK with base_url=https://www.oma-ai.com/api/v1",
+		desc: "Send your key in the Authorization header and select an available model from the catalog.",
 	},
 ];
 

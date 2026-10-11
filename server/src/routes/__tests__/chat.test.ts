@@ -126,11 +126,11 @@ import { chatRoutes } from "../chat/index.js";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-function chatRequest(body: unknown, headers: Record<string, string> = {}) {
+function chatRequest(body: unknown, headers: Record<string, string> = {}, path = "/v1/chat/completions") {
 	const app = new Hono();
 	app.route("/", chatRoutes);
 	return app.request(
-		new Request("http://localhost/v1/chat/completions", {
+		new Request(`http://localhost${path}`, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
@@ -212,6 +212,15 @@ describe("POST /v1/chat/completions", () => {
 	});
 
 	describe("authentication enforcement", () => {
+		it("does not sponsor public API calls with copied website headers", async () => {
+			mockRouteRequest.mockResolvedValueOnce({ response: Response.json({}), actualModelId: baseBody.model });
+			mockParseNonStreaming.mockResolvedValueOnce({ data: { ok: true } });
+			const response = await chatRequest(baseBody, {
+				"X-OMA-Source": "website", Origin: "http://localhost:3000",
+			});
+			expect(response.status).toBe(401);
+			expect(mockRouteRequest).not.toHaveBeenCalled();
+		});
 		it("requires auth for paid models (no userId → 401)", async () => {
 			const res = await chatRequest(
 				{ ...baseBody, model: "llama-3.3-70b" },
@@ -222,7 +231,7 @@ describe("POST /v1/chat/completions", () => {
 			expect(data.error.code).toBe("auth_required");
 		});
 
-		it("allows free website models without auth (X-OMA-Source=website)", async () => {
+		it("allows free models on the separate local website route", async () => {
 			mockRouteRequest.mockResolvedValueOnce({
 				response: new Response("{}", { status: 200 }),
 				actualModelId: "deepseek-v4-flash-0731-openbroker",
@@ -232,7 +241,7 @@ describe("POST /v1/chat/completions", () => {
 			const res = await chatRequest(baseBody, {
 				"X-OMA-Source": "website",
 				Origin: "http://localhost:3000",
-			});
+			}, "/website/chat/completions");
 			expect(res.status).toBe(200);
 		});
 
@@ -245,8 +254,8 @@ describe("POST /v1/chat/completions", () => {
 			const res = await chatRequest(baseBody, {
 				"X-OMA-Source": "website",
 				Origin: "https://evil.example.com",
-			});
-			expect(res.status).toBe(401);
+			}, "/website/chat/completions");
+			expect(res.status).toBe(403);
 		});
 
 		it("bills API-key callers for free models even with website headers", async () => {
@@ -357,7 +366,7 @@ describe("POST /v1/chat/completions", () => {
 			const res = await chatRequest(baseBody, {
 				"X-OMA-Source": "website",
 				Origin: "http://localhost:3000",
-			});
+			}, "/website/chat/completions");
 			expect(res.status).toBe(200);
 			expect(res.headers.get("x-provider")).toBe("oma-ai");
 			expect(res.headers.get("x-actual-model")).toBe("deepseek-v4-flash-0731-openbroker");
@@ -373,7 +382,7 @@ describe("POST /v1/chat/completions", () => {
 			const res = await chatRequest(baseBody, {
 				"X-OMA-Source": "website",
 				Origin: "http://localhost:3000",
-			});
+			}, "/website/chat/completions");
 			expect(res.headers.get("x-oma-fallback")).toBe("1");
 			expect(res.headers.get("x-oma-requested-model")).toBe("deepseek-v4-flash-0731-openbroker");
 		});

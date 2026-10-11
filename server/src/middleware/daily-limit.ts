@@ -6,7 +6,7 @@
 * - Session users on the website free models ride free (no per-request
 *   charge) UP TO the daily cap; API-key callers always pay via the
 *   standard billing path, even on the same models.
-* - API calls (without X-OMA-Source: website header): always require credits
+* - Public SDK calls always require credits, regardless of source headers.
 	*
 	* This is ONLY for the website chat page. API usage always costs credits.
 	*
@@ -19,18 +19,18 @@ import type { OmaEnv } from "../types.js";
 import { extractClientIp } from "./rate-limit/utils.js";
 import { getModelById } from "../inference/models.js";
 import { isFreeWebsiteModel } from "../inference/free-website-model.js";
+import { isWebsiteChatRequest } from "../inference/website-chat-request.js";
 import { consumeDailyQuota, DAILY_LIMIT_ANONYMOUS, DAILY_LIMIT_REGISTERED } from "../lib/daily-quota.js";
 export { DAILY_LIMIT_ANONYMOUS, DAILY_LIMIT_REGISTERED } from "../lib/daily-quota.js";
 
 /**
 	* Middleware to enforce daily usage limits for website chat.
-	* Only applies when X-OMA-Source: website header is present.
+	* Only applies to the authenticated website proxy route.
 	*/
 export function dailyUsageLimit() {
 		return async (c: Context<OmaEnv>, next: Next) => {
 				// Only apply to website chat requests
-				const source = c.req.header("X-OMA-Source");
-				if (source !== "website") {
+				if (!isWebsiteChatRequest(c)) {
 						return next();
 				}
 				// Explicit API keys use prepaid billing even on website-free models.

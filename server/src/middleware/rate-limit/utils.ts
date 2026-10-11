@@ -38,7 +38,7 @@ const INTERNAL_PROXY_SECRET_BUF = INTERNAL_PROXY_SECRET
 	? Buffer.from(INTERNAL_PROXY_SECRET, "utf8")
 	: null;
 
-function proxyIsAuthenticated(headers: {
+export function proxyIsAuthenticated(headers: {
 	header: (k: string) => string | undefined;
 }): boolean {
 	// An unset/empty configured secret must never match, or an attacker

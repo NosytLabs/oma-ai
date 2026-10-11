@@ -31,17 +31,17 @@ async function makeApp(withModelLimiter = false, withKey = false) {
 	if (withKey) app.use("*", async (c, next) => { c.set("apiKey", { id: "paid-key" } as never); await next(); });
 	if (withModelLimiter) {
 		const { modelRateLimit } = await import("../rate-limit/token-bucket.js");
-		app.use("/v1/chat/completions", modelRateLimit());
+		app.use("/website/chat/completions", modelRateLimit());
 	}
-	app.use("/v1/chat/completions", dailyUsageLimit());
-	app.post("/v1/chat/completions", async (c) => c.json({ ok: true, model: (await c.req.json()).model }));
+	app.use("/website/chat/completions", dailyUsageLimit());
+	app.post("/website/chat/completions", async (c) => c.json({ ok: true, model: (await c.req.json()).model }));
 	return app;
 }
 
 const send = (app: Awaited<ReturnType<typeof makeApp>>) =>
-	app.request("http://localhost/v1/chat/completions", {
+	app.request("http://localhost/website/chat/completions", {
 		method: "POST",
-		headers: { "Content-Type": "application/json", "X-OMA-Source": "website" },
+		headers: { "Content-Type": "application/json", "X-OMA-Source": "website", Origin: "http://localhost:3000" },
 		body: JSON.stringify({ model: "minimax-m2-7" }),
 	});
 

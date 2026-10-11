@@ -150,7 +150,7 @@ export default function RootLayout({
 				<WebSiteJsonLd />
 				<SoftwareApplicationJsonLd />
 			</head>
-			<body className="flex min-h-dvh flex-col bg-void text-text font-sans antialiased overflow-x-hidden">
+			<body className="flex min-h-dvh flex-col bg-void text-text font-sans antialiased overflow-x-clip">
 				{/* Legacy no-JS fallback. globals.css also carries a
 				    `@media (scripting: none)` rule, but browsers that predate
 				    that media feature ignore it entirely — so the transform-only

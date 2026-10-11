@@ -22,20 +22,33 @@ import { applyTrustedProxyHeaders } from "@/lib/api/proxy-headers";
  * @returns A NextResponse holding the forwarded backend data stream or JSON
  *          response, or a synthesized 502 if the backend is unreachable.
  */
-export async function proxy(req: NextRequest) {
-	const path = req.nextUrl.pathname.replace(/^\/api/, "");
+export async function proxy(req: NextRequest, options: { websiteChat?: boolean } = {}) {
+	const incomingPath = req.nextUrl.pathname.replace(/^\/api/, "");
+	if (options.websiteChat) {
+		// The same-origin chat UI has its own cost policy. Never grant it to
+		// arbitrary SDK paths or cross-origin browser requests.
+		const origin = req.headers.get("Origin");
+		const fetchSite = req.headers.get("Sec-Fetch-Site");
+		if (incomingPath !== "/chat/completions" || origin !== req.nextUrl.origin ||
+			(fetchSite && fetchSite !== "same-origin")) {
+			return NextResponse.json({ error: { message: "Use chat on the OMA website", code: "website_chat_only" } }, { status: 403 });
+		}
+	}
+	const path = options.websiteChat ? "/website/chat/completions" : incomingPath;
 	// Recovery and settlement jobs are invoked directly by operators or Neon.
 	// They must never be reachable through the public website proxy.
 	let normalizedPath: string;
 	try { normalizedPath = decodeURIComponent(path); }
 	catch { return NextResponse.json({ error: "Invalid path" }, { status: 400 }); }
-	if (/^\/internal(?:\/|$)/i.test(normalizedPath)) {
+	if (/^\/(?:internal|website)(?:\/|$)/i.test(normalizedPath) && !options.websiteChat) {
 		return NextResponse.json({ error: "Not found" }, { status: 404 });
 	}
 	const url = new URL(`${API_URL}${path}${req.nextUrl.search}`);
 
 	const headers = new Headers(req.headers);
 	headers.delete("host");
+	headers.delete("X-OMA-Source");
+	if (options.websiteChat) headers.set("X-OMA-Source", "website");
 	applyTrustedProxyHeaders(headers);
 
 	try {

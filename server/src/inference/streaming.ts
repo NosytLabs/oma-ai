@@ -58,8 +58,20 @@ export function createStreamingProxy(
 		const estimatedOutput = () => estimateTokens(contentText) + estimateTokens(reasoningText) + estimateTokens(toolText);
 		let finalPromptTokens: number | null = null;
 		let finalOutputTokens: number | null = null;
-		let upstreamStatus: "completed" | "error" = "completed";
 		let sseCarry = "";
+		let terminated = false;
+		async function finishUsage(status: "completed" | "error" | "aborted") {
+			try {
+				await recordUsage({
+					...recordArgs,
+					promptTokens: finalPromptTokens ?? recordArgs.promptTokens,
+					outputTokens: finalOutputTokens ?? recordArgs.outputTokens ?? estimatedOutput(),
+					status,
+				});
+			} catch (err) {
+				logger.warn({ err, status }, "[proxy] recordUsage failed");
+			}
+		}
 		function consumeLine(line: string) {
 			if (!line.startsWith("data:")) return;
 			const payload = line.slice(5).trim();
@@ -81,8 +93,11 @@ export function createStreamingProxy(
 
 		return new ReadableStream<Uint8Array>({
 				async pull(controller) {
+						if (terminated) return;
 						try {
 								const { done, value } = await reader.read();
+								// Cancellation resolves an in-flight read. Do not close or meter twice.
+								if (terminated) return;
 								if (done) {
 										// Flush any incomplete trailing SSE line
 										if (sseCarry) {
@@ -91,12 +106,11 @@ export function createStreamingProxy(
 												controller.enqueue(encoder.encode(rewritten));
 												sseCarry = "";
 										}
+										terminated = true;
 										controller.close();
 										// Use upstream-reported usage when available (OMA-AI sends a final
 										// usage chunk at the end of the stream), falling back to estimates.
-										const finalTokens = finalOutputTokens ?? recordArgs.outputTokens ?? estimatedOutput();
-										const promptTokens = finalPromptTokens ?? recordArgs.promptTokens;
-										await recordUsage({ ...recordArgs, promptTokens, outputTokens: finalTokens, status: upstreamStatus });
+										await finishUsage("completed");
 										return;
 								}
 								const text = sseCarry + decoder.decode(value, { stream: true });
@@ -109,21 +123,13 @@ export function createStreamingProxy(
 								const out = rewriteSseModelField(complete, recordArgs.model);
 								controller.enqueue(encoder.encode(out));
 								} catch (err) {
+									if (terminated) return;
+									terminated = true;
 									logger.warn({ err }, "[proxy] stream read failed");
-									upstreamStatus = "error";
 									controller.error(err);
 									// Retain consumed-token cost estimates for operations. Failed
 									// completions are recorded without a customer credit deduction.
-									try {
-										await recordUsage({
-											...recordArgs,
-											promptTokens: finalPromptTokens ?? recordArgs.promptTokens,
-											outputTokens: finalOutputTokens ?? estimatedOutput(),
-											status: "error",
-										});
-									} catch (recErr) {
-										logger.warn({ err: recErr }, "[proxy] recordUsage on read-error failed");
-									}
+									await finishUsage("error");
 									try {
 										await reader.cancel();
 									} catch (cancelErr) {
@@ -132,19 +138,12 @@ export function createStreamingProxy(
 								}
 								},
 								async cancel() {
+								if (terminated) return;
+								terminated = true;
 								reader.cancel().catch(() => {});
 								// Canceled streams retain token/cost estimates without charging
 								// customer credits, so the admin can account for the expense.
-								try {
-								await recordUsage({
-									...recordArgs,
-									promptTokens: finalPromptTokens ?? recordArgs.promptTokens,
-									outputTokens: finalOutputTokens ?? estimatedOutput(),
-									status: "aborted",
-								});
-								} catch (recErr) {
-								logger.warn({ err: recErr }, "[proxy] recordUsage on client-abort failed");
-								}
+								await finishUsage("aborted");
 								},
 		});
 }

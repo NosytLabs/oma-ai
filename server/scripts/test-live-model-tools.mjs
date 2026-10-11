@@ -25,7 +25,7 @@ try {
 	const headers = { Origin: appOrigin, Cookie: cookie, "Content-Type": "application/json", "X-OMA-Source": "website" };
 	async function completion(body) {
 		const start = Date.now();
-		const response = await fetch(`${appOrigin}/api/v1/chat/completions`, { method: "POST", headers,
+		const response = await fetch(`${appOrigin}/api/chat/completions`, { method: "POST", headers,
 			body: JSON.stringify({ model: "minimax-m2-7", max_tokens: 512, stream: true, ...body }), signal: AbortSignal.timeout(150_000) });
 		assert.equal(response.status, 200, `Model returned HTTP ${response.status}`);
 		const text = await response.text();
@@ -60,11 +60,14 @@ try {
 	assert.equal(first.finishReason, "tool_calls");
 	assert.ok(Number.isInteger(first.usage?.prompt_tokens), "Stream must include upstream token totals");
 	const tool = first.tools[0];
+	// Diagnostic variant: determine whether upstream reasoning in assistant content
+	// causes the malformed continuation. The final answer assertion stays strict.
+	const omitAssistantContent = process.argv.includes("--omit-assistant-content");
 	const second = await completion({ tools: definitions, tool_choice: "none", messages: [...messages,
-		{ role: "assistant", content: first.content || null, tool_calls: [{ id: tool.id, type: "function", function: { name: tool.name, arguments: tool.arguments } }] },
+		{ role: "assistant", content: omitAssistantContent ? null : first.content || null, tool_calls: [{ id: tool.id, type: "function", function: { name: tool.name, arguments: tool.arguments } }] },
 		{ role: "tool", tool_call_id: tool.id, content: "4" }, { role: "user", content: "Return only the answer." },
 	] });
-	console.log(JSON.stringify({ check: "MiniMax tool result continuation", ...second }));
+	console.log(JSON.stringify({ check: "MiniMax tool result continuation", omitAssistantContent, ...second }));
 	assert.equal(second.content.trim(), "4");
 	assert.equal(second.finishReason, "stop");
 } finally {

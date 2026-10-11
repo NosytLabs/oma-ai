@@ -12,14 +12,17 @@ if (!process.argv.includes("--run")) {
 }
 
 const { databaseUrl, appOrigin } = localTestContext();
+const formats = process.argv.find(a => a.startsWith("--formats="))?.slice(10).split(",") ?? ["chat"];
+assert.ok(formats.length > 0 && formats.every(f => ["chat", "messages"].includes(f)), "Supported formats: chat,messages");
 const pool = new pg.Pool({ connectionString: databaseUrl.toString() });
 const verificationId = crypto.randomBytes(16).toString("hex");
 const report = { startedAt: new Date().toISOString(), results: [], checks: {}, cleanup: {} };
-let cookie, sessionId, keyId, key;
+let cookie, sessionId, userId, keyId, key;
 const headers = () => ({ Origin: appOrigin, Cookie: cookie, "Content-Type": "application/json" });
 try {
 	const user = (await pool.query('SELECT id FROM "user" WHERE email=$1', ["oma-test-user@local.test"])).rows[0];
 	assert.ok(user, "Seed the current local test user first");
+	userId = user.id;
 	const token = crypto.randomBytes(24).toString("base64url");
 	await pool.query("INSERT INTO verification (id,identifier,value,expires_at) VALUES ($1,$2,$3,$4)", [verificationId,
 		`magic-link:${crypto.createHash("sha256").update(token).digest("base64url")}`,
@@ -36,10 +39,12 @@ try {
 	const models = catalog.data.filter(m => m.available && (!requestedIds || requestedIds.includes(m.id)));
 	assert.ok(models.length > 0 && models.length <= 30, "No available models selected, or too many");
 	if (requestedIds) assert.equal(models.length, new Set(requestedIds).size, "Some requested models are unknown or unavailable");
+	console.log(JSON.stringify({ selectedModels: models.map(model => model.id), formats }));
 	const created = await fetch(`${appOrigin}/api/v1/keys`, { method: "POST", headers: headers(), body: JSON.stringify({ name: "Temporary live API audit", expiresInDays: 1, allowedModels: models.map(m => m.id) }) });
 	assert.equal(created.status, 200, "Key creation failed");
 	const credential = await created.json();
 	keyId = credential.id;
+	report.checks.keyId = keyId;
 	key = credential.key;
 	assert.match(key, /^oma_sk_/);
 	report.checks.keyCreated = true;
@@ -47,13 +52,16 @@ try {
 	assert.ok(Math.abs(new Date(credential.expiresAt).getTime() - Date.now() - 86_400_000) < 10_000, "Requested key expiry was not applied");
 	report.checks.keyScopeAndExpiry = true;
 	const before = Number((await pool.query("SELECT balance_cents FROM credit_balances WHERE user_id=$1", [user.id])).rows[0]?.balance_cents);
-	for (const model of models) {
+	for (const model of models) for (const format of formats) {
 		const requestId = `qa-api-${crypto.randomUUID()}`;
 		const started = Date.now();
 		let result;
 		try {
-			const send = () => fetch(`${appOrigin}/api/v1/chat/completions`, {
-				method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", "X-Request-ID": requestId },
+			const endpoint = format === "messages" ? "/api/v1/messages" : "/api/v1/chat/completions";
+			const send = () => fetch(`${appOrigin}${endpoint}`, {
+				method: "POST", headers: { ...(format === "messages" ? { "x-api-key": key, "anthropic-version": "2023-06-01" } : { Authorization: `Bearer ${key}` }), "Content-Type": "application/json", "X-Request-ID": requestId,
+					// Copying website headers must not remove the paid API charge.
+					Origin: appOrigin, "X-OMA-Source": "website" },
 				body: JSON.stringify({ model: model.id, messages: [{ role: "user", content: "Reply with exactly OMA_API_OK and no explanation." }], max_tokens: 512, stream: false }),
 				signal: AbortSignal.timeout(190_000),
 			});
@@ -70,17 +78,19 @@ try {
 				}
 			}
 			const data = await response.json();
-			const content = data.choices?.[0]?.message?.content ?? "";
+			const content = format === "messages" ? (data.content ?? []).filter(block => block.type === "text").map(block => block.text).join("") : data.choices?.[0]?.message?.content ?? "";
+			const inputTokens = format === "messages" ? data.usage?.input_tokens : data.usage?.prompt_tokens;
+			const outputTokens = format === "messages" ? data.usage?.output_tokens : data.usage?.completion_tokens;
 			const actualModel = response.headers.get("x-actual-model");
 			// Some reasoning models put a complete <think> block in content.
 			// Preserve evidence and assess the final answer separately.
 			const answer = typeof content === "string" ? content.replace(/^\s*<think>[\s\S]*?<\/think>\s*/, "").trim() : "";
-			result = { requestedModel: model.id, status: response.status, actualModel, requestId,
+			result = { format, requestedModel: model.id, status: response.status, actualModel, requestId,
 				finishReason: data.choices?.[0]?.finish_reason, usage: data.usage, content: content.slice(0, 160), answer: answer.slice(0, 160), inlineReasoning: answer !== content.trim(),
-				passed: response.ok && actualModel === model.id && answer === "OMA_API_OK" && Number.isInteger(data.usage?.prompt_tokens) && Number.isInteger(data.usage?.completion_tokens),
+				passed: response.ok && actualModel === model.id && answer === "OMA_API_OK" && Number.isInteger(inputTokens) && Number.isInteger(outputTokens),
 				...(data.error ? { error: data.error.message } : {}), elapsedMs: Date.now() - started };
 		} catch (error) {
-			result = { requestedModel: model.id, requestId, passed: false, error: error.name, elapsedMs: Date.now() - started };
+			result = { format, requestedModel: model.id, requestId, passed: false, error: error.name, elapsedMs: Date.now() - started };
 		}
 		report.results.push(result);
 		console.log(JSON.stringify(result));
@@ -92,6 +102,7 @@ try {
 	report.checks.recordedChargeCents = rows.reduce((total, row) => total + Number(row.total_cents), 0);
 	report.checks.billingMatches = Math.abs(report.checks.balanceDeductedCents - report.checks.recordedChargeCents) < 0.000001;
 	report.checks.usageBoundToKey = rows.length === report.results.filter(r => r.status === 200).length && rows.every(row => row.api_key_id === keyId);
+	report.checks.apiAlwaysBilled = rows.filter(row => row.status === "completed").every(row => Number(row.total_cents) > 0);
 	const revoked = await fetch(`${appOrigin}/api/v1/keys/${keyId}`, { method: "DELETE", headers: headers() });
 	assert.equal(revoked.status, 200, "Key revocation failed");
 	report.cleanup.keyRevoked = true;
@@ -102,6 +113,13 @@ try {
 	if (keyId && !report.cleanup.keyRevoked && cookie) {
 		const revoked = await fetch(`${appOrigin}/api/v1/keys/${keyId}`, { method: "DELETE", headers: headers() }).catch(() => null);
 		report.cleanup.keyRevoked = revoked?.ok ?? false;
+	}
+	// Local fixtures must not leave a live key behind when the HTTP service
+	// disappears during a test. Preserve its ledger rows; revoke only this key.
+	if (keyId && userId && !report.cleanup.keyRevoked) {
+		const revoked = await pool.query("UPDATE api_keys SET active=false WHERE id=$1 AND user_id=$2 RETURNING id", [keyId, userId]);
+		report.cleanup.keyRevoked = revoked.rowCount === 1;
+		report.cleanup.keyRevokedDirectly = report.cleanup.keyRevoked;
 	}
 	if (sessionId) {
 		await pool.query("DELETE FROM session WHERE id=$1", [sessionId]);
@@ -115,4 +133,4 @@ try {
 	await fs.writeFile("../.artifacts/provider-audit/live-api-results.json", JSON.stringify(report, null, 2));
 	console.log(JSON.stringify({ summary: { passed: report.results.filter(r => r.passed).length, total: report.results.length }, checks: { billingMatches: report.checks.billingMatches, revokedKeyStatus: report.checks.revokedKeyStatus }, cleanup: report.cleanup }));
 }
-if (report.results.some(r => !r.passed) || !report.checks.billingMatches || !report.checks.usageBoundToKey) process.exitCode = 1;
+if (report.results.some(r => !r.passed) || !report.checks.billingMatches || !report.checks.usageBoundToKey || !report.checks.apiAlwaysBilled) process.exitCode = 1;

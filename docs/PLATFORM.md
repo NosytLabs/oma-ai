@@ -218,6 +218,8 @@ Production requires durable Postgres and Redis-compatible rate-limit state, real
 
 The app also needs `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_APP_URL`, and the same `BETTER_AUTH_SECRET` used by the server. In normal production, browser traffic uses the website's same-origin `/api/*` and `/x402/*` proxies.
 
+Sponsored website chat uses `POST /api/chat/completions`, forwarded to the backend's `/website/chat/completions`. The frontend requires the same origin and rejects cross-site Fetch Metadata; the production backend requires the authenticated proxy secret and configured application origin. Generic API proxies strip caller sponsorship headers and block `/website/*`. Public `/api/v1/chat/completions` is always prepaid, even when a client copies website headers. The daily quota and billing gate share the same eligibility check. Secretless development is restricted to loopback backend requests; production never accepts that fallback. This separates the API contract from website sponsorship, but does not claim browser headers prevent automated use of the public website. Shared quotas, rate limits, and abuse controls remain necessary.
+
 ### Inference providers and Base RPC
 
 Set the provider credentials required by the intended catalog routes:

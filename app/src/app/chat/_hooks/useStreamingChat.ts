@@ -26,7 +26,7 @@ import { appendCapped, parseStreamData } from "./stream-parser";
 // Same-origin /api proxy so the Better Auth cookie is sent. Hitting
 // :3001 directly drops the session (cross-origin) and playground
 // usage never lands in the dashboard. proxy-response keeps SSE streamed.
-const CHAT_ENDPOINT = "/api/v1/chat/completions";
+const CHAT_ENDPOINT = "/api/chat/completions";
 const SEARCH_ENDPOINT = "/api/v1/search";
 
 /**
@@ -370,7 +370,6 @@ export function useStreamingChat(
 					headers: {
 						"Content-Type": "application/json",
 						Accept: live.stream ? "text/event-stream" : "application/json",
-						"X-OMA-Source": "website", // Identify website chat for free tier
 					},
 					body: JSON.stringify({
 						model: useModel,

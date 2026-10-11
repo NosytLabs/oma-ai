@@ -69,7 +69,7 @@ export function ProviderRoutingSection() {
 						<li>OMA looks up the model→provider mapping in the catalog</li>
 						<li>The model&apos;s primary provider handles the request</li>
 						<li>On failure, the circuit breaker may retry a configured fallback for that mapped model</li>
-						<li>The public model id and customer price remain stable across that retry</li>
+						<li>Check x-actual-model for the model served; paid requests use that model&apos;s listed price</li>
 					</ol>
 				</div>
 				<div className="rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] p-4">
@@ -81,6 +81,8 @@ export function ProviderRoutingSection() {
 						<div>
 							<span className="text-accent">x-provider</span>: venice | oma-ai
 						</div>
+						<div><span className="text-accent">x-actual-model</span>: model served</div>
+						<div><span className="text-accent">x-oma-fallback</span>: 1 when a fallback is used</div>
 					</div>
 				</div>
 			</div>
@@ -89,8 +91,10 @@ export function ProviderRoutingSection() {
 				A mapped model may also have a compatible fallback provider configured.
 				If a primary provider fails and that fallback is used,
 				request content must be forwarded to the inference service that actually
-				handles the retry. The public model id and listed customer price do not
-				change. See <a href="/privacy" className="text-accent underline underline-offset-2">Privacy</a> for data-flow details.
+				handles the retry. A fallback can serve another model; its ID appears in
+				x-actual-model and usage history. Paid usage is charged at the served model&apos;s
+				listed price. Free website requests fall back only to eligible Gonka/OpenBroker models.
+				See <a href="/privacy" className="text-accent underline underline-offset-2">Privacy</a> for data-flow details.
 			</p>
 		</AnimatedSection>
 	);

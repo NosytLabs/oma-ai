@@ -28,7 +28,9 @@ const envelopeCode = `{
     "network": "eip155:8453",
     "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
     "amount": "1000000",
-    "payTo": "<configured treasury address>"
+    "payTo": "<payTo from /x402/info>",
+    "maxTimeoutSeconds": 300,
+    "extra": { "name": "USD Coin", "version": "2" }
   },
   "payload": {
     "signature": "<0x-prefixed 65-byte signature>",

@@ -326,3 +326,78 @@ every possible secret. The published quota contract was checked in the browser
 with no captured warnings/errors or duplicate IDs. Screenshot:
 `.screenshots/account-audit-2026-10-10/quota-docs-live-codebase-pass.jpg`.
 Later receipt commits change documentation only; PR #30 remains open.
+
+## Website chat, public docs and Messages adapter follow-up
+
+The public SDK route formerly selected free inference when a caller copied the
+website's source header and an allowed Origin. A failing regression reproduced
+an anonymous 200 on `/v1/chat/completions`. Free website chat now uses its own
+same-origin frontend handler and a backend-only path with authenticated proxy
+proof. Public SDK requests always use prepaid billing. The generic frontend
+proxy strips client source headers and blocks website/internal backend paths.
+Production requires the configured public origin and proxy secret; a secretless
+development exception only accepts a loopback destination. Daily quotas share
+the same classification, and demo-mode protection covers the new path. This
+separates billing contracts; it does not claim to prevent clients automating
+the website route. The existing daily and per-model limits still apply.
+
+Actual HTTP calls exposed a Messages API attribution defect: two successful
+requests deducted credits, but only chat completions appeared against the API
+key. Both Messages response paths now pass the key ID to shared metering.
+Messages also checks credits before provider inference, translates function
+definitions and tool-result continuations, maps Anthropic stop reasons, and
+uses the shared SSE framing/billing implementation. Fragmented text, late and
+explicit zero usage, real tool IDs/arguments and malformed tool responses have
+regression coverage. Nonstreaming responses return the same token totals used
+for billing, including estimates when the provider omits usage. Cancellation
+testing reproduced two usage records for one interrupted stream; the shared
+proxy now finalizes a stream once and prevents its pending read from recording
+again. Canceled requests retain an aborted cost record without deducting
+customer credits.
+
+Public OpenAPI remains customer-only. Removed unused admin descriptions from
+its source and tested all served aliases for private-path leakage. Consolidated
+the duplicate quickstart examples, removed the unsupported `response_format`
+parameter, and corrected fallback pricing guidance. The public agent skill
+discovers the x402 recipient from `/x402/info` instead of substituting the
+direct-deposit treasury address. Its v2 envelope includes the full advertised
+requirements and separates customer APIs from operator and website routes.
+The public Messages guide explicitly limits compatibility to text and function
+tools; images/documents, extended thinking, caching and beta features are not
+supported. Full Claude Code feature parity is not claimed.
+
+The shared layout had made the body a separate scroll container. On deployed
+docs, the header moved to -11113.5px after navigating to a deep section. Using
+horizontal `clip` instead of `hidden` keeps the header at 0 after a 10861px
+local scroll, with no page overflow. Mobile account profile, usage and sessions
+rendered successfully at 390px; a browser socket failure recovered in a fresh
+tab while the local HTTP service remained healthy.
+
+Current validation: 782 frontend tests and 590 backend tests passed (six API
+tests explicitly skipped); lint, types and production builds passed. The 21
+real HTTP/Postgres groups passed twice, including signup, returning login,
+SIWE/replay, key scope/expiry/revocation, cross-account isolation, admin denial,
+account deletion and ledger controls. The compatible dependency versions are
+current; Node 26 types and TypeScript 7 remain held for the documented runtime
+and lint compatibility reasons. Production dependency audit: no known
+vulnerabilities.
+
+A temporary model-scoped API key completed real MiniMax calls in both OpenAI
+and Anthropic formats. An initial paired check returned the expected
+`OMA_API_OK` answer with 49 input and 116 output tokens each and a combined
+0.00066-cent charge. The final rerun after cancellation fixes returned the same
+answer with 49 input and 197 output tokens each (including inline reasoning),
+matching the 0.000984-cent deduction. Copied website headers did not bypass
+billing; revocation returned 401 and temporary sessions were removed. An
+intermediate smoke run was interrupted by the local frontend restart. Its
+temporary key was revoked directly in the local database, and the test now
+has that cleanup fallback when the HTTP service is unavailable.
+
+The strict live tool probe still fails at the continuation. Initial structured
+`add(2,2)` calls and usage succeed; the answer after the tool result includes
+unwanted markup or unrelated text. Omitting the assistant's reasoning content
+did not repair it. The expected answer remains exactly `4`; no output is
+fabricated and no assertion is weakened. [OpenBroker's current contract](https://openbroker.gonka.gg/docs/chat-completions)
+forwards tools and messages without rewriting; it does not guarantee model
+tool quality. The public guide now explains this limitation. DeepSeek and GLM
+remain paused; no production Venice inference or mainnet settlement is claimed.

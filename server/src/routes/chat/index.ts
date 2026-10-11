@@ -45,7 +45,7 @@ import {
 		} from "../../inference/proxy.js";
 		import type { UsageProvider } from "../../inference/billing.js";
 import { logger } from "../../lib/logger.js";
-import { config } from "../../config.js";
+import { isWebsiteChatRequest, WEBSITE_CHAT_PATH } from "../../inference/website-chat-request.js";
 import { isFreeWebsiteModel } from "../../inference/free-website-model.js";
 
 /**
@@ -91,8 +91,8 @@ const chatSchema = z.object({
 
 export const chatRoutes = new Hono<OmaEnv>();
 
-chatRoutes.post(
-		"/v1/chat/completions",
+for (const path of ["/v1/chat/completions", WEBSITE_CHAT_PATH]) chatRoutes.post(
+		path,
 		rateLimit({
 			windowMs: 60_000,
 			maxRequests: 60,
@@ -165,24 +165,10 @@ chatRoutes.post(
 				if (modelDef.disabledReason) {
 					return c.json({ error: { message: modelDef.disabledReason, type: "model_unavailable" } }, 503);
 				}
-				const source = c.req.header("X-OMA-Source");
-				const origin = c.req.header("Origin") || c.req.header("Referer") || "";
-				const allowedOrigins = [
-					config.PUBLIC_APP_URL,
-					"http://localhost:3000",
-					"http://127.0.0.1:3000",
-				].filter(Boolean) as string[];
-					// Exact match or path-prefix match only. A bare `startsWith(allowed)`
-					// would also accept attacker-controlled origins like
-					// `http://localhost:3000.evil.com`, letting them dodge auth/billing
-					// and take the anonymous free-chat path for any free-tier model.
-					// NOTE: local QA on scratch ports (e.g. :3108) and Vercel
-					// previews legitimately serve the site on other origins —
-					// whitelist those via PUBLIC_APP_URL, not hardcoded here.
-				const originOk = allowedOrigins.some(
-					(allowed) => origin === allowed || origin.startsWith(`${allowed}/`),
-				);
-			const isWebsiteRequest = source === "website" && originOk;
+			const isWebsiteRequest = isWebsiteChatRequest(c);
+			if (c.req.path === WEBSITE_CHAT_PATH && !isWebsiteRequest) {
+				return c.json({ error: { message: "Website chat requires the trusted website proxy", code: "website_chat_only" } }, 403);
+			}
 			const isFreeModel = isFreeWebsiteModel(model);
 			// API-key callers always pay, even on free-tier models: the free
 			// path is session/guest website chat only. The auth middleware
