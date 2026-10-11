@@ -203,4 +203,20 @@ local fixture and a browser with no injected wallet; mocked wallet I/O exercises
 broadcast, proof refusal, expiry, reload recovery and account isolation without
 pretending a real on-chain payment passed.
 
-This frontend follow-up's deployment receipt is recorded after publication.
+The frontend follow-up is published from commit
+`72eff5dc585b7db337d9e11dcc20ba53c3b72b75`. Vercel deployment
+`dpl_7CN54n8KMBNJhGXj8q2jsWRoaLBo` is READY and serves `www.oma-ai.com`;
+the canonical-host lookup confirmed the same deployment and commit. Neon
+`omaapi` deployment 77 remains current/active and completed, with no API source
+changes in this follow-up. Its native `/ready` returned 200 with healthy Postgres
+and Redis. Public models and x402 information returned 200; unauthenticated key
+management returned 401.
+
+The live docs visibly include the deposit challenge, required ownership proof,
+and same-transfer retry guidance, with no captured console warnings/errors.
+Local deposit checks at 390px recorded no horizontal overflow or duplicate IDs.
+Screenshots are kept outside source control under
+`.screenshots/account-audit-2026-10-10/`: `x402-deposit-mobile-followup.png` and
+`deposit-proof-docs-live-followup.png`. The maintained platform guide also gives
+the exact canonical direct-deposit signing message. Subsequent receipt commits
+contain documentation only.

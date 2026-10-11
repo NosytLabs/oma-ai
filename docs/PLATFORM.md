@@ -89,6 +89,25 @@ cross-device synchronization or evidence that funds confirmed. The sending
 account is checked before transfer/signing, and account/disconnect events update
 the form. See the [settlement runbook](settlement-runbook.md) for recovery.
 
+Programmatic direct-deposit registration uses the same EIP-191 message, joined
+with newline characters and no trailing newline:
+
+```text
+OMA-AI deposit authorization
+
+Sending wallet: <fromAddress>
+Deposit to: <depositAddress>
+Challenge: <challengeToken>
+Transaction: <txHash>
+Amount USD: <amountUsd>
+```
+
+Use the addresses and token returned for the original transfer, its actual hash,
+and the same numeric USD value submitted to `/api/v1/deposit/usdc`. The amount
+line uses JavaScript's string representation of that value (`10`, not `10.00`).
+Request a fresh challenge before retrying proof registration; retain the hash
+and transfer details instead of sending another transfer.
+
 Three wallet roles are distinct: the customer holds the USDC; the configured
 treasury receives it; the operator's facilitator key pays Base ETH gas for x402
 relaying. A direct deposit instead requires gas in the customer's wallet. The
