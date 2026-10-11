@@ -85,18 +85,6 @@ function installStorage(name: "localStorage" | "sessionStorage") {
 installStorage("localStorage");
 installStorage("sessionStorage");
 
-// Mock metal-fx (WebGL component — jsdom has no WebGL context)
-vi.mock("metal-fx", () => ({
-	MetalFx: (props: Record<string, unknown>) =>
-		React.createElement("span", { ...props, "data-testid": "mock-metal-fx" }),
-}));
-
-// Mock img-fx ImageGeneration (WebGL/Canvas component)
-vi.mock("img-fx", () => ({
-	ImageGeneration: (props: Record<string, unknown>) =>
-		React.createElement("div", { ...props, "data-testid": "mock-img-fx" }),
-}));
-
 // Mock border-beam (uses window.matchMedia — not available in jsdom).
 // Strip non-DOM props so React does not warn about colorVariant/active/etc.
 vi.mock("border-beam", () => ({

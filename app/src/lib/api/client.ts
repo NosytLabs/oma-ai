@@ -51,13 +51,11 @@ export class ApiError extends Error {
 		}
 }
 
-/**
-	* Thrown when the browser can't reach the backend at all (network error).
-	*/
+/** Browser network failures and explicit proxy-to-API transport failures. */
 export class BackendUnavailableError extends Error {
 		constructor() {
 				super(
-						"Backend server is not reachable. Please ensure the API server is started (configured via NEXT_PUBLIC_API_URL).",
+						"OMA is temporarily unreachable. Please try again shortly.",
 				);
 				this.name = "BackendUnavailableError";
 		}
@@ -217,6 +215,13 @@ export async function request<T>(
 								}
 						} catch {
 								// Non-JSON body — fall back to status text
+						}
+						// The browser can reach Next.js while Next.js cannot reach the API.
+						// Match its transport codes, not all 502s (provider failures also use 502).
+						const code = (body as { error?: { code?: unknown } } | undefined)?.error?.code;
+						if ((res.status === 502 && code === "upstream_unreachable") ||
+							(res.status === 504 && code === "upstream_timeout")) {
+							throw new BackendUnavailableError();
 						}
 						throw new ApiError(res.status, message, body);
 				}
