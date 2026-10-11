@@ -1,5 +1,6 @@
 import { Hono } from "hono";
-import { eq, desc, sql } from "drizzle-orm";
+import { and, eq, desc, gte, lte, sql } from "drizzle-orm";
+import { z } from "zod";
 import type { OmaEnv } from "../types.js";
 import { sessionAuth } from "../auth/middleware.js";
 import { db } from "../db/client.js";
@@ -15,24 +16,16 @@ import {
 import { auditLog } from "../middleware/audit.js";
 import { logger } from "../lib/logger.js";
 import { extractClientIpOrNull } from "../middleware/rate-limit/utils.js";
+import { toCsv } from "../lib/csv.js";
 
 export const exportRoutes = new Hono<OmaEnv>();
 
-function toCsv(rows: Record<string, unknown>[]): string {
-		if (rows.length === 0) return "";
-		const headers = Object.keys(rows[0]);
-		const escape = (v: unknown) => {
-				const s = v === null || v === undefined ? "" : String(v);
-				return s.includes(",") || s.includes('"') || s.includes("\n")
-						? `"${s.replace(/"/g, '""')}"`
-						: s;
-		};
-		const lines = [headers.join(",")];
-		for (const row of rows) {
-				lines.push(headers.map((h) => escape(row[h])).join(","));
-		}
-		return lines.join("\n");
-}
+const USAGE_EXPORT_LIMIT = 10000;
+const usageExportQuery = z.object({
+	format: z.enum(["csv", "json"]).default("csv"),
+	since: z.string().datetime({ offset: true }).optional(),
+	until: z.string().datetime({ offset: true }).optional(),
+}).refine(q => !q.since || !q.until || Date.parse(q.since) <= Date.parse(q.until));
 
 function csvResponse(csv: string, filename: string) {
 		return new Response(csv, {
@@ -54,11 +47,17 @@ function jsonResponse(data: unknown, filename: string) {
 
 exportRoutes.get("/v1/export/usage", sessionAuth, async (c) => {
 		const userId = c.get("userId");
-		const format = c.req.query("format") === "json" ? "json" : "csv";
-		const rows = await db
-				.select({
+		const parsed = usageExportQuery.safeParse(c.req.query());
+		if (!parsed.success) return c.json({ error: { message: "Invalid usage export range or format", type: "invalid_request_error" } }, 400);
+		const { format, since, until } = parsed.data;
+		const conditions = [eq(usageRecords.userId, userId)];
+		if (since) conditions.push(gte(usageRecords.createdAt, new Date(since)));
+		if (until) conditions.push(lte(usageRecords.createdAt, new Date(until)));
+		const fields = {
 						request_id: usageRecords.requestId,
+						api_key_id: usageRecords.apiKeyId,
 						model: usageRecords.model,
+						requested_model: usageRecords.requestedModel,
 						provider: usageRecords.provider,
 						input_tokens: usageRecords.inputTokens,
 						output_tokens: usageRecords.outputTokens,
@@ -68,17 +67,24 @@ exportRoutes.get("/v1/export/usage", sessionAuth, async (c) => {
 						billed_cents: sql<string>`CASE WHEN ${usageRecords.refundedAt} IS NULL THEN ${usageRecords.totalCents} ELSE 0 END::text`,
 						refunded_at: usageRecords.refundedAt,
 						status: usageRecords.status,
+						latency_ms: usageRecords.latencyMs,
 						created_at: usageRecords.createdAt,
-				})
+		};
+		const result = await db.select(fields)
 				.from(usageRecords)
-				.where(eq(usageRecords.userId, userId))
-				.orderBy(desc(usageRecords.createdAt))
-				.limit(10000);
+				.where(and(...conditions))
+				.orderBy(desc(usageRecords.createdAt), desc(usageRecords.id))
+				.limit(USAGE_EXPORT_LIMIT + 1);
+		const rows = result.slice(0, USAGE_EXPORT_LIMIT);
 
 		const filename = `oma-usage-${new Date().toISOString().slice(0, 10)}.${format}`;
-		return format === "json"
+		const response = format === "json"
 				? jsonResponse(rows, filename)
-				: csvResponse(toCsv(rows as unknown as Record<string, unknown>[]), filename);
+				: csvResponse(toCsv(rows as unknown as Record<string, unknown>[], Object.keys(fields)), filename);
+		response.headers.set("Cache-Control", "private, no-store");
+		response.headers.set("X-Export-Row-Count", String(rows.length));
+		response.headers.set("X-Export-Truncated", String(result.length > USAGE_EXPORT_LIMIT));
+		return response;
 });
 
 exportRoutes.get("/v1/export/deposits", sessionAuth, async (c) => {

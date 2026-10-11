@@ -142,8 +142,9 @@ try {
 	});
 	backend.stdout.on("data", (chunk) => { logs += chunk; });
 	backend.stderr.on("data", (chunk) => { logs += chunk; });
-	for (let attempt = 0; !logs.includes("API server running"); attempt += 1) {
-		assert.ok(attempt < 150 && backend.exitCode === null, "Local backend failed to start");
+	const startupDeadline = Date.now() + 60_000;
+	while (!logs.includes("API server running")) {
+		assert.ok(Date.now() < startupDeadline && backend.exitCode === null, "Local backend failed to start within 60 seconds");
 		await delay(100);
 	}
 
@@ -375,6 +376,18 @@ try {
 	assert.equal(userSummary.models.reduce((sum,r)=>sum+r.requests,0), 2008);
 	assert.equal(userSummary.providers.reduce((sum,r)=>sum+r.requests,0), 2008);
 	assert.equal((await request("/v1/usage/summary?range=all", { cookie: first.cookie })).data.totals.requests, 2009);
+	const exportRange = new URLSearchParams({ format: "json", since: userSummary.from, until: userSummary.to, userId: "admin-test-target" });
+	const rangedExport = await request(`/v1/export/usage?${exportRange}`, { cookie: first.cookie });
+	assert.equal(rangedExport.data.length, userSummary.totals.requests, "Export must match the selected dashboard range");
+	assert.ok(rangedExport.data.every(row => row.request_id !== "user-old" && row.request_id !== "other-user-private"));
+	assert.equal(rangedExport.response.headers.get("X-Export-Row-Count"), String(userSummary.totals.requests));
+	assert.equal(rangedExport.response.headers.get("X-Export-Truncated"), "false");
+	assert.equal(rangedExport.response.headers.get("cache-control"), "private, no-store");
+	assert.equal(rangedExport.data.find(row => row.request_id === "user-tiny").billed_cents, "0.00000600");
+	assert.equal(Number(rangedExport.data.find(row => row.request_id === "user-refund").billed_cents), 0);
+	await request("/v1/export/usage?since=invalid", { cookie: first.cookie, expected: 400 });
+	await request("/v1/export/usage?format=json", { expected: 401 });
+	pass("usage exports match the dashboard date range, retain precision/refunds, exclude other accounts and report their bounded row count");
 	const summaryExport = (await request("/v1/export/summary?format=json", { cookie: first.cookie })).data;
 	assert.equal(summaryExport.total_input_tokens, userSummary.totals.input_tokens);
 	assert.equal(summaryExport.total_output_tokens, userSummary.totals.output_tokens);

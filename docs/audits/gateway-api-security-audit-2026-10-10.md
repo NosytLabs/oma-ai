@@ -1,503 +1,181 @@
-# Gateway API, authentication and provider audit — 2026-10-10
+# Gateway and account audit — October 10–11, 2026
 
-Scope: real local account and provider calls, two-account authorization tests,
-browser key management, API documentation, deployment boundaries and cleanup.
-Local time was October 10; some provider receipts are dated October 11 UTC.
+Consolidated evidence for the account, API, website and infrastructure work.
+Current behavior lives in [Platform](../PLATFORM.md),
+[Deployment](../DEPLOYMENT.md) and [Chat UI](../chat-ui.md).
 
-## Fixes
+## Implemented safeguards and account improvements
 
-- API-key validity now comes from Postgres on every request. Only concurrent
-  in-flight lookups share a result. Stale positive Redis entries cannot keep
-  revoked, expired or deleted keys valid. Previously, expiry could survive as
-  a string in cached records and the cache lifetime refreshed on every hit.
-- Missing accounts block authentication. Failure to check suspension/account
-  status blocks protected requests with a safe 503. Invalid explicit keys
-  cannot fall through to anonymous free chat. Optional authentication reuses
-  the bearer validator, including IP restrictions and suspension checks.
-- Both website proxies remove client `x-neon-*` headers. The general proxy
-  refuses internal recovery/settlement paths, including encoded variants.
-  Native scheduler authorization requires the Neon runtime and excludes the
-  website proxy hop. Auth transport failures no longer expose diagnostics.
-- Session-only key creation accepts a 1–365 day expiry and a catalog model
-  allowlist. Both inference APIs enforce the allowlist on primary and fallback
-  models. Oversized output limits fail before upstream work; unsuitable
-  smaller-output fallbacks are skipped.
-- Upstream credential failures return gateway 502 errors instead of customer
-  401 errors. Other models using that same rejected provider credential are
-  skipped within the request. Cross-provider fallback remains possible when
-  the key scope permits it.
-- The model limiter now returns its inner middleware response. Default rate
-  budgets are separated by HTTP method and registered route pattern; dynamic
-  IDs share a route budget. Key creation cannot exhaust account deletion's
-  budget. Explicit shared prefixes retain their intended behavior.
-- A Redis command failure now preserves a bounded free-chat daily quota.
-  Paid key requests do not consume the free quota. Daily rejections include
-  Retry-After; degraded memory limits remain weaker than shared durable Redis.
-- Completed OpenAI idempotency-key reuse returns explicit 409 already_processed
-  without another charge/call. It no longer invents a successful empty answer.
-  Full response replay and simultaneous upstream-call deduplication are not
-  implemented; clients must retain their original completion.
-- Key UI adds expiry, last use and model restrictions; its one-time secret
-  dialog isolates each new key, auto-hides, traps focus and supports Escape.
-  Duplicate creation prompts disappear while the form is open. All four
-  dashboard tabs remain visible on narrow screens.
-- Spend-donut totals, tooltips and accessible descriptions preserve sub-cent
-  charges instead of contradicting the detailed table with a rounded zero.
-- Removed unused Surplus configuration/catalog routing metadata and a false
-  privacy processor row. Historical provider records/migrations remain intact,
-  and usage breakdowns retain those records in their totals. Dated audit docs
-  moved to this directory; a docs index replaces the duplicate deploy status.
+- Better Auth sessions own browser account actions. API keys are scoped to
+  catalog models and expire in 1–365 days. Postgres validates every key request;
+  only concurrent lookups share results. Revoked/expired/deleted keys and
+  suspended or absent accounts cannot authenticate through stale Redis data.
+- Personal keys, sessions, usage, exports and deletion select the authenticated
+  owner, never a supplied account ID. Profile writes cannot promote roles or
+  change protected wallet fields. Account deletion invalidates sessions and keys.
+- Website proxies strip visitor runtime/forwarding headers and block private
+  paths. On Vercel, the authenticated proxy preserves only a single valid
+  platform client IP. Native recovery scheduler proof is accepted only in Neon.
+  Database/provider secrets and SQL error details are not returned to customers.
+- Free website chat has a separate authenticated proxy route; copying its
+  source headers cannot make SDK inference free. Old session-only SDK tabs
+  receive a reload message instead of a surprise charge. Quota reads and
+  enforcement share UTC counters: 20 guest-IP or 100 account attempts per day.
+  Paid keys do not consume that allowance. Memory fallback is bounded and
+  weaker than shared Redis.
+- Both inference APIs enforce model/output limits and key scopes, including
+  fallbacks. They share metering and streaming framing. Messages records the
+  API-key ID, translates function tools/continuations and preserves explicit
+  zero usage. Stream cancellation finalizes once, without customer deduction.
+  Upstream credential failures are gateway errors, not customer login failures.
+- Completed chat idempotency reuse returns 409 without another charge.
+  The gateway does not fabricate response replay. Method/route-specific rate
+  budgets prevent unrelated account actions from exhausting each other.
+- The user dashboard unifies Overview, Usage, API Keys and Settings.
+  Legacy settings bookmarks redirect to their section; demo actions are
+  read-only. Settings does not poll analytics. Balances and synchronization
+  failures remain explicit. Charts preserve sub-cent amounts and large token
+  totals; request details include correlation IDs and requested/served models.
+- The admin console provides range-based UTC charts, complete usage totals,
+  searchable cursor-paginated logs, account controls and treasury configuration.
+  Deductions lock/cap to the available balance and report the applied amount.
+  Canceled, refunded and failed deductions are separated from customer charges.
+- Support delivery reports actual webhook acknowledgement/failure and preserves
+  messages for recovery. Public docs, OpenAPI and agent instructions omit
+  private operator routes, document supported API subsets and discover the
+  advertised x402 recipient. No fake purchase-expiry records are displayed.
+- The shared layout keeps the sticky header visible during deep docs scrolling.
+  Chat removes fabricated historical cost estimates and retains real token/
+  latency values, account-separated browser history and draft controls.
+- Code-only Neon releases preserve secrets and scheduled recovery jobs.
+  Removed unused provider metadata, stale route diagnostics and duplicate docs
+  while preserving migrations and historical financial/provider records.
 
-## Verification
+## Cleanup and usage downloads — October 11
 
-- Frontend: 746 passing tests; lint, type checking and production build pass.
-- API: 553 passing tests, six explicitly skipped; lint, type checking and
-  production build pass.
-- Real HTTP/Postgres: 20 passing groups against a migrated disposable database.
-  Two accounts cannot read each other's keys, sessions, usage or exports,
-  install/revoke another key, revoke another session, or self-promote to admin.
-  Profile writes reject protected role/wallet fields. Account deletion ignores
-  caller-supplied user IDs and invalidates the deleted account's active keys.
-  Cross-site mutations and forged local scheduler headers are rejected.
-  SQL-like filters remain literal parameters; invalid UUID filters fail.
-  Signup, returning login, session replay/revocation, real SIWE signatures,
-  admin financial controls and safe database-error responses also pass.
-- Browser: authenticated local fixture; key form controls, default expiry,
-  cancellation and desktop/390px/320px layouts verified. No page overflow,
-  duplicate IDs or captured console warnings/errors. Credentials were created
-  and revoked through the opt-in HTTP probe, not left behind by the form.
-- Static build: 141 browser JavaScript files checked against nine configured
-  local server values. No real secret matched. One match was the tracked local
-  mock private-key placeholder, also a public Noble curve constant; no server
-  environment value was injected to produce it. Local `.env` URLs return 404;
-  private usage/export/treasury endpoints return 401 without credentials.
-- Production dependency audit: zero known vulnerabilities. Compatible
-  dependencies were already updated in the preceding release, including
-  Better Auth 1.7.7, Next 16.4.0 and viem 2.57.4. TypeScript stays at 6.0.3
-  because the current linter peer range excludes 7; Node typings remain on 24
-  to match Vercel and Neon. The patched dev-only braces advisory remains
-  visible in the full audit; the production dependency tree is clean.
+Usage export now uses the selected dashboard dates and summary snapshot end.
+The API validates dates/format and returns at most 10,000 account-owned rows,
+with an exact row count and explicit truncation flag. Empty CSV exports retain
+headers; text is spreadsheet-safe, UTC timestamps and tiny charges retain
+precision. Downloads include key/request IDs, requested/served models and
+latency. Demo exports are disabled; duplicate clicks and account-switch races
+cannot leak a pending report.
 
-## Real provider results and remaining limits
+Four overlapping reports are consolidated here; their full originals remain
+linked below. Removed 50 stale generated screenshots/scratch/provider files and
+24 superseded local test/release logs. Current evidence, active server logs,
+the persistent braces patch and private database backups remain. The consumed
+local fixture-link file was also removed. No production log, financial record,
+account or deployment is deleted in this cleanup.
 
-The opt-in live probe signs in through the real magic-link verifier, creates
-a one-day model-scoped key, calls the gateway, reconciles persisted usage with
-the balance deduction, revokes the key, checks 401 and removes its session.
-It stores no raw key or cookie in its report. Actual inference charges remain
-in the ledger; test cleanup does not falsify financial history.
+Local setup references now describe the HTTP Redis requirement accurately.
+A plain Redis daemon cannot serve this client. The database helper starts
+Postgres without starting an unused Redis service. Sample environments do not
+advertise a TCP Redis URL or duplicate optional blank settings.
 
-- MiniMax M2.7 primary route: HTTP 200, actual-model header matched, final
-  answer OMA_API_OK, finish reason stop. Latest call used 49 input/139 output
-  tokens, charged 0.000376 cents, and reconciled exactly within numeric
-  tolerance. It took about 72 seconds. Inline reasoning was preserved in the
-  raw receipt; only the probe's final-answer assessment excludes a complete
-  leading think block.
-- Venice Gemma primary route: HTTP 502 after the configured local Venice
-  credential received upstream 401. No usage charge. Direct credential
-  verification also failed. Public model metadata alone does not establish
-  credential validity. A valid provider credential/credit allocation is still
-  required; production Venice inference was not authenticated in this run.
-- The initial catalog probe attempted 18 enabled models. Three successes were
-  MiniMax fallbacks, not proof of those requested primary models. The limiter
-  failures found during that probe are fixed; blanket model-health claims
-  would still be inaccurate.
-- OpenBroker MiniMax tool round trip: first streamed tool call correctly
-  requested add(2,2). The continuation included malformed upstream tool markup
-  despite mentioning 4. This provider/coding behavior remains unresolved;
-  the gateway does not strip evidence to fabricate a passing tool result.
-- Venice's 17 catalog metadata matches were checked for price, context,
-  output and capabilities. OpenBroker's three active IDs matched OMA routes.
-  Public Base/PublicNode RPC chain reads succeeded; LlamaRPC returned a
-  non-JSON response, so the example fallback now uses mainnet.base.org.
-  Multiple endpoints improve resilience without guaranteeing availability.
-- No mainnet transfer was performed. The previously read treasury had zero
-  USDC/ETH; facilitator gas funding and successful live payment-to-credit
-  reconciliation are not established by readiness or configured wallet names.
+Full validation passed: 797 frontend tests in 119 files and 605 API tests in
+76 passing files, with six explicit API skips; types, lint and both production
+builds passed. All 22 real HTTP/Postgres groups passed, including selected-range
+exports, ownership isolation, precision and refunds. Production dependency
+audit again found no known vulnerabilities. Local Markdown link checks and the
+database-helper shell syntax check passed. An initial run exposed a download
+metadata type error and a missing canonical OpenAPI link in the condensed
+README; both were corrected. Under heavy machine load, the account harness
+failed at startup before reaching flows; its bounded startup wait is now
+60 seconds and the complete rerun passed.
 
-Evidence artifacts (ignored, local): `.artifacts/provider-audit/` and
-`.screenshots/account-audit-2026-10-10/api-key-scope-{desktop,mobile}-final.jpg`,
-plus `usage-spend-precision-final.jpg` in the same screenshot directory.
-Maintained behavior/configuration: [Platform](../PLATFORM.md),
-[Deployment](../DEPLOYMENT.md), [Settlement runbook](../settlement-runbook.md).
+A signed-in local user downloaded 28 CSV records, matching the 24-hour summary.
+The file retained tiny charges, all 15 column headers and UTC timestamps.
+At 1280px and 390px the page had one H1 and no horizontal overflow; mobile had
+no duplicate IDs. Demo export remained disabled with a real session present.
+Console capture returned no warnings/errors. Credit amounts now say "credits"
+and use a coin icon, with the USD equivalent separately labeled; final frontend
+lint/build and the mobile browser check passed after that cosmetic change.
+Screenshots are under `.screenshots/cleanup-2026-10-11/`.
 
-## Release receipt
+Production release verification for this cleanup is pending.
 
-Verified on October 11 UTC (October 10 local):
+## Previous verified release
 
-| Service | Source commit | Production deployment | Result |
+| Service | Source | Deployment | Observed state |
 | --- | --- | --- | --- |
-| Vercel frontend | `53f2d7c5adec7ad7f9193f31257aaaea44e06036` | `dpl_DJ6fr4mYvFyjX6Jtn2WyxboGtXYs` | READY; canonical `www.oma-ai.com` resolves to this deployment |
-| Neon API | `d19d7af3ecd30722b22ae432772f4de6f97b252f` | `omaapi` deployment 77 | Current and active deployments completed; Node.js 24 |
+| Vercel website | `adf20340a7a4093274f4f0bee84409e337324670` | `dpl_BQwXhoT1o3kRGruF4PNwp8Gj4Zbw` | READY; canonical host matched |
+| Neon API | `29430af31ddb14c54c7f3410f106dabab6cd8dbf` | `omaapi` 80 | Current/active, completed; Node 24, 2048 MiB |
 
-The frontend follow-up only changes chart precision; API deployment 77 includes
-all authentication, authorization, key controls, quota and inference fixes.
-Both production services retain their existing environment configuration.
+That release passed 791 frontend and 591 API tests (six explicit API skips),
+types, lint and production builds. The 21 real HTTP/Postgres groups passed
+twice against separate migrated temporary databases. Production dependency
+audit: zero known vulnerabilities across 671 runtime dependencies.
+Neon retained all 40 environment variables and both every-minute jobs,
+`oma-deposit-recovery` and `oma-settlement-dlq`.
+Native and same-origin readiness reported healthy Postgres and Redis.
 
-Post-deployment checks:
+Actual MiniMax calls through a temporary scoped key succeeded in OpenAI and
+Anthropic formats with `OMA_API_OK`, 49 input/197 output tokens each and a
+combined 0.000984-cent deduction, matching persisted key attribution. The key
+was revoked (401) and temporary sessions removed; actual charges were retained.
 
-- Landing, pricing, models, docs, web health and x402 info: HTTP 200.
-- Native API readiness: HTTP 200; Postgres and Redis checks both healthy.
-- Anonymous keys, usage, account export and admin treasury: HTTP 401, with
-  `no-store` responses.
-- Forged scheduler headers sent through the website to internal deposit
-  recovery and settlement retry routes: HTTP 404. An unauthenticated native
-  recovery request with the forged header: HTTP 403.
-- Invalid bearer credentials on website chat: HTTP 401; no anonymous fallback.
-- Public `/.env`: HTTP 404.
-- Live OpenAPI: session-cookie authentication for key creation/deletion,
-  documented expiry/model restrictions, and inference 403/409/502 responses.
+A production guest request returned `OMA_QUOTA_OK` in 34.0 seconds, 140 total/
+90 output tokens. Allowance changed from 20 to 19 and stayed at 19 after reload
+and forged forwarding headers. This verified the platform-IP quota correction.
+Copied website headers on SDK requests returned 401; private paths returned
+404 and cross-origin website chat returned 403. No payment was signed.
 
-No successful scheduled invocation was observed in the sampled function logs.
-The production probes do not establish every model's health, a funded
-facilitator, or successful mainnet payment settlement. The limitations above
-remain part of this release receipt.
+Browser checks covered local user/admin account actions, profile save/restore,
+session revocation, account JSON export, deletion confirmation/cancel, key
+controls, demo isolation, and desktop/390px/320px layouts. Current evidence is
+under `.screenshots/account-audit-2026-10-10/`. The final chat capture has one
+H1, no overflow or captured console warnings/errors. A sitemap audit checked
+all 65 public URLs for status, canonical/title/description/H1/structured data;
+later manual metadata checks covered 14 primary pages. This does not claim a
+manual content review of every generated model/glossary page.
 
-## Wallet and dependency follow-up
+## Dependencies and remaining limits
 
-The next pass used Context7's current x402, injected-wallet and Better Auth
-documentation. No compatible application dependency upgrade remained. The only
-newer reported versions were TypeScript 7 (outside the linter peer range) and
-Node 26 typings (different from the deployed Node 24 runtime). A fresh production
-dependency audit reported zero known vulnerabilities across 671 dependencies.
-OMA's x402 adapter implements the v2 exact/Base USDC envelope; it is custom code,
-not an outdated installed x402 npm package.
+Compatible versions include Next 16.4.0, Better Auth 1.7.7 and viem 2.57.4.
+TypeScript 6.0.3 stays inside typescript-eslint 8.71.1's supported peer range
+(`>=4.8.4 <6.1.0`); TypeScript 7 is held. Node 24 typings match both runtimes.
+The full development audit still reports
+[GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm) for
+braces 3.0.3. A persistent pnpm patch bounds parser/AST recursion, with regression
+coverage; it mitigates the issue without claiming an upstream version fix.
+Deprecated transitive tooling remains under its parent dependency contracts.
 
-Additional fixes:
+- MiniMax's initial structured function call succeeds, but strict tool-result
+  continuation still returns unwanted markup/unrelated text. The expected
+  exact answer remains `4`; assertions are not weakened. Gonka DeepSeek/GLM
+  remain paused. Enabled catalog entries are not proof every primary model works.
+- Venice metadata pricing/limits were compared, but the local inference
+  credential failed upstream authentication. Authenticated production Venice
+  inference remains unverified.
+- Injected EIP-1193/EIP-6963 wallets and real local SIWE signatures are covered;
+  WalletConnect QR/mobile sessions are not implemented.
+- x402 v2 uses OMA's custom funding contract: verification broadcasts, and
+  settlement credits the SIWE-bound payer once. It is not a generic Coinbase
+  facilitator or pay-per-inference route. Mainnet transfer, facilitator gas and
+  successful live payment reconciliation remain unverified.
+- Credit balances remain aggregate. Per-grant allocation/refund policy and a
+  ledger migration are needed; no fabricated expiry dates or financial cleanup.
+- Support needs a configured, verified webhook. Idempotency does not replay
+  responses or prevent simultaneous upstream calls before usage is recorded.
+- Messages supports text/function tools, not images/documents, extended
+  thinking, caching or beta features. Full Claude Code parity is not claimed.
+- Local readiness remains degraded without HTTP Redis credentials; production
+  shared Redis was healthy in the recorded probes.
 
-- Preserve a direct deposit's transaction before proof signing can fail.
-  Preflight the account-bound challenge before broadcasting, refresh proof on
-  registration retries, and never resend funds from the retry action.
-- Keep recovery metadata in account-scoped session storage across same-tab
-  reloads. Store no key, cookie or signed proof with it. Show the chain explorer
-  link and avoid offering another transfer while registration is unresolved.
-- Reject fractional-cent USD input before a transfer to avoid disagreement
-  between the transferred amount and the direct-deposit cent ledger.
-- Observe wallet account/disconnect events, check the sending account before
-  signing/transferring, retain the selected provider on reconnect, and handle
-  synchronous EIP-6963 announcements without recursive discovery.
-- Consolidate deposit requests/types in the API client, replacing an unused
-  proofless submit helper. Document the challenge and required ownership fields.
-- Remove unused limiter instances that created background timers, unused
-  imports/parameters, and a WalletConnect install link that implied an
-  unimplemented connector. Correct the runbook's x402 recipient lookup.
+The production cleanup authorization was limited to expired authentication
+records. [Its receipt](database-cleanup-2026-10-10.md) records six sessions and
+14 verification records removed with a fixed cutoff; both test identities and
+the existing operator key remain.
 
-Fresh verification: 757 frontend tests across 115 files; 553 API tests with six
-explicit skips; all 20 real HTTP/Postgres signup/account/admin groups pass.
-Frontend build/lint/type checking and API lint/type checking pass. Frontend
-unused-local/parameter checking also passes. The optional stricter API scan
-reports two pre-existing unused parameters; its required checks remain green.
+## Historical evidence
 
-A new temporary one-day model-scoped API key completed a real MiniMax request:
-49 input/102 output tokens, 0.000302 cents charged, final answer OMA_API_OK,
-matching persisted usage and balance deduction. The key then returned 401 after
-revocation; its temporary session was removed. Only that primary model was
-authenticated in this follow-up; prior Venice/tool-call limitations remain.
+Full reports are preserved at the pre-consolidation commit, avoiding multiple
+working copies with conflicting test counts and deployment receipts:
 
-Read-only production checks found x402 v2/Base configuration and all three rail
-flags enabled. The public x402 recipient held zero ETH and zero USDC. This does
-not reveal the separate facilitator's gas balance. Neon deployment 77 remains
-current/active and completed. No live payment was signed or broadcast.
+- [Gateway API, provider and release history](https://github.com/NosytLabs/oma-ai/blob/3b4774e409d923c3689c0d6a60e6108e954bdf73/docs/audits/gateway-api-security-audit-2026-10-10.md)
+- [Account/dependency follow-up](https://github.com/NosytLabs/oma-ai/blob/3b4774e409d923c3689c0d6a60e6108e954bdf73/docs/audits/account-platform-followup-2026-10-10.md)
+- [Usage/treasury audit](https://github.com/NosytLabs/oma-ai/blob/3b4774e409d923c3689c0d6a60e6108e954bdf73/docs/audits/account-usage-audit-2026-10-10.md)
+- [Original platform audit](https://github.com/NosytLabs/oma-ai/blob/3b4774e409d923c3689c0d6a60e6108e954bdf73/docs/audits/audit-2026-10-10.md)
 
-WalletConnect mobile/QR sessions remain unimplemented. Browser checks use the
-local fixture and a browser with no injected wallet; mocked wallet I/O exercises
-broadcast, proof refusal, expiry, reload recovery and account isolation without
-pretending a real on-chain payment passed.
-
-The frontend follow-up is published from commit
-`72eff5dc585b7db337d9e11dcc20ba53c3b72b75`. Vercel deployment
-`dpl_7CN54n8KMBNJhGXj8q2jsWRoaLBo` is READY and serves `www.oma-ai.com`;
-the canonical-host lookup confirmed the same deployment and commit. Neon
-`omaapi` deployment 77 remains current/active and completed, with no API source
-changes in this follow-up. Its native `/ready` returned 200 with healthy Postgres
-and Redis. Public models and x402 information returned 200; unauthenticated key
-management returned 401.
-
-The live docs visibly include the deposit challenge, required ownership proof,
-and same-transfer retry guidance, with no captured console warnings/errors.
-Local deposit checks at 390px recorded no horizontal overflow or duplicate IDs.
-Screenshots are kept outside source control under
-`.screenshots/account-audit-2026-10-10/`: `x402-deposit-mobile-followup.png` and
-`deposit-proof-docs-live-followup.png`. The maintained platform guide also gives
-the exact canonical direct-deposit signing message. Subsequent receipt commits
-contain documentation only.
-
-## Codebase, quota and recovery follow-up
-
-This pass reviewed both application packages, request/auth boundaries, account
-and admin routes, chat state, provider/search adapters, payment/credit paths,
-public documentation and dependency/deployment tooling. Static review and the
-tests below cover these areas; this is not a claim that every line or upstream
-model was exercised. Context7 confirmed React effect dependencies and the Hono
-Node adapter's socket-peer behavior.
-
-Fixes:
-
-- Authenticate the actual socket peer before trusting configured-proxy headers.
-  Walk only the trusted suffix of a forwarded chain, normalize valid IPs and
-  ignore caller-prepended identities. Preserve the authenticated Vercel hop.
-- Keep API-client and web-search deadlines active through response-body reads.
-  Support every standard HeadersInit shape and case-insensitive overrides.
-- Stop a chat retry countdown from resetting on each render. Give signed-in
-  users the correct daily cap and API-key action, without an unlimited-usage
-  promise. Measure chat latency before dispatch, including provider wait and
-  key-repair retries, instead of timing only body consumption.
-- Unify free-chat quota admission and reporting in one helper. Both count
-  admitted attempts, including later provider failures; reads never consume
-  quota. Redis and local fallback reset at midnight UTC. Preserve observed
-  usage through Redis failures and make quota responses private/non-cacheable.
-- Validate support payload types, topic ownership and length bounds. Missing
-  delivery configuration returns 503 instead of a fictitious queued ticket;
-  failed or timed-out webhooks return 502. The form retains the message and
-  provides an email action. No external support message was sent by this audit.
-- Remove the retired Llama 3.2 override kept solely for old tests. Update quota,
-  authentication and account links in docs/OpenAPI. Show an empty batch example
-  rather than invented per-purchase expiry records.
-- Replace the old Neon wrapper that moved `.env` files and implicitly applied
-  infrastructure with an explicit code-only release retaining remote secrets
-  and schedules.
-
-Each behavioral fix has a regression test observed failing before the fix and
-passing afterward. Latest full checks: 774 frontend tests across 116 files;
-568 API tests across 72 passing files, with six explicit skips; frontend/API
-lint, types and production builds pass. The 20 real HTTP/Postgres integration
-groups passed twice against separate disposable migrated databases. An initial
-run returned an unexplained usage-history 500 that did not recur; this remains
-a recorded transient, not a diagnosed/fixed defect. Production dependency
-audit: zero known vulnerabilities across 671 dependencies. Only incompatible
-TypeScript 7 and runtime-mismatched Node 26 typings remain newer.
-
-A fresh temporary one-day MiniMax-scoped API key completed actual inference:
-49 input/95 output tokens, final answer OMA_API_OK, 0.000288 cents charged,
-matching ledger attribution and balance deduction. It took 72.456 seconds.
-Revocation returned 401 and its temporary session was removed. The disabled
-OpenBroker DeepSeek entry was excluded before any provider call; the probe did
-not silently enable or substitute it. A real browser free-chat request returned
-7 for 3 + 4 and appeared in the user's usage history with its full 73.7-second
-server latency. The shorter old chat-only timing led to the additional fix.
-
-Browser checks used the local user fixture. At 390px, contact and user usage
-pages had one H1, no duplicate IDs and no page-level horizontal overflow. The
-contact form showed its actual delivery failure, retained its message and
-exposed the email action. Screenshot: `.screenshots/account-audit-2026-10-10/contact-recovery-codebase-pass.jpg`.
-Direct browser navigation to the JSON quota endpoint was blocked by the browser;
-quota semantics are verified by the real Hono/Redis-boundary regression tests.
-
-Remaining setup/product gaps from prior receipts still apply: WalletConnect QR,
-authenticated Venice production verification, upstream tool-continuation
-quality and mainnet/facilitator payment validation. Credit accounting remains
-aggregate: per-purchase batches are not written, and Polar refunds deduct from
-the aggregate balance rather than the unused remainder of the refunded grant.
-A per-grant allocation/refund policy and ledger migration are still needed;
-this pass does not invent expiry dates or alter real balances to conceal it.
-Support form delivery requires a configured, verified webhook.
-
-### Published codebase follow-up
-
-Both services are published from source commit
-`cb479d0d33e6292dfd8472c90acdfcc9c0174e03`:
-
-| Service | Deployment | Verified state |
-| --- | --- | --- |
-| Vercel frontend | `dpl_D4DhfQZV1BR5tMtdtv9CpW536CVy` | READY; canonical `www.oma-ai.com` lookup matches this deployment and commit |
-| Neon `omaapi` | 78, Node.js 24 | Current and active deployments completed; native readiness reports healthy Postgres and Redis |
-
-The code-only API release retains the existing environment names and both
-every-minute recovery schedules. Production quota reads returned the new
-`shared-redis` policy and `private, no-store`; two consecutive reads retained
-the same usage. Website health, models, x402 info and OpenAPI returned 200;
-anonymous key management returned 401 and `/.env` returned 404. The live
-OpenAPI documents optional quota authentication and all five quota fields.
-
-Browser metadata checks covered `/`, pricing, models, docs, getting-started,
-FAQ, about, contact, privacy, terms, changelog, status, glossary and chat.
-All 14 have titles, descriptions, their own canonical URLs, one settled H1
-and no page overflow at the default desktop width. Status first renders a
-loading state, then its live heading; it deliberately declares noindex/follow.
-Robots and sitemap return 200; the sitemap has 65 URLs, all on the canonical
-host. These are structural/metadata checks, not an assertion that every
-generated glossary/model page received a manual visual/content review.
-
-Local mobile checks also covered profile, sessions and data controls. The
-actual account JSON download succeeded and contained key metadata/public
-prefixes, not raw keys, hashes or session tokens. After the final build, 142
-browser JavaScript files were scanned against three configured non-placeholder
-local server values, with no matches. This sample does not prove absence of
-every possible secret. The published quota contract was checked in the browser
-with no captured warnings/errors or duplicate IDs. Screenshot:
-`.screenshots/account-audit-2026-10-10/quota-docs-live-codebase-pass.jpg`.
-Later receipt commits change documentation only; PR #30 remains open.
-
-## Website chat, public docs and Messages adapter follow-up
-
-The public SDK route formerly selected free inference when a caller copied the
-website's source header and an allowed Origin. A failing regression reproduced
-an anonymous 200 on `/v1/chat/completions`. Free website chat now uses its own
-same-origin frontend handler and a backend-only path with authenticated proxy
-proof. Public SDK requests always use prepaid billing. The generic frontend
-proxy strips client source headers and blocks website/internal backend paths.
-Production requires the configured public origin and proxy secret; a secretless
-development exception only accepts a loopback destination. Daily quotas share
-the same classification, and demo-mode protection covers the new path. This
-separates billing contracts; it does not claim to prevent clients automating
-the website route. The existing daily and per-model limits still apply.
-
-Actual HTTP calls exposed a Messages API attribution defect: two successful
-requests deducted credits, but only chat completions appeared against the API
-key. Both Messages response paths now pass the key ID to shared metering.
-Messages also checks credits before provider inference, translates function
-definitions and tool-result continuations, maps Anthropic stop reasons, and
-uses the shared SSE framing/billing implementation. Fragmented text, late and
-explicit zero usage, real tool IDs/arguments and malformed tool responses have
-regression coverage. Nonstreaming responses return the same token totals used
-for billing, including estimates when the provider omits usage. Cancellation
-testing reproduced two usage records for one interrupted stream; the shared
-proxy now finalizes a stream once and prevents its pending read from recording
-again. Canceled requests retain an aborted cost record without deducting
-customer credits.
-
-Public OpenAPI remains customer-only. Removed unused admin descriptions from
-its source and tested all served aliases for private-path leakage. Consolidated
-the duplicate quickstart examples, removed the unsupported `response_format`
-parameter, and corrected fallback pricing guidance. The public agent skill
-discovers the x402 recipient from `/x402/info` instead of substituting the
-direct-deposit treasury address. Its v2 envelope includes the full advertised
-requirements and separates customer APIs from operator and website routes.
-The public Messages guide explicitly limits compatibility to text and function
-tools; images/documents, extended thinking, caching and beta features are not
-supported. Full Claude Code feature parity is not claimed.
-
-The shared layout had made the body a separate scroll container. On deployed
-docs, the header moved to -11113.5px after navigating to a deep section. Using
-horizontal `clip` instead of `hidden` keeps the header at 0 after a 10861px
-local scroll, with no page overflow. Mobile account profile, usage and sessions
-rendered successfully at 390px; a browser socket failure recovered in a fresh
-tab while the local HTTP service remained healthy.
-
-Current validation: 791 frontend tests and 591 backend tests passed (six API
-tests explicitly skipped); lint, types and production builds passed. The 21
-real HTTP/Postgres groups passed twice, including signup, returning login,
-SIWE/replay, key scope/expiry/revocation, cross-account isolation, admin denial,
-account deletion and ledger controls. The compatible dependency versions are
-current; Node 26 types and TypeScript 7 remain held for the documented runtime
-and lint compatibility reasons. Production dependency audit: no known
-vulnerabilities.
-
-A temporary model-scoped API key completed real MiniMax calls in both OpenAI
-and Anthropic formats. An initial paired check returned the expected
-`OMA_API_OK` answer with 49 input and 116 output tokens each and a combined
-0.00066-cent charge. The final rerun after cancellation fixes returned the same
-answer with 49 input and 197 output tokens each (including inline reasoning),
-matching the 0.000984-cent deduction. Copied website headers did not bypass
-billing; revocation returned 401 and temporary sessions were removed. An
-intermediate smoke run was interrupted by the local frontend restart. Its
-temporary key was revoked directly in the local database, and the test now
-has that cleanup fallback when the HTTP service is unavailable.
-
-The strict live tool probe still fails at the continuation. Initial structured
-`add(2,2)` calls and usage succeed; the answer after the tool result includes
-unwanted markup or unrelated text. Omitting the assistant's reasoning content
-did not repair it. The expected answer remains exactly `4`; no output is
-fabricated and no assertion is weakened. [OpenBroker's current contract](https://openbroker.gonka.gg/docs/chat-completions)
-forwards tools and messages without rewriting; it does not guarantee model
-tool quality. The public guide now explains this limitation. DeepSeek and GLM
-remain paused; no production Venice inference or mainnet settlement is claimed.
-
-An additional compatibility guard rejects session-only requests to website-free
-models on the public SDK path with a reload message. Old website tabs used that
-path, and the updated proxy strips their old source header; those requests must
-not silently deduct prepaid credits. Explicit API keys remain billed normally.
-The guard is verified before any provider call or billing operation.
-
-The production guest flow returned `OMA_WEBSITE_OK` from MiniMax, displayed
-the response and full 6.8-second latency, and reduced the allowance from 20
-to 19 without browser console warnings/errors. It also exposed an unrelated
-toolbar estimate that priced every historical message at the currently selected
-model's list rate, including free website responses. Removed that misleading
-cost pill and its fabricated fallback price. Chat retains message/token counts
-and its live composer pricing/free label; dashboard Usage remains the source
-for actual charges. A regression reproduces the cost pill on a free response
-before its removal.
-
-Nonstreaming browser responses now preserve explicit zero input/output usage
-instead of replacing it with estimates. The hook regression first reproduced
-an undefined input count and an invented two-token output for a zero-usage
-response, then passed with both counts retained as zero.
-
-## Release and quota verification — 2026-10-11
-
-Vercel production deployment `dpl_7rW9Y2qMmmbkjPHDJb9C93JP9Ky6` is READY.
-Looking up `www.oma-ai.com` resolves to that deployment and source commit
-`24889d146f2d884930debd5192f087c9d7252125`; the apex alias is attached too.
-GitHub's Deployment lockfile workflow passed on this exact source commit.
-The final frontend run passed 784 tests in 117 files, lint and the production
-build, including Next.js type checking. No backend source changed in this
-last release.
-
-Neon `omaapi` deployment 80 remains current/active and completed, released
-from `29430af31ddb14c54c7f3410f106dabab6cd8dbf`. It runs Node 24 with 2048 MiB
-and retains all 40 environment variables from the preceding deployment.
-Both `oma-deposit-recovery` and `oma-settlement-dlq` remain enabled every
-minute. Production `/api/ready` reports healthy Postgres and Redis.
-
-Live negative checks: an unauthenticated SDK request with copied website
-headers returns 401, website/internal backend paths through the generic
-frontend proxy return 404, and a cross-origin request to the dedicated website
-chat handler returns 403. OpenAPI returns 3.1.0 with no admin/internal/website
-paths. `/x402/info` returns v2 with no-store; quota reads advertise shared Redis
-and private, no-store caching. These boundary checks do not send inference or
-wallet transactions.
-
-Production chat still displays the verified `OMA_WEBSITE_OK` conversation,
-has one H1, no horizontal overflow, no captured console warnings/errors and
-no fabricated cost pill. Screenshots:
-`.screenshots/account-audit-2026-10-10/chat-production-verified.jpg` and
-`.screenshots/account-audit-2026-10-10/docs-quickstart-production-pass.jpg`.
-The response initially reduced the guest allowance from 20 to 19; a later
-reload displayed 20. This exposed a separate proxy identity regression:
-the trust helper stripped Vercel's own client IP along with visitor-supplied
-forwarding headers, leaving backend quota reads and writes tied to changing
-gateway socket addresses. The frontend helper now preserves only a single
-valid platform IP, only on Vercel and with the configured proxy secret. Other
-forwarding headers and all Neon runtime headers are still removed. The auth
-proxy shares this exact policy. New failing route tests reproduced the lost
-IPv4/IPv6 identity for quota, chat and auth before the correction; malformed
-values, chains, missing proxy authentication and non-Vercel spoofing are rejected.
-[Vercel's request-header contract](https://vercel.com/docs/headers/request-headers)
-identifies its platform client-IP header and its edge spoofing protection.
-
-Local frontend/API processes now use the final checkout. Local docs return
-200 and Postgres connects; local readiness explicitly reports Redis degraded
-because shared Redis credentials are missing. Production Redis is healthy.
-Removed only the expired local fixture-login link file in this pass, retaining
-accounts and financial records. The previously authorized production cleanup
-remains limited to expired auth records. PR #30 remains open; subsequent
-receipt commits affect documentation only.
-
-The remaining upstream tool-continuation, paused models, Venice inference,
-WalletConnect, mainnet/facilitator funding, credit-allocation/refund policy and
-support-transport limitations above remain open. This receipt does not claim
-every model, payment flow or generated page is fully verified.
-
-### Final quota correction release
-
-Vercel `dpl_BQwXhoT1o3kRGruF4PNwp8Gj4Zbw` is READY and the canonical
-`www.oma-ai.com` lookup resolves to source
-`adf20340a7a4093274f4f0bee84409e337324670`. The lockfile workflow passed
-that exact commit. The final run passed all 791 frontend tests in 117 files,
-lint and the production build with type checking. Neon remains on deployment
-80/source `29430af31ddb14c54c7f3410f106dabab6cd8dbf`; no backend code changed.
-
-The fresh production guest request returned exactly `OMA_QUOTA_OK` from
-MiniMax in 34.0 seconds, with 140 total tokens and 90 output tokens. The
-allowance changed from 20 to 19 and stayed at 19 after reloading the page.
-Three quota reads, including forged client forwarding headers, consistently
-reported one used and 19 remaining with shared Redis/private, no-store.
-Readiness again reported healthy Postgres and Redis. The settled browser
-has one H1, no horizontal overflow, no cost pill and no captured warnings or
-errors. The final screenshot is
-`.screenshots/account-audit-2026-10-10/chat-production-verified.jpg`.
-
-This verifies the formerly failing reload flow after preserving the platform
-identity. It does not make an IP quota an account identity or eliminate abuse
-through multiple genuine IP addresses. No mainnet transaction was performed.
-Later receipt commits update documentation only; PR #30 stays open.
+PR #30 remains open. Subsequent receipt commits may change documentation only.

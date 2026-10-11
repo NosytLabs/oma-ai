@@ -25,14 +25,24 @@ export * from "./types.js";
 /**
 	* Export namespace — CSV/JSON downloads of usage, deposits.
 	* Paths match server/src/routes/export.ts (`/v1/export/*`).
-	* Dashboard ExportDataButton also hits these via same-origin fetch.
+	* Downloads use the same-origin authenticated proxy.
 	*/
 const exportData = {
-		usage(format: "csv" | "json" = "csv") {
-				return request<Blob>(`/v1/export/usage?format=${format}`, {
-						method: "GET",
-						responseType: "blob",
-				});
+		async usageReport(format: "csv" | "json" = "csv", options: { since?: string; until?: string; signal?: AbortSignal } = {}): Promise<{ blob: Blob; rowCount: number | null; truncated: boolean }> {
+			const query = new URLSearchParams({ format });
+			if (options.since) query.set("since", options.since);
+			if (options.until) query.set("until", options.until);
+			let rowCount: number | null = null;
+			let truncated = false;
+			const blob = await request<Blob>(`/v1/export/usage?${query}`, {
+				method: "GET", responseType: "blob", signal: options.signal,
+				onResponseHeaders: headers => {
+					const count = headers.get("X-Export-Row-Count");
+					if (count && /^\d+$/.test(count) && Number.isSafeInteger(Number(count))) rowCount = Number(count);
+					truncated = headers.get("X-Export-Truncated") === "true";
+				},
+			});
+			return { blob, rowCount, truncated };
 		},
 		deposits(format: "csv" | "json" = "csv") {
 				return request<Blob>(`/v1/export/deposits?format=${format}`, {

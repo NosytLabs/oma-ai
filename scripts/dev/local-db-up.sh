@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Start local Postgres 16 + Redis for OMA server development.
+# Start local Postgres 16 for OMA server development.
 # Works on macOS (ARM + Intel via Homebrew) and Linux (system packages).
 set -euo pipefail
 
@@ -25,8 +25,6 @@ DO $$ BEGIN
 END $$;
 SQL
 psql -d postgres -tc "SELECT 1 FROM pg_database WHERE datname='oma'" | grep -q 1 || createdb -O oma oma
-# Redis
-redis-cli ping >/dev/null 2>&1 || brew services start redis
-redis-cli ping
 echo "DATABASE_URL=postgresql://oma:oma_dev_local@127.0.0.1:5432/oma"
-echo "REDIS_URL=redis://127.0.0.1:6379"
+echo "Shared quotas require UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN in server/.env."
+echo "Without them, local quotas use memory and /ready reports Redis degraded."

@@ -30,6 +30,8 @@ interface DashboardHeaderProps {
 	onRefresh?: () => void;
 	/** Export callback. */
 	onExport?: () => void;
+	exporting?: boolean;
+	exportDisabled?: boolean;
 	/** Active tab for tab navigation. */
 	activeTab?: TabId;
 	/** Tab change callback. */
@@ -60,6 +62,8 @@ export function DashboardHeader({
 	refreshTick,
 	onRefresh,
 	onExport,
+	exporting = false,
+	exportDisabled = false,
 	activeTab = "overview",
 	onTabChange,
 	timeRange = "7d",
@@ -280,11 +284,14 @@ export function DashboardHeader({
 						<button
 							type="button"
 							onClick={onExport}
-							aria-label="Export usage data"
-							className="flex items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-border bg-surface px-3 py-2 min-h-11 text-[11px] font-bold uppercase tracking-widest text-text-muted transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-surface-elevated hover:border-accent/40 hover:text-text-bright active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+							disabled={exporting || exportDisabled}
+							aria-label={exporting ? "Exporting usage data" : `Export usage data for ${timeRange === "all" ? "all time" : timeRange}`}
+							aria-busy={exporting}
+							title={exportDisabled ? "Available after account usage loads. Demo exports are disabled." : "Download up to 10,000 requests in the selected date range"}
+							className="flex items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-border bg-surface px-3 py-2 min-h-11 text-[11px] font-bold uppercase tracking-widest text-text-muted transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:bg-surface-elevated hover:border-accent/40 hover:text-text-bright active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 						>
 							<Download className="h-3.5 w-3.5" aria-hidden="true" />
-							<span className="hidden sm:inline">EXPORT</span>
+							<span className="hidden sm:inline">{exporting ? "EXPORTING…" : `EXPORT ${timeRange === "all" ? "ALL" : timeRange.toUpperCase()}`}</span>
 						</button>
 					)}
 				</div>

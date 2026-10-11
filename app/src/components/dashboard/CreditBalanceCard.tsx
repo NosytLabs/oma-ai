@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { memo } from "react";
+import { Coins } from "lucide-react";
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
 import { Sparkline } from "@/components/ui/Sparkline";
 import type { BalanceResponse, CreditBatch, UsageRecord } from "@/lib/api";
@@ -59,7 +60,7 @@ function CreditBalanceCardComponent({
 			hint="Available credits"
 			icon={
 				<div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-lg)] border border-success/30 bg-[color-mix(in_srgb,var(--color-success)_10%,transparent)] text-success shadow-[0_0_15px_-5px_var(--color-success-glow)]">
-					<span className="text-[16px] font-mono font-bold">$</span>
+					<Coins className="h-5 w-5" aria-hidden="true" />
 				</div>
 			}
 		>
@@ -75,15 +76,14 @@ function CreditBalanceCardComponent({
 						) : !balance ? (
 							<span className="text-xl text-text-muted">Balance unavailable</span>
 						) : (
-							<div className="flex items-baseline gap-2">
-								{/* balanceCents is integer-cent credits (1 credit = $0.01).
-								  Do not dollar-prefix — that double-counts with the CR unit. */}
+							<div className="flex flex-wrap items-baseline gap-2">
+								{/* The ledger stores fractional cent credits (1 credit = $0.01). */}
 								<AnimatedNumber
 									value={parseFloat(balance.balanceCents)}
 									prefix=""
 								/>
-								<span className="text-[16px] font-mono font-bold uppercase tracking-wider text-text-muted">
-									CR
+								<span className="text-[12px] font-mono font-bold uppercase tracking-wider text-text-muted">
+									credits
 								</span>
 							</div>
 						)}

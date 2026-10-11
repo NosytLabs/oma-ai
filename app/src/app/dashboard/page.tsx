@@ -19,6 +19,7 @@ import { DashboardHeader } from "./_components/DashboardHeader";
 import { useDashboardData } from "./_hooks/useDashboardData";
 import { useDashboardKeyboard } from "./_hooks/useDashboardKeyboard";
 import { useDashboardStats } from "./_hooks/useDashboardStats";
+import { useUsageExport } from "./_hooks/useUsageExport";
 import {
 	DEMO_API_KEYS,
 	DEMO_BALANCE,
@@ -101,6 +102,11 @@ function DashboardPageInner() {
 	const error = isDemoView ? null : live.error;
 	const backendUnavailable = isDemoView ? false : live.backendUnavailable;
 	const refresh = live.refresh;
+	const exportRange = live.summary ? { since: live.summary.from ?? undefined, until: live.summary.to } : null;
+	const { exporting, exportUsage: handleExport } = useUsageExport({
+		userId: user?.id, enabled: canLoadDashboard, range: exportRange,
+		rangeLabel: timeRange === "all" ? "all time" : timeRange,
+	});
 
 	const [page, setPage] = useState(1);
 	const [creating, setCreating] = useState(false);
@@ -180,23 +186,6 @@ function DashboardPageInner() {
 		},
 		[toast],
 	);
-
-	const handleExport = useCallback(async () => {
-		try {
-			const blob = await api.exportData.usage("csv");
-			const url = URL.createObjectURL(blob);
-			const a = document.createElement("a");
-			a.href = url;
-			a.download = `oma-usage-${new Date().toISOString().slice(0, 10)}.csv`;
-			document.body.appendChild(a);
-			a.click();
-			document.body.removeChild(a);
-			URL.revokeObjectURL(url);
-			toast.success("Usage data exported");
-		} catch (e: unknown) {
-			toast.error(e instanceof Error ? e.message : "Export failed");
-		}
-	}, [toast]);
 
 	const handleCreateKey = useCallback(async (options: ApiKeyCreateOptions = {}) => {
 		if (!newKeyName.trim()) return;
@@ -331,6 +320,8 @@ function DashboardPageInner() {
 						hasError={!!error}
 						onRefresh={handleRefresh}
 						onExport={handleExport}
+						exporting={exporting}
+						exportDisabled={!canLoadDashboard || !exportRange}
 						activeTab={activeTab}
 						onTabChange={handleTabChange}
 						timeRange={timeRange}

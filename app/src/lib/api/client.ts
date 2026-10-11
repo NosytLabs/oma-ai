@@ -151,6 +151,8 @@ export function setCache<T>(key: string, data: T, ttl = DEFAULT_TTL): void {
 	*/
 export interface RequestOptions extends RequestInit {
 		responseType?: "json" | "blob";
+		/** Read download metadata while the shared timeout still bounds body reads. */
+		onResponseHeaders?: (headers: Headers) => void;
 }
 
 /**
@@ -165,6 +167,7 @@ export async function request<T>(
 ): Promise<T> {
 		const {
 			responseType = "json",
+			onResponseHeaders,
 			signal: callerSignal,
 			...fetchOpts
 		} = opts;
@@ -218,6 +221,7 @@ export async function request<T>(
 						throw new ApiError(res.status, message, body);
 				}
 
+				onResponseHeaders?.(res.headers);
 				if (res.status === 204) return undefined as T;
 				if (responseType === "blob") return (await res.blob()) as T;
 				return (await res.json()) as T;
