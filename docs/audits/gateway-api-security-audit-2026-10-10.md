@@ -26,11 +26,12 @@ Current behavior lives in [Platform](../PLATFORM.md),
 - Both inference APIs enforce model/output limits and key scopes, including
   fallbacks. They share metering and streaming framing. Messages records the
   API-key ID, translates function tools/continuations and preserves explicit
-  zero usage. Stream cancellation finalizes once, without customer deduction.
+  zero usage. Cancellation before completion finalizes once without deduction;
+  delivery failure after committed usage retains the charge and retry claim.
   Upstream credential failures are gateway errors, not customer login failures.
 - Account-scoped inference claims prevent simultaneous calls across both API
   formats and different keys owned by the same account. Completed reuse returns
-  409 without another call or charge; failed/canceled attempts can retry.
+  409 without another call or charge; failed, unbilled attempts can retry.
   The gateway does not fabricate response replay. Method/route-specific rate
   budgets prevent unrelated account actions from exhausting each other.
 - The user dashboard unifies Overview, Usage, API Keys and Settings.
@@ -118,6 +119,40 @@ deposit guidance, admin usage/treasury, pricing and docs at 1280px and 390px.
 The checked views had one H1, no horizontal overflow and no captured console
 warnings/errors. These checks use local test accounts; they do not imply a
 successful mainnet purchase or working Venice/mobile pairing credentials.
+
+### Verified wallet/retry release
+
+| Service | Source | Deployment | Observed state |
+| --- | --- | --- | --- |
+| Vercel website | `8501209d01f4ada54082d91f77f2bb288dfa9879` | `dpl_5esiZKAzRbnvk7bhoVtQ5mAzeaW7` | READY; canonical `www.oma-ai.com` matched |
+| Neon API | `fb4bebcc65c4f64f928630149be41867c21475aa` | `omaapi` 83 | Current/active, completed; Node 24, 2048 MiB |
+
+All 40 API environment values match the pre-release snapshot. Both original
+every-minute recovery jobs remain enabled with the same trigger IDs and paths.
+The later website copy/bookmark changes did not change or redeploy the API.
+Production migration 0005 matches SHA-256
+`57ff37962d1a4d9b5c8fc74cc19ab69b74e821bd28ce26992fdb2da7d67e85ae`.
+No production account, financial record or historical deployment was deleted.
+Two superseded in-progress website releases were canceled during verification.
+
+Native and same-origin readiness returned 200 with healthy Postgres/Redis.
+Anonymous key, usage-export and admin-setting requests returned 401;
+private recovery paths and `/.env` returned 404. Public OpenAPI 3.1 contains
+both inference 409 contracts, the idempotency byte cap and no private paths.
+The live catalog returns 20 entries, 18 enabled, MiniMax's 200,000-token context
+and 16,384-token output cap, and $0.02 per million input/output tokens.
+DeepSeek/GLM remain marked unavailable. Read-only Base and Base Sepolia RPC
+checks returned the correct chain IDs; `/x402/info` advertises Base USDC and
+the configured treasury. No transfer was signed.
+
+Fresh production browser checks confirmed the docs bookmark, rate-limit notes,
+enabled-count copy, correct canonical URLs, one H1 and no page overflow or
+captured warnings/errors. Footer columns align on desktop and mobile links
+measure 44px. Captures are under
+`.screenshots/wallet-retry-audit-2026-10-11/`. The consumed local fixture-link
+file was removed. The final website source's
+[lockfile workflow](https://github.com/NosytLabs/oma-ai/actions/runs/38146152634)
+passed. PR #30 remains open; later receipt commits change documentation only.
 
 ## Wallet, RPC and API-key follow-up — October 11
 
