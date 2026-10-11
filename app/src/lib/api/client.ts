@@ -168,11 +168,8 @@ export async function request<T>(
 			signal: callerSignal,
 			...fetchOpts
 		} = opts;
-		const headers: Record<string, string> = {
-				"Content-Type": "application/json",
-				Accept: "application/json",
-				...(fetchOpts.headers as Record<string, string> | undefined),
-		};
+		const headers = new Headers({ "Content-Type": "application/json", Accept: "application/json" });
+		new Headers(fetchOpts.headers).forEach((value, name) => headers.set(name, value));
 
 		const controller = new AbortController();
 		const abortFromCaller = () => {
@@ -196,8 +193,6 @@ export async function request<T>(
 						credentials: "same-origin",
 						signal: controller.signal,
 				});
-				clearTimeout(timeoutId);
-
 				if (!res.ok) {
 						let message = res.statusText;
 						let body: unknown;

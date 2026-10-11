@@ -6,16 +6,9 @@ import { generalLimiter } from "@/lib/rate-limiter";
 	* POST /api/support
 	*
 	* Receives a support form submission, validates, and forwards to the
-	* configured inbox. Two modes:
-	*  - With `SUPPORT_WEBHOOK_URL` set: POST the JSON payload to the webhook
-	*    (e.g. a Formspree, Slack incoming webhook, or internal ticketing
-	*    endpoint) and surface the upstream status to the client.
-	*  - Without it: respond 202 Accepted with a deterministic ticket id so
-	*    the UI can show a success state even when running locally or in
-	*    tests. The actual delivery is best-effort via SMTP in that case.
-	*
-	* The route is intentionally cheap: no auth, no DB write. Rate limiting
-	* is expected to be applied at the edge / by the upstream consumer.
+	* configured webhook. A missing or failing transport returns an error,
+	* never a fictitious queued ticket. The route has no database queue or
+	* SMTP fallback. Submissions are validated and rate-limited below.
 	*/
 
 const TOPIC_TO_INBOX: Record<string, string> = {
@@ -55,29 +48,36 @@ async function supportPost(request: Request): Promise<NextResponse> {
 			{ status: 400 },
 		);
 	}
+	if (!body || typeof body !== "object" || Array.isArray(body) ||
+		["topic", "email", "message", "wallet"].some(key => {
+			const value = body[key as keyof SupportPayload];
+			return value !== undefined && typeof value !== "string";
+		})) {
+		return NextResponse.json({ error: { message: "Invalid support fields.", type: "validation_error" } }, { status: 400 });
+	}
 
 	const topic = body.topic?.trim() ?? "";
 	const email = body.email?.trim() ?? "";
 	const message = body.message?.trim() ?? "";
 	const wallet = body.wallet?.trim() ?? "";
 
-	if (!topic || !TOPIC_TO_INBOX[topic]) {
+	if (!Object.hasOwn(TOPIC_TO_INBOX, topic)) {
 		return NextResponse.json(
 			{ error: { message: "Please choose a topic.", type: "validation_error" } },
 			{ status: 400 },
 		);
 	}
-	if (!EMAIL_RE.test(email)) {
+	if (email.length > 254 || !EMAIL_RE.test(email)) {
 		return NextResponse.json(
 			{ error: { message: "Please enter a valid email.", type: "validation_error" } },
 			{ status: 400 },
 		);
 	}
-	if (!message || message.length < 10) {
+	if (message.length < 10 || message.length > 10_000) {
 		return NextResponse.json(
 			{
 				error: {
-					message: "Message must be at least 10 characters.",
+					message: "Message must contain 10 to 10,000 characters.",
 					type: "validation_error",
 				},
 			},
@@ -97,6 +97,13 @@ async function supportPost(request: Request): Promise<NextResponse> {
 	}
 
 	const inbox = TOPIC_TO_INBOX[topic]!;
+	const webhook = process.env.SUPPORT_WEBHOOK_URL;
+	if (!webhook) {
+		return NextResponse.json({ error: {
+			message: "Your message could not be delivered. Email support@nosytlabs.com instead.",
+			type: "service_unavailable",
+		} }, { status: 503 });
+	}
 	const ticket = ticketId();
 	const payload = {
 		ticket,
@@ -109,26 +116,16 @@ async function supportPost(request: Request): Promise<NextResponse> {
 		createdAt: new Date().toISOString(),
 	};
 
-	const webhook = process.env.SUPPORT_WEBHOOK_URL;
-	if (webhook) {
-		try {
-			const res = await fetch(webhook, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(payload),
-			});
-			if (!res.ok) {
-				return NextResponse.json(
-					{
-						error: {
-							message: "Support is temporarily unavailable. Please try again.",
-							type: "upstream_error",
-						},
-					},
-					{ status: 502 },
-				);
-			}
-		} catch {
+	const controller = new AbortController();
+	const timer = setTimeout(() => controller.abort(), 10_000);
+	try {
+		const res = await fetch(webhook, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(payload),
+			signal: controller.signal,
+		});
+		if (!res.ok) {
 			return NextResponse.json(
 				{
 					error: {
@@ -139,17 +136,25 @@ async function supportPost(request: Request): Promise<NextResponse> {
 				{ status: 502 },
 			);
 		}
+	} catch {
+		return NextResponse.json(
+			{ error: {
+				message: "Support is temporarily unavailable. Please try again.",
+				type: "upstream_error",
+			} },
+			{ status: 502 },
+		);
+	} finally {
+		clearTimeout(timer);
 	}
 
-	// No webhook configured — return 202 so the UI can render a success
-	// state with the ticket id. (In production, set SUPPORT_WEBHOOK_URL
-	// to forward to your ticketing system.)
+	// The delivery service acknowledged this request.
 	return NextResponse.json(
 		{
 			ok: true,
 			ticket,
 			inbox,
-			message: `Your message has been queued for ${inbox}.`,
+			message: "Your support request was received.",
 		},
 		{ status: 202 },
 	);

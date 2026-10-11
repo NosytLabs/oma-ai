@@ -387,8 +387,23 @@ const spec = {
 		},
 		"/v1/usage/today": {
 			get: {
-				summary: "Today's free-tier usage counter (anon IP, authed user)",
-				responses: { "200": { description: "Counter" } },
+				summary: "Today's free-chat quota (guest IP or signed-in account)",
+				description: "Optional session or API-key authentication. Counts admitted free-chat attempts, including upstream failures; this read does not consume quota. Resets at midnight UTC. Paid API-key inference uses prepaid credits instead. Redis outages use bounded, process-local counters retaining observed usage; these are not durable across restarts.",
+				security: [{ SessionCookie: [] }, { BearerAuth: [] }, {}],
+				responses: { "200": {
+					description: "Private, non-cacheable quota snapshot",
+					content: { "application/json": { schema: {
+						type: "object",
+						required: ["used", "limit", "remaining", "resetMs", "policy"],
+						properties: {
+							used: { type: "integer", minimum: 0 },
+							limit: { type: "integer", enum: [20, 100] },
+							remaining: { type: "integer", minimum: 0 },
+							resetMs: { type: "integer", minimum: 0, description: "Milliseconds until midnight UTC" },
+							policy: { type: "string", enum: ["shared-redis", "degraded-memory"] },
+						},
+					} } },
+				} },
 			},
 		},
 		"/v1/search": {

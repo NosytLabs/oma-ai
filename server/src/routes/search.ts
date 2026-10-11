@@ -73,14 +73,16 @@ function stripTags(html: string): string {
 	);
 }
 
-async function fetchWithTimeout(
+async function fetchWithTimeout<T>(
 	url: string,
-	init: RequestInit = {},
-): Promise<Response> {
+	init: RequestInit,
+	read: (response: Response) => Promise<T>,
+): Promise<T> {
 	const controller = new AbortController();
 	const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 	try {
-		return await fetch(url, { ...init, signal: controller.signal });
+		const response = await fetch(url, { ...init, signal: controller.signal });
+		return await read(response);
 	} finally {
 		clearTimeout(timer);
 	}
@@ -114,18 +116,20 @@ async function searchDuckDuckGoHtml(
 	query: string,
 ): Promise<SearchResult[]> {
 	const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
-	const resp = await fetchWithTimeout(url, {
+	const html = await fetchWithTimeout(url, {
 		method: "GET",
 		headers: {
 			Accept: "text/html",
 			"User-Agent": DDG_UA,
 		},
+	}, async resp => {
+		if (!resp.ok) {
+			logger.warn({ status: resp.status }, "[search] ddg-html non-OK");
+			return null;
+		}
+		return resp.text();
 	});
-	if (!resp.ok) {
-		logger.warn({ status: resp.status }, "[search] ddg-html non-OK");
-		return [];
-	}
-	const html = await resp.text();
+	if (html === null) return [];
 	const results: SearchResult[] = [];
 	const blockRe =
 		/<a[^>]*class="[^"]*result__a[^"]*"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>([\s\S]*?)(?=<a[^>]*class="[^"]*result__a|<\/div>\s*<\/div>\s*<\/div>|$)/gi;
@@ -171,14 +175,15 @@ async function searchDuckDuckGoInstant(
 	query: string,
 ): Promise<SearchResult[]> {
 	const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`;
-	const resp = await fetchWithTimeout(url, {
+	const data = (await fetchWithTimeout(url, {
 		headers: { Accept: "application/json", "User-Agent": DDG_UA },
-	});
-	if (!resp.ok) {
-		logger.warn({ status: resp.status }, "[search] ddg-instant non-OK");
-		return [];
-	}
-	const data = (await resp.json()) as {
+	}, async resp => {
+		if (!resp.ok) {
+			logger.warn({ status: resp.status }, "[search] ddg-instant non-OK");
+			return null;
+		}
+		return resp.json();
+	})) as {
 		AbstractText?: string;
 		AbstractURL?: string;
 		AbstractSource?: string;
@@ -188,7 +193,8 @@ async function searchDuckDuckGoInstant(
 			| { Topics?: Array<{ Text?: string; FirstURL?: string }> }
 		>;
 		Results?: Array<{ Text?: string; FirstURL?: string }>;
-	};
+	} | null;
+	if (!data) return [];
 	const out: SearchResult[] = [];
 	if (data.AbstractText && data.AbstractURL) {
 		out.push({

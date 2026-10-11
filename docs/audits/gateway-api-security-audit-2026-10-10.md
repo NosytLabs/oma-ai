@@ -220,3 +220,73 @@ Screenshots are kept outside source control under
 `deposit-proof-docs-live-followup.png`. The maintained platform guide also gives
 the exact canonical direct-deposit signing message. Subsequent receipt commits
 contain documentation only.
+
+## Codebase, quota and recovery follow-up
+
+This pass reviewed both application packages, request/auth boundaries, account
+and admin routes, chat state, provider/search adapters, payment/credit paths,
+public documentation and dependency/deployment tooling. Static review and the
+tests below cover these areas; this is not a claim that every line or upstream
+model was exercised. Context7 confirmed React effect dependencies and the Hono
+Node adapter's socket-peer behavior.
+
+Fixes:
+
+- Authenticate the actual socket peer before trusting configured-proxy headers.
+  Walk only the trusted suffix of a forwarded chain, normalize valid IPs and
+  ignore caller-prepended identities. Preserve the authenticated Vercel hop.
+- Keep API-client and web-search deadlines active through response-body reads.
+  Support every standard HeadersInit shape and case-insensitive overrides.
+- Stop a chat retry countdown from resetting on each render. Give signed-in
+  users the correct daily cap and API-key action, without an unlimited-usage
+  promise. Measure chat latency before dispatch, including provider wait and
+  key-repair retries, instead of timing only body consumption.
+- Unify free-chat quota admission and reporting in one helper. Both count
+  admitted attempts, including later provider failures; reads never consume
+  quota. Redis and local fallback reset at midnight UTC. Preserve observed
+  usage through Redis failures and make quota responses private/non-cacheable.
+- Validate support payload types, topic ownership and length bounds. Missing
+  delivery configuration returns 503 instead of a fictitious queued ticket;
+  failed or timed-out webhooks return 502. The form retains the message and
+  provides an email action. No external support message was sent by this audit.
+- Remove the retired Llama 3.2 override kept solely for old tests. Update quota,
+  authentication and account links in docs/OpenAPI. Show an empty batch example
+  rather than invented per-purchase expiry records.
+- Replace the old Neon wrapper that moved `.env` files and implicitly applied
+  infrastructure with an explicit code-only release retaining remote secrets
+  and schedules.
+
+Each behavioral fix has a regression test observed failing before the fix and
+passing afterward. Latest full checks: 774 frontend tests across 116 files;
+568 API tests across 72 passing files, with six explicit skips; frontend/API
+lint, types and production builds pass. The 20 real HTTP/Postgres integration
+groups passed twice against separate disposable migrated databases. An initial
+run returned an unexplained usage-history 500 that did not recur; this remains
+a recorded transient, not a diagnosed/fixed defect. Production dependency
+audit: zero known vulnerabilities across 671 dependencies. Only incompatible
+TypeScript 7 and runtime-mismatched Node 26 typings remain newer.
+
+A fresh temporary one-day MiniMax-scoped API key completed actual inference:
+49 input/95 output tokens, final answer OMA_API_OK, 0.000288 cents charged,
+matching ledger attribution and balance deduction. It took 72.456 seconds.
+Revocation returned 401 and its temporary session was removed. The disabled
+OpenBroker DeepSeek entry was excluded before any provider call; the probe did
+not silently enable or substitute it. A real browser free-chat request returned
+7 for 3 + 4 and appeared in the user's usage history with its full 73.7-second
+server latency. The shorter old chat-only timing led to the additional fix.
+
+Browser checks used the local user fixture. At 390px, contact and user usage
+pages had one H1, no duplicate IDs and no page-level horizontal overflow. The
+contact form showed its actual delivery failure, retained its message and
+exposed the email action. Screenshot: `.screenshots/account-audit-2026-10-10/contact-recovery-codebase-pass.jpg`.
+Direct browser navigation to the JSON quota endpoint was blocked by the browser;
+quota semantics are verified by the real Hono/Redis-boundary regression tests.
+
+Remaining setup/product gaps from prior receipts still apply: WalletConnect QR,
+authenticated Venice production verification, upstream tool-continuation
+quality and mainnet/facilitator payment validation. Credit accounting remains
+aggregate: per-purchase batches are not written, and Polar refunds deduct from
+the aggregate balance rather than the unused remainder of the refunded grant.
+A per-grant allocation/refund policy and ledger migration are still needed;
+this pass does not invent expiry dates or alter real balances to conceal it.
+Support form delivery requires a configured, verified webhook.

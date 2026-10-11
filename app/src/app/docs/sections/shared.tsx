@@ -81,8 +81,6 @@ export const MODEL_RATE_OVERRIDES: ModelRateOverride[] = [
 			{ model: "llama-3.3-70b", rpm: 60, tpm: 120000 },
 	{ model: "deepseek-v4-flash-0731-openbroker", rpm: 60, tpm: 120000 },
 	{ model: "kimi-k3", rpm: 60, tpm: 120000 },
-	// Still defined on the server; not always in the curated public catalog.
-	{ model: "llama-3.2-3b", rpm: 120, tpm: 240000 },
 ];
 
 export const MODEL_PRICING_ROWS: ModelPricing[] = MODELS.map((m) => ({
@@ -292,15 +290,16 @@ export const ENDPOINTS: EndpointInfo[] = [
 		method: "GET",
 		path: "/v1/usage/today",
 		anchor: "ep-usage-today",
-		title: "Daily Free-Tier Usage",
-		desc: "How many free messages you have left today. 20/day for anonymous (IP-keyed Redis), 100/day for authenticated users.",
-		auth: "Bearer token (API key) — anonymous allowed",
+		title: "Daily Free-Chat Quota",
+		desc: "Free-chat attempts admitted today: 20/day per guest IP or 100/day per signed-in account. Includes attempts that later fail upstream. Reads do not consume quota; the allowance resets at midnight UTC. Paid API-key inference uses credits instead.",
+		auth: "Optional session cookie or API key; guests allowed",
 		body: undefined,
 		response: `{
 	"used": 12,
 	"limit": 20,
 	"remaining": 8,
-	"resetMs": 12345678
+	"resetMs": 12345678,
+	"policy": "shared-redis"
 }`,
 	},
 	{
@@ -386,20 +385,12 @@ export const ENDPOINTS: EndpointInfo[] = [
 		method: "GET",
 		path: "/v1/credits/balance",
 		anchor: "ep-credits-balance",
-		title: "Credit Batches",
+		title: "Credit Balance Details",
 		desc: "Returns your aggregate balance (authoritative) plus any credit batches. activeBatches is currently always empty: per-batch records are not yet written, so use balanceCents.",
 		auth: "Bearer token (API key)",
 		body: undefined,
 		response: `{
-	"activeBatches": [
-		{
-			"id": "cb_…",
-			"amountCents": "10000",
-			"remainingCents": "7650",
-			"expiresAt": "2026-08-01T00:00:00.000Z",
-			"paymentMethod": "usdc"
-		}
-	],
+	"activeBatches": [],
 	"balanceCents": "7650"
 }`,
 	},

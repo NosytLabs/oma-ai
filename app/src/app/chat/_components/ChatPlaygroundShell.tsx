@@ -810,6 +810,7 @@ function ShellContent() {
 							<div className="max-w-4xl mx-auto">
 								<ChatErrorBanner
 									error={error}
+									isAuthenticated={isAuthenticated}
 									loginHref={loginHref}
 									onDismiss={() => setError(null)}
 									onRetry={() => {

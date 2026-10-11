@@ -396,6 +396,9 @@ export function useStreamingChat(
 				});
 			};
 
+			// Measure from dispatch so provider queueing and key-repair retries
+			// are visible, rather than reporting only the response body's read time.
+			const startTime = Date.now();
 			let response = await doFetch();
 			assertRequestActive(request);
 
@@ -443,8 +446,6 @@ export function useStreamingChat(
 				// actual answer. (BUG-C, audit 2026-09-01-userflow.md)
 				live.setError(null);
 			}
-
-			const startTime = Date.now();
 
 			if (live.stream && response.body) {
 				const reader = response.body.getReader();

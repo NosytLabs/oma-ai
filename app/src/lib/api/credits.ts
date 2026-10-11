@@ -2,9 +2,9 @@
 	* Credit-history endpoints exposed to the dashboard.
 	*
 	* Wraps the server `GET /v1/credits/transactions` endpoint that powers
-	* the Credit History table on `/dashboard/credits`. The endpoint requires
-	* a bearer session token; the request helper injects it from the
-	* `oma_session` cookie automatically.
+	* the credit history in `/dashboard?tab=overview`. Browser requests use the
+	* same-origin proxy and Better Auth's HttpOnly session cookie; API callers
+	* may instead provide an OMA API key.
 	*/
 import { request } from "./client.js";
 

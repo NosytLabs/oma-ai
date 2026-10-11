@@ -16,74 +16,11 @@
 	*/
 import type { Context, Next } from "hono";
 import type { OmaEnv } from "../types.js";
-import { getRedisClient, isRedisReady } from "../lib/redis-client.js";
-import { logger } from "../lib/logger.js";
 import { extractClientIp } from "./rate-limit/utils.js";
-import { checkMemoryCounter } from "./rate-limit/memory-store.js";
 import { getModelById } from "../inference/models.js";
 import { isFreeWebsiteModel } from "../inference/free-website-model.js";
-
-/** Shared with routes/daily-usage.ts so the enforced cap and the
-	displayed quota can never drift apart. */
-export const DAILY_LIMIT_ANONYMOUS = 20;
-export const DAILY_LIMIT_REGISTERED = 100;
-
-interface DailyUsageResult {
-	available: boolean;
-	allowed: boolean;
-		remaining: number;
-		limit: number;
-		resetMs: number;
-}
-
-/**
-	* Check daily usage limit for website chat.
-	* Key format: daily:{ip|userId}:{date}
-	*/
-async function checkDailyUsageLimit(
-		identifier: string,
-		limit: number
-): Promise<DailyUsageResult> {
-		const redis = await getRedisClient();
-		const ready = isRedisReady();
-
-		// A quota-store outage degrades to a bounded per-process counter, never
-		// unlimited free inference. This bound resets with the process and is
-		// weaker than durable shared Redis enforcement.
-		if (!redis || !ready) {
-			logger.warn("Redis unavailable for daily free-tier limit — enforcing a bounded in-memory cap (degraded)");
-			const mem = checkMemoryCounter(identifier, limit, 86_400_000);
-			return { available: true, allowed: mem.allowed, remaining: mem.remaining, limit, resetMs: mem.resetMs };
-		}
-
-		const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-		const key = `daily:${identifier}:${today}`;
-
-		try {
-				const current = await redis.incr(key);
-				
-				// Set expiry on first request of the day (24 hours)
-				if (current === 1) {
-						await redis.expire(key, 86400);
-				}
-
-				const remaining = Math.max(0, limit - current);
-				const ttl = await redis.ttl(key);
-				const resetMs = ttl > 0 ? ttl * 1000 : 0;
-
-			return {
-				available: true,
-				allowed: current <= limit,
-						remaining,
-						limit,
-						resetMs,
-				};
-		} catch (err) {
-				logger.error({ err }, "Daily usage limit check failed — enforcing a bounded in-memory cap");
-				const mem = checkMemoryCounter(identifier, limit, 86_400_000);
-				return { available: true, allowed: mem.allowed, remaining: mem.remaining, limit, resetMs: mem.resetMs };
-		}
-}
+import { consumeDailyQuota, DAILY_LIMIT_ANONYMOUS, DAILY_LIMIT_REGISTERED } from "../lib/daily-quota.js";
+export { DAILY_LIMIT_ANONYMOUS, DAILY_LIMIT_REGISTERED } from "../lib/daily-quota.js";
 
 /**
 	* Middleware to enforce daily usage limits for website chat.
@@ -134,19 +71,8 @@ export function dailyUsageLimit() {
 						limit = DAILY_LIMIT_ANONYMOUS;
 				}
 
-				const result = await checkDailyUsageLimit(identifier, limit);
-				if (!result.available) {
-					return c.json(
-						{
-							error: {
-								message: "Free website chat is temporarily unavailable. Please try again shortly.",
-								type: "service_unavailable",
-								code: "free_tier_unavailable",
-							},
-						},
-						503,
-					);
-				}
+				const result = await consumeDailyQuota(identifier, limit);
+				c.header("X-DailyLimit-Policy", result.policy);
 
 				if (!result.allowed) {
 						c.header("Retry-After", String(Math.max(1, Math.ceil(result.resetMs / 1000))));

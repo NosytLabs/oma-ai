@@ -61,21 +61,17 @@ describe('rate-limit middleware', () => {
 						expect(MODEL_LIMITS['kimi-k3']).toEqual({ rpm: 60, tpm: 120000 })
 						expect(MODEL_LIMITS['llama-3.3-70b']).toEqual({ rpm: 60, tpm: 120000 })
 						expect(MODEL_LIMITS['deepseek-v4-flash-0731-openbroker']).toEqual({ rpm: 60, tpm: 120000 })
-						expect(MODEL_LIMITS['llama-3.2-3b']).toEqual({ rpm: 120, tpm: 240000 })
+						expect(MODEL_LIMITS['llama-3.2-3b']).toBeUndefined()
 				})
 
-				it('should have reasonable limits for different model tiers', () => {
+				it('should have reasonable limits for current standard models', () => {
 						const standardModels = ['kimi-k3', 'llama-3.3-70b', 'deepseek-v4-flash-0731-openbroker']
-						const fastModels = ['llama-3.2-3b']
 
 						standardModels.forEach(model => {
 								expect(MODEL_LIMITS[model].rpm).toBeGreaterThanOrEqual(30)
 								expect(MODEL_LIMITS[model].rpm).toBeLessThanOrEqual(60)
 						})
 
-						fastModels.forEach(model => {
-								expect(MODEL_LIMITS[model].rpm).toBeGreaterThan(60)
-						})
 				})
 		})
 

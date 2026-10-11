@@ -13,7 +13,7 @@ export function RateLimitsSection() {
 				id="rate-limits"
 				icon={<Gauge className="h-5 w-5" />}
 				title="Rate Limits"
-				subtitle="One set of limits for every key — no plan tiers. Enforced per API key (or per IP for unauthenticated requests)."
+				subtitle="No plan tiers. Account, API-key and client-IP limits apply together; creating another key does not bypass the account limit."
 			/>
 
 			<div id="rl-limits" className="mb-6 overflow-x-auto overscroll-x-contain rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] scroll-mt-24">

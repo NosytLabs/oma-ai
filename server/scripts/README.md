@@ -1,6 +1,8 @@
 # Database and account tooling
 
-Run these from `server/`. Never use production credentials for local fixtures.
+Run the account tools from `server/`. Never use production credentials for local fixtures.
+
+`deploy-neon.sh` is a separate production release tool: export the deployment API key, then run it from any directory. It deploys code only to the explicit production function/branch, retaining remote secrets and scheduled triggers. It no longer loads or copies development/production `.env` files or reconciles infrastructure implicitly. See [deployment instructions](../../docs/DEPLOYMENT.md) for deliberate configuration changes.
 
 - `pnpm db:seed-test-auth`: creates or refreshes the current local user/admin fixtures and one-time magic links. Only accepts loopback app/database hosts in development or test.
 - `pnpm db:cleanup-local`: previews a fixed list of historical local test identities plus expired authentication records. `pnpm db:cleanup-local --apply` first saves a full PostgreSQL backup under `.artifacts/database-backups/`. It preserves current fixtures and refuses cleanup when financial records are present. This is not a production cleanup tool.

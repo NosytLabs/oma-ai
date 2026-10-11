@@ -516,6 +516,20 @@ describe("useStreamingChat — request ownership", () => {
 });
 
 describe("useStreamingChat — response rendering metadata", () => {
+	it.each([false, true])("includes provider/header wait in latency (stream=%s)", async stream => {
+		let now = 1_000;
+		vi.spyOn(Date, "now").mockImplementation(() => now);
+		vi.stubGlobal("fetch", vi.fn(async () => {
+			now += 70_000;
+			return stream
+				? new Response('data: {"choices":[{"delta":{"content":"7"},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\n', { headers: { "Content-Type": "text/event-stream" } })
+				: completionResponse("7");
+		}));
+		const { view, state } = mountChat({ stream });
+		await act(async () => { await view.result.current.sendMessage("3 + 4?"); });
+		expect(state.messages.at(-1)).toMatchObject({ role: "assistant", content: "7", latency: 70_000 });
+	});
+
 	it("propagates a failed interactive follow-up while restoring the composer", async () => {
 		vi.stubGlobal("fetch", vi.fn(async () => { throw new TypeError("fetch failed"); }));
 		const { view, state } = mountChat();
