@@ -118,9 +118,25 @@ user's session list revoked four old fixture sessions while preserving this
 device. That user received Access denied at `/admin`; a fresh local admin
 fixture opened the real console and its usage/treasury controls. The revenue
 chart still rounded sub-cent tick values to `$0`; it now shares the dashboard's
-small-value currency formatter and has room for those labels. Current captures
+small-value currency formatter and has room for those labels. Final desktop and
+390px screenshots show `$0.000015`–`$0.00006` ticks, no horizontal overflow and
+no captured console warnings/errors. Current captures
 are under `.screenshots/platform-audit-2026-10-11/`. The consumed local
 fixture-link file was removed.
+
+The final SDK review reproduced an `IndentationError` in the Python streaming
+example, a dictionary-only method on typed model objects, an unused Go streaming
+import, and the Vercel SDK's default Responses endpoint. Python examples now
+parse, Go examples compile, and the Vercel example explicitly uses `oma.chat()`
+with an output cap. Python streaming handles empty choice chunks, cURL disables
+output buffering, and Go prints actual content deltas and reports stream errors.
+Install instructions
+match the Go standard-library examples; public copy names the supported API
+instead of claiming full OpenAI compatibility. The current
+[AI SDK provider documentation](https://github.com/vercel/ai/blob/main/content/providers/01-ai-sdk-providers/03-openai.mdx)
+was checked through Context7. API keys stay server-side in the SDK guidance.
+The compiled Go model-discovery example also returned all 20 catalog IDs from
+the actual public endpoint. Frontend lint and the final production build passed.
 
 ## Cleanup and usage downloads — October 11
 
