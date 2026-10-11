@@ -2,7 +2,7 @@
 
 import { m } from "@/lib/framer-motion-client";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
-import { formatUsd } from "@/lib/utils";
+import { formatUsdPrecise } from "@/lib/utils";
 import { ChartEmptyState } from "./shared";
 
 export interface ModelData {
@@ -20,7 +20,7 @@ interface DonutChartProps {
 
 function formatValue(value: number, currency: boolean): string {
 	if (!Number.isFinite(value)) return "—";
-	if (currency) return formatUsd(value);
+	if (currency) return formatUsdPrecise(value);
 	return value.toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 
@@ -53,6 +53,7 @@ export function DonutChart({
 	currency = true,
 }: DonutChartProps) {
 	const total = data.reduce((sum, item) => sum + item.value, 0);
+	const formattedTotal = formatValue(total, currency);
 	if (data.length === 0 || total === 0) {
 		return (
 			<div className="relative h-[280px] w-full">
@@ -91,8 +92,8 @@ export function DonutChart({
 				aria-hidden="true"
 				className="absolute inset-0 flex flex-col items-center justify-center"
 			>
-				<span className="text-3xl font-bold text-text-bright">
-					{formatValue(total, currency)}
+				<span className={`max-w-[130px] text-center font-bold tabular-nums text-text-bright ${formattedTotal.length > 10 ? "text-base" : formattedTotal.length > 7 ? "text-xl" : "text-3xl"}`}>
+					{formattedTotal}
 				</span>
 				<span className="text-xs text-text-muted uppercase tracking-wider">
 					{label}

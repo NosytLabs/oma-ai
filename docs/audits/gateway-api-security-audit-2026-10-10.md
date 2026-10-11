@@ -41,6 +41,8 @@ Local time was October 10; some provider receipts are dated October 11 UTC.
   dialog isolates each new key, auto-hides, traps focus and supports Escape.
   Duplicate creation prompts disappear while the form is open. All four
   dashboard tabs remain visible on narrow screens.
+- Spend-donut totals, tooltips and accessible descriptions preserve sub-cent
+  charges instead of contradicting the detailed table with a rounded zero.
 - Removed unused Surplus configuration/catalog routing metadata and a false
   privacy processor row. Historical provider records/migrations remain intact,
   and usage breakdowns retain those records in their totals. Dated audit docs
@@ -48,7 +50,7 @@ Local time was October 10; some provider receipts are dated October 11 UTC.
 
 ## Verification
 
-- Frontend: 744 passing tests; lint, type checking and production build pass.
+- Frontend: 746 passing tests; lint, type checking and production build pass.
 - API: 553 passing tests, six explicitly skipped; lint, type checking and
   production build pass.
 - Real HTTP/Postgres: 20 passing groups against a migrated disposable database.
