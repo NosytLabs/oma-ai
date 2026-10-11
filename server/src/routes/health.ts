@@ -21,8 +21,9 @@ healthRoutes.get("/health/db", async (c) => {
     await db.execute(sql`select 1`);
     return c.json({ status: "ok", db: "reachable" });
   } catch (err) {
+    logger.error({ err }, "[health] database health check failed");
     return c.json(
-      { status: "error", db: "unreachable", error: (err as Error).message },
+      { status: "error", db: "unreachable" },
       503,
     );
   }
