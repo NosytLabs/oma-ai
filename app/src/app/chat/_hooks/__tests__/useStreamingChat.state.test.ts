@@ -142,6 +142,15 @@ afterEach(() => {
 });
 
 describe("useStreamingChat — BUG-A: state resets on every exit path", () => {
+	it("preserves explicit zero usage in a nonstreaming response instead of inventing estimated tokens", async () => {
+		vi.stubGlobal("fetch", vi.fn(async () => Response.json({
+			choices: [{ message: { content: "Hello" } }],
+			usage: { total_tokens: 0, prompt_tokens: 0, completion_tokens: 0 },
+		})));
+		const { view, state } = mountChat({ model: "minimax-m2-7" });
+		await act(async () => { await view.result.current.sendMessage(); });
+		expect(state.messages.find(message => message.role === "assistant")).toMatchObject({ tokens: 0, inputTokens: 0, outputTokens: 0 });
+	});
 	it("clears loading and the abort controller when fetch rejects", async () => {
 		vi.stubGlobal(
 			"fetch",

@@ -373,7 +373,7 @@ local scroll, with no page overflow. Mobile account profile, usage and sessions
 rendered successfully at 390px; a browser socket failure recovered in a fresh
 tab while the local HTTP service remained healthy.
 
-Current validation: 783 frontend tests and 591 backend tests passed (six API
+Current validation: 784 frontend tests and 591 backend tests passed (six API
 tests explicitly skipped); lint, types and production builds passed. The 21
 real HTTP/Postgres groups passed twice, including signup, returning login,
 SIWE/replay, key scope/expiry/revocation, cross-account isolation, admin denial,
@@ -417,3 +417,8 @@ cost pill and its fabricated fallback price. Chat retains message/token counts
 and its live composer pricing/free label; dashboard Usage remains the source
 for actual charges. A regression reproduces the cost pill on a free response
 before its removal.
+
+Nonstreaming browser responses now preserve explicit zero input/output usage
+instead of replacing it with estimates. The hook regression first reproduced
+an undefined input count and an invented two-token output for a zero-usage
+response, then passed with both counts retained as zero.
