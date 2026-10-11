@@ -12,7 +12,34 @@ Confirm the API environment has the production configuration described in PLATFO
 
 The facilitator needs Base ETH for transaction gas. The **payer wallet** needs the USDC being transferred. Read current balances and network gas conditions rather than relying on a fixed seed amount or historical cost estimate. QuickNode can provide Base RPC; it is not a substitute for the configured settlement implementation.
 
-Before sending funds, establish a SIWE session with the paying wallet. Read the treasury from authenticated `GET https://www.oma-ai.com/api/v1/deposit/usdc` and compare it with the intended recipient. Do not use a treasury address copied from an old runbook.
+Before sending funds, establish a SIWE session with the paying wallet. Read the
+x402 recipient from `GET https://www.oma-ai.com/x402/info` and compare it with the
+intended recipient. Direct-deposit instructions can specify a different address;
+do not substitute it for x402 or use an address copied from an old runbook.
+
+## Direct wallet deposit recovery
+
+The direct deposit flow uses a customer-paid USDC transfer and an EIP-191
+ownership proof, separately from x402's relayed EIP-3009 authorization.
+
+1. Read authenticated `/api/v1/deposit/usdc` instructions. Obtain an
+   account-bound challenge from `/api/v1/deposit/usdc/challenge` before sending.
+2. The wallet transfers USDC on Base. Preserve its transaction hash, sending
+   wallet, recipient and amount before requesting the ownership signature.
+3. If proof signing or registration fails, use **Retry registration**. It
+   requests a fresh challenge and signature for that same transfer. Do not
+   send another transfer because the proof was refused or expired.
+4. Recovery metadata remains in the same browser tab's account-scoped session
+   storage when available. After a reload, sign into the original account and
+   reconnect the sending wallet. No signature or session credential is stored
+   with the recovery metadata. If browser storage is blocked or the tab is
+   closed, retain the hash separately and ask the operator to investigate.
+5. Check the successful Base receipt and matching USDC log, then the deposit
+   record and ledger credits. Registration success is not chain confirmation.
+
+The API still verifies the user-bound challenge, recovered wallet signer and
+actual transfer evidence. Client recovery metadata cannot grant ownership or
+credits by itself.
 
 ## The two funding operations
 

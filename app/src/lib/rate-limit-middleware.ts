@@ -8,13 +8,13 @@
 	* Usage:
 	* ```ts
 	* import { withRateLimit } from '@/lib/rate-limit-middleware'
-	* import { authLimiter } from '@/lib/rate-limiter'
+	* import { generalLimiter } from '@/lib/rate-limiter'
 	*
 	* export const runtime = 'nodejs'
 	*
 	* export const POST = withRateLimit(async (req) => {
 	*   // … your handler
-	* }, { limiter: authLimiter, route: '/api/auth/sign-in/email' })
+	* }, { limiter: generalLimiter, route: '/api/example' })
 	* ```
 	*/
 

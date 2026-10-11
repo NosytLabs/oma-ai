@@ -52,7 +52,6 @@ export const DOCS_EXAMPLE_MODEL = "llama-3.3-70b";
 	* the upstream server is stale.
 	*/
 function liveDisplayName(
-	id: string,
 	rawName: string | undefined,
 ): string | undefined {
 	// Reserved for future client-side canonicalisation overrides when the
@@ -209,7 +208,7 @@ export function mapLiveModel(m: LiveModelRaw): ModelOption {
 
 	return {
 		id: m.id,
-		name: liveDisplayName(m.id, m.display_name) || humanizeModelId(m.id),
+		name: liveDisplayName(m.display_name) || humanizeModelId(m.id),
 		category: cat,
 		provider,
 		available: isModelAvailable(m) && isModelAvailable(catalogModel ?? {}),

@@ -238,16 +238,6 @@ export default function WalletSignInPanel({
 								Coinbase Wallet
 							</a>
 						</li>
-						<li>
-							<a
-								href="https://www.walletconnect.com/"
-								target="_blank"
-								rel="noopener noreferrer"
-								className="text-accent underline underline-offset-2 hover:opacity-80"
-							>
-								WalletConnect
-							</a>
-						</li>
 					</ul>
 					<button
 						type="button"

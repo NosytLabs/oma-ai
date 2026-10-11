@@ -151,3 +151,56 @@ No successful scheduled invocation was observed in the sampled function logs.
 The production probes do not establish every model's health, a funded
 facilitator, or successful mainnet payment settlement. The limitations above
 remain part of this release receipt.
+
+## Wallet and dependency follow-up
+
+The next pass used Context7's current x402, injected-wallet and Better Auth
+documentation. No compatible application dependency upgrade remained. The only
+newer reported versions were TypeScript 7 (outside the linter peer range) and
+Node 26 typings (different from the deployed Node 24 runtime). A fresh production
+dependency audit reported zero known vulnerabilities across 671 dependencies.
+OMA's x402 adapter implements the v2 exact/Base USDC envelope; it is custom code,
+not an outdated installed x402 npm package.
+
+Additional fixes:
+
+- Preserve a direct deposit's transaction before proof signing can fail.
+  Preflight the account-bound challenge before broadcasting, refresh proof on
+  registration retries, and never resend funds from the retry action.
+- Keep recovery metadata in account-scoped session storage across same-tab
+  reloads. Store no key, cookie or signed proof with it. Show the chain explorer
+  link and avoid offering another transfer while registration is unresolved.
+- Reject fractional-cent USD input before a transfer to avoid disagreement
+  between the transferred amount and the direct-deposit cent ledger.
+- Observe wallet account/disconnect events, check the sending account before
+  signing/transferring, retain the selected provider on reconnect, and handle
+  synchronous EIP-6963 announcements without recursive discovery.
+- Consolidate deposit requests/types in the API client, replacing an unused
+  proofless submit helper. Document the challenge and required ownership fields.
+- Remove unused limiter instances that created background timers, unused
+  imports/parameters, and a WalletConnect install link that implied an
+  unimplemented connector. Correct the runbook's x402 recipient lookup.
+
+Fresh verification: 757 frontend tests across 115 files; 553 API tests with six
+explicit skips; all 20 real HTTP/Postgres signup/account/admin groups pass.
+Frontend build/lint/type checking and API lint/type checking pass. Frontend
+unused-local/parameter checking also passes. The optional stricter API scan
+reports two pre-existing unused parameters; its required checks remain green.
+
+A new temporary one-day model-scoped API key completed a real MiniMax request:
+49 input/102 output tokens, 0.000302 cents charged, final answer OMA_API_OK,
+matching persisted usage and balance deduction. The key then returned 401 after
+revocation; its temporary session was removed. Only that primary model was
+authenticated in this follow-up; prior Venice/tool-call limitations remain.
+
+Read-only production checks found x402 v2/Base configuration and all three rail
+flags enabled. The public x402 recipient held zero ETH and zero USDC. This does
+not reveal the separate facilitator's gas balance. Neon deployment 77 remains
+current/active and completed. No live payment was signed or broadcast.
+
+WalletConnect mobile/QR sessions remain unimplemented. Browser checks use the
+local fixture and a browser with no injected wallet; mocked wallet I/O exercises
+broadcast, proof refusal, expiry, reload recovery and account isolation without
+pretending a real on-chain payment passed.
+
+This frontend follow-up's deployment receipt is recorded after publication.

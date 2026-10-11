@@ -103,7 +103,6 @@ vi.mock("border-beam", () => ({
 	BorderBeam: ({
 		children,
 		className,
-		..._rest
 	}: {
 		children?: React.ReactNode;
 		className?: string;

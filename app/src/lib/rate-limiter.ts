@@ -91,15 +91,5 @@ export class RateLimiter {
 	}
 }
 
-// ---------------------------------------------------------------------------
-// Pre-configured limiters
-// ---------------------------------------------------------------------------
-
-/** Auth routes: 5 requests per 15 minutes */
-const _authLimiter = new RateLimiter(5, 15 * 60 * 1000);
-
-/** Generation routes (image + video): 10 requests per 15 minutes */
-const _generationLimiter = new RateLimiter(10, 15 * 60 * 1000);
-
 /** General API routes: 100 requests per 15 minutes */
 export const generalLimiter = new RateLimiter(100, 15 * 60 * 1000);

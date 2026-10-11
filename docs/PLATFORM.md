@@ -74,6 +74,27 @@ Card checkout is available only when the Polar configuration is complete and the
 
 Users can fund the same internal balance with USDC on Base mainnet. Direct deposits are confirmed against the configured Base treasury address and credited after on-chain confirmation.
 
+The browser uses the customer's injected EIP-1193 wallet, discovered through
+EIP-6963 or legacy injection. It does not create a custodial OMA wallet or store
+the customer's private key. WalletConnect QR/mobile sessions are not implemented.
+Magic-link users can sign in without a wallet and use card checkout when enabled.
+
+Direct deposits first request `/api/v1/deposit/usdc/challenge` for the account
+and sending wallet, then broadcast a USDC transfer and sign ownership proof bound
+to its hash, recipient and amount. If proof signing or registration fails, the
+UI preserves that transfer in account-scoped session storage and offers a fresh
+proof/registration attempt. It never sends a second transfer on retry. This
+recovery survives a reload in the same tab while storage is available; it is not
+cross-device synchronization or evidence that funds confirmed. The sending
+account is checked before transfer/signing, and account/disconnect events update
+the form. See the [settlement runbook](settlement-runbook.md) for recovery.
+
+Three wallet roles are distinct: the customer holds the USDC; the configured
+treasury receives it; the operator's facilitator key pays Base ETH gas for x402
+relaying. A direct deposit instead requires gas in the customer's wallet. The
+admin treasury panel reads each configured role's balance without transferring
+funds. Configuration flags do not prove a funded gas wallet or successful payment.
+
 Agents can use the x402 funding flow:
 
 1. Establish a SIWE website session with the wallet that will pay. Its linked EVM address must equal the USDC payer; an API key or email-only session cannot claim the payment.

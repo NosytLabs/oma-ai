@@ -1,5 +1,33 @@
 import { request } from "./client.js";
 
+export interface DepositInstructions {
+	depositAddress: string;
+	network: string;
+	chainId: number;
+	usdcContract: string;
+	minDepositCents: number;
+	maxDepositCents: number;
+	creditsPerCent: number;
+}
+
+export interface UserDeposit {
+	id: string;
+	status: "pending" | "settling" | "completed" | "failed" | "refunded" | "expired";
+	amountUsd: string;
+	txHash: string | null;
+	depositAddress: string | null;
+	createdAt: string;
+	completedAt: string | null;
+}
+
+export interface DepositSubmission {
+	amountUsd: number;
+	txHash: string;
+	fromAddress: `0x${string}`;
+	challengeToken: string;
+	signature: string;
+}
+
 /**
 	* localStorage key holding the user's per-deposit "seen" timestamps.
 	* The server has no per-user notification read state (notifications are
@@ -31,22 +59,25 @@ function writeState(state: Record<string, string>): void {
 }
 
 export const deposit = {
+	async instructions() {
+		return request<DepositInstructions>("/v1/deposit/usdc");
+	},
+	async challenge(fromAddress: `0x${string}`) {
+		return request<{ token: string; nonce: string; expiresAt: number }>("/v1/deposit/usdc/challenge", {
+			method: "POST", body: JSON.stringify({ fromAddress }),
+		});
+	},
 	/** USDC deposit — submit an on-chain transfer for credit settlement. */
-	async usdc(amountUsd: number, txHash: string, fromAddress: string) {
-		return request("/v1/deposit/usdc", {
+	async usdc(args: DepositSubmission) {
+		return request<{ depositId: string; status: UserDeposit["status"]; amountCents: number; txHash: string; network: string; message: string }>("/v1/deposit/usdc", {
 			method: "POST",
-			body: JSON.stringify({
-				amountUsd,
-				txHash,
-				network: "base",
-				fromAddress,
-			}),
+			body: JSON.stringify({ ...args, network: "base" }),
 		});
 	},
 
 	/** Recent deposits for the signed-in user. */
 	async list() {
-		return request<{ deposits: unknown[] }>("/v1/deposit/status");
+		return request<{ deposits: UserDeposit[] }>("/v1/deposit/status");
 	},
 
 	/** Notifications derived from recent deposits (status changes). */
