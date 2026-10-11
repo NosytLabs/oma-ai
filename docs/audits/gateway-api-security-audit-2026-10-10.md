@@ -115,10 +115,39 @@ in the ledger; test cleanup does not falsify financial history.
   reconciliation are not established by readiness or configured wallet names.
 
 Evidence artifacts (ignored, local): `.artifacts/provider-audit/` and
-`.screenshots/account-audit-2026-10-10/api-key-scope-{desktop,mobile}-final.jpg`.
+`.screenshots/account-audit-2026-10-10/api-key-scope-{desktop,mobile}-final.jpg`,
+plus `usage-spend-precision-final.jpg` in the same screenshot directory.
 Maintained behavior/configuration: [Platform](../PLATFORM.md),
 [Deployment](../DEPLOYMENT.md), [Settlement runbook](../settlement-runbook.md).
 
 ## Release receipt
 
-Release identifiers and production probes are recorded after deployment.
+Verified on October 11 UTC (October 10 local):
+
+| Service | Source commit | Production deployment | Result |
+| --- | --- | --- | --- |
+| Vercel frontend | `53f2d7c5adec7ad7f9193f31257aaaea44e06036` | `dpl_DJ6fr4mYvFyjX6Jtn2WyxboGtXYs` | READY; canonical `www.oma-ai.com` resolves to this deployment |
+| Neon API | `d19d7af3ecd30722b22ae432772f4de6f97b252f` | `omaapi` deployment 77 | Current and active deployments completed; Node.js 24 |
+
+The frontend follow-up only changes chart precision; API deployment 77 includes
+all authentication, authorization, key controls, quota and inference fixes.
+Both production services retain their existing environment configuration.
+
+Post-deployment checks:
+
+- Landing, pricing, models, docs, web health and x402 info: HTTP 200.
+- Native API readiness: HTTP 200; Postgres and Redis checks both healthy.
+- Anonymous keys, usage, account export and admin treasury: HTTP 401, with
+  `no-store` responses.
+- Forged scheduler headers sent through the website to internal deposit
+  recovery and settlement retry routes: HTTP 404. An unauthenticated native
+  recovery request with the forged header: HTTP 403.
+- Invalid bearer credentials on website chat: HTTP 401; no anonymous fallback.
+- Public `/.env`: HTTP 404.
+- Live OpenAPI: session-cookie authentication for key creation/deletion,
+  documented expiry/model restrictions, and inference 403/409/502 responses.
+
+No successful scheduled invocation was observed in the sampled function logs.
+The production probes do not establish every model's health, a funded
+facilitator, or successful mainnet payment settlement. The limitations above
+remain part of this release receipt.
