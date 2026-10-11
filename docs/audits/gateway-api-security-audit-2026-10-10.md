@@ -9,8 +9,9 @@ Current behavior lives in [Platform](../PLATFORM.md),
 [PR #30](https://github.com/NosytLabs/oma-ai/pull/30) is merged into `main` at
 `2f029d4f6642df2bed0c66419dab507654e12315`. Its tree exactly matches the tested
 source tree `0f2ff0b8b0396b46ce2b0c1ca586def4fcded80a`. The merged local/remote
-audit branch was removed; only remote `main` remains. Later receipt-only commits
-do not change that application source.
+audit branch was removed; only remote `main` remains. Later receipt and release-
+script permission commits do not change that application source. The Neon
+deployment helper now has its executable bit; its shell syntax check passed.
 
 The final integration fixes two reproduced defects: malformed or non-object
 upstream SSE frames no longer truncate Anthropic Messages before later text,
