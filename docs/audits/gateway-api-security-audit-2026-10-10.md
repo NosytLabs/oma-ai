@@ -86,6 +86,8 @@ upstream capacity errors. Provider errors inside successful HTTP JSON or SSE
 responses are recorded as failed and remain uncharged. Homepage/status/docs
 labels describe the enabled catalog instead of implying tested provider health, and
 the footer describes actual funding/free-chat behavior with larger mobile links.
+The illustrative homepage request uses enabled MiniMax rather than paused
+Gonka DeepSeek, matching the quick-start model.
 Bookmarked docs sections now scroll after the streamed page mounts instead of
 remaining at the hero. A failing regression preceded the fix; the rebuilt
 390px browser reached Rate Limits below the sticky header. Default limit notes

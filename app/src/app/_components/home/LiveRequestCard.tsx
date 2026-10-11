@@ -31,8 +31,8 @@ const ROUNDS: DemoRound[] = [
 	"One gateway for the OMA catalog. Fund credits with USDC, or card checkout when available.",
 	},
 	{
-	model: "deepseek-v4-flash-0731-openbroker",
-	modelLabel: "DeepSeek V4 Flash",
+	model: "minimax-m2-7",
+	modelLabel: "MiniMax M2.7",
 	prompt: "How do I pay without a card?",
 	reply: "Deposit USDC on Base, or settle USDC via x402 to credit your balance.",
 	},
