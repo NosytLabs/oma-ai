@@ -4,6 +4,70 @@ Consolidated evidence for the account, API, website and infrastructure work.
 Current behavior lives in [Platform](../PLATFORM.md),
 [Deployment](../DEPLOYMENT.md) and [Chat UI](../chat-ui.md).
 
+## Main integration and cleanup — October 11
+
+[PR #30](https://github.com/NosytLabs/oma-ai/pull/30) is merged into `main` at
+`2f029d4f6642df2bed0c66419dab507654e12315`. Its tree exactly matches the tested
+source tree `0f2ff0b8b0396b46ce2b0c1ca586def4fcded80a`. The merged local/remote
+audit branch was removed; only remote `main` remains. Later receipt-only commits
+do not change that application source.
+
+The final integration fixes two reproduced defects: malformed or non-object
+upstream SSE frames no longer truncate Anthropic Messages before later text,
+usage and the final stop; leading-dot deposit amounts such as `.50` now reach
+the configured minimum check instead of an incorrect precision error. Explicit
+provider stream errors still terminate, and invalid deposits never broadcast.
+Both regressions failed before their fixes and passed afterward.
+
+Fresh validation passed 837 frontend tests in 124 files, 640 API tests in 78
+files with the real Postgres suites active, types, lint and both production
+builds. All 25 real HTTP/authentication groups passed on the final rerun. The
+preceding harness attempt hit a local TCP startup timeout before assertions;
+the rerun preserved all checks. Frozen-lockfile installation passed, as did the
+[main lockfile workflow](https://github.com/NosytLabs/oma-ai/actions/runs/38148426831).
+Runtime dependency audit found zero known vulnerabilities across 888 packages;
+the development-only patched braces advisory remains as described below.
+
+| Service | Source | Deployment | Verified state |
+| --- | --- | --- | --- |
+| Vercel website | `2f029d4f6642df2bed0c66419dab507654e12315` | `dpl_6sC16oBA3iDVUY6v7Y4NJvjcninA` | READY; canonical `www.oma-ai.com` matched |
+| Neon API | same tested main tree | `omaapi` 84 | Current/active, completed; Node 24, 2048 MiB |
+
+All 40 API environment values matched the pre-release snapshot. The two
+enabled recovery jobs retained their IDs, paths, versions and every-minute
+schedules. Native and same-origin readiness returned 200 with healthy Postgres
+and Redis. Anonymous keys, usage export, admin site settings and admin usage
+logs returned 401; private recovery paths and `/.env` returned 404. Public
+OpenAPI 3.1 has 20 customer paths and no operator/website-chat paths. The catalog
+returned 20 models, 18 configured as available, with MiniMax priced at $0.02 per
+million input/output tokens and limits of 200,000 context / 16,384 output tokens.
+Gonka DeepSeek/GLM remain paused. Base RPC returned chain ID `0x2105`.
+
+Fresh calls with a temporary scoped, expiring API key returned upstream 408
+timeouts in both OpenAI and Anthropic formats (0/2 successful). Neither charged
+credits; persisted billing matched, revocation returned 401 and the harness
+session was removed. Historical successful inference below does not replace
+this latest result. Provider capacity and tool-continuation quality remain
+unresolved, along with the missing public Reown project ID and failing local
+Venice credential. No mainnet payment or facilitator gas transaction was signed.
+
+Browser checks covered 14 public routes, local user Overview/Usage/Settings,
+usage pagination, profile/sessions/privacy controls and local admin charts,
+usage search/outcome filtering and treasury mock-state disclosure. A nonexistent
+request displayed an explicit empty state; free website records showed zero
+charges. Final production pricing/docs had one H1, correct canonicals and no
+horizontal page overflow at 1280px/390px; captured console warnings/errors were
+empty. Current screenshots are in `.screenshots/main-integration-2026-10-11/`.
+This is not a claim of a manual review of every generated content page or a
+completed live purchase.
+
+Removed 113 superseded CI/build logs while retaining their workflow records and
+current release evidence. Payment/recovery histories were preserved. Removed
+12 obsolete canceled Vercel builds with alias protection; three aliased canceled
+builds and all ready production/rollback deployments were retained. Removed six
+generated local example artifacts and the consumed private fixture-link file.
+No additional production account, financial or anti-abuse data was deleted.
+
 ## Implemented safeguards and account improvements
 
 - Better Auth sessions own browser account actions. API keys are scoped to
@@ -436,4 +500,4 @@ working copies with conflicting test counts and deployment receipts:
 - [Usage/treasury audit](https://github.com/NosytLabs/oma-ai/blob/3b4774e409d923c3689c0d6a60e6108e954bdf73/docs/audits/account-usage-audit-2026-10-10.md)
 - [Original platform audit](https://github.com/NosytLabs/oma-ai/blob/3b4774e409d923c3689c0d6a60e6108e954bdf73/docs/audits/audit-2026-10-10.md)
 
-PR #30 remains open. Subsequent receipt commits may change documentation only.
+PR #30 is merged. Subsequent receipt commits may change documentation only.
