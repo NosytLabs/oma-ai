@@ -19,7 +19,7 @@ describe("public RPC proxy", () => {
 		const res = await POST(request(), context);
 		expect(res.status).toBe(200);
 		expect((await res.json()).result).toBe("0x42");
-		expect(upstream.mock.calls.map(([url]) => url)).toEqual(["https://operator.example/private-key", "https://mainnet.base.org"]);
+		expect(upstream.mock.calls.map(([url]) => url)).toEqual(["https://operator.example/private-key", "https://base.drpc.org"]);
 	});
 	it("tries the second public endpoint after HTTP throttling", async () => {
 		upstream.mockResolvedValueOnce(new Response("over quota", { status:429 })).mockRejectedValueOnce(new Error("offline")).mockResolvedValueOnce(response());

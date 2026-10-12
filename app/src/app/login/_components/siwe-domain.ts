@@ -12,10 +12,15 @@
  * `window.location.host` is the only value guaranteed to match what the
  * user is looking at, so that is what we sign.
  */
+/** EIP-4361 host form. Strip the `www.` prefix so apex and www are
+ *  equivalent for SIWE signature comparison — the wallet signs whatever
+ *  host the browser is on (apex or www) and the server configures the
+ *  apex. better-auth's verifier does NOT normalize, so without this both
+ *  oma-ai.com and www.oma-ai.com end up rejecting each other. */
 export function resolveSiweDomain(): string {
-	if (typeof window !== "undefined" && window.location?.host) {
-		return window.location.host;
-	}
-	// SSR / non-browser fallback. The server accepts both apex and www.
-	return "oma-ai.com";
+	const host =
+		typeof window !== "undefined" && window.location?.host
+			? window.location.host
+			: "oma-ai.com";
+	return host.replace(/^www\./, "");
 }

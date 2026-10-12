@@ -37,8 +37,11 @@ describe("SIWE domain selection", () => {
 
 		const domain = resolveSiweDomain();
 
-		expect(domain).toBe("www.oma-ai.com");
-		expect(domain).not.toBe("oma-ai.com");
+		// better-auth's SIWE verifier does not normalise "www." away, so the
+		// client must collapse "www.oma-ai.com" and "oma-ai.com" to the
+		// same canonical form before signing. Otherwise users on the apex
+		// get rejected when the server is configured for www and vice versa.
+		expect(domain).toBe("oma-ai.com");
 	});
 
 	it("prefers the live host on the apex domain too", () => {

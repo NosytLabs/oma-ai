@@ -557,7 +557,13 @@ user: {
 				}),
 
 			siwe({
-					domain: new URL(authBaseURL).host,
+					// EIP-4361 requires the signed `domain` to equal the configured
+					// one exactly. The client now strips the `www.` prefix (see
+					// app/src/app/login/_components/siwe-domain.ts) so apex and
+					// www collapse to the same canonical form before signing.
+					// Mirror that here: never let the configured domain be
+					// "www.oma-ai.com" while users on "oma-ai.com" get rejected.
+					domain: authHostname.replace(/^www\./, ""),
 					emailDomainName: "oma-ai.com",
 						// Wallet-only signups don't need an email. The wallet address is
 						// already a strong identity signal; we attach it to the user row

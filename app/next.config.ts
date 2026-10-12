@@ -187,7 +187,6 @@ function generateContentSecurityPolicy(): string {
 		"https://*.alchemy.com",
 		"wss://*.ws.alchemy.com",
 		"https://base-rpc.publicnode.com",
-		"https://api.alchemy.com",
 		// The API is same-origin via the /api proxy on Vercel, so 'self'
 		// already covers it. `https://api.oma-ai.com` was listed here but the
 		// host has no DNS record (NXDOMAIN) — a dead entry that can never

@@ -19,8 +19,30 @@ export const dynamic = "force-dynamic";
 type Chain = "base" | "base-sepolia";
 
 const ALLOWED: Record<Chain, { id: number; fallbacks: string[] }> = {
-	base: { id: 8453, fallbacks: ["https://mainnet.base.org", "https://base-rpc.publicnode.com"] },
-	"base-sepolia": { id: 84532, fallbacks: ["https://sepolia.base.org", "https://base-sepolia-rpc.publicnode.com"] },
+	// Public fallbacks ordered by 24h p50 latency / uptime (OpenChainBench,
+	// SwiftNodes, rpc-watch 2026-10). All four answer keyless on chain id 8453
+	// without an account. dRPC is the fastest; PublicNode has the cleanest
+	// reliability. Tenderly and Coinbase-official are kept as warm safety
+	// nets because they're independently operated. x402-aware clients can
+	// prefer the Coinbase-official endpoint, which fronts the same RPC
+	// behind a stable, signed-payment-friendly gateway.
+	base: {
+		id: 8453,
+		fallbacks: [
+			"https://base.drpc.org",
+			"https://base-rpc.publicnode.com",
+			"https://gateway.tenderly.co/public/base",
+			"https://mainnet.base.org",
+		],
+	},
+	"base-sepolia": {
+		id: 84532,
+		fallbacks: [
+			"https://base-sepolia-rpc.publicnode.com",
+			"https://base-sepolia.drpc.org",
+			"https://sepolia.base.org",
+		],
+	},
 };
 
 // Methods we will refuse to proxy. Conservative allowlist of read + tx
