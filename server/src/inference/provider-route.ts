@@ -7,6 +7,7 @@
  *
  */
 import { config } from "../config.js";
+import { logger } from "../lib/logger.js";
 import type { ModelDef } from "./models.js";
 
 /** Provider-specific request envelope. All backends are OpenAI-compatible. */
@@ -50,8 +51,9 @@ export function resolveProvider(provider: string, _modelDef?: ModelDef): Provide
 		// Every catalog entry must declare upstream: "openbroker" (or be
 		// rejected by the catalog loader); we don't branch on it here.
 		if (!config.OPENBROKER_API_KEY) {
+			logger.error({ provider: "oma-ai", requiredSetting: "OPENBROKER_API_KEY" }, "[inference] provider credential missing");
 			throw new ProviderError(
-				"OpenBroker API key not configured (set OPENBROKER_API_KEY in the server env).",
+				"This model is temporarily unavailable. Try another model or contact support.",
 				503,
 			);
 		}
@@ -71,8 +73,9 @@ export function resolveProvider(provider: string, _modelDef?: ModelDef): Provide
 	}
 	// default: venice
 	if (!config.VENICE_API_KEY) {
+		logger.error({ provider: "venice", requiredSetting: "VENICE_API_KEY" }, "[inference] provider credential missing");
 		throw new ProviderError(
-			"Inference provider not configured (VENICE_API_KEY missing).",
+			"This model is temporarily unavailable. Try another model or contact support.",
 			503,
 		);
 	}

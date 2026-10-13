@@ -4,6 +4,74 @@ Consolidated evidence for the account, API, website and infrastructure work.
 Current behavior lives in [Platform](../PLATFORM.md),
 [Deployment](../DEPLOYMENT.md) and [Chat UI](../chat-ui.md).
 
+## Payment notifications and login-code resends — October 13
+
+The customer notification menu reused one query cache for every account and
+converted deposit amounts from dollars to dollars a second time: $25 appeared
+as $0.25. Its cache and local read state now include the account identity;
+queries consume cancellation signals and do not run without a real session.
+The panel also resets at the account boundary so exit animations cannot retain
+the previous account's payment rows.
+Read acknowledgments also include the deposit status, preserving unread
+completion updates after acknowledging a pending payment. Completed updates use
+the confirmation timestamp so an old pending transfer can still trigger a fresh
+badge when confirmed today. The cutoff also advances when a long-open dashboard
+refreshes. Fetch failures now
+offer a retry instead of claiming there are no notifications. Dashboard
+refresh includes payment updates.
+
+Browser testing found the menu opening mostly off-screen at 390px. It now
+aligns to the left on phones and the right on wider screens. It fits at 320,
+390 and 640px without document overflow. Clicking the completed notification
+opens the deposit page and clears its badge. Deposit history and notifications
+share readable status labels, show dollar amounts consistently, and distinguish
+confirming, refunded and expired states from failed payments. The screenshot
+fixture was one explicitly local $25 history row; it did not credit a balance
+or represent an on-chain payment.
+
+The installed Better Auth OTP plugin creates a verification record before
+calling the email sender. Rejecting a rapid resend inside that callback returned
+200 while creating an undelivered replacement code. A before hook now applies
+the cooldown before code creation, returning 429 and `Retry-After`. A regression
+uses the real Better Auth HTTP handler, OTP plugin and memory adapter with a
+Redis boundary fixture; the previously delivered code still signs in after
+the blocked resend. First-login origin/CSRF validation runs before consuming
+the cooldown; rejected cross-site attempts do not delay a legitimate login.
+Hash storage remains enabled. Missing provider credentials
+now produce a customer availability message; environment-variable instructions
+remain in operator documentation and diagnostics.
+
+Validation on Node 24: 859 frontend tests, 655 API tests with all Postgres suites
+active, 30 real HTTP/auth groups, types, lint and both production builds pass.
+The HTTP suite creates and drops a unique local database; two accounts cannot
+read each other's deposit history using forged user IDs or mixed credentials.
+Three wrong OTPs exhaust the verification budget without creating an account
+or session. Existing admin pagination, signed wallet authentication, key
+scoping/revocation, account deletion, durable settlement and retry checks remain
+included. Compatible dependencies remain current, with zero known production
+vulnerabilities; runtime/toolchain compatibility pins are retained.
+
+Fresh MiniMax requests through both API formats returned HTTP 200, 49 input /
+150 output tokens, and the requested actual-model header. Latencies were 141.2s
+and 10.5s. Both failed the strict final-answer assertion because their content
+included additional reasoning after `OMA_API_OK`. The assertions and returned
+provider content are preserved. Charges matched the ledger/balance change; the
+temporary scoped key was revoked (401 afterward), its session removed and
+evidence saved in
+`.artifacts/provider-audit/notification-audit-model-results-2026-10-13.json`.
+This is a transport/billing success, not a clean model-quality pass.
+A direct OpenBroker request reproduced the extra reasoning (HTTP 200, 5.0s,
+the same 49 input / 150 output tokens), isolating the observed response issue
+upstream. Direct evidence is
+`.artifacts/provider-audit/notification-audit-direct-model-2026-10-13.json`.
+
+Live Firecrawl retrieval of the [OpenBroker FAQ](https://openbroker.gonka.gg/docs/faq)
+and [pricing explanation](https://openbroker.gonka.gg/docs/pricing) confirms the
+published governance rate is not the live escrow cost, attempts affect GNK
+spend, and capacity rejections are shared upstream concurrency limits. OMA's
+retail $0.02/M prices stay fixed; upstream USD procurement cost and gross margin
+remain unknown until a cost basis is recorded. No profit figure was invented.
+
 ## Payment controls, dependencies and customer guidance — October 13
 
 The crypto payment switch did not govern `/x402/verify`, and direct deposit/card

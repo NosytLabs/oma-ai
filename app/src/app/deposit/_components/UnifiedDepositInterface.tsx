@@ -29,6 +29,8 @@ import { useToast } from "@/components/ui/Toast";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { deposit, type DepositInstructions, type UserDeposit } from "@/lib/api/deposit";
 import { isAuthError } from "@/lib/api/client";
+import { formatUsd } from "@/lib/utils";
+import { depositStatusLabel } from "@/lib/deposit-status";
 import { readPendingDeposit, savePendingDeposit, type BroadcastDeposit } from "@/lib/deposit-recovery";
 import {
 	connectWallet,
@@ -525,14 +527,14 @@ export function UnifiedDepositInterface({
 																className={`inline-flex rounded-[var(--radius-sm)] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
 																	d.status === "completed"
 																		? "bg-success/10 text-success"
-																		: d.status === "pending"
+																		: d.status === "pending" || d.status === "settling"
 																			? "bg-warning/10 text-warning"
-																			: "bg-error/10 text-error"
+																			: d.status === "failed" ? "bg-error/10 text-error" : "bg-surface text-text-muted"
 																}`}
 															>
-																{d.status}
+																{depositStatusLabel(d.status)}
 															</span>
-															<span className="tabular-nums">${d.amountUsd} USDC</span>
+															<span className="tabular-nums">{formatUsd(Number(d.amountUsd))} USDC</span>
 															{d.txHash && (
 																<a
 																	href={`https://basescan.io/tx/${d.txHash}`}

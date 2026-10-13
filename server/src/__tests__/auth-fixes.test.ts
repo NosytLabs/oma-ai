@@ -5,6 +5,7 @@
 	*/
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { BetterAuthOptions } from "better-auth";
+import type { EmailOTPOptions } from "better-auth/plugins";
 import { getCookies } from "better-auth/cookies";
 
 // ── Hoisted mock fixtures ──────────────────────────────────────────
@@ -78,6 +79,7 @@ vi.mock("better-auth/adapters/drizzle", () => ({
 const capturedPluginOpts = vi.hoisted(() => ({
 	magicLink: undefined as Record<string, unknown> | undefined,
 	siwe: undefined as Record<string, unknown> | undefined,
+	emailOTP: undefined as EmailOTPOptions | undefined,
 }));
 
 vi.mock("better-auth/plugins", () => ({
@@ -89,7 +91,10 @@ vi.mock("better-auth/plugins", () => ({
 		capturedPluginOpts.siwe = opts;
 		return {};
 	},
-	emailOTP: (opts: { sendVerificationOTP?: unknown }) => opts,
+	emailOTP: (opts: EmailOTPOptions) => {
+		capturedPluginOpts.emailOTP = opts;
+		return opts;
+	},
 	admin: () => ({}),
 }));
 
@@ -133,6 +138,58 @@ beforeEach(() => {
 });
 
 describe("per-email send cooldown (audit fix #6)", () => {
+	it("rejects a rapid OTP resend before replacing the code that was already delivered", async () => {
+		const { betterAuth } = await vi.importActual<typeof import("better-auth")>("better-auth");
+		const { emailOTP } = await vi.importActual<typeof import("better-auth/plugins")>("better-auth/plugins");
+		const { memoryAdapter } = await import("better-auth/adapters/memory");
+		const { config } = await import("../config.js");
+		const records = { user: [], session: [], account: [], verification: [] as Array<{ value: string }> };
+		let deliveredOTP = "";
+		const otpOptions = capturedPluginOpts.emailOTP!;
+		const localAuth = betterAuth({
+			baseURL: "https://www.oma-ai.com",
+			secret: "isolated-otp-regression-secret-16bac4e8-294d-4733-80ff",
+			database: memoryAdapter(records),
+			advanced: { disableCSRFCheck: false, disableOriginCheck: false },
+			hooks: { before: capturedAuth.options?.hooks?.before },
+			plugins: [emailOTP({ ...otpOptions, async sendVerificationOTP(data, ctx) {
+				deliveredOTP = data.otp;
+				await otpOptions.sendVerificationOTP(data, ctx);
+			} })],
+		});
+		config.NODE_ENV = "development";
+		try {
+			const body = { email: "resend@example.org", type: "sign-in" as const };
+			const untrusted = await localAuth.handler(new Request("https://www.oma-ai.com/api/auth/email-otp/send-verification-otp", {
+				method: "POST", headers: { "Content-Type": "application/json", Origin: "https://untrusted.example" },
+				body: JSON.stringify(body),
+			}));
+			expect(untrusted.status).toBe(403);
+			expect(mockRedis.set).not.toHaveBeenCalled();
+			expect(records.verification).toHaveLength(0);
+			const send = () => localAuth.handler(new Request("https://www.oma-ai.com/api/auth/email-otp/send-verification-otp", {
+				method: "POST",
+				headers: { "Content-Type": "application/json", Origin: "https://www.oma-ai.com" },
+				body: JSON.stringify(body),
+			}));
+			expect((await send()).status).toBe(200);
+			const deliveredCode = records.verification[0].value;
+			mockRedis.set.mockResolvedValue(null);
+			const rejected = await send();
+			expect(rejected.status).toBe(429);
+			expect(rejected.headers.get("retry-after")).toBe("42");
+			expect(records.verification).toHaveLength(1);
+			expect(records.verification[0].value).toBe(deliveredCode);
+			const signedIn = await localAuth.handler(new Request("https://www.oma-ai.com/api/auth/sign-in/email-otp", {
+				method: "POST", headers: { "Content-Type": "application/json", Origin: "https://www.oma-ai.com" },
+				body: JSON.stringify({ email: body.email, otp: deliveredOTP }),
+			}));
+			expect(signedIn.status).toBe(200);
+			expect((await signedIn.json()).user.emailVerified).toBe(true);
+		} finally {
+			config.NODE_ENV = "production";
+		}
+	});
 		it("exports the cooldown helper with the expected key shape", async () => {
 				const { checkEmailSendCooldown } = await import("../auth.js");
 				expect(typeof checkEmailSendCooldown).toBe("function");

@@ -13,9 +13,11 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
-import { formatTime, toDollars } from "@/lib/utils";
+import { formatTime, formatUsd } from "@/lib/utils";
+import { depositStatusLabel } from "@/lib/deposit-status";
+import { useAuth } from "@/lib/hooks/useAuth";
 
 type Notification = {
 	id: string;
@@ -32,22 +34,11 @@ type Notification = {
 
 const STATUS_COLOR: Record<string, string> = {
 	completed: "text-success",
-	settled: "text-success",
 	pending: "text-warning",
-	processing: "text-warning",
+	settling: "text-warning",
 	failed: "text-error",
 	expired: "text-text-muted",
 	refunded: "text-text-muted",
-};
-
-const STATUS_LABEL: Record<string, string> = {
-	completed: "Completed",
-	settled: "Settled",
-	pending: "Pending",
-	processing: "Processing",
-	failed: "Failed",
-	expired: "Expired",
-	refunded: "Refunded",
 };
 
 interface NotificationBellProps {
@@ -68,29 +59,31 @@ export function NotificationBell({ className = "" }: NotificationBellProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const queryClient = useQueryClient();
 	const router = useRouter();
+	const { user, isReady, isAuthenticated, isDemo } = useAuth();
+	const accountId = user?.id ?? "";
+	const enabled = isReady && isAuthenticated && !isDemo && Boolean(accountId);
 
-	const { data, isLoading } = useQuery({
-		queryKey: ["notifications"],
-		queryFn: () => api.deposit.getNotifications(),
+	const { data, isLoading, isError, isFetching, refetch } = useQuery({
+		queryKey: ["notifications", accountId],
+		queryFn: ({ signal }) => api.deposit.getNotifications(accountId, signal),
+		enabled,
 		staleTime: 60_000,
 		refetchInterval: 60_000,
 	});
 
 	const markRead = useMutation({
-		mutationFn: (notificationId: string) =>
-			api.deposit.markNotificationRead(notificationId),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["notifications"] });
+		mutationFn: ({ notificationId, ownerId }: { notificationId: string; ownerId: string }) =>
+			api.deposit.markNotificationRead(notificationId, ownerId),
+		onSuccess: (_data, { ownerId }) => {
+			void queryClient.invalidateQueries({ queryKey: ["notifications", ownerId] });
 		},
 	});
 
 	const notifications: Notification[] =
 		(data as { notifications?: Notification[] })?.notifications ?? [];
 	const recent = notifications.slice(0, 10);
-	// "Unread" predicate. The backend's `notifiedAt` flag is the source of
-	// truth once a notification has been seen by the user. Fall back to a
-	// 24h "new" window only for legacy rows that don't carry the flag.
-	const oneDayAgo = useMemo(() => Date.now() - 24 * 60 * 60 * 1000, []);
+	// Read state is stored on this device, separately for each account.
+	const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
 	const unreadCount = recent.filter((n) => {
 		if (n.notifiedAt) return false; // already acknowledged by user
 		return new Date(n.createdAt).getTime() > oneDayAgo;
@@ -119,15 +112,16 @@ export function NotificationBell({ className = "" }: NotificationBellProps) {
 	}, [open]);
 
 	const handleToggle = useCallback(() => setOpen((o) => !o), []);
+	if (!enabled) return null;
 
 	return (
-		<div ref={containerRef} className={`relative ${className}`}>
+		<div key={accountId} ref={containerRef} className={`relative ${className}`}>
 			<button
 				type="button"
 				onClick={handleToggle}
 				aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} new)` : ""}`}
 				aria-expanded={open}
-				aria-haspopup="menu"
+				aria-haspopup="dialog"
 				className="relative flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] border border-border bg-surface text-text-muted transition-colors duration-200 ease-out hover:border-accent/40 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 			>
 				<Bell className="h-4 w-4" aria-hidden="true" />
@@ -160,9 +154,9 @@ export function NotificationBell({ className = "" }: NotificationBellProps) {
 						exit={{ opacity: 0, scale: 0.96, y: -6, filter: "blur(4px)" }}
 						transition={{ ...springs.toast, mass: 0.9 }}
 						style={{ transformOrigin: "top right" }}
-						role="menu"
+						role="dialog"
 						aria-label="Notifications"
-						className="absolute right-0 top-full z-50 mt-2 w-80 rounded-[var(--radius-lg)] border border-border bg-panel p-2 shadow-2xl"
+						className="absolute left-0 top-full z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-[var(--radius-lg)] border border-border bg-panel p-2 shadow-2xl sm:left-auto sm:right-0"
 					>
 						<div className="mb-1 flex items-center justify-between px-2 py-1.5">
 							<span className="text-[11px] font-semibold uppercase tracking-widest text-text-muted">
@@ -191,6 +185,11 @@ export function NotificationBell({ className = "" }: NotificationBellProps) {
 										<span className="inline-block h-2 w-2 rounded-full bg-text-muted animate-pulse" />
 										Loading…
 									</m.div>
+								) : isError ? (
+									<div role="alert" className="px-2 py-4 text-sm text-text-secondary">
+										<p>Payment updates could not load.</p>
+										<button type="button" aria-label="Retry notifications" aria-busy={isFetching} disabled={isFetching} onClick={() => void refetch()} className="mt-2 min-h-11 rounded-md border border-border px-3 text-accent disabled:opacity-50">{isFetching ? "Retrying…" : "Retry notifications"}</button>
+									</div>
 								) : recent.length === 0 ? (
 									<m.div
 										key="empty"
@@ -207,7 +206,7 @@ export function NotificationBell({ className = "" }: NotificationBellProps) {
 											No notifications
 										</p>
 										<p className="text-[11px] text-text-muted">
-											Deposit and refund events will show up here.
+										Recent deposit updates will show up here.
 										</p>
 									</m.div>
 								) : (
@@ -223,7 +222,7 @@ export function NotificationBell({ className = "" }: NotificationBellProps) {
 												key={n.id}
 												n={n}
 												onActivate={(id, href) => {
-													markRead.mutate(id);
+													markRead.mutate({ notificationId: id, ownerId: accountId });
 													setOpen(false);
 													if (href) router.push(href);
 												}}
@@ -267,9 +266,9 @@ function NotificationRow({
 	onActivate: (id: string, href?: string) => void;
 }) {
 	const statusColor = STATUS_COLOR[n.status] ?? "text-text-muted";
-	const statusLabel = STATUS_LABEL[n.status] ?? n.status;
-	const amount =
-		n.amountUsd != null ? `$${toDollars(n.amountUsd).toFixed(2)}` : null;
+	const statusLabel = depositStatusLabel(n.status);
+	const amountUsd = n.amountUsd == null ? NaN : Number(n.amountUsd);
+	const amount = Number.isFinite(amountUsd) ? formatUsd(amountUsd) : null;
 	// Notifications derived from deposits route to the credits history page
 	// (same destination as the existing "View all" link). Other notification
 	// types can override `targetHref` later.
