@@ -13,7 +13,8 @@ queries consume cancellation signals and do not run without a real session.
 Read acknowledgments also include the deposit status, preserving unread
 completion updates after acknowledging a pending payment. Completed updates use
 the confirmation timestamp so an old pending transfer can still trigger a fresh
-badge when confirmed today. Fetch failures now
+badge when confirmed today. The cutoff also advances when a long-open dashboard
+refreshes. Fetch failures now
 offer a retry instead of claiming there are no notifications. Dashboard
 refresh includes payment updates.
 
@@ -38,7 +39,7 @@ Hash storage remains enabled. Missing provider credentials
 now produce a customer availability message; environment-variable instructions
 remain in operator documentation and diagnostics.
 
-Validation on Node 24: 857 frontend tests, 655 API tests with all Postgres suites
+Validation on Node 24: 858 frontend tests, 655 API tests with all Postgres suites
 active, 30 real HTTP/auth groups, types, lint and both production builds pass.
 The HTTP suite creates and drops a unique local database; two accounts cannot
 read each other's deposit history using forged user IDs or mixed credentials.

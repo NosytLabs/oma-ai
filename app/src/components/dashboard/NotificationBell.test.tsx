@@ -21,6 +21,16 @@ beforeEach(() => { auth.id = "account-a"; auth.ready = true; localStorage.clear(
 afterEach(() => { cleanup(); clients.forEach(client => client.clear()); clients.length = 0; vi.restoreAllMocks(); });
 
 describe("account deposit notifications", () => {
+	it("ages out the new badge when a dashboard stays open beyond a day", async () => {
+		let currentTime = Date.now();
+		const row = { ...depositRow("deposit-a"), createdAt: new Date(currentTime - 12 * 60 * 60 * 1000).toISOString() };
+		vi.spyOn(Date, "now").mockImplementation(() => currentTime);
+		vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({ deposits: [row] }));
+		const view = mountBell(); await screen.findByRole("button", { name: "Notifications (1 new)" });
+		currentTime += 24 * 60 * 60 * 1000;
+		view.refresh();
+		expect(screen.getByRole("button", { name: "Notifications" })).toBeInTheDocument();
+	});
 	it("displays deposit dollars without converting them from cents again", async () => {
 		vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({ deposits: [depositRow("deposit-a")] }));
 		mountBell(); fireEvent.click(await screen.findByRole("button", { name: "Notifications (1 new)" }));

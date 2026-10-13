@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { formatTime, formatUsd } from "@/lib/utils";
 import { depositStatusLabel } from "@/lib/deposit-status";
@@ -83,7 +83,7 @@ export function NotificationBell({ className = "" }: NotificationBellProps) {
 		(data as { notifications?: Notification[] })?.notifications ?? [];
 	const recent = notifications.slice(0, 10);
 	// Read state is stored on this device, separately for each account.
-	const oneDayAgo = useMemo(() => Date.now() - 24 * 60 * 60 * 1000, []);
+	const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
 	const unreadCount = recent.filter((n) => {
 		if (n.notifiedAt) return false; // already acknowledged by user
 		return new Date(n.createdAt).getTime() > oneDayAgo;
@@ -188,7 +188,7 @@ export function NotificationBell({ className = "" }: NotificationBellProps) {
 								) : isError ? (
 									<div role="alert" className="px-2 py-4 text-sm text-text-secondary">
 										<p>Payment updates could not load.</p>
-										<button type="button" disabled={isFetching} onClick={() => void refetch()} className="mt-2 min-h-11 rounded-md border border-border px-3 text-accent disabled:opacity-50">Retry notifications</button>
+										<button type="button" aria-label="Retry notifications" aria-busy={isFetching} disabled={isFetching} onClick={() => void refetch()} className="mt-2 min-h-11 rounded-md border border-border px-3 text-accent disabled:opacity-50">{isFetching ? "Retrying…" : "Retry notifications"}</button>
 									</div>
 								) : recent.length === 0 ? (
 									<m.div
