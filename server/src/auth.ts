@@ -14,7 +14,7 @@
 	* `auth.api.getSession({ headers })`.
 	*/
 import { betterAuth } from "better-auth";
-import { createAuthMiddleware } from "better-auth/api";
+import { createAuthMiddleware, APIError } from "better-auth/api";
 import { setSessionCookie } from "better-auth/cookies";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import {
@@ -388,6 +388,19 @@ export const auth = betterAuth({
 	// Bind the application profile to that completed identity, never an email
 	// guessed from a request address (email ownership does not prove a wallet).
 	hooks: {
+		before: createAuthMiddleware(async (ctx) => {
+			if (ctx.path !== "/email-otp/send-verification-otp" || typeof ctx.body?.email !== "string") return;
+			// The OTP plugin stores a new code before invoking the email sender.
+			// Reject resends here so an undelivered code cannot replace the one
+			// already in the user's inbox. Keep hashed OTP storage enabled.
+			const cooldown = await checkEmailSendCooldown(ctx.body.email, "otp");
+			if (!cooldown.ok) {
+				throw new APIError("TOO_MANY_REQUESTS", {
+					code: "OTP_SEND_COOLDOWN",
+					message: `Please wait ${cooldown.retryAfter} seconds before requesting another code.`,
+				}, { "Retry-After": String(cooldown.retryAfter) });
+			}
+		}),
 		after: createAuthMiddleware(async (ctx) => {
 			if (ctx.path !== "/siwe/verify") return;
 			const result = ctx.context.returned as {
@@ -620,11 +633,15 @@ user: {
 					// attacker every live OTP / reset code. Store a digest instead
 					// so the stored value can never be replayed.
 					storeOTP: "hashed",
-					async sendVerificationOTP({ email, otp, type }) {
-								const cooldown = await checkEmailSendCooldown(email, "otp");
+					async sendVerificationOTP({ email, otp, type }, ctx) {
+								// Direct sends were checked before the plugin stored the code.
+								// Retain the gate for other plugin-triggered email deliveries.
+								const cooldown = ctx?.path === "/email-otp/send-verification-otp"
+									? { ok: true as const }
+									: await checkEmailSendCooldown(email, "otp");
 								if (!cooldown.ok) {
 										throw new Error(
-												`An OTP was sent to this address ${cooldown.retryAfter}s ago. Please wait before requesting another.`,
+												`Please wait ${cooldown.retryAfter} seconds before requesting another code.`,
 										);
 								}
 								if (!config.RESEND_API_KEY) {

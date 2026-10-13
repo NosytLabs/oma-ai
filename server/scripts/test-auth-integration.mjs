@@ -58,6 +58,7 @@ await once(portProbe, "listening");
 const port = portProbe.address().port;
 await new Promise((resolve) => portProbe.close(resolve));
 const origin = `http://localhost:${port}`;
+const authRequestTimes = [];
 
 function pass(message) {
 	passed += 1;
@@ -65,6 +66,16 @@ function pass(message) {
 }
 
 async function request(path, { method = "GET", cookie, body, expected = 200, headers = {} } = {}) {
+	if (path.startsWith("/api/auth/") && !path.includes("get-session")) {
+		// Honor the real 40/min IP budget while testing many independent flows.
+		// Leave headroom for plugin calls; never weaken the application's limit.
+		while (authRequestTimes.length && authRequestTimes[0] <= Date.now() - 60_000) authRequestTimes.shift();
+		if (authRequestTimes.length >= 36) {
+			await delay(Math.max(0, authRequestTimes[0] + 60_100 - Date.now()));
+			while (authRequestTimes.length && authRequestTimes[0] <= Date.now() - 60_000) authRequestTimes.shift();
+		}
+		authRequestTimes.push(Date.now());
+	}
 	const response = await fetch(`${origin}${path}`, {
 		method,
 		redirect: "manual",
@@ -234,6 +245,19 @@ try {
 	const otherSession = (await request("/api/auth/get-session", { cookie: other.cookie })).data.session;
 	const otherKey = (await request("/v1/keys", { method: "POST", cookie: other.cookie, body: { name: "Other private key" } })).data;
 	const otherHeaders = { Authorization: `Bearer ${otherKey.key}` };
+	const privateDeposits = (await pool.query(`INSERT INTO deposits (user_id, type, amount_usd, credits_issued, status)
+	 VALUES ($1, 'usdc_direct', 25, 2500, 'completed'), ($2, 'usdc_direct', 50, 5000, 'pending') RETURNING id, user_id`, [profile.id, otherProfile.id])).rows;
+	const ownDepositId = privateDeposits.find(deposit => deposit.user_id === profile.id).id;
+	const otherDepositId = privateDeposits.find(deposit => deposit.user_id === otherProfile.id).id;
+	for (const headers of [{}, otherHeaders]) {
+		const ownDeposits = (await request(`/v1/deposit/status?userId=${otherProfile.id}`, { cookie: first.cookie, headers })).data.deposits;
+		assert.deepEqual(ownDeposits.map(deposit => deposit.id), [ownDepositId]);
+		assert.equal(Number(ownDeposits[0].amountUsd), 25, "Payment history amounts are dollars, not cents");
+	}
+	assert.deepEqual((await request("/v1/deposit/status", { headers: otherHeaders })).data.deposits.map(deposit => deposit.id), [otherDepositId]);
+	await request("/v1/deposit/status", { expected: 401 });
+	await pool.query("DELETE FROM deposits WHERE id = ANY($1::uuid[])", [privateDeposits.map(deposit => deposit.id)]);
+	pass("deposit history preserves dollar amounts and isolates owners despite forged user IDs or mixed account credentials");
 	for (const [path, method, body] of [["/v1/keys", "POST", { name: "Cross-site attempt" }], [`/sessions/${otherSession.id}`, "DELETE", undefined], ["/account", "DELETE", undefined]]) {
 		await request(path, { method, cookie: other.cookie, body, headers: { Origin: "https://untrusted.example" }, expected: 403 });
 	}
@@ -285,6 +309,22 @@ try {
 	const legacyChat = await request("/v1/chat/completions", { method: "POST", cookie: first.cookie, body: { model: "minimax-m2-7", messages: [{ role: "user", content: "Do not charge an old free-chat tab" }], max_tokens: 16 }, expected: 409 });
 	assert.equal(legacyChat.data.error.code, "website_chat_moved");
 	pass("public SDK requests cannot select website sponsorship, cross-origin website chat is denied, and old free-chat sessions are not charged");
+
+	const lockedEmail = "otp-attempt-budget@local.test";
+	const otpOffset = logs.length;
+	await request("/api/auth/email-otp/send-verification-otp", { method: "POST", body: { email: lockedEmail, type: "sign-in" } });
+	const lockedOTP = await deliverySince(otpOffset, /otp:\s*"(\d+)"/);
+	const wrongOTP = lockedOTP === "000000" ? "111111" : "000000";
+	for (let attempt = 0; attempt < 3; attempt++) {
+		const rejectedOTP = await request("/api/auth/sign-in/email-otp", { method: "POST", body: { email: lockedEmail, otp: wrongOTP }, expected: 400 });
+		assert.equal(rejectedOTP.data.code, "INVALID_OTP");
+		assert.doesNotMatch(rejectedOTP.cookie, /session_token=[^;]/);
+	}
+	const exhaustedOTP = await request("/api/auth/sign-in/email-otp", { method: "POST", body: { email: lockedEmail, otp: lockedOTP }, expected: 403 });
+	assert.equal(exhaustedOTP.data.code, "TOO_MANY_ATTEMPTS");
+	await request("/api/auth/sign-in/email-otp", { method: "POST", body: { email: lockedEmail, otp: lockedOTP }, expected: 400 });
+	assert.equal((await pool.query('SELECT 1 FROM "user" WHERE email=$1', [lockedEmail])).rowCount, 0);
+	pass("three incorrect OTPs exhaust the code budget; even the correct code cannot create a session or account afterward");
 
 	await request("/api/auth/update-user", { method: "POST", cookie: first.cookie, body: { name: "Saved Display Name" } });
 	assert.equal((await request("/api/auth/get-session", { cookie: first.cookie })).data.user.name, "Saved Display Name");

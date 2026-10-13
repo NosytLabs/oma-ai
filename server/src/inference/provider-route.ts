@@ -51,7 +51,7 @@ export function resolveProvider(provider: string, _modelDef?: ModelDef): Provide
 		// rejected by the catalog loader); we don't branch on it here.
 		if (!config.OPENBROKER_API_KEY) {
 			throw new ProviderError(
-				"OpenBroker API key not configured (set OPENBROKER_API_KEY in the server env).",
+				"This model is temporarily unavailable. Try another model or contact support.",
 				503,
 			);
 		}
@@ -72,7 +72,7 @@ export function resolveProvider(provider: string, _modelDef?: ModelDef): Provide
 	// default: venice
 	if (!config.VENICE_API_KEY) {
 		throw new ProviderError(
-			"Inference provider not configured (VENICE_API_KEY missing).",
+			"This model is temporarily unavailable. Try another model or contact support.",
 			503,
 		);
 	}

@@ -51,7 +51,7 @@ export function useDashboardData({ isAuthenticated, userId, timeRange = "7d", an
 	const error = errors.find(e => e instanceof Error) as Error | undefined;
 	const refresh = useCallback(async () => {
 		if (!enabled) return;
-		await Promise.all(["apiKeys", "usageSummary", "usage", "models", "recentTransactions", "balance"]
+		await Promise.all(["apiKeys", "usageSummary", "usage", "models", "recentTransactions", "balance", "notifications"]
 			.map(key => queryClient.invalidateQueries({ queryKey: [key] })));
 	}, [enabled, queryClient]);
 
