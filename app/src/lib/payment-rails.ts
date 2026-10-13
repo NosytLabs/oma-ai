@@ -6,6 +6,8 @@
 	*/
 
 export type SitePaymentSettings = {
+	/** False when operator payment toggles could not be read. */
+	paymentStatusAvailable?: boolean;
 	maintenanceMode: boolean;
 	cardPaymentsEnabled: boolean;
 	cryptoPaymentsEnabled: boolean;
@@ -23,7 +25,7 @@ export type RailStatus = {
 	key: RailKey;
 	label: string;
 	/** Short badge text for cards. */
-	badge: "Available" | "Paused" | "Setup required" | "Agents";
+	badge: "Available" | "Paused" | "Unavailable" | "Checking…";
 	/** True when the user can complete a deposit/checkout for this rail. */
 	actionable: boolean;
 	/** One-line reason when not actionable. */
@@ -43,25 +45,34 @@ export function railStatuses(
 			{
 				key: "usdc",
 				label: "USDC (Base)",
-				badge: "Setup required",
+				badge: "Checking…",
 				actionable: false,
-				reason: "Checking payment configuration…",
+				reason: "Checking payment availability…",
 			},
 			{
 				key: "card",
 				label: "Card · Polar",
-				badge: "Setup required",
+				badge: "Checking…",
 				actionable: false,
-				reason: "Checking payment configuration…",
+				reason: "Checking payment availability…",
 			},
 			{
 				key: "x402",
 				label: "x402 Agent Settle",
-				badge: "Setup required",
+				badge: "Checking…",
 				actionable: false,
-				reason: "Checking facilitator configuration…",
+				reason: "Checking payment availability…",
 			},
 		];
+	}
+	if (settings.paymentStatusAvailable === false || settings.maintenanceMode) {
+		const unavailable = settings.paymentStatusAvailable === false;
+		return ([
+			["usdc", "USDC (Base)"], ["card", "Card · Polar"], ["x402", "x402 Agent Settle"],
+		] as const).map(([key, label]) => ({
+			key, label, badge: unavailable ? "Unavailable" : "Paused", actionable: false,
+			reason: unavailable ? "Payment availability could not be checked. Please try again shortly." : "New payments are paused during site maintenance.",
+		}));
 	}
 
 	const usdcConfigured = settings.usdcDepositConfigured === true;
@@ -81,28 +92,28 @@ export function railStatuses(
 			badge: usdcPaused
 				? "Paused"
 				: usdcMissing
-					? "Setup required"
+					? "Unavailable"
 					: "Available",
 			actionable: !usdcPaused && !usdcMissing,
 			reason: usdcPaused
-				? "On-chain USDC deposits are paused by the operator."
+				? "USDC deposits are temporarily paused."
 				: usdcMissing
-					? "Deposit address is not configured on the server."
+					? "USDC deposits are not available right now."
 					: null,
 		},
 		{
 			key: "card",
 			label: "Card · Polar",
-			badge: cardPaused
-				? "Paused"
-				: cardMissing
-					? "Setup required"
+			badge: cardMissing
+				? "Unavailable"
+				: cardPaused
+					? "Paused"
 					: "Available",
 			actionable: !cardPaused && !cardMissing,
-			reason: cardPaused
-				? "Card checkout is paused by the operator."
-				: cardMissing
-					? "Card payments are not yet enabled. Contact the operator to enable Polar checkout."
+			reason: cardMissing
+				? "Card payments are not available right now."
+				: cardPaused
+					? "Card payments are temporarily paused."
 					: null,
 		},
 		{
@@ -111,14 +122,14 @@ export function railStatuses(
 			badge: x402Paused
 				? "Paused"
 				: x402Configured
-					? "Agents"
-					: "Setup required",
+					? "Available"
+					: "Unavailable",
 			actionable: !x402Paused && x402Configured,
 			reason: x402Paused
-				? "Crypto settlement is paused by the operator."
+				? "New x402 funding is temporarily paused."
 				: x402Configured
 					? null
-					: "The live x402 facilitator is not fully configured.",
+					: "x402 funding is not available right now.",
 		},
 	];
 }
@@ -131,9 +142,9 @@ export function railByKey(
 		railStatuses(settings).find((r) => r.key === key) ?? {
 			key,
 			label: key,
-			badge: "Setup required",
+			badge: "Checking…",
 			actionable: false,
-			reason: "Checking payment configuration…",
+			reason: "Checking payment availability…",
 		}
 	);
 }

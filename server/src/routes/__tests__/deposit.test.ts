@@ -155,6 +155,21 @@ describe("deposit routes (real handler)", () => {
 	});
 
 	describe("GET /v1/deposit/usdc (instructions)", () => {
+		it.each([
+			["get", "/v1/deposit/usdc"],
+			["post", "/v1/deposit/usdc/challenge"],
+			["post", "/v1/deposit/usdc"],
+		] as const)("refuses %s %s when payment settings cannot be read", async (method, path) => {
+			mockDb.select.mockImplementationOnce(() => { throw new Error("private database connection failure"); });
+			const res = await depositReq(method, path, method === "post" ? { fromAddress: validFromAddress } : undefined);
+			expect(res.status).toBe(503);
+			expect(await res.text()).not.toMatch(/private database connection/);
+		});
+
+		it("refuses a wallet challenge while crypto funding is paused", async () => {
+			mockSelectReturns([{ cryptoPaymentsEnabled: false }]);
+			expect((await depositReq("post", "/v1/deposit/usdc/challenge", { fromAddress: validFromAddress })).status).toBe(503);
+		});
 		it("returns deposit instructions when configured", async () => {
 			mockSelectReturns([{ cryptoPaymentsEnabled: true }]); // siteSettings
 			const res = await depositReq("get", "/v1/deposit/usdc");
@@ -198,13 +213,15 @@ describe("deposit routes (real handler)", () => {
 			expect(data.cardPaymentsEnabled).toBe(false);
 		});
 
-		it("falls back to env defaults when DB fails", async () => {
+		it("keeps public configuration readable but disables payments when DB fails", async () => {
 			mockDb.select.mockImplementationOnce(() => { throw new Error("DB down"); });
 			const res = await depositReq("get", "/v1/site-settings");
 			expect(res.status).toBe(200);
 			const data = await res.json();
 			expect(data.maintenanceMode).toBe(false);
-			expect(data.cardPaymentsEnabled).toBe(true);
+			expect(data.cardPaymentsEnabled).toBe(false);
+			expect(data.cryptoPaymentsEnabled).toBe(false);
+			expect(data.paymentStatusAvailable).toBe(false);
 			expect(data.usdcDepositConfigured).toBe(true);
 		});
 	});

@@ -228,7 +228,7 @@ export default function PricingPage() {
 				}
 			})
 			.catch(() => {
-				/* leave null → Setup required until confirmed */
+				/* Keep funding non-actionable until availability is confirmed. */
 			});
 		return () => {
 			cancelled = true;
@@ -398,7 +398,7 @@ export default function PricingPage() {
 							<p className="max-w-md text-sm leading-relaxed text-text-secondary sm:text-right">
 								{cardActionable
 									? "Choose a prepaid credit pack. Every pack uses the same rate: 1 credit = $0.01 USD."
-									: "Deposit USDC on Base at 1:1 USD, or use x402 settle for agents. Card checkout shows Setup required until Polar is enabled."}
+									: "Add credits with USDC on Base at 1:1 USD. The credits page shows which payment methods are available."}
 							</p>
 						</div>
 						<div className="grid grid-cols-1 gap-4 md:grid-cols-3">

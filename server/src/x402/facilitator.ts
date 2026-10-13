@@ -27,6 +27,7 @@ import { db } from "../db/client.js";
 import { deposits, settlements, user as userTable } from "../db/schema.js";
 import { eq, and } from "drizzle-orm";
 import { rateLimit } from "../middleware/rate-limit.js";
+import { requirePaymentRail } from "../middleware/payment-rail.js";
 import { USDC_BASE, USDC_DECIMALS } from "../constants.js";
 import {
 	isSupportedSettlementAsset,
@@ -152,7 +153,7 @@ x402Routes.get("/x402/info", (c) => {
 		});
 });
 
-x402Routes.post("/x402/verify", rateLimit({ windowMs: 60_000, maxRequests: 10 }), async (c) => {
+x402Routes.post("/x402/verify", rateLimit({ windowMs: 60_000, maxRequests: 10 }), requirePaymentRail("crypto"), async (c) => {
 		const headerVal = c.req.header("PAYMENT-SIGNATURE") ?? c.req.header("X-PAYMENT");
 		if (!headerVal) {
 				return c.json(
@@ -225,6 +226,7 @@ x402Routes.post("/x402/verify", rateLimit({ windowMs: 60_000, maxRequests: 10 })
 		return c.json(result, result.valid ? 200 : 422);
 });
 
+// Settlement recovers funds already sent; a funding pause must not block crediting.
 x402Routes.post("/x402/settle", sessionAuth, async (c) => {
 		const userId = c.get("userId");
 		if (!userId) {

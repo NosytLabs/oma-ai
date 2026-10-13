@@ -563,7 +563,8 @@ user: {
 					// www collapse to the same canonical form before signing.
 					// Mirror that here: never let the configured domain be
 					// "www.oma-ai.com" while users on "oma-ai.com" get rejected.
-					domain: authHostname.replace(/^www\./, ""),
+					// EIP-4361 uses the full authority, including a non-default port.
+					domain: new URL(authBaseURL).host.replace(/^www\./, ""),
 					emailDomainName: "oma-ai.com",
 						// Wallet-only signups don't need an email. The wallet address is
 						// already a strong identity signal; we attach it to the user row

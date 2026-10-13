@@ -71,6 +71,7 @@ export function X402Section() {
       </div>
 
       <div id="x402-flow" className="scroll-mt-24">
+		<p className="mb-4 text-sm leading-relaxed text-text-muted">New funding returns 503 when crypto payments are paused or payment availability cannot be checked. Honor Retry-After when present. If a transfer already confirmed, retry /x402/settle with its existing hash and the payer’s session; a funding pause does not require another payment.</p>
         <h3 className="font-display text-lg font-semibold text-text">How funding works</h3>
         <ol className="mt-3 space-y-3 text-sm text-text-muted">
           <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-accent" />Sign in via SIWE with the USDC payer wallet. Read payTo from /x402/info, then sign that recipient, the intended amount, and a fresh nonce. The direct-deposit address can differ.</li>

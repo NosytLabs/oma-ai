@@ -74,6 +74,11 @@ export const RATE_LIMIT_ROWS: RateLimitRow[] = [
 		desc: "Sliding-window requests-per-minute ceiling.",
 	},
 	{
+		name: "Token budget (listed models)",
+		value: "120,000 TPM",
+		desc: "For the models listed below: estimated input plus requested maximum output, per model, account and key. Separate from actual billed tokens.",
+	},
+	{
 		name: "Emergency allowance",
 		value: "5 RPM",
 		desc: "During limiter outages: per account and instance (per IP for guests), shared across that account's keys. Further requests return 503.",
@@ -578,7 +583,7 @@ export const ERROR_CODES: ErrorInfo[] = [
 	{
 		code: 503,
 		type: "service_unavailable",
-		desc: "A required service is temporarily unavailable, a model is paused, or maintenance is active. Account-status verification failures return auth_state_unavailable. Honor Retry-After when present.",
+		desc: "A required service is temporarily unavailable, a model is paused, or maintenance is active. Account-status verification failures return auth_state_unavailable. New funding returns funding_paused or funding_status_unavailable without starting a transfer or checkout. Honor Retry-After when present.",
 	},
 ];
 

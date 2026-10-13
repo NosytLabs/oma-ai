@@ -460,7 +460,7 @@ const spec = {
 			servers: fundingServers,
 			post: {
 				summary: "Verify and broadcast an EIP-3009 USDC transfer",
-				description: "Moves the authorized USDC to the pinned treasury and waits for on-chain confirmation; this is not a dry run. The facilitator pays gas. Save the returned txHash, then call /x402/settle with the payer wallet's SIWE session to credit the account. Rate-limited at 10/min/IP.",
+				description: "Moves the authorized USDC to the pinned treasury and waits for on-chain confirmation; this is not a dry run. The facilitator pays gas. Save the returned txHash, then call /x402/settle with the payer wallet's SIWE session to credit the account. Rate-limited at 10/min/IP. Returns 503 funding_paused or funding_status_unavailable before moving funds when new crypto funding is unavailable. Existing transfers can still be credited through /x402/settle during a funding pause.",
 				security: [],
 				parameters: [{
 					in: "header", name: "PAYMENT-SIGNATURE", required: true,

@@ -127,7 +127,7 @@ function PaymentMethodsInfo({
 							</span>
 							<span
 								className={`shrink-0 rounded-[var(--radius-sm)] border px-1.5 py-0.5 font-mono text-[10px] font-semibold tabular-nums ${
-									m.badge === "Available" || m.badge === "Agents"
+									m.badge === "Available"
 										? "border-accent/20 bg-accent/10 text-accent"
 										: m.badge === "Paused"
 											? "border-warning/30 bg-warning/10 text-warning"
@@ -270,7 +270,7 @@ export default function DepositPage() {
 				if (preferred) setMethod(preferred.key);
 			})
 			.catch(() => {
-				/* leave null → Setup required until settings load */
+				/* Keep funding non-actionable until availability is confirmed. */
 			});
 	}, []);
 
@@ -358,7 +358,7 @@ export default function DepositPage() {
 										usdc.reason ??
 										"This payment rail is not available right now."
 									}
-									fallback="Use card checkout or x402 settlement instead."
+									fallback="Check the payment methods below for current availability."
 								/>
 							))}
 						{method === "card" &&
@@ -376,7 +376,7 @@ export default function DepositPage() {
 										card.reason ??
 										"This payment rail is not available right now."
 									}
-									fallback="Use USDC on Base or x402 settlement instead."
+									fallback="Check the payment methods below for current availability."
 								/>
 							))}
 						{method === "x402" && <X402Info />}

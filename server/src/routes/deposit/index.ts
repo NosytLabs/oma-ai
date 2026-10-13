@@ -22,6 +22,7 @@ import { and, desc, eq } from "drizzle-orm";
 import type { OmaEnv } from "../../types.js";
 import { sessionOrBearerAuth } from "../../auth/middleware.js";
 import { rateLimit } from "../../middleware/rate-limit.js";
+import { requirePaymentRail } from "../../middleware/payment-rail.js";
 import { db } from "../../db/client.js";
 import { creditBalances, deposits, siteSettings } from "../../db/schema.js";
 import { auditLog } from "../../middleware/audit.js";
@@ -70,31 +71,13 @@ depositRoutes.get("/v1/balance", sessionOrBearerAuth, async (c) => {
 // Returns deposit instructions: address, network, USDC contract,
 // min/max. The frontend surfaces this on the /deposit page.
 
-depositRoutes.get("/v1/deposit/usdc", sessionOrBearerAuth, async (c) => {
-		// Check if crypto deposits are disabled by admin
-		try {
-				const [settings] = await db.select({ cryptoPaymentsEnabled: siteSettings.cryptoPaymentsEnabled }).from(siteSettings).limit(1);
-				if (settings && !settings.cryptoPaymentsEnabled) {
-						return c.json(
-								{
-										error: {
-												message: "USDC deposits are temporarily disabled by the administrator.",
-												type: "service_unavailable",
-										},
-								},
-								503,
-						);
-				}
-		} catch (err) {
-				logger.error({ err }, "[deposit] failed to check site settings for crypto payments");
-		}
-
+depositRoutes.get("/v1/deposit/usdc", sessionOrBearerAuth, requirePaymentRail("crypto"), async (c) => {
 		if (!config.USDC_DEPOSIT_ADDRESS) {
 				return c.json(
 						{
 								error: {
 										message:
-												"USDC deposits are temporarily unavailable. Set USDC_DEPOSIT_ADDRESS in the server env to enable.",
+												"USDC deposits are temporarily unavailable. Please try another available payment method.",
 										type: "not_configured",
 								},
 						},
@@ -124,6 +107,7 @@ depositRoutes.post(
 	"/v1/deposit/usdc/challenge",
 	rateLimit({ windowMs: 60_000, maxRequests: 30 }),
 	sessionOrBearerAuth,
+	requirePaymentRail("crypto"),
 	async (c) => {
 		const userId = c.get("userId");
 		const body = await c.req.json().catch(() => null);
@@ -185,26 +169,9 @@ depositRoutes.post(
 		"/v1/deposit/usdc",
 		rateLimit({ windowMs: 60_000, maxRequests: 10 }),
 		sessionOrBearerAuth,
+		requirePaymentRail("crypto"),
 		async (c) => {
 				const userId = c.get("userId");
-
-				// Check if crypto deposits are disabled by admin
-				try {
-						const [settings] = await db.select({ cryptoPaymentsEnabled: siteSettings.cryptoPaymentsEnabled }).from(siteSettings).limit(1);
-						if (settings && !settings.cryptoPaymentsEnabled) {
-								return c.json(
-										{
-												error: {
-														message: "USDC deposits are temporarily disabled by the administrator.",
-														type: "service_unavailable",
-												},
-										},
-										503,
-								);
-						}
-				} catch (err) {
-						logger.error({ err }, "[deposit] failed to check site settings for crypto payments");
-				}
 
 				if (!config.USDC_DEPOSIT_ADDRESS) {
 						return c.json(
@@ -397,13 +364,11 @@ const [created] = await db
 // Public. Lets the frontend render honest rail statuses instead of
 // discovering a 503 after the user picks a rail.
 //
-// Resilience: if the DB is unreachable (dev DB down, network blip) we still
-// serve a best-effort config from env vars so the deposit page never 5xxs
-// for an anonymous visitor. The toggle states (maintenance, payment on/off)
-// fall back to "open" defaults — the admin panel can re-apply them once
-// the DB recovers.
+// Keep discovery readable during an outage, but never advertise new funding
+// while the operator's payment toggles cannot be checked.
 
 depositRoutes.get("/v1/site-settings", async (c) => {
+		c.header("Cache-Control", "no-store");
 		const envDefaults = {
 				maintenanceMode: false,
 				cardPaymentsEnabled: true,
@@ -433,6 +398,7 @@ depositRoutes.get("/v1/site-settings", async (c) => {
 			// path. The toggle still governs intent; this governs capability.
 			const cardToggle = settings?.cardPaymentsEnabled ?? envDefaults.cardPaymentsEnabled;
 			return c.json({
+				paymentStatusAvailable: true,
 				maintenanceMode: settings?.maintenanceMode ?? envDefaults.maintenanceMode,
 				cardPaymentsEnabled: cardToggle && envDefaults.polarConfigured,
 				cryptoPaymentsEnabled:
@@ -444,9 +410,9 @@ depositRoutes.get("/v1/site-settings", async (c) => {
 		} catch (err) {
 				logger.warn(
 						{ err: (err as Error).message },
-						"[deposit] site-settings DB read failed; serving env defaults",
+						"[deposit] site-settings DB read failed; disabling new funding",
 				);
-				return c.json(envDefaults);
+				return c.json({ ...envDefaults, paymentStatusAvailable: false, cardPaymentsEnabled: false, cryptoPaymentsEnabled: false });
 		}
 });
 

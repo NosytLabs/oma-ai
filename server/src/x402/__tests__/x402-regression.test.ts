@@ -161,6 +161,23 @@ function makeV1PaymentSig(payee: string, amount: string, nonce: string, payFrom 
 		}
 }
 
+describe('operator crypto payment controls', () => {
+	beforeEach(() => { vi.clearAllMocks(); resetChain(); });
+
+	it.each([
+		['paused', [{ cryptoPaymentsEnabled: false }]],
+		['unreachable', new Error('private database connection failure')],
+	])('refuses a new transfer when payment settings are %s', async (_name, result) => {
+		chain._resultQueue.push(result);
+		const app = new Hono().route('/', x402Routes);
+		const res = await app.request('/x402/verify', {
+			method: 'POST', headers: { 'PAYMENT-SIGNATURE': JSON.stringify(makeV1PaymentSig(TREASURY, '1.00', 'payment-control-' + _name)) },
+		});
+		expect(res.status).toBe(503);
+		expect(await res.text()).not.toMatch(/private database connection/);
+	});
+});
+
 // ============================================================================
 // AUDIT-1: parseUsdcAtomic rejects negative + non-numeric + out-of-range
 // ============================================================================
