@@ -69,4 +69,14 @@ describe("documentation section navigation", () => {
 		landOn("authentication"); act(() => window.dispatchEvent(new Event("scroll"))); flushFrames();
 		expect(currentSection()).toEqual(["#authentication"]);
 	});
+
+	it("updates after scrolling when a hash event arrives before its new geometry", () => {
+		window.history.replaceState(null, "", "/docs"); landOn("quickstart");
+		render(<DocsContent />); flushFrames();
+		window.history.replaceState(null, "", "/docs#rate-limits");
+		act(() => window.dispatchEvent(new HashChangeEvent("hashchange"))); flushFrames();
+		expect(currentSection()).toEqual(["#quickstart"]);
+		landOn("rate-limits"); act(() => window.dispatchEvent(new Event("scroll"))); flushFrames();
+		expect(currentSection()).toEqual(["#rate-limits"]);
+	});
 });
