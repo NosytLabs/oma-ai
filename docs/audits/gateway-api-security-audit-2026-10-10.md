@@ -121,6 +121,24 @@ without overflow or captured console warnings/errors. The existing process on
 port 3000 retained the previous build, so these checks used a fresh process on
 port 3002. Production verification follows the reviewed release.
 
+The real HTTP/auth suite now also migrates a unique local database and creates
+1,001 isolated accounts. Admin search and cursor pagination returned all of them
+in 21 bounded pages without duplicates, and found an exact email. The measured
+total HTTP time was 186ms on this machine; this is not a production benchmark
+or a 1,000-user simultaneous browser load test. The suite drops its temporary
+database in finally and now passes 28 groups.
+
+Admin user-list failures previously offered no recovery, and next-page failures
+were silent when earlier users were already loaded. The console now retains
+loaded rows, explains the failure and provides Retry users for the same page.
+It labels the search field, shows the loaded count and uses a larger paging
+button. Both recovery regressions failed before the change, then passed. All
+850 frontend tests in 126 files, types, lint and production build pass. A real
+local admin sign-in confirms the search label, bounded paging guidance and
+loaded count. Attempted browser-only outage interception was cleared; the
+explicit error/retry behavior is established by the component regressions,
+not a claim of a captured browser error state.
+
 ## Authentication and dashboard follow-up — October 11
 
 Malformed API-key cookie encoding reproduced a 500 on an authenticated API
