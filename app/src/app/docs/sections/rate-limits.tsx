@@ -47,11 +47,14 @@ export function RateLimitsSection() {
 			<div id="rl-models" tabIndex={0} role="region" aria-label="Model rate limits. Scroll horizontally to view all columns." className="mb-6 overflow-x-auto overscroll-x-contain rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)] scroll-mt-24">
 				<div className="border-b border-border bg-panel px-4 py-3">
 					<h3 className="font-semibold text-text text-sm">
-						Per-Model Overrides
+						Model Budgets
 					</h3>
 					<p className="mt-1 text-xs text-text-muted">
-						A few models carry their own request/token ceilings. Everything else
-						uses the defaults above.
+						The models below have an additional 120,000 TPM budget. Other models
+						use the request limits above and their advertised context/output limits;
+						OMA does not impose this model-specific TPM budget on them. If one
+						request exceeds a listed budget, reduce the prompt or max_tokens rather
+						than retrying the same request.
 					</p>
 				</div>
 				<table
@@ -130,6 +133,7 @@ export function RateLimitsSection() {
 						emergency allowance. Provider capacity limits may also reject requests;
 						a listed model is not a reservation of upstream capacity.
 					</p>
+					<p className="mt-3 text-sm text-text-muted">OpenBroker’s upstream 429 can also mean shared gateway concurrency is full, even below OMA’s limits. Send fewer requests at once. OMA’s limits and the provider’s capacity are separate; neither guarantees a sustained upstream throughput.</p>
 				</div>
 			</div>
 		</AnimatedSection>

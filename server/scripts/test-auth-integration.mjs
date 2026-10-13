@@ -328,6 +328,24 @@ try {
 	assert.equal(adminSettings.maintenanceMessage, "Local integration maintenance");
 	await request("/v1/models", { expected: 503 });
 	await request("/v1/admin/site-settings", { method: "POST", cookie: first.cookie, body: { maintenanceMode: false } });
+	await request("/v1/admin/site-settings", { method: "POST", cookie: first.cookie, body: { cryptoPaymentsEnabled: false, cardPaymentsEnabled: false } });
+	const pausedPayments = (await request("/v1/site-settings")).data;
+	assert.equal(pausedPayments.paymentStatusAvailable, true);
+	assert.equal(pausedPayments.cryptoPaymentsEnabled, false);
+	assert.equal(pausedPayments.cardPaymentsEnabled, false);
+	for (const [path, method, body] of [
+		["/v1/deposit/usdc", "GET"],
+		["/v1/deposit/usdc/challenge", "POST", { fromAddress: `0x${"12".repeat(20)}` }],
+		["/v1/deposit/usdc", "POST", {}],
+		["/v1/checkout", "POST", { plan: "hobby" }],
+		["/x402/verify", "POST", {}],
+	]) {
+		const paused = await request(path, { method, body, cookie: first.cookie, expected: 503 });
+		assert.equal(paused.data.error.code, "funding_paused");
+	}
+	await request("/v1/admin/site-settings", { method: "POST", cookie: first.cookie, body: { cryptoPaymentsEnabled: true, cardPaymentsEnabled: true } });
+	await request("/x402/verify", { method: "POST", expected: 400 });
+	pass("admin funding pauses protect direct deposits, wallet challenges, card checkout and x402 transfers and can be reversed");
 	await pool.query(`INSERT INTO "user" (id, name, email, email_verified) VALUES ('admin-test-target', 'Operator test target', 'operator-target@local.test', true)`);
 	await request("/v1/admin/credit-adjust", { method: "POST", cookie: first.cookie, body: { userId: "admin-test-target", deltaCents: -10, reason: "Reject missing balance" }, expected: 400 });
 	assert.equal((await pool.query("SELECT 1 FROM credit_balances WHERE user_id = 'admin-test-target'")).rowCount, 0, "A rejected deduction must not create a ledger row");

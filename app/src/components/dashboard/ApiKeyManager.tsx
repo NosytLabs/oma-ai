@@ -1,6 +1,8 @@
 "use client";
 
 import { memo, useRef, useState } from "react";
+import Link from "next/link";
+import SITE_URL from "@/lib/site";
 import { useFocusTrap } from "@/lib/hooks/useFocusTrap";
 import type { ApiKey, ApiKeyCreateOptions } from "@/lib/api";
 import { ApiKeyCreateForm } from "./ApiKeyCreateForm";
@@ -76,7 +78,7 @@ function ApiKeyManagerComponent({
 	{keys.length} key{keys.length === 1 ? "" : "s"} on this account
 	</p>
 	</div>
-	{!showCreateForm && <button
+	{!showCreateForm && keys.length > 0 && <button
 	type="button"
 	onClick={() => setShowCreateForm(true)}
 	className="group flex items-center justify-center rounded-[var(--radius-sm)] border border-accent/40 bg-accent/10 px-4 py-2 min-h-[36px] text-xs font-semibold text-accent transition-[background-color,border-color,box-shadow,color,transform] duration-200 ease-out hover:bg-accent/20 hover:border-accent/60 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
@@ -84,6 +86,16 @@ function ApiKeyManagerComponent({
 	+ New key
 	</button>}
 	</div>
+
+		<section aria-label="Use your API key" className="mb-6 min-w-0 rounded-[var(--radius-md)] border border-border bg-void/40 p-4">
+			<h3 className="text-sm font-semibold text-text-bright">Make your first request</h3>
+			<p className="mt-2 text-sm leading-relaxed text-text-muted">Use the full key in your server’s environment variables. The saved prefix identifies a key and cannot authenticate requests. API calls spend prepaid credits; free chat is available on the website for eligible models.</p>
+			<div className="mt-3 flex flex-wrap items-center gap-2">
+				<code className="min-w-0 flex-1 break-all text-xs text-text-secondary">{SITE_URL}/api/v1</code>
+				<button type="button" onClick={() => onCopy(`${SITE_URL}/api/v1`, "api-base-url")} className="min-h-11 rounded-[var(--radius-sm)] border border-border px-3 text-xs font-semibold text-accent">{copied === "api-base-url" ? "Copied!" : "Copy API base URL"}</button>
+			</div>
+			<div className="mt-2 flex flex-wrap gap-x-4 text-sm"><Link href="/docs#quickstart" className="inline-flex min-h-11 items-center text-accent hover:underline">Request examples</Link><Link href="/docs#rate-limits" className="inline-flex min-h-11 items-center text-accent hover:underline">Limits & retries</Link></div>
+		</section>
 
 		{showCreateForm && (
 			<ApiKeyCreateForm

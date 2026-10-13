@@ -38,11 +38,11 @@ async function post(path: string, body: object) {
 		method: "POST", headers: { origin, "content-type": "application/json" }, body: JSON.stringify(body),
 	}));
 }
-async function signIn(validSignature = true) {
+async function signIn(validSignature = true, domain = "localhost:3000") {
 	const nonceResponse = await post("/siwe/nonce", {});
 	expect(nonceResponse.status).toBe(200);
 	const { nonce } = await nonceResponse.json();
-	const message = createSiweMessage({ address: wallet.address, domain: "localhost:3000", uri: origin, version: "1", chainId: 8453, nonce });
+	const message = createSiweMessage({ address: wallet.address, domain, uri: origin, version: "1", chainId: 8453, nonce });
 	const signature = await wallet.signMessage({ message: validSignature ? message : "Different message" });
 	return post("/siwe/verify", { message, signature });
 }
@@ -62,6 +62,10 @@ beforeEach(() => {
 });
 
 describe("SIWE profile binding", () => {
+	it("rejects a correctly signed message for a different local port", async () => {
+		expect((await signIn(true, "localhost:3001")).status).toBe(401);
+		expect(memory.session).toHaveLength(0);
+	});
 	it("persists the signed wallet on first signup and includes it in the first cached session", async () => {
 		const response = await signIn();
 		expect(response.status).toBe(200);

@@ -1,8 +1,72 @@
-# Gateway and account audit — October 10–11, 2026
+# Gateway and account audit — October 10–13, 2026
 
 Consolidated evidence for the account, API, website and infrastructure work.
 Current behavior lives in [Platform](../PLATFORM.md),
 [Deployment](../DEPLOYMENT.md) and [Chat UI](../chat-ui.md).
+
+## Payment controls, dependencies and customer guidance — October 13
+
+The crypto payment switch did not govern `/x402/verify`, and direct deposit/card
+checks continued after a database failure. One shared middleware now checks
+operator intent before new funding, wallet challenges or hosted checkout.
+Unavailable settings return a safe 503 with Retry-After; public discovery remains
+readable but disables funding. A crypto funding pause does not block crediting
+an existing confirmed x402 payment. Real Postgres tests verify retries credit it
+once, including after the process cache is cleared. Payment recovery records and
+financial history remain intact.
+
+Customer pages now show Checking, Available, Paused or Unavailable. Setup and
+configuration instructions remain in admin diagnostics. The credits page no
+longer suggests another method without knowing it is available. API-key guidance
+adds a copyable SDK base URL, request examples and limits/retry links, explains
+why a saved prefix cannot authenticate, and separates paid API calls from free
+website chat. Menu and status wording describe the actual product and gateway
+readiness rather than promising live provider inference. The duplicate outer
+API-key empty state was removed, so accounts without keys also receive the
+same onboarding guidance and one clear first-key action.
+
+The newer main-branch SIWE change accidentally used hostname instead of host,
+dropping local ports. Real-signature tests reproduced rejected valid logins.
+The server now preserves the non-default port while matching the client’s
+apex/www canonicalization; a correctly signed message for another port remains
+rejected. Domain/nonce/signature checks were not relaxed.
+
+Updated all newly available compatible dependencies, including OpenUI 1.0.0,
+viem 2.57.5, Hono’s Node adapter 2.1.5, Neon config 1.9.1, Zod 4.6.7 and
+Vitest 5.0.4. OpenUI parsing/actions/rendering still pass. TypeScript 6.0.3 and
+Node 24 types retain their tool/runtime compatibility pins. The refreshed audit
+reports zero known production vulnerabilities across 891 dependencies.
+
+Fresh MiniMax API checks used a temporary scoped, expiring key. Chat completions
+timed out at the 180-second provider deadline; Messages returned the expected
+final `OMA_API_OK` in 29.7 seconds with 49 input / 200 output tokens. Only the
+successful call charged 0.000498 cents. Charges matched the credit deduction;
+the key was revoked (401 afterward) and its temporary session removed. The
+first attempt during a local server restart failed sign-in and made no model
+call. Latest model evidence is
+`.artifacts/provider-audit/payment-audit-model-results-2026-10-13.json`.
+Provider latency remains unreliable; this is not a clean bill of model health.
+Venice Gemma was rechecked with a fresh restricted key and again returned a
+safe provider-authentication error (502, 218ms), with no charge. That key and
+session were removed; replacing the local Venice credential remains necessary.
+
+Validation on Node 24.19.0: 845 frontend tests in 124 files, 651 API tests in
+78 files with the Postgres suites active, and 27 real HTTP/auth groups pass.
+Types, lint, both production builds and frozen installation pass. Payment,
+customer-status and SIWE regressions were observed before their fixes.
+
+Research used Firecrawl to retrieve primary [Google canonicalization guidance](https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls),
+[Anthropic rate-limit documentation](https://docs.anthropic.com/en/api/rate-limits),
+and live [OpenBroker FAQ](https://openbroker.gonka.gg/docs/faq) / [load guidance](https://openbroker.gonka.gg/docs/load).
+Docs now distinguish OMA’s request limits, the 120,000 TPM budget on the listed
+models, and upstream shared concurrency. Other models do not inherit that TPM
+budget. Retry-After/backoff guidance does not invent provider capacity promises.
+
+Browser checks of 12 current public footer destinations found one H1, matching
+www canonicals and no document overflow at 390px; captured warnings/errors were
+empty. Those destinations are active, so no healthy footer pages were deleted.
+The landing logo and navigation use the same existing brand component. Admin
+funding controls were exercised locally; no mainnet payment was signed.
 
 ## Authentication and dashboard follow-up — October 11
 

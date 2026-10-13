@@ -4,6 +4,7 @@ import { polarRoutes, isAllowedCheckoutOrigin } from "../polar.js";
 import crypto from "node:crypto";
 
 const mockConfig = vi.hoisted(() => ({
+	POLAR_ACCESS_TOKEN: "polar_test_token",
 	POLAR_WEBHOOK_SECRET: "test-secret",
 	POLAR_HOBBY_PRODUCT_ID: "prod_hobby",
 	POLAR_BUILDER_PRODUCT_ID: "prod_builder",
@@ -12,6 +13,8 @@ const mockConfig = vi.hoisted(() => ({
 	PRIMARY_DOMAIN: "oma-ai.com",
 	NODE_ENV: "test"
 }));
+
+vi.mock("@polar-sh/sdk/2026-10", () => ({ createPolar: () => ({ checkouts: { create: async () => ({ id: "checkout-test", url: "https://checkout.example.test" }) } }) }));
 
 const mockDb = vi.hoisted(() => {
 	const limitMock = vi.fn().mockReturnThis();
@@ -146,6 +149,13 @@ describe("polar routes", () => {
 		// configured default before every test so order and failure paths cannot
 		// leak a 503 state into the rest of the suite.
 		mockConfig.POLAR_WEBHOOK_SECRET = "test-secret";
+	});
+
+	it("refuses checkout when the operator's payment settings are unreachable", async () => {
+		mockDb.limit.mockRejectedValueOnce(new Error("private database connection failure"));
+		const response = await app.request("/v1/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan: "hobby" }) });
+		expect(response.status).toBe(503);
+		expect(await response.text()).not.toMatch(/private database connection/);
 	});
 
 	describe("POST /webhooks/polar", () => {

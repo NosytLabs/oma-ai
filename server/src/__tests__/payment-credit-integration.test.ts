@@ -130,6 +130,17 @@ describe.skipIf(!fixture.url)("durable credit claims (Postgres)", () => {
 		expect((await query("select * from payment_credit_claims")).rows).toHaveLength(1);
 	});
 
+	it("credits already confirmed funds once while new crypto funding is paused", async () => {
+		await query("insert into site_settings (crypto_payments_enabled) values (false)");
+		try {
+			expect((await settle("original")).status).toBe(200);
+			settlementCache.clear();
+			expect((await settle("original")).status).toBe(200);
+			expect(await balance("original")).toBe(123.4567);
+			expect((await query("select * from payment_credit_claims")).rows).toHaveLength(1);
+		} finally { await query("delete from site_settings"); }
+	});
+
 	it("requires reconciliation for an old transfer without a surviving credit record", async () => {
 		fixture.blockTime = 1n;
 		const response = await settle("original");

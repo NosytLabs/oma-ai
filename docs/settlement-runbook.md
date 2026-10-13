@@ -8,6 +8,10 @@ This runbook describes the implemented recovery procedure. It does not assert th
 
 ## x402 prerequisites
 
+The crypto funding switch pauses new `/x402/verify` transfers, direct-deposit instructions/submissions, and wallet challenges. The card switch pauses new hosted checkouts. If payment settings cannot be read, these routes return `503 funding_status_unavailable` with `Retry-After: 30`; no new transfer or checkout begins. Public `/api/v1/site-settings` remains readable with `paymentStatusAvailable: false` and both payment flags disabled. Configuration flags describe setup, not current availability.
+
+A funding pause leaves `/x402/settle` and deposit recovery available for funds already sent. Confirmed funds retain the same payer and durable credit-claim checks; retries cannot mint additional credits. Maintenance mode is a separate site-wide control.
+
 Confirm the API environment has the production configuration described in PLATFORM: a real treasury, Base RPC access, a facilitator signing key, receipt-signing secrets, Postgres, and durable replay/rate-limit storage. Production and staging reject mock settlement. Keep secrets in the deployment's secret store; do not copy a local development environment over the live function configuration.
 
 The facilitator needs Base ETH for transaction gas. The **payer wallet** needs the USDC being transferred. Read current balances and network gas conditions rather than relying on a fixed seed amount or historical cost estimate. QuickNode can provide Base RPC; it is not a substitute for the configured settlement implementation.

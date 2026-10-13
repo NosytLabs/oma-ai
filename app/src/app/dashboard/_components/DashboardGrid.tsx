@@ -7,7 +7,6 @@ import { springs } from "@/lib/animation";
 import {
 	Activity,
 	Inbox,
-	KeyRound,
 	type LucideIcon,
 } from "lucide-react";
 import { Suspense, useMemo, useState } from "react";
@@ -60,8 +59,7 @@ const tabContentVariants = {
 /**
 	* Empty state with icon, copy, and optional action. The icon defaults to
 	* Inbox when none is supplied — call sites pass a Lucide icon that matches
-	* the data the user expected to see (Activity for usage, KeyRound for API
-	* keys, BarChart3 for charts/health).
+	* the data the user expected to see (Activity for usage).
 	*
 	* When `showChartSkeleton` is true, renders a mini chart placeholder below
 	* the description to give users a visual preview of what they'll see.
@@ -448,42 +446,22 @@ export function DashboardGrid(props: DashboardGridProps) {
 						animate="visible"
 						exit="exit"
 					>
-						{!loading &&
-						(!apiKeys || apiKeys.length === 0) &&
-						!showCreateForm ? (
-							<EmptyState
-								icon={KeyRound}
-								title="No API keys"
-								description="Create your first API key to start accessing the gateway programmatically."
-								action={
-									<button
-										type="button"
-										onClick={() => setShowCreateForm(true)}
-										className="inline-flex items-center gap-2 bg-accent text-void px-4 py-2 text-sm font-medium rounded-[var(--radius-sm)] hover:bg-accent/90 transition-colors duration-200 ease-out"
-									>
-										<KeyRound className="h-4 w-4" />
-										Create API Key
-									</button>
-								}
+						<WidgetErrorBoundary title="API keys">
+							<LazyApiKeyManager
+								keys={apiKeys}
+								loading={loading}
+								creating={creating}
+								showCreateForm={showCreateForm}
+								newKeyName={newKeyName}
+								copied={copied}
+								revokingId={revokingId}
+								onCopy={onCopy}
+								onRevokeKey={onRevokeKey}
+								onCreateKey={onCreateKey}
+								setShowCreateForm={setShowCreateForm}
+								setNewKeyName={setNewKeyName}
 							/>
-						) : (
-							<WidgetErrorBoundary title="API keys">
-								<LazyApiKeyManager
-									keys={apiKeys}
-									loading={loading}
-									creating={creating}
-									showCreateForm={showCreateForm}
-									newKeyName={newKeyName}
-									copied={copied}
-									revokingId={revokingId}
-									onCopy={onCopy}
-									onRevokeKey={onRevokeKey}
-									onCreateKey={onCreateKey}
-									setShowCreateForm={setShowCreateForm}
-									setNewKeyName={setNewKeyName}
-								/>
-							</WidgetErrorBoundary>
-						)}
+						</WidgetErrorBoundary>
 					</m.div>
 				)}
 			</AnimatePresence>

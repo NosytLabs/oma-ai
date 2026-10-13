@@ -30,7 +30,7 @@ describe("public service status", () => {
 		render(await StatusPage());
 		expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Some services are degraded.");
 		expect(screen.getByText(/Shared cache unavailable/)).toBeInTheDocument();
-		expect(screen.queryByText("All systems normal.")).not.toBeInTheDocument();
+		expect(screen.queryByText("Gateway services are online.")).not.toBeInTheDocument();
 	});
 
 	it("checks the same default model as the playground", async () => {
@@ -43,7 +43,7 @@ describe("public service status", () => {
 	it("reports normal status when readiness and the default model both succeed", async () => {
 		mockGateway(true);
 		render(await StatusPage());
-		expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("All systems normal.");
+		expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Gateway services are online.");
 		expect(screen.getByText("Database and shared cache are ready.")).toBeInTheDocument();
 	});
 });

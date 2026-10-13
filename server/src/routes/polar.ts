@@ -32,11 +32,11 @@ import type { Context } from "hono";
 import type { OmaEnv } from "../types.js";
 import { sessionOrBearerAuth } from "../auth/middleware.js";
 import { rateLimit } from "../middleware/rate-limit.js";
+import { requirePaymentRail } from "../middleware/payment-rail.js";
 import { db } from "../db/client.js";
 import {
 		creditBalances,
 		polarWebhookEvents,
-		siteSettings,
 } from "../db/schema.js";
 import { config, isProductionEnv } from "../config.js";
 import { logger } from "../lib/logger.js";
@@ -126,6 +126,7 @@ polarRoutes.post(
 		"/v1/checkout",
 		rateLimit({ windowMs: 60_000, maxRequests: 10 }),
 		sessionOrBearerAuth,
+		requirePaymentRail("card"),
 		async (c) => {
 				const body = await c.req.json().catch(() => null);
 				const parsed = checkoutSchema.safeParse(body);
@@ -142,38 +143,13 @@ polarRoutes.post(
 						);
 				}
 
-				// Check if card payments are disabled by admin
-				try {
-						const [settings] = await db
-								.select({ cardPaymentsEnabled: siteSettings.cardPaymentsEnabled })
-								.from(siteSettings)
-								.limit(1);
-						if (settings && !settings.cardPaymentsEnabled) {
-								return c.json(
-										{
-												error: {
-														message:
-																"Card payments are temporarily disabled by the administrator.",
-														type: "service_unavailable",
-												},
-										},
-										503,
-								);
-						}
-				} catch (err) {
-						logger.error(
-								{ err },
-								"[polar] failed to check site settings for card payments",
-						);
-				}
-
 				const polar = getPolarClient();
 				if (!polar) {
 						return c.json(
 								{
 										error: {
 												message:
-														"Polar is not configured. Set POLAR_ACCESS_TOKEN + product IDs in server/.env.",
+														"Card payments are temporarily unavailable. Please try another available payment method.",
 												type: "not_configured",
 										},
 								},
@@ -186,7 +162,7 @@ polarRoutes.post(
 						return c.json(
 								{
 										error: {
-												message: `Plan '${parsed.data.plan}' is not configured (${plan.productEnv} missing).`,
+												message: "This credit pack is not available right now.",
 												type: "not_configured",
 										},
 								},

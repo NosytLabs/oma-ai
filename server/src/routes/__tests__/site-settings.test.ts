@@ -6,7 +6,7 @@ import { Hono } from "hono";
 	*
 	* The endpoint must remain available even when the DB is unreachable:
 	*   1. DB read succeeds → return DB state (with env fallback for missing fields)
-	*   2. DB read throws → return env defaults (anonymous visitor never sees a 5xx)
+	*   2. DB read throws → discovery stays readable but funding is unavailable
 	*
 	* This guards the deposit page UX in dev environments where the Postgres
 	* container is offline but the operator is browsing the marketing surfaces.
@@ -96,7 +96,7 @@ describe("GET /v1/site-settings", () => {
 		expect(body.cryptoPaymentsEnabled).toBe(true);
 	});
 
-	it("falls back to env defaults when the DB read throws (resilience)", async () => {
+	it("reports unavailable payments when the DB read throws", async () => {
 		mockDb.limit.mockRejectedValueOnce(new Error("DB unreachable"));
 
 		const res = await app.request("/v1/site-settings");
@@ -104,8 +104,10 @@ describe("GET /v1/site-settings", () => {
 		expect(res.status).toBe(200);
 		const body = (await res.json()) as Record<string, unknown>;
 		expect(body.maintenanceMode).toBe(false);
-		expect(body.cardPaymentsEnabled).toBe(true);
-		expect(body.cryptoPaymentsEnabled).toBe(true);
+		expect(body.cardPaymentsEnabled).toBe(false);
+		expect(body.cryptoPaymentsEnabled).toBe(false);
+		expect(body.paymentStatusAvailable).toBe(false);
+		expect(res.headers.get("cache-control")).toBe("no-store");
 		expect(body.usdcDepositConfigured).toBe(true);
 		expect(body.polarConfigured).toBe(true);
 		expect(body.x402Configured).toBe(true);

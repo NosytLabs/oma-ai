@@ -180,7 +180,7 @@ export default async function StatusPage() {
 			<div className="container-page page-content mx-auto max-w-2xl">
 				<span className="section-eyebrow-caps">Live status</span>
 				<h1 className="h1-page mt-4 text-text-bright">
-					{allOk ? "All systems normal." : "Some services are degraded."}
+					{allOk ? "Gateway services are online." : "Some services are degraded."}
 				</h1>
 				<p className="page-intro">
 					Live health of the services behind OMA. This page checks

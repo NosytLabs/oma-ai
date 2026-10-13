@@ -34,7 +34,7 @@ export const primaryLinks: NavItem[] = [
 		href: "/chat",
 		label: "Chat",
 		icon: Terminal,
-		desc: "Multimodal LLM playground",
+		desc: "Try models and compare responses",
 	},
 	{ href: "/pricing", label: "Pricing", icon: Tag, desc: "Transparent cost" },
 	{ href: "/docs", label: "Docs", icon: FileText, desc: "API reference" },
@@ -52,7 +52,7 @@ export const toolsLinks: NavItem[] = [
 		href: "/docs#endpoints",
 		label: "API reference",
 		icon: Network,
-		desc: "Every endpoint, live",
+		desc: "Requests, authentication and limits",
 	},
 	{
 		href: "/docs#integrations",
