@@ -155,12 +155,10 @@ export function DocsContent() {
 		scheduleUpdate();
 		window.addEventListener("scroll", scheduleUpdate, { passive: true });
 		window.addEventListener("resize", scheduleUpdate);
-		window.addEventListener("hashchange", scheduleUpdate);
 		return () => {
 			if (frame !== undefined) cancelAnimationFrame(frame);
 			window.removeEventListener("scroll", scheduleUpdate);
 			window.removeEventListener("resize", scheduleUpdate);
-			window.removeEventListener("hashchange", scheduleUpdate);
 		};
 	}, []);
 

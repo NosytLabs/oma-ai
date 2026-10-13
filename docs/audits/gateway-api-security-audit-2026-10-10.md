@@ -112,7 +112,7 @@ canceled preview were removed after validation.
 Direct `/docs#rate-limits` bookmarks revealed a stale Quick Start selection.
 The short heading lands at 84px, outside the previous observer's 20–30% viewport
 band. Navigation now measures the section reached at a reading line, once per
-animation frame, for scrolling, resizing and hash changes. Subsection bookmarks
+animation frame, on mount, scrolling and resizing. Subsection bookmarks
 select their parent. All three regressions failed before the change and pass
 after it. The complete frontend suite passes 848 tests in 125 files; types,
 lint and production build pass. Browser checks against the newly built local
