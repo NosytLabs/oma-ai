@@ -72,6 +72,23 @@ spend, and capacity rejections are shared upstream concurrency limits. OMA's
 retail $0.02/M prices stay fixed; upstream USD procurement cost and gross margin
 remain unknown until a cost basis is recorded. No profit figure was invented.
 
+PR #36 merged as `d8056f86836ab7331fb9fc22ef6a57c6989779b0`; its complete tree
+matches tested head `c431a17254464f472e53da4e8c3fba108b708644`. Final code review
+and Vercel preview checks completed successfully. Production website deployment
+`dpl_8bFm2bGduscfgdSZd6kigvvw31Uw` is Ready on the canonical domain. Neon API
+deployment 88 completed on Node 24 / 2GiB; all 40 environment values and both
+scheduled jobs are unchanged. Live readiness confirms healthy database/shared
+cache. Private treasury/payment/account endpoints reject anonymous access with
+no-store, and both the website proxy and native API reject cross-site OTP sends.
+The released pricing page has one H1, the correct www canonical, no 390px
+document overflow or setup instructions, and no captured console warnings/errors.
+The local browser user was signed out and this run's history fixture and unused
+login record were removed. Three obsolete canceled records and two superseded
+preview deployments were removed with active-alias protection. The current
+release, final preview, production rollback and financial records remain.
+Only main remains locally/remotely, with no open PRs. Subsequent release-receipt
+commits change documentation only.
+
 ## Payment controls, dependencies and customer guidance — October 13
 
 The crypto payment switch did not govern `/x402/verify`, and direct deposit/card
@@ -808,4 +825,4 @@ working copies with conflicting test counts and deployment receipts:
 - [Usage/treasury audit](https://github.com/NosytLabs/oma-ai/blob/3b4774e409d923c3689c0d6a60e6108e954bdf73/docs/audits/account-usage-audit-2026-10-10.md)
 - [Original platform audit](https://github.com/NosytLabs/oma-ai/blob/3b4774e409d923c3689c0d6a60e6108e954bdf73/docs/audits/audit-2026-10-10.md)
 
-PRs #30–#35 are merged. Subsequent receipt commits may change documentation only.
+PRs #30–#36 are merged. Subsequent receipt commits may change documentation only.
