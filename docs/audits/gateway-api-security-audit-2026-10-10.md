@@ -68,6 +68,40 @@ empty. Those destinations are active, so no healthy footer pages were deleted.
 The landing logo and navigation use the same existing brand component. Admin
 funding controls were exercised locally; no mainnet payment was signed.
 
+A normal-account browser chat returned `OMA_CHAT_OK` in 45.2 seconds. Its
+50 input / 127 output tokens were recorded as free website usage with zero
+charge. Copying the visible answer excludes the collapsed reasoning. The
+API-key empty state shows guidance and one creation action; mobile copy and
+navigation controls work without document overflow or captured console errors.
+
+Fresh structured tool calls succeed through OMA (11.8s) and directly through
+OpenBroker (51.8s). Both strict tool-result continuations fail: the provider
+returns reasoning/native tool markup instead of exactly `4`. Direct comparison
+isolates that behavior upstream; assertions and returned provider content are
+not weakened or silently rewritten.
+
+PR #32 merged as `9f1ba53cdc00da44bc0e1917e41dfd7de803787a`; its source tree matches
+the tested head `4a6e83595401533dedc5a66994b84c9bb88a659b` exactly. Lockfile CI,
+Vercel preview and external code review passed (no issues reported). Production
+website deployment `dpl_Fan2T5stDqHkmBWUJz8yvqJuGECx` is Ready. Neon API deployment
+86 completed on Node 24 with all 40 environment values and both jobs unchanged.
+Production readiness confirms database/shared-cache health; unauthorized admin,
+treasury and key actions are denied, malformed cookies return 401 and the Base
+RPC proxy returns chain ID `0x2105`. `/api/ready` is the health path; a probe of
+`/api/v1/ready` was an incorrect URL and returned 404.
+
+Removed the merged branch, one duplicate canceled preview, and three superseded
+October 10 lockfile log archives (run IDs 38096594691, 38096308850, 38094588269).
+Run metadata, current validation evidence, active deployments and financial
+records remain. No further production database deletion was performed.
+
+Post-release checks found settlement responses missing an explicit no-store
+policy. The follow-up applies it before session authentication, including
+denials and successful payment receipts. Both 401 and confirmed 200 regressions
+failed before the fix; the full API suite now passes 652 tests with real
+Postgres credit checks. Types, lint and API build pass. Frontend source is
+unchanged by this follow-up.
+
 ## Authentication and dashboard follow-up — October 11
 
 Malformed API-key cookie encoding reproduced a 500 on an authenticated API

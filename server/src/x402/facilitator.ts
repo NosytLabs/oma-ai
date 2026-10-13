@@ -141,6 +141,13 @@ function settlementFailure(c: Context<OmaEnv>, err: unknown) {
 
 export const x402Routes = new Hono<OmaEnv>();
 
+// Apply before session authentication, including denied requests and errors.
+// Successful responses carry receipts and account-specific credit results.
+x402Routes.use("/x402/settle", async (c, next) => {
+	c.header("Cache-Control", "no-store");
+	await next();
+});
+
 x402Routes.get("/x402/info", (c) => {
 		c.header("Cache-Control", "no-store");
 		if (!SERVER_TREASURY) {

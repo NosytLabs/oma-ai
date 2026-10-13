@@ -173,6 +173,8 @@ try {
 	await request("/user", { expected: 401 });
 	await request("/sessions", { expected: 401 });
 	await request("/v1/export/account", { expected: 401 });
+	const deniedSettlement = await request("/x402/settle", { method: "POST", expected: 401 });
+	assert.equal(deniedSettlement.response.headers.get("cache-control"), "no-store");
 	await request("/api/auth/sign-in/magic-link", {
 		method: "POST", body: { email: "invalid" }, expected: 400,
 	});

@@ -133,7 +133,9 @@ describe.skipIf(!fixture.url)("durable credit claims (Postgres)", () => {
 	it("credits already confirmed funds once while new crypto funding is paused", async () => {
 		await query("insert into site_settings (crypto_payments_enabled) values (false)");
 		try {
-			expect((await settle("original")).status).toBe(200);
+			const credited = await settle("original");
+			expect(credited.status).toBe(200);
+			expect(credited.headers.get("cache-control")).toBe("no-store");
 			settlementCache.clear();
 			expect((await settle("original")).status).toBe(200);
 			expect(await balance("original")).toBe(123.4567);
