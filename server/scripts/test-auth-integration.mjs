@@ -408,6 +408,35 @@ try {
 	assert.ok(!("prompt" in searchedLogs.items[0]));
 	await request("/v1/admin/usage/logs?cursor=invalid", { cookie: first.cookie, expected: 400 });
 	await request("/v1/admin/usage/timeline?days=999", { cookie: first.cookie, expected: 400 });
+	await pool.query(`INSERT INTO "user" (id, email, name, email_verified, created_at, updated_at)
+	 SELECT 'scale-user-' || lpad(n::text, 4, '0'), 'oma-scale-' || n || '@local.test', 'Scale User ' || n, true, now(), now()
+	 FROM generate_series(1, 1001) n`);
+	const scaleStart = performance.now();
+	const scaleIds = new Set();
+	let userCursor;
+	let userPages = 0;
+	do {
+		const params = new URLSearchParams({ limit: "50", q: "oma-scale-" });
+		if (userCursor) params.set("cursor", userCursor);
+		const page = (await request(`/v1/admin/users?${params}`, { cookie: first.cookie })).data;
+		assert.ok(page.items.length > 0 && page.items.length <= 50, "User pages must remain bounded");
+		for (const user of page.items) {
+			assert.ok(!scaleIds.has(user.id), "A cursor must not return a duplicate user");
+			assert.ok(user.email.startsWith("oma-scale-"), "Search must filter before pagination");
+			scaleIds.add(user.id);
+		}
+		userCursor = page.nextCursor;
+		assert.ok(++userPages <= 21, "Cursor pagination must terminate");
+	} while (userCursor);
+	assert.equal(scaleIds.size, 1001);
+	assert.equal(userPages, 21);
+	const searchedUser = (await request("/v1/admin/users?q=oma-scale-1001%40local.test", { cookie: first.cookie })).data;
+	assert.equal(searchedUser.items.length, 1);
+	assert.equal(searchedUser.items[0].id, "scale-user-1001");
+	assert.equal(searchedUser.nextCursor, null);
+	console.log(`Admin paging: 1,001 isolated accounts, 21 pages, ${Math.round(performance.now() - scaleStart)}ms total HTTP time (local only).`);
+	await pool.query(`DELETE FROM "user" WHERE id LIKE 'scale-user-%'`);
+	pass("admin paging/search return all 1,001 isolated accounts in bounded, unique pages");
 	await pool.query("UPDATE \"user\" SET role = 'user' WHERE id = $1", [profile.id]);
 	pass("admin analytics enforce roles, fill empty buckets, exclude refunds, retain failover and unknown costs, and paginate searchable metadata logs");
 

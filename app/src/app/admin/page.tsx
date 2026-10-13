@@ -550,6 +550,7 @@ function UsersSection() {
 				</h2>
 				<input
 					type="search"
+					aria-label="Search users by email or name"
 					value={q}
 					onChange={(e) => setQ(e.target.value)}
 					placeholder="Search email or name…"
@@ -557,10 +558,19 @@ function UsersSection() {
 				/>
 			</header>
 
+			{users.isError && (
+				<div role="alert" className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-md border border-error/30 bg-error/5 p-3 text-sm text-error">
+					<p>{items.length ? "More users could not load. Your loaded users are still shown." : "Users could not load."}</p>
+					<button type="button" onClick={() => void users.refetch()} disabled={users.isFetching} className="min-h-11 rounded-md border border-error/30 px-3 disabled:opacity-50">
+						Retry users
+					</button>
+				</div>
+			)}
+
 			{users.isLoading && items.length === 0 ? (
 				<p className="text-xs text-text-muted">Loading users…</p>
 			) : users.isError && items.length === 0 ? (
-				<p className="text-xs text-error">Failed to load users.</p>
+				null
 			) : items.length === 0 ? (
 				<p className="text-xs text-text-muted">No users found.</p>
 			) : (
@@ -648,12 +658,14 @@ function UsersSection() {
 				</div>
 			)}
 
+			{items.length > 0 && <p className="mt-3 text-xs text-text-muted" aria-live="polite">{items.length.toLocaleString()} users loaded · 50 per page</p>}
+
 			{nextCursor && (
 				<button
 					type="button"
 					onClick={() => setCursor(String(nextCursor))}
 					disabled={users.isFetching}
-					className="mt-3 inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-border bg-void px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-text-secondary hover:border-accent/40 hover:text-accent disabled:opacity-50"
+					className="mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-[var(--radius-md)] border border-border bg-void px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-text-secondary hover:border-accent/40 hover:text-accent disabled:opacity-50"
 				>
 					{users.isFetching ? "Loading…" : "Load more"}
 				</button>
