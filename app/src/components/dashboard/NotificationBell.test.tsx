@@ -48,6 +48,15 @@ describe("account deposit notifications", () => {
 		await waitFor(() => expect(emptyMessage).toBeVisible());
 		expect(screen.queryByRole("button", { name: /deposit notification/ })).not.toBeInTheDocument();
 	});
+	it("removes the previous account's open payment panel without waiting for an exit animation", async () => {
+		vi.spyOn(globalThis, "fetch").mockImplementation(async () => Response.json({ deposits: auth.id === "account-a" ? [depositRow("deposit-a")] : [] }));
+		const view = mountBell();
+		fireEvent.click(await screen.findByRole("button", { name: "Notifications (1 new)" }));
+		const privateAmount = await screen.findByText("$25.00");
+		await waitFor(() => expect(privateAmount).toBeVisible());
+		auth.id = "account-b"; view.refresh();
+		expect(screen.queryByText("$25.00")).not.toBeInTheDocument();
+	});
 
 	it("does not fetch or render a payment menu while signed out", async () => {
 		auth.id = null;

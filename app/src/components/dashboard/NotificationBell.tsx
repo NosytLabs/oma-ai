@@ -115,7 +115,7 @@ export function NotificationBell({ className = "" }: NotificationBellProps) {
 	if (!enabled) return null;
 
 	return (
-		<div ref={containerRef} className={`relative ${className}`}>
+		<div key={accountId} ref={containerRef} className={`relative ${className}`}>
 			<button
 				type="button"
 				onClick={handleToggle}

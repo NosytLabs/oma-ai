@@ -10,6 +10,8 @@ The customer notification menu reused one query cache for every account and
 converted deposit amounts from dollars to dollars a second time: $25 appeared
 as $0.25. Its cache and local read state now include the account identity;
 queries consume cancellation signals and do not run without a real session.
+The panel also resets at the account boundary so exit animations cannot retain
+the previous account's payment rows.
 Read acknowledgments also include the deposit status, preserving unread
 completion updates after acknowledging a pending payment. Completed updates use
 the confirmation timestamp so an old pending transfer can still trigger a fresh
@@ -39,7 +41,7 @@ Hash storage remains enabled. Missing provider credentials
 now produce a customer availability message; environment-variable instructions
 remain in operator documentation and diagnostics.
 
-Validation on Node 24: 858 frontend tests, 655 API tests with all Postgres suites
+Validation on Node 24: 859 frontend tests, 655 API tests with all Postgres suites
 active, 30 real HTTP/auth groups, types, lint and both production builds pass.
 The HTTP suite creates and drops a unique local database; two accounts cannot
 read each other's deposit history using forged user IDs or mixed credentials.
