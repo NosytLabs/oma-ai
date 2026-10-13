@@ -102,6 +102,25 @@ failed before the fix; the full API suite now passes 652 tests with real
 Postgres credit checks. Types, lint and API build pass. Frontend source is
 unchanged by this follow-up.
 
+PR #33 merged as `2a2ab5dd40caecc9d9ff8135091ad82a52e6c61b`, with the exact
+tested source tree retained. Neon API deployment 87 completed; all 40 environment
+values and both recovery jobs remain unchanged. The canonical website now
+returns 401 with no-store for an unauthenticated settlement; `/api/ready`
+confirms database and shared-cache health. Its merged branch and duplicate
+canceled preview were removed after validation.
+
+Direct `/docs#rate-limits` bookmarks revealed a stale Quick Start selection.
+The short heading lands at 84px, outside the previous observer's 20–30% viewport
+band. Navigation now measures the section reached at a reading line, once per
+animation frame, on mount, scrolling and resizing. Subsection bookmarks
+select their parent. All three regressions failed before the change and pass
+after it. The complete frontend suite passes 848 tests in 125 files; types,
+lint and production build pass. Browser checks against the newly built local
+site confirm Rate Limits, SDKs and the chat endpoint subsection select correctly,
+without overflow or captured console warnings/errors. The existing process on
+port 3000 retained the previous build, so these checks used a fresh process on
+port 3002. Production verification follows the reviewed release.
+
 ## Authentication and dashboard follow-up — October 11
 
 Malformed API-key cookie encoding reproduced a 500 on an authenticated API
