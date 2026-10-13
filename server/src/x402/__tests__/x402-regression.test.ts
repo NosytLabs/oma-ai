@@ -163,6 +163,11 @@ function makeV1PaymentSig(payee: string, amount: string, nonce: string, payFrom 
 
 describe('operator crypto payment controls', () => {
 	beforeEach(() => { vi.clearAllMocks(); resetChain(); });
+	it('prevents caching a session-protected settlement response', async () => {
+		const res = await new Hono().route('/', x402Routes).request('/x402/settle', { method: 'POST' });
+		expect(res.status).toBe(401);
+		expect(res.headers.get('cache-control')).toBe('no-store');
+	});
 
 	it.each([
 		['paused', [{ cryptoPaymentsEnabled: false }]],
