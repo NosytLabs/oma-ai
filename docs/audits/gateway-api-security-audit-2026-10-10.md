@@ -138,6 +138,10 @@ local admin sign-in confirms the search label, bounded paging guidance and
 loaded count. Attempted browser-only outage interception was cleared; the
 explicit error/retry behavior is established by the component regressions,
 not a claim of a captured browser error state.
+The combined branch, including the docs hash-before-scroll regression and
+cached headings, passes 851 frontend tests plus types, lint and build. The local
+admin test session was signed out; its unused normal-user seed verification and
+private link file were removed.
 
 ## Authentication and dashboard follow-up — October 11
 
