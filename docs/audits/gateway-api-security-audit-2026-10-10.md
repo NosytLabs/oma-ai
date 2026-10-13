@@ -32,7 +32,9 @@ calling the email sender. Rejecting a rapid resend inside that callback returned
 the cooldown before code creation, returning 429 and `Retry-After`. A regression
 uses the real Better Auth HTTP handler, OTP plugin and memory adapter with a
 Redis boundary fixture; the previously delivered code still signs in after
-the blocked resend. Hash storage remains enabled. Missing provider credentials
+the blocked resend. First-login origin/CSRF validation runs before consuming
+the cooldown; rejected cross-site attempts do not delay a legitimate login.
+Hash storage remains enabled. Missing provider credentials
 now produce a customer availability message; environment-variable instructions
 remain in operator documentation and diagnostics.
 
@@ -55,6 +57,10 @@ temporary scoped key was revoked (401 afterward), its session removed and
 evidence saved in
 `.artifacts/provider-audit/notification-audit-model-results-2026-10-13.json`.
 This is a transport/billing success, not a clean model-quality pass.
+A direct OpenBroker request reproduced the extra reasoning (HTTP 200, 5.0s,
+the same 49 input / 150 output tokens), isolating the observed response issue
+upstream. Direct evidence is
+`.artifacts/provider-audit/notification-audit-direct-model-2026-10-13.json`.
 
 Live Firecrawl retrieval of the [OpenBroker FAQ](https://openbroker.gonka.gg/docs/faq)
 and [pricing explanation](https://openbroker.gonka.gg/docs/pricing) confirms the

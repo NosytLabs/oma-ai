@@ -14,7 +14,7 @@
 	* `auth.api.getSession({ headers })`.
 	*/
 import { betterAuth } from "better-auth";
-import { createAuthMiddleware, APIError } from "better-auth/api";
+import { createAuthMiddleware, APIError, formCsrfMiddleware } from "better-auth/api";
 import { setSessionCookie } from "better-auth/cookies";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import {
@@ -390,6 +390,9 @@ export const auth = betterAuth({
 	hooks: {
 		before: createAuthMiddleware(async (ctx) => {
 			if (ctx.path !== "/email-otp/send-verification-otp" || typeof ctx.body?.email !== "string") return;
+			// Before hooks run ahead of endpoint middleware. Validate the same
+			// first-login CSRF policy before consuming an email's cooldown.
+			await formCsrfMiddleware(ctx);
 			// The OTP plugin stores a new code before invoking the email sender.
 			// Reject resends here so an undelivered code cannot replace the one
 			// already in the user's inbox. Keep hashed OTP storage enabled.

@@ -150,6 +150,7 @@ describe("per-email send cooldown (audit fix #6)", () => {
 			baseURL: "https://www.oma-ai.com",
 			secret: "isolated-otp-regression-secret-16bac4e8-294d-4733-80ff",
 			database: memoryAdapter(records),
+			advanced: { disableCSRFCheck: false, disableOriginCheck: false },
 			hooks: { before: capturedAuth.options?.hooks?.before },
 			plugins: [emailOTP({ ...otpOptions, async sendVerificationOTP(data, ctx) {
 				deliveredOTP = data.otp;
@@ -159,6 +160,13 @@ describe("per-email send cooldown (audit fix #6)", () => {
 		config.NODE_ENV = "development";
 		try {
 			const body = { email: "resend@example.org", type: "sign-in" as const };
+			const untrusted = await localAuth.handler(new Request("https://www.oma-ai.com/api/auth/email-otp/send-verification-otp", {
+				method: "POST", headers: { "Content-Type": "application/json", Origin: "https://untrusted.example" },
+				body: JSON.stringify(body),
+			}));
+			expect(untrusted.status).toBe(403);
+			expect(mockRedis.set).not.toHaveBeenCalled();
+			expect(records.verification).toHaveLength(0);
 			const send = () => localAuth.handler(new Request("https://www.oma-ai.com/api/auth/email-otp/send-verification-otp", {
 				method: "POST",
 				headers: { "Content-Type": "application/json", Origin: "https://www.oma-ai.com" },
