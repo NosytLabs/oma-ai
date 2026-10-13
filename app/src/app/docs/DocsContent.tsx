@@ -130,19 +130,34 @@ export function DocsContent() {
 	useInitialDocAnchor();
 
 	useEffect(() => {
-		const observer = new IntersectionObserver(
-			(entries) => {
-				entries.forEach((entry) => {
-					if (entry.isIntersecting) setActiveId(entry.target.id);
-				});
-			},
-			{ rootMargin: "-20% 0px -70% 0px" },
-		);
-		NAV_ITEMS.forEach((item) => {
-			const el = document.getElementById(item.id);
-			if (el) observer.observe(el);
-		});
-		return () => observer.disconnect();
+		let frame: number | undefined;
+		function updateSection() {
+			frame = undefined;
+			// Bookmarks and large scroll jumps can skip a heading's intersection
+			// band. Keep its section selected until the next heading is reached.
+			let current = NAV_ITEMS[0].id;
+			const readingLine = Math.max(96, window.innerHeight * 0.2);
+			for (const item of NAV_ITEMS) {
+				const heading = document.getElementById(item.id);
+				if (heading && heading.getBoundingClientRect().top <= readingLine) {
+					current = item.id;
+				}
+			}
+			setActiveId(current);
+		}
+		function scheduleUpdate() {
+			if (frame === undefined) frame = requestAnimationFrame(updateSection);
+		}
+		scheduleUpdate();
+		window.addEventListener("scroll", scheduleUpdate, { passive: true });
+		window.addEventListener("resize", scheduleUpdate);
+		window.addEventListener("hashchange", scheduleUpdate);
+		return () => {
+			if (frame !== undefined) cancelAnimationFrame(frame);
+			window.removeEventListener("scroll", scheduleUpdate);
+			window.removeEventListener("resize", scheduleUpdate);
+			window.removeEventListener("hashchange", scheduleUpdate);
+		};
 	}, []);
 
 	return (
