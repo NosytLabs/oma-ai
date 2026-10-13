@@ -119,7 +119,9 @@ lint and production build pass. Browser checks against the newly built local
 site confirm Rate Limits, SDKs and the chat endpoint subsection select correctly,
 without overflow or captured console warnings/errors. The existing process on
 port 3000 retained the previous build, so these checks used a fresh process on
-port 3002. Production verification follows the reviewed release.
+port 3002. Production checks after release confirm Rate Limits, SDK navigation
+and direct endpoint subsection bookmarks select correctly, with no overflow
+or captured console warnings/errors.
 
 The real HTTP/auth suite now also migrates a unique local database and creates
 1,001 isolated accounts. Admin search and cursor pagination returned all of them
@@ -142,6 +144,28 @@ The combined branch, including the docs hash-before-scroll regression and
 cached headings, passes 851 frontend tests plus types, lint and build. The local
 admin test session was signed out; its unused normal-user seed verification and
 private link file were removed.
+
+PR #34 merged as `c6e976f9176e461cab73723561017833b3a3fe1a` and PR #35 as
+`38c661b8bf86807d9950ad084f15d610f82e059f`. The latter's complete source tree
+matches tested head `3b15fca52c61fa7fe3dc19c9e0573d20f0db9a24` exactly. Both final
+external reviews report no issues. Production website deployment
+`dpl_FLvpmvYjxzKRaTugRSzfbT5iN64Q` is Ready. The latest PR #35 preview was
+intentionally canceled as superseded after merging, rather than due to a build
+error; the combined production build succeeded. Its canceled preview, the
+intermediate PR #34 production build and the ignored API-only production build
+were removed safely. Together with the earlier cleanup, five canceled records
+and three superseded CI log archives were removed. Active release/rollback
+deployments and financial records remain. The repository has no open PRs and
+only main remains locally/remotely. Full paid CI retains its existing manual
+cost-containment setting; the reported validation was run locally on Node 24.
+
+A production guest browser chat returned exactly `OMA_PUBLIC_CHAT_OK` in 19.6s
+with 95 displayed tokens. The daily allowance changed from 20 to 19; the UI
+showed free website chat. Copy contained only the final answer, with no captured
+console warnings/errors. Neon API deployment 87 remains active, with all 40
+environment values and both jobs unchanged. Production readiness confirms
+database/shared-cache health and settlement denials return 401 with no-store.
+Runtime API code did not change in the docs/admin follow-ups.
 
 ## Authentication and dashboard follow-up — October 11
 
@@ -716,4 +740,4 @@ working copies with conflicting test counts and deployment receipts:
 - [Usage/treasury audit](https://github.com/NosytLabs/oma-ai/blob/3b4774e409d923c3689c0d6a60e6108e954bdf73/docs/audits/account-usage-audit-2026-10-10.md)
 - [Original platform audit](https://github.com/NosytLabs/oma-ai/blob/3b4774e409d923c3689c0d6a60e6108e954bdf73/docs/audits/audit-2026-10-10.md)
 
-PRs #30 and #31 are merged. Subsequent receipt commits may change documentation only.
+PRs #30–#35 are merged. Subsequent receipt commits may change documentation only.
