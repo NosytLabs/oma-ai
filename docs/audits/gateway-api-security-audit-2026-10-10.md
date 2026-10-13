@@ -76,8 +76,12 @@ PR #36 merged as `d8056f86836ab7331fb9fc22ef6a57c6989779b0`; its complete tree
 matches tested head `c431a17254464f472e53da4e8c3fba108b708644`. Final code review
 and Vercel preview checks completed successfully. Production website deployment
 `dpl_8bFm2bGduscfgdSZd6kigvvw31Uw` is Ready on the canonical domain. Neon API
-deployment 88 completed on Node 24 / 2GiB; all 40 environment values and both
-scheduled jobs are unchanged. Live readiness confirms healthy database/shared
+deployment 88 completed on Node 24 / 2GiB; all 40 configured variable names and
+both scheduled jobs are unchanged. The code-only release sent no environment
+updates. Function metadata lists names, so secret values were not compared.
+An attempted deployed-Venice credential check could not obtain that secret and
+made no provider call; production Venice inference remains unverified.
+Live readiness confirms healthy database/shared
 cache. Private treasury/payment/account endpoints reject anonymous access with
 no-store, and both the website proxy and native API reject cross-site OTP sends.
 The released pricing page has one H1, the correct www canonical, no 390px
@@ -169,7 +173,7 @@ PR #32 merged as `9f1ba53cdc00da44bc0e1917e41dfd7de803787a`; its source tree mat
 the tested head `4a6e83595401533dedc5a66994b84c9bb88a659b` exactly. Lockfile CI,
 Vercel preview and external code review passed (no issues reported). Production
 website deployment `dpl_Fan2T5stDqHkmBWUJz8yvqJuGECx` is Ready. Neon API deployment
-86 completed on Node 24 with all 40 environment values and both jobs unchanged.
+86 completed on Node 24 with all 40 configured variable names and both jobs unchanged.
 Production readiness confirms database/shared-cache health; unauthorized admin,
 treasury and key actions are denied, malformed cookies return 401 and the Base
 RPC proxy returns chain ID `0x2105`. `/api/ready` is the health path; a probe of
@@ -188,8 +192,8 @@ Postgres credit checks. Types, lint and API build pass. Frontend source is
 unchanged by this follow-up.
 
 PR #33 merged as `2a2ab5dd40caecc9d9ff8135091ad82a52e6c61b`, with the exact
-tested source tree retained. Neon API deployment 87 completed; all 40 environment
-values and both recovery jobs remain unchanged. The canonical website now
+tested source tree retained. Neon API deployment 87 completed; all 40 configured
+variable names and both recovery jobs remain unchanged. The canonical website now
 returns 401 with no-store for an unauthenticated settlement; `/api/ready`
 confirms database and shared-cache health. Its merged branch and duplicate
 canceled preview were removed after validation.
@@ -248,7 +252,7 @@ A production guest browser chat returned exactly `OMA_PUBLIC_CHAT_OK` in 19.6s
 with 95 displayed tokens. The daily allowance changed from 20 to 19; the UI
 showed free website chat. Copy contained only the final answer, with no captured
 console warnings/errors. Neon API deployment 87 remains active, with all 40
-environment values and both jobs unchanged. Production readiness confirms
+configured variable names and both jobs unchanged. Production readiness confirms
 database/shared-cache health and settlement denials return 401 with no-store.
 Runtime API code did not change in the docs/admin follow-ups.
 
@@ -310,7 +314,7 @@ removed; only `main` remains locally and remotely.
 | Vercel website | `dpl_wox96KXHLR6TYpRLnG5cafGcUBzg` | READY; canonical host serves the merged SHA |
 | Neon API | `omaapi` 85 | Current/active, completed; Node 24, 2048 MiB |
 
-The code-only API release preserved all 40 environment values and both recovery
+The code-only API release sent no environment updates and preserved both recovery
 job IDs/configurations. Post-release native and same-origin readiness reported
 healthy Postgres/Redis. The first native malformed-cookie probe returned 500
 during rollout; subsequent native and canonical probes returned 401. The live
@@ -358,7 +362,7 @@ the development-only patched braces advisory remains as described below.
 | Vercel website | `2f029d4f6642df2bed0c66419dab507654e12315` | `dpl_6sC16oBA3iDVUY6v7Y4NJvjcninA` | READY; canonical `www.oma-ai.com` matched |
 | Neon API | same tested main tree | `omaapi` 84 | Current/active, completed; Node 24, 2048 MiB |
 
-All 40 API environment values matched the pre-release snapshot. The two
+All 40 configured API variable names matched the pre-release snapshot. The two
 enabled recovery jobs retained their IDs, paths, versions and every-minute
 schedules. Native and same-origin readiness returned 200 with healthy Postgres
 and Redis. Anonymous keys, usage export, admin site settings and admin usage
@@ -516,7 +520,7 @@ successful mainnet purchase or working Venice/mobile pairing credentials.
 | Vercel website | `8501209d01f4ada54082d91f77f2bb288dfa9879` | `dpl_5esiZKAzRbnvk7bhoVtQ5mAzeaW7` | READY; canonical `www.oma-ai.com` matched |
 | Neon API | `fb4bebcc65c4f64f928630149be41867c21475aa` | `omaapi` 83 | Current/active, completed; Node 24, 2048 MiB |
 
-All 40 API environment values match the pre-release snapshot. Both original
+All 40 configured API variable names match the pre-release snapshot. Both original
 every-minute recovery jobs remain enabled with the same trigger IDs and paths.
 The later website copy/bookmark changes did not change or redeploy the API.
 Production migration 0005 matches SHA-256
@@ -723,7 +727,7 @@ Screenshots are under `.screenshots/cleanup-2026-10-11/`.
 | Vercel website | `57dee4a6688bb1ca3e357391c5aaab39d23661fa` | `dpl_9VRLXdP1Xxj4YbYJkMJ1W65RnAai` | READY; canonical `www.oma-ai.com` matched |
 | Neon API | `cc3d2a088c9a5b6229caeeec82787dee83f1d8a8` | `omaapi` 81 | Current/active, completed; Node 24, 2048 MiB |
 
-All 40 API environment values match the pre-release snapshot. Both enabled
+All 40 configured API variable names match the pre-release snapshot. Both enabled
 every-minute recovery jobs retained their configuration. The navigation-only
 website follow-up did not redeploy the API.
 Native and same-origin `/ready` returned 200 with healthy Postgres and Redis.
