@@ -23,8 +23,7 @@ import { useUsageExport } from "./_hooks/useUsageExport";
 import {
 	DEMO_API_KEYS,
 	DEMO_BALANCE,
-	DEMO_BATCHES,
-	DEMO_TRANSACTIONS,
+	buildDemoTransactions,
 	buildDemoUsage,
 } from "./_lib/demo-data";
 
@@ -92,12 +91,12 @@ function DashboardPageInner() {
 		() => (isDemoView ? buildDemoUsage() : []),
 		[isDemoView],
 	);
+	const demoTransactions = useMemo(() => buildDemoTransactions(demoUsage), [demoUsage]);
 	const balance = isDemoView ? DEMO_BALANCE : live.balance;
 	const apiKeys = isDemoView ? DEMO_API_KEYS : live.apiKeys;
 	const usage = isDemoView ? demoUsage : live.usage;
-	const creditBatches = isDemoView ? DEMO_BATCHES : live.creditBatches;
 	const models = isDemoView ? [] : live.models;
-	const transactions = isDemoView ? DEMO_TRANSACTIONS : live.transactions;
+	const transactions = isDemoView ? demoTransactions : live.transactions;
 	const loading = isDemoView ? false : live.loading;
 	const error = isDemoView ? null : live.error;
 	const backendUnavailable = isDemoView ? false : live.backendUnavailable;
@@ -327,7 +326,6 @@ function DashboardPageInner() {
 						apiKeys={apiKeys}
 						usage={isDemoView ? filteredUsage : usage}
 						hasAnyUsage={isDemoView ? usage.length > 0 : (live.summary?.lifetimeRequests ?? 0) > 0}
-						creditBatches={creditBatches}
 						transactions={transactions}
 						isDemo={isDemoView}
 						loading={loading}

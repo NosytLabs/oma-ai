@@ -116,14 +116,6 @@ export interface UsageSummary {
 	timeline: Array<{ date: string; requests: number; billed_cents: string }>;
 }
 
-export interface CreditBatch {
-	id: string;
-	amountCents: string;
-	remainingCents: string;
-	expiresAt: string;
-	paymentMethod: string | null;
-}
-
 // ─── Models ───────────────────────────────────────────────────────────────────
 
 export interface Model {

@@ -6,7 +6,7 @@
 	*/
 import { request } from "./client.js";
 import { balance, models, usage } from "./resources.js";
-import { credits, creditHistory } from "./credits.js";
+import { creditHistory } from "./credits.js";
 import { deposit } from "./deposit.js";
 import { health } from "./inference.js";
 import { auth } from "./auth.js";
@@ -83,6 +83,5 @@ export const api = {
 	deposit,
 	healthPing: health.ping,
 	creditHistory,
-	credits,
 	exportData,
 };

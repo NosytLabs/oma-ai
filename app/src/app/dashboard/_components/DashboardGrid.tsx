@@ -20,7 +20,6 @@ import type {
 	ApiKeyWithSecret,
 	ApiKeyCreateOptions,
 	BalanceResponse,
-	CreditBatch,
 	CreditTransaction,
 	UsageRecord,
 	UsageSummary,
@@ -162,7 +161,6 @@ interface DashboardGridProps {
 	summary?: UsageSummary | null;
 	hasMoreUsage?: boolean;
 	loadingMoreUsage?: boolean;
-	creditBatches: CreditBatch[];
 	transactions: CreditTransaction[];
 	loading: boolean;
 	error: Error | null;
@@ -236,7 +234,6 @@ export function DashboardGrid(props: DashboardGridProps) {
 		summary,
 		hasMoreUsage = false,
 		loadingMoreUsage = false,
-		creditBatches,
 		transactions,
 		loading,
 		error,
@@ -325,7 +322,6 @@ export function DashboardGrid(props: DashboardGridProps) {
 									loading={loading}
 									recentUsage={usage}
 									spendTrend={summary?.timeline.map(p => toDollars(p.billed_cents))}
-									creditBatches={creditBatches}
 								/>
 							</WidgetErrorBoundary>
 							<WidgetErrorBoundary title="Today's stats">

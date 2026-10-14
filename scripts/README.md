@@ -1,13 +1,14 @@
 # Scripts
 
-Tooling for local development and operations.
+Local development and browser audit helpers. Production release procedures live
+in [Deployment](../docs/DEPLOYMENT.md); account and API test tools live in
+[Account tooling](../server/scripts/README.md).
 
 ## Layout
 
 | Directory | Purpose |
 |-----------|---------|
 | `dev/` | Day-to-day local development |
-| `ops/` | Production environment helper scripts |
 
 ## Dev
 
@@ -16,13 +17,6 @@ Tooling for local development and operations.
 ./scripts/dev/local-db-up.sh        # local Postgres 16
 ./scripts/dev/start-chrome-debug.sh # Chrome CDP for browser harness
 ./scripts/dev/screenshot-audit.mjs  # full-page Playwright screenshots for visual review
-```
-
-## Ops
-
-```bash
-./scripts/ops/start-prod.sh                   # docker compose prod up (or down|logs)
-./scripts/ops/check-launch-env.sh             # preflight: verify required prod env vars are set
 ```
 
 ## Root monorepo

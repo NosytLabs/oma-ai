@@ -79,7 +79,7 @@ paid models. [Account tooling](server/scripts/README.md) documents guarded local
 fixtures, cleanup and opt-in live inference tests.
 
 Production dependency auditing is separate from the full development audit.
-[The consolidated audit](docs/audits/gateway-api-security-audit-2026-10-10.md)
+[The consolidated audit](docs/AUDIT.md)
 records validation, compatibility holds and remaining limitations.
 
 ## Repository
@@ -92,7 +92,7 @@ records validation, compatibility holds and remaining limitations.
 | `server/src/inference/` | Routing, providers and shared model catalog |
 | `server/src/db/` | Ledger/schema and migrations |
 | `server/scripts/` | Guarded account tests and API deployment |
-| `scripts/` | Development and self-host helpers |
+| `scripts/` | Local development and browser audit helpers |
 | `docs/` | Maintained references and consolidated audit evidence |
 | `patches/` | Persistent dependency mitigations |
 
@@ -106,7 +106,6 @@ Vercel hosts the frontend; a Neon Function hosts the API and Neon Postgres
 stores the ledger. Deploy both services when both change.
 [Deployment](docs/DEPLOYMENT.md) contains exact targets and release procedures;
 [health checks](docs/deployment-health.md) explain verification.
-The Docker/Coolify path is an optional self-host route, unused in production.
 
 The canonical host is `www.oma-ai.com`; the apex redirects to it. Customer
 APIs are under `https://www.oma-ai.com/api`. There is no `api.oma-ai.com`.

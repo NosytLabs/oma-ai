@@ -10,10 +10,8 @@
 /server/src/auth/          @NosytLabs/oma-ai-maintainers
 /server/src/middleware/    @NosytLabs/oma-ai-maintainers
 /.github/workflows/        @NosytLabs/oma-ai-maintainers
-/app/Dockerfile            @NosytLabs/oma-ai-maintainers
-/server/Dockerfile         @NosytLabs/oma-ai-maintainers
-/docker-compose.yml        @NosytLabs/oma-ai-maintainers
-/docker-compose.prod.yml   @NosytLabs/oma-ai-maintainers
+/server/neon.ts            @NosytLabs/oma-ai-maintainers
+/server/scripts/deploy-neon.sh @NosytLabs/oma-ai-maintainers
 /SECURITY.md               @NosytLabs/oma-ai-maintainers
 /.gitleaks.toml            @NosytLabs/oma-ai-maintainers
 

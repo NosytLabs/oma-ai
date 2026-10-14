@@ -10,10 +10,10 @@
 import type {
 	ApiKey,
 	BalanceResponse,
-	CreditBatch,
 	CreditTransaction,
 	UsageRecord,
 } from "@/lib/api";
+import { MODELS as CATALOG } from "@/lib/models-data";
 
 function daysAgo(n: number, hour = 12): string {
 	const d = new Date();
@@ -22,14 +22,13 @@ function daysAgo(n: number, hour = 12): string {
 	return d.toISOString();
 }
 
-// Curated mix: one frontier (Venice), one premium (OMA-AI), one budget
-// (Venice) — gives the donut chart three distinct slices at different
-// price points so visitors see the catalog tier spread at a glance.
-const MODELS = [
-	{ model: "claude-opus-5", provider: "Venice" },
-	{ model: "deepseek-v4-flash-0731-openbroker", provider: "OMA-AI" },
-	{ model: "deepseek-v4-flash-0731", provider: "Venice" },
-] as const;
+// Sample charges use the shared catalog, without inventing provider invoices.
+const MODELS = ["claude-opus-5", "minimax-m2-7", "deepseek-v4-flash-0731"]
+	.map(id => {
+		const model = CATALOG.find(entry => entry.id === id);
+		if (!model) throw new Error(`Missing dashboard demo model: ${id}`);
+		return model;
+	});
 
 /** Synthetic usage spread across the last 14 days so range filters still chart. */
 export function buildDemoUsage(): UsageRecord[] {
@@ -39,21 +38,22 @@ export function buildDemoUsage(): UsageRecord[] {
 		for (let i = 0; i < calls; i++) {
 			const m = MODELS[(day + i) % MODELS.length];
 			const prompt = 180 + day * 12 + i * 40;
-			const completion = 90 + i * 25;
-			const cost = (0.08 + day * 0.01 + i * 0.02).toFixed(2);
-			const markup = (Number(cost) * 0.15).toFixed(2);
-			const total = (Number(cost) + Number(markup)).toFixed(2);
 			const isError = day === 2 && i === 0;
+			const completion = isError ? 0 : 90 + i * 25;
+			const total = isError ? "0" : ((prompt * m.inputPricePer1M
+				+ completion * m.outputPricePer1M) / 10_000).toFixed(8);
 			rows.push({
 				id: `demo-usage-${day}-${i}`,
 				requestId: `req_demo_${day}_${i}`,
 				apiKeyId: i % 3 === 0 ? null : "demo-key-1",
-				model: m.model,
+				model: m.id,
 				provider: m.provider,
 				promptTokens: prompt,
 				completionTokens: completion,
-				costCents: cost,
-				markupCents: markup,
+				// Cost split is omitted from the read-only customer demo. These
+				// fields satisfy its usage shape; totalCents drives every display.
+				costCents: "0",
+				markupCents: "0",
 				totalCents: total,
 				latencyMs: isError ? null : 420 + day * 15 + i * 30,
 				status: isError ? "error" : "completed",
@@ -66,8 +66,8 @@ export function buildDemoUsage(): UsageRecord[] {
 
 export const DEMO_BALANCE: BalanceResponse = {
 	balanceCents: "1284.50",
-	totalDepositedCents: "5000",
-	// Closes the ledger: card $50.00 + USDC batch $25.00 − used = balance.
+	// The aggregate ledger includes card $50.00 + USDC $25.00.
+	totalDepositedCents: "7500",
 	totalUsedCents: "6215.50",
 	lastActivityAt: daysAgo(0, 10),
 };
@@ -89,33 +89,18 @@ export const DEMO_API_KEYS: ApiKey[] = [
 	},
 ];
 
-export const DEMO_BATCHES: CreditBatch[] = [
-	{
-		id: "demo-batch-1",
-		amountCents: "2500",
-		remainingCents: "1284.50",
-		// Credits do not expire while the account is active — keep demo far future.
-		expiresAt: daysAgo(-3650),
-		paymentMethod: "usdc",
-	},
-];
-
-export const DEMO_TRANSACTIONS: CreditTransaction[] = [
-	{
-		id: "demo-tx-1",
-		type: "deposit",
-		amountCents: 1000,
-		creditsIssued: 1000,
-		status: "confirmed",
-		createdAt: daysAgo(3),
-		txHash: "0xdemo0000000000000000000000000000000000000000000000000000000001",
-	},
-	{
-		id: "demo-tx-2",
-		type: "usage",
-		amountCents: -42,
-		status: "completed",
-		createdAt: daysAgo(0, 9),
-		model: "deepseek-v4-flash-0731-openbroker",
-	},
-];
+export function buildDemoTransactions(usage: UsageRecord[]): CreditTransaction[] {
+	const latest = usage.filter(row => row.status === "completed")
+		.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))[0];
+	const transactions: CreditTransaction[] = [
+		{ id: "demo-deposit-card", type: "deposit", amountCents: 5000,
+			creditsIssued: 5000, status: "completed", createdAt: daysAgo(12) },
+		{ id: "demo-deposit-usdc", type: "deposit", amountCents: 2500,
+			creditsIssued: 2500, status: "completed", createdAt: daysAgo(3) },
+	];
+	if (latest) transactions.push({
+		id: latest.id, type: "usage", amountCents: -Number(latest.totalCents),
+		status: latest.status, createdAt: latest.createdAt, model: latest.model,
+	});
+	return transactions;
+}

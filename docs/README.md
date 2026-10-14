@@ -11,7 +11,7 @@ Maintained references:
 
 Evidence:
 
-- [Consolidated gateway and account audit](audits/gateway-api-security-audit-2026-10-10.md): fixes, validation, release receipts and open limitations. Links preserve the earlier full reports in Git history.
+- [Gateway and account audit](AUDIT.md): current validation, release receipts and open limitations, with earlier reports preserved in Git history.
 - [Approved database cleanup](audits/database-cleanup-2026-10-10.md): the exact authorization, deleted expired records and preserved accounts.
 
 Audit receipts describe observations at the recorded time; they do not replace

@@ -60,8 +60,6 @@ export function useDashboardData({ isAuthenticated, userId, timeRange = "7d", an
 		apiKeys: enabled ? keysQuery.data?.keys ?? [] : [],
 		usage,
 		summary,
-		// Legacy batch storage is not a funding source; the balance ledger is authoritative.
-		creditBatches: [],
 		models: enabled ? modelsQuery.data?.data ?? [] : [],
 		transactions: enabled ? transactionsQuery.data?.transactions ?? [] : [],
 		loading: enabled && (balanceQuery.loading || keysQuery.isLoading || (analytics && (summaryQuery.isLoading ||
