@@ -4,10 +4,10 @@ Canonical deployment facts for OMA-AI. Other docs link here rather than
 restating them — this file is the single source of truth so a deploy
 instruction can't drift between documents.
 
-Production topology was verified on 2026-10-10. See
+Production topology was verified on 2026-10-13. See
 [deployment verification](deployment-health.md) for release checks and failure diagnosis.
 
-The [gateway API and authentication audit](audits/gateway-api-security-audit-2026-10-10.md)
+The [gateway API and authentication audit](AUDIT.md)
 records the release receipt and remaining limitations. Deployment targets below
 describe the platform topology; historical audit receipts retain their original
 deployment IDs.
@@ -174,13 +174,6 @@ curl -fsS https://www.oma-ai.com/api/health
 # expected: no result
 dig +short api.oma-ai.com A
 ```
-
-## Self-hosting
-
-`deploy/coolify/` is an **unused** self-host reference, not the production
-path. The verified production frontend is the Vercel project. See
-[`deploy/coolify/README.md`](../deploy/coolify/README.md) — and do not
-repoint working `www` records at Coolify as routine cleanup.
 
 ## Related
 

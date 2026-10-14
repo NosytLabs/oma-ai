@@ -5,7 +5,7 @@ import { memo } from "react";
 import { Coins } from "lucide-react";
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
 import { Sparkline } from "@/components/ui/Sparkline";
-import type { BalanceResponse, CreditBatch, UsageRecord } from "@/lib/api";
+import type { BalanceResponse, UsageRecord } from "@/lib/api";
 import { toDollars } from "@/lib/utils";
 import { usageBilledDollars } from "@/lib/dashboard-aggregate";
 import { DashboardCard } from "./DashboardCard";
@@ -16,8 +16,6 @@ interface CreditBalanceCardProps {
 	/** Last 7 days of usage, oldest → newest. Drives the inline sparkline. */
 	recentUsage?: UsageRecord[];
 	spendTrend?: number[];
-	/** Legacy compatibility only; the aggregate ledger includes every credit grant. */
-	creditBatches?: CreditBatch[];
 }
 
 function CreditBalanceCardComponent({

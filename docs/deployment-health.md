@@ -72,12 +72,19 @@ workflow run records:
 gh api --method DELETE repos/NosytLabs/oma-ai/actions/runs/RUN_ID/logs
 ```
 
-Inspect each Vercel candidate's project, state and aliases first. Remove only
-obsolete canceled/failed builds by explicit ID, with alias protection:
+Inspect each Vercel candidate's project, state and aliases first. Keep the live
+production deployment, the latest tested preview and at least two production
+rollback candidates. Remove obsolete canceled/failed builds and superseded
+deployments by explicit ID, with alias protection:
 
 ```bash
 vercel remove DEPLOYMENT_ID --safe --yes --scope nosyt
 ```
+
+An old branch preview may still have its generated branch alias. Remove that
+alias only after confirming the branch is merged/closed and the alias is not a
+customer domain, then repeat the protected removal. Never remove `www`, the
+apex, or the active project/production aliases during cleanup.
 
 Keep ready production deployments for rollback and retain payment/recovery
 records. Never pass a project name to `vercel remove` for routine log cleanup.

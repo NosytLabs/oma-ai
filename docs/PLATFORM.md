@@ -306,7 +306,7 @@ The three product IDs must point to the one-time Hobby, Builder, and Scale credi
 
 ### Optional service configuration
 
-- `FREE_SIGNUP_CENTS`: new-account trial credit amount; `0` disables it. The tracked .env.example ships `100`; set `0` to disable.
+- `FREE_SIGNUP_CENTS`: new-account trial credit amount; `0` disables it. The tracked `server/.env.example` ships `100`; set `0` to disable.
 - `DEFAULT_KEY_EXPIRY_DAYS`: API-key lifetime; `0` means keys do not expire by default.
 - `MODELS_CONFIG_PATH` and `MODEL_OVERRIDES_PATH`: optional server catalog and runtime override files.
 - `OTEL_EXPORTER_OTLP_ENDPOINT` and `OTEL_SERVICE_NAME`: optional observability settings.

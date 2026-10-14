@@ -30,26 +30,3 @@ export const creditHistory = {
 		);
 	},
 };
-
-/**
-	* Credits namespace — credit batches (active/expired) and balance helpers.
-	* Re-exported as `api.credits.*` via the composite `api` object in
-	* `./index.ts` (e.g. `api.credits.getBatches()`).
-	*/
-export const credits = {
-	getBatches() {
-		// Batches live on GET /v1/credits/balance (there is no /v1/credits/batches).
-		return request<{
-			activeBatches?: Array<{
-				id: string;
-				amountCents: string;
-				remainingCents: string;
-				expiresAt: string;
-				paymentMethod: string | null;
-			}>;
-		}>("/v1/credits/balance").then((data) => ({
-			activeBatches: data.activeBatches ?? [],
-		}));
-	},
-
-};

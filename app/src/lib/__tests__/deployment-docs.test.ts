@@ -33,7 +33,6 @@ const DEPLOY_DOCS = [
 	"docs/PLATFORM.md",
 	"docs/settlement-runbook.md",
 	"docs/deployment-health.md",
-	"deploy/coolify/README.md",
 ] as const;
 
 /** Only these OMA hosts may appear in a `https://` URL in deploy docs. */
@@ -47,7 +46,7 @@ function httpsUrls(doc: string): string[] {
 	return [...doc.matchAll(/https:\/\/[^\s`)"'<>]+/g)].map((m) => m[0]);
 }
 
-/** Third-party links (badge CDN, coolify.io) are legitimate; only ours are policed. */
+/** Third-party links are legitimate; only OMA hosts are checked here. */
 function isOmaHost(host: string): boolean {
 	return host === "oma-ai.com" || host.endsWith(".oma-ai.com");
 }

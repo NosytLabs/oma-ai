@@ -51,7 +51,6 @@ export function DangerZoneSection({
 				void queryClient.invalidateQueries({ queryKey: ["usageSummary"] });
 				void queryClient.invalidateQueries({ queryKey: ["balance"] });
 				void queryClient.invalidateQueries({ queryKey: ["recentTransactions"] });
-				void queryClient.invalidateQueries({ queryKey: ["creditBatches"] });
 				setShowClearConfirm(false);
 			} else {
 				toast.error("Failed to clear history");
