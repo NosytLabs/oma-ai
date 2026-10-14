@@ -1,4 +1,5 @@
 import { CheckCircle2, Zap } from "lucide-react";
+import Link from "next/link";
 import { AnimatedSection, CodeBlock, SectionHeading } from "./shared";
 
 const flowCode = `# Sign in via SIWE with the wallet that owns the USDC first.
@@ -122,6 +123,13 @@ export function X402Section() {
           A 409 payment_already_credited or payment_reconciliation_required response is
           not retryable. Contact support with the transaction hash if reconciliation
           is required. Do not authorize a replacement payment to resolve that conflict.
+        </p>
+        <p className="mt-2 text-sm text-text-muted">
+          Background on the protocol status code lives in the{" "}
+          <Link href="/glossary/http-status-402" className="text-accent underline underline-offset-2 hover:text-accent/80">HTTP 402 status code</Link>{" "}
+          glossary entry, including the x402 challenge-response lifecycle and how{" "}
+          <Link href="/glossary/eip-3009" className="text-accent underline underline-offset-2 hover:text-accent/80">EIP-3009</Link>{" "}
+          TransferWithAuthorization is used to settle the payment.
         </p>
       </div>
 

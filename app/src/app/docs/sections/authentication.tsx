@@ -96,7 +96,9 @@ func main() {
 							<code className="text-warning font-mono">oma_sk_</code> prefix.
 							Only the SHA-256 hash is stored. Keep your key secret and never
 							commit it to version control.
-							{" "}The dashboard lets you set an expiry, allowed model IDs and up to 20 IP addresses or CIDR ranges. IP restrictions use your application’s public outbound address; requests outside those ranges receive 403. Leave the IP field blank if your address changes. Revoke and replace a key to change its restrictions.
+							{" "}The dashboard lets you set an expiry, allowed model IDs and up to 20 IP addresses or CIDR ranges. IP restrictions use your application’s public outbound address; requests outside those ranges receive 403. Leave the IP field blank if your address changes. Revoke and replace a key to change its restrictions. See the{" "}
+							<Link href="/glossary/api-key" className="text-warning underline underline-offset-2 hover:text-warning/80">API key</Link>{" "}
+							glossary entry for the full format spec and storage details.
 						</p>
 					</div>
 				</div>
@@ -109,8 +111,10 @@ func main() {
 					Email Magic Link
 				</h3>
 				<p className="text-sm text-text-muted mb-4">
-					Sign in with a passwordless magic link sent to your inbox. No password to leak,
-					no password reset loops. 
+					Sign in with a passwordless{" "}
+					<Link href="/glossary/magic-link" className="text-accent underline underline-offset-2 hover:text-accent/80">magic link</Link>{" "}
+					sent to your inbox. No password to leak,
+					no password reset loops.
 				</p>
 				<div className="rounded-[var(--radius-xl)] border border-accent/20 bg-accent/5 p-4">
 					<h3 className="font-semibold text-accent text-sm mb-2">How it works</h3>
