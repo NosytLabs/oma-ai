@@ -109,7 +109,7 @@ export function ModelUsageTable({ usage, loading, summary }: ModelUsageTableProp
 					Model usage breakdown
 				</h3>
 				<p className="text-[12.5px] text-text-muted leading-relaxed">
-					No model usage data yet. Start making API calls to see breakdown.
+					No model usage in this range. Try another date range, or send a request from chat or the API.
 				</p>
 			</div>
 		);

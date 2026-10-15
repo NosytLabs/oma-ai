@@ -110,7 +110,8 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 								colSpan={7}
 								className="px-6 py-16 text-center transition-colors duration-200 ease-out hover:bg-surface/30"
 								>
-									<p className="text-[13px] text-text-secondary font-semibold">No inference calls yet.</p>
+									<p className="text-[13px] text-text-secondary font-semibold">No requests in this range.</p>
+									<p className="mt-1 text-xs text-text-muted">Try another date range, or send a request.</p>
 									<Link
 										href="/chat"
 										className="inline-block mt-3 text-[11px] font-bold uppercase tracking-widest text-accent hover:text-accent-hover transition-colors duration-200 ease-out active:scale-[0.97]"

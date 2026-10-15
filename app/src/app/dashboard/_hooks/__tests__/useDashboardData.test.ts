@@ -25,8 +25,7 @@ const summary: UsageSummary = {
 		active_models: 1, input_tokens: 2500, output_tokens: 2500, billed_cents: "0.05", avg_latency_ms: 100 },
 	models: [], providers: [], timeline: [],
 };
-function wrapper() {
-	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+function wrapper(client = new QueryClient({ defaultOptions: { queries: { retry: false } } })) {
 	return ({ children }: { children: React.ReactNode }) => React.createElement(QueryClientProvider, { client }, children);
 }
 beforeEach(() => {
@@ -91,5 +90,26 @@ describe("useDashboardData", () => {
 		vi.mocked(api.usage.summary).mockClear();
 		await act(async () => { await result.current.refresh(); });
 		expect(api.usage.summary).toHaveBeenCalled();
+	});
+	it("shares concurrent keyboard, button and polling refreshes instead of restarting requests", async () => {
+		const { result } = renderHook(() => useDashboardData({ isAuthenticated: true, userId: "a" }), { wrapper: wrapper() });
+		await waitFor(() => expect(result.current.loading).toBe(false));
+		const completions: Array<(value: UsageSummary) => void> = [];
+		vi.mocked(api.usage.summary).mockClear().mockImplementation(() => new Promise(resolve => { completions.push(resolve); }));
+		let first!: Promise<void>;
+		let second!: Promise<void>;
+		act(() => { first = result.current.refresh(); second = result.current.refresh(); });
+		const calls = vi.mocked(api.usage.summary).mock.calls.length;
+		await act(async () => { completions.forEach(finish => finish(summary)); await Promise.all([first, second]); });
+		expect(calls).toBe(1);
+	});
+	it("does not invalidate another account's private cached data during a refresh", async () => {
+		const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+		client.setQueryData(["apiKeys", "other-account"], { keys: [] });
+		const { result } = renderHook(() => useDashboardData({ isAuthenticated: true, userId: "a" }), { wrapper: wrapper(client) });
+		await waitFor(() => expect(result.current.loading).toBe(false));
+		await act(async () => { await result.current.refresh(); });
+		expect(client.getQueryState(["apiKeys", "other-account"])?.isInvalidated).toBe(false);
+		client.clear();
 	});
 });

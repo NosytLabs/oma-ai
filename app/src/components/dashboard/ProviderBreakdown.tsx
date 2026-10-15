@@ -80,7 +80,7 @@ export function ProviderBreakdown({ usage, loading, summary }: ProviderBreakdown
 				<h3 className="font-sans text-[14.5px] font-bold text-text-bright tracking-tight mb-2">
 					Provider breakdown
 				</h3>
-				<p className="text-[12.5px] text-text-muted leading-relaxed">No provider data yet.</p>
+				<p className="text-[12.5px] text-text-muted leading-relaxed">No provider usage in this range.</p>
 			</div>
 		);
 	}

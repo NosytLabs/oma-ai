@@ -21,13 +21,14 @@ import { TABS, TIME_RANGES, type TabId, type TimeRangeId } from "../_constants";
 interface DashboardHeaderProps {
 	loading: boolean;
 	modelsAvailable: number;
-	/** When true, force the "Awaiting data" line even if we've previously seen data. */
+	/** Whether account data has loaded. */
 	hasAnyData: boolean;
-	/** Increments every time the user explicitly hits RETRY/CLEAR — used to
-	 * bump the "Last updated" timestamp without depending on the data shape. */
+	/** Sample accounts never sync or poll authenticated data. */
+	isDemo?: boolean;
+	/** Increments when a refresh completes. */
 	refreshTick?: number;
 	/** Manual refresh callback. */
-	onRefresh?: () => void;
+	onRefresh?: () => void | Promise<void>;
 	/** Export callback. */
 	onExport?: () => void;
 	exporting?: boolean;
@@ -59,6 +60,7 @@ export function DashboardHeader({
 	loading,
 	modelsAvailable,
 	hasAnyData,
+	isDemo = false,
 	refreshTick,
 	onRefresh,
 	onExport,
@@ -75,64 +77,68 @@ export function DashboardHeader({
 	const [isRefreshing, setIsRefreshing] = useState(false);
 	const [autoRefreshCountdown, setAutoRefreshCountdown] = useState(120);
 
-	// Single source of truth for "is a refresh in flight" — used by both the
-	// 120s timer and the manual button. The previous implementation had two
-	// parallel `setInterval`s and a separate `isRefreshing` state, which could
-	// race: clicking Refresh at second 119 could fire the auto-poll within
-	// milliseconds, both invalidating the same query keys.
+	// The timer and manual button share both the lock and the next deadline.
 	const refreshInFlightRef = useRef(false);
+	const nextRefreshAtRef = useRef(0);
+	const canRefresh = !!onRefresh && !isDemo && activeTab !== "settings";
 
-	// Reset the countdown to 120 and stamp the time atomically.
-	const markRefreshed = useCallback(() => {
-		setLastUpdated(new Date());
+	const scheduleNextRefresh = useCallback(() => {
+		nextRefreshAtRef.current = Date.now() + POLL_INTERVAL_MS;
 		setAutoRefreshCountdown(120);
 	}, []);
+	const markRefreshed = useCallback(() => {
+		setLastUpdated(new Date());
+		scheduleNextRefresh();
+	}, [scheduleNextRefresh]);
 
 	useEffect(() => {
-		if (hasAnyData && !loading && !hasError) markRefreshed();
-	}, [hasAnyData, loading, hasError, markRefreshed]);
+		if (!isDemo && hasAnyData && !loading && !hasError) markRefreshed();
+	}, [isDemo, hasAnyData, loading, hasError, markRefreshed]);
 
 	useEffect(() => {
-		if (refreshTick && refreshTick > 0 && !hasError) markRefreshed();
-	}, [refreshTick, hasError, markRefreshed]);
+		if (!isDemo && refreshTick && refreshTick > 0 && !hasError) markRefreshed();
+	}, [isDemo, refreshTick, hasError, markRefreshed]);
+
+	const handleRefresh = useCallback(async () => {
+		if (!canRefresh || !onRefresh || loading || refreshInFlightRef.current) return;
+		refreshInFlightRef.current = true;
+		setIsRefreshing(true);
+		try {
+			await onRefresh();
+		} catch (err) {
+			log.warn("Dashboard refresh failed", err);
+		} finally {
+			refreshInFlightRef.current = false;
+			setIsRefreshing(false);
+			scheduleNextRefresh();
+		}
+	}, [canRefresh, onRefresh, loading, scheduleNextRefresh]);
 
 	// Drive the countdown from a single 1-second interval that reads the next-
 	// refresh timestamp out of a ref. This removes the "0s lingers for a full
 	// second" bug from the old `(prev) => prev - 1` math and keeps the timer
 	// and the refresh in lockstep.
 	useEffect(() => {
-		if (!onRefresh || !hasAnyData || activeTab === "settings") return;
-
-		let nextRefreshAt = Date.now() + POLL_INTERVAL_MS;
-		refreshInFlightRef.current = false;
-		setAutoRefreshCountdown(120);
+		if (!canRefresh || !hasAnyData) return;
+		scheduleNextRefresh();
 
 		const refreshIfVisible = () => {
 			if (document.visibilityState !== "visible" || refreshInFlightRef.current) return;
-			refreshInFlightRef.current = true;
-			Promise.resolve(onRefresh())
-				.catch((err) => {
-					log.warn("Auto-refresh failed", err);
-				})
-				.finally(() => {
-					nextRefreshAt = Date.now() + POLL_INTERVAL_MS;
-					refreshInFlightRef.current = false;
-					setAutoRefreshCountdown(120);
-				});
+			void handleRefresh();
 		};
 
 		const tick = setInterval(() => {
 			if (document.visibilityState !== "visible") return;
 			const remaining = Math.max(
 				0,
-				Math.round((nextRefreshAt - Date.now()) / 1000),
+				Math.ceil((nextRefreshAtRef.current - Date.now()) / 1000),
 			);
 			setAutoRefreshCountdown(remaining);
 			if (remaining === 0) refreshIfVisible();
 		}, 1000);
 		const onVisibilityChange = () => {
 			if (document.visibilityState === "visible") {
-				nextRefreshAt = Date.now();
+				nextRefreshAtRef.current = Date.now();
 				refreshIfVisible();
 			}
 		};
@@ -142,19 +148,7 @@ export function DashboardHeader({
 			clearInterval(tick);
 			document.removeEventListener("visibilitychange", onVisibilityChange);
 		};
-	}, [onRefresh, hasAnyData, activeTab]);
-
-	const handleRefresh = useCallback(async () => {
-		if (!onRefresh || refreshInFlightRef.current) return;
-		refreshInFlightRef.current = true;
-		setIsRefreshing(true);
-		try {
-			await onRefresh();
-		} finally {
-			setIsRefreshing(false);
-			refreshInFlightRef.current = false;
-		}
-	}, [onRefresh]);
+	}, [canRefresh, hasAnyData, handleRefresh, scheduleNextRefresh]);
 
 	const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
@@ -222,9 +216,9 @@ export function DashboardHeader({
 						{activeTab !== "settings" && <span className="flex items-center gap-1.5 bg-surface/50 px-2 py-0.5 rounded-[var(--radius-sm)] border border-border/50">
 							<span
 								aria-hidden="true"
-								className={`inline-block h-1.5 w-1.5 rounded-full ${hasError ? "bg-error" : loading ? "bg-warning animate-pulse" : lastUpdated ? "bg-success" : "bg-text-muted"}`}
+								className={`inline-block h-1.5 w-1.5 rounded-full ${isDemo ? "bg-accent" : hasError ? "bg-error" : loading ? "bg-warning animate-pulse" : lastUpdated ? "bg-success" : "bg-text-muted"}`}
 							/>
-							{hasError ? "SYNC FAILED" : loading
+							{isDemo ? "SAMPLE DATA" : hasError ? "SYNC FAILED" : loading
 								? "SYNCING..."
 								: lastUpdated
 									? `UPDATED ${formatTime(lastUpdated.toISOString())}`
@@ -232,10 +226,10 @@ export function DashboardHeader({
 						</span>}
 						<span
 							className="hidden items-center gap-1.5 text-text-secondary/80 md:flex bg-surface/50 px-2 py-0.5 rounded-[var(--radius-sm)] border border-border/50"
-							title={`Keyboard shortcuts: ${activeTab === "settings" ? "" : "R = refresh, "}1-${TABS.length} = switch tabs`}
+							title={`Keyboard shortcuts: ${canRefresh ? "R = refresh, " : ""}1-${TABS.length} = switch tabs`}
 						>
 							<Keyboard className="h-3 w-3" aria-hidden="true" />
-							<span>{activeTab === "settings" ? "" : "R · "}1-{TABS.length}</span>
+							<span>{canRefresh ? "R · " : ""}1-{TABS.length}</span>
 						</span>
 						{modelsAvailable > 0 && (
 							<span className="flex items-center gap-1.5 whitespace-nowrap text-text-muted/70">
@@ -246,7 +240,7 @@ export function DashboardHeader({
 								{modelsAvailable} {modelsAvailable === 1 ? "model" : "models"} available
 							</span>
 						)}
-						{activeTab !== "settings" && hasAnyData && autoRefreshCountdown > 0 && (
+						{canRefresh && hasAnyData && autoRefreshCountdown > 0 && (
 							<span className="hidden items-center gap-1.5 text-text-muted/50 sm:flex">
 								<Clock className="h-3 w-3" aria-hidden="true" />
 								NEXT IN {autoRefreshCountdown}s
@@ -265,7 +259,7 @@ export function DashboardHeader({
 								onTimeRangeChange={onTimeRangeChange}
 							/>
 						)}
-					{activeTab !== "settings" && <button
+					{canRefresh && <button
 						type="button"
 						onClick={handleRefresh}
 						disabled={isRefreshing || loading}

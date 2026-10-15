@@ -1,7 +1,7 @@
 "use client";
 
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { api, BackendUnavailableError } from "@/lib/api";
 import { useBalance } from "@/components/chat/useBalance";
 import type { TimeRangeId } from "../_constants";
@@ -17,6 +17,7 @@ interface Options {
 export function useDashboardData({ isAuthenticated, userId, timeRange = "7d", analyticsEnabled = true }: Options) {
 	const queryClient = useQueryClient();
 	const enabled = isAuthenticated && !!userId;
+	const refreshInFlight = useRef<{ userId: string; promise: Promise<void> } | null>(null);
 	const analytics = enabled && analyticsEnabled;
 	const timezone = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC", []);
 	const balanceQuery = useBalance({ enabled });
@@ -49,11 +50,19 @@ export function useDashboardData({ isAuthenticated, userId, timeRange = "7d", an
 	const errors = enabled ? [balanceQuery.error, keysQuery.error, ...(analytics ? [summaryQuery.error, usageQuery.error,
 		modelsQuery.error, transactionsQuery.error] : [])] : [];
 	const error = errors.find(e => e instanceof Error) as Error | undefined;
-	const refresh = useCallback(async () => {
-		if (!enabled) return;
-		await Promise.all(["apiKeys", "usageSummary", "usage", "models", "recentTransactions", "balance", "notifications"]
-			.map(key => queryClient.invalidateQueries({ queryKey: [key] })));
-	}, [enabled, queryClient]);
+	const refresh = useCallback(() => {
+		if (!enabled || !userId) return Promise.resolve();
+		if (refreshInFlight.current?.userId === userId) return refreshInFlight.current.promise;
+		const promise = Promise.all([
+			...["apiKeys", "usageSummary", "usage", "recentTransactions", "balance", "notifications"]
+				.map(key => queryClient.invalidateQueries({ queryKey: [key, userId] })),
+			queryClient.invalidateQueries({ queryKey: ["models"] }),
+		]).then(() => {}).finally(() => {
+			if (refreshInFlight.current?.promise === promise) refreshInFlight.current = null;
+		});
+		refreshInFlight.current = { userId, promise };
+		return promise;
+	}, [enabled, userId, queryClient]);
 
 	return {
 		balance: enabled ? balanceQuery.balance : null,
