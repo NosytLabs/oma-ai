@@ -82,6 +82,12 @@ Production dependency auditing is separate from the full development audit.
 [The consolidated audit](docs/AUDIT.md)
 records validation, compatibility holds and remaining limitations.
 
+Keep regression tests focused on observable behavior. Reuse existing coverage
+for filtering, availability and authentication instead of adding page-render
+smoke tests or source-text checks for removed features. Preserve account,
+payment and isolation checks. Generated logs and browser reports are ignored;
+keep the maintained references in `docs/` rather than new audit copies.
+
 ## Repository
 
 | Path | Purpose |

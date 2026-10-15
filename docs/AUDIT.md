@@ -9,8 +9,8 @@ in [Platform](PLATFORM.md), [Deployment](DEPLOYMENT.md),
 
 | Check | October 15 result |
 | --- | --- |
-| API | 660 tests in 79 files, including real Postgres credit/webhook tests |
-| Frontend | 883 tests in 131 files; types, lint and production build passed |
+| API | 651 tests in 77 files, including real Postgres credit/webhook tests |
+| Frontend | 875 tests in 129 files; types, lint and production build passed |
 | Real HTTP/auth | All 30 groups passed against an isolated migrated local database |
 | Dependencies | Zero known production vulnerabilities across 890 dependencies |
 | Runtime | Node 24 on both Vercel and Neon; compatible direct dependencies current |
@@ -21,6 +21,22 @@ streaming, billing, concurrent requests and admin pagination through 1,001
 fixture accounts. Provider responses in this suite are deterministic fixtures;
 they do not prove real model quality. Local tests create and drop only their
 own databases/schemas.
+
+The October 15 cleanup consolidates duplicate pricing availability checks and
+removes render-only, export-presence and removed-plugin source checks. Runtime
+rate-limit, auth, account-isolation and payment regressions remain. Four workers
+bound test resource use; real auth imports run once in setup, and initial query
+and lazy-chat waits retain their original assertions.
+
+Pricing now explains the credit exchange once, displays payment availability
+beside each method, and sends funding actions to the payment chooser rather
+than forcing USDC when card checkout is unavailable. Failed settings requests
+stop showing “Checking”. Collapsed FAQ panels leave the accessibility tree,
+and metadata no longer promises an unconditional signup bonus. The credits
+page uses payment-neutral headings. Desktop and 390px browser checks covered
+pricing alignment, FAQ disclosure and navigation to the sign-in-gated funding
+flow. No payment was executed. Sixty-one obsolete local audit scratch files
+were removed; maintained references and current release evidence are retained.
 
 ## Verified behavior
 

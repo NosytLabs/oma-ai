@@ -456,14 +456,8 @@ app.use("/api/auth/*", async (c, next) => {
 });
 app.all("/api/auth/*", (c) => auth.handler(c.req.raw));
 
-// Agent discovery is served via the frontend's `/.well-known/agent-card.json`
-// (app/src/app/.well-known/agent-card.json). A separate
-// `/.well-known/agent-configuration` forward used to target better-auth's
-// `/api/auth/agent-configuration`, but the @better-auth/agent-auth plugin was
-// intentionally removed (it required four unmigrated tables — see
-// src/__tests__/agent-auth-gating.test.ts), so that route 404s. Forwarding to
-// a nonexistent route advertises an agent-auth capability that isn't
-// provisioned, so the forward was removed.
+// Agent discovery is served by the frontend's /.well-known/agent-card.json.
+// There is no Better Auth agent-configuration route in this deployment.
 
 // OMA-specific auth-adjacent routes (CSRF, /user, /keys).
 //

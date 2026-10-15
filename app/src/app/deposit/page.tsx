@@ -225,7 +225,7 @@ function X402Info() {
 							Open chat
 						</div>
 						<div className="mt-0.5 text-[11px] text-text-muted">
-							Try the playground surface
+							Try a model in website chat
 						</div>
 					</div>
 				</a>
@@ -356,7 +356,7 @@ export default function DepositPage() {
 									}
 									reason={
 										usdc.reason ??
-										"This payment rail is not available right now."
+										"This payment method is not available right now."
 									}
 									fallback="Check the payment methods below for current availability."
 								/>
@@ -374,7 +374,7 @@ export default function DepositPage() {
 									}
 									reason={
 										card.reason ??
-										"This payment rail is not available right now."
+										"This payment method is not available right now."
 									}
 									fallback="Check the payment methods below for current availability."
 								/>

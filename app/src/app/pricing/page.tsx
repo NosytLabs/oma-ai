@@ -2,15 +2,10 @@ import type { Metadata } from "next";
 import PricingPageClient from "./_components/PricingPageClient";
 import Link from "next/link";
 
-// No model COUNT appears in this metadata, deliberately, and MODEL_COUNT is no
-// longer imported here. Availability is a live API fact: the table below marks
-// every unavailable row, so a count baked into a build-time <head> is a claim
-// that rots the moment a provider key is added, revoked or expires. Measured
-// live: 18 of 20 models were dark while this still advertised "20 curated".
-// The body keeps reporting the real number; the metadata describes the page.
+// Counts, availability and signup offers are live facts, not build-time claims.
 const TITLE = "Pricing — AI models, USDC on Base";
 const DESCRIPTION =
-	"Transparent per-token pricing behind one OpenAI-compatible endpoint. Pay in USDC on Base; free signup credits included.";
+	"Compare per-token model prices for OMA’s OpenAI-compatible API. Use prepaid credits, pay with USDC on Base, and track usage with no monthly fee.";
 
 export const metadata: Metadata = {
 	title: TITLE,
@@ -20,8 +15,6 @@ export const metadata: Metadata = {
 		locale: "en_US",
 		title: TITLE,
 		description: DESCRIPTION,
-		// Every other page supplies this; without it, links shared to
-		// Slack/X/Discord render with no preview card.
 		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA pricing" }],
 		type: "website",
 		url: "/pricing",
