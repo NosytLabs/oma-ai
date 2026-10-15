@@ -64,6 +64,12 @@ Website chat has a separate free daily allowance for eligible models. API-key re
 
 Polar is the merchant of record for card checkout. Card details are entered on Polar-hosted checkout and do not pass through OMA. A successful paid order triggers a signed Polar webhook, and OMA credits the purchased pack to the internal ledger.
 
+Webhook verification uses the versioned Polar SDK, including legacy UTF-8 and
+Standard Webhooks signing keys, multiple signatures, and timestamp validation.
+An atomic event claim runs in the same Postgres transaction as the grant or
+refund. Concurrent deliveries change the balance once; failed transactions
+leave the event retryable. This does not change the aggregate refund policy.
+
 Card checkout is available only when the Polar configuration is complete and the card rail is enabled. If it is unavailable, `POST /api/v1/checkout` returns an error and the deposit UI reports the live rail status.
 
 | Endpoint | Auth | Purpose |

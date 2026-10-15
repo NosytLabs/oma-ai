@@ -1,6 +1,7 @@
 "use client";
 
-import { AlertTriangle, X } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
+import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
@@ -703,12 +704,12 @@ function ShellContent() {
 
 	return (
 		<div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-void font-sans text-text">
-			<h1 className="sr-only">OMA Playground — text and multimodal LLM chat</h1>
+			<h1 className="sr-only">OMA Playground — AI chat with interactive responses</h1>
 			<MemoizedChatToolbar
 				model={model}
 				setModel={setModel}
 				paramsOpen={paramsOpen}
-				setParamsOpen={setParamsOpen}
+				setParamsOpen={(open) => { setParamsOpen(open); if (open) setHistoryOpen(false); }}
 				searching={searching}
 				isAuthenticated={isAuthenticated}
 				balance={balance}
@@ -893,8 +894,8 @@ function ShellContent() {
 				/>
 			</div>
 
-			{historyOpen && (
-				<div className="fixed inset-0 z-50 lg:hidden">
+			{historyOpen && createPortal(
+				<div className="fixed inset-x-0 top-0 bottom-[var(--consent-banner-height,0px)] z-[80] lg:hidden">
 					<button
 						type="button"
 						aria-label="Close conversation history"
@@ -909,17 +910,9 @@ function ShellContent() {
 						aria-label="Conversation history"
 						className="relative h-full w-[min(88vw,22rem)] shadow-2xl shadow-black/60"
 					>
-						<button
-							type="button"
-							onClick={() => setHistoryOpen(false)}
-							aria-label="Close conversation history"
-							className="absolute right-2 top-2 z-10 rounded-md p-2 text-text-muted hover:bg-white/5 hover:text-text"
-						>
-							<X className="h-4 w-4" aria-hidden="true" />
-						</button>
-						<ConversationHistory {...historyPanelProps} autoFocusSearch />
+						<ConversationHistory {...historyPanelProps} autoFocusSearch onClose={() => setHistoryOpen(false)} />
 					</div>
-				</div>
+				</div>, document.body,
 			)}
 
 			<LazyKeyboardShortcutsModal
