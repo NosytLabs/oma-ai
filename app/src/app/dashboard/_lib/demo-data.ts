@@ -19,19 +19,17 @@ function daysAgo(n: number, hour = 12): string {
 	const d = new Date();
 	d.setDate(d.getDate() - n);
 	d.setHours(hour, (n * 7) % 60, 0, 0);
-	return d.toISOString();
+	return new Date(Math.min(d.getTime(), Date.now())).toISOString();
 }
 
 // Sample charges use the shared catalog, without inventing provider invoices.
 const MODELS = ["claude-opus-5", "minimax-m2-7", "deepseek-v4-flash-0731"]
-	.map(id => {
-		const model = CATALOG.find(entry => entry.id === id);
-		if (!model) throw new Error(`Missing dashboard demo model: ${id}`);
-		return model;
-	});
+	.map(id => CATALOG.find(entry => entry.id === id))
+	.filter(model => model !== undefined);
 
 /** Synthetic usage spread across the last 14 days so range filters still chart. */
 export function buildDemoUsage(): UsageRecord[] {
+	if (MODELS.length === 0) return [];
 	const rows: UsageRecord[] = [];
 	for (let day = 0; day < 14; day++) {
 		const calls = 4 + (day % 5);
@@ -40,8 +38,9 @@ export function buildDemoUsage(): UsageRecord[] {
 			const prompt = 180 + day * 12 + i * 40;
 			const isError = day === 2 && i === 0;
 			const completion = isError ? 0 : 90 + i * 25;
+			// Catalog rates are USD per million tokens; records store fractional cents.
 			const total = isError ? "0" : ((prompt * m.inputPricePer1M
-				+ completion * m.outputPricePer1M) / 10_000).toFixed(8);
+				+ completion * m.outputPricePer1M) / 1_000_000 * 100).toFixed(8);
 			rows.push({
 				id: `demo-usage-${day}-${i}`,
 				requestId: `req_demo_${day}_${i}`,
@@ -68,6 +67,7 @@ export const DEMO_BALANCE: BalanceResponse = {
 	balanceCents: "1284.50",
 	// The aggregate ledger includes card $50.00 + USDC $25.00.
 	totalDepositedCents: "7500",
+	// Lifetime usage includes requests before the tour's 14-day history window.
 	totalUsedCents: "6215.50",
 	lastActivityAt: daysAgo(0, 10),
 };

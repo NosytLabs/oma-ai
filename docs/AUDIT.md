@@ -181,6 +181,23 @@ Both test identities and the operator key were preserved. The
 this repository cleanup does not authorize deleting production users or money
 records.
 
+## October 15 follow-up
+
+October 15 follow-up: retired sample model IDs are skipped, and an empty sample
+catalog produces an empty history instead of crashing the dashboard module.
+Demo timestamps never exceed the current time; chart windows now exclude future
+requests just as the last-24-hours card does. Rolling windows use elapsed time,
+so spring/fall clock changes cannot shift chart totals by an hour. The USD-per-million to fractional
+cents conversion has an explicit example. The duplicate root environment file
+was removed again after it was reintroduced: it pointed the auth/API proxy at
+its own public website and omitted server configuration. Dedicated environment
+templates and pricing-override documentation now describe the actual loader,
+five-second billing cache and operator-only setup diagnostics.
+
+Validation passed on Node 24: 871 frontend tests, 655 API tests with the Postgres
+suites enabled, types, lint and both builds. The exact 24-hour boundary now has
+a fixed-clock regression, replacing an ambiguous wall-clock test fixture.
+
 ## Historical evidence
 
 - [Full October 10–13 gateway, account and release report](https://github.com/NosytLabs/oma-ai/blob/799ffb258828f44b01f92f4d9763c1222543599a/docs/audits/gateway-api-security-audit-2026-10-10.md)
