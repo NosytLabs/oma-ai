@@ -9,6 +9,7 @@ import {
 	Plus,
 	Search,
 	Trash2,
+	X,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { ChatPersistenceStatus } from "@/app/chat/_hooks/useConversationHistory";
@@ -26,6 +27,7 @@ export interface ConversationHistoryProps {
 	onTogglePinned: (threadId: string) => void;
 	onDelete: (threadId: string) => void;
 	onExport: (threadId: string) => void;
+	onClose?: () => void;
 	autoFocusSearch?: boolean;
 	className?: string;
 }
@@ -64,6 +66,7 @@ export function ConversationHistory({
 	onTogglePinned,
 	onDelete,
 	onExport,
+	onClose,
 	autoFocusSearch = false,
 	className = "",
 }: ConversationHistoryProps) {
@@ -95,15 +98,18 @@ export function ConversationHistory({
 						{threads.length} {threads.length === 1 ? "conversation" : "conversations"}
 					</p>
 				</div>
-				<button
-					type="button"
-					onClick={onNew}
-					disabled={disabled}
-					className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-accent/35 bg-accent/10 px-2.5 text-[11px] font-semibold text-accent transition-colors hover:bg-accent/20 disabled:cursor-not-allowed disabled:opacity-40"
-				>
-					<Plus className="h-3.5 w-3.5" aria-hidden="true" />
-					New chat
-				</button>
+				<div className="flex shrink-0 items-center gap-1">
+					<button
+						type="button"
+						onClick={onNew}
+						disabled={disabled}
+						className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-accent/35 bg-accent/10 px-2.5 text-[11px] font-semibold text-accent transition-colors hover:bg-accent/20 disabled:cursor-not-allowed disabled:opacity-40"
+					>
+						<Plus className="h-3.5 w-3.5" aria-hidden="true" />
+						New chat
+					</button>
+					{onClose && <button type="button" onClick={onClose} aria-label="Close conversation history" className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md text-text-muted hover:bg-surface-elevated hover:text-text focus-ring"><X className="h-4 w-4" aria-hidden="true" /></button>}
+				</div>
 			</div>
 
 			<div className="p-3 pb-2">

@@ -168,8 +168,6 @@ export const MessageInput = forwardRef<
 		target.style.height = `${Math.min(target.scrollHeight, 200)}px`;
 	}, [input]);
 
-	const beamActive = !reduceMotion && (loading || (focused && hasInput));
-
 	const toolPill = (
 		active: boolean,
 		activeCls: string,
@@ -187,7 +185,7 @@ export const MessageInput = forwardRef<
 				theme="auto"
 				strength={loading ? 0.75 : 0.6}
 				duration={loading ? 2.0 : 2.8}
-				active={beamActive || focused}
+				active={!reduceMotion && (loading || focused)}
 				borderRadius={16}
 				className="w-full"
 			>

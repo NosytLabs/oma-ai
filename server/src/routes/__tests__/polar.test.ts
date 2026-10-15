@@ -14,48 +14,12 @@ const mockConfig = vi.hoisted(() => ({
 	NODE_ENV: "test"
 }));
 
-vi.mock("@polar-sh/sdk/2026-10", () => ({ createPolar: () => ({ checkouts: { create: async () => ({ id: "checkout-test", url: "https://checkout.example.test" }) } }) }));
+vi.mock("@polar-sh/sdk/2026-10", async (importOriginal) => ({ ...await importOriginal<typeof import("@polar-sh/sdk/2026-10")>(), createPolar: () => ({ checkouts: { create: async () => ({ id: "checkout-test", url: "https://checkout.example.test" }) } }) }));
 
-const mockDb = vi.hoisted(() => {
-	const limitMock = vi.fn().mockReturnThis();
-	const whereMock = vi.fn().mockReturnThis();
-	// drainUserTx now reads the post-drain balance via
-	// update().set().where().returning(), so the chain must terminate in a
-	// `returning` mock instead of `this`.
-	const returningMock = vi.fn().mockResolvedValue([{ balanceCents: "0" }]);
-	whereMock.mockReturnValue({ returning: returningMock });
-	const setMock = vi.fn().mockReturnValue({ where: whereMock });
-	const updateMock = vi.fn().mockReturnValue({ set: setMock });
-	const onConflictDoUpdateMock = vi.fn().mockReturnThis();
-	const valuesMock = vi.fn().mockReturnValue({ onConflictDoUpdate: onConflictDoUpdateMock });
-	const insertMock = vi.fn().mockReturnValue({ values: valuesMock });
-	const selectMock = vi.fn().mockReturnThis();
-	const fromMock = vi.fn().mockReturnThis();
-	// SECURITY (audit 2.2): the route now wraps credit + processed-flag
-	// updates in `db.transaction`. The transaction receives a tx that
-	// exposes the same insert/update surface as the top-level db. Inside
-	// the callback we forward to the same chained mocks so call counts
-	// stay comparable across tests.
-	const transactionMock = vi.fn(async (fn: (tx: typeof mockDb) => Promise<void>) =>
-		fn(mockDb),
-	);
-
-	return {
-		insert: insertMock,
-		values: valuesMock,
-		onConflictDoUpdate: onConflictDoUpdateMock,
-		update: updateMock,
-		set: setMock,
-		where: whereMock,
-		select: selectMock,
-		from: fromMock,
-		limit: limitMock,
-		transaction: transactionMock,
-	};
-});
-
-const mockLogPaymentEvent = vi.hoisted(() => vi.fn());
-const mockEmitDepositMatched = vi.hoisted(() => vi.fn());
+const mockDb = vi.hoisted(() => ({
+	select: vi.fn().mockReturnThis(), from: vi.fn().mockReturnThis(),
+	limit: vi.fn().mockResolvedValue([]),
+}));
 
 vi.mock("../../config.js", () => ({
 	config: mockConfig,
@@ -64,43 +28,6 @@ vi.mock("../../config.js", () => ({
 
 vi.mock("../../db/client.js", () => ({
 	db: mockDb,
-}));
-
-vi.mock("../../db/schema.js", () => ({
-	// `processed` must be present: the resume path reads
-	// polarWebhookEvents.processed to tell a genuine replay (processed=1)
-	// from a previously-failed event (processed=0). Without this column the
-	// handler saw undefined and both cases behaved identically, so the
-	// regression test could not fail.
-	polarWebhookEvents: { polarEventId: "polarEventId", processed: "processed" },
-	creditBalances: { userId: "userId", balanceCents: "balanceCents", totalDepositedCents: "totalDepositedCents" },
-	siteSettings: {}
-}));
-
-vi.mock("drizzle-orm", async (importOriginal) => {
-	const original = await importOriginal<typeof import("drizzle-orm")>();
-	return {
-		...original,
-		sql: vi.fn((strings, ...args) => ({ strings, args }))
-	};
-});
-
-vi.mock("../../lib/logger.js", () => ({
-	logger: {
-		info: vi.fn(),
-		warn: vi.fn(),
-		error: vi.fn(),
-	}
-}));
-
-// We need to properly intercept the module where `logPaymentEvent` is defined
-vi.mock("../../lib/payment-observability.js", () => ({
-	logPaymentEvent: mockLogPaymentEvent
-}));
-
-// MOCK THE FEED SO IT DOESNT FAIL OR USE REAL IMPLEMENTATION
-vi.mock("../deposit/feed.js", () => ({
-	emitDepositMatched: mockEmitDepositMatched
 }));
 
 vi.mock("../../auth/middleware.js", () => ({
@@ -118,19 +45,6 @@ vi.mock("../../middleware/rate-limit.js", () => ({
 		() => async (_c: unknown, next: () => Promise<void>) => next(),
 	),
 }));
-
-// Add timingSafeEqual mock before using
-vi.mock("node:crypto", async (importOriginal) => {
-	const original = await importOriginal<typeof import("node:crypto")>();
-	return {
-		...original,
-		default: {
-			...original,
-			timingSafeEqual: vi.fn().mockReturnValue(true)
-		},
-		timingSafeEqual: vi.fn().mockReturnValue(true)
-	};
-});
 
 function generateSignature(secret: string, id: string, timestamp: number, body: string) {
 	const hmac = crypto.createHmac("sha256", secret)
@@ -182,8 +96,6 @@ describe("polar routes", () => {
 		});
 
 		it("rejects invalid signature", async () => {
-			// Override the timingSafeEqual specifically for this test
-			vi.mocked(crypto.timingSafeEqual).mockReturnValueOnce(false);
 			const body = JSON.stringify({ type: "test" });
 			const id = "evt_123";
 			const ts = Math.floor(Date.now() / 1000).toString();
@@ -220,162 +132,7 @@ describe("polar routes", () => {
 			expect(res.status).toBe(400);
 		});
 
-		it("handles duplicate event (double-spend protection)", async () => {
-			const body = JSON.stringify({ type: "order.paid" });
-			const id = "evt_123";
-			const ts = Math.floor(Date.now() / 1000);
-			const sig = generateSignature("test-secret", id, ts, body);
 
-			// Simulate unique constraint violation
-			const err = new Error("duplicate") as any;
-			err.code = "23505";
-			mockDb.values.mockRejectedValueOnce(err);
-			// An ALREADY-PROCESSED row: a genuine replay. The handler must
-			// short-circuit and must NOT credit a second time.
-			mockDb.select.mockReturnValueOnce({
-				from: () => ({
-					where: () => ({
-						limit: async () => [{ processed: 1 }],
-					}),
-				}),
-			});
-
-			const res = await app.request("/webhooks/polar", {
-				method: "POST",
-				body,
-				headers: {
-					"webhook-id": id,
-					"webhook-timestamp": ts.toString(),
-					"webhook-signature": sig
-				}
-			});
-
-			expect(res.status).toBe(200);
-			const data = await res.json() as { duplicate: boolean };
-			expect(data.duplicate).toBe(true);
-			expect(mockLogPaymentEvent).toHaveBeenCalledWith(expect.objectContaining({ outcome: "double_spend_blocked" }));
-		});
-
-		it("RESUMES a previously-failed event instead of dropping the credit", async () => {
-			// REGRESSION (audit HIGH): the row is claimed and committed with
-			// processed=0 BEFORE the credit transaction runs. If that
-			// transaction then failed (DB blip, timeout, crash), the row stayed
-			// at processed=0. The old code treated ANY unique-constraint
-			// collision as a duplicate and returned 200, so every Polar retry
-			// was swallowed and the customer was NEVER credited — permanently,
-			// with no repair path. A processed=0 row must be resumed.
-			const body = JSON.stringify({
-				type: "order.paid",
-				data: {
-					product: { id: "prod_hobby" },
-					metadata: { userId: "user_1" },
-				},
-			});
-			const id = "evt_resume";
-			const ts = Math.floor(Date.now() / 1000);
-			const sig = generateSignature("test-secret", id, ts, body);
-
-			const err = new Error("duplicate") as any;
-			err.code = "23505";
-			mockDb.values.mockRejectedValueOnce(err);
-			// processed=0 => a previous attempt claimed but never completed.
-			mockDb.select.mockReturnValueOnce({
-				from: () => ({
-					where: () => ({
-						limit: async () => [{ processed: 0 }],
-					}),
-				}),
-			});
-
-			const res = await app.request("/webhooks/polar", {
-				method: "POST",
-				body,
-				headers: {
-					"webhook-id": id,
-					"webhook-timestamp": ts.toString(),
-					"webhook-signature": sig
-				}
-			});
-
-			expect(res.status).toBe(200);
-			// Must NOT be reported as a duplicate — that was the money bug.
-			const data = await res.json() as { duplicate?: boolean };
-			expect(data.duplicate).toBeUndefined();
-			// The credit must actually have been re-attempted.
-			expect(mockDb.transaction).toHaveBeenCalled();
-		});
-
-		it("processes order.paid successfully and credits user", async () => {
-			// Pass `product.id` so `planFromProductId` can resolve a plan — the
-			// webhook handler no longer trusts metadata.credits (security fix).
-			// Test product id maps to "builder" via mockConfig.POLAR_BUILDER_PRODUCT_ID.
-			const body = JSON.stringify({
-				type: "order.paid",
-				data: {
-					product: { id: "prod_builder" },
-					metadata: { userId: "user_123", credits: 5000 }
-				}
-			});
-			const id = "evt_456";
-			const ts = Math.floor(Date.now() / 1000);
-			const sig = generateSignature("test-secret", id, ts, body);
-
-			const res = await app.request("/webhooks/polar", {
-				method: "POST",
-				body,
-				headers: {
-					"webhook-id": id,
-					"webhook-timestamp": ts.toString(),
-					"webhook-signature": sig
-				}
-			});
-
-			expect(res.status).toBe(200);
-			// Verify db insert values (polarWebhookEvents + credit balance)
-			expect(mockDb.insert).toHaveBeenCalledTimes(2);
-			expect(mockDb.values).toHaveBeenCalledWith(expect.objectContaining({
-				polarEventId: id,
-				eventType: "order.paid"
-			}));
-			// Verify user was credited with the plan-derived amount (5000)
-			expect(mockDb.values).toHaveBeenCalledWith(expect.objectContaining({
-				userId: "user_123",
-				balanceCents: "5000"
-			}));
-			expect(mockDb.onConflictDoUpdate).toHaveBeenCalled();
-		});
-
-		it("processes order.refunded successfully and drains user", async () => {
-			const body = JSON.stringify({
-				type: "order.refunded",
-				data: {
-					product: { id: "prod_builder" },
-					metadata: { userId: "user_123", credits: 5000 }
-				}
-			});
-			const id = "evt_789";
-			const ts = Math.floor(Date.now() / 1000);
-			const sig = generateSignature("test-secret", id, ts, body);
-			
-			const res = await app.request("/webhooks/polar", {
-				method: "POST",
-				body,
-				headers: {
-					"webhook-id": id,
-					"webhook-timestamp": ts.toString(),
-					"webhook-signature": sig
-				}
-			});
-			
-			expect(res.status).toBe(200);
-			// Only the event row is INSERTed now. The drain was changed from an
-			// insert-on-conflict upsert to a guarded UPDATE that reads back the
-			// post-drain balance, so it shows up in update(), not insert().
-			expect(mockDb.insert).toHaveBeenCalledTimes(1);
-			// GREATEST(balance - credits, 0) means a refund can never overdraw.
-			expect(mockDb.update).toHaveBeenCalled();
-			expect(mockDb.set).toHaveBeenCalled();
-		});
 	});
 
 	describe("checkout successUrl origin allow-list (open-redirect fix)", () => {

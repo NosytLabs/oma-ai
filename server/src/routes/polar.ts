@@ -25,8 +25,7 @@
 	*/
 import { Hono } from "hono";
 import { z } from "zod";
-import { createHmac, timingSafeEqual } from "node:crypto";
-import { createPolar, type Polar } from "@polar-sh/sdk/2026-10";
+import { createPolar, webhooks, type Polar } from "@polar-sh/sdk/2026-10";
 import { eq, sql } from "drizzle-orm";
 import type { Context } from "hono";
 import type { OmaEnv } from "../types.js";
@@ -189,35 +188,6 @@ polarRoutes.post(
 
 // ─── Webhook verification ──────────────────────────────────────────────
 
-/**
-	* Polar webhook signature scheme (standardwebhooks):
-	*   headers: webhook-id, webhook-timestamp, webhook-signature
-	*   signature: v1,<base64(hmac_sha256(secret, "{id}.{timestamp}.{body}"))>
-	*
-	* Compare with timingSafeEqual. Reject if timestamp drift > 5 min
-	* (replay protection).
-	*/
-function verifyPolarSignature(
-		rawBody: string,
-		headers: { id: string | null; ts: string | null; sig: string | null },
-		secret: string,
-): boolean {
-		if (!headers.id || !headers.ts || !headers.sig) return false;
-		const ts = Number(headers.ts);
-		if (!Number.isFinite(ts)) return false;
-		const now = Math.floor(Date.now() / 1000);
-		if (ts > now + 30 || now - ts > 5 * 60) return false;
-		const expected =
-				"v1," +
-				createHmac("sha256", secret)
-						.update(`${headers.id}.${headers.ts}.${rawBody}`)
-						.digest("base64");
-		const a = Buffer.from(expected);
-		const b = Buffer.from(headers.sig);
-		if (a.length !== b.length) return false;
-		return timingSafeEqual(a, b);
-}
-
 interface WebhookEventPayload {
 		type: string;
 		data?: {
@@ -262,85 +232,44 @@ export async function polarWebhookHandler(c: Context<OmaEnv>) {
 		const rawBody = await c.req.text();
 		const startedAt = Date.now();
 		const eventId = c.req.header("webhook-id") ?? null;
-		const ok = verifyPolarSignature(
-				rawBody,
-				{
-						id: eventId,
-						ts: c.req.header("webhook-timestamp") ?? null,
-						sig: c.req.header("webhook-signature") ?? null,
-				},
-				config.POLAR_WEBHOOK_SECRET,
-		);
-		if (!ok) {
-			logger.warn("[polar] webhook signature verification failed");
-			return errorResponse(c, "Invalid webhook signature", 401, { code: "invalid_signature" });
-		}
 		let event: WebhookEventPayload;
 		try {
-			event = JSON.parse(rawBody) as WebhookEventPayload;
-		} catch {
-			return errorResponse(c, "Request body is not valid JSON", 400, { code: "invalid_json" });
+			event = await webhooks.validateEvent(rawBody, {
+				"webhook-id": eventId ?? "",
+				"webhook-timestamp": c.req.header("webhook-timestamp") ?? "",
+				"webhook-signature": c.req.header("webhook-signature") ?? "",
+			}, config.POLAR_WEBHOOK_SECRET) as WebhookEventPayload;
+		} catch (err) {
+			if (err instanceof webhooks.PolarWebhookVerificationError) {
+				logger.warn("[polar] webhook signature verification failed");
+				return errorResponse(c, "Invalid webhook signature", 401, { code: "invalid_signature" });
+			}
+			// Authenticated events from a newer API version do not grant credits.
+			if (err instanceof webhooks.PolarWebhookUnknownTypeError && typeof err.eventType === "string") {
+				return c.json({ ok: true, ignored: true });
+			}
+			return errorResponse(c, "Invalid webhook payload", 400, { code: "invalid_json" });
 		}
 		if (!eventId) {
 			return errorResponse(c, "Missing Webhook-Id header", 400, { code: "missing_webhook_id" });
 		}
-		// Claim the event, and decide whether this delivery should actually run
-		// the credit/refund step.
-		//
-		// BUG (audit HIGH): the original code returned `{duplicate:true}` for ANY
-		// unique-constraint collision. The row is inserted with `processed = 0`
-		// and committed BEFORE the credit transaction runs, so a transient failure
-		// (DB blip, timeout, crash) left a row stuck at processed=0. Every
-		// subsequent Polar retry then took the duplicate branch and returned 200 —
-		// the customer was never credited, and nothing ever repaired it. The
-		// comment below claiming the claim, the grant, and the processed flip are
-		// "one transaction" was false: the claim commits on its own.
-		//
-		// Fix: only short-circuit when the existing row is already processed. An
-		// existing processed=0 row means a prior attempt failed partway, so we
-		// resume it. `processInTransaction` flips processed=1 with a
-		// `processed = 0` guard, so concurrent retries can still never
-		// double-credit.
+		// Preserve failed deliveries for retry. Conflict handling must not rely
+		// on driver-specific error shapes (Drizzle wraps Postgres errors).
 		try {
-			await db.insert(polarWebhookEvents).values({
-				polarEventId: eventId,
-				eventType: event.type,
-				payload: rawBody,
-				processed: 0,
-			});
-		} catch (err) {
-			if (
-				err &&
-				typeof err === "object" &&
-				"code" in err &&
-				(err as { code?: string }).code === "23505"
-			) {
-				const existing = await db
-					.select({ processed: polarWebhookEvents.processed })
-					.from(polarWebhookEvents)
-					.where(sql`${polarWebhookEvents.polarEventId} = ${eventId}`)
-					.limit(1);
-
-				if (existing[0]?.processed === 1) {
-					logPaymentEvent({
-						kind: "polar",
-						outcome: "double_spend_blocked",
-						signature: eventId,
-						latencyMs: Date.now() - startedAt,
-					});
+			const inserted = await db.insert(polarWebhookEvents).values({
+				polarEventId: eventId, eventType: event.type, payload: rawBody, processed: 0,
+			}).onConflictDoNothing().returning({ id: polarWebhookEvents.id });
+			if (inserted.length === 0) {
+				const [existing] = await db.select({ processed: polarWebhookEvents.processed })
+					.from(polarWebhookEvents).where(eq(polarWebhookEvents.polarEventId, eventId)).limit(1);
+				if (existing?.processed === 1) {
+					logPaymentEvent({ kind: "polar", outcome: "double_spend_blocked", signature: eventId, latencyMs: Date.now() - startedAt });
 					return c.json({ ok: true, duplicate: true });
 				}
-
-				// processed = 0 on an existing row => a previous delivery claimed
-				// the event but never completed. Resume it rather than dropping it.
-				logger.warn(
-					{ eventId, eventType: event.type },
-					"[polar] resuming previously-failed webhook event",
-				);
-			} else {
-				logger.error({ err, eventId }, "[polar] failed to claim webhook event");
-				return errorResponse(c, "Webhook processing is temporarily unavailable", 503, { code: "polar_claim_failed" });
 			}
+		} catch (err) {
+			logger.error({ err, eventId }, "[polar] failed to claim webhook event");
+			return errorResponse(c, "Webhook processing is temporarily unavailable", 503, { code: "polar_claim_failed" });
 		}
 
 		// SECURITY: derive credits from the server-side product→plan mapping, not
@@ -367,16 +296,8 @@ export async function polarWebhookHandler(c: Context<OmaEnv>) {
 
 		if (event.type === "order.paid") {
 				if (userId && credits) {
-						// SECURITY (audit 2.2 / HIGH): wrap the credit grant + the
-						// processed-flag flip in a single DB transaction. If the server
-						// crashes between the two writes, a re-delivery from Polar will
-						// see the webhook row exists (idempotency holds), but the
-						// transaction either fully completed or rolled back — never
-						// partial. The unique-constraint on `polarEventId` plus the
-						// `processed = 0` guard on the update prevent double-credits.
 						await processInTransaction(eventId, async (tx) => {
 								await creditUserTx(tx, userId, credits as number, event.type);
-								await markEventProcessedTx(tx, eventId);
 						});
 				} else {
 					logger.error(
@@ -409,7 +330,6 @@ export async function polarWebhookHandler(c: Context<OmaEnv>) {
 				if (userId && credits) {
 						await processInTransaction(eventId, async (tx) => {
 								await drainUserTx(tx, userId, credits as number);
-								await markEventProcessedTx(tx, eventId);
 						});
 				} else {
 						logger.warn(
@@ -462,11 +382,9 @@ export async function polarWebhookHandler(c: Context<OmaEnv>) {
 														{ userId, periodStart, eventId },
 														"[polar] subscription period already credited; skipping duplicate grant",
 												);
-												await markEventProcessedTx(tx, eventId);
 												return;
 										}
 										await creditUserTx(tx, userId, credits as number, event.type);
-										await markEventProcessedTx(tx, eventId);
 								});
 						} else {
 								logger.info(
@@ -518,26 +436,19 @@ async function markEventProcessed(eventId: string): Promise<void> {
 				);
 }
 
-/**
-	* Run a Polar webhook processing step inside a DB transaction.
-	*
-	* SECURITY (audit 2.2 / HIGH): the credit grant + processed-flag flip
-	* must be atomic. Without a tx, a crash between the two writes leaves
-	* a row with `processed = 0` after the user has already been credited.
-	* A re-delivery from Polar would see the row exists (unique constraint
-	* on polarEventId) but `processed = 0`, and the next handler invocation
-	* would double-credit.
-	*
-	* The `processed = 0` guard on the update (in markEventProcessedTx)
-	* also keeps a duplicate re-delivery from re-running the credit grant
-	* even if a transaction somehow commits twice.
-	*/
+/** Claim the event and apply its balance change atomically. Concurrent retries
+ * wait for this update's row lock, then skip the already-completed event.
+ * A failed step rolls back the claim so Polar can retry the grant/refund. */
 async function processInTransaction(
 		eventId: string,
 		step: (tx: Parameters<Parameters<typeof db.transaction>[0]>[0]) => Promise<void>,
 ): Promise<void> {
 		try {
 				await db.transaction(async (tx) => {
+						const claimed = await tx.update(polarWebhookEvents).set({ processed: 1 })
+							.where(sql`${polarWebhookEvents.polarEventId} = ${eventId} AND ${polarWebhookEvents.processed} = 0`)
+							.returning({ id: polarWebhookEvents.id });
+						if (claimed.length === 0) return;
 						await step(tx);
 				});
 		} catch (err) {
@@ -620,38 +531,8 @@ async function drainUserTx(
 		logger.info({ userId, credits, remaining }, "[polar] refunded; credits drained");
 }
 
-/**
-	* Inside-transaction variant of markEventProcessed. Caller controls the tx.
-	*/
-async function markEventProcessedTx(
-		tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
-		eventId: string,
-): Promise<void> {
-		await tx
-				.update(polarWebhookEvents)
-				.set({ processed: 1 })
-				.where(
-						sql`${polarWebhookEvents.polarEventId} = ${eventId} AND ${polarWebhookEvents.processed} = 0`,
-				);
-}
-
-// Fails OPEN on purpose.
-//
-// `rateLimit` defaults to `failClosed: true`, which returns 503 whenever the
-// Redis backend is unreachable. The rate limiter here uses @upstash/redis
-// (REST) and the deployment only sets REDIS_URL — no UPSTASH_REDIS_REST_URL /
-// UPSTASH_REDIS_REST_TOKEN — so `isRedisReady()` is false and EVERY Polar
-// webhook delivery was rejected with 503. That silently blocks all revenue:
-// the endpoint URL and signature secret are both correct, orders settle on
-// Polar's side, and our ledger never gets credited.
-//
-// This endpoint is cryptographically signature-verified with standardwebhooks
-// (see polarWebhookHandler), so an attacker cannot forge an accepted payload
-// without the secret. That verification — not this limiter — is the real
-// security boundary. A Redis outage must not be able to stop payments.
-//
-// The in-process fallback cap still applies when Redis is down, so this is
-// bounded, not unlimited.
+// Signature verification is the security boundary. Keep webhook delivery
+// available during Redis outages with the bounded in-process fallback cap.
 const polarWebhookRateLimit = rateLimit({
 	windowMs: 60_000,
 	maxRequests: 1000,

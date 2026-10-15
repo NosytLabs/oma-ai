@@ -19,7 +19,10 @@
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { X } from "lucide-react";
 import dynamic from "next/dynamic";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { springs } from "@/lib/animation";
+import { useFocusTrap } from "@/lib/hooks/useFocusTrap";
 import { Skeleton } from "@/components/ui/Skeleton";
 import type { SettingsPanelProps } from "@/components/chat/SettingsPanel";
 
@@ -51,6 +54,20 @@ export function ChatSettingsPanel({
 	setParamsOpen,
 	...body
 }: ChatSettingsPanelProps) {
+	const [mobile, setMobile] = useState(false);
+	const mobilePanelRef = useRef<HTMLElement | null>(null);
+	const returnFocusRef = useRef<HTMLElement | null>(null);
+	useEffect(() => {
+		const query = window.matchMedia("(max-width: 767px)");
+		const sync = () => setMobile(query.matches);
+		sync();
+		query.addEventListener("change", sync);
+		return () => query.removeEventListener("change", sync);
+	}, []);
+	useEffect(() => {
+		if (paramsOpen && mobile) returnFocusRef.current = document.activeElement as HTMLElement | null;
+	}, [paramsOpen, mobile]);
+	useFocusTrap({ active: paramsOpen && mobile, containerRef: mobilePanelRef, restoreFocusRef: returnFocusRef, onClose: () => setParamsOpen(false) });
 	// `body` is exactly `SettingsPanelProps`; spreading it keeps the two
 	// render sites in sync with the body contract automatically.
 	const panel = <LazySettingsPanel {...body} />;
@@ -89,6 +106,8 @@ export function ChatSettingsPanel({
 				)}
 			</AnimatePresence>
 
+			{/* Escape main's stacking context, as the navigation drawer does. */}
+			{mobile && createPortal(<>
 			{/* Mobile Settings Modal Overlay */}
 			<AnimatePresence>
 				{paramsOpen && (
@@ -96,7 +115,7 @@ export function ChatSettingsPanel({
 						initial={{ opacity: 0 }}
 						animate={{ opacity: 1 }}
 						exit={{ opacity: 0 }}
-						className="md:hidden fixed inset-0 z-40 bg-overlay/80 backdrop-blur-sm"
+						className="md:hidden fixed inset-0 z-[70] bg-overlay/80 backdrop-blur-sm"
 						onClick={() => setParamsOpen(false)}
 					/>
 				)}
@@ -106,11 +125,15 @@ export function ChatSettingsPanel({
 			<AnimatePresence>
 				{paramsOpen && (
 					<m.aside
+						ref={mobilePanelRef}
+						role={mobile ? "dialog" : undefined}
+						aria-modal={mobile ? true : undefined}
+						aria-label="Model parameters"
 						initial={{ x: "100%" }}
 						animate={{ x: 0 }}
 						exit={{ x: "100%" }}
 						transition={springs.card}
-						className="md:hidden fixed inset-y-0 right-0 w-80 max-w-full bg-void border-l border-border z-50 flex flex-col"
+						className="md:hidden fixed top-0 bottom-[var(--consent-banner-height,0px)] right-0 w-80 max-w-full bg-void border-l border-border z-[80] flex flex-col"
 					>
 						<div className="flex-none h-12 border-b border-border flex items-center justify-between px-4 bg-void">
 							<h2 className="text-[11px] font-bold text-text-muted uppercase tracking-widest">
@@ -131,6 +154,7 @@ export function ChatSettingsPanel({
 					</m.aside>
 				)}
 			</AnimatePresence>
+			</>, document.body)}
 		</>
 	);
 }

@@ -96,6 +96,9 @@ available from More even before the first message. Conversation history uses a
 desktop sidebar and a mobile drawer. The consent banner publishes its measured
 height through `--consent-banner-height`; the chat viewport reserves that space
 so the composer remains reachable before consent is dismissed.
+Mobile history and parameter panels appear above navigation, with reachable
+close controls and space for the consent banner. The parameters dialog traps
+keyboard focus, closes with Escape, and restores focus to its opener.
 
 ## Validation
 

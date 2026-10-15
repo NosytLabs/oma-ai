@@ -180,7 +180,7 @@ export function ChatToolbar({
 							<button type="button" role="menuitem" onClick={() => runMenuAction(() => exportConversation("md"))} className={menuItemClass}><FileDown className={iconClass} />Export Markdown</button>
 							<button type="button" role="menuitem" onClick={() => runMenuAction(() => exportConversation("txt"))} className={menuItemClass}><FileText className={iconClass} />Export text</button>
 						</>}
-						<button type="button" role="menuitem" onClick={() => runMenuAction(clearChat)} disabled={messagesLength === 0 || loading} className={`${menuItemClass} !text-red-300 hover:bg-red-400/10`}><Trash2 className={iconClass} />Clear conversation</button>
+						<button type="button" role="menuitem" onClick={() => runMenuAction(clearChat)} disabled={messagesLength === 0 || loading} className={`${menuItemClass} !text-error hover:bg-error/10`}><Trash2 className={iconClass} />Clear conversation</button>
 						<div role="separator" className="my-1 border-t border-border" />
 						<Link href="/models" role="menuitem" onClick={closeMoreMenu} className={menuItemClass}><Columns2 className={iconClass} />Browse models</Link>
 						<Link href="/getting-started" role="menuitem" onClick={closeMoreMenu} className={menuItemClass}><BookOpen className={iconClass} />Getting started</Link>
