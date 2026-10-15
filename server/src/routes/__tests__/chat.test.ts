@@ -137,6 +137,18 @@ beforeEach(() => {
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
 describe("POST /v1/chat/completions", () => {
+	it.each([false, true])("exposes the usage request ID for stream=%s without trusting a client ID", async (stream) => {
+		mockRouteRequest.mockResolvedValueOnce({ response: new Response("{}"), actualModelId: baseBody.model });
+		mockParseNonStreaming.mockResolvedValueOnce({ data: { id: "provider-owned-id" } });
+		const res = await chatRequest({ ...baseBody, stream }, { Authorization: "Bearer test-key", "X-OMA-Request-ID": "forged-id" });
+		expect(res.status).toBe(200);
+		const requestId = res.headers.get("X-OMA-Request-ID");
+		expect(requestId).toMatch(/^chatcmpl-/);
+		const usageHandler = stream ? mockCreateStreamingProxy : mockParseNonStreaming;
+		expect(usageHandler).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ requestId }));
+		await res.body?.cancel();
+	});
+
 	it("asks old signed-in free-chat clients to reload rather than charging them as API requests", async () => {
 		mockRouteRequest.mockResolvedValueOnce({ response: new Response("{}"), actualModelId: baseBody.model });
 		mockParseNonStreaming.mockResolvedValueOnce({ data: { ok: true } });

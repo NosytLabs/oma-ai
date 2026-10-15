@@ -9,8 +9,8 @@ in [Platform](PLATFORM.md), [Deployment](DEPLOYMENT.md),
 
 | Check | October 15 result |
 | --- | --- |
-| API | 658 tests in 79 files, including real Postgres credit/webhook tests |
-| Frontend | 879 tests in 131 files; types, lint and production build passed |
+| API | 660 tests in 79 files, including real Postgres credit/webhook tests |
+| Frontend | 883 tests in 131 files; types, lint and production build passed |
 | Real HTTP/auth | All 30 groups passed against an isolated migrated local database |
 | Dependencies | Zero known production vulnerabilities across 890 dependencies |
 | Runtime | Node 24 on both Vercel and Neon; compatible direct dependencies current |
@@ -76,6 +76,48 @@ was revoked (401 afterward) and the session removed. Earlier tool tests obtained
 initial function calls but failed strict continuation-quality assertions;
 these assertions were not weakened. Current local evidence is retained in
 `.artifacts/provider-audit/payment-chat-live-api-2026-10-15.json`.
+
+## October 15 SEO and account follow-up
+
+- Crawled all 65 canonical production sitemap URLs: every URL returned 200,
+  with one matching canonical and H1, a title/description, valid JSON-LD and
+  no noindex conflict. No duplicate URLs or redirects appeared in the sitemap.
+  Private account/operator paths remain excluded. The report is local-only at
+  `.artifacts/site-audit/seo-before-2026-10-15.json`.
+- Removed misleading zero-price and flat purchase offers from paid inference
+  markup. Pricing/model pages share one escaped Service schema; static model
+  metadata no longer freezes token prices that can be overridden live.
+  This follows [Google's structured-data policy](https://developers.google.com/search/docs/appearance/structured-data/sd-policies)
+  requiring an accurate representation of visible content.
+- Settings forms and destructive confirmations remount on account/demo changes.
+  A late deletion response cannot sign out the newly selected account. Two
+  account-switch regressions were reproduced before the fixes and now pass.
+- API docs describe key IP restrictions and expired-key listings, add a bounded
+  function-tool round trip, and correct stale search headings. Copy controls
+  occupy a toolbar so they do not cover example code on mobile. The example
+  was syntax-checked and exercised with valid, unapproved, invalid and looping
+  tool responses; these fixture checks do not establish provider tool quality.
+- Both inference formats expose `X-OMA-Request-ID`, matching the recorded usage
+  ID for JSON and streaming replies. `X-Request-ID` remains the HTTP trace.
+  Docs and the live test report distinguish these IDs; a client-supplied ID
+  cannot select the billing identity.
+- A chat Retry cooldown now cancels on unmount. Full validation passes 883
+  frontend tests and all 660 API tests (including 26 real Postgres tests).
+  The 30-group real HTTP/auth suite passed again in an isolated local database.
+- A fresh paid MiniMax Messages request returned `OMA_API_OK`: 49 input and
+  111 output tokens, about 86.7 seconds. Billing matched usage; the temporary
+  scoped key was revoked (401 afterward), and its session removed. This checks
+  the local gateway with a real upstream, not production Venice or every model.
+  The follow-up passed with the new usage header matching its Postgres row,
+  HTTP correlation kept separate, and a revoked-key 401 (about 0.77 seconds).
+  Evidence: `.artifacts/provider-audit/site-seo-account-live-api-2026-10-15.json`.
+- Browser QA with local accounts covered settings/profile, sessions, API-key
+  setup controls, safe deletion cancellation, sign-out, role-gated admin access,
+  admin charts and request-ID search. Mobile docs stay within 390px; copying and
+  format switching work without a button covering the code. No console warnings
+  or errors were captured on the updated docs page. Screenshots are local-only
+  in `.screenshots/seo-account-2026-10-15/`. Actual deletion is covered by the
+  isolated HTTP suite; no real user account was deleted.
 
 ## Open limitations
 

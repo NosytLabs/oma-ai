@@ -4,11 +4,11 @@ import { cache } from "react";
 import { DEFAULT_API_URL } from "@/lib/config";
 import SITE_URL from "@/lib/site";
 
-import { MODELS, formatPricePerMillion } from "@/lib/models-data";
+import { MODELS } from "@/lib/models-data";
 import { ModelDetail } from "./_components/ModelDetail";
 import { isModelAvailable } from "@/lib/model-availability";
 import { withLiveModelDetails, type LiveModelDetails } from "@/app/models/_lib/detail-data";
-import { BreadcrumbListJsonLd } from "@/components/json-ld";
+import { BreadcrumbListJsonLd, ServiceJsonLd } from "@/components/json-ld";
 
 const fetchLiveModel = cache(
 	async (slug: string): Promise<LiveModelDetails | null> => {
@@ -27,65 +27,6 @@ const fetchLiveModel = cache(
 		}
 	},
 );
-
-function ModelJsonLd({
-	name,
-	description,
-	price,
-	url,
-	image,
-	brand,
-	available,
-}: {
-	name: string;
-	description: string;
-	price: number;
-	url: string;
-	image: string;
-	brand: string;
-	available: boolean | null;
-}) {
-	const data = {
-		"@context": "https://schema.org",
-		"@type": "Product",
-		name,
-		description,
-		url,
-		image,
-		brand: {
-			"@type": "Brand",
-			name: brand,
-		},
-		offers: {
-			"@type": "Offer",
-			price: price.toString(),
-			priceCurrency: "USD",
-			description: "Input price per 1 million tokens",
-			...(available !== null
-				? { availability: available ? "https://schema.org/InStock" : "https://schema.org/OutOfStock" }
-				: {}),
-		},
-	};
-
-	return (
-		<script
-			type="application/ld+json"
-			dangerouslySetInnerHTML={{
-				__html: JSON.stringify(data).replace(
-					/[<>&\u2028\u2029]/g,
-					(character) =>
-						({
-							"<": "\\u003c",
-							">": "\\u003e",
-							"&": "\\u0026",
-							"\u2028": "\\u2028",
-							"\u2029": "\\u2029",
-						})[character] ?? character,
-				),
-			}}
-		/>
-	);
-}
 
 export function generateStaticParams() {
 	return MODELS.map((m) => ({ slug: m.id }));
@@ -108,7 +49,7 @@ export async function generateMetadata({
 	// not deindex a page or persist a stale noindex flag after recovery.
 	const robots = { index: true, follow: true };
 	const title = `${model.name} · ${model.provider}`;
-	const description = `${model.description} ${formatPricePerMillion(model.inputPricePer1M)}/M input, ${formatPricePerMillion(model.outputPricePer1M)}/M output, ${model.contextLength} context.`;
+	const description = `${model.description} Compare current token rates, context limits, capabilities and API examples on OMA.`;
 	return {
 		title,
 		description,
@@ -146,18 +87,15 @@ export default async function ModelDetailPage({
 					{ name: model.name, url: `/models/${model.id}` },
 				]}
 			/>
-			<ModelJsonLd
+			<ServiceJsonLd
 				name={model.name}
 				description={model.description}
-				price={model.inputPricePer1M}
 				url={`${SITE_URL}/models/${model.id}`}
 				image={
 					model.provider === "Venice"
 						? `${SITE_URL}/logos/providers/venice.svg`
 						: `${SITE_URL}/logos/oma-icon-512.png`
 				}
-				brand={model.provider}
-				available={available}
 			/>
 			<ModelDetail
 				model={model}

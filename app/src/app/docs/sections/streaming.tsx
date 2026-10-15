@@ -131,7 +131,10 @@ for await (const chunk of stream) {
 							<span className="text-accent">x-provider</span>: Provider handling the request
 						</div>
 						<div>
-							<span className="text-accent">X-Correlation-ID</span>: Request tracking ID
+							<span className="text-accent">X-Request-ID</span>: HTTP trace ID
+						</div>
+						<div>
+							<span className="text-accent">X-OMA-Request-ID</span>: Inference / usage record ID
 						</div>
 						<div>
 							<span className="text-accent">X-Key-Rotation-Recommended</span>: Key age advisory
@@ -139,6 +142,13 @@ for await (const chunk of stream) {
 					</div>
 				</div>
 			</div>
+			<p className="mt-3 text-sm text-text-muted">
+				Both inference formats return <code className="font-mono text-accent">X-OMA-Request-ID</code> for
+				the inference attempt; recorded usage uses the same ID. Copy it when contacting support.
+				<code className="font-mono text-accent"> X-Request-ID</code> identifies the HTTP trace and can differ
+				from the provider&apos;s response-body ID. Rejected requests may have no usage record or inference ID.
+			</p>
+
 		</AnimatedSection>
 	);
 }

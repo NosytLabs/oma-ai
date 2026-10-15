@@ -20,8 +20,9 @@ describe("model detail", () => {
 		expect(screen.getByText("$5.859375")).toBeInTheDocument();
 		expect(screen.getByText("200K")).toBeInTheDocument();
 		expect(screen.getByText("Tool calling")).toBeInTheDocument();
-		const product = Array.from(container.querySelectorAll('script[type="application/ld+json"]')).map((script) => JSON.parse(script.textContent!)).find((data) => data["@type"] === "Product");
-		expect(product.offers).toMatchObject({ price: "1.171875", availability: "https://schema.org/OutOfStock" });
+		const schemas = Array.from(container.querySelectorAll('script[type="application/ld+json"]')).map((script) => JSON.parse(script.textContent!));
+		// A per-million input rate is not a flat offer to buy this model.
+		for (const schema of schemas) expect(schema.offers).toBeUndefined();
 	});
 
 	it("shows an honest fallback during a catalog outage and retains the selected model link", async () => {

@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { springs } from "@/lib/animation";
 import { api } from "@/lib/api";
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
@@ -73,6 +73,15 @@ const MOBILE_TAB_LABEL: Record<SettingsTab, string> = {
 };
 
 export default function AccountSettings() {
+	const { user, isDemo } = useAuth();
+	const searchParams = useSearchParams();
+	const isDemoView = searchParams?.get("demo") === "1" || isDemo;
+
+	// Forms, errors and destructive confirmations belong to one account only.
+	return <AccountSettingsContent key={isDemoView ? "demo" : user?.id ?? "signed-out"} />;
+}
+
+function AccountSettingsContent() {
 	const { isAuthenticated, isDemo, isReady, evmAddress, signOut, user } =
 		useAuth();
 	const hasRealSession = isAuthenticated && !isDemo;
@@ -93,6 +102,11 @@ export default function AccountSettings() {
 	const error = actionError ?? (activeTab === "sessions" && sessionsQuery.error instanceof Error ? sessionsQuery.error.message : null);
 
 	const [deleting, setDeleting] = useState(false);
+	const isCurrentAccount = useRef(true);
+	useEffect(() => {
+		isCurrentAccount.current = true;
+		return () => { isCurrentAccount.current = false; };
+	}, []);
 
 	// Demo tour user mock for settings preview
 	const demoUser = isDemoView
@@ -128,6 +142,7 @@ export default function AccountSettings() {
 		setDeleting(true);
 		try {
 			await api.auth.deleteAccount();
+			if (!isCurrentAccount.current) return;
 			try {
 				await signOut({ callbackURL: "/" });
 			} catch {

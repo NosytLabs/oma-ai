@@ -91,6 +91,46 @@ func main() {
 	fmt.Println(string(data))
 }`;
 
+	const pythonToolsCode = `import json
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["OMA_API_KEY"],
+    base_url="https://www.oma-ai.com/api/v1",
+)
+model = "llama-3.3-70b"  # Choose an enabled tool-capable model.
+tools = [{"type": "function", "function": {
+    "name": "add", "description": "Add two integers.",
+    "parameters": {"type": "object", "properties": {
+        "a": {"type": "integer"}, "b": {"type": "integer"}
+    }, "required": ["a", "b"], "additionalProperties": False}
+}}]
+messages = [{"role": "user", "content": "Use add to calculate 19 + 23."}]
+
+for _ in range(4):  # Bound model/tool turns and their cost.
+    response = client.chat.completions.create(
+        model=model, messages=messages, tools=tools,
+        tool_choice="auto", max_tokens=256,
+    )
+    assistant = response.choices[0].message
+    if not assistant.tool_calls:
+        print(assistant.content)
+        break
+    messages.append(assistant.model_dump(exclude_none=True))
+    for call in assistant.tool_calls:
+        if call.type != "function" or call.function.name != "add":
+            raise ValueError("Unapproved tool")
+        args = json.loads(call.function.arguments)
+        if not isinstance(args, dict) or set(args) != {"a", "b"}:
+            raise ValueError("Invalid tool arguments")
+        if any(type(v) is not int or abs(v) > 1000000 for v in args.values()):
+            raise ValueError("Arguments must be bounded integers")
+        messages.append({"role": "tool", "tool_call_id": call.id,
+                         "content": json.dumps(args["a"] + args["b"])})
+else:
+    raise RuntimeError("Tool turn limit reached")`;
+
 	/* ── Streaming examples ── */
 	const pythonStreamCode = `from openai import OpenAI
 
@@ -314,6 +354,22 @@ func main() {
 						{ label: "Go", lang: "go", code: goChatCode },
 					]}
 				/>
+			</div>
+
+			<div id="sdk-tools" className="mb-10 scroll-mt-24">
+				<h3 className="mb-3 text-lg font-semibold text-text font-display">Function tools</h3>
+				<p className="mb-4 text-sm text-text-muted">
+					OMA forwards tool definitions and results; your application runs the approved functions.
+					Keep the assistant message with its tool calls, append one result for each call using its
+					<code className="font-mono text-accent"> tool_call_id</code>, then request the next response.
+					Validate arguments before execution and require user approval for consequential actions.
+					Each model request spends credits; cap tool turns and output tokens.
+				</p>
+				<p className="mb-4 text-sm text-text-muted">
+					Check the live catalog for tool support and availability. Provider and model behavior vary;
+					the MiniMax Gonka/OpenBroker route still needs tool-result quality validation before production agent use.
+				</p>
+				<CodeBlock title="Python · bounded tool-call round trip" lang="python" code={pythonToolsCode} />
 			</div>
 
 			{/* Streaming */}

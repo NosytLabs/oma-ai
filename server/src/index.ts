@@ -199,6 +199,7 @@ const corsOptions = {
 				"X-DailyLimit-Remaining",
 				"X-DailyLimit-Reset",
 				"X-Request-ID",
+				"X-OMA-Request-ID",
 				"PAYMENT-RESPONSE",
 				"X-PAYMENT-RESPONSE",
 				// OpenRouter-style routing transparency (read by website chat toast)

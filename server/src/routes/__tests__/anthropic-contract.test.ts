@@ -23,8 +23,11 @@ beforeEach(() => { vi.resetAllMocks(); mocks.route.mockResolvedValue({ response:
 
 describe("Anthropic customer contract", () => {
 	it("attributes nonstreaming usage to the authenticating API key", async () => {
-		expect((await send(body)).status).toBe(200);
-		expect(mocks.parse).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ userId: "account-a", apiKeyId: "key-a" }));
+		const response = await send(body);
+		expect(response.status).toBe(200);
+		const requestId = (await response.json()).id;
+		expect(response.headers.get("X-OMA-Request-ID")).toBe(requestId);
+		expect(mocks.parse).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ userId: "account-a", apiKeyId: "key-a", requestId }));
 	});
 	it("checks the prepaid balance before inference", async () => {
 		await send(body); expect(mocks.balance).toHaveBeenCalledWith("account-a", expect.anything(), 2, 32);
@@ -65,10 +68,13 @@ describe("Anthropic customer contract", () => {
 		const sse = 'data: {"choices":[{"delta":{"content":"Hello"}}]}\n\ndata: {"choices":[{"delta":{},"finish_reason":"length"}]}\n\ndata: {"choices":[],"usage":{"prompt_tokens":8,"completion_tokens":3}}\n\ndata: [DONE]\n\n';
 		const bytes = new TextEncoder().encode(sse);
 		mocks.route.mockResolvedValue({ actualModelId: body.model, response: new Response(new ReadableStream({ start(controller) { for (let i = 0; i < bytes.length; i += 7) controller.enqueue(bytes.slice(i, i + 7)); controller.close(); } })) });
-		const text = await (await send({ ...body, stream: true })).text();
+		const response = await send({ ...body, stream: true });
+		const requestId = response.headers.get("X-OMA-Request-ID");
+		expect(requestId).toMatch(/^msg_/);
+		const text = await response.text();
 		expect(text).toContain('"text":"Hello"'); expect(text).toContain('"stop_reason":"max_tokens"'); expect(text).toContain('"output_tokens":3');
 		expect(text.match(/event: message_stop/g)).toHaveLength(1);
-		await vi.waitFor(() => expect(mocks.record).toHaveBeenCalledWith(expect.objectContaining({ apiKeyId: "key-a", promptTokens: 8, outputTokens: 3, status: "completed" })));
+		await vi.waitFor(() => expect(mocks.record).toHaveBeenCalledWith(expect.objectContaining({ apiKeyId: "key-a", requestId, promptTokens: 8, outputTokens: 3, status: "completed" })));
 	});
 	it("streams tool arguments with a real ID and preserves explicit zero usage", async () => {
 		const chunks = [

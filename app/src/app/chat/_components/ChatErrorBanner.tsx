@@ -300,11 +300,16 @@ export function ChatErrorBanner({
 		return () => clearInterval(interval);
 	}, [errorType, dailyQuotaError, error]);
 
+	useEffect(() => {
+		if (!retrying) return;
+		const timeout = setTimeout(() => setRetrying(false), 1000);
+		return () => clearTimeout(timeout);
+	}, [retrying]);
+
 	const handleRetry = useCallback(() => {
 		if (classification?.type === "auth" && classification.action?.href) return; // handled by Link
 		setRetrying(true);
 		onRetry?.();
-		setTimeout(() => setRetrying(false), 1000);
 	}, [classification, onRetry]);
 
 	if (!error || !classification || !styles) return null;

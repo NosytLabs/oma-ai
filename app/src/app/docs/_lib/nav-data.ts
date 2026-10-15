@@ -36,7 +36,7 @@ export const NAV_ITEMS: NavItem[] = [
 		],
 		headings: [
 			{ id: "qs-step-key", label: "1. Get API key" },
-			{ id: "qs-step-request", label: "2. Add to headers" },
+			{ id: "qs-step-request", label: "2. Fund your balance" },
 			{ id: "qs-step-response", label: "3. Start building" },
 		],
 	},
@@ -217,7 +217,6 @@ export const NAV_ITEMS: NavItem[] = [
 			"llama",
 			"deepseek",
 			"qwen",
-			"flux",
 			"gpt",
 			"claude",
 			"pricing",
@@ -237,7 +236,6 @@ export const NAV_ITEMS: NavItem[] = [
 			"usdc",
 			"base",
 			"agent settlement",
-			"no account",
 			"agent",
 			"402",
 			"eip-3009",
@@ -256,7 +254,9 @@ export const NAV_ITEMS: NavItem[] = [
 		keywords: [
 			"openai",
 			"vercel",
-			"langchain",
+			"tool calling",
+			"function tools",
+			"tool results",
 			"sdk",
 			"client",
 			"library",
@@ -272,6 +272,7 @@ export const NAV_ITEMS: NavItem[] = [
 		],
 		headings: [
 			{ id: "sdk-chat", label: "Chat Completion" },
+			{ id: "sdk-tools", label: "Function tools" },
 			{ id: "sdk-stream", label: "Streaming" },
 			{ id: "sdk-models", label: "List Models" },
 			{ id: "sdk-vercel", label: "Vercel AI SDK" },

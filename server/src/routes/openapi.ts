@@ -12,6 +12,11 @@ import { config } from "../config.js";
 
 export const openapiRoutes = new Hono<OmaEnv>();
 
+const inferenceResponseHeaders = {
+	"X-OMA-Request-ID": { schema: { type: "string" }, description: "Inference attempt ID; recorded usage uses this ID. Copy it to trace the request in dashboard usage or support." },
+	"X-Request-ID": { schema: { type: "string" }, description: "HTTP trace ID. This can differ from the inference and upstream response-body IDs." },
+};
+
 function isInternalApiHost(url: string): boolean {
 	try {
 		const { hostname } = new URL(url);
@@ -238,6 +243,7 @@ const spec = {
 				responses: {
 					"200": {
 						description: "Completion (or SSE stream when stream=true)",
+						headers: inferenceResponseHeaders,
 						content: {
 							"application/json": {
 								schema: { type: "object" },
@@ -294,7 +300,7 @@ const spec = {
 					},
 				},
 				responses: {
-					"200": { description: "Anthropic-shaped message (or SSE when stream=true)" },
+					"200": { description: "Anthropic-shaped message (or SSE when stream=true)", headers: inferenceResponseHeaders },
 					"401": { description: "Missing or invalid API key" },
 					"402": { description: "Insufficient credit balance" },
 					"404": { description: "Unknown model id" },
