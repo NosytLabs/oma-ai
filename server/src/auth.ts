@@ -547,16 +547,7 @@ user: {
 						: {}),
 		},
 
-		// NOTE: `@better-auth/agent-auth` used to be registered here and is
-		// deliberately NOT re-added yet. It requires four tables that have never
-		// been migrated — `agent`, `agentHost`, `agentCapabilityGrant`,
-		// `approvalRequest` — and Better Auth validates the whole plugin schema
-		// when betterAuth() is constructed, not per route. Registering it without
-		// those tables made EVERY auth call throw a "Drizzle schema mismatch"
-		// and took production sign-in/sign-up offline.
-		// Model discovery is unaffected: GET /api/v1/models is public.
-		// Re-enable only after migrating all four tables — see
-		// src/__tests__/agent-auth-gating.test.ts, which guards this.
+		// Register only plugins backed by the migrated Drizzle schema.
 		plugins: [
 				magicLink({
 					sendMagicLink,

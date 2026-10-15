@@ -189,8 +189,7 @@ if (typeof window !== "undefined" && !window.ResizeObserver) {
 }
 
 // Suppress framer-motion React.Fragment className warnings in jsdom
-// This is a known compatibility issue in jsdom - framer-motion v12 internally
-// renders as Fragment during testing, which triggers this harmless warning
+// Some motion test doubles render as Fragment and forward className.
 const originalError = console.error;
 console.error = (...args: unknown[]) => {
 	if (

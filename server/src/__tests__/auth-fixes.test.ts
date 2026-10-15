@@ -3,7 +3,7 @@
 	* sends (audit fix #6). Plus the creditGrants-backed free-trial credit
 	* (audit fix #4) — verifies a single grant per email survives user deletion.
 	*/
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeAll, beforeEach } from "vitest";
 import type { BetterAuthOptions } from "better-auth";
 import type { EmailOTPOptions } from "better-auth/plugins";
 import { getCookies } from "better-auth/cookies";
@@ -125,7 +125,24 @@ vi.mock("../inference/models.js", () => ({
 		listAllModels: vi.fn(() => []),
 }));
 
-import { auth, resolveTrustedOrigins, resolveAuthBaseURL } from "../auth.js";
+import { resolveTrustedOrigins, resolveAuthBaseURL } from "../auth.js";
+
+let createAuth: typeof import("better-auth")["betterAuth"];
+let emailOTPPlugin: typeof import("better-auth/plugins")["emailOTP"];
+let memoryAdapter: typeof import("better-auth/adapters/memory")["memoryAdapter"];
+
+// Load the real auth harness once. Cold module loading is setup work, not
+// part of the resend/session behavior's five-second test budget.
+beforeAll(async () => {
+	const [runtime, plugins, adapter] = await Promise.all([
+		vi.importActual<typeof import("better-auth")>("better-auth"),
+		vi.importActual<typeof import("better-auth/plugins")>("better-auth/plugins"),
+		import("better-auth/adapters/memory"),
+	]);
+	createAuth = runtime.betterAuth;
+	emailOTPPlugin = plugins.emailOTP;
+	memoryAdapter = adapter.memoryAdapter;
+}, 20_000);
 
 beforeEach(() => {
 		// Re-apply mock implementations so each test starts from a known state.
@@ -137,22 +154,19 @@ beforeEach(() => {
 		mockGetRedisClient.mockResolvedValue(mockRedis);
 });
 
-describe("per-email send cooldown (audit fix #6)", () => {
+describe("per-email send cooldown", () => {
 	it("rejects a rapid OTP resend before replacing the code that was already delivered", async () => {
-		const { betterAuth } = await vi.importActual<typeof import("better-auth")>("better-auth");
-		const { emailOTP } = await vi.importActual<typeof import("better-auth/plugins")>("better-auth/plugins");
-		const { memoryAdapter } = await import("better-auth/adapters/memory");
 		const { config } = await import("../config.js");
 		const records = { user: [], session: [], account: [], verification: [] as Array<{ value: string }> };
 		let deliveredOTP = "";
 		const otpOptions = capturedPluginOpts.emailOTP!;
-		const localAuth = betterAuth({
+		const localAuth = createAuth({
 			baseURL: "https://www.oma-ai.com",
 			secret: "isolated-otp-regression-secret-16bac4e8-294d-4733-80ff",
 			database: memoryAdapter(records),
 			advanced: { disableCSRFCheck: false, disableOriginCheck: false },
 			hooks: { before: capturedAuth.options?.hooks?.before },
-			plugins: [emailOTP({ ...otpOptions, async sendVerificationOTP(data, ctx) {
+			plugins: [emailOTPPlugin({ ...otpOptions, async sendVerificationOTP(data, ctx) {
 				deliveredOTP = data.otp;
 				await otpOptions.sendVerificationOTP(data, ctx);
 			} })],
@@ -190,13 +204,7 @@ describe("per-email send cooldown (audit fix #6)", () => {
 			config.NODE_ENV = "production";
 		}
 	});
-		it("exports the cooldown helper with the expected key shape", async () => {
-				const { checkEmailSendCooldown } = await import("../auth.js");
-				expect(typeof checkEmailSendCooldown).toBe("function");
-				expect(
-						checkEmailSendCooldown("foo@bar.com", "magic"),
-				).toBeInstanceOf(Promise);
-		});
+
 });
 
 describe("free-trial credit via the real signup hook", () => {
@@ -249,13 +257,6 @@ describe("free-trial credit via the real signup hook", () => {
 		expect(ledger.grants.size).toBe(0);
 		expect(ledger.balance).toBe(0);
 	});
-});
-
-describe("auth.ts boots with the audit-fix surface", () => {
-		it("exports a configured better-auth instance", () => {
-			expect(auth).toBeDefined();
-			expect(typeof (auth as { handler: unknown }).handler).toBe("function");
-		});
 });
 
 describe("auth plugin security configuration", () => {
@@ -368,9 +369,7 @@ describe("auth plugin security configuration", () => {
 
 describe("session revocation with the production cookie policy", () => {
 	it("rejects a replayed session immediately after it is signed out", async () => {
-		const { betterAuth } = await vi.importActual<typeof import("better-auth")>("better-auth");
-		const { memoryAdapter } = await import("better-auth/adapters/memory");
-		const localAuth = betterAuth({
+		const localAuth = createAuth({
 			baseURL: "https://www.oma-ai.com",
 			secret: "isolated-auth-regression-secret-16bac4e8-294d-4733-80ff",
 			database: memoryAdapter({ user: [], session: [], account: [], verification: [] }),

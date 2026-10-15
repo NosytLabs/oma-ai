@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { MODELS, type Model } from "@/lib/models-data";
@@ -25,6 +25,39 @@ const model = (id: string, inputPricePer1M: number, available = true): Model => 
 });
 
 describe("pricing availability and rates", () => {
+	it("keeps collapsed FAQ answers out of the accessibility tree", () => {
+		loadModels.mockReturnValue(new Promise(() => {}));
+		render(<PricingPage />);
+		expect(screen.queryByRole("region", { name: "Do credits expire?" })).not.toBeInTheDocument();
+		fireEvent.click(screen.getByRole("button", { name: "Do credits expire?" }));
+		expect(screen.getByRole("region", { name: "Do credits expire?" })).toBeVisible();
+		fireEvent.click(screen.getByRole("button", { name: "Do credits expire?" }));
+		expect(screen.queryByRole("region", { name: "Do credits expire?" })).not.toBeInTheDocument();
+	});
+
+	it.each([
+		{ maintenanceMode: true, cardPaymentsEnabled: false, cryptoPaymentsEnabled: false },
+		{ maintenanceMode: false, cardPaymentsEnabled: true, cryptoPaymentsEnabled: false, polarConfigured: true },
+	])("opens the payment chooser rather than pinning a potentially paused method (%j)", async (settings) => {
+		loadModels.mockResolvedValue([]);
+		vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify(settings)));
+		render(<PricingPage />);
+		await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("0 enabled models"));
+		const packs = screen.getByRole("region", { name: "Choose a starting balance." });
+		const links = within(packs).getAllByRole("link");
+		expect(links).toHaveLength(3);
+		for (const link of links) expect(link).toHaveAttribute("href", "/deposit");
+	});
+
+	it("stops reporting payment availability as checking after the settings request fails", async () => {
+		loadModels.mockResolvedValue([]);
+		vi.mocked(fetch).mockRejectedValue(new Error("network unavailable"));
+		render(<PricingPage />);
+		const methods = screen.getByRole("region", { name: "Payment methods" });
+		await waitFor(() => expect(within(methods).getAllByText("Unavailable")).toHaveLength(3));
+		expect(within(methods).queryByText("Checking…")).not.toBeInTheDocument();
+	});
+
 	it("does not advertise the fallback count or entry price while checking", () => {
 		loadModels.mockReturnValue(new Promise(() => {}));
 		render(<PricingPage />);

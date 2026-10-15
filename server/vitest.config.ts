@@ -10,14 +10,8 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    maxWorkers: 4,
     include: ['src/**/*.test.ts'],
-    // 2026-07-31: deposit-recovery test re-enabled after fixing two mock
-    // bugs: (1) beforeEach used clearAllMocks, which does not drop queued
-    // mockResolvedValueOnce values, so each test consumed the previous
-    // test's stale getTransaction input ("queue shift"); now uses
-    // resetAllMocks. (2) parseAbi was mocked to vi.fn() returning
-    // undefined, so TRANSFER_ABI[0] threw inside runRecoveryIteration and
-    // the outer catch returned fromBlock; now returns a real ABI shape.
     exclude: ['dist/**', 'node_modules/**'],
     setupFiles: ['./vitest.setup.ts'],
   },

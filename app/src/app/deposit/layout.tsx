@@ -5,23 +5,23 @@ import type { Metadata } from "next";
 import { MotionProvider } from "@/lib/animation/MotionProvider";
 
 export const metadata: Metadata = {
-	title: "Deposit USDC credits",
+	title: "Add credits",
 	description:
-		"Fund your prepaid OMA AI balance with USDC on Base.",
+		"Add prepaid OMA API credits and choose from the available payment methods.",
 	alternates: { canonical: "/deposit" },
 	openGraph: {
 		locale: "en_US",
-		title: "Deposit USDC credits · OMA",
+		title: "Add credits · OMA",
 		description:
-			"Fund your prepaid OMA AI balance with USDC on Base.",
+			"Add prepaid OMA API credits and choose from the available payment methods.",
 		url: "/deposit",
 		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA Deposit" }],
 	},
 	twitter: {
 		card: "summary_large_image",
-		title: "Deposit USDC credits · OMA",
+		title: "Add credits · OMA",
 		description:
-			"Deposit credits to your OMA AI account. USDC on Base supported.",
+			"Add prepaid OMA API credits and choose from the available payment methods.",
 		images: ["/og-image.png"],
 	},
 	// Session-gated — keep out of the public index.

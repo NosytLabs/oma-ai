@@ -82,8 +82,10 @@ describe("guest chat model access", () => {
 			]),
 		);
 		renderChat();
+		// The first render cold-loads the chat workspace inside Suspense.
 		await waitFor(() =>
 			expect(screen.getByRole("textbox", { name: "Enter your message" })).toBeEnabled(),
+			{ timeout: 10_000 },
 		);
 
 		const historyToggle = screen.getByRole("button", { name: "Conversation history" });

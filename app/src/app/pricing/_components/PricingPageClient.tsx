@@ -68,34 +68,30 @@ const CATEGORY_STYLES: Record<Category, { active: string; inactive: string }> =
 
 const PAYMENT_METHODS = [
 	{
+		key: "card",
 		icon: CreditCard,
 		title: "Card checkout",
-		desc: "Buy credits by card when available, using Polar’s secure checkout. No wallet required.",
-		tag: "Optional",
-		tagStyle: "bg-accent-dim text-accent border border-accent/30",
+		desc: "Buy a credit pack with Polar’s secure checkout. No wallet required.",
 	},
 	{
+		key: "usdc",
 		icon: Coins,
 		title: "USDC on Base",
 		desc: "Transfer USDC on Base to your deposit address. Credits apply after confirmation.",
-		tag: "On-chain",
-		tagStyle: "bg-surface text-text-secondary border border-border",
 	},
 	{
+		key: "x402",
 		icon: Rocket,
-		id: "x402",
 		href: "/docs#x402",
-		title: "x402 Agent Settlement",
-		desc: "Sign a USDC payment on Base, verify and settle it to add credits, then spend with an API key. Requires the paying wallet’s session.",
-		tag: "Agents",
-		tagStyle: "bg-surface text-text-secondary border border-border",
+		title: "x402 for agents",
+		desc: "Fund an account with a signed USDC payment on Base, then use an API key. Sign in with the paying wallet.",
 	},
-];
+] as const;
 
 // Tiers render from the single CREDIT_PLANS source (lib/credit-utils.ts).
 // Marketing-only copy + recommended badges are layered on top here so the
 // pricing UI can evolve without touching the deposit flow that consumes it.
-const POLAR_TIERS: Array<{
+const CREDIT_PACKS: Array<{
 	name: string;
 	price: string;
 	credits: string;
@@ -132,16 +128,12 @@ const POLAR_TIERS: Array<{
 
 const FAQ_ITEMS = [
 	{
-		q: "How do I add credits?",
-		a: "Deposit USDC on Base at 1:1 USD, settle USDC via x402 to credit your balance, or buy credits with card where Polar checkout is enabled. The credits page always shows which rails are available.",
+		q: "How is API usage billed?",
+		a: "Each API request uses prepaid credits at the model’s listed input and output token rates. Your dashboard shows recorded requests, token counts and charges. All credit packs use the same exchange rate; larger packs do not change model prices.",
 	},
 	{
 		q: "Do credits expire?",
 		a: "No. Credits never expire while your account is active. They are non-redeemable and non-transferable. 1 credit = $0.01 USD (so $1 = 100 credits), and each request consumes the model's listed per-token cost at request time.",
-	},
-	{
-		q: "What payment methods are accepted?",
-		a: "USDC direct on Base at 1:1 USD, plus x402 verify/settle to credit your balance for agent workflows. Card checkout is offered as an optional rail; the credits page always shows which rails are live right now.",
 	},
 	{
 		q: "Is there a free tier?",
@@ -189,11 +181,9 @@ function AccordionItem({
 				id={panelId}
 				role="region"
 				aria-labelledby={buttonId}
-				className={`grid transition-all duration-200 ease-spring-soft ${isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
+				hidden={!isOpen}
 			>
-				<div className="min-h-0 overflow-hidden">
-					<p className="pb-5 text-sm text-text-secondary leading-relaxed">{item.a}</p>
-				</div>
+				<p className="pb-5 text-sm text-text-secondary leading-relaxed">{item.a}</p>
 			</div>
 		</div>
 	);
@@ -222,33 +212,26 @@ export default function PricingPage() {
 				if (!cancelled) setAvailabilityStatus("unavailable");
 			});
 		fetch("/api/v1/site-settings", { credentials: "same-origin" })
-			.then((r) => (r.ok ? r.json() : null))
+			.then((r) => {
+				if (!r.ok) throw new Error("Payment availability could not be checked");
+				return r.json();
+			})
 			.then((data) => {
-				if (!cancelled && data && typeof data === "object") {
-					setSiteSettings(data as SitePaymentSettings);
-				}
+				if (!data || typeof data !== "object") throw new Error("Missing payment availability");
+				if (!cancelled) setSiteSettings(data as SitePaymentSettings);
 			})
 			.catch(() => {
-				/* Keep funding non-actionable until availability is confirmed. */
+				if (!cancelled) setSiteSettings({ paymentStatusAvailable: false, maintenanceMode: false, cardPaymentsEnabled: false, cryptoPaymentsEnabled: false });
 			});
 		return () => {
 			cancelled = true;
 		};
 	}, []);
 
-	const cardRail = railByKey(siteSettings, "card");
-	const cardActionable = cardRail.actionable;
-
 	const pricedModels = useMemo(() => models.filter((model) => model.modality === "chat").map(toPricedModel), [models]);
 
-	// One availability projection feeds both the headline count and the entry
-	// price, so the two can never disagree and the catalog is not scanned (and
-	// re-priced) twice per update.
-	//
-	// The entry price must be one a visitor can ACTUALLY buy. It previously used
-	// the whole catalog, so the page advertised "Starts at $0.15" for a model
-	// listed right below it as UNAVAILABLE, while the cheapest usable model was
-	// $0.50.
+	// Use the same live availability for the count and entry price. Fallback
+	// catalog rates are reference-only until the API confirms enabled models.
 	const { modelCount, lowestInputPrice } = useMemo(() => {
 		if (availabilityStatus !== "live") return { modelCount: 0, lowestInputPrice: "—" };
 		const available = selectAvailableModels(pricedModels);
@@ -303,7 +286,6 @@ export default function PricingPage() {
 								: availabilityStatus === "checking" ? "Loading model catalog" : "Live catalog unavailable"}
 						</span>
 						<span>Usage-based billing</span>
-						<span>USDC · x402 · optional card</span>
 					</div>
 				</div>
 
@@ -336,18 +318,11 @@ export default function PricingPage() {
 							className="surface-card flex flex-col p-5 rounded-[var(--radius-xl)] border border-border transition-[border-color,box-shadow] duration-200 ease-out hover:border-accent/30 hover:shadow-[var(--shadow-md)]"
 						>
 							<p className="text-[11px] font-mono uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
-								Pay your way
+								Simple credit pricing
 							</p>
-							<p className="mt-3 text-2xl sm:text-3xl font-semibold text-[var(--color-text-bright)]">USDC · optional card</p>
-							<p className="mt-2 min-h-12 text-sm leading-relaxed text-[var(--color-text)]">
-								Top up with USDC on Base, or buy with card via Polar when checkout is
-								enabled.
-							</p>
-							<p className="mt-auto pt-3 text-xs leading-relaxed text-[var(--color-text-muted)]">
-								x402 settlement also supported for agents —{" "}
-								<Link href="#x402" className="font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] transition-colors duration-200 ease-out inline-flex items-center">
-									see below
-								</Link>
+							<p className="mt-3 font-geometric text-3xl font-medium tabular-nums tracking-tight text-[var(--color-text-bright)]">$1 = 100 credits</p>
+							<p className="mt-2 text-sm leading-relaxed text-[var(--color-text)]">
+								One balance for every API model. Add what you need and track your spending in the dashboard.
 							</p>
 						</m.div>
 					</div>
@@ -384,17 +359,15 @@ export default function PricingPage() {
 							<div>
 								<span className="section-eyebrow-caps">Buy credits upfront</span>
 								<h2 id="polar-tiers-heading" className="h2-page mt-3 text-text-bright">
-									Pay your way.
+									Choose a starting balance.
 								</h2>
 							</div>
 							<p className="max-w-md text-sm leading-relaxed text-text-secondary sm:text-right">
-								{cardActionable
-									? "Choose a prepaid credit pack. Every pack uses the same rate: 1 credit = $0.01 USD."
-									: "Add credits with USDC on Base at 1:1 USD. The credits page shows which payment methods are available."}
+								Prepaid credits, with the same model rates at every balance. Choose an available payment method on the credits page.
 							</p>
 						</div>
 						<div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-							{POLAR_TIERS.map((tier) => {
+							{CREDIT_PACKS.map((tier) => {
 								const recommended = tier.name === "Builder";
 								return (
 									<m.article
@@ -418,39 +391,13 @@ export default function PricingPage() {
 										<p className="mt-5 flex-1 text-sm leading-relaxed text-text-secondary">
 											{tier.description}
 										</p>
-										{cardActionable ? (
-											<>
-												<Link
-													href="/deposit?method=card"
-													className={`${recommended ? "btn-mono btn-primary" : "btn-mono"} mt-8 w-full`}
-												>
-													<CreditCard className="h-3.5 w-3.5" aria-hidden="true" />
-													Buy with card
-												</Link>
-												<Link
-													href="/deposit?method=usdc"
-													className="mt-2 inline-flex min-h-10 w-full items-center justify-center text-xs font-mono text-text-muted underline-offset-4 hover:text-accent hover:underline"
-												>
-													or deposit USDC
-												</Link>
-												<p className="mt-3 text-center text-[10px] font-mono uppercase tracking-wider text-text-muted">
-													Card checkout by Polar · USDC direct on Base
-												</p>
-											</>
-										) : (
-											<>
-												<Link
-													href="/deposit?method=usdc"
-													className={`${recommended ? "btn-mono btn-primary" : "btn-mono"} mt-8 w-full`}
-												>
-													<Coins className="h-3.5 w-3.5" aria-hidden="true" />
-													Deposit USDC
-												</Link>
-												<p className="mt-3 text-center text-[10px] font-mono uppercase tracking-wider text-text-muted">
-													Card · {cardRail.badge}
-												</p>
-											</>
-										)}
+										<Link
+											href="/deposit"
+											className={`${recommended ? "btn-mono btn-primary" : "btn-mono"} mt-8 w-full`}
+										>
+											Choose payment method
+											<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+										</Link>
 									</m.article>
 								);
 							})}
@@ -459,19 +406,20 @@ export default function PricingPage() {
 				</InViewFade>
 
 				<InViewFade delay={0.4}>
-					<section className="relative border-t border-border-subtle py-14 sm:py-18 lg:py-22">
+					<section aria-labelledby="payment-methods-heading" className="relative border-t border-border-subtle py-14 sm:py-18 lg:py-22">
 						<div className="mb-6 flex items-center gap-2">
 							<div className="h-px flex-1 bg-border" />
-							<h2 className="text-xs font-mono text-text-muted uppercase tracking-widest">
-								payment methods
+							<h2 id="payment-methods-heading" className="text-xs font-mono text-text-muted uppercase tracking-widest">
+								Payment methods
 							</h2>
 							<div className="h-px flex-1 bg-border" />
 						</div>
 						<div className="grid grid-cols-1 gap-4 md:grid-cols-3">
 							{PAYMENT_METHODS.map((method) => {
 								const Icon = method.icon;
+								const availability = railByKey(siteSettings, method.key);
 								return (
-									<div key={method.title} id={method.id} className="relative group min-w-0 scroll-mt-24">
+									<div key={method.title} id={method.key} className="relative group min-w-0 scroll-mt-24">
 										<div className="absolute inset-0 bg-accent/5 rounded-[var(--radius-xl)] blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 										<m.div
 											whileHover={{ y: -4 }}
@@ -480,18 +428,16 @@ export default function PricingPage() {
 										>
 											<div className="mb-4 flex items-center gap-3">
 												<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-surface-elevated shadow-sm">
-													<Icon className="h-5 w-5 text-accent" />
+													<Icon className="h-5 w-5 text-accent" aria-hidden="true" />
 												</div>
 												<h3 className="text-sm font-semibold text-text-bright">{method.title}</h3>
 											</div>
 											<p className="flex-1 text-sm text-text-secondary leading-relaxed">{method.desc}</p>
 											<div className="mt-4 flex min-h-11 flex-wrap items-center justify-between gap-3">
-												{method.tag && (
-													<div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono font-medium border ${method.tagStyle}`}>
-														{method.tag}
-													</div>
-												)}
-												{method.href && (
+												<span className={`inline-flex items-center rounded-md border px-2.5 py-1 text-xs font-medium ${availability.actionable ? "border-accent/30 bg-accent-dim text-accent" : "border-border bg-surface text-text-muted"}`}>
+													{availability.badge}
+												</span>
+												{"href" in method && (
 													<Link href={method.href} aria-label="Learn more about x402" className="inline-flex min-h-11 items-center gap-1 text-xs font-medium text-accent hover:underline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2">
 														Read the guide <ArrowRight className="h-3 w-3" aria-hidden="true" />
 													</Link>
@@ -549,24 +495,16 @@ export default function PricingPage() {
 								<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
 							</Link>
 							<Link
-								href={cardActionable ? "/deposit?method=card" : "/deposit?method=usdc"}
+								href="/deposit"
 								className="btn-mono w-full sm:w-auto"
 							>
-								{cardActionable ? (
-									<CreditCard className="h-3.5 w-3.5" aria-hidden="true" />
-								) : (
-									<Coins className="h-3.5 w-3.5" aria-hidden="true" />
-								)}
-								<span>{cardActionable ? "Buy credits" : "Deposit USDC"}</span>
-														</Link>
-													</div>
-													{/* The adjacent button asks for money, so the signup button beside
-													    it needs the reassurance spelled out — otherwise "Get API key"
-													    reads as the first step of a charge. Free website chat and
-													    no card required are both literally true. */}
-													<p className="text-center font-mono text-[11px] uppercase tracking-[0.14em] text-text-muted">
-														No credit card required to start
-													</p>
+								<Coins className="h-3.5 w-3.5" aria-hidden="true" />
+								<span>View payment methods</span>
+							</Link>
+						</div>
+						<p className="text-center font-mono text-[11px] uppercase tracking-[0.14em] text-text-muted">
+							No credit card required to start
+						</p>
 						<Link
 							href="/models"
 							className="inline-flex min-h-11 items-center justify-center font-mono text-xs text-text-muted transition-colors duration-200 ease-out hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
@@ -585,10 +523,8 @@ export default function PricingPage() {
 						{[
 						"1 credit = $0.01; credits are non-redeemable and non-transferable",
 						"Credits never expire while your account is active",
-						"No credit float — credits appear after settlement",
+						"Credits appear after your payment is confirmed",
 						"Billed per token at the listed rates, deducted in real-time",
-						"Venice model rates include a 50% markup on Venice catalog prices",
-						"OMA-AI models: $0.02 per million input tokens and $0.02 per million output tokens",
 						"Card purchases via Polar appear as 'NOSYT' on your statement",
 						].map((note) => (
 							<div key={note} className="flex items-start gap-2">
