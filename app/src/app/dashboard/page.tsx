@@ -144,10 +144,11 @@ function DashboardPageInner() {
 	} = useDashboardStats(usage, timeRange);
 
 	const handleRefresh = useCallback(async () => {
+		if (!canLoadDashboard) return;
 		setPage(1);
 		await refresh();
 		setRefreshTick((n) => n + 1);
-	}, [refresh]);
+	}, [canLoadDashboard, refresh]);
 
 	const handlePageChange = async (next: number) => {
 		if (live.loadingMoreUsage) return;
@@ -308,9 +309,10 @@ function DashboardPageInner() {
 						loading={loading}
 						modelsAvailable={selectAvailableModels(models).length}
 						hasAnyData={hasAnyData}
+						isDemo={isDemoView}
 						refreshTick={refreshTick}
 						hasError={!!error}
-						onRefresh={handleRefresh}
+						onRefresh={canLoadDashboard ? handleRefresh : undefined}
 						onExport={handleExport}
 						exporting={exporting}
 						exportDisabled={!canLoadDashboard || !exportRange}

@@ -92,7 +92,8 @@ export function DonutChart({
 				aria-hidden="true"
 				className="absolute inset-0 flex flex-col items-center justify-center"
 			>
-				<span className={`max-w-[130px] text-center font-bold tabular-nums text-text-bright ${formattedTotal.length > 10 ? "text-base" : formattedTotal.length > 7 ? "text-xl" : "text-3xl"}`}>
+				{/* The chart has a fixed 140px opening; page heading sizes can exceed it. */}
+				<span className={`max-w-[130px] break-all text-center font-mono font-bold leading-tight tabular-nums text-text-bright ${formattedTotal.length > 10 ? "text-[14px]" : formattedTotal.length > 7 ? "text-[20px]" : "text-[30px]"}`}>
 					{formattedTotal}
 				</span>
 				<span className="text-xs text-text-muted uppercase tracking-wider">
