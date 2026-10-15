@@ -6,7 +6,6 @@ import {
 	Coins,
 	CreditCard,
 	HelpCircle,
-	Link2,
 	Rocket,
 	Zap,
 } from "lucide-react";
@@ -83,8 +82,10 @@ const PAYMENT_METHODS = [
 	},
 	{
 		icon: Rocket,
+		id: "x402",
+		href: "/docs#x402",
 		title: "x402 Agent Settlement",
-		desc: "EIP-3009 USDC on Base. Agents verify, settle to credit a balance, then spend with an API key.",
+		desc: "Sign a USDC payment on Base, verify and settle it to add credits, then spend with an API key. Requires the paying wallet’s session.",
 		tag: "Agents",
 		tagStyle: "bg-surface text-text-secondary border border-border",
 	},
@@ -105,8 +106,7 @@ const POLAR_TIERS: Array<{
 			description: "A small start for side projects and first experiments.",
 		},
 		Builder: {
-			description:
-				"Enough credits to carry a production app or an autonomous agent.",
+			description: "A larger balance for regular development and testing.",
 			badge: "Recommended",
 		},
 		Scale: {
@@ -292,11 +292,8 @@ export default function PricingPage() {
 					<span className="section-eyebrow-caps">AI API pricing</span>
 					<h1 className="h1-page text-text-bright max-w-4xl">Pricing for every model.</h1>
 					<p className="page-intro mt-0">
-						See model costs first, then choose how to pay. OMA bills from
-						prepaid credits per token, with no subscriptions and no lock-in.
-						Listed prices are what you pay: Venice-routed models include a
-						50% markup on Venice catalog rates; OMA-AI models cost $0.02 per
-						million input tokens and $0.02 per million output tokens.
+						Compare model rates, then add prepaid credits. Pay only for the
+						tokens you use, with no monthly fee.
 					</p>
 					<div className="meta-strip">
 						<span role="status">
@@ -311,12 +308,6 @@ export default function PricingPage() {
 
 				<InViewFade>
 					<div className="mb-10 grid grid-cols-1 gap-4 md:grid-cols-2">
-						{/* flex-col plus a trailing note on mt-auto pins both
-						    cards' last line to the shared card bottom: in plain
-						    flow the two content blocks ended at different y
-						    (186 vs 159 after the first pass, 640 vs 657 in the
-						    original audit), so equal-height cards still read as
-						    misaligned. Both cards now end on one baseline. */}
 						<m.div
 							whileHover={{ y: -4 }}
 							transition={springs.card}
@@ -423,7 +414,7 @@ export default function PricingPage() {
 											{tier.price}
 										</p>
 										<p className="mt-2 font-mono text-sm font-medium text-accent">{tier.credits}</p>
-										<p className="mt-5 min-h-12 text-sm leading-relaxed text-text-secondary">
+										<p className="mt-5 flex-1 text-sm leading-relaxed text-text-secondary">
 											{tier.description}
 										</p>
 										{cardActionable ? (
@@ -470,42 +461,41 @@ export default function PricingPage() {
 					<section className="relative border-t border-border-subtle py-14 sm:py-18 lg:py-22">
 						<div className="mb-6 flex items-center gap-2">
 							<div className="h-px flex-1 bg-border" />
-							<span className="text-xs font-mono text-text-muted uppercase tracking-widest">
+							<h2 className="text-xs font-mono text-text-muted uppercase tracking-widest">
 								payment methods
-							</span>
+							</h2>
 							<div className="h-px flex-1 bg-border" />
 						</div>
-						<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+						<div className="grid grid-cols-1 gap-4 md:grid-cols-3">
 							{PAYMENT_METHODS.map((method) => {
 								const Icon = method.icon;
 								return (
-									<div key={method.title} className="relative group">
+									<div key={method.title} id={method.id} className="relative group min-w-0 scroll-mt-24">
 										<div className="absolute inset-0 bg-accent/5 rounded-[var(--radius-xl)] blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 										<m.div
 											whileHover={{ y: -4 }}
 											transition={springs.card}
-											className="relative p-6 rounded-[var(--radius-xl)] border border-border bg-surface hover:border-accent/30 shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] transition-[border-color,box-shadow] duration-200 ease-out"
+											className="relative flex h-full flex-col p-5 rounded-[var(--radius-xl)] border border-border bg-surface hover:border-accent/30 shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] transition-[border-color,box-shadow] duration-200 ease-out"
 										>
-											<div className="flex items-start gap-4">
-												<div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-border bg-surface-elevated shadow-sm">
+											<div className="mb-4 flex items-center gap-3">
+												<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-surface-elevated shadow-sm">
 													<Icon className="h-5 w-5 text-accent" />
 												</div>
-												<div className="flex-1 min-w-0">
-													<h3 className="text-sm font-semibold text-text-bright">
-														{method.title}
-													</h3>
-													<p className="mt-2 text-xs text-text-secondary leading-relaxed">
-														{method.desc}
-													</p>
-												</div>
+												<h3 className="text-sm font-semibold text-text-bright">{method.title}</h3>
 											</div>
-											{method.tag && (
-												<div
-													className={`mt-4 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono font-medium border ${method.tagStyle}`}
-												>
-													{method.tag}
-												</div>
-											)}
+											<p className="flex-1 text-sm text-text-secondary leading-relaxed">{method.desc}</p>
+											<div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+												{method.tag && (
+													<div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono font-medium border ${method.tagStyle}`}>
+														{method.tag}
+													</div>
+												)}
+												{method.href && (
+													<Link href={method.href} aria-label="Learn more about x402" className="inline-flex min-h-11 items-center gap-1 text-xs font-medium text-accent hover:underline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2">
+														Read the guide <ArrowRight className="h-3 w-3" aria-hidden="true" />
+													</Link>
+												)}
+											</div>
 										</m.div>
 									</div>
 								);
@@ -513,66 +503,14 @@ export default function PricingPage() {
 						</div>
 					</section>
 				</InViewFade>
-
-				<InViewFade>
-				<section id="x402" className="relative border-t border-border-subtle py-14 sm:py-18 lg:py-22 scroll-mt-20">
-					<m.div
-						whileHover={{ y: -4 }}
-						transition={springs.card}
-						className="relative p-6 rounded-[var(--radius-xl)] bg-accent/5 border border-accent/20 shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] transition-[box-shadow] duration-200 ease-out"
-					>
-						<div className="flex items-start gap-4">
-							<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 border border-accent/20">
-								<Link2 className="h-5 w-5 text-accent" />
-							</div>
-							<div>
-								<div className="flex flex-wrap items-center gap-3">
-									{/* text-sm, was text-base: this h3 was 15px against
-									    three sibling payment-method h3s at 13px, so the
-									    level carried two sizes. The accent colour and
-									    the "recommended for agents" pill already mark
-									    this card as the featured one. */}
-									<h3 className="text-sm font-semibold text-accent">
-										x402 Protocol
-									</h3>
-									<span className="inline-flex items-center rounded-full bg-accent text-void px-2.5 py-0.5 text-[10px] font-mono font-medium uppercase tracking-widest shadow-sm">
-										recommended for agents
-									</span>
-								</div>
-								<p className="mt-2 text-sm text-text-secondary leading-relaxed">
-									Native x402 support lets applications fund with USDC on Base
-									without a card. Verify and settle USDC to add credits, then spend with an API key.
-									<Link
-										href="/docs#x402"
-										className="ml-2 font-medium text-accent hover:text-accent-hover transition-colors duration-200 ease-out inline-flex items-center"
-										aria-label="Learn more about x402"
-									>
-										Learn more about x402 <ArrowRight className="ml-1 h-3 w-3" />
-									</Link>
-								</p>
-							</div>
-						</div>
-					</m.div>
-				</section>
-			</InViewFade>
-
 			{/* ── FAQ ── */}
 				<InViewFade delay={0.5}>
 					<div id="faq" className="mb-12 scroll-mt-20">
 					<div className="flex items-center gap-2 mb-6">
 						<HelpCircle className="h-4 w-4 text-accent" />
-						{/* Was an <h2> in mono 13px uppercase, the only mono
-						    heading on a page whose h2s are otherwise the
-						    serif .h2-page scale — so the h2 level measured
-						    as two families. This is a card caption above the
-						    accordion, not a document section, and the page
-						    already carries the real sections as serif h2s,
-						    so a <p> is both the correct level and the
-						    visual match for the sibling "payment methods"
-						    divider caption. */}
-						<p className="text-sm font-mono font-semibold uppercase tracking-widest text-text-secondary">
+						<h2 className="text-sm font-mono font-semibold uppercase tracking-widest text-text-secondary">
 							FAQ
-						</p>
+						</h2>
 					</div>
 					<div className="rounded-[var(--radius-xl)] border border-border bg-surface p-6 shadow-[var(--shadow-sm)]">
 						{FAQ_ITEMS.map((item, i) => (
@@ -639,11 +577,6 @@ export default function PricingPage() {
 
 			{/* ── Billing Notes ── */}
 			<div className="mb-12 sm:mb-16 p-5 rounded-[var(--radius-xl)] border border-border bg-surface/50 shadow-sm">
-					{/* Was an <h3> in mono 12px, the only mono heading at
-					    this level on a page whose other h3s are serif card
-					    titles. It captions the notes list below rather than
-					    introducing a subsection, so a <p> keeps the h3
-					    level on one family. */}
 					<p className="text-xs font-mono font-semibold uppercase tracking-widest text-text-muted mb-4">
 						Billing notes
 					</p>
@@ -652,7 +585,9 @@ export default function PricingPage() {
 						"1 credit = $0.01; credits are non-redeemable and non-transferable",
 						"Credits never expire while your account is active",
 						"No credit float — credits appear after settlement",
-						"Billed per token, deducted in real-time",
+						"Billed per token at the listed rates, deducted in real-time",
+						"Venice model rates include a 50% markup on Venice catalog prices",
+						"OMA-AI models: $0.02 per million input tokens and $0.02 per million output tokens",
 						"Card purchases via Polar appear as 'NOSYT' on your statement",
 						].map((note) => (
 							<div key={note} className="flex items-start gap-2">

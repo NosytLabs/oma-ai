@@ -23,7 +23,11 @@ import { applyTrustedProxyHeaders } from "@/lib/api/proxy-headers";
  *          response, or a synthesized 502 if the backend is unreachable.
  */
 export async function proxy(req: NextRequest, options: { websiteChat?: boolean } = {}) {
-	const incomingPath = req.nextUrl.pathname.replace(/^\/api/, "");
+	// Polar's alternate callback already includes /api in the backend route.
+	// Stripping it here sends valid deliveries to the nonexistent /webhook/polar.
+	const incomingPath = req.nextUrl.pathname === "/api/webhook/polar"
+		? "/api/webhook/polar"
+		: req.nextUrl.pathname.replace(/^\/api/, "");
 	if (options.websiteChat) {
 		// The same-origin chat UI has its own cost policy. Never grant it to
 		// arbitrary SDK paths or cross-origin browser requests.

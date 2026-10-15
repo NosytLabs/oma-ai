@@ -6,6 +6,24 @@ import { proxy } from "../proxy-handler";
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.restoreAllMocks(); });
 
 describe("gateway proxy cancellation", () => {
+	it.each([
+		["/api/webhook/polar", "/api/webhook/polar"],
+		["/api/webhooks/polar", "/webhooks/polar"],
+	])("forwards Polar callback %s without changing its signed body or headers", async (path, upstreamPath) => {
+		const rawBody = '{ "type": "order.paid", "data": {"amount": 5000} }\n';
+		const signatureHeaders = { "webhook-id": "evt_payment_retry", "webhook-timestamp": "1792083600", "webhook-signature": "v1,first v1,second" };
+		const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(Response.json({ error: { code: "invalid_signature" } }, { status: 401 }));
+		vi.stubGlobal("fetch", fetchMock);
+		const response = await proxy(new NextRequest(`https://www.oma-ai.com${path}`, { method: "POST", headers: { "content-type": "application/json", ...signatureHeaders }, body: rawBody }));
+		expect(fetchMock).toHaveBeenCalledOnce();
+		const [url, init] = fetchMock.mock.calls[0];
+		expect((url as URL).pathname).toBe(upstreamPath);
+		expect(init?.method).toBe("POST");
+		expect(await new Response(init?.body).text()).toBe(rawBody);
+		for (const [name, value] of Object.entries(signatureHeaders)) expect(new Headers(init?.headers).get(name)).toBe(value);
+		expect(response.status).toBe(401);
+		expect(await response.json()).toEqual({ error: { code: "invalid_signature" } });
+	});
 	it.each(["/api/v1/usage/today", "/api/chat/completions"])("retains Vercel's platform client IP for quota path %s", async path => {
 		vi.stubEnv("VERCEL", "1");
 		vi.stubEnv("INTERNAL_PROXY_SECRET", "server-owned-secret");

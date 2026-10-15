@@ -195,14 +195,7 @@ export function DocsContent() {
 								<span className="opacity-50">/</span>
 								<span className="text-text">docs</span>
 							</nav>
-						{/* The two hero columns measured 502x193 against 336x70 - the search
-						    column carried 123px less content but `lg:items-start` pinned both
-						    to the top edge, so the short one floated with all that height as
-						    dead space beneath it. `lg:items-center` pairs them on a shared
-						    optical centre; min-width steps 21rem -> 22rem to give the search
-						    field room to breathe; the meta-strip keeps its nowrap so the
-						    three facts stay on one line. */}
-					<div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+					<div className="flex flex-col gap-6">
 						<div className="min-w-0">
 							<span className="section-eyebrow-caps">API reference</span>
 							<h1 className="display-headline mt-4 text-text-bright">
@@ -213,9 +206,9 @@ export function DocsContent() {
 								credit billing. One endpoint, one key, every curated model.
 							</p>
 						</div>
-						<div className="flex flex-col gap-3 lg:min-w-[22rem] lg:items-center lg:justify-end">
+						<div className="flex flex-wrap items-center justify-between gap-3">
 							<DocsSearch />
-							<div className="meta-strip justify-start lg:justify-end lg:flex-nowrap lg:whitespace-nowrap">
+							<div className="meta-strip justify-start">
 								<span>OpenAI-compatible</span>
 								<span>{MODEL_COUNT} models</span>
 								<span>x402 on Base</span>

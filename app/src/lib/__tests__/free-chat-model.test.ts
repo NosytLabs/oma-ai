@@ -6,29 +6,24 @@ import {
 	DOCS_EXAMPLE_MODEL,
 	isFreeChatModel,
 } from "@/lib/model-utils";
+import { MODELS } from "@/lib/models-data";
 
 describe("isFreeChatModel (guest website chat)", () => {
 	it("defaults free chat to an allowlisted catalog id", () => {
 		expect(FREE_DEFAULT_CHAT_MODEL).toBe("minimax-m2-7");
 		expect(FREE_CHAT_MODEL_IDS.has(FREE_DEFAULT_CHAT_MODEL)).toBe(true);
+		const catalogIds = new Set(MODELS.map(model => model.id));
+		for (const id of FREE_CHAT_MODEL_IDS) expect(catalogIds.has(id)).toBe(true);
 	});
 
 	it("only OMA-AI / Gonka.AI upstream models are free; everything else requires auth", () => {
-		// Free — every model with server-side upstream === "openbroker"
-		// on api.openbroker.gonka.gg. Verified live against the upstream
-		// catalog (2 models). See server/src/inference/models.ts.
 		expect(isFreeChatModel("deepseek-v4-flash-0731-openbroker")).toBe(true);
 		expect(isFreeChatModel("kimi-k2-6")).toBe(false);
 		expect(isFreeChatModel("minimax-m2-7")).toBe(true);
 
-		// Paid — Venice-routed models always require auth. (Pre-2026-08-17
-		// this block also covered OMA-AI resale through Zyloo, e.g.
-		// qwen3-235b-a22b-openbroker, gpt-4o, gemini-3.1-pro-preview.
-		// Those models were deleted along with Zyloo.)
 		expect(isFreeChatModel("kimi-k3")).toBe(false);
 		expect(isFreeChatModel("llama-3.3-70b")).toBe(false);
 		expect(isFreeChatModel("llama-3.3-70b", "Venice")).toBe(false);
-		expect(isFreeChatModel("llama-3.3-70b")).toBe(false);
 	});
 
 	it("only allowlisted openbroker ids are free; unknown ids require auth", () => {
@@ -42,17 +37,6 @@ describe("isFreeChatModel (guest website chat)", () => {
 	});
 });
 
-/**
- * Open question 1 (audit 2026-09-01-userflow.md §5): the model picker
- * should show a DEFAULT badge on the FREE_DEFAULT_CHAT_MODEL row.
- * Locked in by exporting FREE_DEFAULT_CHAT_MODEL and having the
- * ModelSelector render the badge for `model.id === FREE_DEFAULT_CHAT_MODEL`.
- *
- * Open question 2 (audit 2026-09-01 §5): the mistral "free" badge
- * could be misread as "OpenBroker-grade free" when it's a Venice
- * fallback. FREE_TIER_LABELS disambiguates the two tiers with
- * explicit copy + tooltip.
- */
 describe("FREE_TIER_LABELS", () => {
 	it("covers every entry in FREE_CHAT_MODEL_IDS", () => {
 		for (const id of FREE_CHAT_MODEL_IDS) {
@@ -62,7 +46,7 @@ describe("FREE_TIER_LABELS", () => {
 		}
 	});
 
-	it("the default model (deepseek-v4-flash-0731-openbroker) is in the labels map", () => {
+	it("the default model has a free label", () => {
 		expect(FREE_TIER_LABELS[FREE_DEFAULT_CHAT_MODEL]).toBeDefined();
 		// Its label is the plain "Free" — primary OMA-AI / Gonka.AI tier.
 		expect(FREE_TIER_LABELS[FREE_DEFAULT_CHAT_MODEL].label).toBe("Free");
