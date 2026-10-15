@@ -133,6 +133,7 @@ anthropicRoutes.post(
 				const userId = c.get("userId");
 				const apiKeyId = c.get("apiKey")?.id ?? null;
 				const requestId = c.get("inferenceRequestId") ?? `msg_${crypto.randomUUID()}`;
+				c.header("X-OMA-Request-ID", requestId);
 
 				const openAIMessages = toOpenAIMessages(messages, system);
 				const promptText = openAIMessages.map((m) => flattenMessageContent(m.content as string | unknown[])).join("\n");

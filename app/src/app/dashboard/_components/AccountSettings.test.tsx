@@ -1,6 +1,6 @@
 import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ProfileSection } from "./settings/ProfileSection";
@@ -28,12 +28,14 @@ const user = {
 	updatedAt: "2026-01-01T00:00:00Z",
 };
 
+let signedInUser = user;
+
 vi.mock("next/navigation", () => ({
 	useRouter: () => mocks.router,
 	useSearchParams: () => mocks.params,
 }));
 vi.mock("@/lib/hooks/useAuth", () => ({
-	useAuth: () => ({ isAuthenticated: true, isDemo: false, isReady: true, evmAddress: null, user, signOut: mocks.signOut }),
+	useAuth: () => ({ isAuthenticated: true, isDemo: false, isReady: true, evmAddress: null, user: signedInUser, signOut: mocks.signOut }),
 }));
 vi.mock("@/components/shared/UnauthCallout", () => ({ UnauthCallout: () => null }));
 vi.mock("@/components/ui/Toast", () => ({ useToast: () => mocks.toast }));
@@ -54,11 +56,14 @@ vi.mock("@/lib/framer-motion-client", () => {
 function renderSettings(cachedBalanceCents?: number) {
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	if (cachedBalanceCents !== undefined) client.setQueryData(["balance"], { balanceCents: cachedBalanceCents });
-	return render(<QueryClientProvider client={client}><ThemeProvider><AccountSettings /></ThemeProvider></QueryClientProvider>);
+	const element = () => <QueryClientProvider client={client}><ThemeProvider><AccountSettings /></ThemeProvider></QueryClientProvider>;
+	const view = render(element());
+	return { ...view, refreshSession: () => view.rerender(element()) };
 }
 
 beforeEach(() => {
 	vi.clearAllMocks();
+	signedInUser = user;
 	mocks.params = new URLSearchParams("demo=1");
 	mocks.listSessions.mockResolvedValue({ sessions: [] });
 	mocks.balance.mockResolvedValue({ balanceCents: 100 });
@@ -128,5 +133,45 @@ describe("profile name state", () => {
 		expect(mocks.updateUser).toHaveBeenCalledWith({ name: "Updated name" });
 		expect(screen.getByRole("textbox", { name: "Display name" })).toHaveValue("Updated name");
 		expect(screen.getByRole("button", { name: "Save name" })).toBeDisabled();
+	});
+});
+
+
+describe("settings account boundaries", () => {
+	it("does not sign out a new account when an old account deletion finishes", async () => {
+		mocks.params = new URLSearchParams("tab=settings&section=danger");
+		let finishDeletion!: () => void;
+		mocks.deleteAccount.mockReturnValueOnce(new Promise<void>((resolve) => { finishDeletion = resolve; }));
+		const { refreshSession } = renderSettings();
+		fireEvent.click(screen.getByRole("button", { name: "Delete account" }));
+		fireEvent.change(screen.getByRole("textbox", { name: "Confirm by typing DELETE" }), { target: { value: "DELETE" } });
+		fireEvent.click(screen.getByRole("button", { name: "Delete my account" }));
+		expect(mocks.deleteAccount).toHaveBeenCalledTimes(1);
+
+		signedInUser = { ...user, id: "another-user", email: "another@example.com" };
+		refreshSession();
+		await act(async () => { finishDeletion(); });
+		expect(mocks.signOut).not.toHaveBeenCalled();
+		expect(screen.getByRole("button", { name: "Delete account" })).toBeEnabled();
+	});
+
+	it("requires fresh destructive confirmations after switching accounts", async () => {
+		mocks.params = new URLSearchParams("tab=settings&section=danger");
+		const { refreshSession } = renderSettings();
+		fireEvent.click(screen.getByRole("button", { name: "Clear usage history" }));
+		fireEvent.click(screen.getByRole("button", { name: "Delete account" }));
+		fireEvent.change(screen.getByRole("textbox", { name: "Confirm by typing DELETE" }), { target: { value: "DELETE" } });
+		expect(screen.getByRole("button", { name: "Delete my account" })).toBeEnabled();
+
+		signedInUser = { ...user, id: "another-user", email: "another@example.com" };
+		refreshSession();
+		expect(screen.queryByRole("button", { name: "Confirm wipe" })).not.toBeInTheDocument();
+		expect(screen.queryByRole("textbox", { name: "Confirm by typing DELETE" })).not.toBeInTheDocument();
+		fireEvent.click(screen.getByRole("button", { name: "Delete account" }));
+		expect(screen.getByRole("textbox", { name: "Confirm by typing DELETE" })).toHaveValue("");
+		expect(screen.getByRole("button", { name: "Delete my account" })).toBeDisabled();
+		expect(mocks.deleteAccount).not.toHaveBeenCalled();
+		expect(mocks.clearHistory).not.toHaveBeenCalled();
+		await waitFor(() => expect(mocks.balance).toHaveBeenCalledTimes(2));
 	});
 });

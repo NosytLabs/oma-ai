@@ -88,7 +88,8 @@ describe("guest chat model access", () => {
 
 		const historyToggle = screen.getByRole("button", { name: "Conversation history" });
 		fireEvent.click(historyToggle);
-		const history = await screen.findByRole("dialog", { name: "Conversation history" });
+		// The history panel is lazy-loaded; allow a cold import under the full worker pool.
+		const history = await screen.findByRole("dialog", { name: "Conversation history" }, { timeout: 10_000 });
 		expect(within(history).getByText("Legacy sparse attention question")).toBeVisible();
 
 		fireEvent.click(within(history).getByRole("button", { name: "New chat" }));

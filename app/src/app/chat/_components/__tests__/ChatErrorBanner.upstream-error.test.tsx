@@ -15,6 +15,22 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("ChatErrorBanner upstream timeout", () => {
+	it("releases the retry cooldown when the banner unmounts", () => {
+		vi.useFakeTimers();
+		try {
+			const onRetry = vi.fn();
+			const { unmount } = render(<ChatErrorBanner error="Backend request timed out" onDismiss={vi.fn()} onRetry={onRetry} />);
+			fireEvent.click(screen.getByRole("button", { name: /try again/i }));
+			expect(onRetry).toHaveBeenCalledOnce();
+			expect(vi.getTimerCount()).toBeGreaterThan(0);
+			unmount();
+			expect(vi.getTimerCount()).toBe(0);
+		} finally {
+			vi.clearAllTimers();
+			vi.useRealTimers();
+		}
+	});
+
 	it.each([
 		"Inference provider temporarily unavailable",
 		"Model MiniMaxAI/MiniMax-M2.7 is temporarily unavailable",

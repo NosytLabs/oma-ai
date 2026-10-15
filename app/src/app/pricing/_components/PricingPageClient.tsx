@@ -12,7 +12,8 @@ import {
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { InViewFade } from "@/components/motion/in-view-fade";
-import { MODELS, MODEL_COUNT, formatPricePerMillion, loadModels, type Model } from "@/lib/models-data";
+import { MODELS, formatPricePerMillion, loadModels, type Model } from "@/lib/models-data";
+import SITE_URL from "@/lib/site";
 import { CREDIT_PLANS } from "@/lib/credit-utils";
 import {
 	toPricedModel,
@@ -21,7 +22,7 @@ import {
 } from "../_lib/pricing-utils";
 import {
 	BreadcrumbListJsonLd,
-	ProductJsonLd,
+	ServiceJsonLd,
 	FAQPageJsonLd,
 } from "@/components/json-ld";
 import { m } from "@/lib/framer-motion-client";
@@ -270,10 +271,10 @@ export default function PricingPage() {
 					{ name: "Pricing", url: "/pricing" },
 				]}
 			/>
-			<ProductJsonLd
+			<ServiceJsonLd
 				name="OMA AI API Inference"
-				description={`Usage-based AI inference across ${MODEL_COUNT} models. No monthly fees, no lock-in.`}
-				price="0.01"
+				description="Usage-based AI inference with prepaid credits and model-specific token rates. No monthly fee."
+				url={`${SITE_URL}/pricing`}
 			/>
 			<FAQPageJsonLd
 				questions={FAQ_ITEMS.map((item) => ({

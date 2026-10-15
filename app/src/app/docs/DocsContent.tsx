@@ -202,8 +202,8 @@ export function DocsContent() {
 								API Docs
 							</h1>
 							<p className="page-intro max-w-2xl">
-								OpenAI-compatible inference with wallet auth and x402
-								credit billing. One endpoint, one key, every curated model.
+								OpenAI-compatible inference with prepaid credits. Sign in by email or wallet,
+								create an API key, and choose an available model.
 							</p>
 						</div>
 						<div className="flex flex-wrap items-center justify-between gap-3">

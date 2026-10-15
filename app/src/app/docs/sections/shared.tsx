@@ -135,7 +135,8 @@ export const ENDPOINTS: EndpointInfo[] = [
 			temperature: "number 0 to 2 (optional, default from upstream)",
 			max_tokens: "positive integer (optional). Must not exceed the model's max_output_tokens",
 			stream: "boolean. Server-Sent Events when true (text/event-stream)",
-			tools: "array of tool definitions (optional)",
+			tools: "array of function-tool definitions (optional). Your application executes tools and sends their results back; OMA does not run them.",
+			tool_choice: "auto, none, required, or a named function (optional; support varies by model)",
 		},
 		response: `{
 	"id": "chatcmpl-9f3k2a",
@@ -435,7 +436,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 		path: "/v1/keys",
 		anchor: "ep-keys-list",
 		title: "List API Keys",
-		desc: "Lists your active API keys. Raw key values are never returned — only metadata.",
+		desc: "Lists your API key metadata, including expiry, model restrictions and IP restrictions. Expired keys can remain listed until revoked; they cannot authenticate. Raw key values are never returned.",
 		auth: "Better Auth session cookie",
 		body: undefined,
 		response: `{
@@ -447,7 +448,8 @@ export const ENDPOINTS: EndpointInfo[] = [
 			"createdAt": "2026-08-01T00:00:00.000Z",
 			"lastUsedAt": null,
 			"expiresAt": "2026-10-30T00:00:00.000Z",
-			"allowedModels": ["minimax-m2-7"]
+			"allowedModels": ["minimax-m2-7"],
+			"ipAllowlist": ["192.0.2.0/24"]
 		}
 	]
 }`,
@@ -459,7 +461,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 		title: "Create API Key",
 		desc: "Mints a new API key. Store the returned secret immediately; only its hash is kept. Model restrictions apply to fallback routes too. Keys expire after 90 days by default.",
 		auth: "Better Auth session cookie",
-		body: { name: "string (optional). Key label, 1–64 characters, default \"default\"", expiresInDays: "integer (optional). 1–365 days, default 90", allowedModels: "string[] (optional). 1–30 OMA model IDs; omit to allow all models" },
+		body: { name: "string (optional). Key label, 1–64 characters, default \"default\"", expiresInDays: "integer (optional). 1–365 days, default 90", allowedModels: "string[] (optional). 1–30 OMA model IDs; omit to allow all models", ipAllowlist: "string[] (optional). 1–20 IPv4/IPv6 addresses or CIDR ranges. Use your server’s public outbound IP; omit for unrestricted access. Revoke and replace a key to change restrictions." },
 		response: `{
 	"id": "key_…",
 	"name": "default",
@@ -467,6 +469,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 	"createdAt": "2026-08-01T00:00:00.000Z",
 	"expiresAt": "2026-10-30T00:00:00.000Z",
 	"allowedModels": null,
+	"ipAllowlist": null,
 	"key": "oma_sk_…"
 }`,
 	},
@@ -626,7 +629,7 @@ function CopyButton({ text, id }: { text: string; id: string }) {
 					setTimeout(() => setCopied(false), 2000);
 				});
 			}}
-			className={`absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border bg-surface/95 px-2.5 py-1.5 text-[11px] font-mono font-semibold uppercase tracking-wider backdrop-blur-sm transition-[background-color,border-color,color,transform] duration-200 ease-out hover:border-accent/60 hover:text-accent active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+			className={`shrink-0 inline-flex min-h-9 items-center gap-1.5 rounded-[var(--radius-md)] border bg-surface/95 px-2.5 py-1.5 text-[11px] font-mono font-semibold uppercase tracking-wider backdrop-blur-sm transition-[background-color,border-color,color,transform] duration-200 ease-out hover:border-accent/60 hover:text-accent active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
 				copied
 					? "border-success/60 text-success"
 					: "border-border text-text-secondary"
@@ -661,14 +664,12 @@ export function CodeBlock({
 	const id = useId();
 	return (
 		<div className="group relative max-w-full min-w-0 overflow-hidden rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)]">
-			{title && (
-				<div className="flex items-center justify-between border-b border-border/50 px-4 py-2">
-					<span className="text-xs font-medium text-text-muted font-mono">
-						{title}
-					</span>
-				</div>
-			)}
-			<CopyButton text={code} id={id} />
+			<div className="flex items-center justify-between gap-3 border-b border-border/50 px-4 py-2">
+				<span className="min-w-0 break-words text-xs font-medium text-text-muted font-mono">
+					{title ?? "Code example"}
+				</span>
+				<CopyButton text={code} id={id} />
+			</div>
 			<div
 				aria-label={`${title ?? "Code example"} — ${id}`}
 				role="region"
@@ -688,24 +689,26 @@ export function TabbedCode({ tabs }: { tabs: Tab[] }) {
 	const id = useId();
 	return (
 		<div className="max-w-full min-w-0 overflow-hidden rounded-[var(--radius-xl)] border border-border bg-panel shadow-[var(--shadow-md)]">
-			<div className="flex max-w-full overflow-x-auto border-b border-border/50 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-				{tabs.map((t, i) => (
-					<button
-						type="button"
-						key={t.label}
-						onClick={() => setActive(i)}
-						className={`shrink-0 px-4 py-2.5 text-sm font-medium transition-[color,border-color,background-color,transform] duration-200 ease-out border-b-2 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void ${
-							i === active
-								? "text-accent border-accent"
-								: "text-text-muted border-transparent hover:text-text-secondary"
-						}`}
-					>
-						{t.label}
-					</button>
-				))}
+			<div className="flex items-center gap-2 border-b border-border/50 pr-3">
+				<div className="flex min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+					{tabs.map((t, i) => (
+						<button
+							type="button"
+							key={t.label}
+							onClick={() => setActive(i)}
+							className={`shrink-0 px-4 py-2.5 text-sm font-medium transition-[color,border-color,background-color,transform] duration-200 ease-out border-b-2 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void ${
+								i === active
+									? "text-accent border-accent"
+									: "text-text-muted border-transparent hover:text-text-secondary"
+							}`}
+						>
+							{t.label}
+						</button>
+					))}
+				</div>
+				<CopyButton key={active} text={tabs[active].code} id={id} />
 			</div>
 			<div className="relative min-w-0 max-w-full">
-				<CopyButton text={tabs[active].code} id={id} />
 				<div
 					role="region"
 					aria-label={`${tabs[active].label} — ${id}`}

@@ -1,32 +1,40 @@
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { ProductJsonLd } from "./json-ld";
+import { ServiceJsonLd, SoftwareApplicationJsonLd } from "./json-ld";
 
-describe("Product structured data", () => {
-	it("renders an absolute default image with the usage offer", () => {
+it("does not publish the paid API as a zero-dollar software offer", () => {
+	const { container } = render(<SoftwareApplicationJsonLd />);
+	const data = JSON.parse(container.querySelector('script[type="application/ld+json"]')!.textContent!);
+	expect(data.offers).toBeUndefined();
+});
+
+describe("Inference service structured data", () => {
+	it("describes metered inference without inventing a flat-price offer", () => {
 		const { container } = render(
-			<ProductJsonLd name="OMA API" description="Inference" price="0.01" />,
+			<ServiceJsonLd name="OMA API" description="Inference" url="https://www.oma-ai.com/pricing" />,
 		);
 		const script = container.querySelector('script[type="application/ld+json"]')!;
 		expect(JSON.parse(script.textContent!)).toMatchObject({
-			"@type": "Product",
+			"@type": "Service",
 			image: "https://www.oma-ai.com/og-image.png",
-			offers: { "@type": "Offer", price: "0.01", priceCurrency: "USD" },
+			url: "https://www.oma-ai.com/pricing",
+			provider: { "@id": "https://www.oma-ai.com/#organization" },
 		});
+		expect(JSON.parse(script.textContent!).offers).toBeUndefined();
 	});
 
-	it("keeps a supplied product image in the emitted schema", () => {
+	it("keeps a supplied service image in the emitted schema", () => {
 		const { container } = render(
-			<ProductJsonLd name="OMA API" description="Inference" price="0.01" image="https://www.oma-ai.com/logos/oma-icon-512.png" />,
+			<ServiceJsonLd name="OMA API" description="Inference" url="https://www.oma-ai.com/pricing" image="https://www.oma-ai.com/logos/oma-icon-512.png" />,
 		);
 		const script = container.querySelector('script[type="application/ld+json"]')!;
 		expect(JSON.parse(script.textContent!).image).toBe("https://www.oma-ai.com/logos/oma-icon-512.png");
 	});
 
-	it("escapes markup in product text without changing the JSON value", () => {
+	it("escapes markup in service text without changing the JSON value", () => {
 		const name = "</script><script>alert(1)</script>";
 		const { container } = render(
-			<ProductJsonLd name={name} description="Inference" price="0.01" />,
+			<ServiceJsonLd name={name} description="Inference" url="https://www.oma-ai.com/pricing" />,
 		);
 		const scripts = container.querySelectorAll('script[type="application/ld+json"]');
 		expect(scripts).toHaveLength(1);

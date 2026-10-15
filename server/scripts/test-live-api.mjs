@@ -53,13 +53,13 @@ try {
 	report.checks.keyScopeAndExpiry = true;
 	const before = Number((await pool.query("SELECT balance_cents FROM credit_balances WHERE user_id=$1", [user.id])).rows[0]?.balance_cents);
 	for (const model of models) for (const format of formats) {
-		const requestId = `qa-api-${crypto.randomUUID()}`;
+		const clientCorrelationId = `qa-api-${crypto.randomUUID()}`;
 		const started = Date.now();
 		let result;
 		try {
 			const endpoint = format === "messages" ? "/api/v1/messages" : "/api/v1/chat/completions";
 			const send = () => fetch(`${appOrigin}${endpoint}`, {
-				method: "POST", headers: { ...(format === "messages" ? { "x-api-key": key, "anthropic-version": "2023-06-01" } : { Authorization: `Bearer ${key}` }), "Content-Type": "application/json", "X-Request-ID": requestId,
+				method: "POST", headers: { ...(format === "messages" ? { "x-api-key": key, "anthropic-version": "2023-06-01" } : { Authorization: `Bearer ${key}` }), "Content-Type": "application/json", "X-Correlation-ID": clientCorrelationId,
 					// Copying website headers must not remove the paid API charge.
 					Origin: appOrigin, "X-OMA-Source": "website" },
 				body: JSON.stringify({ model: model.id, messages: [{ role: "user", content: "Reply with exactly OMA_API_OK and no explanation." }], max_tokens: 512, stream: false }),
@@ -82,15 +82,16 @@ try {
 			const inputTokens = format === "messages" ? data.usage?.input_tokens : data.usage?.prompt_tokens;
 			const outputTokens = format === "messages" ? data.usage?.output_tokens : data.usage?.completion_tokens;
 			const actualModel = response.headers.get("x-actual-model");
+			const requestId = response.headers.get("x-oma-request-id");
 			// Some reasoning models put a complete <think> block in content.
 			// Preserve evidence and assess the final answer separately.
 			const answer = typeof content === "string" ? content.replace(/^\s*<think>[\s\S]*?<\/think>\s*/, "").trim() : "";
-			result = { format, requestedModel: model.id, status: response.status, actualModel, requestId,
+			result = { format, requestedModel: model.id, status: response.status, actualModel, requestId, correlationId: response.headers.get("x-request-id"), clientCorrelationId,
 				finishReason: data.choices?.[0]?.finish_reason, usage: data.usage, content: content.slice(0, 160), answer: answer.slice(0, 160), inlineReasoning: answer !== content.trim(),
-				passed: response.ok && actualModel === model.id && answer === "OMA_API_OK" && Number.isInteger(inputTokens) && Number.isInteger(outputTokens),
+				passed: typeof requestId === "string" && requestId.length > 0 && response.ok && actualModel === model.id && answer === "OMA_API_OK" && Number.isInteger(inputTokens) && Number.isInteger(outputTokens),
 				...(data.error ? { error: data.error.message } : {}), elapsedMs: Date.now() - started };
 		} catch (error) {
-			result = { format, requestedModel: model.id, requestId, passed: false, error: error.name, elapsedMs: Date.now() - started };
+			result = { format, requestedModel: model.id, clientCorrelationId, passed: false, error: error.name, elapsedMs: Date.now() - started };
 		}
 		report.results.push(result);
 		console.log(JSON.stringify(result));
@@ -102,6 +103,7 @@ try {
 	report.checks.recordedChargeCents = rows.reduce((total, row) => total + Number(row.total_cents), 0);
 	report.checks.billingMatches = Math.abs(report.checks.balanceDeductedCents - report.checks.recordedChargeCents) < 0.000001;
 	report.checks.usageBoundToKey = rows.length === report.results.filter(r => r.status === 200).length && rows.every(row => row.api_key_id === keyId);
+	report.checks.requestIdsMatchUsage = report.results.filter(r => r.status === 200).every(result => rows.some(row => row.request_id === result.requestId));
 	report.checks.apiAlwaysBilled = rows.filter(row => row.status === "completed").every(row => Number(row.total_cents) > 0);
 	const revoked = await fetch(`${appOrigin}/api/v1/keys/${keyId}`, { method: "DELETE", headers: headers() });
 	assert.equal(revoked.status, 200, "Key revocation failed");
@@ -131,6 +133,6 @@ try {
 	report.finishedAt = new Date().toISOString();
 	await fs.mkdir("../.artifacts/provider-audit", { recursive: true });
 	await fs.writeFile("../.artifacts/provider-audit/live-api-results.json", JSON.stringify(report, null, 2));
-	console.log(JSON.stringify({ summary: { passed: report.results.filter(r => r.passed).length, total: report.results.length }, checks: { billingMatches: report.checks.billingMatches, revokedKeyStatus: report.checks.revokedKeyStatus }, cleanup: report.cleanup }));
+	console.log(JSON.stringify({ summary: { passed: report.results.filter(r => r.passed).length, total: report.results.length }, checks: { billingMatches: report.checks.billingMatches, requestIdsMatchUsage: report.checks.requestIdsMatchUsage, revokedKeyStatus: report.checks.revokedKeyStatus }, cleanup: report.cleanup }));
 }
-if (report.results.some(r => !r.passed) || !report.checks.billingMatches || !report.checks.usageBoundToKey || !report.checks.apiAlwaysBilled) process.exitCode = 1;
+if (report.results.some(r => !r.passed) || !report.checks.billingMatches || !report.checks.usageBoundToKey || !report.checks.requestIdsMatchUsage || !report.checks.apiAlwaysBilled) process.exitCode = 1;

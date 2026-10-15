@@ -79,12 +79,6 @@ export function SoftwareApplicationJsonLd() {
 		url: SITE_URL,
 		description:
 			"OpenAI-compatible API gateway. Multi-model routing, wallet-based auth, and USDC credits on Base.",
-		offers: {
-			"@type": "Offer",
-			price: "0",
-			priceCurrency: "USD",
-			description: "Usage-based pricing in USDC. No monthly fees.",
-		},
 	};
 
 	return (
@@ -120,32 +114,27 @@ export function BreadcrumbListJsonLd({
 	);
 }
 
-/** Product + AggregateOffer for a pricing tier. */
-export function ProductJsonLd({
+/** Metered inference is a service; token rates are not flat product offers. */
+export function ServiceJsonLd({
 	name,
 	description,
-	price,
-	priceCurrency = "USD",
+	url,
 	image = `${SITE_URL}/og-image.png`,
 }: {
 	name: string;
 	description: string;
-	price: string;
-	priceCurrency?: string;
+	url: string;
 	image?: string;
 }) {
 	const data = {
 		"@context": "https://schema.org",
-		"@type": "Product",
+		"@type": "Service",
 		name,
 		description,
+		url,
 		image,
-		offers: {
-			"@type": "Offer",
-			price,
-			priceCurrency,
-			availability: "https://schema.org/InStock",
-		},
+		serviceType: "AI inference API",
+		provider: { "@id": `${SITE_URL}/#organization` },
 	};
 
 	return (

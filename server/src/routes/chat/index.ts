@@ -199,6 +199,7 @@ for (const path of ["/v1/chat/completions", WEBSITE_CHAT_PATH]) chatRoutes.post(
 				}
 
 				const requestId = c.get("inferenceRequestId") ?? `chatcmpl-${crypto.randomUUID()}`;
+				c.header("X-OMA-Request-ID", requestId);
 
 				try {
 				const promptText = messages.map((m) => flattenMessageContent(m.content)).join("\n");
