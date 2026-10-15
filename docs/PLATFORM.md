@@ -308,7 +308,7 @@ The three product IDs must point to the one-time Hobby, Builder, and Scale credi
 
 - `FREE_SIGNUP_CENTS`: new-account trial credit amount; `0` disables it. The tracked `server/.env.example` ships `100`; set `0` to disable.
 - `DEFAULT_KEY_EXPIRY_DAYS`: API-key lifetime; `0` means keys do not expire by default.
-- `MODELS_CONFIG_PATH` and `MODEL_OVERRIDES_PATH`: optional server catalog and runtime override files.
+- `MODEL_OVERRIDES_PATH`: optional durable input/output pricing sidecar, cached by billing for five seconds. The default resolver uses `server/models-overrides.json` in a repository checkout. Legacy `MODELS_CONFIG_PATH` only supplies a directory hint for this sidecar; it does not load a custom catalog. The model catalog is the shared `server/src/inference/model-catalog.json`.
 - `OTEL_EXPORTER_OTLP_ENDPOINT` and `OTEL_SERVICE_NAME`: optional observability settings.
 - `RECOVERY_TOKEN`: secret accepted by the deposit-recovery endpoint for a long-running HTTP deployment.
 

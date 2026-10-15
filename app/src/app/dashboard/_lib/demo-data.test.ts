@@ -1,6 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { MODELS } from "@/lib/models-data";
 import { buildDemoTransactions, buildDemoUsage, DEMO_BALANCE } from "./demo-data";
+
+afterEach(() => vi.useRealTimers());
 
 describe("dashboard demo balance", () => {
 	it("credits added minus credits spent equals the displayed balance", () => {
@@ -41,5 +43,18 @@ describe("dashboard demo balance", () => {
 	it("recent deposits account for the credits added to the demo balance", () => {
 		const added = buildDemoTransactions([]).reduce((sum, row) => sum + row.amountCents, 0);
 		expect(added).toBe(Number(DEMO_BALANCE.totalDepositedCents));
+	});
+
+	it("never generates future requests when the tour is opened early in the day", () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-10-15T00:05:00-03:00"));
+		expect(Math.max(...buildDemoUsage().map(row => Date.parse(row.createdAt))))
+			.toBeLessThanOrEqual(Date.now());
+	});
+
+	it("converts USD per million tokens to fractional cents", () => {
+		const request = buildDemoUsage().find(row => row.id === "demo-usage-0-0");
+		// 180 × $9/M input + 90 × $45/M output = $0.00567 = 0.567 cents.
+		expect(Number(request?.totalCents)).toBeCloseTo(0.567, 8);
 	});
 });

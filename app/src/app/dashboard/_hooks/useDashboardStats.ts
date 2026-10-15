@@ -15,6 +15,12 @@ interface UseDashboardStatsResult {
 	activeModels: number;
 }
 
+const RANGE_DURATION_MS = {
+	"24h": 86_400_000,
+	"7d": 7 * 86_400_000,
+	"30d": 30 * 86_400_000,
+};
+
 /**
 	* Derives dashboard aggregates from raw usage records.
 	*
@@ -35,22 +41,13 @@ export function useDashboardStats(
 	// Time-range filtered usage for charts
 	const filteredUsage = useMemo(() => {
 		if (timeRange === "all") return usage;
-		const now = new Date();
-		const cutoff = new Date(now);
-		switch (timeRange) {
-			case "24h":
-				cutoff.setHours(cutoff.getHours() - 24);
-				break;
-			case "7d":
-				cutoff.setDate(cutoff.getDate() - 7);
-				break;
-			case "30d":
-				cutoff.setDate(cutoff.getDate() - 30);
-				break;
-			default:
-				return usage;
-		}
-		return usage.filter((u) => new Date(u.createdAt) >= cutoff);
+		const now = Date.now();
+		// Rolling durations must stay equal to the API window across DST changes.
+		const cutoff = now - RANGE_DURATION_MS[timeRange];
+		return usage.filter((u) => {
+			const at = Date.parse(u.createdAt);
+			return at >= cutoff && at <= now;
+		});
 	}, [usage, timeRange]);
 
 	const todayCost = useMemo(
