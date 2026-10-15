@@ -198,6 +198,21 @@ Validation passed on Node 24: 871 frontend tests, 655 API tests with the Postgre
 suites enabled, types, lint and both builds. The exact 24-hour boundary now has
 a fixed-clock regression, replacing an ambiguous wall-clock test fixture.
 
+The dependency follow-up upgrades Next.js and its tools to 16.4.1, React/DOM
+to 19.3.1, Better Auth to 1.7.10 on both tiers and viem to 2.57.7. It also
+updates the compatible query, animation, icon, UI-rendering and test packages.
+[Next.js 16.4.1](https://github.com/vercel/next.js/releases/tag/v16.4.1)
+includes security fixes. Node 24 typings, TypeScript 6 and the existing pnpm
+major remain aligned with the supported toolchain. WalletConnect is already
+current; x402 remains the documented OMA funding implementation.
+
+The updated dependencies passed the same 871 frontend and 655 API tests,
+types, lint, both builds, a frozen installation and all 30 real HTTP/auth
+groups against an isolated local database. The production dependency audit
+reports zero known vulnerabilities across 890 dependencies. Upstream Solana
+transitives still advertise TypeScript 5 peers, and the development-only
+braces mitigation remains necessary; these are not claimed as resolved.
+
 ## Historical evidence
 
 - [Full October 10–13 gateway, account and release report](https://github.com/NosytLabs/oma-ai/blob/799ffb258828f44b01f92f4d9763c1222543599a/docs/audits/gateway-api-security-audit-2026-10-10.md)
