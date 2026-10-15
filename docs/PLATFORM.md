@@ -72,6 +72,8 @@ leave the event retryable. This does not change the aggregate refund policy.
 
 Card checkout is available only when the Polar configuration is complete and the card rail is enabled. If it is unavailable, `POST /api/v1/checkout` returns an error and the deposit UI reports the live rail status.
 
+For callbacks through the website, configure Polar with `https://www.oma-ai.com/api/webhook/polar` (or `/api/webhooks/polar`). The proxy preserves the signed body and signature headers. Direct backend callbacks can use `/api/webhook/polar` or `/webhooks/polar`. An unsigned callback must return 401, not 404; no customer session or browser Origin header is required.
+
 | Endpoint | Auth | Purpose |
 |---|---|---|
 | `POST /api/v1/checkout` | Session cookie | Create a Polar checkout session for a credit pack; the card rail for real revenue. Callbacks arrive at `POST /webhooks/polar`. |
