@@ -68,8 +68,8 @@ const CATEGORY_STYLES: Record<Category, { active: string; inactive: string }> =
 const PAYMENT_METHODS = [
 	{
 		icon: CreditCard,
-		title: "Card checkout · when enabled",
-		desc: "Where card checkout is available, buy credits by card without a wallet.",
+		title: "Card checkout",
+		desc: "Buy credits by card when available, using Polar’s secure checkout. No wallet required.",
 		tag: "Optional",
 		tagStyle: "bg-accent-dim text-accent border border-accent/30",
 	},
@@ -484,7 +484,7 @@ export default function PricingPage() {
 												<h3 className="text-sm font-semibold text-text-bright">{method.title}</h3>
 											</div>
 											<p className="flex-1 text-sm text-text-secondary leading-relaxed">{method.desc}</p>
-											<div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+											<div className="mt-4 flex min-h-11 flex-wrap items-center justify-between gap-3">
 												{method.tag && (
 													<div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono font-medium border ${method.tagStyle}`}>
 														{method.tag}
