@@ -104,22 +104,23 @@ export default defineConfig({
 		},
 	},
 	triggers: {
-		// Deposit recovery, every minute (was a 30s in-memory loop in HTTP mode).
+		// Deposit recovery, every 15 minutes (was every minute; the per-minute
+		// schedule kept Neon compute awake 24/7 and burned the free CU-hour allowance).
 		// Invokes POST /internal/recover-deposits, which persists the block cursor
 		// in Postgres so each run is stateless and resumes from the last checkpoint.
 		"oma-deposit-recovery": {
 			type: "schedule",
 			function: "omaapi",
-			cron: "*/1 * * * *",
+			cron: "*/15 * * * *",
 			functionPath: "/internal/recover-deposits",
 		},
 		// Replays settlements that were accepted on-chain but failed to
-		// persist. Every minute: the queue is normally empty, and each entry
+		// persist. Every 15 minutes: the queue is normally empty, and each entry
 		// backs off exponentially on repeated failure, so this is cheap.
 		"oma-settlement-dlq": {
 			type: "schedule",
 			function: "omaapi",
-			cron: "*/1 * * * *",
+			cron: "*/15 * * * *",
 			functionPath: "/internal/drain-settlement-dlq",
 		},
 	},
