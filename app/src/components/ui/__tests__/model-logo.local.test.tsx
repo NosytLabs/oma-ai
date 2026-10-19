@@ -24,10 +24,13 @@ describe("ModelLogo — locally-vendored dashboard-icons provider marks", () => 
 		expect(img?.getAttribute("src")).toBe("/logos/providers/deepseek.svg");
 	});
 
-	it("uses locally-vendored dashboard-icons tile for MiniMax", () => {
+	it("falls back to initials badge for MiniMax (SVG chromium naturalW=0)", () => {
 		const { container } = render(<ModelLogo modelId="minimax-m2-7" />);
-		const img = container.querySelector("img") as HTMLImageElement | null;
-		expect(img?.getAttribute("src")).toBe("/logos/providers/minimax.svg");
+		// verified live: minimax.svg returns 200 with full body, but
+		// chromium-headless reports naturalW: 0 + complete: false on the
+		// <img>. Cards have always shown a blank tile. Initials badge wins.
+		expect(container.querySelector("img")).toBeNull();
+		expect(container.textContent).toBeTruthy();
 	});
 
 	it("uses the real upstream deepseek tile for the Gonka OMA-AI DeepSeek V4 Flash", () => {
@@ -127,6 +130,23 @@ describe("ModelLogo — locally-vendored dashboard-icons provider marks", () => 
 		const { container } = render(<ModelLogo modelId="mercury-2" />);
 		const img = container.querySelector("img") as HTMLImageElement | null;
 		expect(img?.getAttribute("src")).toBe("/logos/providers/mercury.svg");
+	});
+
+	it("falls back to initials badge for Venice (venice.svg chromium naturalW=0)", () => {
+		const { container } = render(<ModelLogo modelId="venice-uncensored-1-2" />);
+		// venice.svg has the same chromium-headless naturalW: 0 issue as
+		// minimax.svg; the local fallback was dropped so Venice IDs flow
+		// through to the colored initials badge instead.
+		expect(container.querySelector("img")).toBeNull();
+		expect(container.textContent).toBeTruthy();
+	});
+
+	it("falls back to initials badge for MiniMax (minimax.svg chromium naturalW=0)", () => {
+		const { container } = render(<ModelLogo modelId="minimax-m2-7" />);
+		// minimax.svg has the same chromium-headless naturalW: 0 issue;
+		// confirmed in v3 screenshots. Drop to initials.
+		expect(container.querySelector("img")).toBeNull();
+		expect(container.textContent).toBeTruthy();
 	});
 
 	it("falls back to initials badge for unknown brands without crashing", () => {

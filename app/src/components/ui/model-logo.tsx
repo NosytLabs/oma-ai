@@ -60,7 +60,11 @@ const DASHBOARD_ICON_SLUGS: Record<string, string> = {
 	// canvas — at 36×36 the visible logo collapses to a few non-visible
 	// sub-px. Drop to initials.
 	// qwen: "qwen",
-	minimax: "minimax",
+	// minimax.svg: chromium-headless returns naturalW: 0 when rendering
+	// the file via <img>, even though a raw `fetch()` of the URL returns
+	// the full SVG body (verified live). Visible-MiniMax cards have
+	// always rendered as a blank tile on the live site. Drop to initials.
+	// minimax: "minimax",
 	// xiaomi + mimo: xiaomi-global.svg ships with viewBox "-200.008 -199.727
 	// 512 512" — the visible mark sits in the negative coord space and
 	// vanishes when scaled to 36×36. Drop to initials.
@@ -74,6 +78,14 @@ const DASHBOARD_ICON_SLUGS: Record<string, string> = {
 	// 36×36 it shows as a stretched-blank diamond. Drop to initials.
 	// ethereum: "ethereum",
 	coinbase: "coinbase",
+	// venice: same chromium-headless naturalW: 0 issue as minimax above.
+	// The LogoPath card showed a blank tile for Venice Uncensored 1.2
+	// since launch; better to render the violet "VU" initials badge.
+	// venice: "venice" (resolved via LOCAL_FALLBACKS, but the SVG fails to
+	// decode in chromium-headless <img> as well), so no mapping here:
+	// `getProviderFromModelId("venice-...")` returns "venice" with no slug
+	// in this map and no localFallback either, falling through to
+	// initials.
 };
 
 interface ModelLogoProps {
@@ -134,7 +146,11 @@ const LOCAL_FALLBACKS: Record<string, string> = {
 	mercury: "/logos/providers/mercury.svg",
 	inception: "/logos/providers/mercury.svg",
 	inceptionai: "/logos/providers/mercury.svg",
-	venice: "/logos/providers/venice.svg",
+	// venice: venice.svg has the chromium-headless naturalW: 0 issue
+	// described on the DASHBOARD_ICON_SLUGS table; falling through to
+	// initials is preferable to serving a blank tile. gonka/OMA-AI and
+	// coinbase have working local tiles and remain.
+	// venice: "/logos/providers/venice.svg",
 	coinbase: "/logos/providers/coinbase.svg",
 	"oma-ai": "/logos/providers/gonka.svg",
 	gonka: "/logos/providers/gonka.svg",
