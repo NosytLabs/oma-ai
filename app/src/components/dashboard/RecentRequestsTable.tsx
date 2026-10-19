@@ -250,6 +250,7 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 				onSubmitted={() => {
 					void queryClient.invalidateQueries({ queryKey: ["usage"] });
 					void queryClient.invalidateQueries({ queryKey: ["balance"] });
+					void queryClient.invalidateQueries({ queryKey: ["refunds", "list"] });
 				}}
 			/>
 		</div>

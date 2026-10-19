@@ -28,6 +28,7 @@ import type { TabId, TimeRangeId } from "../_constants";
 import { QuickActions } from "./QuickActions";
 import { QuickStatsCard } from "./QuickStatsCard";
 import { RecentTransactions } from "./RecentTransactions";
+import { RefundActivityPanel } from "../../../components/dashboard/RefundActivityPanel";
 import { DashboardErrorBanner } from "./DashboardErrorBanner";
 const AccountSettings = dynamic(() => import("./AccountSettings"), {
 	loading: () => <p role="status" className="py-8 text-text-muted">Loading account settings…</p>,
@@ -351,6 +352,8 @@ export function DashboardGrid(props: DashboardGridProps) {
 						</div>
 
 						<QuickActions isDemo={_isDemo} />
+
+						<RefundActivityPanel />
 
 						<RecentTransactions transactions={transactions} isDemo={_isDemo} />
 					</m.div>
