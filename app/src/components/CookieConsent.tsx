@@ -36,9 +36,16 @@ declare global {
 
 export function CookieConsent() {
 	const measurementId = process.env.NEXT_PUBLIC_GA_ID;
+	// Initial value matches the server render to avoid a hydration
+	// mismatch — we hide the banner until we've read localStorage.
 	const [state, setState] = useState<ConsentState>("pending");
+	const [mounted, setMounted] = useState(false);
 
 	useEffect(() => {
+		// First client-side render: mark mounted, then immediately read
+		// the user's prior decision from localStorage. Returning users
+		// no longer see a flash of the consent banner before it hides.
+		setMounted(true);
 		if (!measurementId) return;
 		const stored = readStored();
 		if (stored === "granted") {
@@ -64,6 +71,7 @@ export function CookieConsent() {
 		setState(value);
 	}, []);
 
+	if (!mounted) return null;
 	if (!measurementId) return null;
 	if (state !== "pending") return null;
 
