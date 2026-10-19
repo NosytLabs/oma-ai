@@ -477,6 +477,174 @@ const spec = {
 				} },
 			},
 		},
+		"/v1/checkout": {
+			post: {
+				summary: "Create a Polar checkout session for prepaid credits",
+				description: "Hosted Polar checkout. The user is redirected to a Polar URL; on success or cancel, they return to the configured successUrl/cancelUrl. The Polar webhook is the source of truth for credit delivery. Requires the polar rail to be configured + toggled on.",
+				security: [{ SessionCookie: [] }, { BearerAuth: [] }],
+				requestBody: {
+					required: true,
+					content: { "application/json": {
+						schema: {
+							type: "object",
+							required: ["productId", "successUrl", "cancelUrl"],
+							properties: {
+								productId: { type: "string" },
+								successUrl: { type: "string", format: "uri" },
+								cancelUrl: { type: "string", format: "uri" },
+							},
+						},
+					} },
+				},
+				responses: {
+					"200": { description: "Checkout session created" },
+					"401": { description: "Authentication required" },
+					"503": { description: "Card rail not configured" },
+				},
+			},
+		},
+		"/v1/credits/balance": {
+			get: {
+				summary: "Prepaid credit balance and active batches",
+				security: [{ SessionCookie: [] }, { BearerAuth: [] }],
+				responses: { "200": { description: "balance + active batches" } },
+			},
+		},
+		"/v1/credits/transactions": {
+			get: {
+				summary: "Credit transaction history (deposits, usage, refunds)",
+				security: [{ SessionCookie: [] }, { BearerAuth: [] }],
+				parameters: [
+					{ in: "query", name: "limit", required: false, schema: { type: "integer", minimum: 1, maximum: 200, default: 50 } },
+				],
+				responses: { "200": { description: "Transactions (deposits, usage, refunds), newest first" } },
+			},
+		},
+		"/v1/refunds": {
+			post: {
+				summary: "Request a refund on a specific credit charge (creates a pending refund_requests row for admin review)",
+				security: [{ SessionCookie: [] }, { BearerAuth: [] }],
+				requestBody: {
+					required: true,
+					content: { "application/json": {
+						schema: {
+							type: "object",
+							required: ["usageId", "reason"],
+							properties: {
+								usageId: { type: "string" },
+								reason: { type: "string", minLength: 10, maxLength: 1000 },
+								amountCents: { type: "integer", minimum: 1 },
+							},
+						},
+					} },
+				},
+				responses: {
+					"200": { description: "Refund request created" },
+					"400": { description: "Validation error" },
+					"401": { description: "Authentication required" },
+					"404": { description: "usageId not found" },
+					"429": { description: "Too many open refund requests (max 5)" },
+				},
+			},
+			get: {
+				summary: "List the caller's refund requests (newest first)",
+				security: [{ SessionCookie: [] }, { BearerAuth: [] }],
+				responses: { "200": { description: "Refund requests for the authenticated account" } },
+			},
+		},
+		"/v1/admin/refunds": {
+			get: {
+				summary: "Admin: list all refund requests (newest first)",
+				security: [{ SessionCookie: [] }, { BearerAuth: [] }],
+				responses: { "200": { description: "All refund requests in the system" } },
+			},
+			post: {
+				summary: "Admin: decide on a refund request (approve, deny, or mark issued)",
+				security: [{ SessionCookie: [] }, { BearerAuth: [] }],
+				requestBody: {
+					required: true,
+					content: { "application/json": {
+						schema: {
+							type: "object",
+							required: ["id", "decision"],
+							properties: {
+								id: { type: "string" },
+								decision: { type: "string", enum: ["approved", "denied", "issued"] },
+								adminNote: { type: "string", maxLength: 1000 },
+							},
+						},
+					} },
+				},
+				responses: { "200": { description: "Decision applied" }, "404": { description: "Refund request not found" } },
+			},
+		},
+		"/v1/export/usage": {
+			get: {
+				summary: "CSV export of usage_records (for spreadsheets/accounting)",
+				security: [{ SessionCookie: [] }],
+				parameters: [
+					{ in: "query", name: "from", required: false, schema: { type: "string", format: "date-time" } },
+					{ in: "query", name: "to", required: false, schema: { type: "string", format: "date-time" } },
+					{ in: "query", name: "model", required: false, schema: { type: "string" } },
+				],
+				responses: { "200": { description: "text/csv", content: { "text/csv": { schema: { type: "string" } } } } },
+			},
+		},
+		"/v1/export/deposits": {
+			get: {
+				summary: "CSV export of credit_batches (deposits, grants, expirations)",
+				security: [{ SessionCookie: [] }],
+				responses: { "200": { description: "text/csv", content: { "text/csv": { schema: { type: "string" } } } } },
+			},
+		},
+		"/v1/export/summary": {
+			get: {
+				summary: "JSON summary of usage + deposits + refunds for the requested range",
+				security: [{ SessionCookie: [] }],
+				parameters: [
+					{ in: "query", name: "from", required: false, schema: { type: "string", format: "date-time" } },
+					{ in: "query", name: "to", required: false, schema: { type: "string", format: "date-time" } },
+				],
+				responses: { "200": { description: "Aggregated totals" } },
+			},
+		},
+		"/v1/export/account": {
+			get: {
+				summary: "JSON export of full account state (profile, balance, keys metadata, settings)",
+				security: [{ SessionCookie: [] }],
+				responses: { "200": { description: "Complete account snapshot" } },
+			},
+		},
+		"/v1/models/{id}": {
+			get: {
+				summary: "Get a single model from the catalog",
+				parameters: [
+					{ in: "path", name: "id", required: true, schema: { type: "string" } },
+				],
+				responses: { "200": { description: "Model detail" }, "404": { description: "Not in catalog" } },
+			},
+		},
+		"/v1/site-settings": {
+			get: {
+				summary: "Public site settings (payment-rail availability, maintenance mode)",
+				responses: { "200": { description: "Site settings — rails configured + toggled on" } },
+			},
+		},
+		"/ready": {
+			get: {
+				summary: "Liveness + readiness probe (DB, Redis, provider health)",
+				responses: {
+					"200": { description: "All checks ok" },
+					"503": { description: "At least one dependency is degraded" },
+				},
+			},
+		},
+		"/version": {
+			get: {
+				summary: "Build version + git SHA + deploy time",
+				responses: { "200": { description: "version, sha, deployedAt" } },
+			},
+		},
 		"/v1/search": {
 			get: {
 				summary: "Web search (chat playground grounding)",
