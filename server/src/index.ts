@@ -28,6 +28,8 @@ import { searchRoutes } from "./routes/search.js";
 import { depositRoutes } from "./routes/deposit/index.js";
 import { creditsRoutes } from "./routes/credits.js";
 import { exportRoutes } from "./routes/export.js";
+import { refundsRoutes } from "./routes/refunds.js";
+import { adminRefundsRoutes } from "./routes/admin-refunds.js";
 import { dailyUsageRoutes } from "./routes/daily-usage.js";
 import { usageRoutes } from "./routes/usage.js";
 import { usageSummaryRoutes } from "./routes/usage-summary.js";
@@ -478,6 +480,9 @@ app.route("/", anthropicRoutes);
 app.route("/", searchRoutes);
 app.route("/", depositRoutes);
 app.route("/", exportRoutes);
+
+app.route("/", refundsRoutes);
+app.route("/", adminRefundsRoutes);
 
 // Credit batches and history.
 app.route("/", creditsRoutes);

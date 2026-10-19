@@ -559,7 +559,7 @@ const spec = {
 				responses: { "200": { description: "All refund requests in the system" } },
 			},
 			post: {
-				summary: "Admin: decide on a refund request (approve, deny, or mark issued)",
+				summary: "Admin: decide on a refund request (grant or deny)",
 				security: [{ SessionCookie: [] }, { BearerAuth: [] }],
 				requestBody: {
 					required: true,
@@ -569,7 +569,7 @@ const spec = {
 							required: ["id", "decision"],
 							properties: {
 								id: { type: "string" },
-								decision: { type: "string", enum: ["approved", "denied", "issued"] },
+								decision: { type: "string", enum: ["granted", "denied"] },
 								adminNote: { type: "string", maxLength: 1000 },
 							},
 						},
