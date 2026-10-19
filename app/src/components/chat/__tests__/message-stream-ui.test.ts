@@ -29,7 +29,21 @@ describe("message-stream-ui (shipped ChatMessage helpers)", () => {
 		).toBe(false);
 	});
 
-	it("keeps reasoning open when the final answer is empty but reasoning exists", () => {
+	it("keeps reasoning closed during streaming (post-stream rule still auto-expands)", () => {
+		// During streaming, we deliberately do NOT auto-expand the chain-of-
+		// thought. Word-by-word token dumps on a slow-reasoning model
+		// (observed in production on MiniMax M2.7 free chat: 471 reasoning
+		// tokens streamed live before a 4-word answer) make the surface
+		// look broken. The ThinkingOrb in the avatar column already gives a
+		// progress signal. To verify the post-stream fallback works: streaming
+		// ends with no content + reasoning present → auto-expand.
+		expect(
+			shouldExpandReasoning({
+				streaming: true,
+				content: "",
+				reasoning: "thinking…",
+			}),
+		).toBe(false);
 		expect(
 			shouldExpandReasoning({
 				streaming: false,
@@ -39,17 +53,19 @@ describe("message-stream-ui (shipped ChatMessage helpers)", () => {
 		).toBe(true);
 		expect(
 			shouldExpandReasoning({
-				streaming: true,
-				content: "",
-				reasoning: "thinking…",
-			}),
-		).toBe(true);
-		expect(
-			shouldExpandReasoning({
 				streaming: false,
 				content: "4",
 				reasoning: "math",
 			}),
 		).toBe(false);
+		// And the user-toggle override must always win:
+		expect(
+			shouldExpandReasoning({
+				streaming: true,
+				content: "",
+				reasoning: "thinking…",
+				userExpanded: true,
+			}),
+		).toBe(true);
 	});
 });
