@@ -14,6 +14,26 @@ const app = new Hono().route("/", healthRoutes);
 
 beforeEach(() => vi.clearAllMocks());
 
+describe("public liveness probes", () => {
+  it("/health returns the ok payload", async () => {
+    const response = await app.request("/health");
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.status).toBe("ok");
+    expect(body.service).toBe("oma-ai");
+    expect(typeof body.timestamp).toBe("string");
+  });
+
+  it("/v1/health returns the same ok payload under the v1 prefix", async () => {
+    const response = await app.request("/v1/health");
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.status).toBe("ok");
+    expect(body.service).toBe("oma-ai");
+    expect(typeof body.timestamp).toBe("string");
+  });
+});
+
 describe("public database health", () => {
   it("reports a reachable database", async () => {
     mocks.execute.mockResolvedValueOnce([]);

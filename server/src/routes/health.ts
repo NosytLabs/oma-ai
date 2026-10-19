@@ -16,6 +16,19 @@ healthRoutes.get("/health", async (c) => {
   });
 });
 
+// `/v1/health` is the same `ok` payload, mounted under the `/v1`
+// prefix so any OpenAI-SDK-style caller that prepends `/v1/` to every
+// URL (`GET /v1/health`, `GET /v1/models`, …) gets a real 200 instead
+// of a 404. The body is intentionally identical to `/health` so
+// monitoring configs don't have to special-case the prefix.
+healthRoutes.get("/v1/health", (c) => {
+  return c.json({
+    status: "ok",
+    service: "oma-ai",
+    timestamp: new Date().toISOString(),
+  });
+});
+
 healthRoutes.get("/health/db", async (c) => {
   try {
     await db.execute(sql`select 1`);

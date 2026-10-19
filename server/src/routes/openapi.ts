@@ -742,6 +742,15 @@ const spec = {
 				responses: { "200": { description: "OK" } },
 			},
 		},
+		"/v1/health": {
+			get: {
+				summary: "Liveness probe (v1-prefixed alias)",
+				description:
+					"Same payload as GET /health, exposed under /v1 so SDK-style callers that prepend /v1 to every path get a real 200.",
+				security: [],
+				responses: { "200": { description: "OK" } },
+			},
+		},
 	},
 };
 
