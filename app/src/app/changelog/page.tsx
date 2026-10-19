@@ -39,6 +39,18 @@ const ENTRIES: {
 	tags?: string[];
 }[] = [
 	{
+		date: "2026-10-19",
+		title: "Self-serve refunds",
+		body: "Signed-in users can request a refund for completed payments from the dashboard; an admin review then settles or denies the request. The refund endpoints (/v1/refunds, /v1/admin/refunds) are documented in /docs and exposed in the public OpenAPI spec.",
+		tags: ["feature", "api"],
+	},
+	{
+		date: "2026-10-19",
+		title: "Smaller visual and chat fixes",
+		body: "Provider logo tiles that were rendering blank in Chromium now fall back to a colored-initials badge. Chat composer text no longer clips while you type, and the cookie consent banner stops flashing for returning visitors. Six broken provider SVGs were removed from /public/logos.",
+		tags: ["fix", "site"],
+	},
+	{
 		date: "2026-09-25",
 		title: "FAQ expanded for teams and agents",
 		body: "The FAQ grew two new sections: \"Using OMA with your tools\" (Claude Code, OpenCode, Cursor, migrating an OpenAI app, the Anthropic Messages endpoint) and \"Reliability & safety\" (provider outages, rate limits, what a provider can see).",

@@ -517,20 +517,42 @@ export const ENDPOINTS: EndpointInfo[] = [
 	"networkId": "base"
 }`,
 	},
-	{
-		method: "POST",
-		path: "/x402/settle",
-		anchor: "ep-x402-settle",
-		title: "x402 Payment Settle",
-		desc: "Credits a confirmed USDC transfer to the SIWE session whose linked wallet is the payer. API keys are not accepted here. Amount and payer come from verified payment evidence; recovery can read the confirmed USDC Transfer log after a restart. Retries with the same hash are idempotent, including fractional credits.",
-		auth: "SIWE session cookie for the USDC payer wallet",
-		body: {
-			txHash: "string (required). Confirmed transaction hash returned by verification",
-			networkId: 'string (required). "base" or "eip155:8453"',
+		{
+			method: "POST",
+			path: "/x402/settle",
+			anchor: "ep-x402-settle",
+			title: "x402 Payment Settle",
+			desc: "Credits a confirmed USDC transfer to the SIWE session whose linked wallet is the payer. API keys are not accepted here. Amount and payer come from verified payment evidence; recovery can read the confirmed USDC Transfer log after a restart. Retries with the same hash are idempotent, including fractional credits.",
+			auth: "SIWE session cookie for the USDC payer wallet",
+			body: {
+				txHash: "string (required). Confirmed transaction hash returned by verification",
+				networkId: 'string (required). "base" or "eip155:8453"',
+			},
+			response: `{ "settled": true, "receipt": "<signed receipt>", "creditedCents": 100 }`,
 		},
-		response: `{ "settled": true, "receipt": "<signed receipt>", "creditedCents": 100 }`,
-	},
-];
+		{
+			method: "POST",
+			path: "/v1/refunds",
+			anchor: "ep-refunds-create",
+			title: "Request a Refund",
+			desc: "Signed-in users can request a refund for a recent payment. Provide the original deposit/receipt id and a reason; an operator then settles or denies the request at /v1/admin/refunds. Status transitions are reported on subsequent GETs.",
+			auth: "Session cookie",
+			body: {
+				receiptId: "string (required). The id returned by /v1/deposit/status for the original payment",
+				reason: "string (required, max 500 chars). Why the user is requesting the refund",
+			},
+			response: `{ "id": "rfnd_…", "status": "pending", "receiptId": "rcpt_…", "createdAt": "2026-10-19T12:34:56Z" }`,
+		},
+		{
+			method: "GET",
+			path: "/v1/refunds",
+			anchor: "ep-refunds-list",
+			title: "List My Refunds",
+			desc: "Lists refunds the signed-in user has submitted, with their current status (pending, approved, denied, settled). Newest first. Operators review refunds at the admin counterpart.",
+			auth: "Session cookie",
+			response: `{ "items": [{ "id": "rfnd_…", "status": "pending", "receiptId": "rcpt_…", "createdAt": "2026-10-19T12:34:56Z" }], "nextCursor": null }`,
+		},
+	];
 
 export const ERROR_CODES: ErrorInfo[] = [
 	{
