@@ -20,61 +20,30 @@
  * Requires session or bearer auth.
  */
 import { Hono } from "hono";
-import { z } from "zod";
 import { and, count, desc, eq } from "drizzle-orm";
 import type { OmaEnv } from "../types.js";
 import { sessionOrBearerAuth } from "../auth/middleware.js";
 import { db } from "../db/client.js";
 import { refundRequests, usageRecords } from "../db/schema.js";
 import { logger } from "../lib/logger.js";
+import {
+	createRefundSchema,
+	decodeEnvelope,
+	encodeEnvelope,
+	listRefundsSchema,
+} from "./_refund-schemas.js";
 
 export const refundsRoutes = new Hono<OmaEnv>();
 
-const createSchema = z.object({
-	usageId: z.string().uuid({ message: "usageId must be a usage_records.id (UUID)" }),
-	reason: z
-		.string()
-		.min(10, { message: "reason must be at least 10 characters" })
-		.max(1000, { message: "reason must be at most 1000 characters" }),
-	amountCents: z
-		.number()
-		.int()
-		.positive()
-		.optional()
-		.describe("Optional partial-refund amount; defaults to the full unrefunded portion"),
-});
-
-const listSchema = z.object({
-	status: z.enum(["pending", "granted", "denied"]).optional(),
-	limit: z.coerce.number().int().min(1).max(200).default(50),
-});
-
 const MAX_OPEN_REQUESTS = 5;
 const MAX_AGE_DAYS = 30;
-
-type Envelope = { u?: string; n?: string };
-
-function encodeEnvelope(env: Envelope): string {
-	// Stable key order so equal envelopes produce equal notes strings.
-	return JSON.stringify({ u: env.u, n: env.n });
-}
-function decodeEnvelope(notes: string | null): { usageId: string | null; adminNote: string | null } {
-	if (!notes) return { usageId: null, adminNote: null };
-	try {
-		const obj = JSON.parse(notes) as Envelope;
-		return { usageId: obj.u ?? null, adminNote: obj.n ?? null };
-	} catch {
-		// Backwards-compat: legacy rows stored the raw usageId in `notes`.
-		return { usageId: notes, adminNote: null };
-	}
-}
 
 // ─── GET /v1/refunds ────────────────────────────────────────────────────────
 
 refundsRoutes.get("/v1/refunds", sessionOrBearerAuth, async (c) => {
 	c.header("Cache-Control", "no-store");
 	const userId = c.get("userId");
-	const parsed = listSchema.safeParse({
+	const parsed = listRefundsSchema.safeParse({
 		status: c.req.query("status"),
 		limit: c.req.query("limit") ?? undefined,
 	});
@@ -132,7 +101,7 @@ refundsRoutes.post("/v1/refunds", sessionOrBearerAuth, async (c) => {
 	const userId = c.get("userId");
 
 	const body = await c.req.json().catch(() => null);
-	const parsed = createSchema.safeParse(body);
+	const parsed = createRefundSchema.safeParse(body);
 	if (!parsed.success) {
 		return c.json(
 			{ error: { message: "Invalid request", issues: parsed.error.flatten() } },

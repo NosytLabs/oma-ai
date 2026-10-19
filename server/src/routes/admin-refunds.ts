@@ -10,20 +10,14 @@
  */
 import { Hono } from "hono";
 import { and, eq, sql } from "drizzle-orm";
-import { z } from "zod";
 import type { OmaEnv } from "../types.js";
 import { sessionOrBearerAuth, requireAdmin } from "../auth/middleware.js";
 import { db } from "../db/client.js";
 import { refundRequests, usageRecords } from "../db/schema.js";
 import { logger } from "../lib/logger.js";
-import { decodeEnvelope } from "./refunds.js";
+import { decodeEnvelope, listAdminRefundsSchema, decideRefundSchema } from "./_refund-schemas.js";
 
 export const adminRefundsRoutes = new Hono<OmaEnv>();
-
-const listSchema = z.object({
-	status: z.enum(["pending", "granted", "denied"]).optional(),
-	limit: z.coerce.number().int().min(1).max(200).default(50),
-});
 
 adminRefundsRoutes.get(
 	"/v1/admin/refunds",
@@ -31,7 +25,7 @@ adminRefundsRoutes.get(
 	requireAdmin(),
 	async (c) => {
 		c.header("Cache-Control", "no-store");
-		const parsed = listSchema.safeParse({
+		const parsed = listAdminRefundsSchema.safeParse({
 			status: c.req.query("status") ?? undefined,
 			limit: c.req.query("limit") ?? undefined,
 		});
@@ -80,12 +74,6 @@ adminRefundsRoutes.get(
 	},
 );
 
-const decisionSchema = z.object({
-	id: z.string().uuid(),
-	decision: z.enum(["granted", "denied"]),
-	adminNote: z.string().max(1000).optional(),
-});
-
 adminRefundsRoutes.post(
 	"/v1/admin/refunds",
 	sessionOrBearerAuth,
@@ -94,7 +82,7 @@ adminRefundsRoutes.post(
 		c.header("Cache-Control", "no-store");
 		const adminId = c.get("userId");
 		const body = await c.req.json().catch(() => null);
-		const parsed = decisionSchema.safeParse(body);
+		const parsed = decideRefundSchema.safeParse(body);
 		if (!parsed.success) {
 			return c.json(
 				{ error: { message: "Invalid request", issues: parsed.error.flatten() } },
