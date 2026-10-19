@@ -579,75 +579,12 @@ adminRoutes.get(
 							},
 						);
 
-						// ---------- GET /v1/admin/usage/failover ----------
+												// Removed 2026-10: GET /v1/admin/usage/failover had
+						// zero callers (no admin page consumer, no openapi
+						// entry) since the rewrite to usage-summary. The
+						// `requested_model IS DISTINCT FROM model` aggregation
+						// already lives in /v1/admin/usage/summary as the
+						// `failedOver` field. Re-add if a dedicated failover
+						// drilldown page ships.
 
-						/**
-						 * Failover rate per REQUESTED model.
-						 *
-						 * Only answerable now that usage_records keeps requested_model alongside the
-						 * model that actually served the request. A group where requested_model !=
-						 * model is a request that was served by a different model than the client
-						 * asked for.
-						 */
-						adminRoutes.get(
-							"/v1/admin/usage/failover",
-							sessionOrBearerAuth,
-							requireAdmin(),
-							rateLimit({ windowMs: 60_000, maxRequests: 30, failClosed: false }),
-							async (c) => {
-								const url = new URL(c.req.url);
-								const parsed = usageSummarySchema.safeParse({
-									from: url.searchParams.get("from") ?? undefined,
-									to: url.searchParams.get("to") ?? undefined,
-									limit: url.searchParams.get("limit") ?? undefined,
-								});
-								if (!parsed.success) {
-									return c.json({ error: { message: "Invalid query", issues: parsed.error.flatten() } }, 400);
-								}
-								const { from, to, limit } = parsed.data;
-								const toDate = to ?? new Date();
-								const fromDate = from ?? new Date(toDate.getTime() - 30 * 24 * 60 * 60 * 1000);
-								if (fromDate > toDate || toDate.getTime() - fromDate.getTime() > 90 * 86_400_000) return c.json({ error: { message: "Choose an ordered range of up to 90 days." } }, 400);
-
-								try {
-									const rows = await db.execute(sql`
-										SELECT
-											requested_model AS key,
-											COUNT(*)::int AS requests,
-											COUNT(*) FILTER (WHERE requested_model IS DISTINCT FROM model)::int AS failed_over,
-											COALESCE(SUM(attempt_count), 0)::numeric AS total_attempts,
-											COALESCE(SUM(total_cents) FILTER (WHERE refunded_at IS NULL), 0)::numeric AS total_cents
-										FROM usage_records
-										WHERE created_at >= ${fromDate} AND created_at <= ${toDate}
-											AND requested_model IS NOT NULL
-										GROUP BY requested_model
-										ORDER BY failed_over DESC, requests DESC
-										LIMIT ${limit}
-									`);
-
-									const list = (rows as unknown as { rows?: Array<Record<string, unknown>> }).rows ?? rows;
-									const arr = list as Array<Record<string, unknown>>;
-
-									return c.json({
-										ok: true,
-										from: fromDate.toISOString(),
-										to: toDate.toISOString(),
-										items: arr.map((r) => {
-											const requests = Number(r.requests ?? 0);
-											const failedOver = Number(r.failed_over ?? 0);
-											return {
-												key: r.key,
-												requests,
-												failedOver,
-												failoverRate: requests > 0 ? failedOver / requests : 0,
-												totalAttempts: Number(r.total_attempts ?? 0),
-												totalCents: Number(r.total_cents ?? 0),
-											};
-										}),
-									});
-								} catch (err) {
-									logger.error({ err }, "[admin] failover summary failed");
-									return c.json({ error: "internal_error" }, 500);
-								}
-							},
-						);
+;
