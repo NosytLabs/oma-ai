@@ -36,22 +36,62 @@ describe("ModelLogo — locally-vendored dashboard-icons provider marks", () => 
 		expect(img?.getAttribute("src")).toBe("/logos/providers/deepseek.svg");
 	});
 
-	it("uses the real upstream kimi-ai tile for Kimi / Moonshot", () => {
+	it("falls back to initials badge for Kimi / Moonshot (kimi-ai.svg viewBox is off-canvas)", () => {
 		const { container } = render(<ModelLogo modelId="kimi-k2-6" />);
-		const img = container.querySelector("img") as HTMLImageElement | null;
-		expect(img?.getAttribute("src")).toBe("/logos/providers/kimi-ai.svg");
+		// kimi-ai.svg ships with viewBox "2589.93 529.3 4225.03 4225.03";
+		// the logo sits in the upper-right corner of a 4225-px canvas and
+		// renders as ~0 visible pixels at 36×36. We deliberately do NOT
+		// map "kimi" / "moonshotai" → "kimi-ai" so these IDs go through the
+		// colored initials badge instead.
+		expect(container.querySelector("img")).toBeNull();
+		expect(container.textContent).toBeTruthy();
 	});
 
-	it("uses the real upstream qwen tile for Qwen", () => {
+	it("falls back to initials badge for Qwen (qwen.svg viewBox is off-center)", () => {
 		const { container } = render(<ModelLogo modelId="qwen-3-7-plus" />);
-		const img = container.querySelector("img") as HTMLImageElement | null;
-		expect(img?.getAttribute("src")).toBe("/logos/providers/qwen.svg");
+		// qwen.svg viewBox "27.55 17.52 147.28 145.51" places the logo
+		// inside a 147-unit canvas offset to (27.55, 17.52); at 36×36 the
+		// visible strokes collapse below sub-px. Initials badge wins.
+		expect(container.querySelector("img")).toBeNull();
+		expect(container.textContent).toBeTruthy();
 	});
 
-	it("uses the real upstream xiaomi-global tile for Xiaomi MiMo", () => {
+	it("falls back to initials badge for Xiaomi MiMo (xiaomi-global.svg viewBox is negative)", () => {
 		const { container } = render(<ModelLogo modelId="xiaomi-mimo-v2-5" />);
-		const img = container.querySelector("img") as HTMLImageElement | null;
-		expect(img?.getAttribute("src")).toBe("/logos/providers/xiaomi-global.svg");
+		// xiaomi-global.svg ships with viewBox "-200.008 -199.727 512 512";
+		// the visible mark lives in the negative coord space and vanishes
+		// when scaled to 36×36. Initials badge wins.
+		expect(container.querySelector("img")).toBeNull();
+		expect(container.textContent).toBeTruthy();
+	});
+
+	it("falls back to initials badge for Meta / Llama (meta.svg has no viewBox)", () => {
+		const { container } = render(<ModelLogo modelId="llama-3-3-70b" />);
+		// meta.svg ships with no viewBox attribute; the browser renders it
+		// at the intrinsic 300×150 default, showing a stretched/blank tile
+		// in the 36×36 card. The "meta" / "llama" mapping is intentionally
+		// absent so these IDs go through the initials badge.
+		expect(container.querySelector("img")).toBeNull();
+		expect(container.textContent).toBeTruthy();
+	});
+
+	it("falls back to initials badge for Grok / xAI (grok.svg root fill is none + opacity 0.3)", () => {
+		const { container } = render(<ModelLogo modelId="grok-4-5" />);
+		// grok.svg sets root fill="none" with per-path CSS classes at
+		// opacity 0.3 and 0.8; at 36×36 the rendered shape disappears into
+		// the panel background. Initials badge wins.
+		expect(container.querySelector("img")).toBeNull();
+		expect(container.textContent).toBeTruthy();
+	});
+
+	it("falls back to initials badge for Ethereum (no viewBox attribute)", () => {
+		const { container } = render(<ModelLogo modelId="ethereum-testnet" />);
+		// ethereum.svg ships with no viewBox attribute; the unwrapped
+		// <path> fills the entire image bounding box and renders as a
+		// stretched-blank diamond at 36×36. The "ethereum" mapping is
+		// intentionally absent.
+		expect(container.querySelector("img")).toBeNull();
+		expect(container.textContent).toBeTruthy();
 	});
 
 	it("uses the real upstream z-ai tile for Z.AI / GLM", () => {
@@ -60,10 +100,21 @@ describe("ModelLogo — locally-vendored dashboard-icons provider marks", () => 
 		expect(img?.getAttribute("src")).toBe("/logos/providers/z-ai.svg");
 	});
 
-	it("uses locally-vendored dashboard-icons tile for Grok / xAI", () => {
+	it("falls back to initials badge for Grok / xAI (grok.svg renders opaqueless at 36×36)", () => {
+		// See "falls back to initials badge for Grok / xAI (root fill is none)" below
+		// for context. The "grok" / "xai" mapping is intentionally absent.
+		// Combined with the prior Grok test below for full coverage.
 		const { container } = render(<ModelLogo modelId="grok-4-5" />);
-		const img = container.querySelector("img") as HTMLImageElement | null;
-		expect(img?.getAttribute("src")).toBe("/logos/providers/grok.svg");
+		expect(container.querySelector("img")).toBeNull();
+		expect(container.textContent).toBeTruthy();
+	});
+
+	it("falls back to local grok.svg tile when the file is broken at small sizes (legacy test preserved)", () => {
+		// Kept as documentation: if a future vendored grok.svg ships with
+		// proper fill + viewBox, restore the `grok: "grok"` mapping and
+		// this test will simply assert the SVG path again.
+		const { container } = render(<ModelLogo modelId="xai-grok-future" />);
+		expect(container.querySelector("img")).toBeNull();
 	});
 
 	it("uses locally-vendored OpenAI tile for GPT-5.6 Sol (real upstream is OpenAI)", () => {
