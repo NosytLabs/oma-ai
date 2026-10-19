@@ -181,3 +181,11 @@ dig +short api.oma-ai.com A
   environment variables.
 - [`settlement-runbook.md`](settlement-runbook.md) — Polar/x402 operational
   notes.
+
+## Security disclosure (RFC 9116)
+
+A `security.txt` lives at `https://www.oma-ai.com/.well-known/security.txt`
+(also served from `app/public/.well-known/security.txt`). It points to
+`security@oma-ai.com` and the `SECURITY.md` policy. Verify it after deploy:
+`curl -I https://www.oma-ai.com/.well-known/security.txt` should return
+`200` with `content-type: text/plain`.

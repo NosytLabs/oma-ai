@@ -307,9 +307,20 @@ function LoginInner() {
 									{magicSent && (
 										<p
 											role="status"
-											className="text-[11px] text-text-muted"
+											className="flex items-center justify-between gap-3 text-[11px] text-text-muted"
 										>
-											Check your inbox. The link expires in 5 minutes.
+											<span>Check your inbox. The link expires in 5 minutes.</span>
+											<button
+												type="button"
+												disabled={submitting || !email}
+												onClick={() => {
+													if (submitting || !email) return;
+													void handleMagic({ preventDefault: () => {} } as React.FormEvent<HTMLFormElement>);
+												}}
+												className="text-text-secondary underline-offset-2 hover:text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50 disabled:hover:text-text-secondary disabled:hover:no-underline"
+											>
+												{submitting ? "Sending…" : "Resend"}
+											</button>
 										</p>
 									)}
 									</form>

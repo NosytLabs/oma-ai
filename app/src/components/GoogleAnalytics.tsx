@@ -30,11 +30,17 @@ export function GoogleAnalytics() {
 			/>
 			<Script id="ga-init" strategy="afterInteractive">
 				{`
-				window.dataLayer = window.dataLayer || [];
-				function gtag(){dataLayer.push(arguments);}
-				gtag('js', new Date());
-				gtag('config', '${measurementId}', { anonymize_ip: true });
-			`}
+			window.dataLayer = window.dataLayer || [];
+			function gtag(){dataLayer.push(arguments);}
+			gtag('js', new Date());
+			// Default-deny. The CookieConsent component upgrades to 'granted'
+			// once the user accepts; until then, GA sets a no-cookie header and
+			// does not persist any client identifiers. The CSP allows
+			// googletagmanager.com so the script still loads and the consent
+			// state can be flipped client-side without a reload.
+			gtag('consent', 'default', { analytics_storage: 'denied', ad_storage: 'denied' });
+			gtag('config', '${measurementId}', { anonymize_ip: true, send_page_view: true });
+		`}
 			</Script>
 		</>
 	);

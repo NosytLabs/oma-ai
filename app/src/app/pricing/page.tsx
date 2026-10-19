@@ -31,7 +31,13 @@ export default function PricingPage() {
 	return (
 		<>
 			<PricingPageClient />
-			<nav aria-label="Pricing resources" className="container-page flex flex-wrap gap-x-5 gap-y-2 border-t border-border py-5 text-sm text-text-secondary">
+			<nav aria-label="Pricing resources" className="container-page flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-border py-5 text-sm text-text-secondary">
+				<Link
+					href="/login?next=/dashboard"
+					className="btn-mono btn-primary group mr-auto"
+				>
+					<span>Get an API key</span>
+				</Link>
 				<Link href="/models" className="inline-flex min-h-6 items-center -my-1 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">Compare models</Link>
 				<Link href="/getting-started" className="hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">New to OMA? Get started</Link>
 				<Link href="/docs" className="hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">Read the API docs</Link>

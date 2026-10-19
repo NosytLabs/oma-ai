@@ -1,14 +1,7 @@
 # GitHub Sponsors funding configuration for NosytLabs/oma-ai.
-# See https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/displaying-a-sponsor-button-in-your-repository
+# See https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/displaying-a-sponsor-button-in-your-repository
 
 github: NosytLabs
-open_collective: # nosytlabs
-ko_fi: # nosytlabs
-tidelift: # nosytlabs
-community_bridge: # nosytlabs
-liberapay: # nosytlabs
-issuehunt: # nosytlabs
-otechie: # nosytlabs
 custom:
   - https://oma-ai.com
   - https://x402.org

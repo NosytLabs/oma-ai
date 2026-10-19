@@ -5,6 +5,7 @@ import SITE_URL from "@/lib/site";
 import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/themes";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
+import { CookieConsent } from "@/components/CookieConsent";
 import { Footer } from "@/components/footer";
 import { Navbar } from "@/components/navbar";
 import { Providers } from "@/components/providers";
@@ -161,6 +162,7 @@ export default function RootLayout({
 					<style>{`.reveal-target,.reveal-target[data-revealed="false"],.reveal-target[data-revealed="true"]{transform:none!important;transition:none!important}`}</style>
 				</noscript>
 				<GoogleAnalytics />
+			<CookieConsent />
 				<a
 					href="#main-content"
 					className="sr-only focus:not-sr-only focus:fixed focus:top-14 focus:left-4 focus:z-[100] focus:bg-accent focus:text-void focus:px-4 focus:py-2 focus:rounded-[var(--radius-lg)] focus:font-semibold focus:shadow-[0_0_20px_var(--color-accent-glow)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"

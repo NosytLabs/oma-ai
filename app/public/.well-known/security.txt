@@ -1,0 +1,5 @@
+Contact: mailto:security@oma-ai.com
+Expires: 2027-12-31T00:00:00Z
+Preferred-Languages: en
+Canonical: https://www.oma-ai.com/.well-known/security.txt
+Policy: https://github.com/NosytLabs/oma-ai/blob/main/SECURITY.md

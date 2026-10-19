@@ -395,6 +395,67 @@ const spec = {
 				responses: { "200": { description: "Pending" } },
 			},
 		},
+		"/v1/deposit/usdc/challenge": {
+			post: {
+				summary: "Request a deposit challenge (returns a one-shot challenge token + nonce to sign with the funding wallet)",
+				description: "Required first step of the USDC deposit flow. Server issues a one-shot, short-lived challenge bound to the calling account. The caller then signs the EIP-191 personal message with the funding wallet and POSTs the resulting challengeToken + signature to /v1/deposit/usdc. Without this step, the deposit submission returns 400 challenge_required.",
+				security: [{ SessionCookie: [] }, { BearerAuth: [] }],
+				requestBody: {
+					required: true,
+					content: { "application/json": {
+						schema: {
+							type: "object",
+							required: ["fromAddress"],
+							properties: {
+								fromAddress: { type: "string", pattern: "^0x[a-fA-F0-9]{40}$", description: "EVM address that will fund the deposit (used for ownership proof and daily-rail accounting)" },
+								amountCents: { type: "integer", minimum: 100, maximum: 1000000, description: "Optional preview amount in USD cents" },
+							},
+						},
+					} },
+				},
+				responses: {
+					"200": {
+						description: "Challenge issued",
+						content: { "application/json": {
+							schema: {
+								type: "object",
+								required: ["challengeToken", "challengeMessage", "issuedAt", "expiresAt", "fromAddress", "treasuryAddress", "network", "assetAddress", "decimals", "minCents", "maxCents"],
+								properties: {
+									challengeToken: { type: "string", description: "Opaque one-shot token; pass back to /v1/deposit/usdc with the signature" },
+									challengeMessage: { type: "string", description: "EIP-191 personal message the funding wallet must sign" },
+									issuedAt: { type: "string", format: "date-time" },
+									expiresAt: { type: "string", format: "date-time" },
+									fromAddress: { type: "string" },
+									treasuryAddress: { type: "string", pattern: "^0x[a-fA-F0-9]{40}$" },
+									network: { type: "string", enum: ["base"] },
+									assetAddress: { type: "string", pattern: "^0x[a-fA-F0-9]{40}$", description: "Canonical USDC contract on the configured network" },
+									decimals: { type: "integer", enum: [6] },
+									minCents: { type: "integer" },
+									maxCents: { type: "integer" },
+								},
+							},
+						} },
+					},
+					"400": { description: "fromAddress missing or malformed" },
+					"401": { description: "Authentication required" },
+					"429": { description: "Challenge rate-limited" },
+					"503": { description: "Deposit rail not configured (USDC_DEPOSIT_ADDRESS and TREASURY_BASE_ADDRESS both unset)" },
+				},
+			},
+		},
+		"/v1/deposit/status": {
+			get: {
+				summary: "Status of a pending or recent USDC deposit by request id",
+				security: [{ SessionCookie: [] }, { BearerAuth: [] }],
+				parameters: [
+					{ in: "query", name: "requestId", required: true, schema: { type: "string" } },
+				],
+				responses: {
+					"200": { description: "Deposit status" },
+					"404": { description: "No deposit with that request id" },
+				},
+			},
+		},
 		"/v1/usage/today": {
 			get: {
 				summary: "Today's free-chat quota (guest IP or signed-in account)",
