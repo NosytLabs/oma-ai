@@ -36,6 +36,7 @@ import { isModelAvailable } from "@/lib/model-availability";
 import { AdminAnalytics } from "./_components/AdminAnalytics";
 import { UsageLogs } from "./_components/UsageLogs";
 import { FundingStatus } from "./_components/FundingStatus";
+import { AdminRefunds } from "./_components/AdminRefunds";
 
 interface OpsSnapshot {
 	status: "ok" | "degraded";
@@ -230,7 +231,7 @@ export default function AdminPage() {
 				)}
 			</header>
 			<nav aria-label="Admin sections" className="flex flex-wrap items-center gap-2 border-b border-border pb-4">
-				{[["overview", "Overview"], ["usage-summary", "Spend breakdown"], ["usage-logs", "Usage logs"], ["admin-users", "Users"], ["admin-controls", "Controls"]].map(([id, label]) => <a key={id} href={`#${id}`} className="inline-flex min-h-11 items-center rounded-md border border-border px-3 text-sm text-text-secondary hover:bg-surface-elevated">{label}</a>)}
+				{[["overview", "Overview"], ["usage-summary", "Spend breakdown"], ["usage-logs", "Usage logs"], ["admin-users", "Users"], ["admin-refunds", "Refund queue"], ["admin-controls", "Controls"]].map(([id, label]) => <a key={id} href={`#${id}`} className="inline-flex min-h-11 items-center rounded-md border border-border px-3 text-sm text-text-secondary hover:bg-surface-elevated">{label}</a>)}
 				<button type="button" className="min-h-11 rounded-md border border-accent/30 px-3 text-sm text-accent sm:ml-auto" onClick={() => void queryClient.invalidateQueries({ predicate: query => ["ops", "models", "site-settings"].includes(String(query.queryKey[0])) || String(query.queryKey[0]).startsWith("admin") })}>Refresh dashboard</button>
 			</nav>
 			<AdminAnalytics />
@@ -408,7 +409,10 @@ export default function AdminPage() {
 				</section>
 
 			</div>
-			<div id="admin-controls" className="grid scroll-mt-24 gap-4 lg:grid-cols-2"><SiteSettingsSection /><RateLimitSection /></div>
+
+			<div id="admin-refunds" className="mt-4 scroll-mt-24">
+				<AdminRefunds />
+			</div>			<div id="admin-controls" className="grid scroll-mt-24 gap-4 lg:grid-cols-2"><SiteSettingsSection /><RateLimitSection /></div>
 		</div>
 	);
 }
