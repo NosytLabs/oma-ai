@@ -745,9 +745,22 @@ const spec = {
 	},
 };
 
-/** This module contains customer endpoints only; operator contracts live in docs/PLATFORM.md. */
+/**
+ * Returns the customer-facing OpenAPI spec. Operator and operational paths
+ * (/v1/admin/*, /v1/site-settings, /internal/*, /website/*) are intentionally
+ * excluded — those are documented in docs/PLATFORM.md and used by the frontend
+ * only. The shipped routes still exist (server registers them) so we don't have
+ * to deploy a separate build to talk to them, but external integrators using
+ * SDK generators never see them.
+ */
 export function getPublicOpenApiSpec() {
-	return spec;
+	const OPERATIONAL_PATH_PATTERN = /^\/(?:v1\/admin|internal|website)(?:\/|$)/;
+	const filteredPaths: Record<string, unknown> = {};
+	for (const [path, value] of Object.entries(spec.paths)) {
+		if (path === "/v1/site-settings" || OPERATIONAL_PATH_PATTERN.test(path)) continue;
+		(filteredPaths as Record<string, unknown>)[path] = value;
+	}
+	return { ...spec, paths: filteredPaths };
 }
 
 openapiRoutes.get("/openapi.json", (c) => c.json(getPublicOpenApiSpec()));
