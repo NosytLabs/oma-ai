@@ -1,14 +1,16 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useState } from "react";
 import { m } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import type { UsageRecord } from "@/lib/api";
 import { formatTime, formatUsdPrecise } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
 import { resolveModelDisplayName, usageBilledDollars } from "@/lib/dashboard-aggregate";
+import { RequestRefundModal } from "./RequestRefundModal";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface RecentRequestsTableProps {
 	usage: UsageRecord[];
@@ -32,6 +34,8 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 	loadingMore = false,
 }: RecentRequestsTableProps) {
 	const toast = useToast();
+	const queryClient = useQueryClient();
+	const [refundTarget, setRefundTarget] = useState<UsageRecord | null>(null);
 	const totalPages = Math.ceil(totalCount / limit);
 	const currentPage = Math.min(page, Math.max(1, Math.ceil(usage.length / limit)));
 
@@ -95,19 +99,25 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 						>
 							Time
 						</th>
+						<th
+							scope="col"
+							className="px-4 py-4 text-[10.5px] font-bold text-text-muted uppercase tracking-wider text-right"
+						>
+							<span className="sr-only">Actions</span>
+						</th>
 						</tr>
 					</thead>
 					<tbody className="bg-void/30">
 						{loading && usage.length === 0 ? (
 						<tr>
-							<td colSpan={7} className="px-6 py-12 text-center">
+							<td colSpan={8} className="px-6 py-12 text-center">
 									<span className="inline-block h-5 w-5 border-2 border-border border-t-accent rounded-full animate-spin shadow-[0_0_8px_var(--color-accent)]" />
 								</td>
 							</tr>
 						) : usage.length === 0 ? (
 						<tr>
 							<td
-								colSpan={7}
+								colSpan={8}
 								className="px-6 py-16 text-center transition-colors duration-200 ease-out hover:bg-surface/30"
 								>
 									<p className="text-[13px] text-text-secondary font-semibold">No requests in this range.</p>
@@ -184,6 +194,19 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 								<td className="px-6 sm:px-7 py-4 text-[11.5px] font-mono text-text-muted/80 transition-colors duration-200 ease-out group-hover:text-text-secondary">
 									<time dateTime={row.createdAt} title={new Date(row.createdAt).toLocaleString()}>{formatTime(row.createdAt)}</time>
 								</td>
+								<td className="px-4 py-4 text-right">
+									{!row.refundedAt && row.status === "completed" ? (
+										<button
+											type="button"
+											aria-label={`Request a refund for this ${row.model} request`}
+											onClick={() => setRefundTarget(row)}
+											className="inline-flex items-center gap-1 rounded-[var(--radius-md)] border border-border bg-surface px-2.5 py-1 text-[11px] font-semibold text-text-secondary transition-colors duration-150 ease-out hover:border-accent/40 hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.97]"
+											>
+												<RotateCcw className="h-3 w-3" aria-hidden="true" />
+											Refund
+										</button>
+									) : null}
+								</td>
 								</m.tr>
 							))
 						)}
@@ -221,6 +244,14 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 					</div>
 				</div>
 			)}
+			<RequestRefundModal
+				record={refundTarget}
+				onDismiss={() => setRefundTarget(null)}
+				onSubmitted={() => {
+					void queryClient.invalidateQueries({ queryKey: ["usage"] });
+					void queryClient.invalidateQueries({ queryKey: ["balance"] });
+				}}
+			/>
 		</div>
 	);
 });

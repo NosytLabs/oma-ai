@@ -10,6 +10,7 @@ import { creditHistory } from "./credits.js";
 import { deposit } from "./deposit.js";
 import { health } from "./inference.js";
 import { auth } from "./auth.js";
+import { refunds } from "./refunds.js";
 
 export {
 	BackendUnavailableError,
@@ -17,8 +18,13 @@ export {
 } from "./client.js";
 
 export type {
-		CreditTransaction,
+	CreditTransaction,
 } from "./credits.js";
+export type {
+	RefundRecord,
+	RefundStatus,
+	RequestRefundInput,
+} from "./refunds.js";
 
 export * from "./types.js";
 
@@ -83,5 +89,6 @@ export const api = {
 	deposit,
 	healthPing: health.ping,
 	creditHistory,
+	refunds,
 	exportData,
 };
