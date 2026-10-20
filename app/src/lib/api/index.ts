@@ -22,6 +22,7 @@ export type {
 } from "./credits.js";
 export type {
 	RefundRecord,
+	RefundListResponse,
 	RefundStatus,
 	RequestRefundInput,
 	AdminRefundRecord,
