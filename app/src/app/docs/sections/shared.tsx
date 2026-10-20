@@ -336,6 +336,33 @@ export const ENDPOINTS: EndpointInfo[] = [
 }`,
 	},
 	{
+		method: "GET",
+		path: "/v1/usage/summary",
+		anchor: "ep-usage-summary",
+		title: "Usage Summary (Aggregates)",
+		desc: "Time-bucketed customer analytics independent of the per-request history endpoint. Returns lifetime request count, totals across the requested range + the last 24h, a per-model and per-provider breakdown, and a daily (or monthly for the all-range) timeline ready to chart.",
+		auth: "Bearer token (API key) or session cookie",
+		body: undefined,
+		params: [
+			{ name: "range", type: "string", desc: "\"24h\" | \"7d\" (default) | \"30d\" | \"all\"" },
+			{ name: "timezone", type: "string", desc: "IANA tz id, max 100 chars, default \"UTC\"" },
+		],
+		response: `
+			"range": "7d",
+			"timezone": "UTC",
+			"bucket": "day",
+			"from": "2026-10-12T12:00:00.000Z",
+			"to": "2026-10-19T12:00:00.000Z",
+			"totals":     { "requests": 142, "errors": 0, "aborted": 0, "free_requests": 18, "input_tokens": 9034, "output_tokens": 14211, "billed_cents": "0.014", "active_models": 7 },
+			"last24h":    { "requests": 31, "errors": 0, "aborted": 0, "free_requests": 12, "input_tokens": 2102, "output_tokens": 3117, "billed_cents": "0.003", "active_models": 4 },
+			"lifetimeRequests": 1183,
+			"models":      [{ "model": "minimax-m2-7", "requests": 90, "input_tokens": 5400, "output_tokens": 9810, "billed_cents": "0.009", "avg_latency_ms": 84 }],
+			"providers":   [{ "provider": "venice", "requests": 142, "billed_cents": "0.014" }],
+			"timeline":    [{ "date": "2026-10-12", "requests": 12, "billed_cents": "0.001" },
+			                 { "date": "2026-10-13", "requests": 18, "billed_cents": "0.002" }]
+		`,
+	},
+	{
 		method: "POST",
 		path: "/v1/deposit/usdc/challenge",
 		anchor: "ep-deposit-challenge",
