@@ -81,6 +81,16 @@ describe("refunds.create", () => {
 });
 
 describe("refunds.list", () => {
+	it("shows refunds from the server's data envelope", async () => {
+		fetchMock.mockResolvedValueOnce(Response.json({ data: [{
+			id: "refund-1", status: "pending", reason: "Unusable response", amountCents: 0.00000234,
+			createdAt: "2026-10-21T12:00:00Z",
+		}] }));
+		expect((await refunds.list()).items).toEqual([{
+			id: "refund-1", status: "pending", reason: "Unusable response", amountCents: 0.00000234,
+			createdAt: "2026-10-21T12:00:00Z",
+		}]);
+	});
 	it("encodes status as a query param when supplied", async () => {
 		fetchMock.mockResolvedValueOnce(
 			Response.json({ items: [], nextCursor: null }),

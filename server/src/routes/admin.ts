@@ -498,6 +498,8 @@ adminRoutes.get(
 								// failed — an aborted stream still consumed upstream tokens and is
 								// revenue-relevant, not an error.
 								const errorCount = sql<number>`COUNT(*) FILTER (WHERE status = 'error')`;
+								// Refunding revenue does not refund the provider's token charge.
+								const netMarkup = sql`CASE WHEN provider = 'oma-ai' THEN 0 WHEN refunded_at IS NOT NULL THEN -cost_cents ELSE markup_cents END`;
 
 								try {
 									const rows = await db.execute(sql`
@@ -511,12 +513,12 @@ adminRoutes.get(
 											SUM(SUM(input_tokens)) OVER ()::bigint AS range_input_tokens,
 											SUM(SUM(output_tokens)) OVER ()::bigint AS range_output_tokens,
 											SUM(SUM(cost_cents) FILTER (WHERE provider <> 'oma-ai')) OVER ()::numeric AS range_upstream_cents,
-											SUM(SUM(markup_cents)) OVER ()::numeric AS range_markup_cents,
+											SUM(SUM(${netMarkup})) OVER ()::numeric AS range_markup_cents,
 											SUM(SUM(total_cents) FILTER (WHERE refunded_at IS NULL)) OVER ()::numeric AS range_total_cents,
 											COALESCE(SUM(input_tokens), 0)::bigint AS input_tokens,
 											COALESCE(SUM(output_tokens), 0)::bigint AS output_tokens,
 											COALESCE(SUM(cost_cents) FILTER (WHERE provider <> 'oma-ai'), 0)::numeric AS upstream_cents,
-											COALESCE(SUM(markup_cents), 0)::numeric AS markup_cents,
+											COALESCE(SUM(${netMarkup}), 0)::numeric AS markup_cents,
 											COALESCE(SUM(total_cents) FILTER (WHERE refunded_at IS NULL), 0)::numeric AS total_cents,
 											${errorCount}::int AS error_count,
 											-- avg_latency_ms is meaningful now that latency_ms is written.

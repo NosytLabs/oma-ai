@@ -324,6 +324,8 @@ function DashboardPageInner() {
 					/>
 
 					<DashboardGrid
+						key={isDemoView ? "demo" : user?.id ?? "guest"}
+						ownerId={user?.id}
 						balance={balance}
 						apiKeys={apiKeys}
 						usage={isDemoView ? filteredUsage : usage}

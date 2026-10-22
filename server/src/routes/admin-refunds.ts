@@ -1,21 +1,14 @@
-/**
- * GET  /v1/admin/refunds   — list all refund_requests (filtered by status)
- * POST /v1/admin/refunds   — grant or deny a request; on grant, marks
- *                            usage_records.refundedAt so future balance /
- *                            usage queries exclude the cents.
- *
- * Shares the `notes`-envelope convention with routes/refunds.ts.
- * Requires session/bearer auth + requireAdmin(). Admin decisions are
- * terminal — the row's status never moves out of {granted, denied}.
- */
+/** Operator refund history and atomic usage-credit decisions. */
 import { Hono } from "hono";
-import { and, eq, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { OmaEnv } from "../types.js";
 import { sessionOrBearerAuth, requireAdmin } from "../auth/middleware.js";
 import { db } from "../db/client.js";
-import { refundRequests, usageRecords } from "../db/schema.js";
+import { refundRequests } from "../db/schema.js";
 import { logger } from "../lib/logger.js";
 import { decodeEnvelope, listAdminRefundsSchema, decideRefundSchema } from "./_refund-schemas.js";
+
+import { decideUsageRefund, RefundError } from "../lib/usage-refunds.js";
 
 export const adminRefundsRoutes = new Hono<OmaEnv>();
 
@@ -89,73 +82,12 @@ adminRefundsRoutes.post(
 				400,
 			);
 		}
-		const { id, decision, adminNote } = parsed.data;
-
-		const [row] = await db
-			.select()
-			.from(refundRequests)
-			.where(eq(refundRequests.id, id))
-			.limit(1);
-		if (!row) {
-			return c.json({ error: { message: "Refund request not found" } }, 404);
-		}
-		if (row.status !== "pending") {
-			return c.json(
-				{ error: { message: `Already ${row.status}; decisions are terminal` } },
-				409,
-			);
-		}
-
-		const { usageId } = decodeEnvelope(row.notes);
-		const newStatus: "granted" | "denied" = decision;
-
-		// On grant: actually mark the underlying usage row so future
-		// usage/balance queries exclude the cents. Guard with a
-		// not-already-refunded predicate so a double-approval is a no-op.
-				if (newStatus === "granted" && usageId) {
-			try {
-				await db
-					.update(usageRecords)
-					.set({ refundedAt: sql`now()` })
-					.where(
-						and(
-							eq(usageRecords.id, usageId),
-							sql`${usageRecords.refundedAt} IS NULL`,
-						),
-					);
-			} catch (err) {
-				logger.error(
-					{ err, refundId: id, usageId },
-					"[admin/refunds] usage mark failed",
-				);
-				return c.json(
-					{ error: { message: "Could not mark usage as refunded; refund decision NOT saved" } },
-					500,
-				);
-			}
-		}
-
-				// Preserve the existing usageId in the envelope, add the admin note.
-		const nextNotes = JSON.stringify({
-			u: usageId ?? null,
-			n: adminNote ?? null,
-		});
-
 		try {
-			await db
-				.update(refundRequests)
-				.set({
-					status: newStatus,
-					notes: nextNotes,
-					decidedBy: adminId,
-					decidedAt: sql`now()`,
-				})
-				.where(eq(refundRequests.id, id));
+			return c.json(await decideUsageRefund(adminId, parsed.data));
 		} catch (err) {
-			logger.error({ err, refundId: id }, "[admin/refunds] decision save failed");
-			return c.json({ error: { message: "Could not save decision" } }, 500);
+			if (err instanceof RefundError) return c.json({ error: { message: err.message } }, err.status);
+			logger.error({ err, refundId: parsed.data.id }, "[admin/refunds] decision failed");
+			return c.json({ error: { message: "Could not save decision; no credits were changed" } }, 500);
 		}
-
-		return c.json({ id, status: newStatus, usageId, adminNote: adminNote ?? null });
 	},
 );

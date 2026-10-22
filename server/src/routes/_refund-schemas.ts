@@ -15,15 +15,14 @@ import { z } from "zod";
 export const createRefundSchema = z.object({
 	usageId: z.string().uuid({ message: "usageId must be a usage_records.id (UUID)" }),
 	reason: z
-		.string()
+		.string().trim()
 		.min(10, { message: "reason must be at least 10 characters" })
 		.max(1000, { message: "reason must be at most 1000 characters" }),
 	amountCents: z
 		.number()
-		.int()
 		.positive()
 		.optional()
-		.describe("Optional partial-refund amount; defaults to the full unrefunded portion"),
+		.describe("Optional exact full-charge amount; partial refunds are not supported. Omit to use the charge."),
 });
 
 /** GET /v1/refunds query. */

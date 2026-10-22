@@ -568,6 +568,44 @@ try {
 	await request("/v1/credits/transactions?limit=invalid", { cookie: first.cookie, expected: 400 });
 	pass("customer statistics cover the full range, preserve tiny charges, separate cancellations/refunds, isolate accounts and paginate every microsecond row");
 
+	const refundCustomer = await magicSignIn("refund-customer@example.com");
+	const refundOwner = (await request("/user", { cookie: refundCustomer.cookie })).data.id;
+	const refundUsage = (await pool.query(`INSERT INTO usage_records
+	 (request_id, user_id, model, provider, cost_cents, markup_cents, total_cents)
+	 VALUES ('refund-auth-charge', $1, 'minimax-m2-7', 'oma-ai', 0, 0, 0.25) RETURNING id`, [refundOwner])).rows[0].id;
+	await request("/v1/refunds", { expected: 401 });
+	await request("/v1/admin/refunds", { cookie: refundCustomer.cookie, expected: 403 });
+	const refundBody = { usageId: refundUsage, reason: "Provider returned an unusable answer." };
+	await request("/v1/refunds", { method: "POST", cookie: first.cookie, body: refundBody, expected: 404 });
+	await request("/v1/refunds", { method: "POST", cookie: refundCustomer.cookie, body: refundBody, headers: { Origin: "https://untrusted.example" }, expected: 403 });
+	await request("/v1/refunds", { method: "POST", cookie: refundCustomer.cookie, body: refundBody, headers: { Origin: "" }, expected: 403 });
+	const refund = (await request("/v1/refunds", { method: "POST", cookie: refundCustomer.cookie, body: refundBody })).data;
+	assert.equal(refund.amountCents, 0.25);
+	const ownRefunds = await request("/v1/refunds", { cookie: refundCustomer.cookie });
+	assert.match(ownRefunds.response.headers.get("cache-control"), /no-store/);
+	assert.equal(ownRefunds.data.data[0].id, refund.id);
+	assert.equal((await request("/v1/refunds", { cookie: first.cookie })).data.data.length, 0);
+	await request("/v1/admin/refunds", { method: "POST", cookie: refundCustomer.cookie, body: { id: refund.id, decision: "granted" }, expected: 403 });
+	await request("/v1/admin/refunds", { method: "POST", cookie: first.cookie, body: { id: refund.id, decision: "granted" }, expected: 403 });
+	await pool.query('UPDATE "user" SET role = \'admin\' WHERE id = $1', [profile.id]);
+	const beforeRefund = (await pool.query("SELECT balance_cents FROM credit_balances WHERE user_id=$1", [refundOwner])).rows[0];
+	await request("/v1/admin/refunds", { method: "POST", cookie: first.cookie, body: { id: refund.id, decision: "granted", adminNote: "Confirmed provider error." } });
+	const afterRefund = (await pool.query("SELECT balance_cents FROM credit_balances WHERE user_id=$1", [refundOwner])).rows[0];
+	assert.equal(Number(afterRefund.balance_cents) - Number(beforeRefund.balance_cents), 0.25);
+	assert.equal((await request("/v1/refunds", { cookie: refundCustomer.cookie })).data.data[0].adminNote, "Confirmed provider error.");
+	await request("/v1/admin/refunds", { method: "POST", cookie: first.cookie, body: { id: refund.id, decision: "denied" }, expected: 409 });
+	await pool.query('UPDATE "user" SET role = \'user\' WHERE id = $1', [profile.id]);
+	const refundKey = (await request("/v1/keys", { method: "POST", cookie: refundCustomer.cookie, body: { name: "Refund integration key" } })).data;
+	const bearerRefundUsage = (await pool.query(`INSERT INTO usage_records
+	 (request_id, user_id, model, provider, cost_cents, markup_cents, total_cents)
+	 VALUES ('refund-bearer-charge', $1, 'minimax-m2-7', 'oma-ai', 0, 0, 0.5) RETURNING id`, [refundOwner])).rows[0].id;
+	const bearerRefundBody = { ...refundBody, usageId: bearerRefundUsage };
+	const bearerRefundHeaders = { Authorization: `Bearer ${refundKey.key}` };
+	await request("/v1/refunds", { method: "POST", cookie: refundCustomer.cookie, body: bearerRefundBody,
+		headers: { ...bearerRefundHeaders, Origin: "https://untrusted.example" }, expected: 403 });
+	await request("/v1/refunds", { method: "POST", body: bearerRefundBody, headers: { ...bearerRefundHeaders, Origin: "" } });
+	pass("refunds enforce real session ownership, admin roles and origins, return fractional credits once, and expose the review to its owner");
+
 	const signedOut = await request("/api/auth/sign-out", { method: "POST", cookie: first.cookie, body: {} });
 	assert.ok(signedOut.response.headers.getSetCookie().some((cookie) => /oma\.session_token=;.*Max-Age=0/i.test(cookie)));
 	await assertSignedOut(first.cookie);

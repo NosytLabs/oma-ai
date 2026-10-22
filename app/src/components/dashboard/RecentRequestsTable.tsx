@@ -21,6 +21,7 @@ interface RecentRequestsTableProps {
 	totalCount?: number;
 	hasMore?: boolean;
 	loadingMore?: boolean;
+	refundsEnabled?: boolean;
 }
 
 export const RecentRequestsTable = memo(function RecentRequestsTable({
@@ -32,6 +33,7 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 	totalCount = usage.length,
 	hasMore = false,
 	loadingMore = false,
+	refundsEnabled = true,
 }: RecentRequestsTableProps) {
 	const toast = useToast();
 	const queryClient = useQueryClient();
@@ -195,7 +197,7 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 									<time dateTime={row.createdAt} title={new Date(row.createdAt).toLocaleString()}>{formatTime(row.createdAt)}</time>
 								</td>
 								<td className="px-4 py-4 text-right">
-									{!row.refundedAt && row.status === "completed" ? (
+										{refundsEnabled && !row.refundedAt && row.status === "completed" && usageBilledDollars(row) > 0 ? (
 										<button
 											type="button"
 											aria-label={`Request a refund for this ${row.model} request`}
@@ -250,7 +252,7 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 				onSubmitted={() => {
 					void queryClient.invalidateQueries({ queryKey: ["usage"] });
 					void queryClient.invalidateQueries({ queryKey: ["balance"] });
-					void queryClient.invalidateQueries({ queryKey: ["refunds", "list"] });
+					void queryClient.invalidateQueries({ queryKey: ["refunds"] });
 				}}
 			/>
 		</div>

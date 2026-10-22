@@ -522,7 +522,8 @@ const spec = {
 		},
 		"/v1/refunds": {
 			post: {
-				summary: "Request a refund on a specific credit charge (creates a pending refund_requests row for admin review)",
+				summary: "Request a full usage-charge credit refund for operator review",
+				description: "Paid charges within 30 days only. At most five pending per account and one per usage charge. Approval restores OMA credits; it does not issue a card/USDC payment. Partial refunds are not supported.",
 				security: [{ SessionCookie: [] }, { BearerAuth: [] }],
 				requestBody: {
 					required: true,
@@ -531,9 +532,9 @@ const spec = {
 							type: "object",
 							required: ["usageId", "reason"],
 							properties: {
-								usageId: { type: "string" },
+								usageId: { type: "string", format: "uuid" },
 								reason: { type: "string", minLength: 10, maxLength: 1000 },
-								amountCents: { type: "integer", minimum: 1 },
+								amountCents: { type: "number", exclusiveMinimum: 0, description: "Optional exact full-charge amount in cents, including fractional cents. Omit to use the original charge." },
 							},
 						},
 					} },
@@ -543,6 +544,7 @@ const spec = {
 					"400": { description: "Validation error" },
 					"401": { description: "Authentication required" },
 					"404": { description: "usageId not found" },
+					"409": { description: "Already refunded or a request is already pending" },
 					"429": { description: "Too many open refund requests (max 5)" },
 				},
 			},

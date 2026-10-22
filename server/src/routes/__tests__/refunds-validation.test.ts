@@ -64,8 +64,8 @@ describe("createRefundSchema (POST /v1/refunds body)", () => {
 		).toBe(false);
 	});
 
-	it("rejects a non-positive amountCents", () => {
-		for (const bad of [0, -1, -100, 1.5, NaN]) {
+	it("rejects a non-positive or non-finite amountCents", () => {
+		for (const bad of [0, -1, -100, NaN, Infinity]) {
 			expect(
 				createRefundSchema.safeParse({
 					usageId: "11111111-1111-4111-8111-111111111111",

@@ -35,13 +35,13 @@ function makeRefund(overrides: Partial<RefundRecord> = {}): RefundRecord {
 	};
 }
 
-function renderPanel() {
+function renderPanel(ownerId = "buyer") {
 	const queryClient = new QueryClient({
 		defaultOptions: { queries: { retry: false } },
 	});
 	return render(
 		<QueryClientProvider client={queryClient}>
-			<RefundActivityPanel />
+			<RefundActivityPanel ownerId={ownerId} />
 		</QueryClientProvider>,
 	);
 }
@@ -56,6 +56,21 @@ afterEach(() => {
 });
 
 describe("RefundActivityPanel", () => {
+	it("does not show the previous account's cached refund reason after an account switch", async () => {
+		vi.spyOn(api.refunds, "list").mockResolvedValueOnce({ items: [makeRefund({ reason: "Private first account reason" })], nextCursor: null })
+			.mockImplementation(() => new Promise(() => {}));
+		const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+		const view = render(<QueryClientProvider client={queryClient}><RefundActivityPanel ownerId="first" /></QueryClientProvider>);
+		await screen.findByText("Private first account reason");
+		view.rerender(<QueryClientProvider client={queryClient}><RefundActivityPanel ownerId="second" /></QueryClientProvider>);
+		expect(screen.queryByText("Private first account reason")).not.toBeInTheDocument();
+	});
+
+	it("does not fetch private refund history without an account", () => {
+		const list = vi.spyOn(api.refunds, "list").mockResolvedValue({ items: [], nextCursor: null });
+		renderPanel("");
+		expect(list).not.toHaveBeenCalled();
+	});
 	it("renders the header + 'past 5' label regardless of data state", () => {
 		vi.spyOn(api.refunds, "list").mockResolvedValue({
 			items: [],
