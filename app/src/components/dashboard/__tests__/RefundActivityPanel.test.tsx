@@ -56,6 +56,13 @@ afterEach(() => {
 });
 
 describe("RefundActivityPanel", () => {
+	it("preserves legacy history without promising credit restoration", async () => {
+		vi.spyOn(api.refunds, "list").mockResolvedValue({ items: [makeRefund({ status: "granted" })], nextCursor: null });
+		renderPanel();
+		await screen.findByText("Granted");
+		expect(screen.getByText(/credit refunds are temporarily unavailable/i)).toBeInTheDocument();
+		expect(screen.queryByText(/approvals restore/i)).not.toBeInTheDocument();
+	});
 	it("does not show the previous account's cached refund reason after an account switch", async () => {
 		vi.spyOn(api.refunds, "list").mockResolvedValueOnce({ items: [makeRefund({ reason: "Private first account reason" })], nextCursor: null })
 			.mockImplementation(() => new Promise(() => {}));

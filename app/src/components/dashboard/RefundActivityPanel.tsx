@@ -71,6 +71,7 @@ export function RefundActivityPanel({ ownerId }: { ownerId?: string }) {
 		() => (query.data?.items ?? []).slice(0, 5),
 		[query.data?.items],
 	);
+	const canRefund = !query.isError && query.data?.creditRefundsAvailable === true;
 	if (!ownerId) return null;
 
 	return (
@@ -117,9 +118,9 @@ export function RefundActivityPanel({ ownerId }: { ownerId?: string }) {
 						No refund requests yet
 					</p>
 					<p className="text-[11.5px] text-text-muted max-w-[280px] leading-relaxed">
-						Open the <span className="text-accent font-medium">Usage</span> tab and
+						{canRefund ? <>Open the <span className="text-accent font-medium">Usage</span> tab and
 						click <span className="text-accent font-medium">Refund</span> on a billable
-						request to start one.
+						request to start one.</> : <>Contact support for help with a charge.</>}
 					</p>
 				</div>
 			) : (
@@ -170,8 +171,9 @@ export function RefundActivityPanel({ ownerId }: { ownerId?: string }) {
 				</ul>
 			)}
 			<p className="mt-3 text-[10.5px] text-text-muted">
-				An operator reviews each request. Check here for the decision.
-				Approved refunds return the charge to your OMA credit balance.{" "}
+				{canRefund
+					? "An operator reviews each request. New approvals restore the full usage charge to your OMA credit balance."
+					: "Credit refunds are temporarily unavailable. Contact support for help with a charge."}{" "}
 				<Link href="/docs#ep-refunds-create" className="text-accent hover:underline">
 					API reference
 				</Link>

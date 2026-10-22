@@ -562,7 +562,7 @@ export const ENDPOINTS: EndpointInfo[] = [
 			path: "/v1/refunds",
 			anchor: "ep-refunds-create",
 			title: "Request a Refund",
-			desc: "Request the full credit charge for one paid inference request within 30 days. An operator reviews it; approval returns prepaid OMA credits, not a card or USDC payment. Only one pending request per charge and five pending requests per account are allowed. Partial refunds are not supported. Check refund history for the decision and review note.",
+			desc: "First GET /v1/refunds and require creditRefundsAvailable: true. If absent or false, contact support instead of submitting a request. When available, request the full credit charge for one paid inference request within 30 days. An operator reviews it; new approvals return prepaid OMA credits, not a card or USDC payment. One pending request per charge and five per account are allowed. Partial refunds are not supported.",
 			auth: "Session cookie or Bearer API key",
 			body: {
 				usageId: "UUID (required). The id of the charged usage record, not its requestId or a deposit receipt",
@@ -575,9 +575,9 @@ export const ENDPOINTS: EndpointInfo[] = [
 			path: "/v1/refunds",
 			anchor: "ep-refunds-list",
 			title: "List My Refunds",
-			desc: "Lists this account's refund requests, newest first. Status is pending, granted or denied. Optional status filters the list; limit accepts 1–200 (default 50). Amounts preserve fractional cents. adminNote contains the operator's review when supplied.",
+			desc: "Lists this account's refund requests, newest first. Submit new credit-refund requests only when creditRefundsAvailable is true; an absent or false flag means intake is unavailable. Status is pending, granted or denied. Optional status filters the list; limit accepts 1–200 (default 50). adminNote contains the operator's review when supplied. Historical decisions are not automatically reconciled.",
 			auth: "Session cookie or Bearer API key",
-			response: `{ "data": [{ "id": "<refund UUID>", "usageId": "<usage UUID>", "status": "granted", "amountCents": 0.25, "adminNote": "Confirmed provider error.", "createdAt": "2026-10-21T12:34:56Z" }] }`,
+			response: `{ "creditRefundsAvailable": true, "data": [{ "id": "<refund UUID>", "usageId": "<usage UUID>", "status": "granted", "amountCents": 0.25, "adminNote": "Confirmed provider error.", "createdAt": "2026-10-21T12:34:56Z" }] }`,
 		},
 	];
 

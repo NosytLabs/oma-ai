@@ -51,7 +51,7 @@ guarantee a particular compute bill. Recovery retries can now wait up to
 
 ## Validation and release status
 
-Types, lint, both production builds, all 926 frontend tests and all 689 API
+Types, lint, both production builds, all 934 frontend tests and all 689 API
 tests passed on Node 24, with the real Postgres suites enabled. Production
 dependency auditing reports zero advisories. The full development audit still
 flags `braces` by package version; its tracked recursion-bound patch and
@@ -68,7 +68,11 @@ Apply migration `0006_refund_precision` through the existing migration
 workflow before releasing the new backend. It changes only
 `refund_requests.amount_cents` to match usage precision. The production quota
 block currently prevents that migration and live account/billing verification.
-A frontend release alone cannot activate the backend refund fixes.
+  The frontend requires `creditRefundsAvailable: true` from account-scoped
+refund history before offering intake or claiming new approvals restore
+credits. Missing capability flags and unavailable/legacy backends leave intake
+disabled. Existing history remains readable. A frontend release alone cannot
+activate the backend refund fixes.
 
 ## Commercial limits
 

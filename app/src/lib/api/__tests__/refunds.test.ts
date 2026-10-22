@@ -81,6 +81,10 @@ describe("refunds.create", () => {
 });
 
 describe("refunds.list", () => {
+	it.each([undefined, false, "true", true])("requires an explicit backend credit-refund capability: %j", async (capability) => {
+		fetchMock.mockResolvedValueOnce(Response.json({ data: [], creditRefundsAvailable: capability }));
+		expect(await refunds.list()).toMatchObject({ creditRefundsAvailable: capability === true });
+	});
 	it("shows refunds from the server's data envelope", async () => {
 		fetchMock.mockResolvedValueOnce(Response.json({ data: [{
 			id: "refund-1", status: "pending", reason: "Unusable response", amountCents: 0.00000234,

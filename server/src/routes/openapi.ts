@@ -551,7 +551,7 @@ const spec = {
 			get: {
 				summary: "List the caller's refund requests (newest first)",
 				security: [{ SessionCookie: [] }, { BearerAuth: [] }],
-				responses: { "200": { description: "Refund requests for the authenticated account" } },
+				responses: { "200": { description: "Refund requests for the authenticated account, plus creditRefundsAvailable. Submit new credit-refund requests only when that flag is true." } },
 			},
 		},
 		"/v1/admin/refunds": {

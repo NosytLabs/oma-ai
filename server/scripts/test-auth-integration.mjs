@@ -584,6 +584,7 @@ try {
 	const ownRefunds = await request("/v1/refunds", { cookie: refundCustomer.cookie });
 	assert.match(ownRefunds.response.headers.get("cache-control"), /no-store/);
 	assert.equal(ownRefunds.data.data[0].id, refund.id);
+	assert.equal(ownRefunds.data.creditRefundsAvailable, true);
 	assert.equal((await request("/v1/refunds", { cookie: first.cookie })).data.data.length, 0);
 	await request("/v1/admin/refunds", { method: "POST", cookie: refundCustomer.cookie, body: { id: refund.id, decision: "granted" }, expected: 403 });
 	await request("/v1/admin/refunds", { method: "POST", cookie: first.cookie, body: { id: refund.id, decision: "granted" }, expected: 403 });

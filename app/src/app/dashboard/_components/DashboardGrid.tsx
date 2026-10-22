@@ -416,6 +416,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 									<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-success/40 to-transparent" />
 									<WidgetErrorBoundary title="Recent requests">
 										<LazyRecentRequestsTable
+											ownerId={_isDemo ? undefined : props.ownerId}
 											refundsEnabled={!_isDemo}
 											usage={usage}
 											loading={loading}

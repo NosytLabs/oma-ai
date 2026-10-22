@@ -71,7 +71,7 @@ refundsRoutes.get("/v1/refunds", sessionOrBearerAuth, async (c) => {
 		};
 	});
 
-	return c.json({ data });
+	return c.json({ data, creditRefundsAvailable: true });
 });
 
 // ─── POST /v1/refunds ───────────────────────────────────────────────────────
