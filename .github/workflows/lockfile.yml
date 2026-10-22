@@ -1,31 +1,9 @@
 name: Deployment lockfile
 
-# Fast install-contract check; the full app/server/browser CI stays manual.
+# Cost containment: run the install-contract check explicitly from Actions.
+# Automatic dependency-PR/main triggers are paused to avoid paid runner cascades.
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - package.json
-      - app/package.json
-      - server/package.json
-      - pnpm-lock.yaml
-      - patches/**
-      - pnpm-workspace.yaml
-      - .npmrc
-      - .nvmrc
-      - .github/workflows/lockfile.yml
-  pull_request:
-    paths:
-      - package.json
-      - app/package.json
-      - server/package.json
-      - pnpm-lock.yaml
-      - patches/**
-      - pnpm-workspace.yaml
-      - .npmrc
-      - .nvmrc
-      - .github/workflows/lockfile.yml
 
 permissions:
   contents: read
