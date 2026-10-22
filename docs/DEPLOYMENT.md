@@ -4,7 +4,7 @@ Canonical deployment facts for OMA-AI. Other docs link here rather than
 restating them — this file is the single source of truth so a deploy
 instruction can't drift between documents.
 
-Production topology was verified on 2026-10-13. See
+Production topology was verified on 2026-10-21. See
 [deployment verification](deployment-health.md) for release checks and failure diagnosis.
 
 The [gateway API and authentication audit](AUDIT.md)
@@ -146,7 +146,7 @@ neon deploy --config server/neon.ts --update-existing
 ```
 
 The manifest registers `omaapi` plus the `oma-deposit-recovery` and
-`oma-settlement-dlq` scheduled triggers. Both run every minute. A code-only
+`oma-settlement-dlq` scheduled triggers. Both run every 15 minutes. A code-only
 function deploy leaves these existing triggers in place.
 
 After deploying, confirm that the current and active function deployments

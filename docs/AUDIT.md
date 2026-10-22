@@ -1,181 +1,103 @@
 # Gateway and account audit
 
-Latest validation: October 15, 2026. These are dated observations, not a guarantee
-that every provider or mainnet payment works. Maintained behavior is documented
-in [Platform](PLATFORM.md), [Deployment](DEPLOYMENT.md),
-[Chat UI](chat-ui.md) and the [account test guide](../server/scripts/README.md).
+Latest inspection: October 21, 2026 (America/Moncton). These are dated
+observations. [Deployment](DEPLOYMENT.md), [Platform](PLATFORM.md), and
+[account tooling](../server/scripts/README.md) own the maintained procedures.
 
-## Current verification
+## Production incident
 
-| Check | October 15 result |
-| --- | --- |
-| API | 651 tests in 77 files, including real Postgres credit/webhook tests |
-| Frontend | 875 tests in 129 files; types, lint and production build passed |
-| Real HTTP/auth | All 30 groups passed against an isolated migrated local database |
-| Dependencies | Zero known production vulnerabilities across 890 dependencies |
-| Runtime | Node 24 on both Vercel and Neon; compatible direct dependencies current |
+The website and catalog respond, but the API readiness probe returns 503 with
+an unavailable database. Neon database access returns HTTP 402: the account or
+project quota has been exceeded. The project is on `free_v3`; its reported
+consumption period ends November 1, 2026. Redis readiness succeeds. Public
+payment settings fail closed, disabling new card and crypto funding.
 
-The HTTP suite covers real Better Auth and signed SIWE login, origin checks,
-OTP budgets, owner isolation, API-key scopes/expiry/revocation, deletion,
-streaming, billing, concurrent requests and admin pagination through 1,001
-fixture accounts. Provider responses in this suite are deterministic fixtures;
-they do not prove real model quality. Local tests create and drop only their
-own databases/schemas.
+Restoring service before the allowance resets requires the owner to resolve
+billing/quota for the existing `oma-ai-prod` project. Redeployment does not
+reset database quota. No customer records, balances, or payment settings were
+changed during this inspection; database inspection itself was quota-blocked.
 
-The October 15 cleanup consolidates duplicate pricing availability checks and
-removes render-only, export-presence and removed-plugin source checks. Runtime
-rate-limit, auth, account-isolation and payment regressions remain. Four workers
-bound test resource use; real auth imports run once in setup, and initial query
-and lazy-chat waits retain their original assertions.
+Both enabled Neon recovery schedules still ran every minute, despite the
+15-minute schedules in `server/neon.ts`. They were updated and read back as
+every 15 minutes on October 21. This reduces scheduled invocations from 2,880
+to 192 per day, allowing idle gaps; it does not reset consumed allowance or
+guarantee a particular compute bill. Recovery retries can now wait up to
+15 minutes. Both jobs remain enabled.
 
-Pricing now explains the credit exchange once, displays payment availability
-beside each method, and sends funding actions to the payment chooser rather
-than forcing USDC when card checkout is unavailable. Failed settings requests
-stop showing “Checking”. Collapsed FAQ panels leave the accessibility tree,
-and metadata no longer promises an unconditional signup bonus. The credits
-page uses payment-neutral headings. Desktop and 390px browser checks covered
-pricing alignment, FAQ disclosure and navigation to the sign-in-gated funding
-flow. No payment was executed. Sixty-one obsolete local audit scratch files
-were removed; maintained references and current release evidence are retained.
+## Changes prepared for release
 
-## Verified behavior
+- Sign-in checks gateway readiness rather than the website's liveness. A
+  confirmed settings outage displays a site-wide service notice and status
+  link. Status no longer advertises operational chat during a dependency
+  outage. Neither a catalog flag nor readiness proves upstream inference.
+- Completed the existing local usage-refund work in an isolated checkout.
+  Approval restores exact prepaid credits, adjusts net usage, marks the charge
+  and saves the operator audit in one transaction. Concurrent decisions and
+  duplicate requests cannot credit the same charge twice. Intake enforces
+  ownership, the 30-day window, and five pending requests per account.
+- Refunds cover full paid usage charges; they return OMA credits, not card or
+  USDC transfers. Fractional cents survive storage, approval and history.
+  Invalid legacy charge links remain pending for review. Existing historical
+  decisions are not automatically replayed or reconciled.
+- Refund history is scoped to the account, demo actions cannot submit live
+  refunds, and customer docs match the actual request/response contract.
+  Cookie-authenticated submissions require a trusted Origin; API-key clients
+  retain support for requests without browser headers.
+- Refunded known-cost requests retain the provider charge as a loss in admin
+  markup totals. Unknown Gonka costs remain explicitly unknown.
+- Vite 8.2.4 addresses six dependency advisories. The production dependency
+  audit reports zero known advisories. The manual CI workflow now supplies
+  Postgres so real ledger tests and the HTTP/auth suite run when dispatched.
 
-- Account data and caches are scoped to the authenticated user. Keys, sessions,
-  deposits, usage and exports reject cross-account access. Deletion invalidates
-  keys/sessions while retaining detached payment-security records.
-- Public proxies block private job/website paths, strip forged runtime headers
-  and keep database/provider secrets out of responses. Anonymous key and admin
-  treasury requests return 401 and `no-store` in production.
-- Sponsored website chat uses its own endpoint and UTC quotas. API-key calls
-  always use prepaid credits. Both inference formats share authorization,
-  output/context limits, usage billing and durable request claims.
-- Polar uses the versioned SDK to verify the original body, including legacy
-  and Standard Webhooks keys and multiple signatures. Event claiming and credit
-  changes share one transaction. Eight concurrent paid/refund deliveries change
-  the balance once; failed grants roll back and remain retryable. Tests use real
-  signatures and Postgres, replacing mock-only money assertions.
-- User overview, usage, keys and settings share one dashboard. Complete
-  aggregates retain fractional cents; rolling charts exclude future requests
-  and use elapsed time across clock changes. Stale refreshes cannot replace
-  newer data, and request/summary failures remain visible.
-- The read-only tour uses current model IDs, consistent accounting and bounded
-  timestamps. Empty/retired catalogs produce empty sample history safely.
-- Admin has cursor-paginated accounts and requests, usage/revenue charts,
-  account controls and treasury diagnostics. Balance deductions lock/cap to the
-  available balance. Notifications retain account-specific read state.
-- Mobile chat drawers appear above navigation, fit above cookie controls and
-  keep close buttons reachable. Parameters contain keyboard focus, close on
-  Escape and return focus to their opener. Input effects respect reduced motion.
-- Public docs/OpenAPI/agent guides omit private operator routes and distinguish
-  free website chat, billed SDK requests and authenticated x402 funding.
+## Validation and release status
 
-## Release and live checks
+Types, lint, both production builds, all 926 frontend tests and all 689 API
+tests passed on Node 24, with the real Postgres suites enabled. Production
+dependency auditing reports zero advisories. The full development audit still
+flags `braces` by package version; its tracked recursion-bound patch and
+regression coverage remain in place. Release deployment receipts belong in
+the release PR. The refund
+suite first reproduced nine failures against main, then passed its 13 real
+Postgres cases including concurrency, rollback, sub-cent accounting, legacy
+links and net markup. All 31 real HTTP/auth checks passed, including account isolation, cookie
+origin rejection and API-key refund intake without an Origin header, in a
+temporary local database.
+No test sends a paid provider request or executes a mainnet payment.
 
-[PR #39](https://github.com/NosytLabs/oma-ai/pull/39) updates the supported web,
-auth and wallet dependencies. [PR #40](https://github.com/NosytLabs/oma-ai/pull/40)
-fixes dashboard refresh/usage states. [PR #41](https://github.com/NosytLabs/oma-ai/pull/41)
-fixes Polar delivery and mobile chat. Exact release checks belong in each PR.
+Apply migration `0006_refund_precision` through the existing migration
+workflow before releasing the new backend. It changes only
+`refund_requests.amount_cents` to match usage precision. The production quota
+block currently prevents that migration and live account/billing verification.
+A frontend release alone cannot activate the backend refund fixes.
 
-PR #41 merged as `d49e4aa331b9c64098a79ec8b05b5bd4411849b2`. Vercel deployment
-`dpl_3sFV71H4cpyFSUdwTjz5F8149TjC` was READY at that revision; Neon `omaapi`
-deployment 90 completed on Node 24. Code-only deployment retained the same
-40 environment names and both enabled recovery schedules; secret values were
-not compared. Native readiness reported healthy Postgres/Redis. Unsigned native
-Polar callbacks returned 401. A website alternate-callback 404 was reproduced
-and traced to the proxy stripping `/api`; its regression checks preserve both
-callback paths, the original body and signature headers.
+## Commercial limits
 
-The fresh MiniMax test returned the expected `OMA_API_OK` through Messages
-(200; 49 input/77 output tokens; 33.9s). Chat Completions timed out upstream at
-180s (408). Usage matched the balance deduction. Its temporary local API key
-was revoked (401 afterward) and the session removed. Earlier tool tests obtained
-initial function calls but failed strict continuation-quality assertions;
-these assertions were not weakened. Current local evidence is retained in
-`.artifacts/provider-audit/payment-chat-live-api-2026-10-15.json`.
+Reliable account access and funding are release blockers while the database
+is unavailable. After recovery, verify an authenticated API request and each
+configured payment rail before promoting paid access. Keep the payment
+recovery jobs and inspect their failures; reducing frequency is not disabling
+reconciliation.
 
-## October 15 SEO and account follow-up
+Venice catalog prices include a 50% markup, which is a 33.3% gross margin
+before refunds, payment fees, hosting, support and taxes. Gonka dollar margin
+requires a GNK cost basis and retry costs. Neither markup nor prepaid deposits
+establishes net profit. The admin estimated margin remains incomplete when
+provider costs are unknown.
 
-- Crawled all 65 canonical production sitemap URLs: every URL returned 200,
-  with one matching canonical and H1, a title/description, valid JSON-LD and
-  no noindex conflict. No duplicate URLs or redirects appeared in the sitemap.
-  Private account/operator paths remain excluded. The report is local-only at
-  `.artifacts/site-audit/seo-before-2026-10-15.json`.
-- Removed misleading zero-price and flat purchase offers from paid inference
-  markup. Pricing/model pages share one escaped Service schema; static model
-  metadata no longer freezes token prices that can be overridden live.
-  This follows [Google's structured-data policy](https://developers.google.com/search/docs/appearance/structured-data/sd-policies)
-  requiring an accurate representation of visible content.
-- Settings forms and destructive confirmations remount on account/demo changes.
-  A late deletion response cannot sign out the newly selected account. Two
-  account-switch regressions were reproduced before the fixes and now pass.
-- API docs describe key IP restrictions and expired-key listings, add a bounded
-  function-tool round trip, and correct stale search headings. Copy controls
-  occupy a toolbar so they do not cover example code on mobile. The example
-  was syntax-checked and exercised with valid, unapproved, invalid and looping
-  tool responses; these fixture checks do not establish provider tool quality.
-- Both inference formats expose `X-OMA-Request-ID`, matching the recorded usage
-  ID for JSON and streaming replies. `X-Request-ID` remains the HTTP trace.
-  Docs and the live test report distinguish these IDs; a client-supplied ID
-  cannot select the billing identity.
-- A chat Retry cooldown now cancels on unmount. Full validation passes 883
-  frontend tests and all 660 API tests (including 26 real Postgres tests).
-  The 30-group real HTTP/auth suite passed again in an isolated local database.
-- A fresh paid MiniMax Messages request returned `OMA_API_OK`: 49 input and
-  111 output tokens, about 86.7 seconds. Billing matched usage; the temporary
-  scoped key was revoked (401 afterward), and its session removed. This checks
-  the local gateway with a real upstream, not production Venice or every model.
-  The follow-up passed with the new usage header matching its Postgres row,
-  HTTP correlation kept separate, and a revoked-key 401 (about 0.77 seconds).
-  Evidence: `.artifacts/provider-audit/site-seo-account-live-api-2026-10-15.json`.
-- Browser QA with local accounts covered settings/profile, sessions, API-key
-  setup controls, safe deletion cancellation, sign-out, role-gated admin access,
-  admin charts and request-ID search. Mobile docs stay within 390px; copying and
-  format switching work without a button covering the code. No console warnings
-  or errors were captured on the updated docs page. Screenshots are local-only
-  in `.screenshots/seo-account-2026-10-15/`. Actual deletion is covered by the
-  isolated HTTP suite; no real user account was deleted.
+Messages supports text and function tools rather than full Claude Code
+feature parity. Earlier live MiniMax tests included timeouts and tool
+continuation failures; live Venice credentials, WalletConnect pairing,
+Polar purchases, x402 settlement and support delivery need fresh verification.
+These were not exercised with real funds during this inspection.
 
-## Open limitations
+## Documentation and retention
 
-- The MiniMax timeout and earlier unwanted reasoning/continuation output remain
-  provider issues. Gonka DeepSeek/GLM routes remain paused. Catalog enablement
-  does not prove every model serves a good result.
-- The local Venice key returns 401. Failed requests are not charged; production
-  Venice inference remains unverified.
-- Live WalletConnect QR pairing needs a valid public Reown project ID. Missing
-  or placeholder IDs hide that connector; injected-wallet and local SIWE tests
-  pass. No mainnet purchase or treasury transfer was signed.
-- x402 v2 is OMA's authenticated USDC funding contract: verification broadcasts,
-  settlement credits the SIWE-bound payer once. Generic facilitator and
-  pay-per-inference compatibility are not claimed. Live gas/reconciliation and
-  paid Polar checkout remain unverified.
-- Balances remain aggregate. Per-grant refund/allocation policy requires a
-  ledger migration. Gonka dollar profit needs GNK cost basis and retry costs;
-  retail remains $0.02/M input and output. Venice catalog rates include 50%
-  markup, not a claim about settled provider invoices.
-- Messages supports text/function tools, not full Claude Code feature parity.
-  Memory quota fallback is weaker than shared durable counters. Support form
-  delivery needs a verified webhook; no Vercel log drain is configured.
-- TypeScript 6 and Node 24 typings stay within the supported toolchain. The
-  development-only braces advisory has a persistent recursion-bound patch and
-  regression coverage; an upstream fixed release is not claimed. Deprecated
-  transitive packages remain under their parent contracts.
+This report replaces repeated chronological audit narratives. Detailed
+[October 15 evidence](https://github.com/NosytLabs/oma-ai/blob/17b752f645ce4022d9e4fbeef4b9d8eeea4065c8/docs/AUDIT.md)
+remains in Git history. Generated logs, browser reports, screenshots and
+private backups stay ignored; no generated logs are tracked. Keep security,
+license, migration and deployment references.
 
-## Cleanup boundaries and history
-
-Obsolete Docker/Coolify/oldpc scaffolding, duplicated environment templates,
-unused credit-batch UI wrappers, stale generated files and superseded audit
-notes were removed. Repository logs, screenshots and private backups are not
-tracked. Maintained runbooks, security/license notices, migrations and generated
-agent instructions remain. Merged PRs are closed and branches removed; PR
-history is retained. Deployment cleanup preserves the live version and rollback
-candidates.
-
-Production database cleanup was limited to the separately approved six expired
-sessions and 14 verification records before `2026-10-10T22:40:00Z`. Both test
-identities and the operator key were preserved. The
-[exact cleanup receipt](audits/database-cleanup-2026-10-10.md) remains authoritative;
-this audit does not authorize removing users or financial/anti-abuse records.
-
-[Earlier reports and release receipts](https://github.com/NosytLabs/oma-ai/blob/d49e4aa331b9c64098a79ec8b05b5bd4411849b2/docs/AUDIT.md)
-remain in Git history instead of being duplicated in the working documentation.
+The [approved October 10 database cleanup](audits/database-cleanup-2026-10-10.md)
+remains authoritative for that earlier operation. This audit does not expand
+its scope or authorize removing accounts or financial/anti-abuse records.
