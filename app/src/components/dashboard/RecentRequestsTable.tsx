@@ -5,12 +5,12 @@ import { m } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";
 import { ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
 import Link from "next/link";
-import type { UsageRecord } from "@/lib/api";
+import { api, type UsageRecord } from "@/lib/api";
 import { formatTime, formatUsdPrecise } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
 import { resolveModelDisplayName, usageBilledDollars } from "@/lib/dashboard-aggregate";
 import { RequestRefundModal } from "./RequestRefundModal";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface RecentRequestsTableProps {
 	usage: UsageRecord[];
@@ -21,6 +21,8 @@ interface RecentRequestsTableProps {
 	totalCount?: number;
 	hasMore?: boolean;
 	loadingMore?: boolean;
+	refundsEnabled?: boolean;
+	ownerId?: string;
 }
 
 export const RecentRequestsTable = memo(function RecentRequestsTable({
@@ -32,9 +34,18 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 	totalCount = usage.length,
 	hasMore = false,
 	loadingMore = false,
+	refundsEnabled = true,
+	ownerId,
 }: RecentRequestsTableProps) {
 	const toast = useToast();
 	const queryClient = useQueryClient();
+	const refundQuery = useQuery({
+		queryKey: ["refunds", ownerId, "list"],
+		queryFn: () => api.refunds.list(),
+		enabled: refundsEnabled && Boolean(ownerId),
+		staleTime: 60_000,
+	});
+	const canRefund = refundsEnabled && Boolean(ownerId) && !refundQuery.isError && refundQuery.data?.creditRefundsAvailable === true;
 	const [refundTarget, setRefundTarget] = useState<UsageRecord | null>(null);
 	const totalPages = Math.ceil(totalCount / limit);
 	const currentPage = Math.min(page, Math.max(1, Math.ceil(usage.length / limit)));
@@ -195,7 +206,7 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 									<time dateTime={row.createdAt} title={new Date(row.createdAt).toLocaleString()}>{formatTime(row.createdAt)}</time>
 								</td>
 								<td className="px-4 py-4 text-right">
-									{!row.refundedAt && row.status === "completed" ? (
+										{canRefund && !row.refundedAt && row.status === "completed" && usageBilledDollars(row) > 0 ? (
 										<button
 											type="button"
 											aria-label={`Request a refund for this ${row.model} request`}
@@ -245,12 +256,12 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 				</div>
 			)}
 			<RequestRefundModal
-				record={refundTarget}
+				record={canRefund ? refundTarget : null}
 				onDismiss={() => setRefundTarget(null)}
 				onSubmitted={() => {
 					void queryClient.invalidateQueries({ queryKey: ["usage"] });
 					void queryClient.invalidateQueries({ queryKey: ["balance"] });
-					void queryClient.invalidateQueries({ queryKey: ["refunds", "list"] });
+					void queryClient.invalidateQueries({ queryKey: ["refunds"] });
 				}}
 			/>
 		</div>

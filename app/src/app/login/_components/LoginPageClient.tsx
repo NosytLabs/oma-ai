@@ -203,10 +203,10 @@ function LoginInner() {
 										aria-hidden="true"
 									/>
 									<div className="text-xs text-text-primary">
-										<p className="font-semibold">Connection interrupted</p>
+										<p className="font-semibold">Account services unavailable</p>
 										<p className="text-text-muted">
-											We could not confirm the website connection. You can
-											still try signing in.
+											We could not confirm account service availability. Sign-in may
+											fail. Check <Link href="/status" prefetch={false} className="underline underline-offset-2">service status</Link> or try again shortly.
 										</p>
 									</div>
 								</div>

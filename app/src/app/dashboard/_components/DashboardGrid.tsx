@@ -218,6 +218,7 @@ interface DashboardGridProps {
 	hasAnyUsage?: boolean;
 	/** Demo tour (`?demo=1`) renders sample data only — no live backend calls. */
 	isDemo?: boolean;
+	ownerId?: string;
 }
 
 /**
@@ -353,7 +354,7 @@ export function DashboardGrid(props: DashboardGridProps) {
 
 						<QuickActions isDemo={_isDemo} />
 
-						<RefundActivityPanel />
+						<RefundActivityPanel ownerId={_isDemo ? undefined : props.ownerId} />
 
 						<RecentTransactions transactions={transactions} isDemo={_isDemo} />
 					</m.div>
@@ -415,6 +416,8 @@ export function DashboardGrid(props: DashboardGridProps) {
 									<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-success/40 to-transparent" />
 									<WidgetErrorBoundary title="Recent requests">
 										<LazyRecentRequestsTable
+											ownerId={_isDemo ? undefined : props.ownerId}
+											refundsEnabled={!_isDemo}
 											usage={usage}
 											loading={loading}
 											page={page}

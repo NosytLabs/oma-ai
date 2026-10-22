@@ -37,7 +37,7 @@ function billedCentsString(record: UsageRecord | null): string {
 	const raw = record.billedCents ?? record.totalCents ?? "0";
 	const n = Number(raw);
 	if (!Number.isFinite(n) || n <= 0) return "0";
-	return Math.floor(n).toString();
+	return n.toString();
 }
 
 export function RequestRefundModal({
@@ -77,7 +77,7 @@ export function RequestRefundModal({
 		setError(null);
 		try {
 			await api.refunds.create({ usageId: record.id, reason: trimmed });
-			toast.success("Refund request submitted. We'll email you when it's reviewed.");
+			toast.success("Refund request submitted. Check Refund activity for the decision.");
 			onSubmitted?.();
 			onDismiss();
 		} catch (e) {
@@ -125,7 +125,7 @@ export function RequestRefundModal({
 									Request a refund
 								</h2>
 								<p id="request-refund-desc" className="mt-1 text-[12.5px] leading-relaxed text-text-secondary">
-									For this one request only. Your statement notes the operator will review and email you back.
+									For this one request only. An operator will review it. Approved refunds return the full charge to your OMA credit balance.
 								</p>
 							</div>
 						</div>

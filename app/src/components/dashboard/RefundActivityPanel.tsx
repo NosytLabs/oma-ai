@@ -59,10 +59,11 @@ function formatRelative(iso: string): string {
 	return new Date(t).toLocaleDateString();
 }
 
-export function RefundActivityPanel() {
+export function RefundActivityPanel({ ownerId }: { ownerId?: string }) {
 	const query = useQuery({
-		queryKey: ["refunds", "list"],
+		queryKey: ["refunds", ownerId, "list"],
 		queryFn: () => api.refunds.list(),
+		enabled: Boolean(ownerId),
 		staleTime: 60_000,
 	});
 
@@ -70,6 +71,8 @@ export function RefundActivityPanel() {
 		() => (query.data?.items ?? []).slice(0, 5),
 		[query.data?.items],
 	);
+	const canRefund = !query.isError && query.data?.creditRefundsAvailable === true;
+	if (!ownerId) return null;
 
 	return (
 		<div className="mb-8 bg-surface/30 border border-border rounded-[var(--radius-xl)] shadow-[var(--shadow-md)] p-6 relative overflow-hidden transition-colors duration-200 ease-out hover:border-accent/40">
@@ -115,9 +118,9 @@ export function RefundActivityPanel() {
 						No refund requests yet
 					</p>
 					<p className="text-[11.5px] text-text-muted max-w-[280px] leading-relaxed">
-						Open the <span className="text-accent font-medium">Usage</span> tab and
+						{canRefund ? <>Open the <span className="text-accent font-medium">Usage</span> tab and
 						click <span className="text-accent font-medium">Refund</span> on a billable
-						request to start one.
+						request to start one.</> : <>Contact support for help with a charge.</>}
 					</p>
 				</div>
 			) : (
@@ -154,6 +157,7 @@ export function RefundActivityPanel() {
 												{r.reason}
 											</p>
 										)}
+										{r.adminNote && <p className="mt-1 text-[12px] text-text-secondary">Review: {r.adminNote}</p>}
 									</div>
 								</div>
 								<div className="flex items-center justify-end pl-12 sm:pl-0">
@@ -167,8 +171,9 @@ export function RefundActivityPanel() {
 				</ul>
 			)}
 			<p className="mt-3 text-[10.5px] text-text-muted">
-				Refund requests are reviewed by an operator. Decisions typically arrive
-				within one business day.{" "}
+				{canRefund
+					? "An operator reviews each request. New approvals restore the full usage charge to your OMA credit balance."
+					: "Credit refunds are temporarily unavailable. Contact support for help with a charge."}{" "}
 				<Link href="/docs#ep-refunds-create" className="text-accent hover:underline">
 					API reference
 				</Link>

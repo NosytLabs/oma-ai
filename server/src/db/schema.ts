@@ -21,8 +21,6 @@
 	* than dropped: removing a table from the schema generates a DROP TABLE
 	* migration, which is irreversible and buys nothing while the rows are empty.
 	* Do NOT assume these features work because the tables exist:
-	*   - refundRequests       - refunds shown in the dashboard are read from the
-	*                            credit ledger, not from this table
 	*   - webhookSubscriptions - no subscription create/list/deliver path exists
 	*   - autoReloadSettings   - no admin surface reads or writes it
 	*/
@@ -636,7 +634,7 @@ export const refundRequests = pgTable(
 				depositId: uuid("deposit_id").references(() => deposits.id, {
 						onDelete: "set null",
 				}),
-				amountCents: numeric("amount_cents", { precision: 18, scale: 2 }).notNull(),
+				amountCents: numeric("amount_cents", { precision: 18, scale: 8 }).notNull(),
 				reason: text("reason").notNull(),
 				status: refundStatusEnum("status").notNull().default("pending"),
 				notes: text("notes"),

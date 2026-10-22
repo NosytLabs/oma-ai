@@ -21,11 +21,13 @@ export interface RefundRecord {
 	amountCents?: number | null;
 	createdAt: string;
 	updatedAt?: string;
+	adminNote?: string | null;
 }
 
 export interface RefundListResponse {
 	items: RefundRecord[];
 	nextCursor: string | null;
+	creditRefundsAvailable?: boolean;
 }
 
 /**
@@ -79,7 +81,8 @@ export const refunds = {
 	async list(status?: RefundStatus, limit = 50): Promise<RefundListResponse> {
 		const qs = new URLSearchParams({ limit: String(limit) });
 		if (status) qs.set("status", status);
-		return request<RefundListResponse>(`/v1/refunds?${qs.toString()}`);
+		const response = await request<{ data: RefundRecord[]; creditRefundsAvailable?: unknown }>(`/v1/refunds?${qs.toString()}`);
+		return { items: response.data, nextCursor: null, creditRefundsAvailable: response.creditRefundsAvailable === true };
 	},
 
 	admin: {

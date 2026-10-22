@@ -1,42 +1,22 @@
-/**
- * GET  /v1/refunds        — list the caller's own refund_requests
- * POST /v1/refunds        — create a new refund_request against a usage charge
- *
- * The user-facing side of the refund flow. Writes a row in
- * `refund_requests` with status='pending' for an admin to review via
- * POST /v1/admin/refunds. The actual `usage_records.refundedAt` mark is
- * only set when the admin grants the refund; this endpoint never touches
- * credits directly.
- *
- * The `notes` column on refund_requests holds a small JSON envelope:
- *   { "u": "<usageId>", "n": "<adminNote>" }
- * to keep the existing schema unchanged. usageId is set on create;
- * adminNote is appended on admin decision.
- *
- * Validation: usage must belong to the caller, be within the last 30
- * days, and not already be refunded. Caller may have at most 5 open
- * (pending) refund requests at a time.
- *
- * Requires session or bearer auth.
- */
+/** Customer usage-credit refund intake and account-scoped history. */
 import { Hono } from "hono";
-import { and, count, desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import type { OmaEnv } from "../types.js";
 import { sessionOrBearerAuth } from "../auth/middleware.js";
 import { db } from "../db/client.js";
-import { refundRequests, usageRecords } from "../db/schema.js";
+import { refundRequests } from "../db/schema.js";
 import { logger } from "../lib/logger.js";
+import { originGuard } from "../middleware/origin-guard.js";
 import {
 	createRefundSchema,
 	decodeEnvelope,
-	encodeEnvelope,
 	listRefundsSchema,
 } from "./_refund-schemas.js";
 
+import { createUsageRefund, RefundError } from "../lib/usage-refunds.js";
+
 export const refundsRoutes = new Hono<OmaEnv>();
 
-const MAX_OPEN_REQUESTS = 5;
-const MAX_AGE_DAYS = 30;
 
 // ─── GET /v1/refunds ────────────────────────────────────────────────────────
 
@@ -91,12 +71,17 @@ refundsRoutes.get("/v1/refunds", sessionOrBearerAuth, async (c) => {
 		};
 	});
 
-	return c.json({ data });
+	return c.json({ data, creditRefundsAvailable: true });
 });
 
 // ─── POST /v1/refunds ───────────────────────────────────────────────────────
 
-refundsRoutes.post("/v1/refunds", sessionOrBearerAuth, async (c) => {
+const enforceOrigin = originGuard();
+refundsRoutes.post("/v1/refunds", sessionOrBearerAuth, async (c, next) => {
+	// Check the credential actually selected by authentication. SDK callers
+	// with an API key need no browser Origin; cookie-authenticated writes do.
+	return c.get("session") ? enforceOrigin(c, next) : next();
+}, async (c) => {
 	c.header("Cache-Control", "no-store");
 	const userId = c.get("userId");
 
@@ -110,109 +95,14 @@ refundsRoutes.post("/v1/refunds", sessionOrBearerAuth, async (c) => {
 	}
 	const { usageId, reason, amountCents } = parsed.data;
 
-	// 1. usage must exist, belong to the caller, be in-range, and not
-	//    already be refunded.
-	const [usage] = await db
-		.select({
-			id: usageRecords.id,
-			userId: usageRecords.userId,
-			totalCents: usageRecords.totalCents,
-			refundedAt: usageRecords.refundedAt,
-			createdAt: usageRecords.createdAt,
-		})
-		.from(usageRecords)
-		.where(eq(usageRecords.id, usageId))
-		.limit(1);
-
-	if (!usage) {
-		return c.json({ error: { message: "usageId not found" } }, 404);
-	}
-	if (usage.userId !== userId) {
-		// Don't leak existence — return 404 for both "not found" and "not yours".
-		return c.json({ error: { message: "usageId not found" } }, 404);
-	}
-	if (usage.refundedAt) {
-		return c.json(
-			{ error: { message: "usageId has already been refunded" } },
-			400,
-		);
-	}
-	const ageDays = (Date.now() - usage.createdAt.getTime()) / (1000 * 60 * 60 * 24);
-	if (ageDays > MAX_AGE_DAYS) {
-		return c.json(
-			{
-				error: {
-					message: `Refunds must be requested within ${MAX_AGE_DAYS} days of the original charge (charge is ${ageDays.toFixed(0)} days old)`,
-				},
-			},
-			400,
-		);
-	}
-
-	// 2. Cap open requests per user — 5 is the threshold from the docs.
-	const [{ open } = { open: 0 }] = await db
-		.select({ open: count() })
-		.from(refundRequests)
-		.where(
-			and(
-				eq(refundRequests.userId, userId),
-				eq(refundRequests.status, "pending"),
-			),
-		);
-	if (Number(open) >= MAX_OPEN_REQUESTS) {
-		return c.json(
-			{
-				error: {
-					message: `You already have ${open} open refund requests (max ${MAX_OPEN_REQUESTS}). Wait for an admin to review them before opening more.`,
-				},
-			},
-			429,
-		);
-	}
-
-	// 3. Default amount = full unrefunded portion (i.e. totalCents), but
-	//    never more than the original charge.
-	const fullCents = Number(usage.totalCents);
-	const requestedCents = amountCents ?? fullCents;
-	if (requestedCents > fullCents) {
-		return c.json(
-			{
-				error: {
-					message: `amountCents (${requestedCents}) cannot exceed the original charge (${fullCents})`,
-				},
-			},
-			400,
-		);
-	}
-
-	// 4. Insert. usageId is stashed in the `notes` envelope; the admin
-	//    route reads it back to mark the underlying usage row.
 	try {
-		const [row] = await db
-			.insert(refundRequests)
-			.values({
-				userId,
-				amountCents: String(requestedCents),
-				reason,
-				notes: encodeEnvelope({ u: usageId }),
-				status: "pending",
-			})
-			.returning();
-		return c.json(
-			{
-				id: row.id,
-				usageId,
-				amountCents: requestedCents,
-				status: row.status,
-				createdAt: row.createdAt,
-			},
-			200,
-		);
+		return c.json(await createUsageRefund(userId, { usageId, reason, amountCents }));
 	} catch (err) {
+		if (err instanceof RefundError) return c.json({ error: { message: err.message } }, err.status);
 		logger.error({ err, userId, usageId }, "[refunds] create failed");
 		return c.json({ error: { message: "Could not create refund request" } }, 500);
 	}
 });
 
 // Re-export helpers for the admin route to share (read-only).
-export { encodeEnvelope, decodeEnvelope };
+export { encodeEnvelope, decodeEnvelope } from "./_refund-schemas.js";

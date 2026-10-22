@@ -46,4 +46,11 @@ describe("public service status", () => {
 		expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Gateway services are online.");
 		expect(screen.getByText("Database and shared cache are ready.")).toBeInTheDocument();
 	});
+
+	it("does not advertise operational chat during a dependency outage", async () => {
+		mockGateway(false);
+		render(await StatusPage());
+		expect(screen.getByText(/Chat availability cannot be confirmed while gateway dependencies are unavailable/)).toBeInTheDocument();
+		expect(screen.queryByText(/The default free model is listed as available/)).not.toBeInTheDocument();
+	});
 });

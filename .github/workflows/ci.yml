@@ -15,6 +15,21 @@ jobs:
   validate-and-build:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      CREDIT_TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+      AUTH_TEST_POSTGRES_URL: postgresql://postgres:postgres@localhost:5432/postgres
 
     steps:
       - name: Checkout
@@ -36,6 +51,9 @@ jobs:
 
       - name: Validate and build
         run: pnpm validate
+
+      - name: Verify real authentication and account isolation
+        run: pnpm --filter oma-server test:auth:integration
 
   e2e:
     runs-on: ubuntu-latest

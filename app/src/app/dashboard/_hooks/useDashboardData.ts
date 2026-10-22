@@ -54,7 +54,7 @@ export function useDashboardData({ isAuthenticated, userId, timeRange = "7d", an
 		if (!enabled || !userId) return Promise.resolve();
 		if (refreshInFlight.current?.userId === userId) return refreshInFlight.current.promise;
 		const promise = Promise.all([
-			...["apiKeys", "usageSummary", "usage", "recentTransactions", "balance", "notifications"]
+			...["apiKeys", "usageSummary", "usage", "recentTransactions", "balance", "notifications", "refunds"]
 				.map(key => queryClient.invalidateQueries({ queryKey: [key, userId] })),
 			queryClient.invalidateQueries({ queryKey: ["models"] }),
 		]).then(() => {}).finally(() => {

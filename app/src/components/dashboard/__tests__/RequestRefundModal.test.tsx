@@ -75,6 +75,10 @@ afterEach(() => {
 });
 
 describe("RequestRefundModal", () => {
+	it("shows fractional-cent charges without flooring them to zero", () => {
+		renderModal({ record: { ...baseRecord, billedCents: "0.25", totalCents: "0.25" } });
+		expect(screen.getByText("$0.0025")).toBeInTheDocument();
+	});
 	it("renders the dialog with model, charge, request id, and form when record is provided", () => {
 		renderModal();
 		const dialog = screen.getByRole("dialog");

@@ -62,6 +62,27 @@ The chat browser fixtures exercise local UI behavior without paid inference.
 A fixture-backed test is not evidence that an external provider or a live paid
 account flow succeeded.
 
+## Database quota exhaustion
+
+If database access returns HTTP 402 with a quota-exceeded message, inspect
+consumption and billing for the existing production Neon project. A successful
+website health response and a ready frontend deployment do not restore it.
+The owner must resolve the plan/quota or wait for the reported reset. Do not
+replace the database, delete ledger records, or create another project to work
+around the limit.
+
+Check that both recovery schedules match `server/neon.ts` (every 15 minutes).
+Minute-by-minute database work prevents the normal idle window. Keep the jobs
+enabled so confirmed payments can be reconciled; the longer interval means
+background retries can take up to 15 minutes. Read schedules back after changing
+them. Code-only function releases preserve triggers and do not reconcile them.
+
+Before resuming paid promotion, require a 200 native `/ready`, successful
+Postgres/Redis checks, readable site settings and an authenticated account/API
+check. Apply pending migrations before releasing dependent backend code.
+Inspect pending deposits and settlement retries after recovery; do not collect
+a second payment merely because crediting was delayed.
+
 ## Build-output cleanup
 
 Keep the logs for the current website/API sources and the latest main-branch
