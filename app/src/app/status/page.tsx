@@ -108,7 +108,7 @@ export default async function StatusPage() {
 		ok: backendJson !== null,
 		detail:
 			backendJson !== null
-				? `Healthy${apiVersion ? ` — v${apiVersion}` : ""}`
+				? `Reachable${apiVersion ? ` — v${apiVersion}` : ""} — dependency readiness is checked separately.`
 				: "Unreachable — chat, key management, and billing may fail. Retry in a moment.",
 	};
 	const checks = readinessJson?.checks as Record<string, { ok?: boolean }> | undefined;
@@ -158,15 +158,17 @@ export default async function StatusPage() {
 	const freeChatModel = modelRows.find(
 		(model) => model.id === FREE_DEFAULT_CHAT_MODEL,
 	);
-	const chatAvailable = api.ok && freeChatModel?.available === true;
+	const chatAvailable = api.ok && dependencies.ok && freeChatModel?.available === true;
 	const chat: ServiceState = {
 		name: "Free website chat",
 		ok: chatAvailable,
 		detail: chatAvailable
 			? "The default free model is listed as available. Live responses may use a fallback."
-			: api.ok
-				? "Paused — the default free model is not currently available."
-				: "Paused while the gateway is unreachable.",
+			: !api.ok
+				? "Paused while the gateway is unreachable."
+				: !dependencies.ok
+					? "Chat availability cannot be confirmed while gateway dependencies are unavailable."
+					: "Paused — the default free model is not currently available.",
 	};
 
 	const services = [web, api, dependencies, providers, chat];

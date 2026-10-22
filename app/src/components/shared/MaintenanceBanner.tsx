@@ -1,18 +1,20 @@
 "use client";
 
 import { AlertTriangle, X } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 interface SiteSettingsPayload {
 	maintenanceMode?: boolean;
 	maintenanceMessage?: string | null;
+	paymentStatusAvailable?: boolean;
 }
 
 /**
  * Site-wide maintenance banner.
  *
  * Polls /api/v1/site-settings every 60s and shows a dismissable banner
- * when the operator has flipped maintenance mode on. Reads the same
+ * for scheduled maintenance or a confirmed account-service outage. Reads the same
  * endpoint the deposit page uses so the message comes from one place.
  *
  * Survives transient network errors silently — if the API is down, we
@@ -22,6 +24,9 @@ interface SiteSettingsPayload {
 export function MaintenanceBanner() {
 	const [settings, setSettings] = useState<SiteSettingsPayload | null>(null);
 	const [dismissed, setDismissed] = useState(false);
+	const notice = settings?.maintenanceMode
+		? "maintenance"
+		: settings?.paymentStatusAvailable === false ? "outage" : null;
 
 	useEffect(() => {
 		let cancelled = false;
@@ -49,16 +54,16 @@ export function MaintenanceBanner() {
 		};
 	}, []);
 
-	// Re-show on a fresh maintenance flip
+	// A dismissed incident must not suppress a later, separate incident.
 	useEffect(() => {
-		if (settings?.maintenanceMode) setDismissed(false);
-	}, [settings?.maintenanceMode]);
+		setDismissed(false);
+	}, [notice]);
 
-	if (!settings?.maintenanceMode || dismissed) return null;
+	if (!notice || dismissed) return null;
 
-	const message =
-		settings.maintenanceMessage?.trim() ||
-		"OMA is in maintenance mode. Some features may be temporarily unavailable.";
+	const message = notice === "maintenance"
+		? settings?.maintenanceMessage?.trim() || "OMA is in maintenance mode. Some features may be temporarily unavailable."
+		: "Account services are temporarily unavailable. Sign-in, credits and paid requests may fail.";
 
 	return (
 		<div
@@ -68,9 +73,12 @@ export function MaintenanceBanner() {
 		>
 			<span className="flex items-center gap-2">
 				<AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-				<span className="uppercase tracking-wider font-semibold">Maintenance ·</span>
+				<span className="uppercase tracking-wider font-semibold">{notice === "maintenance" ? "Maintenance" : "Service notice"} ·</span>
 				<span className="text-warning/90 normal-case font-sans">{message}</span>
 			</span>
+			<Link href="/status" prefetch={false} className="text-warning underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-warning">
+				Service status
+			</Link>
 			<button
 				type="button"
 				onClick={() => setDismissed(true)}

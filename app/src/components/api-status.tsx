@@ -1,15 +1,13 @@
 "use client";
 
 /**
- * `useApiHealth` — shared frontend-liveness poll for the navbar status
- * chip and any UI that wants to know whether the website itself is
- * reachable. It measures website reachability, NOT inference / API
- * readiness (that lives at /status + /api/health).
+ * `useApiHealth` — gateway readiness for sign-in and account services.
+ * The website's own liveness cannot establish database/cache readiness
+ * or whether an upstream model can serve inference.
  *
  * Single source of truth:
- * - One query key: ["health", "ready-v2"].
- * - Treats any 2xx response as "online", any non-2xx or thrown error as
- *   "offline".
+ * - One query key: ["health", "ready-v3"].
+ * - Requires a successful readiness response; failures are "offline".
  * - Exposes a stable `refresh()` callback so consumers can re-poll after
  *   a "Retry" click.
  * - Steady 30s poll while online; capped exponential backoff
@@ -28,7 +26,7 @@ import { nextHealthPollMs } from "@/lib/health-backoff";
 type HealthStatus = "checking" | "online" | "offline";
 
 const STALE_TIME_MS = 25_000;
-const HEALTH_QUERY_KEY = ["health", "ready-v2"] as const;
+const HEALTH_QUERY_KEY = ["health", "ready-v3"] as const;
 
 async function fetchHealth(): Promise<HealthStatus> {
 	try {
