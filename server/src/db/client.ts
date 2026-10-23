@@ -24,6 +24,21 @@ let _dbInitFailed = false;
 let _pgPool: pg.Pool | null = null;
 let _neonPool: InstanceType<typeof Pool> | null = null;
 
+function databaseErrorMetadata(error: unknown) {
+	// Driver errors can contain a live client, connectionString, password, or
+	// credentials in their message/stack/cause. Pino's default err serializer
+	// retains those fields. Log only bounded protocol diagnostics here.
+	const metadata: { type: string; code?: string; status?: number } = { type: "DatabaseError" };
+	if (error && typeof error === "object") {
+		const { code, status } = error as { code?: unknown; status?: unknown };
+		if (typeof code === "string" && /^[0-9A-Z]{5}$/.test(code)) metadata.code = code;
+		if (typeof status === "number" && Number.isInteger(status) && status >= 100 && status <= 599) {
+			metadata.status = status;
+		}
+	}
+	return metadata;
+}
+
 function isNeonUrl(url: string): boolean {
 	try {
 		const host = new URL(url).hostname;
@@ -55,7 +70,7 @@ function createNeonDb(dbUrl: string): AppDb {
 		max: Math.min(config.CONNECTION_POOL_SIZE ?? 10, 20),
 	});
 	pool.on("error", (err: Error) => {
-		logger.error({ err }, "[db] neon pool idle client error");
+		logger.error({ err: databaseErrorMetadata(err) }, "[db] neon pool idle client error");
 	});
 	_neonPool = pool;
 	return drizzleNeonWs(pool, { schema }) as unknown as AppDb;
@@ -67,7 +82,7 @@ function createNodePgDb(dbUrl: string): AppDb {
 		max: Math.min(config.CONNECTION_POOL_SIZE ?? 10, 20),
 	});
 	_pgPool.on("error", (err) => {
-		logger.error({ err }, "[db] idle client error");
+		logger.error({ err: databaseErrorMetadata(err) }, "[db] idle client error");
 	});
 	return drizzleNode(_pgPool, { schema });
 }
@@ -107,7 +122,7 @@ function getDb() {
 				throw err;
 			}
 			logger.fatal(
-				{ err },
+				{ err: databaseErrorMetadata(err) },
 				"Failed to initialize database connection. Refusing to start with a mock DB in non-test environments.",
 			);
 			process.exit(1);
