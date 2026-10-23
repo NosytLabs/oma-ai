@@ -257,7 +257,12 @@ app.use("*", async (c, next) => {
 				path.startsWith("/api/auth/") ||
 				path === "/v1/site-settings" ||
 				path.startsWith("/v1/admin") ||
+				path === "/health" ||
 				path === "/v1/health" ||
+				path === "/live" ||
+				path === "/version" ||
+				path === "/health/db" ||
+				path === "/ready" ||
 				path === "/v1/metrics" ||
 				path.startsWith("/.well-known")
 		) {
@@ -514,7 +519,7 @@ app.onError((err, c) => {
 				return err.getResponse();
 		}
 		const correlationId = c.get("correlationId") as string | undefined;
-		logger.error({ correlationId, error: err.message }, "[OMA] Unhandled error");
+		logger.error({ correlationId, err }, "[OMA] Unhandled error");
 		const errWithStatus = err as Error & { status?: ContentfulStatusCode };
 		const status = errWithStatus.status ?? 500;
 		// 5xx with an explicit ProviderError message — surface it. These are

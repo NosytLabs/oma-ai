@@ -159,9 +159,8 @@ describe("HomePage", () => {
 		expect(document.body.textContent).toContain(
 			`From ${MIN_INPUT_PRICE_LABEL}/1M input tokens`,
 		);
-		// Settlement + no-monthly-fee are the two objections the CTA doesn't
-		// answer, so they belong next to the price anchor.
-		expect(document.body.textContent).toMatch(/USDC or card/i);
+		// Funding availability must be qualified alongside the price anchor.
+		expect(document.body.textContent).toMatch(/USDC · card when available/i);
 		expect(document.body.textContent).toMatch(/no monthly fee/i);
 	});
 

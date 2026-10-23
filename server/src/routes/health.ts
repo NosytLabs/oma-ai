@@ -61,7 +61,7 @@ healthRoutes.get("/ready", async (c) => {
       latencyMs: Date.now() - dbStart,
     };
   } catch (err) {
-    // SECURITY: /ready is public. Keep the raw driver message in the logs.
+    // Public responses omit driver details; the logger bounds DB diagnostics.
     logger.error({ err }, "[health] database readiness check failed");
     checks.database = {
       ok: false,
@@ -80,7 +80,7 @@ healthRoutes.get("/ready", async (c) => {
       error: redisOk ? undefined : redis.status,
     };
   } catch (err) {
-    // SECURITY: /ready is public. Keep the raw driver message in the logs.
+    // Public responses omit driver details.
     logger.error({ err }, "[health] redis readiness check failed");
     checks.redis = {
       ok: false,

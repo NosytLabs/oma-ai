@@ -50,7 +50,7 @@ export function Hero() {
 					    price list. Payment rails and "no monthly fee" are stated here
 					    because they are the two objections that block the CTA. */}
 					<p className="mt-4 font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted sm:mt-5 sm:text-xs">
-						From {MIN_INPUT_PRICE_LABEL}/1M input tokens · USDC or card · no monthly fee
+						From {MIN_INPUT_PRICE_LABEL}/1M input tokens · USDC · card when available · no monthly fee
 					</p>
 
 					<div className="mt-8 flex w-full flex-col items-center justify-center gap-3 sm:mt-9 sm:w-auto sm:flex-row">

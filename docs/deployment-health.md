@@ -19,17 +19,18 @@ For changes to chat interactions or layout, also run the
 `pnpm validate:server` for a change limited to one workspace.
 
 Commit `pnpm-lock.yaml` whenever a workspace manifest changes. Vercel installs
-the pnpm workspace with a frozen lockfile. The `Deployment lockfile` workflow
-checks that contract for dependency/configuration changes without running
-package scripts; it can also be dispatched manually. The full CI workflow
-remains manual for Actions cost control.
+the pnpm workspace with a frozen lockfile. Both the `Deployment lockfile`
+install-contract check and the full CI workflow require manual dispatch for
+Actions cost control. A missing automatic check is not a passing check; record
+the local validation or manually dispatched run for the exact release commit.
 
 ## Verify each layer
 
 | Layer | Evidence | What it establishes |
 |-------|----------|---------------------|
 | Frontend release | The deployment serving `www.oma-ai.com` is `READY` and has the intended commit | The production domain received the release |
-| Web runtime | `/chat` and `/api/health` respond successfully | The page and web service are reachable |
+| Web runtime | `/chat` and `/api/health` respond successfully | The page and Next.js web service are reachable; `/api/health` is not a backend probe |
+| API liveness | Native API `/health` or `/live` responds successfully | The API process responds without querying Postgres or Redis, including during maintenance |
 | API release | The current and active `omaapi` deployments are completed | The separate API release is active |
 | API dependencies | The native API `/ready` response reports healthy database and Redis checks | Required data stores are reachable |
 | Model catalog | `/api/v1/models` returns the expected configured routes | Catalog configuration is available |
@@ -40,6 +41,18 @@ provider availability. Likewise, model `available` flags describe configured
 routes, not recent synthetic inference probes. Record the checks actually run
 and any limits in the release PR instead of treating an old incident report as
 current service status.
+
+Operational probes bypass the global maintenance-settings query. `/health/db`
+checks Postgres once and `/ready` checks Postgres and Redis; they report
+dependency health even during scheduled maintenance. Inspect
+`/v1/site-settings` separately for maintenance mode. Do not use readiness as a
+frequent idle liveness check: each readiness request intentionally queries the
+database and can keep a serverless compute active.
+
+Database query errors retain bounded SQLSTATE/HTTP diagnostics and request
+correlation IDs in application logs. SQL text, bound values, driver clients,
+and nested database messages/stacks are omitted. Preserve operational receipts
+without copying raw credentials or customer query values into docs or tickets.
 
 The Vercel Git integration releases the frontend from `main`. Server changes
 need the separate Neon release documented in [Deployment](DEPLOYMENT.md).

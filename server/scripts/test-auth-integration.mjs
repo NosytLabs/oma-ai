@@ -369,6 +369,14 @@ try {
 	const adminSettings = (await request("/v1/admin/site-settings", { cookie: first.cookie })).data;
 	assert.equal(adminSettings.maintenanceMessage, "Local integration maintenance");
 	await request("/v1/models", { expected: 503 });
+	for (const path of ["/health", "/v1/health", "/live", "/version", "/health/db"]) {
+		await request(path);
+	}
+	// This fixture intentionally has no Redis. Readiness must report the
+	// dependency check, rather than being replaced by the maintenance response.
+	const maintenanceReadiness = await request("/ready", { expected: 503 });
+	assert.equal(maintenanceReadiness.data.checks.database.ok, true);
+	assert.equal(maintenanceReadiness.data.checks.redis.ok, false);
 	await request("/v1/admin/site-settings", { method: "POST", cookie: first.cookie, body: { maintenanceMode: false } });
 	await request("/v1/admin/site-settings", { method: "POST", cookie: first.cookie, body: { cryptoPaymentsEnabled: false, cardPaymentsEnabled: false } });
 	const pausedPayments = (await request("/v1/site-settings")).data;
