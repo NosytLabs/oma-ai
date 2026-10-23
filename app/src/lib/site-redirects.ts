@@ -8,6 +8,7 @@ export type SiteRedirect = {
 };
 
 export const SITE_REDIRECTS: readonly SiteRedirect[] = [
+	{ source: "/models/deepseek-v4-flash-0731-openbroker", destination: "/models/deepseek-v4-flash-0731#deepseek-v4-flash-0731-openbroker" },
 	// /about restored as a live E-E-A-T page (no longer redirects)
 	// /faq restored as a live public page (no longer redirects)
 	{ source: "/blog", destination: "/docs" },

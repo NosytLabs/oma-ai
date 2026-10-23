@@ -54,7 +54,7 @@ describe("dashboard demo balance", () => {
 
 	it("converts USD per million tokens to fractional cents", () => {
 		const request = buildDemoUsage().find(row => row.id === "demo-usage-0-0");
-		// 180 × $9/M input + 90 × $45/M output = $0.00567 = 0.567 cents.
-		expect(Number(request?.totalCents)).toBeCloseTo(0.567, 8);
+		// 180 × $7.50/M input + 90 × $37.50/M output = $0.004725 = 0.4725 cents.
+		expect(Number(request?.totalCents)).toBeCloseTo(0.4725, 8);
 	});
 });

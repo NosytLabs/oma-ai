@@ -36,6 +36,7 @@ export function inferenceIdempotency(): MiddlewareHandler<OmaEnv> {
 				ON CONFLICT (user_id,key_hash) DO UPDATE SET request_id=EXCLUDED.request_id, expires_at=EXCLUDED.expires_at, created_at=NOW()
 				WHERE inference_request_claims.state='pending' AND inference_request_claims.expires_at<=NOW()
 				AND NOT EXISTS (SELECT 1 FROM usage_records WHERE request_id=inference_request_claims.request_id AND status IN ('completed','free_tier'))
+				AND NOT EXISTS (SELECT 1 FROM inference_credit_reservations WHERE request_id=inference_request_claims.request_id AND state IN ('held','reconciliation'))
 				RETURNING request_id`);
 			if (!admitted.rows.length) {
 				const prior = await db.execute(sql`SELECT request_id, state, EXISTS (SELECT 1 FROM usage_records WHERE request_id=inference_request_claims.request_id AND status IN ('completed','free_tier')) AS billed
@@ -57,7 +58,8 @@ export function inferenceIdempotency(): MiddlewareHandler<OmaEnv> {
 				// Delivery can fail after billing committed. Keep that key held so
 				// retrying an ambiguous response cannot issue a second charge.
 				else await db.execute(sql`DELETE FROM inference_request_claims WHERE request_id=${requestId} AND state='pending'
-					AND NOT EXISTS (SELECT 1 FROM usage_records WHERE request_id=${requestId} AND status IN ('completed','free_tier'))`);
+					AND NOT EXISTS (SELECT 1 FROM usage_records WHERE request_id=${requestId} AND status IN ('completed','free_tier'))
+					AND NOT EXISTS (SELECT 1 FROM inference_credit_reservations WHERE request_id=${requestId} AND state IN ('held','reconciliation'))`);
 			} catch (err) { logger.warn({ err, requestId }, "[inference] retry claim finalization failed; claim remains held"); }
 		}
 		try { await next(); } catch (err) { await finalize(false); throw err; }

@@ -47,9 +47,8 @@ const envSchema = z.object({
 		GONKA_API_KEY: z.string().min(1).optional(),
 		OBK_API_KEY: z.string().min(1).optional(),
 		OPENBROKER_API_URL: z.string().url().optional().default("https://api.openbroker.gonka.gg"),
-		// Allow Venice non-private mode. By default all Venice requests set
-		// venice_parameters.private=true. Set OMMA_ALLOW_NON_PRIVATE_VENICE=true to
-		// use non-private mode for this deployment. Callers cannot override it.
+		// Default to verified private Venice models. Explicitly opting in permits
+		// anonymized models; privacy is model metadata, not a request flag.
 		// Production should leave this unset (defaults to false).
 		OMMA_ALLOW_NON_PRIVATE_VENICE: envBoolean.default(false),
 		// Optional configured Base primary. The RPC client also supplies public
@@ -112,11 +111,10 @@ const envSchema = z.object({
 		// Base mainnet chain ID
 		BASE_CHAIN_ID: z.coerce.number().int().positive().default(8453),
 
-		// Free signup credit — credits minted to a brand-new user on first
-		// sign-in. 100 = $1.00 at 1 credit = 1 cent. Set to 0 to disable the
-		// free trial. Without this, /v1/balance reads 0 forever and users
-		// hit "insufficient_balance" on their first real call.
-		FREE_SIGNUP_CENTS: z.coerce.number().min(0).max(100000).default(100),
+		// Promotional signup credit is opt-in: 100 = $1.00, 0 disables it.
+		// Normal API usage is customer funded; the browser's free allowance is
+		// separate. An existing environment value overrides this zero default.
+		FREE_SIGNUP_CENTS: z.coerce.number().min(0).max(100000).default(0),
 
 		// OpenTelemetry configuration
 		OTEL_EXPORTER_OTLP_ENDPOINT: z.string().min(1).default("http://localhost:4318").optional(),

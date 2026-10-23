@@ -82,13 +82,13 @@ export const metadata: Metadata = {
 		template: "%s · OMA",
 	},
 	description:
-		"One gateway. Every model. No lock-in. OpenAI-compatible AI inference with wallet-based auth, USDC on Base, optional card checkout, and x402 settlement.",
+		"A curated AI model catalog, Chat Completions, prepaid credits, email or wallet sign-in, and USDC funding on Base.",
 	openGraph: {
 		locale: "en_US",
 		siteName: "OMA",
 		title: "OMA · Open Model Access — AI inference, USDC on Base",
 		description:
-			"One gateway. Every model. No lock-in. OpenAI-compatible AI inference with wallet-based auth, USDC on Base, optional card checkout, and x402 settlement.",
+			"A curated AI model catalog, Chat Completions, prepaid credits, email or wallet sign-in, and USDC funding on Base.",
 		type: "website",
 		url: SITE_URL,
 		images: [
@@ -96,7 +96,7 @@ export const metadata: Metadata = {
 				url: "/og-image.png?v=20260928",
 				width: 1280,
 				height: 720,
-				alt: "OMA — One gateway. Every model.",
+				alt: "OMA — AI models and prepaid API access.",
 			},
 		],
 	},

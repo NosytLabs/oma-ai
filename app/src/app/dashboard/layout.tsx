@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 				url: "/og-image.png",
 				width: 1280,
 				height: 720,
-				alt: "OMA — One gateway. Every model.",
+				alt: "OMA — Account dashboard.",
 			},
 		],
 	},

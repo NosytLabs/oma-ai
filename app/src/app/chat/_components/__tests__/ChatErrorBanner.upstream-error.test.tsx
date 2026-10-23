@@ -80,6 +80,28 @@ describe("ChatErrorBanner upstream timeout", () => {
 		expect(screen.getByText(/rate limited/i)).toBeInTheDocument();
 	});
 
+	it("shows an interrupted paid response with dashboard review instead of a network claim or immediate retry", () => {
+		render(<ChatErrorBanner
+			error="Response interrupted; credits may be held until provider cost is confirmed. Check dashboard before retrying. Request ID: billing-attempt-1."
+			onDismiss={vi.fn()} onRetry={vi.fn()}
+		/>);
+		expect(screen.getByText("RESPONSE INTERRUPTED")).toBeInTheDocument();
+		expect(screen.getByText(/credits may be held until provider cost is confirmed/i)).toBeInTheDocument();
+		expect(screen.getByRole("link", { name: "Check dashboard" })).toHaveAttribute("href", "/dashboard?tab=usage");
+		expect(screen.queryByText(/could not reach|check your connection/i)).not.toBeInTheDocument();
+		expect(screen.queryByRole("button", { name: /try again/i })).not.toBeInTheDocument();
+	});
+
+	it("keeps free-stream interruption copy free of credit claims and allows an explicit retry", () => {
+		const onRetry = vi.fn();
+		render(<ChatErrorBanner error="Response interrupted. The partial answer has been kept." onDismiss={vi.fn()} onRetry={onRetry} />);
+		expect(screen.getByText("RESPONSE INTERRUPTED")).toBeInTheDocument();
+		expect(screen.queryByText(/credits|held|check your connection/i)).not.toBeInTheDocument();
+		expect(screen.queryByRole("link", { name: "Check dashboard" })).not.toBeInTheDocument();
+		fireEvent.click(screen.getByRole("button", { name: /try again/i }));
+		expect(onRetry).toHaveBeenCalledOnce();
+	});
+
 	it("does NOT render the banner when error is null", () => {
 		const { container } = render(
 			<ChatErrorBanner

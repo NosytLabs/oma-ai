@@ -141,6 +141,10 @@ function settlementFailure(c: Context<OmaEnv>, err: unknown) {
 
 export const x402Routes = new Hono<OmaEnv>();
 
+function maximumFundingAtomic(): bigint {
+	return BigInt(config.USDC_DEPOSIT_MAX_CENTS ?? 1_000_000) * 10n ** BigInt(USDC_DECIMALS - 2);
+}
+
 // Apply before session authentication, including denied requests and errors.
 // Successful responses carry receipts and account-specific credit results.
 x402Routes.use("/x402/settle", async (c, next) => {
@@ -156,6 +160,7 @@ x402Routes.get("/x402/info", (c) => {
 		return c.json({
 			x402Version: 2, scheme: "exact", network: CAIP2_BASE_MAINNET,
 			asset: USDC_BASE, decimals: USDC_DECIMALS, payTo: SERVER_TREASURY,
+			maxAtomicAmount: maximumFundingAtomic().toString(),
 			maxTimeoutSeconds: PAYMENT_WINDOW_SECONDS, extra: { name: "USD Coin", version: "2" },
 		});
 });
@@ -229,6 +234,17 @@ x402Routes.post("/x402/verify", rateLimit({ windowMs: 60_000, maxRequests: 10 })
 			);
 		}
 
+		// Cap both advertised amount and legacy required amount before entering
+		// the EIP-3009 path, which can broadcast real funds. V2 pins the signed
+		// authorization value to these requirements; v1 verifies that equality.
+		const maximum = maximumFundingAtomic();
+		for (const amount of [paymentSig.payload.amount, paymentSig.payload.maxAmountRequired || paymentSig.payload.amount]) {
+			let atomic: bigint;
+			try { atomic = parseUsdcAtomic(amount); } catch { continue; }
+			if (atomic > maximum) {
+				return c.json(paymentError("x402_funding_limit", "Payment exceeds the configured funding maximum. Read maxAtomicAmount from /x402/info.", false), 400);
+			}
+		}
 		const result = await verifyPayment(paymentSig);
 		return c.json(result, result.valid ? 200 : 422);
 });

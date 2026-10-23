@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { TIER_LABELS } from "@/app/models/_lib/labels";
-import { MODELS, type Model } from "@/lib/models-data";
+import { MODEL_PAGES, getModelPageId, type Model } from "@/lib/models-data";
 
 
 
@@ -27,8 +27,8 @@ export function Stat({
 }
 
 export function RelatedModels({ current }: { current: Model }) {
-	const related = MODELS.filter(
-		(m) => m.tier === current.tier && m.id !== current.id,
+	const related = MODEL_PAGES.filter(
+		(m) => m.tier === current.tier && m.id !== getModelPageId(current),
 	).slice(0, 4);
 	if (related.length === 0) return null;
 	return (

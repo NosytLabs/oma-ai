@@ -17,7 +17,7 @@ vi.mock("@/lib/wallet", () => ({
  getConnectedAccount: vi.fn(async () => ADDRESS), hasWallet: () => true,
  sendUsdcTransfer: mocks.send, signDepositMessage: mocks.sign,
  subscribeWalletAccount: (listener: (address: typeof ADDRESS | null) => void) => { listener(mocks.connected ? ADDRESS : null); return () => {}; },
- listWallets: () => [{ id: "rabby", name: "Rabby" }, { id: "walletconnect", name: "WalletConnect" }],
+ listWallets: () => [{ id: "rabby", name: "Rabby" }, { id: "metamask", name: "MetaMask" }],
  subscribeWallets: (listener: () => void) => { listener(); return () => {}; },
 }));
 vi.mock("@/lib/framer-motion-client", () => ({
@@ -129,9 +129,9 @@ describe("USDC broadcast recovery", () => {
  it("connects the wallet the depositor selects instead of the first extension", async () => {
   mocks.connected = false;
   render(<UnifiedDepositInterface />);
-  fireEvent.change(await screen.findByLabelText("Wallet to connect"), { target: { value: "walletconnect" } });
-  fireEvent.click(screen.getByRole("button", { name: "Connect WalletConnect" }));
-  await waitFor(() => expect(mocks.connect).toHaveBeenCalledExactlyOnceWith("walletconnect"));
+  fireEvent.change(await screen.findByLabelText("Wallet to connect"), { target: { value: "metamask" } });
+  fireEvent.click(screen.getByRole("button", { name: "Connect MetaMask" }));
+  await waitFor(() => expect(mocks.connect).toHaveBeenCalledExactlyOnceWith("metamask"));
   expect(mocks.send).not.toHaveBeenCalled();
  });
 
@@ -142,8 +142,8 @@ describe("USDC broadcast recovery", () => {
   render(<UnifiedDepositInterface />);
   const retry = await screen.findByRole("button", { name: "Retry registration" });
   expect(retry).toBeDisabled();
-  fireEvent.change(screen.getByLabelText("Wallet to connect"), { target: { value: "walletconnect" } });
-  fireEvent.click(screen.getByRole("button", { name: "Connect WalletConnect" }));
+  fireEvent.change(screen.getByLabelText("Wallet to connect"), { target: { value: "metamask" } });
+  fireEvent.click(screen.getByRole("button", { name: "Connect MetaMask" }));
   await waitFor(() => expect(retry).toBeEnabled());
   expect(mocks.send).toHaveBeenCalledOnce();
  });

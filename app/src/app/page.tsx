@@ -9,7 +9,7 @@ import { HomeView } from "./_components/home";
 // under the title. Availability changes hourly; a build-time constant in
 // static metadata cannot track it, so the number is simply left out.
 const DESCRIPTION =
-	"One gateway. Every model. No lock-in. OpenAI-compatible API, wallet-based auth, USDC on Base, optional card checkout, and x402 settlement.";
+	"Access a curated AI model catalog through Chat Completions, with prepaid API credits, free eligible website chat and USDC funding on Base.";
 
 export const metadata: Metadata = {
 	title: {

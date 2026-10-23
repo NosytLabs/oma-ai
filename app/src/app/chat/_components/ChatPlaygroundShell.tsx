@@ -480,12 +480,9 @@ function ShellContent() {
 			setAuthPromptOpen(true);
 			return false;
 		}
-		if (isLowBalance) {
-			setError("Your credit balance is too low for this model. Top up to continue.");
-			return false;
-		}
+		// Credit warnings are informational; the API enforces the required request reservation.
 		return allowGuestSend();
-	}, [isReady, isModelUnavailable, setError, model, compareMode, compareModel, isAuthenticated, isLowBalance, allowGuestSend]);
+	}, [isReady, isModelUnavailable, setError, model, compareMode, compareModel, isAuthenticated, allowGuestSend]);
 	const gatedSend = useCallback(async (prompt?: string, options?: SendMessageOptions) => {
 		if (!checkSendAccess()) {
 			if (prompt) setInput(prompt);
@@ -831,8 +828,8 @@ function ShellContent() {
 									onStop={stopGeneration}
 									loading={loading}
 									textareaRef={inputRef}
-									disabled={!isReady || !conversationHistory.hydrated || isLowBalance}
-									disabledReason={!isReady || !conversationHistory.hydrated ? "Restoring your chats…" : "Your credit balance is too low — top up to send"}
+									disabled={!isReady || !conversationHistory.hydrated}
+									disabledReason="Restoring your chats…"
 									modelUnavailable={isModelUnavailable}
 									webSearchEnabled={webSearchEnabled}
 									setWebSearchEnabled={setWebSearchEnabled}

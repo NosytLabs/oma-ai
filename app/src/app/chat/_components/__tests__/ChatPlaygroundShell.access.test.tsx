@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ChatPlaygroundShell } from "../ChatPlaygroundShell";
 import { Navbar } from "@/components/navbar";
+import type { BalanceResponse } from "@/lib/api";
 import {
 	conversationHistoryStorageKey,
 	conversationStorageKey,
@@ -12,6 +13,7 @@ const fixtures = vi.hoisted(() => ({
 	searchParams: new URLSearchParams("model=claude-opus-5"),
 	router: { replace: vi.fn() },
 	fetch: vi.fn(),
+	balance: null as BalanceResponse | null,
 	toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
 	exportChatHistory: vi.fn(),
 	models: [
@@ -37,7 +39,7 @@ vi.mock("@/lib/chat-export", async (original) => ({
 }));
 vi.mock("@/components/chat/useBalance", async (original) => ({
 	...await original<typeof import("@/components/chat/useBalance")>(),
-	useBalance: () => ({ balance: null, loading: false, refresh: async () => {} }),
+	useBalance: () => ({ balance: fixtures.balance, loading: false, refresh: async () => {} }),
 }));
 vi.mock("@/lib/api", () => ({
 	api: { models: { list: async () => ({ data: fixtures.models }) }, auth: { listKeys: async () => { throw new Error("Unauthorized"); } } },
@@ -46,6 +48,7 @@ vi.mock("@/lib/api", () => ({
 beforeEach(() => {
 	localStorage.clear();
 	sessionStorage.clear();
+	fixtures.balance = null;
 	fixtures.auth.user = null;
 	fixtures.auth.isAuthenticated = false;
 	fixtures.auth.isReady = true;
@@ -211,6 +214,53 @@ describe("guest chat model access", () => {
 			expect(JSON.parse(request?.[1].body).model).toBe("minimax-m2-7");
 		});
 		expect(screen.queryByRole("dialog", { name: "Sign in to access this model" })).not.toBeInTheDocument();
+	});
+
+	it("keeps the low-credit warning while sending a paid request with $0.50 remaining", async () => {
+		fixtures.auth.isAuthenticated = true;
+		fixtures.auth.user = { id: "user-a" };
+		fixtures.balance = { balanceCents: "50", totalDepositedCents: "50", totalUsedCents: "0", lastActivityAt: null };
+		fixtures.fetch.mockResolvedValue(new Response(
+			'data: {"choices":[{"delta":{"content":"A paid response."}}]}\n\ndata: [DONE]\n\n',
+			{ status: 200, headers: { "Content-Type": "text/event-stream" } },
+		));
+		renderChat();
+		const composer = await screen.findByRole("textbox", { name: "Enter your message" });
+		await waitFor(() => expect(composer).toBeEnabled());
+		expect(screen.getAllByText("Low credits — $0.50").length).toBeGreaterThan(0);
+		const send = screen.getByRole("button", { name: "Send message" });
+		await waitFor(() => expect(send).not.toHaveAttribute("title", "Restoring your chats…"));
+		fireEvent.change(composer, { target: { value: "Use my remaining credits" } });
+		await waitFor(() => expect(send).toBeEnabled());
+		fireEvent.click(send);
+		await waitFor(() => {
+			const request = fixtures.fetch.mock.calls.find(([url]) => String(url).includes("chat/completions"));
+			expect(request).toBeDefined();
+			expect(JSON.parse(request?.[1].body)).toMatchObject({ model: "claude-opus-5", messages: expect.arrayContaining([
+				{ role: "user", content: "Use my remaining credits" },
+			]) });
+		});
+	});
+
+	it("lets the backend reject an unaffordable paid request at zero credits", async () => {
+		fixtures.auth.isAuthenticated = true;
+		fixtures.auth.user = { id: "user-a" };
+		fixtures.balance = { balanceCents: "0", totalDepositedCents: "0", totalUsedCents: "0", lastActivityAt: null };
+		fixtures.fetch.mockResolvedValue(Response.json(
+			{ error: { code: "insufficient_credits", message: "Insufficient credits for this request" } },
+			{ status: 402 },
+		));
+		renderChat();
+		const composer = await screen.findByRole("textbox", { name: "Enter your message" });
+		const send = screen.getByRole("button", { name: "Send message" });
+		await waitFor(() => expect(send).not.toHaveAttribute("title", "Restoring your chats…"));
+		fireEvent.change(composer, { target: { value: "Ask the backend to check this request" } });
+		await waitFor(() => expect(send).toBeEnabled());
+		fireEvent.click(send);
+		const alert = await screen.findByRole("alert");
+		expect(alert).toHaveTextContent("LOW CREDITS");
+		expect(within(alert).getByRole("link", { name: "Top Up Credits" })).toHaveAttribute("href", "/deposit");
+		expect(fixtures.fetch.mock.calls.filter(([url]) => String(url).includes("chat/completions"))).toHaveLength(1);
 	});
 
 	it("shows free website billing for a signed-in session too", async () => {

@@ -1,0 +1,6 @@
+{
+  "drizzle-orm@0.45.4": "https://raw.githubusercontent.com/drizzle-team/drizzle-orm/0.45.4/LICENSE",
+  "rehype-katex@7.0.1": "https://raw.githubusercontent.com/remarkjs/remark-math/88a9497e1ede93b958237c85edbf5651faeca7af/license",
+  "remark-math@6.0.0": "https://raw.githubusercontent.com/remarkjs/remark-math/d5d0660b150810a535bbb07eac6cc96a4510aa24/license",
+  "siwe@3.0.0": "https://raw.githubusercontent.com/spruceid/siwe/7b7bb4fc4c74d9e53103e1c987869880c03eb5f5/LICENSE-APACHE"
+}

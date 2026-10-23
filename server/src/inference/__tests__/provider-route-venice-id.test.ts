@@ -14,6 +14,7 @@ function veniceModel(overrides: Partial<ModelDef> = {}): ModelDef {
 	return {
 		id: "public-model-id",
 		provider: "venice",
+		privacy: "private",
 		inputPricePer1M: 1,
 		outputPricePer1M: 2,
 		markupPercent: 25,
@@ -27,6 +28,13 @@ function veniceModel(overrides: Partial<ModelDef> = {}): ModelDef {
 }
 
 describe("venice upstream model id", () => {
+	it("rejects anonymized or unverified Venice models under the private-only policy", () => {
+		for (const privacy of ["anonymized", undefined] as const) expect(() => resolveProvider("venice", veniceModel({ privacy }))).toThrow(/temporarily unavailable/);
+	});
+	it("uses documented Venice parameters without claiming a per-request privacy switch", () => {
+		const body = resolveProvider("venice", veniceModel()).extraBody({ model: "public-model-id", messages: [] });
+		expect(body.venice_parameters).toEqual({ include_venice_system_prompt: false });
+	});
 	/** Public aliases must resolve to the exact configured Venice model ID. */
 	it("sends veniceId upstream when the catalog defines one", () => {
 		const route = resolveProvider(

@@ -1,3 +1,4 @@
+import modelLimits from "./model-limits.json" with { type: "json" };
 import { timingSafeEqual } from "node:crypto";
 import { isIP } from "node:net";
 import type { Context } from "hono";
@@ -65,12 +66,7 @@ if (TRUSTED_PROXIES.size === 0 && !INTERNAL_PROXY_SECRET_BUF && config.NODE_ENV 
 // the catalog audit are kept. `getModelLimits()` is called per-model; any
 // ID not listed here falls through to the default limits in the
 // rate-limit middleware.
-export const MODEL_LIMITS: Record<string, { rpm: number; tpm: number }> = {
-		// Curated catalog (standard tier)
-		"llama-3.3-70b": { rpm: 60, tpm: 120000 },
-		"deepseek-v4-flash-0731-openbroker": { rpm: 60, tpm: 120000 },
-		"kimi-k3": { rpm: 60, tpm: 120000 },
-};
+export const MODEL_LIMITS: Record<string, { rpm: number; tpm: number }> = modelLimits;
 
 function isTrustedProxy(ip: string): boolean {
 		return TRUSTED_PROXIES.has(ip);

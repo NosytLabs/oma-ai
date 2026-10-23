@@ -407,7 +407,7 @@ function BrandPitch() {
 		},
 		{
 			Icon: Sparkles,
-			title: "One gateway. Every model.",
+			title: "One account. A curated model catalog.",
 			body: "OpenAI-compatible API. Multi-provider routing with provider failover.",
 		},
 		{

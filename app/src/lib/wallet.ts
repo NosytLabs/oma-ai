@@ -18,7 +18,6 @@
 import { createWalletClient, custom, encodeFunctionData, getAddress, parseUnits, type WalletClient } from "viem";
 import { base } from "viem/chains";
 import { SiweMessage } from "siwe";
-import { getWalletConnectWallet } from "./wallet-connect";
 
 export type Eip1193Provider = {
 	request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
@@ -130,8 +129,6 @@ export function listWallets(): DiscoveredWallet[] {
 		const name = legacyName(provider);
 		out.push({ id: `${name}-${index}`, name, provider });
 	});
-	const walletConnect = getWalletConnectWallet();
-	if (walletConnect) out.push(walletConnect);
 	return out;
 }
 
@@ -236,7 +233,7 @@ export async function signSiweMessage(
 	return { message, signature };
 }
 
-/** True when an injected wallet or configured WalletConnect connector is available. */
+/** True when an injected EIP-1193 browser wallet is available. */
 export function hasWallet(): boolean {
 	return listWallets().length > 0;
 }

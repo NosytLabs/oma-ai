@@ -450,6 +450,8 @@ export function useStreamingChat(
 				const reader = response.body.getReader();
 				let accumulated = "";
 				let accumulatedReasoning = "";
+				let receivedDelta = false;
+				let receivedDone = false;
 				let realTokenCount: number | undefined;
 				let realInputTokens: number | undefined;
 				let realOutputTokens: number | undefined;
@@ -520,15 +522,18 @@ export function useStreamingChat(
 					onReasoning: appendToReasoning,
 				});
 				const processData = (raw: string) => {
+					if (raw.trim() === "[DONE]") { receivedDone = true; return; }
 					// Frame parsing lives in stream-parser.ts so it can be tested
 					// without mounting this hook and driving a live stream.
 					const d = parseStreamData(raw);
 					if (!d) return;
 					if (d.content) {
+						receivedDelta = true;
 						router.route(d.content);
 						flushToState();
 					}
 					if (d.reasoning) {
+						receivedDelta = true;
 						appendToReasoning(d.reasoning);
 						flushToState();
 					}
@@ -542,13 +547,28 @@ export function useStreamingChat(
 					}
 				};
 
-				await consumeSSE(reader, (block) => {
+				try {
+					await consumeSSE(reader, (block) => {
+						assertRequestActive(request);
+						for (const d of block.data) processData(d);
+					});
 					assertRequestActive(request);
-					for (const d of block.data) {
-						processData(d);
+					if (receivedDelta && !receivedDone && !finishReason) throw new Error("Stream ended before completion.");
+				} catch (error) {
+					if (receivedDelta && !signal.aborted && request.isCurrent()) {
+						// Keep the last buffered text even when the reader fails between UI updates.
+						router.flushTail();
+						flushToState(true);
+						const requestId = response.headers.get("X-OMA-Request-ID");
+						const traceId = response.headers.get("X-Request-ID");
+						const reference = requestId ? ` Request ID: ${requestId}.`
+							: traceId ? ` HTTP trace ID: ${traceId}.` : "";
+						throw new Error((freeModelSelected
+							? "Response interrupted. The partial answer has been kept."
+							: "Response interrupted; credits may be held until provider cost is confirmed. Check dashboard before retrying.") + reference);
 					}
-				});
-				assertRequestActive(request);
+					throw error;
+				}
 				router.flushTail();
 				flushToState(true);
 			} else {
@@ -611,7 +631,7 @@ export function useStreamingChat(
 			const previousCompareMessages = [...live.compareMessagesRef.current];
 			const removePending = (setMessages: Dispatch<SetStateAction<Message[]>>, assistantId: string) => {
 				setMessages((previous) => request.isCurrent()
-					? previous.filter((message) => message.id !== assistantId || message.content !== "")
+					? previous.filter((message) => message.id !== assistantId || message.content !== "" || Boolean(message.reasoning))
 					: previous);
 			};
 

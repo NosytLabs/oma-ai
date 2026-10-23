@@ -177,7 +177,7 @@ export async function consumeSSE(
 		}
 	} finally {
 		try {
-			reader.cancel();
+			await reader.cancel();
 		} catch {
 			// already closed / aborted — nothing to do
 		}

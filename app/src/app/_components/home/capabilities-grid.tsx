@@ -93,7 +93,7 @@ const SUPPORT = [
 	id: "openai",
 	icon: Sparkles,
 	title: "OpenAI-compatible",
-	body: "Same SDK, new baseURL. Every model, one endpoint.",
+	body: "Chat Completions clients use one base URL for the catalog.",
 	href: "/docs#quickstart",
 	},
 	{

@@ -60,7 +60,6 @@ export interface UseAuthResult {
 	error: Error | null;
 	evmAddress: string | null;
 	role: string | null;
-	isAdmin: boolean;
 	signOut: (options?: SignOutOptions) => Promise<void>;
 	refresh: () => Promise<void>;
 }
@@ -71,24 +70,6 @@ export function useAuth(): UseAuthResult {
 	const user = data?.user ?? null;
 	const evmAddress = (user?.evmAddress as string | null | undefined) ?? null;
 	const role = (user?.role as string | null | undefined) ?? null;
-	const evmAddr = (user?.evmAddress as string | null | undefined) ?? null;
-	// AUDIT 2026-09-27 / admin-dash #1: mirror the server's requireAdmin
-	// predicate (role === 'admin' OR wallet in ADMIN_WALLET_ADDRESSES) so
-	// wallet-gated operators can actually see admin UI affordances instead
-	// of being refused client-side while fully authorized at the API.
-	// The allowlist is exposed to the client as NEXT_PUBLIC_ADMIN_WALLETS
-	// (comma-separated lowercase addresses); it contains no secrets.
-	const publicAdminWallets = (
-		process.env.NEXT_PUBLIC_ADMIN_WALLETS ?? ""
-	)
-		.split(",")
-		.map((w) => w.trim().toLowerCase())
-		.filter(Boolean);
-	const isAdmin =
-		role === "admin" ||
-		(publicAdminWallets.length > 0 &&
-			!!evmAddr &&
-			publicAdminWallets.includes(evmAddr.toLowerCase()));
 
 	// Demo bypass: the middleware sets `oma-demo-public` cookie when the
 	// user hits a protected page with `?demo=1`. Mirror that here so the
@@ -146,7 +127,6 @@ export function useAuth(): UseAuthResult {
 		error: session.error as Error | null,
 		evmAddress,
 		role,
-		isAdmin,
 		async signOut(options: SignOutOptions = {}) {
 			await betterSignOut(options);
 		},

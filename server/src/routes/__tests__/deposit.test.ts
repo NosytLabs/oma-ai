@@ -14,6 +14,7 @@
  */
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { Hono } from "hono";
+vi.mock("../../lib/credit-holds.js", () => ({ readCreditHoldTotals: async () => ({ reservedCents: "0", reconciliationCents: "0" }) }));
 
 // ─── Mocks ──────────────────────────────────────────────────────────────────
 

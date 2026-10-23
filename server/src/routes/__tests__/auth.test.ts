@@ -338,18 +338,24 @@ describe("auth routes", () => {
 	});
 
 	describe("DELETE /v1/keys/:id", () => {
+		it("rejects malformed UUIDs before reaching the database", async () => {
+			const res = await authReq("delete", "/v1/keys/not-a-uuid", undefined, authedHeaders);
+			expect(res.status).toBe(400);
+			expect(mockRevokeApiKey).not.toHaveBeenCalled();
+		});
+
 		it("returns 404 when key does not exist", async () => {
 			mockRevokeApiKey.mockResolvedValueOnce(null);
-			const res = await authReq("delete", "/v1/keys/key_missing", undefined, authedHeaders);
+			const res = await authReq("delete", "/v1/keys/10000000-0000-4000-8000-000000000001", undefined, authedHeaders);
 			expect(res.status).toBe(404);
 		});
 
 		it("revokes the key and writes API_KEY_REVOKED audit log", async () => {
 			mockRevokeApiKey.mockResolvedValueOnce(true);
-			const res = await authReq("delete", "/v1/keys/key_1", undefined, authedHeaders);
+			const res = await authReq("delete", "/v1/keys/10000000-0000-4000-8000-000000000002", undefined, authedHeaders);
 			expect(res.status).toBe(200);
 			expect(auditLog).toHaveBeenCalledWith(
-				expect.objectContaining({ action: "API_KEY_REVOKED", resourceId: "key_1" }),
+				expect.objectContaining({ action: "API_KEY_REVOKED", resourceId: "10000000-0000-4000-8000-000000000002" }),
 			);
 		});
 	});

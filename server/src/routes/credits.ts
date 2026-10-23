@@ -20,6 +20,7 @@ import { and, desc, eq, gt, isNull, isNotNull } from "drizzle-orm";
 import type { OmaEnv } from "../types.js";
 import { sessionOrBearerAuth } from "../auth/middleware.js";
 import { db } from "../db/client.js";
+import { readCreditHoldTotals } from "../lib/credit-holds.js";
 import {
 		creditBalances,
 		creditBatches,
@@ -36,7 +37,7 @@ creditsRoutes.get("/v1/credits/balance", sessionOrBearerAuth, async (c) => {
 		c.header("Cache-Control", "no-store");
 		const userId = c.get("userId");
 
-		const [batches, balances] = await Promise.all([
+		const [batches, balances, holds] = await Promise.all([
 				db
 						.select()
 						.from(creditBatches)
@@ -55,6 +56,7 @@ creditsRoutes.get("/v1/credits/balance", sessionOrBearerAuth, async (c) => {
 						.from(creditBalances)
 						.where(eq(creditBalances.userId, userId))
 						.limit(1),
+				readCreditHoldTotals(userId),
 		]);
 
 		return c.json({
@@ -66,6 +68,7 @@ creditsRoutes.get("/v1/credits/balance", sessionOrBearerAuth, async (c) => {
 						paymentMethod: b.paymentMethod ?? "usdc",
 				})),
 				balanceCents: balances[0]?.balanceCents ?? "0",
+				...holds,
 		});
 });
 

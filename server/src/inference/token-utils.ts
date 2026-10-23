@@ -46,3 +46,8 @@ export function flattenMessageContent(content: string | unknown[] | null): strin
 		}
 		return "";
 }
+
+/** One output default shared by routing, prepaid quotes and TPM admission. */
+export function boundedDefaultOutput(model?: { maxOutputTokens?: number; maxTokens?: number }): number {
+	return Math.min(model?.maxOutputTokens ?? model?.maxTokens ?? 4096, 4096);
+}

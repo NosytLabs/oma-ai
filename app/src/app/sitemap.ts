@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { MODELS } from "@/lib/models-data";
+import { MODEL_PAGES } from "@/lib/models-data";
 import { GLOSSARY_SLUGS } from "@/components/glossary-data";
 import SITE_URL from "@/lib/site";
 
@@ -30,7 +30,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 	return [
 		entry("/", 1, "weekly"),
 		entry("/models", 0.9, "daily"),
-		...MODELS.map((model) => entry(`/models/${model.id}`, 0.8, "weekly")),
+		...MODEL_PAGES.map((model) => entry(`/models/${model.id}`, 0.8, "weekly")),
 		entry("/chat", 0.85, "weekly"),
 		entry("/pricing", 0.9, "weekly"),
 		entry("/docs", 0.9, "weekly"),

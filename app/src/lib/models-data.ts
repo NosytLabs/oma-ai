@@ -59,6 +59,8 @@ export type Provider =
 
 export interface Model {
 	id: string;
+	/** A shared detail page can describe several separately billed provider routes. */
+	pageId?: string;
 	name: string;
 	provider: Provider;
 	tier: Tier;
@@ -86,6 +88,13 @@ export interface Model {
 	modelId: string;
 	inputModalities?: string[];
 	outputModalities?: string[];
+	privacy?: string;
+	metadataVerification?: {
+		status: string;
+		sourceUrl: string;
+		verifiedAt: string;
+		note: string;
+	};
 	/**
 	 * Whether this model can actually be called right now. The server sets
 	 * `available: false` when the backing provider's API key is missing or a
@@ -186,6 +195,7 @@ export const TIER_COLORS: Record<
 
 interface RawEntry {
 	id: string;
+	pageId?: string;
 	disabledReason?: string;
 	veniceId?: string;
 	/** Raw provider model id when the public OMA id must stay URL-safe. */
@@ -203,6 +213,10 @@ interface RawEntry {
 	displayName: string;
 	capabilities: string[];
 	description?: string;
+	inputModalities?: string[];
+	outputModalities?: string[];
+	privacy?: string;
+	metadataVerification?: Model["metadataVerification"];
 	creditsPerMillionInput?: number;
 	creditsPerMillionOutput?: number;
 }
@@ -385,6 +399,7 @@ function toModel(entry: RawEntry): Model {
 	const serverCaps = entry.capabilities ?? [];
 	return {
 		id: entry.id,
+		pageId: entry.pageId,
 		name: entry.displayName,
 		provider: normalizeProvider(entry.provider),
 		tier,
@@ -398,8 +413,10 @@ function toModel(entry: RawEntry): Model {
 		outputPricePer1M: entry.outputPricePer1M,
 		capabilities: deriveCapabilities(entry.id, entry.displayName, entry.description, serverCaps),
 		modelId: entry.upstreamId ?? entry.veniceId ?? entry.id,
-		inputModalities: ["text"],
-		outputModalities: ["text"],
+		inputModalities: entry.inputModalities ?? ["text"],
+		outputModalities: entry.outputModalities ?? ["text"],
+		privacy: entry.privacy,
+		metadataVerification: entry.metadataVerification,
 		...(entry.disabledReason ? { available: false, unavailableReason: entry.disabledReason } : {}),
 	};
 }
@@ -416,6 +433,8 @@ function catalogFromRaw(catalog: RawCatalog): Model[] {
 /** OpenAI-style models with OMA catalog metadata from GET /v1/models. */
 interface ApiModelEntry extends ModelCapabilityMetadata {
 	id: string;
+	privacy?: string;
+	metadata_verification?: { status: string; source_url: string; verified_at: string; note: string };
 	unavailable_reason?: string;
 	/** Customer-facing name from the server catalog; never derive this when present. */
 	display_name?: string;
@@ -525,6 +544,7 @@ export async function loadModels(): Promise<Model[]> {
 			const models: Model[] = json.data
 				.filter((entry: ApiModelEntry) => entry.modality !== "video")
 				.map((entry: ApiModelEntry) => {
+					const curated = MODELS.find((model) => model.id === entry.id);
 					const name = normalizeDisplayName(entry.id, entry.display_name);
 					const promptRaw = parseFloat(entry.pricing?.prompt ?? "");
 					const completionRaw = parseFloat(entry.pricing?.completion ?? "");
@@ -545,6 +565,7 @@ const tier: Tier =
 					const modality = deriveModality(entry);
 					return {
 						id: entry.id,
+						pageId: curated?.pageId,
 						name,
 						provider: normalizeProvider(rawProvider),
 						tier,
@@ -567,8 +588,15 @@ const tier: Tier =
 								? resolveModelCapabilities(entry, MODELS.find((model) => model.id === entry.id)?.capabilities)
 								: [],
 						modelId: entry.id,
-						inputModalities: entry.architecture?.input_modalities ?? ["text"],
-						outputModalities: entry.architecture?.output_modalities ?? ["text"],
+						inputModalities: entry.architecture?.input_modalities ?? curated?.inputModalities ?? ["text"],
+						outputModalities: entry.architecture?.output_modalities ?? curated?.outputModalities ?? ["text"],
+						privacy: entry.privacy ?? curated?.privacy,
+						metadataVerification: entry.metadata_verification ? {
+							status: entry.metadata_verification.status,
+							sourceUrl: entry.metadata_verification.source_url,
+							verifiedAt: entry.metadata_verification.verified_at,
+							note: entry.metadata_verification.note,
+						} : curated?.metadataVerification,
 						// Absent means "no signal" (older cache / static fallback),
 						// which must read as available so a missing flag never hides
 						// a working model.
@@ -623,6 +651,22 @@ const FALLBACK_CATALOG: RawCatalog = {
 
 export const MODELS: Model[] = catalogFromRaw(FALLBACK_CATALOG);
 
+/** Provider route IDs stay billable identities; only their reference page is shared. */
+export function getModelPageId(model: Pick<Model, "id" | "pageId">): string {
+	return model.pageId ?? model.id;
+}
+
+export function getModelPageHref(model: Pick<Model, "id" | "pageId">): string {
+	const pageId = getModelPageId(model);
+	return `/models/${pageId}${pageId !== model.id ? `#${model.id}` : ""}`;
+}
+
+export const MODEL_PAGES: Model[] = MODELS.filter((model) => getModelPageId(model) === model.id);
+
+export function getModelPageRoutes(pageId: string): Model[] {
+	return MODELS.filter((model) => getModelPageId(model) === pageId);
+}
+
 export function formatPricePerMillion(pricePer1M: number): string {
 	if (!Number.isFinite(pricePer1M)) return "—";
 	if (pricePer1M <= 0) return "$0.00";
@@ -661,4 +705,6 @@ export function getModelsByTier(models: Model[]): Record<Tier, Model[]> {
 }
 
 // Marketing counts derive from the shared catalog.
-export const MODEL_COUNT = MODELS.length;
+/** Distinct public model identities; provider routes can share one model. */
+export const MODEL_COUNT = MODEL_PAGES.length;
+export const MODEL_ROUTE_COUNT = MODELS.length;

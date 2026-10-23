@@ -1,0 +1,8 @@
+{
+  "inferenceRequestsPerMinute": 60,
+  "bucketCapacity": 60,
+  "bucketRefillPerSecond": 20,
+  "emergencyRequestsPerMinute": 5,
+  "anonymousWebsiteRequestsPerDay": 20,
+  "registeredWebsiteRequestsPerDay": 100
+}

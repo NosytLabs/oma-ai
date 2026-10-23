@@ -113,6 +113,14 @@ describe("gateway proxy cancellation", () => {
 		expect(response.status).toBe(404);
 		expect(fetchMock).not.toHaveBeenCalled();
 	});
+	it.each(["/v1/admin/refunds", "/v1/%61dmin/refunds", "/admin", "/ADMIN/analytics"])("does not expose operator path %s through the public gateway", async path => {
+		const fetchMock = vi.fn();
+		vi.stubGlobal("fetch", fetchMock);
+		const response = await proxy(new NextRequest(`https://www.oma-ai.com/api${path}`));
+		expect(response.status).toBe(404);
+		expect(await response.json()).toEqual({ error: { message: "Not found", type: "not_found" } });
+		expect(fetchMock).not.toHaveBeenCalled();
+	});
 
 	it("strips all caller runtime headers and overwrites the proxy secret", async () => {
 		vi.stubEnv("INTERNAL_PROXY_SECRET", "server-owned-secret");

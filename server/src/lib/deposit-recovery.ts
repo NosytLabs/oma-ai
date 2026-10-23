@@ -159,16 +159,20 @@ export async function runRecoveryIteration(
 						args: { to: getAddress(depositAddress) },
 				});
 
+				let processingFailed = false;
 				for (const log of logs) {
 						try {
 								const event = log as unknown as TransferEvent;
 								await processTransfer(client, event, depositAddress);
 						} catch (err) {
+								processingFailed = true;
 								logger.error({ err, txHash: log.transactionHash }, "[deposit-recovery] failed to process transfer, continuing");
 						}
 				}
 
-				return currentBlock;
+				// A failed credit must remain in the next scan. Successful credits
+				// are idempotent, so replaying the range cannot credit them twice.
+				return processingFailed ? fromBlock : currentBlock;
 		} catch (err) {
 				logger.error({ err, fromBlock }, "[deposit-recovery] iteration failed, will retry from same block");
 				return fromBlock;

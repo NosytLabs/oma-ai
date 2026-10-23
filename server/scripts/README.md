@@ -14,4 +14,4 @@ Run the account tools from `server/`. Never use production credentials for local
 - `backfill-evm-address.sql` / `check-backfill-sql.mjs`: review historical wallet-binding candidates and the guarded query.
 - `run-backfill.mjs`: dry-run report by default. Only `--apply` executes the guarded wallet binding transaction. Review candidates and obtain authorization for the target database first.
 
-Backups may contain private account data. Keep them outside version control and restrict access. See [the cleanup receipt](../../docs/audits/database-cleanup-2026-10-10.md) for the separately approved production authentication cleanup.
+Backups may contain private account data. Keep them outside version control and restrict access.

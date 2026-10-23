@@ -1,3 +1,4 @@
+import apiLimits from "../../inference/api-limits.json" with { type: "json" };
 import type { Context, Next } from "hono";
 import type { OmaEnv } from "../../types.js";
 import { getRedisClient, isRedisReady } from "../../lib/redis-client.js";
@@ -5,7 +6,8 @@ import { TOKEN_BUCKET_SCRIPT, TPM_LIMIT_SCRIPT } from "./lua-scripts.js";
 import { checkFallbackLimit, checkMemoryCounter, FALLBACK_BURST_LIMIT } from "./memory-store.js";
 import { checkRpmLimit } from "./sliding-window.js";
 import { logger } from "../../lib/logger.js";
-import { estimateTokens, flattenMessageContent } from "../../inference/token-utils.js";
+import { estimateTokens, flattenMessageContent, boundedDefaultOutput } from "../../inference/token-utils.js";
+import { getModelById } from "../../inference/models.js";
 import {
 	getModelLimits,
 	getRateLimitKey,
@@ -22,8 +24,8 @@ export interface TokenBucketConfig {
 	refillRate: number; // tokens per second
 }
 
-const DEFAULT_BUCKET_SIZE_USER = 60;
-const DEFAULT_TOKENS_PER_SECOND_USER = 20;
+const DEFAULT_BUCKET_SIZE_USER = apiLimits.bucketCapacity;
+const DEFAULT_TOKENS_PER_SECOND_USER = apiLimits.bucketRefillPerSecond;
 
 /**
  * Weighted tokens-per-minute check.
@@ -153,7 +155,7 @@ export function tokenBucket(options: TokenBucketOptions = {}) {
 		const {
 				keyPrefix = "tb",
 				checkRpm = true,
-				rpmLimit = 60
+				rpmLimit = apiLimits.inferenceRequestsPerMinute
 		} = options;
 		let degradedWarned = false;
 
@@ -292,7 +294,7 @@ export function modelRateLimit(options: ModelRateLimitOptions = {}) {
 					messages?: Array<{ content?: unknown }>;
 				}>());
 				model = body?.model;
-				maxTokens = typeof body?.max_tokens === "number" ? body.max_tokens : 0;
+				maxTokens = typeof body?.max_tokens === "number" ? body.max_tokens : boundedDefaultOutput(getModelById(model ?? ""));
 				if (Array.isArray(body?.messages)) {
 					for (const m of body.messages) {
 						promptTokens += estimateTokens(

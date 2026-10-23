@@ -7,7 +7,7 @@ import { MODELS } from "@/lib/models-data";
 const originalFetch = globalThis.fetch;
 const model = MODELS.find((entry) => entry.id === "claude-opus-5")!;
 
-afterEach(() => { globalThis.fetch = originalFetch; });
+afterEach(() => { globalThis.fetch = originalFetch; window.history.replaceState(null, "", "/"); });
 
 describe("model detail", () => {
 	it("keeps unavailable models useful without an unusable chat link", async () => {
@@ -76,5 +76,28 @@ describe("model detail", () => {
 		expect(screen.getByText("stream")).toBeInTheDocument();
 		expect(screen.queryByText("tool_choice")).not.toBeInTheDocument();
 		expect(screen.queryByText("Tool calling")).not.toBeInTheDocument();
+	});
+
+	it("switches all provider facts and API examples together on a shared model page", () => {
+		const venice = MODELS.find((entry) => entry.id === "deepseek-v4-flash-0731")!;
+		const oma = MODELS.find((entry) => entry.id === "deepseek-v4-flash-0731-openbroker")!;
+		render(<ModelDetail model={venice} availability={true} routes={[{ model: venice, availability: true }, { model: oma, availability: false }]} />);
+		expect(screen.getByText("1M")).toBeInTheDocument();
+		fireEvent.click(screen.getByRole("button", { name: /OMA-AI/ }));
+		expect(screen.getByRole("heading", { name: oma.name })).toBeInTheDocument();
+		expect(screen.getByText("OMA configured limit: 400,000 tokens")).toBeInTheDocument();
+		expect(screen.getAllByText("Unverified")).toHaveLength(2);
+		expect(screen.queryByRole("link", { name: "Try in chat" })).not.toBeInTheDocument();
+		fireEvent.click(screen.getByRole("tab", { name: "API examples" }));
+		expect(screen.getByLabelText(`${oma.name} cURL example`)).toHaveTextContent('"model": "deepseek-v4-flash-0731-openbroker"');
+	});
+
+	it("opens the selected provider from a shared page link", () => {
+		const venice = MODELS.find((entry) => entry.id === "deepseek-v4-flash-0731")!;
+		const oma = MODELS.find((entry) => entry.id === "deepseek-v4-flash-0731-openbroker")!;
+		window.history.replaceState(null, "", `#${oma.id}`);
+		render(<ModelDetail model={venice} availability={true} routes={[{ model: venice, availability: true }, { model: oma, availability: false }]} />);
+		expect(screen.getByRole("heading", { name: oma.name })).toBeInTheDocument();
+		expect(screen.getByRole("button", { name: /OMA-AI/ })).toHaveAttribute("aria-pressed", "true");
 	});
 });

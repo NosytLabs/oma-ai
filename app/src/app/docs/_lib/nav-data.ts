@@ -62,7 +62,7 @@ export const NAV_ITEMS: NavItem[] = [
 	},
 	{
 		id: "integrations",
-		label: "Agents & IDEs",
+		label: "Client configuration",
 		icon: Bot,
 		keywords: [
 			"opencode",
@@ -128,7 +128,7 @@ export const NAV_ITEMS: NavItem[] = [
 	},
 	{
 		id: "models",
-		label: "Available Models",
+		label: "Model limits",
 		icon: BookOpen,
 		keywords: [
 			"models",
@@ -143,15 +143,11 @@ export const NAV_ITEMS: NavItem[] = [
 			"frontier",
 		],
 		headings: [
-			{ id: "models-budget", label: "Budget models" },
-			{ id: "models-mid", label: "Mid-tier models" },
-			{ id: "models-premium", label: "Premium models" },
-			{ id: "models-frontier", label: "Frontier models" },
 		],
 	},
 	{
 		id: "provider-routing",
-		label: "Provider Routing",
+		label: "Routing",
 		icon: GitBranch,
 		keywords: [
 			"provider",
@@ -249,7 +245,7 @@ export const NAV_ITEMS: NavItem[] = [
 	},
 	{
 		id: "sdks",
-		label: "SDKs & Examples",
+		label: "Retries and tools",
 		icon: Package,
 		keywords: [
 			"openai",

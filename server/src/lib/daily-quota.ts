@@ -1,8 +1,9 @@
+import apiLimits from "../inference/api-limits.json" with { type: "json" };
 import { getRedisClient, isRedisReady } from "./redis-client.js";
 import { logger } from "./logger.js";
 
-export const DAILY_LIMIT_ANONYMOUS = 20;
-export const DAILY_LIMIT_REGISTERED = 100;
+export const DAILY_LIMIT_ANONYMOUS = apiLimits.anonymousWebsiteRequestsPerDay;
+export const DAILY_LIMIT_REGISTERED = apiLimits.registeredWebsiteRequestsPerDay;
 const DAY_MS = 86_400_000;
 const MAX_LOCAL_COUNTERS = 10_000;
 

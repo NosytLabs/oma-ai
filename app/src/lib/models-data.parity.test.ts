@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { MODELS } from "./models-data";
+import { MODELS, MODEL_PAGES, getModelPageId, getModelPageHref, getModelPageRoutes } from "./models-data";
 
 /** SSR prices must match the shared catalog, including fixed retail rates. */
 const SERVER_MODELS = resolve(
@@ -17,6 +17,10 @@ type ServerEntry = {
 	markupPercent: number;
 	customerInputPricePer1M?: number;
 	customerOutputPricePer1M?: number;
+	contextWindow: number;
+	maxOutputTokens?: number;
+	inputModalities?: string[];
+	privacy?: string;
 };
 
 function readServerCatalog(): ServerEntry[] {
@@ -46,6 +50,27 @@ describe("app fallback catalog matches the server catalog", () => {
 				"An id on only one side either 404s at runtime (app-only) or is " +
 				"invisible to SSR metadata (server-only).",
 		).toEqual({ onlyApp: [], onlyServer: [] });
+	});
+
+	it("retains provider context, completion limits, modalities and privacy in SSR", () => {
+		for (const entry of server) {
+			const model = MODELS.find((model) => model.id === entry.id)!;
+			expect(model.contextTokens).toBe(entry.contextWindow);
+			expect(model.maxOutputTokens).toBe(entry.maxOutputTokens);
+			expect(model.inputModalities).toEqual(entry.inputModalities);
+			expect(model.privacy).toBe(entry.privacy);
+		}
+	});
+
+	it("shares one DeepSeek reference page while preserving independently billed providers", () => {
+		const routes = getModelPageRoutes("deepseek-v4-flash-0731");
+		expect(routes.map((model) => model.id)).toEqual(["deepseek-v4-flash-0731", "deepseek-v4-flash-0731-openbroker"]);
+		expect(new Set(routes.map(getModelPageId))).toEqual(new Set(["deepseek-v4-flash-0731"]));
+		expect(routes.map((model) => model.inputPricePer1M)).toEqual([0.195, 0.02]);
+		expect(routes.map((model) => model.contextTokens)).toEqual([1000000, 400000]);
+		expect(MODEL_PAGES.some((model) => model.id === "deepseek-v4-flash-0731-openbroker")).toBe(false);
+		expect(MODELS).toHaveLength(MODEL_PAGES.length + 1);
+		expect(getModelPageHref(routes[1])).toBe("/models/deepseek-v4-flash-0731#deepseek-v4-flash-0731-openbroker");
 	});
 
 	it("applies each model's markup exactly once", () => {

@@ -78,15 +78,15 @@ deletion against its own temporary migrated local database. It does not call
 paid models. [Account tooling](server/scripts/README.md) documents guarded local
 fixtures, cleanup and opt-in live inference tests.
 
-Production dependency auditing is separate from the full development audit.
-[The consolidated audit](docs/AUDIT.md)
-records validation, compatibility holds and remaining limitations.
+Run both `pnpm audit --prod` and `pnpm audit` for dependency checks.
+Compatibility patches and third-party notices are tracked in `patches/` and
+`LICENSE-THIRD-PARTY.md`.
 
 Keep regression tests focused on observable behavior. Reuse existing coverage
 for filtering, availability and authentication instead of adding page-render
 smoke tests or source-text checks for removed features. Preserve account,
 payment and isolation checks. Generated logs and browser reports are ignored;
-keep the maintained references in `docs/` rather than new audit copies.
+keep only maintained references in `docs/`.
 
 ## Repository
 
@@ -99,7 +99,7 @@ keep the maintained references in `docs/` rather than new audit copies.
 | `server/src/db/` | Ledger/schema and migrations |
 | `server/scripts/` | Guarded account tests and API deployment |
 | `scripts/` | Local development and browser audit helpers |
-| `docs/` | Maintained references and consolidated audit evidence |
+| `docs/` | Maintained operating references |
 | `patches/` | Persistent dependency mitigations |
 
 The JSON model catalog is shared by the website and API; parity tests check

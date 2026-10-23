@@ -5,6 +5,7 @@ vi.mock("../../config.js", () => ({ config: {
 	OPENBROKER_API_URL: "https://api.openbroker.gonka.gg",
 	VENICE_API_KEY: "test-venice-key",
 	VENICE_API_URL: "https://api.venice.ai",
+	OMMA_ALLOW_NON_PRIVATE_VENICE: true,
 } }));
 vi.mock("../../lib/logger.js", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
 vi.mock("../billing.js", () => ({ assertSufficientBalance: vi.fn(), recordUsage: vi.fn() }));

@@ -41,8 +41,8 @@ describe("ModelsPage", () => {
 		await act(async () => {
 			await waitFor(() => {
 				// Wording must NOT claim every catalogued model is usable —
-				// 18 of 20 are marked UNAVAILABLE when Venice is unconfigured.
-				expect(screen.getByText(/models in the catalog/i)).toBeInTheDocument();
+				// Routes can be unavailable when provider credentials are missing.
+				expect(screen.getByText(/provider routes in the catalog/i)).toBeInTheDocument();
 			});
 		});
 	});

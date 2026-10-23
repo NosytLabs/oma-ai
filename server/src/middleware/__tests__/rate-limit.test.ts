@@ -337,6 +337,14 @@ describe('rate-limit middleware', () => {
 		})
 
 		describe('modelRateLimit middleware', () => {
+				it('counts the shared 4096-token output default when max_tokens is omitted', async () => {
+					mockRedisClient.eval.mockResolvedValue([1, 0, 0]);
+					mockContext.req.json.mockResolvedValue({ model: 'kimi-k3', messages: [{ content: 'Hello' }] });
+					await modelRateLimit()(mockContext, mockNext);
+					const tokenCalls = mockRedisClient.eval.mock.calls.filter(call => (call[1] as string[]).some(key => key.includes(':tpm')));
+					expect(tokenCalls.length).toBeGreaterThan(0);
+					expect(tokenCalls.every(call => call[2][2] === '4098')).toBe(true);
+				});
 				it('should skip rate limiting for GET requests', async () => {
 						;(mockContext.req as any).method = 'GET'
 

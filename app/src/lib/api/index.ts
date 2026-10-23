@@ -25,9 +25,6 @@ export type {
 	RefundListResponse,
 	RefundStatus,
 	RequestRefundInput,
-	AdminRefundRecord,
-	AdminRefundListResponse,
-	DecideRefundInput,
 } from "./refunds.js";
 
 export * from "./types.js";

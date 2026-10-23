@@ -41,6 +41,18 @@ describe("documentation bookmarks", () => {
 		expect(() => act(() => frame?.(0))).not.toThrow();
 		expect(scroll).not.toHaveBeenCalled();
 	});
+	it("opens a bookmarked endpoint before scrolling, including later hash navigation", () => {
+		const endpoint = document.createElement("details");
+		endpoint.id = "ep-keys-create";
+		endpoint.scrollIntoView = scroll;
+		document.body.append(endpoint);
+		renderHook(() => useInitialDocAnchor());
+		window.history.replaceState(null, "", "/docs#ep-keys-create");
+		act(() => window.dispatchEvent(new HashChangeEvent("hashchange")));
+		act(() => frame?.(0));
+		expect(endpoint.open).toBe(true);
+		expect(scroll).toHaveBeenCalledOnce();
+	});
 
 	it("cancels its pending jump when leaving documentation", () => {
 		const { unmount } = renderHook(() => useInitialDocAnchor());

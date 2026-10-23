@@ -64,6 +64,7 @@ vi.mock("../../middleware/daily-limit.js", () => ({
 	dailyUsageLimit: () => async (_c: unknown, next: () => Promise<void>) => next(),
 }));
 vi.mock("../../middleware/inference-idempotency.js", () => ({ inferenceIdempotency: () => async (_c: unknown, next: () => Promise<void>) => next() }));
+vi.mock("../../inference/credit-reservations.js", () => ({ reservationQuote: () => ({ cents: 1, maxTokens: 32 }), reserveInferenceCredits: vi.fn(), failInferenceReservation: vi.fn(async () => {}) }));
 
 // Auth middleware: optionalAuth sets userId when a Bearer header is present.
 vi.mock("../../auth/middleware.js", () => ({

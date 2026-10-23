@@ -4,7 +4,7 @@ import { cache } from "react";
 import { DEFAULT_API_URL } from "@/lib/config";
 import SITE_URL from "@/lib/site";
 
-import { MODELS } from "@/lib/models-data";
+import { MODEL_PAGES, getModelPageRoutes } from "@/lib/models-data";
 import { ModelDetail } from "./_components/ModelDetail";
 import { isModelAvailable } from "@/lib/model-availability";
 import { withLiveModelDetails, type LiveModelDetails } from "@/app/models/_lib/detail-data";
@@ -29,7 +29,7 @@ const fetchLiveModel = cache(
 );
 
 export function generateStaticParams() {
-	return MODELS.map((m) => ({ slug: m.id }));
+	return MODEL_PAGES.map((m) => ({ slug: m.id }));
 }
 
 // The public catalog is generated from the curated registry. Unknown slugs
@@ -42,7 +42,7 @@ export async function generateMetadata({
 	params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
 	const { slug } = await params;
-	const model = MODELS.find((m) => m.id === slug);
+	const model = MODEL_PAGES.find((m) => m.id === slug);
 	if (!model) notFound();
 	// Match the stable sitemap policy: catalog pages remain useful reference
 	// material during temporary provider outages. Runtime availability must
@@ -72,12 +72,23 @@ export default async function ModelDetailPage({
 	params: Promise<{ slug: string }>;
 }) {
 	const { slug } = await params;
-	const staticModel = MODELS.find((m) => m.id === slug);
+	const staticModel = MODEL_PAGES.find((m) => m.id === slug);
 	if (!staticModel) notFound();
 	const live = await fetchLiveModel(slug);
 	const model = withLiveModelDetails(staticModel, live);
 	// A failed lookup is unknown, not an outage. Keep the reference page indexable.
 	const available = model.unavailableReason ? false : live ? isModelAvailable(live) : null;
+	const routes = await Promise.all(getModelPageRoutes(slug).map(async (route) => {
+		const routeLive = route.id === slug ? live : await fetchLiveModel(route.id);
+		const routeModel = withLiveModelDetails(route, routeLive);
+		return {
+			model: routeModel,
+			availability: routeModel.unavailableReason ? false : routeLive ? isModelAvailable(routeLive) : null,
+			supportedParameters: routeLive?.supported_parameters,
+			supportsTools: routeLive?.supports_tools,
+			supportsStreaming: routeLive?.supports_streaming,
+		};
+	}));
 	return (
 		<>
 			<BreadcrumbListJsonLd
@@ -99,6 +110,7 @@ export default async function ModelDetailPage({
 			/>
 			<ModelDetail
 				model={model}
+				routes={routes}
 				availability={available}
 				supportedParameters={live?.supported_parameters}
 				supportsTools={live?.supports_tools}

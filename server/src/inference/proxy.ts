@@ -33,7 +33,7 @@ export {
 // Re-export for existing test/route imports that pull helpers from proxy.
 export { FALLBACK_MAP, buildFallbackChain, rewriteSseModelField } from "./fallback.js";
 
-import { ProviderAuthenticationError, ProviderError, resolveProvider } from "./provider-route.js";
+import { ProviderAuthenticationError, ProviderError, resolveProvider, isModelPrivacyAllowed } from "./provider-route.js";
 
 export interface CallProviderOptions {
 		modelId: string;
@@ -57,6 +57,8 @@ export interface CallProviderOptions {
 		clientFallbacks?: string[];
 		/** Restrict both primary and fallback routes to the caller's key scope. */
 		allowedModels?: string[] | null;
+		/** Do not multiply uncertain upstream bills after a prepaid hold. */
+		prepaidReservation?: boolean;
 }
 
 /**
@@ -68,7 +70,7 @@ async function callProvider(opts: CallProviderOptions): Promise<Response> {
 
 		const modelDef = getModelById(modelId);
 		if (!modelDef) {
-			throw new ProviderError(`Model ${modelId} not found`, 404);
+			throw new ProviderError(`Model ${modelId} not found`, 404, true);
 		}
 
 		// Resolve upstream provider (Venice vs OMA-AI/OpenBroker).
@@ -158,6 +160,7 @@ async function callProvider(opts: CallProviderOptions): Promise<Response> {
 						throw new ProviderError(
 								"Inference provider is rate-limited. Try again in a few seconds.",
 								429,
+								true,
 						);
 				}
 				// SECURITY: never forward the raw upstream body. For non-5xx
@@ -168,6 +171,7 @@ async function callProvider(opts: CallProviderOptions): Promise<Response> {
 						? "Inference provider temporarily unavailable"
 						: `Upstream request failed (${status})`,
 					safeStatus,
+					status < 500,
 				);
 		}
 
@@ -194,12 +198,13 @@ export async function routeRequestWithFallback(
 }> {
 	const modelId = opts.modelId;
 	if (opts.allowedModels && !opts.allowedModels.includes(modelId)) {
-		throw new ProviderError("This API key does not allow the requested model", 403);
+		throw new ProviderError("This API key does not allow the requested model", 403, true);
 	}
 	const requested = getModelById(modelId);
-	if (requested?.disabledReason) throw new ProviderError(requested.disabledReason, 503);
+	if (requested && !isModelPrivacyAllowed(requested)) throw new ProviderError("This model is temporarily unavailable under the current privacy policy. Choose a private model.", 503, true);
+	if (requested?.disabledReason) throw new ProviderError(requested.disabledReason, 503, true);
 	if (requested?.maxOutputTokens && opts.max_tokens && opts.max_tokens > requested.maxOutputTokens) {
-		throw new ProviderError(`max_tokens exceeds this model's limit of ${requested.maxOutputTokens}`, 400);
+		throw new ProviderError(`max_tokens exceeds this model's limit of ${requested.maxOutputTokens}`, 400, true);
 	}
 	// One budget across all models and retries, including the returned body.
 	// The frontend waits 270 seconds, leaving time to return an actionable error.
@@ -220,6 +225,7 @@ export async function routeRequestWithFallback(
 		).filter(id => !opts.allowedModels || opts.allowedModels.includes(id));
 
 		let lastError: unknown = null;
+		let allExecutionRejected = true;
 		const errorLog: unknown[] = [];
 		// A provider shares one operator credential across its models. Once
 		// rejected, further same-provider calls cannot repair it in this request.
@@ -246,6 +252,7 @@ export async function routeRequestWithFallback(
 				const maxRetries = freeOnly ? 1 : 2;
 			const modelDef = getModelById(currentModelId);
 			if (!modelDef) continue;
+			if (!isModelPrivacyAllowed(modelDef)) continue;
 			if (rejectedProviders.has(modelDef.provider)) continue;
 			// A fallback with a smaller output ceiling cannot satisfy this request.
 			if (modelDef.maxOutputTokens && opts.max_tokens && opts.max_tokens > modelDef.maxOutputTokens) continue;
@@ -274,6 +281,13 @@ export async function routeRequestWithFallback(
 								lastError = err;
 								errorLog.push(err);
 								const e = readError(err);
+								allExecutionRejected &&= err instanceof ProviderError && err.executionRejected;
+								if (opts.prepaidReservation && !(err instanceof ProviderAuthenticationError) &&
+					(e.status === undefined || e.status === 408 || (e.status >= 500 && !((err instanceof ProviderError) && err.executionRejected)))) {
+									const failure = err instanceof ProviderError ? err : new ProviderError("Inference outcome requires reconciliation; retry with the same key", 502);
+									failure.billingUncertain = true;
+									throw failure;
+								}
 								const message = e.message ?? String(err);
 
 								// Auth / not-found / bad request: never thrash the same model —
@@ -348,9 +362,10 @@ export async function routeRequestWithFallback(
 				if (seen.size > 1) {
 						throw new ProviderError(
 								`All model providers failed: ${[...seen.values()].join(", ")}. Try another model or try again later.`,
-								502,
+								502, allExecutionRejected,
 						);
 				}
+				if (lastError instanceof ProviderError) lastError.executionRejected = allExecutionRejected;
 				throw lastError;
 		}
 		throw new ProviderError("Model routing failed on all fallback attempts", 502);

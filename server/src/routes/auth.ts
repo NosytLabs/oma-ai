@@ -25,7 +25,7 @@ import {
 } from "../auth/api-keys.js";
 import { auth, authBaseURL } from "../auth.js";
 import { SESSION_FRESH_AGE_SECONDS } from "../auth/session-policy.js";
-import { ADMIN_WALLET_ADDRESSES_SET, config } from "../config.js";
+import { config } from "../config.js";
 import type { OmaEnv } from "../types.js";
 import { extractClientIpOrNull } from "../middleware/rate-limit/utils.js";
 import { getAddress } from "viem";
@@ -59,15 +59,6 @@ authRoutes.get("/user", async (c) => {
 				401,
 			);
 		}
-		// Compute admin status with the SAME rule as requireAdmin in
-		// middleware.ts (role === "admin" OR evmAddress in the configured
-		// admin-wallet allowlist). Exposed so the client gate can agree with
-		// the server instead of gate-blocking wallet-gated operators.
-		const isAdmin =
-			session.user.role === "admin" ||
-			(ADMIN_WALLET_ADDRESSES_SET.size > 0 &&
-				!!session.user.evmAddress &&
-				ADMIN_WALLET_ADDRESSES_SET.has(session.user.evmAddress.toLowerCase()));
 		return c.json({
 			id: session.user.id,
 			email: session.user.email,
@@ -75,7 +66,6 @@ authRoutes.get("/user", async (c) => {
 			evmAddress: session.user.evmAddress ?? null,
 			isAnonymous: session.user.isAnonymous ?? false,
 			role: session.user.role ?? null,
-			isAdmin,
 			createdAt: session.user.createdAt,
 		});
 });
@@ -365,13 +355,14 @@ authRoutes.post(
 // DELETE /v1/keys/:id — revoke a key.
 authRoutes.delete("/v1/keys/:id", sessionAuth, async (c) => {
 		const userId = c.get("userId");
-		const id = c.req.param("id");
-		if (!id) {
+		const parsedId = z.uuid().safeParse(c.req.param("id"));
+		if (!parsedId.success) {
 				return c.json(
-						{ error: { message: "Missing key id", type: "invalid_request_error" } },
+						{ error: { message: "Invalid key id", type: "invalid_request_error" } },
 						400,
 				);
 		}
+		const id = parsedId.data;
 		const revoked = await revokeApiKey(userId, id);
 		if (!revoked) {
 				return c.json(

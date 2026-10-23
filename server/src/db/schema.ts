@@ -284,6 +284,29 @@ export const verification = pgTable("verification", {
 // OMA domain tables
 // =============================================================================
 
+/** Spendable balances exclude held/reconciliation amounts until settlement. */
+export const inferenceCreditReservations = pgTable("inference_credit_reservations", {
+	requestId: text("request_id").primaryKey(),
+	userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+	reservedCents: numeric("reserved_cents", { precision: 18, scale: 8 }).notNull(),
+	state: text("state").notNull().default("held"),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+	updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [index("idx_inference_credit_reservations_user").on(t.userId), index("idx_inference_credit_reservations_state").on(t.state, t.createdAt)]);
+
+/** No account foreign key or customer content: accounting survives deletion. */
+export const inferenceFinancialReceipts = pgTable("inference_financial_receipts", {
+	requestId: text("request_id").primaryKey(), requestedModel: text("requested_model"), model: text("model"), provider: text("provider"), providerResponseId: text("provider_response_id"),
+	reservedCents: numeric("reserved_cents", { precision: 18, scale: 8 }).notNull().default("0"),
+	costCents: numeric("cost_cents", { precision: 18, scale: 8 }).notNull().default("0"),
+	chargedCents: numeric("charged_cents", { precision: 18, scale: 8 }).notNull().default("0"),
+	refundedCents: numeric("refunded_cents", { precision: 18, scale: 8 }).notNull().default("0"),
+	costKnown: boolean("cost_known").notNull().default(false), usageVerified: boolean("usage_verified").notNull().default(false),
+	inputTokens: integer("input_tokens").notNull().default(0), outputTokens: integer("output_tokens").notNull().default(0),
+	pricingSnapshot: jsonb("pricing_snapshot").notNull().default({}), state: text("state").notNull().default("held"),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(), updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [index("idx_inference_financial_receipts_state").on(t.state, t.createdAt)]);
+
 export const apiKeys = pgTable(
 		"api_keys",
 		{
@@ -428,6 +451,8 @@ export const usageRecords = pgTable(
 		{
 				id: uuid("id").defaultRandom().primaryKey(),
 				requestId: text("request_id").notNull(),
+				providerResponseId: text("provider_response_id"),
+				usageVerified: boolean("usage_verified").notNull().default(false),
 				userId: text("user_id")
 						.references(() => user.id, { onDelete: "cascade" })
 						.notNull(),

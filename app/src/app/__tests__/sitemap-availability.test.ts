@@ -1,13 +1,13 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 
-const MODELS = [
+const MODEL_PAGES = [
 	{ id: "minimax-m2-7" },
-	{ id: "deepseek-v4-flash-0731-openbroker" },
+	{ id: "deepseek-v4-flash-0731" },
 	{ id: "claude-opus-5" },
 	{ id: "kimi-k3" },
 ];
 
-vi.mock("@/lib/models-data", () => ({ MODELS }));
+vi.mock("@/lib/models-data", () => ({ MODEL_PAGES }));
 
 const originalFetch = global.fetch;
 
@@ -23,7 +23,7 @@ async function load() {
  * crawl graph changed whenever a provider blipped — and a network failure at
  * build time silently published either the whole catalog or none of it. The
  * current contract (see the comment block in sitemap.ts) is: every model in
- * MODELS is always listed, because the model pages are useful reference pages
+ * MODEL_PAGES is always listed, because the model pages are useful reference pages
  * and remain indexable while a provider is temporarily unavailable.
  *
  * These tests therefore pin the static contract, and assert that the sitemap
@@ -45,7 +45,7 @@ describe("sitemap model catalog", () => {
 	it("lists every model in the catalog regardless of runtime availability", async () => {
 		const sitemapFn = await load();
 		const urls = (await sitemapFn()).map((e) => e.url);
-		for (const m of MODELS) {
+		for (const m of MODEL_PAGES) {
 			expect(urls).toContain(`https://www.oma-ai.com/models/${m.id}`);
 		}
 	});

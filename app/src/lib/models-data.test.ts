@@ -147,6 +147,13 @@ describe("live model capabilities", () => {
 		expect(model.capabilities).toEqual(["chat", "reasoning", "coding", "multimodal", "agents"]);
 	});
 
+	it("retains source verification and multimodal inputs when the API omits architecture", async () => {
+		const model = await loadEntry({ id: "gemini-3-6-flash" });
+		expect(model.inputModalities).toEqual(["text", "image", "audio", "video"]);
+		expect(model.privacy).toBe("anonymized");
+		expect(model.metadataVerification?.verifiedAt).toBe("2026-10-23");
+	});
+
 	it("uses supported parameters and the tool flag for an unknown legacy model", async () => {
 		const model = await loadEntry({ supported_parameters: ["reasoning_effort"], supports_tools: true });
 		expect(model.capabilities).toEqual(["chat", "reasoning", "agents"]);
