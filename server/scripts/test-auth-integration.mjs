@@ -19,6 +19,8 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { createSiweMessage } from "viem/siwe";
+import { writeFile } from "node:fs/promises";
+import { stripVTControlCharacters } from "node:util";
 
 const serverDir = fileURLToPath(new URL("../", import.meta.url));
 const adminUrl = new URL(process.env.AUTH_TEST_POSTGRES_URL ??
@@ -37,16 +39,20 @@ let passed = 0;
 let providerCalls = 0;
 let providerRelease;
 let providerEntered;
+let providerAutoRelease = false;
+let lastProviderRequest;
+let publicSpec;
+const publicObservations = [];
 const provider = createHttpServer(async (req, res) => {
 	let body = ""; for await (const chunk of req) body += chunk;
-	const input = JSON.parse(body); providerCalls++; providerEntered?.();
+	const input = JSON.parse(body); lastProviderRequest = input; providerCalls++; providerEntered?.();
 	if (input.stream) {
 		res.writeHead(200, { "Content-Type": "text/event-stream" });
 		res.write(`data: ${JSON.stringify({ choices: [{ delta: { content: "LOCAL_OK" } }] })}\n\n`);
-		await new Promise(resolve => { providerRelease = resolve; });
+		if (!providerAutoRelease) await new Promise(resolve => { providerRelease = resolve; });
 		res.end(`data: ${JSON.stringify({ choices: [{ delta: {}, finish_reason: "stop" }], usage: { prompt_tokens: 10, completion_tokens: 4 } })}\n\ndata: [DONE]\n\n`);
 	} else {
-		await new Promise(resolve => { providerRelease = resolve; });
+		if (!providerAutoRelease) await new Promise(resolve => { providerRelease = resolve; });
 		res.writeHead(200, { "Content-Type": "application/json" });
 		res.end(JSON.stringify({ choices: [{ message: { role: "assistant", content: "LOCAL_OK" }, finish_reason: "stop" }], usage: { prompt_tokens: 10, completion_tokens: 4 } }));
 	}
@@ -63,6 +69,37 @@ const authRequestTimes = [];
 function pass(message) {
 	passed += 1;
 	console.log(`PASS ${message}`);
+}
+
+/** Validate the published JSON-schema subset against real HTTP responses. */
+function assertPublicSchema(value, schema, location = "response") {
+	if (schema.$ref) return assertPublicSchema(value, schema.$ref.split("/").slice(1).reduce((node, key) => node[key], publicSpec), location);
+	for (const candidate of schema.allOf ?? []) assertPublicSchema(value, candidate, location);
+	if (schema.oneOf || schema.anyOf) {
+		const matches = (schema.oneOf ?? schema.anyOf).filter(candidate => { try { assertPublicSchema(value, candidate, location); return true; } catch { return false; } });
+		assert.ok(schema.oneOf ? matches.length === 1 : matches.length > 0, `${location} must match its documented schema variant`);
+	}
+	const type = value === null ? "null" : Array.isArray(value) ? "array" : typeof value;
+	if (schema.type) assert.ok((Array.isArray(schema.type) ? schema.type : [schema.type]).some(expected => expected === type || expected === "integer" && Number.isInteger(value)), `${location} has the documented type`);
+	if (schema.enum) assert.ok(schema.enum.includes(value), `${location} is a documented enum value`);
+	if (typeof value === "number") {
+		if (schema.minimum !== undefined) assert.ok(value >= schema.minimum, `${location} minimum`);
+		if (schema.maximum !== undefined) assert.ok(value <= schema.maximum, `${location} maximum`);
+		if (schema.exclusiveMinimum !== undefined) assert.ok(value > schema.exclusiveMinimum, `${location} exclusive minimum`);
+	}
+	if (typeof value === "string") {
+		if (schema.minLength !== undefined) assert.ok(value.length >= schema.minLength, `${location} minimum length`);
+		if (schema.maxLength !== undefined) assert.ok(value.length <= schema.maxLength, `${location} maximum length`);
+		if (schema.pattern) assert.match(value, new RegExp(schema.pattern), `${location} pattern`);
+	}
+	if (Array.isArray(value)) {
+		if (schema.minItems !== undefined) assert.ok(value.length >= schema.minItems, `${location} minimum item count`);
+		if (schema.maxItems !== undefined) assert.ok(value.length <= schema.maxItems, `${location} maximum item count`);
+		if (schema.items) value.forEach((entry, index) => assertPublicSchema(entry, schema.items, `${location}[${index}]`));
+	} else if (value && typeof value === "object") {
+		for (const key of schema.required ?? []) assert.ok(key in value, `${location}.${key} is required by the published contract`);
+		for (const [key, child] of Object.entries(schema.properties ?? {})) if (key in value) assertPublicSchema(value[key], child, `${location}.${key}`);
+	}
 }
 
 async function request(path, { method = "GET", cookie, body, expected = 200, headers = {} } = {}) {
@@ -90,17 +127,29 @@ async function request(path, { method = "GET", cookie, body, expected = 200, hea
 		...(body === undefined ? {} : { body: JSON.stringify(body) }),
 	});
 	const text = await response.text();
+	const data = response.headers.get("content-type")?.includes("json") ? text ? JSON.parse(text) : null : text;
+	const pathname = path.split("?")[0];
+	const template = Object.keys(publicSpec?.paths ?? {}).find((candidate) =>
+		new RegExp(`^${candidate.replace(/\{[^}]+\}/g, "[^/]+")}$`).test(pathname));
+	if (template && publicSpec.paths[template][method.toLowerCase()]) {
+		const operation = publicSpec.paths[template][method.toLowerCase()];
+		const contentType = response.headers.get("content-type")?.split(";")[0];
+		const responseSchema = operation.responses?.[response.status]?.content?.[contentType]?.schema;
+		if (responseSchema) assertPublicSchema(data, responseSchema, `${method} ${template} ${response.status}`);
+		publicObservations.push({ operation: `${method} ${template}`, status: response.status,
+			contentType: response.headers.get("content-type"), schemaValidated: Boolean(responseSchema), authenticated: Boolean(cookie || headers.Authorization || headers["x-api-key"]) });
+	}
 	assert.equal(response.status, expected, `${method} ${path.split("?")[0]} returned ${response.status}: ${text}`);
 	return {
 		response,
-		data: text ? JSON.parse(text) : null,
+		data,
 		cookie: response.headers.getSetCookie().map((value) => value.split(";")[0]).join("; "),
 	};
 }
 
 async function deliverySince(offset, expression) {
 	for (let attempt = 0; attempt < 50; attempt += 1) {
-		const match = logs.slice(offset).replace(/\u001b\[[0-9;]*m/g, "").match(expression);
+		const match = stripVTControlCharacters(logs.slice(offset)).match(expression);
 		if (match) return match[1];
 		await delay(100);
 	}
@@ -158,6 +207,9 @@ try {
 			PATH: process.env.PATH,
 			NODE_ENV: "development",
 			DOTENV_CONFIG_PATH: "/dev/null",
+			// Exercise an explicitly enabled local promotion and its one-time grant.
+			// Production defaults to zero; disabled/default behavior has separate coverage.
+			FREE_SIGNUP_CENTS: "100",
 			DATABASE_URL: databaseUrl.toString(),
 			PORT: String(port),
 			PUBLIC_APP_URL: origin,
@@ -170,6 +222,8 @@ try {
 			OTEL_SDK_DISABLED: "true",
 			VENICE_API_URL: providerOrigin,
 			VENICE_API_KEY: "isolated-local-provider-fixture",
+			USDC_DEPOSIT_ADDRESS: `0x${"12".repeat(20)}`,
+			TREASURY_BASE_ADDRESS: `0x${"12".repeat(20)}`,
 		},
 		stdio: ["ignore", "pipe", "pipe"],
 	});
@@ -180,6 +234,33 @@ try {
 		assert.ok(Date.now() < startupDeadline && backend.exitCode === null, "Local backend failed to start within 60 seconds");
 		await delay(100);
 	}
+	publicSpec = (await request("/openapi.json")).data;
+	for (const path of ["/openapi", "/v1/openapi.json", "/v1/openapi"]) {
+		assert.deepEqual((await request(path)).data, publicSpec, "Every documented OpenAPI alias must publish the same contract");
+	}
+	const models = (await request("/v1/models")).data;
+	assert.equal(models.object, "list"); assert.equal(models.data.length, 20);
+	const modelDetail = (await request("/v1/models/google-gemma-4-31b-it")).data;
+	assert.equal(modelDetail.id, "google-gemma-4-31b-it");
+	assert.deepEqual(modelDetail, models.data.find(model => model.id === modelDetail.id), "List and detail must use the same model serialization");
+	assert.equal(modelDetail.created, 0, "An unknown creation date cannot become the current request time");
+	assert.equal(modelDetail.metadata_verification.status, "verified");
+	assert.equal(modelDetail.privacy, "private");
+	assert.deepEqual(modelDetail.architecture.input_modalities, ["text", "image", "video"]);
+	assert.equal(models.data.find(model => model.id === "minimax-m2-7").metadata_verification.status, "unverified");
+	assert.equal(modelDetail.max_output_tokens, 8192);
+	assert.equal(typeof modelDetail.pricing.prompt, "number");
+	await request("/v1/models/not-a-real-model", { expected: 404 });
+	const quota = await request("/v1/usage/today");
+	assert.equal(quota.data.limit, 20); assert.equal(quota.data.used, 0);
+	assert.match(quota.response.headers.get("cache-control"), /no-store/);
+	const funding = (await request("/x402/info")).data;
+	assert.equal(funding.x402Version, 2); assert.equal(funding.payTo.toLowerCase(), `0x${"12".repeat(20)}`);
+	for (const query of ["", "?query=", `?query=${"x".repeat(501)}`]) await request(`/v1/search${query}`, { expected: 400 });
+	const searched = (await request("/v1/search?query=OMA%20AI")).data;
+	assert.equal(searched.query, "OMA AI"); assert.ok(Array.isArray(searched.results));
+	assert.equal(searched.provider, "duckduckgo");
+	pass("all OpenAPI aliases, public model detail, guest quota, search validation and read-only funding discovery return their documented envelopes");
 
 	await request("/user", { expected: 401 });
 	await request("/sessions", { expected: 401 });
@@ -205,6 +286,7 @@ try {
 	const first = await magicSignIn(email);
 	const profile = (await request("/user", { cookie: first.cookie })).data;
 	assert.equal(profile.email, email);
+	assert.ok(!("isAdmin" in profile), "Public profiles omit the unused operator UI flag");
 	assert.equal((await request("/api/auth/get-session", { cookie: first.cookie })).data.user.emailVerified, true);
 	const balance = await pool.query("SELECT balance_cents FROM credit_balances WHERE user_id = $1", [profile.id]);
 	assert.equal(Number(balance.rows[0].balance_cents), 100);
@@ -212,8 +294,60 @@ try {
 	assert.match(replay.response.headers.get("location"), /error=INVALID_TOKEN/);
 	assert.doesNotMatch(replay.cookie, /session_token=[^;]/);
 	pass("magic-link signup creates a verified user and one trial grant; used links are rejected");
+	const accountBalance = await request("/v1/balance", { cookie: first.cookie });
+	assert.equal(accountBalance.data.userId, profile.id); assert.equal(Number(accountBalance.data.balanceCents), 100);
+	assert.equal(typeof accountBalance.data.balanceCents, "string");
+	assert.match(accountBalance.response.headers.get("cache-control"), /no-store/);
+	const creditBalance = (await request("/v1/credits/balance", { cookie: first.cookie })).data;
+	assert.equal(Number(creditBalance.balanceCents), 100); assert.ok(Array.isArray(creditBalance.activeBatches));
+	const instructions = (await request("/v1/deposit/usdc", { cookie: first.cookie })).data;
+	assert.equal(instructions.network, "base"); assert.equal(instructions.chainId, 8453);
+	const depositWallet = privateKeyToAccount(generatePrivateKey());
+	const challenge = (await request("/v1/deposit/usdc/challenge", { method: "POST", cookie: first.cookie, body: { fromAddress: depositWallet.address } })).data;
+	assert.deepEqual(Object.keys(challenge).sort(), ["expiresAt", "nonce", "token"]);
+	assert.equal(typeof challenge.expiresAt, "number"); assert.ok(challenge.expiresAt > Date.now());
+	const fakeTxHash = `0x${"34".repeat(32)}`;
+	const signedDeposit = ["OMA-AI deposit authorization", "", `Sending wallet: ${depositWallet.address}`, `Deposit to: ${instructions.depositAddress}`, `Challenge: ${challenge.token}`, `Transaction: ${fakeTxHash}`, "Amount USD: 1"].join("\n");
+	const pendingDeposit = (await request("/v1/deposit/usdc", { method: "POST", cookie: first.cookie, body: { amountUsd: 1, txHash: fakeTxHash, network: "base", fromAddress: depositWallet.address, challengeToken: challenge.token, signature: await depositWallet.signMessage({ message: signedDeposit }) } })).data;
+	assert.equal(pendingDeposit.status, "pending"); assert.equal(pendingDeposit.amountCents, 100);
+	assert.ok((await request("/v1/deposit/status", { cookie: first.cookie })).data.deposits.some(row => row.id === pendingDeposit.depositId));
+	assert.equal(Number((await request("/v1/balance", { cookie: first.cookie })).data.balanceCents), 100, "Recording a local pending deposit cannot credit funds");
+	await pool.query("DELETE FROM deposits WHERE id=$1", [pendingDeposit.depositId]);
+	await request("/v1/deposit/usdc/challenge", { method: "POST", cookie: first.cookie, body: { fromAddress: "bad" }, expected: 400 });
+	await request("/v1/deposit/usdc", { method: "POST", cookie: first.cookie, body: {}, expected: 400 });
+	await request("/v1/checkout", { method: "POST", cookie: first.cookie, body: { productId: "stale-contract", successUrl: origin, cancelUrl: origin }, expected: 400 });
+	await request("/v1/checkout", { method: "POST", cookie: first.cookie, body: { plan: "hobby" }, expected: 503 });
+	await request("/x402/settle", { method: "POST", cookie: first.cookie, body: { txHash: "invalid", networkId: "base" }, expected: 400 });
+	for (const fields of [{ max_tokens: 0 }, { max_tokens: 1.5 }, { temperature: -0.01 }, { temperature: 2.01 }, { top_p: -0.01 }, { top_p: 1.01 }, { messages: [] }, { models: Array(9).fill("x") }]) {
+		await request("/v1/chat/completions", { method: "POST", cookie: first.cookie, expected: 400, body: { model: "", messages: [{ role: "user", content: "Bounds check" }], ...fields } });
+	}
+	for (const fields of [{ max_tokens: 0 }, { temperature: -0.01 }, { temperature: 1.01 }, { top_p: 1.01 }, { messages: [] }, { tool_choice: "auto" }, { messages: [{ role: "system", content: "invalid" }] }]) {
+		await request("/v1/messages", { method: "POST", cookie: first.cookie, expected: 400, body: { model: "", messages: [{ role: "user", content: "Bounds check" }], max_tokens: 1, ...fields } });
+	}
+	for (const path of ["/v1/chat/completions", "/v1/messages"]) await request(path, { method: "POST", cookie: first.cookie, expected: 404, body: { model: "", messages: [{ role: "user", content: "Valid bounds" }], max_tokens: 1, temperature: 0, top_p: 1 } });
+	providerAutoRelease = true;
+	const anthropic = await request("/v1/messages", { method: "POST", cookie: first.cookie, body: { model: "google-gemma-4-31b-it", messages: [{ role: "user", content: "Return LOCAL_OK" }], max_tokens: 8, system: "Local contract fixture" } });
+	assert.equal(anthropic.data.type, "message"); assert.equal(anthropic.data.content[0].text, "LOCAL_OK");
+	assert.deepEqual(anthropic.data.usage, { input_tokens: 10, output_tokens: 4 });
+	assert.ok(anthropic.response.headers.get("x-oma-request-id"));
+	assert.deepEqual(lastProviderRequest.messages[0], { role: "system", content: "Local contract fixture" });
+	providerAutoRelease = false; providerCalls = 0;
+	await pool.query("DELETE FROM usage_records WHERE user_id=$1", [profile.id]);
+	await pool.query("UPDATE credit_balances SET balance_cents=100, total_used_cents=0 WHERE user_id=$1", [profile.id]);
+	for (const path of ["/v1/export/usage", "/v1/export/deposits", "/v1/export/summary"]) {
+		const csv = await request(path, { cookie: first.cookie });
+		assert.match(csv.response.headers.get("content-type"), /text\/csv/);
+		const json = await request(`${path}?format=json`, { cookie: first.cookie });
+		assert.match(json.response.headers.get("content-type"), /application\/json/);
+		assert.equal(typeof json.data, "object");
+	}
+	for (const query of ["?format=xml", "?since=invalid", "?since=2026-02-02T00%3A00%3A00Z&until=2026-01-01T00%3A00%3A00Z"]) await request(`/v1/export/usage${query}`, { cookie: first.cookie, expected: 400 });
+	for (const query of ["limit=0", "limit=501", "model=" + "x".repeat(151), "cursor=" + "x".repeat(513), "provider=other"]) await request(`/v1/usage?${query}`, { cookie: first.cookie, expected: 400 });
+	for (const query of ["limit=0", "limit=201", "status=other"]) await request(`/v1/refunds?${query}`, { cookie: first.cookie, expected: 400 });
+	pass("real HTTP contract checks cover signed pending deposits without crediting, exact checkout/challenge envelopes, completion bounds, Anthropic conversion, CSV/JSON exports and private filter bounds");
 
 	await request("/v1/keys", { method: "POST", expected: 401, body: { name: "No session" } });
+	await request("/v1/keys/not-a-uuid", { method: "DELETE", cookie: first.cookie, expected: 400 });
 	const scopedKey = (await request("/v1/keys", { method: "POST", cookie: first.cookie, body: { name: "Integration scope", expiresInDays: 1, allowedModels: ["minimax-m2-7", "minimax-m2-7"] } })).data;
 	assert.deepEqual(scopedKey.allowedModels, ["minimax-m2-7"]);
 	assert.ok(Math.abs(new Date(scopedKey.expiresAt).getTime() - Date.now() - 86_400_000) < 10_000);
@@ -706,6 +840,12 @@ try {
 		assert.equal((await request("/user", { cookie: fixture.cookie })).data.role, index === 0 ? "user" : "admin");
 	}
 	pass("seeded user/admin magic links authenticate against the real hashed-token verifier");
+	const operations = Object.entries(publicSpec.paths).flatMap(([path, item]) =>
+		Object.keys(item).filter(method => ["get", "post", "put", "patch", "delete"].includes(method)).map(method => `${method.toUpperCase()} ${path}`));
+	const missing = operations.filter(operation => !publicObservations.some(row => row.operation === operation));
+	assert.deepEqual(missing, [], "Every currently published public OpenAPI operation must be exercised over real HTTP");
+	if (process.env.AUTH_TEST_REPORT_PATH) await writeFile(process.env.AUTH_TEST_REPORT_PATH, JSON.stringify({ checkedAt: new Date().toISOString(), environment: "isolated-local-http-postgres", provider: "local-fixture-only", paidProviderCalls: 0, onChainBroadcasts: 0, operations: operations.map(operation => ({ operation, observedStatuses: [...new Set(publicObservations.filter(row => row.operation === operation).map(row => row.status))] })), observations: publicObservations }, null, 2) + "\n");
+	pass(`all ${operations.length} published public OpenAPI operations exercised over real HTTP`);
 	console.log(`All ${passed} real auth integration checks passed.`);
 } finally {
 	providerRelease?.(); provider.closeAllConnections(); await new Promise(resolve => provider.close(resolve));

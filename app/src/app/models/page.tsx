@@ -15,7 +15,7 @@ import { Suspense, useMemo } from "react";
 import { BreadcrumbListJsonLd } from "@/components/json-ld";
 import { InViewFade } from "@/components/motion/in-view-fade";
 import { Breadcrumb } from "@/components/shared/Breadcrumb";
-import { MODELS, TIER_COLORS, TIER_ORDER } from "@/lib/models-data";
+import { MODEL_PAGES, TIER_COLORS, TIER_ORDER } from "@/lib/models-data";
 import { ModelCard } from "./_components/ModelCard";
 import { ModelFiltersSidebar } from "./_components/ModelFiltersSidebar";
 import { SORT_OPTIONS, useModelFilters, type SortKey } from "./_hooks/useModelFilters";
@@ -93,7 +93,7 @@ function ModelsPageInner() {
 							Choose a model to explore its capabilities or try it in chat.
 						</p>
 						<p className="mt-4 font-mono text-xs uppercase tracking-[0.18em] text-text-muted">
-							{totalModels} models in the catalog
+							{totalModels} provider routes in the catalog
 							{availableCount !== null && (
 								<>
 									{" "}
@@ -272,7 +272,7 @@ function ModelsSeoFallback() {
 					capabilities, pricing, and copy-paste API examples.
 				</p>
 				<p className="mt-4 font-mono text-xs uppercase tracking-[0.18em] text-text-muted">
-					{MODELS.length} curated catalog entries · live availability loads in the browser
+					{MODEL_PAGES.length} model pages · live provider availability loads in the browser
 				</p>
 
 				<section className="mt-10" aria-labelledby="static-model-list-heading">
@@ -283,7 +283,7 @@ function ModelsSeoFallback() {
 						Browse model pages
 					</h2>
 					<div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-						{MODELS.map((model) => (
+						{MODEL_PAGES.map((model) => (
 							<Link
 								key={model.id}
 								href={`/models/${model.id}`}

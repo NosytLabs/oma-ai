@@ -2,8 +2,8 @@
   {
     "id": "openai-gpt-56-sol",
     "provider": "venice",
-    "inputPricePer1M": 5,
-    "outputPricePer1M": 25,
+    "inputPricePer1M": 4,
+    "outputPricePer1M": 20,
     "markupPercent": 50,
     "displayName": "GPT-5.6 Sol",
     "category": "frontier",
@@ -19,15 +19,29 @@
     ],
     "extendedPricing": {
       "contextTokenThreshold": 272000,
-      "inputPricePer1M": 10,
-      "outputPricePer1M": 37.5
+      "inputPricePer1M": 8,
+      "outputPricePer1M": 30
+    },
+    "privacy": "anonymized",
+    "inputModalities": [
+      "text",
+      "image"
+    ],
+    "outputModalities": [
+      "text"
+    ],
+    "metadataVerification": {
+      "status": "verified",
+      "sourceUrl": "https://api.venice.ai/api/v1/models?type=text",
+      "verifiedAt": "2026-10-23",
+      "note": "Provider route prices, context, output limits, input modalities and privacy verified against the Venice model catalog. OMA applies its listed markup."
     }
   },
   {
     "id": "claude-opus-5",
     "provider": "venice",
-    "inputPricePer1M": 6,
-    "outputPricePer1M": 30,
+    "inputPricePer1M": 5,
+    "outputPricePer1M": 25,
     "markupPercent": 50,
     "displayName": "Claude Opus 5",
     "category": "frontier",
@@ -41,7 +55,21 @@
       "coding",
       "tools",
       "multimodal"
-    ]
+    ],
+    "privacy": "anonymized",
+    "inputModalities": [
+      "text",
+      "image"
+    ],
+    "outputModalities": [
+      "text"
+    ],
+    "metadataVerification": {
+      "status": "verified",
+      "sourceUrl": "https://api.venice.ai/api/v1/models?type=text",
+      "verifiedAt": "2026-10-23",
+      "note": "Provider route prices, context, output limits, input modalities and privacy verified against the Venice model catalog. OMA applies its listed markup."
+    }
   },
   {
     "id": "kimi-k3",
@@ -61,7 +89,21 @@
       "coding",
       "tools",
       "multimodal"
-    ]
+    ],
+    "privacy": "private",
+    "inputModalities": [
+      "text",
+      "image"
+    ],
+    "outputModalities": [
+      "text"
+    ],
+    "metadataVerification": {
+      "status": "verified",
+      "sourceUrl": "https://api.venice.ai/api/v1/models?type=text",
+      "verifiedAt": "2026-10-23",
+      "note": "Provider route prices, context, output limits, input modalities and privacy verified against the Venice model catalog. OMA applies its listed markup."
+    }
   },
   {
     "id": "zai-org-glm-5-2",
@@ -80,7 +122,20 @@
       "reasoning",
       "coding",
       "tools"
-    ]
+    ],
+    "privacy": "private",
+    "inputModalities": [
+      "text"
+    ],
+    "outputModalities": [
+      "text"
+    ],
+    "metadataVerification": {
+      "status": "verified",
+      "sourceUrl": "https://api.venice.ai/api/v1/models?type=text",
+      "verifiedAt": "2026-10-23",
+      "note": "Provider route prices, context, output limits, input modalities and privacy verified against the Venice model catalog. OMA applies its listed markup."
+    }
   },
   {
     "id": "deepseek-v4-pro",
@@ -99,7 +154,20 @@
       "reasoning",
       "coding",
       "tools"
-    ]
+    ],
+    "privacy": "private",
+    "inputModalities": [
+      "text"
+    ],
+    "outputModalities": [
+      "text"
+    ],
+    "metadataVerification": {
+      "status": "verified",
+      "sourceUrl": "https://api.venice.ai/api/v1/models?type=text",
+      "verifiedAt": "2026-10-23",
+      "note": "Provider route prices, context, output limits, input modalities and privacy verified against the Venice model catalog. OMA applies its listed markup."
+    }
   },
   {
     "id": "qwen-3-8-max",
@@ -119,7 +187,22 @@
       "coding",
       "tools",
       "multimodal"
-    ]
+    ],
+    "privacy": "anonymized",
+    "inputModalities": [
+      "text",
+      "image",
+      "video"
+    ],
+    "outputModalities": [
+      "text"
+    ],
+    "metadataVerification": {
+      "status": "verified",
+      "sourceUrl": "https://api.venice.ai/api/v1/models?type=text",
+      "verifiedAt": "2026-10-23",
+      "note": "Provider route prices, context, output limits, input modalities and privacy verified against the Venice model catalog. OMA applies its listed markup."
+    }
   },
   {
     "id": "grok-4-5",
@@ -144,13 +227,27 @@
       "contextTokenThreshold": 200000,
       "inputPricePer1M": 4.53,
       "outputPricePer1M": 13.6
+    },
+    "privacy": "private",
+    "inputModalities": [
+      "text",
+      "image"
+    ],
+    "outputModalities": [
+      "text"
+    ],
+    "metadataVerification": {
+      "status": "verified",
+      "sourceUrl": "https://api.venice.ai/api/v1/models?type=text",
+      "verifiedAt": "2026-10-23",
+      "note": "Provider route prices, context, output limits, input modalities and privacy verified against the Venice model catalog. OMA applies its listed markup."
     }
   },
   {
     "id": "claude-sonnet-4-6",
     "provider": "venice",
-    "inputPricePer1M": 3.6,
-    "outputPricePer1M": 18,
+    "inputPricePer1M": 3,
+    "outputPricePer1M": 15,
     "markupPercent": 50,
     "displayName": "Claude Sonnet 4.6",
     "category": "premium",
@@ -164,7 +261,21 @@
       "coding",
       "tools",
       "multimodal"
-    ]
+    ],
+    "privacy": "anonymized",
+    "inputModalities": [
+      "text",
+      "image"
+    ],
+    "outputModalities": [
+      "text"
+    ],
+    "metadataVerification": {
+      "status": "verified",
+      "sourceUrl": "https://api.venice.ai/api/v1/models?type=text",
+      "verifiedAt": "2026-10-23",
+      "note": "Provider route prices, context, output limits, input modalities and privacy verified against the Venice model catalog. OMA applies its listed markup."
+    }
   },
   {
     "id": "gemini-3-6-flash",
@@ -183,7 +294,23 @@
       "reasoning",
       "tools",
       "multimodal"
-    ]
+    ],
+    "privacy": "anonymized",
+    "inputModalities": [
+      "text",
+      "image",
+      "audio",
+      "video"
+    ],
+    "outputModalities": [
+      "text"
+    ],
+    "metadataVerification": {
+      "status": "verified",
+      "sourceUrl": "https://api.venice.ai/api/v1/models?type=text",
+      "verifiedAt": "2026-10-23",
+      "note": "Provider route prices, context, output limits, input modalities and privacy verified against the Venice model catalog. OMA applies its listed markup."
+    }
   },
   {
     "id": "llama-3.3-70b",
@@ -193,14 +320,27 @@
     "markupPercent": 50,
     "displayName": "Llama 3.3 70B",
     "category": "mid",
-    "maxTokens": 8192,
+    "maxTokens": 4096,
     "contextWindow": 128000,
     "maxOutputTokens": 4096,
     "supportsStreaming": true,
     "capabilities": [
       "chat",
       "tools"
-    ]
+    ],
+    "privacy": "private",
+    "inputModalities": [
+      "text"
+    ],
+    "outputModalities": [
+      "text"
+    ],
+    "metadataVerification": {
+      "status": "verified",
+      "sourceUrl": "https://api.venice.ai/api/v1/models?type=text",
+      "verifiedAt": "2026-10-23",
+      "note": "Provider route prices, context, output limits, input modalities and privacy verified against the Venice model catalog. OMA applies its listed markup."
+    }
   },
   {
     "id": "hermes-3-llama-3.1-405b",
@@ -216,7 +356,20 @@
     "supportsStreaming": true,
     "capabilities": [
       "chat"
-    ]
+    ],
+    "privacy": "private",
+    "inputModalities": [
+      "text"
+    ],
+    "outputModalities": [
+      "text"
+    ],
+    "metadataVerification": {
+      "status": "verified",
+      "sourceUrl": "https://api.venice.ai/api/v1/models?type=text",
+      "verifiedAt": "2026-10-23",
+      "note": "Provider route prices, context, output limits, input modalities and privacy verified against the Venice model catalog. OMA applies its listed markup."
+    }
   },
   {
     "id": "zai-org-glm-5-1",
@@ -234,7 +387,20 @@
       "chat",
       "reasoning",
       "tools"
-    ]
+    ],
+    "privacy": "private",
+    "inputModalities": [
+      "text"
+    ],
+    "outputModalities": [
+      "text"
+    ],
+    "metadataVerification": {
+      "status": "verified",
+      "sourceUrl": "https://api.venice.ai/api/v1/models?type=text",
+      "verifiedAt": "2026-10-23",
+      "note": "Provider route prices, context, output limits, input modalities and privacy verified against the Venice model catalog. OMA applies its listed markup."
+    }
   },
   {
     "id": "qwen-3-7-plus",
@@ -259,6 +425,21 @@
       "contextTokenThreshold": 256000,
       "inputPricePer1M": 1.5,
       "outputPricePer1M": 6
+    },
+    "privacy": "anonymized",
+    "inputModalities": [
+      "text",
+      "image",
+      "video"
+    ],
+    "outputModalities": [
+      "text"
+    ],
+    "metadataVerification": {
+      "status": "verified",
+      "sourceUrl": "https://api.venice.ai/api/v1/models?type=text",
+      "verifiedAt": "2026-10-23",
+      "note": "Provider route prices, context, output limits, input modalities and privacy verified against the Venice model catalog. OMA applies its listed markup."
     }
   },
   {
@@ -278,7 +459,21 @@
       "tools",
       "multimodal",
       "uncensored"
-    ]
+    ],
+    "privacy": "private",
+    "inputModalities": [
+      "text",
+      "image"
+    ],
+    "outputModalities": [
+      "text"
+    ],
+    "metadataVerification": {
+      "status": "verified",
+      "sourceUrl": "https://api.venice.ai/api/v1/models?type=text",
+      "verifiedAt": "2026-10-23",
+      "note": "Provider route prices, context, output limits, input modalities and privacy verified against the Venice model catalog. OMA applies its listed markup."
+    }
   },
   {
     "id": "xiaomi-mimo-v2-5",
@@ -297,9 +492,24 @@
       "reasoning",
       "coding",
       "tools",
-      "multimodal",
-      "fast"
-    ]
+      "multimodal"
+    ],
+    "privacy": "private",
+    "inputModalities": [
+      "text",
+      "image",
+      "audio",
+      "video"
+    ],
+    "outputModalities": [
+      "text"
+    ],
+    "metadataVerification": {
+      "status": "verified",
+      "sourceUrl": "https://api.venice.ai/api/v1/models?type=text",
+      "verifiedAt": "2026-10-23",
+      "note": "Provider route prices, context, output limits, input modalities and privacy verified against the Venice model catalog. OMA applies its listed markup."
+    }
   },
   {
     "id": "deepseek-v4-flash-0731",
@@ -317,9 +527,21 @@
       "chat",
       "reasoning",
       "coding",
-      "tools",
-      "fast"
-    ]
+      "tools"
+    ],
+    "privacy": "private",
+    "inputModalities": [
+      "text"
+    ],
+    "outputModalities": [
+      "text"
+    ],
+    "metadataVerification": {
+      "status": "verified",
+      "sourceUrl": "https://api.venice.ai/api/v1/models?type=text",
+      "verifiedAt": "2026-10-23",
+      "note": "Provider route prices, context, output limits, input modalities and privacy verified against the Venice model catalog. OMA applies its listed markup."
+    }
   },
   {
     "id": "google-gemma-4-31b-it",
@@ -329,7 +551,7 @@
     "markupPercent": 50,
     "displayName": "Gemma 4 31B",
     "category": "budget",
-    "maxTokens": 16384,
+    "maxTokens": 8192,
     "contextWindow": 256000,
     "maxOutputTokens": 8192,
     "supportsStreaming": true,
@@ -337,9 +559,23 @@
       "chat",
       "reasoning",
       "tools",
-      "multimodal",
-      "fast"
-    ]
+      "multimodal"
+    ],
+    "privacy": "private",
+    "inputModalities": [
+      "text",
+      "image",
+      "video"
+    ],
+    "outputModalities": [
+      "text"
+    ],
+    "metadataVerification": {
+      "status": "verified",
+      "sourceUrl": "https://api.venice.ai/api/v1/models?type=text",
+      "verifiedAt": "2026-10-23",
+      "note": "Provider route prices, context, output limits, input modalities and privacy verified against the Venice model catalog. OMA applies its listed markup."
+    }
   },
   {
     "id": "minimax-m2-7",
@@ -364,7 +600,20 @@
     ],
     "customerInputPricePer1M": 0.02,
     "customerOutputPricePer1M": 0.02,
-    "upstreamCostKnown": false
+    "upstreamCostKnown": false,
+    "metadataVerification": {
+      "status": "unverified",
+      "sourceUrl": "https://api.openbroker.gonka.gg/v1/models",
+      "verifiedAt": "2026-10-23",
+      "note": "The provider catalog confirms this model ID but publishes no context, output, capability or cost metadata. Limits shown are OMA configuration; retail token rates are set by OMA."
+    },
+    "privacy": "unverified",
+    "inputModalities": [
+      "text"
+    ],
+    "outputModalities": [
+      "text"
+    ]
   },
   {
     "id": "deepseek-v4-flash-0731-openbroker",
@@ -389,7 +638,21 @@
     ],
     "customerInputPricePer1M": 0.02,
     "customerOutputPricePer1M": 0.02,
-    "upstreamCostKnown": false
+    "upstreamCostKnown": false,
+    "metadataVerification": {
+      "status": "unverified",
+      "sourceUrl": "https://api.openbroker.gonka.gg/v1/models",
+      "verifiedAt": "2026-10-23",
+      "note": "The provider catalog confirms this model ID but publishes no context, output, capability or cost metadata. Limits shown are OMA configuration; retail token rates are set by OMA."
+    },
+    "privacy": "unverified",
+    "inputModalities": [
+      "text"
+    ],
+    "outputModalities": [
+      "text"
+    ],
+    "pageId": "deepseek-v4-flash-0731"
   },
   {
     "id": "zai-org-glm-5-3",
@@ -415,6 +678,19 @@
     ],
     "customerInputPricePer1M": 0.02,
     "customerOutputPricePer1M": 0.02,
-    "upstreamCostKnown": false
+    "upstreamCostKnown": false,
+    "metadataVerification": {
+      "status": "unverified",
+      "sourceUrl": "https://api.openbroker.gonka.gg/v1/models",
+      "verifiedAt": "2026-10-23",
+      "note": "The provider catalog confirms this model ID but publishes no context, output, capability or cost metadata. Limits shown are OMA configuration; retail token rates are set by OMA."
+    },
+    "privacy": "unverified",
+    "inputModalities": [
+      "text"
+    ],
+    "outputModalities": [
+      "text"
+    ]
   }
 ]

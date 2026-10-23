@@ -71,6 +71,7 @@ export async function decideUsageRefund(adminId: string, input: DecideRefundBody
 			}).where(eq(creditBalances.userId, row.userId)).returning({ userId: creditBalances.userId });
 			if (!balance) throw new RefundError("Account credit ledger is missing; reconcile it before granting", 409);
 			await tx.update(usageRecords).set({ refundedAt: sql`now()` }).where(eq(usageRecords.id, usage.id));
+			await tx.execute(sql`UPDATE inference_financial_receipts SET refunded_cents=${usage.totalCents}::numeric,updated_at=NOW() WHERE request_id=${usage.requestId}`);
 		}
 		await tx.update(refundRequests).set({
 			status: input.decision, notes: encodeEnvelope({ u: usageId ?? undefined, n: input.adminNote }),

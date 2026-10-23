@@ -68,17 +68,28 @@ export function getModelPricing(modelId: string): ModelPricing {
 		return {
 			inputPer1M: m.customerInputPricePer1M, outputPer1M: m.customerOutputPricePer1M,
 			markup: 0, ...costFields,
+			...(m.extendedPricing ? { extended: {
+				contextTokenThreshold: m.extendedPricing.contextTokenThreshold,
+				pricing: {
+					inputPer1M: m.customerInputPricePer1M, outputPer1M: m.customerOutputPricePer1M, markup: 0,
+					costInputPer1M: m.extendedPricing.inputPricePer1M,
+					costOutputPer1M: m.extendedPricing.outputPricePer1M, costKnown,
+				},
+			} } : {}),
 		};
 	}
 	return {
 		inputPer1M: m.inputPricePer1M,
 		outputPer1M: m.outputPricePer1M,
 		markup: m.markupPercent,
+		...costFields,
 		...(m.extendedPricing ? { extended: {
 			contextTokenThreshold: m.extendedPricing.contextTokenThreshold,
 			pricing: {
 				inputPer1M: m.extendedPricing.inputPricePer1M,
 				outputPer1M: m.extendedPricing.outputPricePer1M, markup: m.markupPercent,
+				costInputPer1M: m.extendedPricing.inputPricePer1M,
+				costOutputPer1M: m.extendedPricing.outputPricePer1M, costKnown,
 			},
 		} } : {}),
 	};

@@ -42,7 +42,7 @@ const STEPS: Step[] = [
 		n: "02",
 		title: "Get your API key",
 		description:
-			"One key works across every model and provider. Rotate, scope, and revoke from your dashboard at any time.",
+			"One key accesses the catalog within its model and IP restrictions. Rotate or revoke it from your dashboard.",
 		icon: Key,
 	},
 	{

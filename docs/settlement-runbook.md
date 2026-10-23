@@ -21,6 +21,13 @@ x402 recipient from `GET https://www.oma-ai.com/x402/info` and compare it with t
 intended recipient. Direct-deposit instructions can specify a different address;
 do not substitute it for x402 or use an address copied from an old runbook.
 
+Read `maxAtomicAmount` from the same response before signing. The public verify
+route caps funding at the configured `USDC_DEPOSIT_MAX_CENTS` ($10,000 default),
+with exact integer atomic-unit comparison before any transfer verification or
+broadcast. `x402_funding_limit` is a non-retryable 400 for that authorization.
+Positive sub-cent x402 payments remain supported. Do not split an unexpectedly
+large payment automatically; confirm the intended amount and configured limit.
+
 ## Direct wallet deposit recovery
 
 The direct deposit flow uses a customer-paid USDC transfer and an EIP-191
@@ -44,6 +51,11 @@ ownership proof, separately from x402's relayed EIP-3009 authorization.
 The API still verifies the user-bound challenge, recovered wallet signer and
 actual transfer evidence. Client recovery metadata cannot grant ownership or
 credits by itself.
+
+If any transfer in a scanned block range fails processing, the recovery cursor
+stays at the previous block. Other transfers are still processed, and the range
+is retried on the next iteration. Durable credit claims make that replay safe;
+a temporary database or RPC error must not advance the cursor past paid funds.
 
 ## The two funding operations
 
@@ -89,6 +101,90 @@ driver messages.
 - `x402_credit_failed` after confirmed payment means crediting needs a retry or operator investigation. Preserve the hash and retry settlement; do not collect another payment.
 
 Ordinary chat uses the prepaid balance with an API key. An insufficient-credit 402 on inference is not a request to attach a payment signature to the chat call. Fund separately, then retry inference.
+
+## Inference holds and reconciliation
+
+Migration `0007_inference_credit_reservations` must be applied before the API
+release that uses prepaid holds. Both chat formats reserve a conservative
+maximum charge before inference. The spendable balance excludes the hold.
+Completed usage and its actual charge settle atomically; unused credits return
+to spendable balance. Known pre-execution rejections release once. An uncertain
+upstream outcome, stream cancellation, usage exceeding its quoted bound, or
+billing-store outage retains the hold for review. There is no timed automatic
+refund. Paid inference does not retry an ambiguous upstream attempt.
+
+The native operator API provides `GET /v1/admin/credit-holds` (default unresolved
+states; optional `state`, `userId`, `limit` up to 100, and `offset` up to 10,000)
+and `GET /v1/admin/credit-holds/:requestId`. Both require administrator auth,
+are rate limited, and return `Cache-Control: no-store`. The detail includes the
+usage/cost receipt when one exists. These routes are not proxied by the public
+website. Customer balance endpoints separately report active `reservedCents`
+and uncertain `reconciliationCents`, preserving fractional cents as strings.
+
+Detached accounting remains available after the account-linked hold has
+cascaded on deletion: native `GET /v1/admin/credit-holds-receipts` lists up to
+100 unresolved financial intents, and `/:requestId` reads one receipt. These
+use the same operator-only controls. The receipt has no account/customer
+content or foreign key and is created before inference, so an in-flight account
+deletion or worker crash does not erase the original intent. A failed attempt
+to update it during a database outage leaves that original row held for review.
+
+Keep the customer's request ID and idempotency key. Reuse the same key while
+investigating; it cannot begin another request while a held or reconciliation
+reservation survives. Do not recommend a new key or refund solely because the
+client disconnected. A cancelled stream may have incurred an upstream bill.
+History deletion does not erase holds or retry claims. Account deletion
+cascades account-linked holds, as it does account usage records.
+
+Use read-only queries against the intended environment. These show unresolved
+holds, the associated usage receipt, and the distinction between spendable and
+held credits:
+
+```sql
+SELECT r.request_id, r.user_id, r.state, r.reserved_cents,
+       r.created_at, r.updated_at, u.status AS usage_status,
+       u.provider_response_id, u.input_tokens, u.output_tokens, u.cost_cents, u.total_cents
+FROM inference_credit_reservations r
+LEFT JOIN usage_records u ON u.request_id = r.request_id
+WHERE r.state IN ('held', 'reconciliation')
+ORDER BY r.created_at;
+
+SELECT request_id, requested_model, model, provider, provider_response_id,
+       reserved_cents, cost_cents, charged_cents, refunded_cents,
+       cost_known, usage_verified, state, pricing_snapshot, created_at
+FROM inference_financial_receipts
+WHERE state IN ('held', 'reconciliation') ORDER BY created_at;
+
+SELECT b.user_id, b.balance_cents AS spendable_cents,
+       b.total_deposited_cents, b.total_used_cents,
+       COALESCE(h.held_cents, 0) AS held_cents
+FROM credit_balances b
+LEFT JOIN (
+  SELECT user_id, SUM(reserved_cents) AS held_cents
+  FROM inference_credit_reservations
+  WHERE state IN ('held', 'reconciliation') GROUP BY user_id
+) h USING (user_id);
+
+SELECT network_id, tx_hash, attempts, next_attempt_at, settled_at
+FROM settlement_dlq ORDER BY settled_at;
+```
+
+Compare the original provider request and timestamp with provider billing
+history. Venice's current read endpoints are `/api/v1/billing/balance` and
+`/api/v1/billing/usage-history`; the old `/billing/usage` endpoint is removed.
+Do not log provider credentials or response content. A catalog token-price
+estimate is not a provider invoice, and OpenBroker/Gonka USD cost remains
+unknown until GNK procurement cost is recorded.
+
+Once the original outcome is verified, resolve the original reservation in one
+reviewed transaction: lock the reservation and balance, verify its still-held
+state, record the evidenced actual customer charge/usage, return only the
+unused hold, update lifetime usage and mark the reservation settled. For
+verified zero execution, return the hold and mark it released. Keep terminal
+rows so a repeated resolution cannot refund or charge twice. There is no public
+automatic hold-resolution endpoint; operator reconciliation must use an
+authorized database transaction with independent evidence. Do not delete a
+hold or edit only the balance to clear the alert.
 
 ## Card checkout and webhook reconciliation
 

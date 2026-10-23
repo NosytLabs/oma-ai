@@ -35,6 +35,7 @@ export interface StreamingProxyArgs {
 	skipBilling?: boolean;
 	/** API key row id for Bearer-auth callers (null for website sessions). */
 	apiKeyId?: string | null;
+	reservation?: boolean;
 	/** Signal the terminal inference outcome before an outer response guard sees EOF. */
 	onFinalized?: (status: "completed" | "error" | "aborted") => void;
 }
@@ -60,29 +61,51 @@ export function createStreamingProxy(
 		const estimatedOutput = () => estimateTokens(contentText) + estimateTokens(reasoningText) + estimateTokens(toolText);
 		let finalPromptTokens: number | null = null;
 		let finalOutputTokens: number | null = null;
+		let providerResponseId: string | undefined;
+		let terminalSeen = false;
+		let malformedFrame = false;
+		let completionFrameSeen = false;
+		let usageFinalized = false;
 		let sseCarry = "";
 		let terminated = false;
 		async function finishUsage(status: "completed" | "error" | "aborted") {
+			if (usageFinalized) return;
+			usageFinalized = true;
+			const usageVerified = finalPromptTokens !== null && finalOutputTokens !== null && !malformedFrame;
+			const missingPaidUsage = recordArgs.reservation && status === "completed" && (!usageVerified || !terminalSeen || !completionFrameSeen);
+			let finalizedStatus = missingPaidUsage ? "error" as const : status;
 			try {
 				await recordUsage({
 					...recordArgs,
 					promptTokens: finalPromptTokens ?? recordArgs.promptTokens,
 					outputTokens: finalOutputTokens ?? recordArgs.outputTokens ?? estimatedOutput(),
-					status,
+					status: finalizedStatus,
+					providerResponseId,
+					usageVerified,
 				});
+				if (missingPaidUsage) throw new ProviderError("Provider usage is incomplete; credits are held for reconciliation", 503);
 			} catch (err) {
 				logger.warn({ err, status }, "[proxy] recordUsage failed");
+				if (recordArgs.reservation) {
+					finalizedStatus = "error";
+					throw err;
+				}
 			} finally {
-				recordArgs.onFinalized?.(status);
+				recordArgs.onFinalized?.(finalizedStatus);
 			}
 		}
 		function consumeLine(line: string) {
 			if (!line.startsWith("data:")) return;
 			const payload = line.slice(5).trim();
-			if (!payload || payload === "[DONE]") return;
+			if (payload === "[DONE]") { terminalSeen = true; return; }
+			if (!payload) return;
 			let obj;
-			try { obj = JSON.parse(payload); } catch { return; }
+			try { obj = JSON.parse(payload); } catch { malformedFrame = true; return; }
+			if (!obj || typeof obj !== "object" || Array.isArray(obj)) { malformedFrame = true; return; }
+			if (Array.isArray(obj.choices) && obj.choices.length > 0) completionFrameSeen = true;
 			if (obj?.error) throw new ProviderError("Upstream stream failed", 502);
+			if (typeof obj?.id === "string") providerResponseId = obj.id.slice(0, 256);
+			if (typeof obj?.choices?.[0]?.finish_reason === "string" && obj.choices[0].finish_reason) terminalSeen = true;
 			try {
 				const delta = obj.choices?.[0]?.delta;
 				if (typeof delta?.content === "string") contentText += delta.content;
@@ -92,8 +115,12 @@ export function createStreamingProxy(
 				if (Array.isArray(delta?.tool_calls)) for (const tool of delta.tool_calls) {
 					if (typeof tool?.function?.arguments === "string") toolText += tool.function.arguments;
 				}
-				finalOutputTokens = tokenCount(obj.usage?.completion_tokens) ?? finalOutputTokens;
-				finalPromptTokens = tokenCount(obj.usage?.prompt_tokens) ?? finalPromptTokens;
+				// The latest usage frame is authoritative. A malformed final frame
+				// cannot borrow valid preliminary counters and silently underbill.
+				if (obj.usage !== undefined && obj.usage !== null) {
+					finalOutputTokens = tokenCount(obj.usage?.completion_tokens);
+					finalPromptTokens = tokenCount(obj.usage?.prompt_tokens);
+				}
 			} catch { /* Malformed upstream SSE lines pass through unchanged. */ }
 		}
 
@@ -112,10 +139,10 @@ export function createStreamingProxy(
 												controller.enqueue(encoder.encode(rewritten));
 												sseCarry = "";
 										}
-										terminated = true;
 										// Use upstream-reported usage when available (OMA-AI sends a final
 										// usage chunk at the end of the stream), falling back to estimates.
 										await finishUsage("completed");
+										terminated = true;
 										// Admission guards must observe persisted usage before EOF.
 										controller.close();
 										return;
@@ -182,12 +209,18 @@ export async function parseNonStreamingResponse(
 			estimateTokens(completionText) + estimateTokens(typeof reasoning === "string" ? reasoning : "") + estimateTokens(toolText));
 		const finalPromptTokens = tokenCount(data?.usage?.prompt_tokens) ?? recordArgs.promptTokens;
 
+		const usageVerified = tokenCount(data?.usage?.prompt_tokens) !== null && tokenCount(data?.usage?.completion_tokens) !== null;
+		const completionValid = message && (typeof message.content === "string" || Array.isArray(message.content) || (Array.isArray(message.tool_calls) && message.tool_calls.length > 0));
+		const missingPaidUsage = recordArgs.reservation && (!usageVerified || !completionValid);
 		await recordUsage({
 				...recordArgs,
 				promptTokens: finalPromptTokens,
 				outputTokens: completionTokens,
-				status: "completed",
+				status: missingPaidUsage ? "error" : "completed",
+				providerResponseId: typeof data.id === "string" ? data.id.slice(0, 256) : undefined,
+				usageVerified,
 		});
+		if (missingPaidUsage) throw new ProviderError("Provider usage is incomplete; credits are held for reconciliation", 503);
 
 		// OpenRouter-style: body.model is the model that actually served the request
 		// (may differ from the requested id after failover).

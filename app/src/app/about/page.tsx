@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 		locale: "en_US",
 		title: "About OMA — Open Model Access",
 		description:
-			"One gateway. Every model. Wallet auth and USDC x402 settlement — no lock-in.",
+			"A curated AI model catalog with prepaid API access, email or wallet sign-in and USDC funding on Base.",
 		url: "/about",
 		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "About OMA" }],
 	},

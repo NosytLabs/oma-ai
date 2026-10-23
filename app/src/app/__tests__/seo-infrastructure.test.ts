@@ -71,7 +71,6 @@ describe("sitemap.ts - Next.js MetadataRoute.Sitemap", () => {
 			"/deposit",
 			"/dashboard",
 			"/settings",
-			"/admin",
 			"/image-generation",
 			"/video-generation",
 			"/login",
@@ -80,10 +79,11 @@ describe("sitemap.ts - Next.js MetadataRoute.Sitemap", () => {
 		}
 	});
 
-	it("excludes removed marketing routes", async () => {
+	it("excludes removed routes", async () => {
 		const result = await sitemap();
 		const paths = result.map((e) => e.url.replace(/^https:\/\/(www\.)?oma-ai\.com/, "") || "/");
 		for (const dead of [
+			"/admin",
 			"/blog",
 			"/capabilities",
 			"/compare",
@@ -126,7 +126,7 @@ describe("robots.ts - Next.js MetadataRoute.Robots", () => {
 		}
 	});
 
-	it("disallows /api/, /admin, /dashboard, /settings, /login and deposit", () => {
+	it("disallows /api/, /dashboard, /settings, /login and deposit", () => {
 		const result = robots();
 		for (const rule of rulesArray(result)) {
 			if (rule.userAgent === "*") {
@@ -137,7 +137,6 @@ describe("robots.ts - Next.js MetadataRoute.Robots", () => {
 						: [];
 				for (const path of [
 					"/api/",
-					"/admin",
 					"/dashboard",
 					"/settings",
 					"/login",

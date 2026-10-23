@@ -251,6 +251,28 @@ describe("free-trial credit via the real signup hook", () => {
 		expect(ledger.balance).toBe(100);
 	});
 
+	it("does not write a grant while disabled and preserves a later explicit offer", async () => {
+		const { config } = await import("../config.js");
+		const ledger = fakeLedger();
+		mockDb.transaction.mockClear();
+		mockDb.insert.mockClear();
+		config.FREE_SIGNUP_CENTS = 0;
+		try {
+			await createUser("user@example.org");
+			expect(mockDb.transaction).not.toHaveBeenCalled();
+			expect(mockDb.insert).not.toHaveBeenCalled();
+			expect(ledger.grants.size).toBe(0);
+			expect(ledger.balance).toBe(0);
+
+			config.FREE_SIGNUP_CENTS = 100;
+			await createUser("user@example.org", "usr_opted_in");
+			expect(ledger.grants).toEqual(new Set(["user@example.org"]));
+			expect(ledger.balance).toBe(100);
+		} finally {
+			config.FREE_SIGNUP_CENTS = 100;
+		}
+	});
+
 	it("does not consume the one-shot trial if the balance write fails", async () => {
 		const ledger = fakeLedger(true);
 		await createUser();

@@ -12,7 +12,6 @@ const PAGES = [
   { name: 'chat', path: '/chat' },
   { name: 'dashboard', path: '/dashboard' },
   { name: 'settings', path: '/settings' },
-  { name: 'admin', path: '/admin' },
   { name: 'docs', path: '/docs' },
   { name: 'deposit', path: '/deposit' },
   { name: 'about', path: '/about' },

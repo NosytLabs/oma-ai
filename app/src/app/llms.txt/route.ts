@@ -30,7 +30,7 @@ export function GET(): Response {
 
 	const BODY = `# OMA AI — Open Model Access
 
-> One gateway. Every model. No lock-in. OpenAI-compatible inference across a curated model catalog, prepaid credits, and x402 USDC funding on Base. Check the live catalog for current availability, capabilities, and prices.
+> Chat Completions and a text/function-tool Messages adapter across a curated model catalog, with prepaid credits and USDC funding on Base. Check the live catalog for current availability, capabilities, and prices.
 
 ## Docs
 

@@ -21,6 +21,7 @@ const COMPANY: FooterSection = {
 		{ label: "Changelog", href: "/changelog" },
 		{ label: "Privacy", href: "/privacy" },
 		{ label: "Terms", href: "/terms" },
+		{ label: "Third-party notices", href: "/licenses/third-party-notices.txt" },
 	],
 };
 
@@ -41,7 +42,7 @@ export function Footer() {
 	];
 
 	// Full-height application shells supply their own navigation.
-	if (["/chat", "/dashboard", "/settings", "/admin"].some((href) => isCurrentPath(pathname, href))) return null;
+	if (["/chat", "/dashboard", "/settings"].some((href) => isCurrentPath(pathname, href))) return null;
 
 	return (
 		<footer aria-label="Site footer" className="border-t border-border bg-void">

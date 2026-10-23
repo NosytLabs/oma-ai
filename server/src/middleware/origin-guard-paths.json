@@ -1,0 +1,12 @@
+[
+  "/v1/keys",
+  "/v1/keys/*",
+  "/v1/history",
+  "/sessions",
+  "/sessions/*",
+  "/account",
+  "/v1/deposit/usdc",
+  "/v1/deposit/usdc/*",
+  "/v1/checkout",
+  "/v1/admin/*"
+]

@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
 	title: "API Documentation — OpenAI-compatible AI inference",
-	description: `OpenAI-compatible AI inference reference. ${MODEL_COUNT} models, wallet auth, x402 settlement flows, and provider routing — all behind one endpoint.`,
+	description: `OpenAI-compatible AI inference reference. ${MODEL_COUNT} models, request schemas, context limits, rate limits and prepaid billing.`,
 	alternates: { canonical: "/docs" },
 	openGraph: {
 		locale: "en_US",
@@ -30,7 +30,7 @@ export default function DocsPage() {
 			<DocsContent />
 			<nav aria-label="Documentation resources" className="border-t border-border bg-surface px-4 py-5 text-sm text-text-secondary sm:px-6 lg:pl-80">
 				<span className="mx-auto flex max-w-5xl flex-wrap gap-x-5 gap-y-2">
-					<Link href="/api/v1/openapi.json" className="hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent" rel="alternate">OpenAPI 2.1 spec</Link>
+					<Link href="/api/v1/openapi.json" className="hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent" rel="alternate">OpenAPI 3.1 spec</Link>
 					<Link href="/getting-started" className="hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">Getting started</Link>
 					<Link href="/pricing" className="hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">Pricing</Link>
 					<Link href="/contact" className="hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">Contact support</Link>

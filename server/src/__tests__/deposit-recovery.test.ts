@@ -326,7 +326,7 @@ describe("deposit-recovery lib", () => {
 						expect(mockClient.getLogs).toHaveBeenCalled();
 				});
 
-				it("continues on individual log processing error", async () => {
+				it("continues processing other logs but retains the cursor after a transfer fails", async () => {
 						mockClient.getBlockNumber.mockResolvedValueOnce(1000n);
 						mockClient.getLogs.mockResolvedValueOnce([
 								{ transactionHash: "0xabc", args: { from: "0xfrom", to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", value: 1_000_000n } },
@@ -347,7 +347,8 @@ describe("deposit-recovery lib", () => {
 
 						const result = await depositRecovery.runRecoveryIteration(mockClient as any, "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", 500n);
 
-						expect(result).toBe(1000n);
+						expect(result).toBe(500n);
+						expect(mockLimit).toHaveBeenCalledTimes(2);
 						expect(logger.error).toHaveBeenCalledWith(
 								expect.objectContaining({ txHash: "0xabc" }),
 								"[deposit-recovery] failed to process transfer, continuing",

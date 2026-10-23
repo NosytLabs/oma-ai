@@ -1,3 +1,4 @@
+import originGuardPaths from "./middleware/origin-guard-paths.json" with { type: "json" };
 import "dotenv/config";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
@@ -435,18 +436,7 @@ const authMutationLimit = rateLimit({
 // (origin-guard's own docstring says Lax is not a sufficient long-term control),
 // so the Origin/Referer guard belongs on all of these too.
 const csrfOriginGuard = originGuard();
-for (const p of [
-	"/v1/keys",
-	"/v1/keys/*",
-	"/v1/history",
-	"/sessions",
-	"/sessions/*",
-	"/account",
-	"/v1/deposit/usdc",
-	"/v1/deposit/usdc/*",
-	"/v1/checkout",
-	"/v1/admin/*",
-]) {
+for (const p of originGuardPaths) {
 	app.use(p, csrfOriginGuard);
 }
 app.use("/api/auth/*", async (c, next) => {

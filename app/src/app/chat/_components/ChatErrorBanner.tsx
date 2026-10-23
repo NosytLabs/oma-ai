@@ -40,7 +40,7 @@ interface ChatErrorBannerProps {
 }
 
 interface ErrorClassification {
-	type: "auth" | "network" | "rateLimit" | "model" | "credits" | "unknown";
+	type: "auth" | "network" | "rateLimit" | "model" | "credits" | "interrupted" | "unknown";
 	label: string;
 	suggestion: string;
 	dailyQuota?: boolean;
@@ -57,6 +57,17 @@ function classifyError(
 	isAuthenticated = false,
 ): ErrorClassification {
 	const lower = error.toLowerCase();
+
+	if (lower.startsWith("response interrupted")) {
+		return {
+			type: "interrupted",
+			label: "RESPONSE INTERRUPTED",
+			suggestion: error,
+			action: lower.includes("credits may be held")
+				? { label: "Check dashboard", href: "/dashboard?tab=usage" }
+				: undefined,
+		};
+	}
 
 	// A provider outage is distinct from the visitor's connection or quota.
 	// Generic service failures do not identify their cause, so do not guess.
@@ -213,6 +224,12 @@ const TYPE_STYLES: Record<
 		text: "text-error",
 		badge: "bg-error/20 text-error",
 	},
+	interrupted: {
+		bg: "bg-warning/10",
+		border: "border-warning/20",
+		text: "text-warning",
+		badge: "bg-warning/20 text-warning",
+	},
 	credits: {
 		bg: "bg-warning/10",
 		border: "border-warning/20",
@@ -248,6 +265,7 @@ const TYPE_STYLES: Record<
 const TYPE_ICONS: Record<ErrorClassification["type"], typeof AlertCircle> = {
 	auth: Wallet,
 	credits: Coins,
+	interrupted: AlertCircle,
 	rateLimit: Clock,
 	model: Bot,
 	network: WifiOff,
@@ -361,7 +379,7 @@ export function ChatErrorBanner({
 						)}
 
 						{/* Credits CTA */}
-						{classification.type === "credits" &&
+						{(classification.type === "credits" || classification.type === "interrupted") &&
 							classification.action?.href && (
 								<Link
 									href={classification.action.href}
@@ -372,7 +390,7 @@ export function ChatErrorBanner({
 	hover:bg-warning/90 transition-colors duration-200 ease-out active:scale-[0.97] focus-ring min-h-[32px]
 	"
 								>
-									Top Up Credits
+									{classification.type === "interrupted" ? "Check dashboard" : "Top Up Credits"}
 									<ArrowRight className="w-3 h-3" />
 								</Link>
 							)}
@@ -411,6 +429,7 @@ export function ChatErrorBanner({
 						{/* Retry — only for recoverable errors (not daily quota) */}
 						{classification.type !== "auth" &&
 							classification.type !== "credits" &&
+							!(classification.type === "interrupted" && classification.action?.href) &&
 							!dailyQuotaError &&
 							onRetry && (
 								<button

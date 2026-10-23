@@ -14,7 +14,6 @@ import { getModelPricing } from "../../inference/billing-service.js";
 import type { UsageProvider } from "../../inference/billing.js";
 import {
 		parseNonStreamingResponse,
-		assertSufficientBalance,
 		ProviderError,
 		estimateTokens,
 		flattenMessageContent,
@@ -24,6 +23,7 @@ import { anthropicSchema, toOpenAIMessages, toOpenAITools, toOpenAIToolChoice } 
 import { createAnthropicStream, anthropicStopReason } from "./stream.js";
 import { logger } from "../../lib/logger.js";
 import { inferenceIdempotency } from "../../middleware/inference-idempotency.js";
+import { reservationQuote, reserveInferenceCredits, failInferenceReservation } from "../../inference/credit-reservations.js";
 
 
 /** Convert OpenAI non-streaming response → Anthropic message */
@@ -139,15 +139,20 @@ anthropicRoutes.post(
 				const promptText = openAIMessages.map((m) => flattenMessageContent(m.content as string | unknown[])).join("\n");
 				const promptTokens = estimateTokens(promptText);
 
+				let reserved = false;
+				let providerStarted = false;
 				try {
-						await assertSufficientBalance(userId, getModelPricing(model), promptTokens, max_tokens);
+						const quote = reservationQuote({ modelId: model, allowedModels: c.get("apiKey")?.allowedModels, messages: openAIMessages, tools: toOpenAITools(tools), max_tokens });
+						await reserveInferenceCredits(userId, requestId, quote.cents, { requestedModel: model, pricingSnapshot: quote.pricingSnapshot });
+						reserved = true;
+						providerStarted = true;
 						const { response: upstreamResp, actualModelId, attemptCount } =
 							await routeRequestWithFallback({
 								modelId: model,
 								allowedModels: c.get("apiKey")?.allowedModels,
 								messages: openAIMessages,
 								stream,
-								max_tokens,
+								max_tokens: quote.maxTokens,
 								temperature,
 								top_p,
 								tools: toOpenAITools(tools),
@@ -155,6 +160,7 @@ anthropicRoutes.post(
 								userId,
 								requestId,
 								signal: c.req.raw.signal,
+								prepaidReservation: reserved,
 						});
 
 						const actualModelDef = getModelById(actualModelId) || modelDef;
@@ -186,6 +192,7 @@ anthropicRoutes.post(
 								pricing: actualPricing,
 								requestId,
 								startedAt,
+								reservation: reserved,
 							});
 								return c.body(anthropicStream, 200);
 						}
@@ -202,11 +209,13 @@ anthropicRoutes.post(
 											pricing: actualPricing,
 											requestId,
 											startedAt,
+											reservation: reserved,
 										});
 
 						const anthropicMsg = toAnthropicMessage(data, actualModelId, requestId, { promptTokens: actualPromptTokens, outputTokens });
 						return c.json(anthropicMsg);
 				} catch (err) {
+						if (reserved) await failInferenceReservation(requestId, !providerStarted || (err instanceof ProviderError && err.executionRejected && !err.billingUncertain)).catch(failure => logger.error({ err: failure, requestId }, "[anthropic] reservation finalization requires reconciliation"));
 						if (err instanceof ProviderError) {
 								const status = err.status >= 500 ? 502 : err.status;
 								return c.json(

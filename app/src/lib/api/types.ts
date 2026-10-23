@@ -46,6 +46,10 @@ export interface ApiKeyWithSecret extends ApiKey {
 
 export interface BalanceResponse {
 	balanceCents: string;
+	/** Budgets held for pending requests, excluded from spendable balance. */
+	reservedCents?: string;
+	/** Uncertain upstream costs awaiting review, excluded from spendable balance. */
+	reconciliationCents?: string;
 	totalDepositedCents: string;
 	totalUsedCents: string;
 	lastActivityAt: string | null;
@@ -136,11 +140,21 @@ export interface Model {
 	category?: string;
 	modality?: string;
 	context_length?: number;
+	max_output_tokens?: number;
+	privacy?: "private" | "anonymized";
+	metadata_verification?: {
+		status: "verified" | "unverified";
+		source_url?: string;
+		verified_at?: string;
+		note?: string;
+	};
+	architecture?: { input_modalities: string[]; output_modalities: string[] };
 	supports_streaming?: boolean;
 	supports_tools?: boolean;
 	pricing?: {
-		prompt: string;
-		completion: string;
+		prompt: number;
+		completion: number;
+		extended?: { context_token_threshold: number; prompt: number; completion: number };
 	};
 }
 

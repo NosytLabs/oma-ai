@@ -1,11 +1,16 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { generateMetadata } from "../[slug]/page";
+import { generateMetadata, generateStaticParams } from "../[slug]/page";
 
 vi.mock("../[slug]/_components/ModelDetail", () => ({ ModelDetail: () => null }));
 
 afterEach(() => vi.unstubAllGlobals());
 
 describe("model detail indexing", () => {
+	it("generates one reference page for DeepSeek's two provider routes", () => {
+		const params = generateStaticParams();
+		expect(params).toContainEqual({ slug: "deepseek-v4-flash-0731" });
+		expect(params).not.toContainEqual({ slug: "deepseek-v4-flash-0731-openbroker" });
+	});
 	it("keeps catalog reference pages indexable without checking provider health", async () => {
 		const fetch = vi.fn().mockResolvedValue({
 			ok: true,

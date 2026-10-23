@@ -41,7 +41,7 @@ const ENTRIES: {
 	{
 		date: "2026-10-19",
 		title: "Self-serve refunds",
-		body: "Signed-in users can request a refund for completed payments from the dashboard; an admin review then settles or denies the request. The refund endpoints (/v1/refunds, /v1/admin/refunds) are documented in /docs and exposed in the public OpenAPI spec.",
+		body: "Signed-in users can view refund requests in the dashboard. Eligible usage charges can be submitted for review when credit refunds are available; approved requests return the original charge as OMA credits.",
 		tags: ["feature", "api"],
 	},
 	{
@@ -83,7 +83,7 @@ const ENTRIES: {
 	{
 		date: "2026-09-05",
 		title: "Status page + changelog launched",
-		body: "Two frequently-requested pages are live: /status shows live health of the site, gateway, and free chat; /changelog (this page) records notable changes going forward.",
+		body: "The status page shows live health of the site, gateway, and free chat. This changelog records notable product changes.",
 		tags: ["feature", "site"],
 	},
 	{

@@ -10,6 +10,7 @@ import { logger } from "../lib/logger.js";
 import { and, eq, sql } from "drizzle-orm";
 import { getModelPricing, pricingForContext } from "./billing-service.js";
 import { ProviderError } from "./provider-route.js";
+import { settleInferenceReservation, recordFinancialOutcome } from "./credit-reservations.js";
 
 export type UsageProvider = "venice" | "litellm" | "tinyfish" | "surplus" | "oma-ai";
 
@@ -41,6 +42,11 @@ export interface RecordUsageArgs {
 	 * Null for session/guest website chat. Lets analytics tell paid API
 	 * traffic apart from free website traffic on the same model. */
 	apiKeyId?: string | null;
+	/** This paid request reserved its maximum charge before inference. */
+	reservation?: boolean;
+	/** Upstream response reference for cost reconciliation; no prompt content. */
+	providerResponseId?: string;
+	usageVerified?: boolean;
 }
 
 /**
@@ -63,9 +69,8 @@ function estimateUserCostCents(
 }
 
 /**
-	* Preflight the authenticated credit balance. This is deliberately a read
-	* only check; the conditional UPDATE in recordUsage is the authoritative
-	* final deduction and protects against concurrent callers.
+	* Legacy read-only affordability helper. Paid HTTP routes additionally reserve
+	* credit atomically before inference; this helper alone does not admit work.
 	*/
 export async function assertSufficientBalance(
 		userId: string,
@@ -160,8 +165,14 @@ export async function recordUsage(args: RecordUsageArgs): Promise<void> {
 		// to deduct. The daily-limit middleware already tracks anon usage in
 		// Redis. Skip the DB write entirely for anon to avoid the FK throw.
 		const isAnonymous = userId === "anonymous" || !userId;
+		const financialOutcome = {
+			requestId, model, provider, providerResponseId: args.providerResponseId,
+			promptTokens, outputTokens, costCents: upstreamCostCents,
+			costKnown: appliedPricing.costKnown !== false, usageVerified: args.usageVerified ?? false,
+		};
 
 		let deductionRejected = false;
+		let reservationRejected = false;
 				let duplicateRecord = false;
 					try {
 					await db.transaction(async (tx) => {
@@ -189,6 +200,8 @@ export async function recordUsage(args: RecordUsageArgs): Promise<void> {
 							.insert(usageRecords)
 							.values({
 								requestId,
+								providerResponseId: args.providerResponseId?.slice(0, 256) ?? null,
+								usageVerified: args.usageVerified ?? false,
 								userId,
 								apiKeyId,
 								model,
@@ -218,7 +231,11 @@ export async function recordUsage(args: RecordUsageArgs): Promise<void> {
 											return;
 										}
 
-						if (shouldCharge) {
+						if (args.reservation) {
+							reservationRejected = !await settleInferenceReservation(tx, userId, requestId, userCostCents, shouldCharge);
+							if (reservationRejected) await tx.update(usageRecords).set({ status: "error", totalCents: "0", markupCents: appliedPricing.costKnown === false ? "0" : (-upstreamCostCents).toFixed(8) }).where(eq(usageRecords.requestId, requestId));
+							await recordFinancialOutcome(tx, { ...financialOutcome, chargedCents: shouldCharge && !reservationRejected ? userCostCents : 0, state: shouldCharge && !reservationRejected ? "settled" : "reconciliation" });
+						} else if (shouldCharge) {
 							const deducted = await deductCreditsIfSufficient(
 								userId,
 								userCostCents,
@@ -243,6 +260,7 @@ export async function recordUsage(args: RecordUsageArgs): Promise<void> {
 							}
 						}
 					});
+				if (reservationRejected) throw new ProviderError("Provider usage exceeded the prepaid limit; contact support with the request ID", 503);
 				// Only claim a deduction that actually happened. When the guarded
 				// UPDATE matched no rows (insufficient balance, or a concurrent
 				// request won the race) the user was NOT charged, so recording
@@ -281,5 +299,9 @@ export async function recordUsage(args: RecordUsageArgs): Promise<void> {
 								});
 							} catch (err) {
 								logger.error({ err, requestId }, "[proxy] usage record failed");
+								if (args.reservation) {
+									await recordFinancialOutcome(db as never, { ...financialOutcome, chargedCents: 0, state: "reconciliation" }).catch(failure => logger.error({ err: failure, requestId }, "[billing] detached receipt requires reconciliation"));
+									throw err;
+								}
 							}
 						}

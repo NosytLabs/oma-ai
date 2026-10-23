@@ -29,9 +29,11 @@ import {
 import { logger } from "../lib/logger.js";
 import { auditLog, createAuditLogger } from "../middleware/audit.js";
 import { adminAnalyticsRoutes } from "./admin-analytics.js";
+import { adminCreditHoldsRoutes } from "./admin-credit-holds.js";
 
 export const adminRoutes = new Hono<OmaEnv>();
 adminRoutes.route("/", adminAnalyticsRoutes);
+adminRoutes.route("/", adminCreditHoldsRoutes);
 
 // ---------- POST /v1/admin/site-settings ----------
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { Coins, MessageSquare } from "lucide-react";
+import Link from "next/link";
 import { estimateTokens } from "@/lib/text";
 import { useSharedLiveModelCatalog } from "./chat-message-shared";
 
@@ -51,7 +52,7 @@ export function CostEstimate({
 	}
 
 	return (
-		<div className="flex items-center gap-3 text-[11.5px] font-mono text-text-muted uppercase tracking-wider">
+		<div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px] font-mono text-text-muted uppercase tracking-wider">
 			<div className="flex items-center gap-1.5">
 				<MessageSquare className="w-3 h-3 text-[var(--color-accent)]" />
 				<span>{inputTokens} TK</span>
@@ -66,6 +67,7 @@ export function CostEstimate({
 					{label}
 				</span>
 			</div>
+			{hasPricing && !freeWebsiteChat && <Link href="/docs#pricing" className="text-[10px] normal-case tracking-normal text-text-secondary underline underline-offset-2" title="Paid requests temporarily reserve the full input-context budget plus the reply budget. Unused credits return after the cost is confirmed.">A larger temporary credit reserve applies</Link>}
 		</div>
 	);
 }

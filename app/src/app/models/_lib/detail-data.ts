@@ -3,6 +3,8 @@ import { formatContextLength, resolveModelCapabilities, type Model, type ModelCa
 /** Fields returned by OMA's /v1/models endpoint. Prices are already per 1M. */
 export interface LiveModelDetails extends ModelCapabilityMetadata {
 	id: string;
+	privacy?: string;
+	metadata_verification?: { status: string; source_url: string; verified_at: string; note: string };
 	available?: boolean;
 	unavailable_reason?: string;
 	context_length?: number | null;
@@ -27,6 +29,13 @@ export function withLiveModelDetails(model: Model, live: LiveModelDetails | null
 		: model.contextTokens;
 	return {
 		...model,
+		privacy: live.privacy ?? model.privacy,
+		metadataVerification: live.metadata_verification ? {
+			status: live.metadata_verification.status,
+			sourceUrl: live.metadata_verification.source_url,
+			verifiedAt: live.metadata_verification.verified_at,
+			note: live.metadata_verification.note,
+		} : model.metadataVerification,
 		available: live.available,
 		unavailableReason: live.unavailable_reason ?? model.unavailableReason,
 		inputPricePer1M: priceOrFallback(live.pricing?.prompt, model.inputPricePer1M),

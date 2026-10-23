@@ -39,13 +39,13 @@ export async function proxy(req: NextRequest, options: { websiteChat?: boolean }
 		}
 	}
 	const path = options.websiteChat ? "/website/chat/completions" : incomingPath;
-	// Recovery and settlement jobs are invoked directly by operators or Neon.
-	// They must never be reachable through the public website proxy.
+	// Operators use the authenticated backend directly. No operator or job
+	// surface is exposed through the customer-facing website proxy.
 	let normalizedPath: string;
 	try { normalizedPath = decodeURIComponent(path); }
-	catch { return NextResponse.json({ error: "Invalid path" }, { status: 400 }); }
-	if (/^\/(?:internal|website)(?:\/|$)/i.test(normalizedPath) && !options.websiteChat) {
-		return NextResponse.json({ error: "Not found" }, { status: 404 });
+	catch { return NextResponse.json({ error: { message: "Invalid path", type: "invalid_request_error" } }, { status: 400 }); }
+	if (/^\/(?:admin|v1\/admin|internal|website)(?:\/|$)/i.test(normalizedPath) && !options.websiteChat) {
+		return NextResponse.json({ error: { message: "Not found", type: "not_found" } }, { status: 404 });
 	}
 	const url = new URL(`${API_URL}${path}${req.nextUrl.search}`);
 

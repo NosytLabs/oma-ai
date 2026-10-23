@@ -30,68 +30,48 @@ function facingPrices(m: ModelDef) {
 		};
 }
 
+/** One serialization contract for both catalog endpoints. */
+function serializeModel(m: ModelDef) {
+    return {
+        id: m.id,
+        object: "model",
+        // No creation timestamp is supplied by the curated provider metadata.
+        created: 0,
+        owned_by: m.provider ?? "oma",
+        display_name: m.displayName,
+        ...(m.description ? { description: m.description } : {}),
+        provider: m.provider,
+        category: m.category,
+        modality: "chat",
+        context_length: m.contextWindow ?? 0,
+        max_output_tokens: m.maxOutputTokens ?? m.maxTokens,
+        supports_streaming: m.supportsStreaming,
+        supports_tools: m.capabilities?.includes("tools") ?? false,
+        capabilities: m.capabilities ?? [],
+        privacy: m.privacy ?? "unverified",
+        architecture: { input_modalities: m.inputModalities ?? ["text"], output_modalities: m.outputModalities ?? ["text"] },
+        ...(m.metadataVerification ? { metadata_verification: {
+            status: m.metadataVerification.status,
+            source_url: m.metadataVerification.sourceUrl,
+            verified_at: m.metadataVerification.verifiedAt,
+            note: m.metadataVerification.note,
+        } } : {}),
+        available: providerAvailable(m),
+        ...(m.disabledReason ? { unavailable_reason: m.disabledReason } : {}),
+        pricing: facingPrices(m),
+    };
+}
+
 // OpenAI-compatible /v1/models
 modelRoutes.get("/v1/models", async (c) => {
-		await ensureCatalogLoaded();
-		const models = listAllModels();
-		return c.json({
-				object: "list",
-				data: models.map((m) => {
-						// Prices are user-facing (markup applied) so dashboards, chat cost
-						// pills, and billing all show the same number the customer is charged.
-						const prices = facingPrices(m);
-						return {
-								id: m.id,
-								object: "model",
-								created: Math.floor(Date.now() / 1000),
-								owned_by: m.provider ?? "oma",
-								display_name: m.displayName,
-								...(m.description ? { description: m.description } : {}),
-								provider: m.provider,
-								category: m.category,
-								modality: "chat",
-								context_length: m.contextWindow ?? 0,
-								max_output_tokens: m.maxOutputTokens ?? m.maxTokens,
-								supports_streaming: m.supportsStreaming,
-								supports_tools: m.capabilities?.includes("tools") ?? false,
-								capabilities: m.capabilities ?? [],
-								available: providerAvailable(m),
-								...(m.disabledReason ? { unavailable_reason: m.disabledReason } : {}),
-								pricing: prices,
-						};
-				}),
-		});
+    await ensureCatalogLoaded();
+    return c.json({ object: "list", data: listAllModels().map(serializeModel) });
 });
 
 // Single model lookup
 modelRoutes.get("/v1/models/:id", async (c) => {
-		await ensureCatalogLoaded();
-		const id = c.req.param("id");
-		const m = listAllModels().find((x) => x.id === id);
-		if (!m) {
-				return c.json(
-						{ error: { message: "Model not found", type: "not_found" } },
-						404,
-				);
-		}
-		const prices = facingPrices(m);
-		return c.json({
-				id: m.id,
-				object: "model",
-				created: Math.floor(Date.now() / 1000),
-				owned_by: m.provider ?? "oma",
-				display_name: m.displayName,
-				...(m.description ? { description: m.description } : {}),
-				provider: m.provider,
-				category: m.category,
-				modality: "chat",
-				context_length: m.contextWindow ?? 0,
-				max_output_tokens: m.maxOutputTokens ?? m.maxTokens,
-				supports_streaming: m.supportsStreaming,
-				supports_tools: m.capabilities?.includes("tools") ?? false,
-				capabilities: m.capabilities ?? [],
-				available: providerAvailable(m),
-				...(m.disabledReason ? { unavailable_reason: m.disabledReason } : {}),
-				pricing: prices,
-		});
+    await ensureCatalogLoaded();
+    const model = listAllModels().find((entry) => entry.id === c.req.param("id"));
+    if (!model) return c.json({ error: { message: "Model not found", type: "not_found" } }, 404);
+    return c.json(serializeModel(model));
 });

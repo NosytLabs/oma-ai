@@ -2,7 +2,6 @@ import path from "node:path";
 import type { NextConfig } from "next";
 import { SITE_REDIRECTS } from "./src/lib/site-redirects";
 import nextBundleAnalyzer from "@next/bundle-analyzer";
-import { walletConnectProjectId, WALLETCONNECT_CONNECT_ORIGINS, WALLETCONNECT_FRAME_ORIGINS } from "./src/lib/wallet-connect-config";
 
 const withBundleAnalyzer = nextBundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
@@ -156,9 +155,8 @@ const nextConfig: NextConfig = {
 
 function generateContentSecurityPolicy(): string {
 	// 'unsafe-eval' only in development (Next HMR / React Refresh).
-	// Production drops it; neither wallet adapter requires eval.
+	// Production drops it; injected browser wallets do not require eval.
 	const isDev = process.env.NODE_ENV !== "production";
-	const walletConnectEnabled = Boolean(walletConnectProjectId());
 	const scriptSrc = [
 		"'self'",
 		isDev ? "'unsafe-eval'" : null,
@@ -171,7 +169,6 @@ function generateContentSecurityPolicy(): string {
 
 	const connectSrc = [
 		"'self'",
-		...(walletConnectEnabled ? WALLETCONNECT_CONNECT_ORIGINS : []),
 		// Local API — only for a locally-run dev server. Gated on the
 		// environment for the same reason 'unsafe-eval' is: a production CSP
 		// allowing connect-src to localhost is NOT harmless remotely. It lets
@@ -206,7 +203,7 @@ function generateContentSecurityPolicy(): string {
 		"style-src 'self' 'unsafe-inline'",
 		"img-src 'self' data: https: blob:",
 		"font-src 'self'",
-		`frame-src 'self'${walletConnectEnabled ? ` ${WALLETCONNECT_FRAME_ORIGINS.join(" ")}` : ""}`,
+		"frame-src 'self'",
 		`connect-src ${connectSrc}`,
 		// Align with X-Frame-Options: DENY — block all framing (clickjacking).
 		"frame-ancestors 'none'",

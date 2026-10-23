@@ -9,6 +9,7 @@ import { playgroundHrefForModel } from "@/lib/playground-href";
 import {
 	MODALITY_LABELS,
 	formatPricePerMillion,
+	getModelPageHref,
 	type Model,
 	PROVIDER_COLORS,
 } from "@/lib/models-data";
@@ -58,7 +59,7 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 						/>
 						<div className="min-w-0 flex-1">
 							<Link
-								href={`/models/${model.id}`}
+								href={getModelPageHref(model)}
 								className="flex min-h-6 items-center rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel"
 							>
 								<p className="text-[15px] font-semibold tracking-tight text-text-bright break-words leading-snug transition-colors group-hover:text-accent">
@@ -157,7 +158,7 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 				<div className="mt-auto pt-4 border-t border-border/50 flex flex-wrap items-center justify-between gap-2 text-xs">
 					<span className="text-[11px] text-text-secondary font-mono tabular-nums">
 						{model.contextLength && model.contextLength !== "0"
-							? `${model.contextLength} ctx`
+							? model.metadataVerification?.status === "unverified" ? "Context unverified" : `${model.contextLength} ctx`
 							: "—"}
 					</span>
 					<div className="flex items-center gap-2 text-[11px] font-mono tabular-nums">

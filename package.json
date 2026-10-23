@@ -14,7 +14,8 @@
     "validate:server": "pnpm --filter oma-server run typecheck && pnpm --filter oma-server run lint && pnpm --filter oma-server test && pnpm --filter oma-server run build",
     "validate:typecheck": "pnpm -r run typecheck",
     "validate:lint": "pnpm -r run lint",
-    "validate:test": "pnpm -r test"
+    "validate:test": "pnpm -r test",
+    "licenses:generate": "node scripts/generate-third-party-notices.mjs"
   },
   "pnpm": {
     "overrides": {

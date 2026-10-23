@@ -7,11 +7,6 @@ instruction can't drift between documents.
 Production topology was verified on 2026-10-21. See
 [deployment verification](deployment-health.md) for release checks and failure diagnosis.
 
-The [gateway API and authentication audit](AUDIT.md)
-records the release receipt and remaining limitations. Deployment targets below
-describe the platform topology; historical audit receipts retain their original
-deployment IDs.
-
 ## Canonical host
 
 | Host | Status |
@@ -50,8 +45,9 @@ POST https://www.oma-ai.com/api/v1/checkout (session cookie)
 GET  https://www.oma-ai.com/api/v1/privacy
 ```
 
-The app's in-product `/docs` page documents these endpoints with request and
-response shapes; this list is the summary of what the live OpenAPI serves.
+The app's `/docs` page and customer OpenAPI describe supported customer
+request and response shapes. Website settings/privacy endpoints are separate
+operational metadata and are excluded from the customer OpenAPI contract.
 
 ## What runs where
 
@@ -116,6 +112,19 @@ the explicit production deploy command above. Do not add `VERCEL_TOKEN`
 merely to make a check green.
 
 ## Backend deploy (Neon)
+
+Apply pending database migrations **before** releasing dependent API code.
+Migration `0006` adds persistent inference idempotency. Migration `0007` adds
+credit reservations, detached financial receipts and provider response IDs.
+Run the repository migration command using the approved production connection,
+then verify the journal and expected tables before deploying the function.
+A successful local migration does not establish production schema readiness.
+
+If production database queries return quota-exceeded HTTP402, stop the API
+release. Resolve the account quota/plan first, migrate, deploy, and require
+native `/ready` HTTP200 before running paid signup/funding/inference checks.
+Do not replace the production environment with local fixture credentials.
+
 
 The API is a Neon Function, not a Vercel serverless function. The verified
 target is project `empty-bar-94645349` (`oma-ai-prod`), branch

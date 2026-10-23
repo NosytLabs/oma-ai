@@ -5,15 +5,7 @@ import { generalLimiter } from "@/lib/rate-limiter";
 
 export const runtime = "nodejs";
 
-/**
-	* /api/v1/models — proxies GET to backend /v1/models.
-	*
-	* Returns the full model catalog (chat + image + video + tts + embedding
-	* + asr + music + upscale + inpaint) as an OpenAI-compatible
-	* `{"object": "list", "data": [...]}` payload. Linked from the docs
-	* `/docs#available-models` section. Cache-Control from the backend is
-	* preserved so we don't re-proxy on every page load.
-	*/
+/** Public chat-model catalog. Preserve the backend's cache policy. */
 export const dynamic = "force-dynamic";
 
 export const GET = withRateLimit(

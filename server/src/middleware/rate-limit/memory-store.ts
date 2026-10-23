@@ -1,7 +1,8 @@
+import apiLimits from "../../inference/api-limits.json" with { type: "json" };
 // In-memory fallback tracker for fail-safe mode when Redis is unavailable.
 // A bounded per-process counter: enforcement degrades, availability does not.
 
-export const FALLBACK_BURST_LIMIT = 5;
+export const FALLBACK_BURST_LIMIT = apiLimits.emergencyRequestsPerMinute;
 const FALLBACK_WINDOW_MS = 60000; // 1 minute window
 
 const MAX_FALLBACK_ENTRIES = 10000;

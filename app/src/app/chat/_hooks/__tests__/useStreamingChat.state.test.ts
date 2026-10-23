@@ -170,6 +170,65 @@ describe("useStreamingChat — BUG-A: state resets on every exit path", () => {
 		);
 	});
 
+	it.each(["content", "reasoning_content"])("preserves partial %s and warns about the paid request when its reader fails", async (field) => {
+		const bytes = new TextEncoder().encode(`data: ${JSON.stringify({ choices: [{ delta: { [field]: "Partial answer" } }] })}\n\n`);
+		let reads = 0;
+		vi.stubGlobal("fetch", vi.fn(async () => new Response(new ReadableStream<Uint8Array>({
+			pull(controller) {
+				if (reads++ === 0) controller.enqueue(bytes);
+				else controller.error(new TypeError("terminated"));
+			},
+		}), { headers: { "X-OMA-Request-ID": "billing-attempt-1", "X-Request-ID": "http-trace-2" } })));
+		const { view, state } = mountChat({ model: "google-gemma-4-31b-it", stream: true });
+		await act(async () => { await view.result.current.sendMessage("hello"); });
+		expect(state.error).toContain("Response interrupted");
+		expect(state.error).toContain("credits may be held until provider cost is confirmed");
+		expect(state.error).toContain("billing-attempt-1");
+		expect(state.error).not.toContain("http-trace-2");
+		expect(state.error).not.toMatch(/cannot reach|check your connection/i);
+		expect(state.messages.find(message => message.role === "assistant")).toMatchObject(
+			field === "content" ? { content: "Partial answer" } : { reasoning: "Partial answer" },
+		);
+		expect(state.loading).toBe(false);
+	});
+
+	it("marks a partial stream that closes without a completion marker as interrupted", async () => {
+		vi.stubGlobal("fetch", vi.fn(async () => new Response(
+			'data: {"choices":[{"delta":{"content":"Incomplete answer"}}]}\n\n',
+			{ headers: { "X-Request-ID": "http-trace-only" } },
+		)));
+		const { view, state } = mountChat({ model: "google-gemma-4-31b-it", stream: true });
+		await act(async () => { await view.result.current.sendMessage("hello"); });
+		expect(state.error).toContain("Response interrupted");
+		expect(state.error).toContain("HTTP trace ID: http-trace-only");
+		expect(state.messages.find(message => message.role === "assistant")?.content).toBe("Incomplete answer");
+	});
+
+	it("keeps the usual network error when a response reader fails before delivering any content", async () => {
+		vi.stubGlobal("fetch", vi.fn(async () => new Response(new ReadableStream<Uint8Array>({
+			start(controller) { controller.error(new TypeError("terminated")); },
+		}))));
+		const { view, state } = mountChat({ model: "google-gemma-4-31b-it", stream: true });
+		await act(async () => { await view.result.current.sendMessage("hello"); });
+		expect(state.error).toMatch(/cannot reach the backend/i);
+		expect(state.error).not.toMatch(/credits may be held/i);
+	});
+
+	it("does not imply account credits are held when free website chat is interrupted", async () => {
+		let reads = 0;
+		vi.stubGlobal("fetch", vi.fn(async () => new Response(new ReadableStream<Uint8Array>({
+			pull(controller) {
+				if (reads++ === 0) controller.enqueue(new TextEncoder().encode('data: {"choices":[{"delta":{"content":"Partial free answer"}}]}\n\n'));
+				else controller.error(new TypeError("terminated"));
+			},
+		}))));
+		const { view, state } = mountChat({ model: "minimax-m2-7", stream: true });
+		await act(async () => { await view.result.current.sendMessage("hello"); });
+		expect(state.error).toContain("Response interrupted");
+		expect(state.error).not.toMatch(/credits|held/i);
+		expect(state.messages.find(message => message.role === "assistant")?.content).toBe("Partial free answer");
+	});
+
 	it("clears loading and the abort controller on a non-2xx response", async () => {
 		vi.stubGlobal(
 			"fetch",

@@ -4,12 +4,11 @@
 	* Routes a single userId-keyed chat call to the upstream matching the
 	* requested model's `provider` field, and:
 	*
-	*   - Streams the OpenAI-shaped SSE back to the browser unchanged.
-	*   - Estimates prompt/completion token counts (some upstreams don't
-	*     always include `usage` in streamed chunks).
-	*   - Deducts credits from `creditBalances` after a successful call
-	*     (5xx failures leave the balance alone).
-	*   - Records one row per request into `usageRecords` for the dashboard.
+	*   - Forwards OpenAI-shaped SSE with the served model ID.
+	*   - Reserves paid credits before upstream work and settles verified usage.
+	*   - Retains a review hold when provider execution or final usage is uncertain.
+	*   - Estimates usage only for free website chat or operational error records.
+	*   - Records request usage and preserves detached paid financial receipts.
 	*
 	* Adds a small provider markup on top of the upstream's per-token cost
 	* (defined in the `ModelDef.markupPercent` field).
@@ -32,7 +31,6 @@ import { inferenceIdempotency } from "../../middleware/inference-idempotency.js"
 import { getModelById } from "../../inference/models.js";
 import { getModelPricing } from "../../inference/billing-service.js";
 import {
-		assertSufficientBalance,
 		createStreamingProxy,
 		parseNonStreamingResponse,
 		ProviderError,
@@ -44,6 +42,8 @@ import {
 import { logger } from "../../lib/logger.js";
 import { isWebsiteChatRequest, WEBSITE_CHAT_PATH } from "../../inference/website-chat-request.js";
 import { isFreeWebsiteModel } from "../../inference/free-website-model.js";
+import { reservationQuote, reserveInferenceCredits, failInferenceReservation } from "../../inference/credit-reservations.js";
+import { boundedDefaultOutput } from "../../inference/token-utils.js";
 
 /**
 	* Check if a model is eligible for the anonymous free website chat path.
@@ -200,37 +200,23 @@ for (const path of ["/v1/chat/completions", WEBSITE_CHAT_PATH]) chatRoutes.post(
 
 				const requestId = c.get("inferenceRequestId") ?? `chatcmpl-${crypto.randomUUID()}`;
 				c.header("X-OMA-Request-ID", requestId);
+				let reserved = false;
+				let providerStarted = false;
+				let outputLimit = max_tokens ?? boundedDefaultOutput(modelDef);
 
 				try {
 				const promptText = messages.map((m) => flattenMessageContent(m.content)).join("\n");
 				const promptTokens = estimateTokens(promptText);
 
-				// Fail before calling an upstream provider when an authenticated request
-				// has no usable credit balance. The ledger remains the final atomic guard
-				// after the provider returns, but this avoids serving obviously unpaid
-				// requests and gives the client a useful 402 response.
+				// Atomically hold the worst eligible provider charge before inference.
 				if (userId && !isFreeWebsiteChat) {
-								// AUDIT 2026-09-27 / B-13 (P3): routeRequestWithFallback may
-								// serve the request with a fallback model, not the requested
-								// one. Preflight against the priciest candidate across the
-								// requested model + client fallbacks so the 402 gate is not
-								// misleading. The atomic conditional UPDATE in
-								// deductCreditsIfSufficient remains the authoritative guard.
-								const candidates = [model, ...(clientModels ?? [])];
-								let worstPricing = getModelPricing(model);
-								for (const cand of candidates) {
-										const p = getModelPricing(cand);
-										if (!p) continue;
-										if (
-												p.inputPer1M + 3 * p.outputPer1M >
-												worstPricing.inputPer1M + 3 * worstPricing.outputPer1M
-										) {
-												worstPricing = p;
-										}
-								}
-								await assertSufficientBalance(userId, worstPricing, promptTokens, max_tokens);
+								const quote = reservationQuote({ modelId: model, clientFallbacks: clientModels, allowedModels: apiKey?.allowedModels, messages, tools, max_tokens });
+								outputLimit = quote.maxTokens;
+								await reserveInferenceCredits(userId, requestId, quote.cents, { requestedModel: model, pricingSnapshot: quote.pricingSnapshot });
+								reserved = true;
 						}
 
+						providerStarted = true;
 						const { response: upstreamResp, actualModelId, attemptCount } =
 					await routeRequestWithFallback({
 								modelId: model,
@@ -238,7 +224,7 @@ for (const path of ["/v1/chat/completions", WEBSITE_CHAT_PATH]) chatRoutes.post(
 								allowedModels: apiKey?.allowedModels,
 								messages,
 								stream,
-								max_tokens,
+								max_tokens: outputLimit,
 								temperature,
 								top_p,
 								tools,
@@ -247,6 +233,7 @@ for (const path of ["/v1/chat/completions", WEBSITE_CHAT_PATH]) chatRoutes.post(
 								requestId,
 								signal: c.req.raw.signal,
 								skipBilling: isFreeWebsiteChat, // Don't deduct credits for free website chat
+								prepaidReservation: reserved,
 						});
 
 						const actualModelDef = getModelById(actualModelId) || modelDef;
@@ -286,6 +273,7 @@ for (const path of ["/v1/chat/completions", WEBSITE_CHAT_PATH]) chatRoutes.post(
 										startedAt,
 										skipBilling: isFreeWebsiteChat,
 										apiKeyId,
+										reservation: reserved,
 									});
 								return c.body(proxyStream, 200);
 						}
@@ -303,10 +291,12 @@ for (const path of ["/v1/chat/completions", WEBSITE_CHAT_PATH]) chatRoutes.post(
 										startedAt,
 										skipBilling: isFreeWebsiteChat,
 										apiKeyId,
+										reservation: reserved,
 									});
 
 						return c.json(data);
 				} catch (err) {
+						if (reserved) await failInferenceReservation(requestId, !providerStarted || (err instanceof ProviderError && err.executionRejected && !err.billingUncertain)).catch(failure => logger.error({ err: failure, requestId }, "[chat] reservation finalization requires reconciliation"));
 						if (err instanceof ProviderError) {
 								return c.json(
 										{

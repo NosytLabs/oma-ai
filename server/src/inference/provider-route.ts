@@ -29,20 +29,30 @@ export interface ProviderRoute {
 }
 
 export class ProviderError extends Error {
+	/** An attempt may have run upstream; retry/release needs reconciliation. */
+	billingUncertain = false;
+	executionRejected = false;
 	constructor(
 		message: string,
 		readonly status: number,
+		executionRejected = false,
 	) {
 		super(message);
 		this.name = "ProviderError";
+		this.executionRejected = executionRejected;
 	}
 }
 
 /** A rejected operator credential is a gateway failure, not a customer's 401. */
 export class ProviderAuthenticationError extends ProviderError {
 	constructor() {
-		super("Model provider authentication failed. Contact support.", 502);
+		super("Model provider authentication failed. Contact support.", 502, true);
 	}
+}
+
+/** Privacy is verified model metadata, never an arbitrary request flag. */
+export function isModelPrivacyAllowed(model?: ModelDef): boolean {
+	return model?.provider !== "venice" || config.OMMA_ALLOW_NON_PRIVATE_VENICE === true || model.privacy === "private";
 }
 
 export function resolveProvider(provider: string, _modelDef?: ModelDef): ProviderRoute {
@@ -55,6 +65,7 @@ export function resolveProvider(provider: string, _modelDef?: ModelDef): Provide
 			throw new ProviderError(
 				"This model is temporarily unavailable. Try another model or contact support.",
 				503,
+				true,
 			);
 		}
 		return {
@@ -72,11 +83,13 @@ export function resolveProvider(provider: string, _modelDef?: ModelDef): Provide
 		};
 	}
 	// default: venice
+	if (!isModelPrivacyAllowed(_modelDef)) throw new ProviderError("This model is temporarily unavailable under the current privacy policy. Choose a private model.", 503, true);
 	if (!config.VENICE_API_KEY) {
 		logger.error({ provider: "venice", requiredSetting: "VENICE_API_KEY" }, "[inference] provider credential missing");
 		throw new ProviderError(
 			"This model is temporarily unavailable. Try another model or contact support.",
 			503,
+			true,
 		);
 	}
 	return {
@@ -90,10 +103,11 @@ export function resolveProvider(provider: string, _modelDef?: ModelDef): Provide
 		upstreamModel: (id) => _modelDef?.veniceId ?? id,
 		extraBody: (body) => ({
 			...body,
-			// Venice privacy: force private mode unless the operator explicitly
-			// enabled non-private opt-out. Other providers ignore this field.
+			// Use the caller's system prompt without Venice adding its own.
+			// Privacy belongs to the selected model's model_spec.privacy; the
+			// current API contract has no per-request `private` switch.
 			venice_parameters: {
-				private: !config.OMMA_ALLOW_NON_PRIVATE_VENICE,
+				include_venice_system_prompt: false,
 			},
 		}),
 		providerLabel: "venice",

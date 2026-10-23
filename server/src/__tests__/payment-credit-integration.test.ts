@@ -43,7 +43,7 @@ vi.mock("../lib/rpc-client.js", async () => {
 
 import { x402Routes } from "../x402/facilitator.js";
 import { settlementCache } from "../x402/settlement-cache.js";
-import { processTransfer } from "../lib/deposit-recovery.js";
+import { processTransfer, runRecoveryIteration } from "../lib/deposit-recovery.js";
 import { db } from "../db/client.js";
 import { sql } from "drizzle-orm";
 import { DrizzleQueryError } from "drizzle-orm/errors";
@@ -163,6 +163,29 @@ describe.skipIf(!fixture.url)("durable credit claims (Postgres)", () => {
 		expect(await balance("original")).toBe(123.4567);
 		settlementCache.clear();
 		expect((await settle("original")).status).toBe(200);
+		expect(await balance("original")).toBe(123.4567);
+		expect((await query("select * from payment_credit_claims")).rows).toHaveLength(1);
+	});
+
+	it("retries a failed watcher credit without advancing past paid funds or double-crediting", async () => {
+		await pendingDeposit("original");
+		const client = {
+			getBlockNumber: async () => 200n,
+			getLogs: async () => [{ transactionHash: fixture.txHash, args: { from: fixture.payer, to: fixture.treasury, value: 1234567n } }],
+		};
+		await query("create function reject_credit() returns trigger language plpgsql as $$ begin raise exception 'synthetic credit outage'; end $$");
+		await query("create trigger reject_credit before insert on credit_balances for each row execute function reject_credit()");
+		try {
+			expect(await runRecoveryIteration(client, fixture.treasury, 100n)).toBe(100n);
+			expect(await balance("original")).toBe(0);
+			expect((await query("select * from payment_credit_claims")).rows).toHaveLength(0);
+		} finally {
+			await query("drop trigger reject_credit on credit_balances");
+			await query("drop function reject_credit()");
+		}
+		expect(await runRecoveryIteration(client, fixture.treasury, 100n)).toBe(200n);
+		expect(await balance("original")).toBe(123.4567);
+		await runRecoveryIteration(client, fixture.treasury, 100n);
 		expect(await balance("original")).toBe(123.4567);
 		expect((await query("select * from payment_credit_claims")).rows).toHaveLength(1);
 	});

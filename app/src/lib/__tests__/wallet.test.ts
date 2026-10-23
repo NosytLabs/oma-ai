@@ -16,7 +16,7 @@ import {
 } from "../wallet";
 
 /**
- * Wallet-connect coverage with a mock EIP-1193 provider.
+ * Injected-wallet coverage with a mock EIP-1193 provider.
  *
  * The previous state of this file had no tests at all, which meant the SIWE
  * path was only ever exercised by a real browser with a real extension. The

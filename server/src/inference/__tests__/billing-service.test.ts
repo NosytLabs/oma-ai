@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { getModelPricing, userFacingFor } from "../billing-service.js";
+import { getModelPricing, pricingForContext, userFacingFor } from "../billing-service.js";
 
 const mockGetModelById = vi.hoisted(() => vi.fn());
 const mockReadModelPricingOverrides = vi.hoisted(() => vi.fn().mockReturnValue({}));
@@ -38,6 +38,9 @@ describe("getModelPricing", () => {
 			inputPer1M: 10,
 			outputPer1M: 20,
 			markup: 15,
+			costInputPer1M: 10,
+			costOutputPer1M: 20,
+			costKnown: true,
 		});
 	});
 
@@ -49,6 +52,27 @@ describe("getModelPricing", () => {
 		});
 		expect(userFacingFor("flat-price")).toEqual({ inputPer1M: 0.02, outputPer1M: 0.02 });
 		expect(getModelPricing("flat-price")).toMatchObject({ costKnown: false });
+	});
+
+	it("preserves unknown cost basis for catalog prices and long-context rates", () => {
+		mockGetModelById.mockReturnValue({
+			id: "unknown-cost", inputPricePer1M: 1, outputPricePer1M: 2,
+			markupPercent: 50, upstreamCostKnown: false,
+			extendedPricing: { contextTokenThreshold: 100, inputPricePer1M: 3, outputPricePer1M: 4 },
+		});
+		const pricing = getModelPricing("unknown-cost");
+		expect(pricing.costKnown).toBe(false);
+		expect(pricingForContext(pricing, 101).costKnown).toBe(false);
+	});
+
+	it("retains tiered wholesale cost when customer prices are fixed", () => {
+		mockGetModelById.mockReturnValue({
+			id: "fixed-long-context", inputPricePer1M: 1, outputPricePer1M: 2,
+			markupPercent: 50, customerInputPricePer1M: 5, customerOutputPricePer1M: 6,
+			extendedPricing: { contextTokenThreshold: 100, inputPricePer1M: 3, outputPricePer1M: 4 },
+		});
+		const pricing = pricingForContext(getModelPricing("fixed-long-context"), 101);
+		expect(pricing).toMatchObject({ inputPer1M: 5, outputPer1M: 6, markup: 0, costInputPer1M: 3, costOutputPer1M: 4 });
 	});
 
 	it("applies the long-context rate only after its input threshold", () => {

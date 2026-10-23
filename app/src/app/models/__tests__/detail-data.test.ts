@@ -36,4 +36,10 @@ describe("model detail data", () => {
 		const result = withLiveModelDetails(model, { id: model.id, capabilities: [] });
 		expect(result.capabilities).toEqual([]);
 	});
+
+	it("uses the API's current provider verification rather than stale fallback provenance", () => {
+		const result = withLiveModelDetails(model, { id: model.id, privacy: "unverified", metadata_verification: { status: "unverified", source_url: "https://provider.example/models", verified_at: "2026-10-24", note: "Provider limits unavailable" } });
+		expect(result.privacy).toBe("unverified");
+		expect(result.metadataVerification).toEqual({ status: "unverified", sourceUrl: "https://provider.example/models", verifiedAt: "2026-10-24", note: "Provider limits unavailable" });
+	});
 });

@@ -7,11 +7,16 @@
 import { config } from "../config.js";
 import { logger } from "../lib/logger.js";
 import catalogData from "./model-catalog.json" with { type: "json" };
+import { isModelPrivacyAllowed } from "./provider-route.js";
 
 export interface ModelDef {
 		description?: string;
 		id: string;
 		provider: string;
+		privacy?: "private" | "anonymized" | "unverified";
+		inputModalities?: string[];
+		outputModalities?: string[];
+		metadataVerification?: { status: string; sourceUrl: string; verifiedAt: string; note: string };
 		inputPricePer1M: number;
 		outputPricePer1M: number;
 		markupPercent: number;
@@ -69,7 +74,7 @@ export function getModelById(id: string): ModelDef | undefined {
 	* upstream 401. OMA-AI models check their specific upstream key.
 	*/
 export function providerAvailable(m: ModelDef): boolean {
-	if (m.disabledReason) return false;
+	if (m.disabledReason || !isModelPrivacyAllowed(m)) return false;
 	if (m.provider === "venice") return isConfiguredKey(config.VENICE_API_KEY);
 	if (m.provider === "oma-ai") {
 		// Only "openbroker" upstream remains after Zyloo removal (2026-08-17).

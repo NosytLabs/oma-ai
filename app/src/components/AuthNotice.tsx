@@ -34,9 +34,7 @@ export function AuthNotice() {
 					? "deposit"
 					: next === "/settings"
 						? "settings"
-						: next === "/admin"
-							? "admin"
-							: next?.replace(/^\//, "") || "that page";
+						: next?.replace(/^\//, "") || "that page";
 
 	const message =
 		auth === "expired"

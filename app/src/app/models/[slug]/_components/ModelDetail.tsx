@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, MessageSquare, Wrench, Radio } from "lucide-react";
 import { ModelLogo } from "@/components/ui/model-logo";
@@ -16,15 +16,30 @@ import { ModelDetailTabs } from "./ModelDetailTabs";
 const DETAIL_TABS = [{ id: "overview", label: "Overview" }, { id: "api", label: "API examples" }] as const;
 const badgeClass = "inline-flex items-center gap-2 rounded-[var(--radius-md)] border border-border bg-surface px-3 py-2 text-sm text-text-secondary";
 
-export function ModelDetail({ model, availability, supportedParameters, supportsTools, supportsStreaming }: {
+export interface ModelRouteDetails {
 	model: Model;
 	availability: boolean | null;
 	supportedParameters?: string[];
 	supportsTools?: boolean;
 	supportsStreaming?: boolean;
-}) {
+}
+
+export function ModelDetail({ routes, ...initial }: ModelRouteDetails & { routes?: ModelRouteDetails[] }) {
+	const [selectedRouteId, setSelectedRouteId] = useState(initial.model.id);
+	useEffect(() => {
+		function selectLinkedProvider() {
+			const id = window.location.hash.slice(1);
+			if (routes?.some((route) => route.model.id === id)) setSelectedRouteId(id);
+		}
+		selectLinkedProvider();
+		window.addEventListener("hashchange", selectLinkedProvider);
+		return () => window.removeEventListener("hashchange", selectLinkedProvider);
+	}, [routes]);
+	const { model, availability, supportedParameters, supportsTools, supportsStreaming } =
+		routes?.find((route) => route.model.id === selectedRouteId) ?? initial;
 	const [tab, setTab] = useState<(typeof DETAIL_TABS)[number]["id"]>("overview");
 	const unavailable = availability === false;
+	const unverified = model.metadataVerification?.status === "unverified";
 	// The curated registry calls tool-capable models "agents". Present that
 	// as the concrete API feature, and let an explicit live flag override it.
 	const toolCalling = supportsTools ?? model.capabilities.includes("agents");
@@ -39,6 +54,21 @@ export function ModelDetail({ model, availability, supportedParameters, supports
 						<ArrowLeft className="h-4 w-4" aria-hidden="true" /> All models
 					</Link>
 				</nav>
+				{routes && routes.length > 1 && (
+					<section aria-labelledby="provider-routes-heading" className="mb-8 rounded-[var(--radius-xl)] border border-border bg-panel p-5">
+						<h2 id="provider-routes-heading" className="font-display text-xl font-medium text-text-bright">Choose a provider</h2>
+						<p className="mt-2 text-sm text-text-secondary">Compare this model’s providers. Each provider has its own API ID, pricing, limits and availability.</p>
+						<div className="mt-4 grid gap-3 sm:grid-cols-2">
+							{routes.map((route) => (
+								<button key={route.model.id} id={route.model.id} type="button" aria-pressed={selectedRouteId === route.model.id} onClick={() => { setSelectedRouteId(route.model.id); window.history.replaceState(null, "", `#${route.model.id}`); }} className={`rounded-[var(--radius-lg)] border p-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${selectedRouteId === route.model.id ? "border-accent bg-accent/5" : "border-border bg-surface"}`}>
+									<span className="block font-medium text-text-bright">{route.model.provider}</span>
+									<span className="mt-1 block text-sm text-text-secondary">{formatPricePerMillion(route.model.inputPricePer1M)}/M input · {formatPricePerMillion(route.model.outputPricePer1M)}/M output</span>
+									<span className="mt-1 block text-xs text-text-muted">{route.availability === false ? "Currently unavailable" : route.availability === true ? "Enabled" : "Availability unconfirmed"}</span>
+								</button>
+							))}
+						</div>
+					</section>
+				)}
 
 				<header className="mb-8 flex flex-col justify-between gap-6 lg:flex-row lg:items-start">
 					<div className="min-w-0 max-w-3xl">
@@ -75,12 +105,19 @@ export function ModelDetail({ model, availability, supportedParameters, supports
 				<div className="mb-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
 					<Stat label="Input price" value={formatPricePerMillion(model.inputPricePer1M)} unit="USD per 1M tokens" />
 					<Stat label="Output price" value={formatPricePerMillion(model.outputPricePer1M)} unit="USD per 1M tokens" />
-					<Stat label="Context window" value={model.contextLength} unit={`${model.contextTokens.toLocaleString("en-US")} tokens`} />
-					<Stat label="Maximum output" value={model.maxOutputTokens?.toLocaleString("en-US") ?? "Not specified"} unit="tokens per response" />
+					<Stat label="Context window" value={unverified ? "Unverified" : model.contextLength} unit={unverified ? `OMA configured limit: ${model.contextTokens.toLocaleString("en-US")} tokens` : `${model.contextTokens.toLocaleString("en-US")} tokens`} />
+					<Stat label="Maximum output" value={unverified ? "Unverified" : model.maxOutputTokens?.toLocaleString("en-US") ?? "Not specified"} unit={unverified ? `OMA configured limit: ${model.maxOutputTokens?.toLocaleString("en-US") ?? "not specified"} tokens` : "tokens per response"} />
 				</div>
 				<p className="mb-8 text-xs leading-relaxed text-text-muted">
 					{isFreeChatModel(model.id) ? "Free in website chat within the daily limit. API usage is billed at the rates above." : "Pay for the tokens you use. Chat and API usage draw from your account credits."}
 				</p>
+				{model.metadataVerification && (
+					<p className="mb-8 text-xs leading-relaxed text-text-muted">
+						{model.metadataVerification.note}{" "}
+						<a href={model.metadataVerification.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Provider catalog</a>{" "}
+						checked {model.metadataVerification.verifiedAt}.
+					</p>
+				)}
 
 				<ModelDetailTabs label="Model details" tabs={DETAIL_TABS} selected={tab} onSelect={setTab} prefix="model" />
 				<div role="tabpanel" id="model-panel-overview" aria-labelledby="model-tab-overview" hidden={tab !== "overview"} tabIndex={0} className="pt-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
@@ -95,6 +132,7 @@ export function ModelDetail({ model, availability, supportedParameters, supports
 							<dl className="mt-6 space-y-3 border-t border-border pt-5 text-sm">
 								<div className="flex items-start justify-between gap-4"><dt className="text-text-muted">Input</dt><dd className="text-right capitalize text-text-secondary">{(model.inputModalities ?? ["text"]).join(", ") || "Not specified"}</dd></div>
 								<div className="flex items-start justify-between gap-4"><dt className="text-text-muted">Output</dt><dd className="text-right capitalize text-text-secondary">{(model.outputModalities ?? ["text"]).join(", ") || "Not specified"}</dd></div>
+								{model.privacy && <div className="flex items-start justify-between gap-4"><dt className="text-text-muted">Provider privacy</dt><dd className="text-right capitalize text-text-secondary">{model.privacy}</dd></div>}
 								{model.extendedPricing && <div className="flex items-start justify-between gap-4"><dt className="text-text-muted">Above {model.extendedPricing.contextTokenThreshold.toLocaleString("en-US")} input tokens</dt><dd className="text-right text-text-secondary">{formatPricePerMillion(model.extendedPricing.inputPricePer1M)}/M input · {formatPricePerMillion(model.extendedPricing.outputPricePer1M)}/M output</dd></div>}
 							</dl>
 						</section>

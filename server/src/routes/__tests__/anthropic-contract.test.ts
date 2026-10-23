@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { OmaEnv } from "../../types.js";
 
 const mocks = vi.hoisted(() => ({ route: vi.fn(), parse: vi.fn(), record: vi.fn(), balance: vi.fn() }));
+vi.mock("../../inference/credit-reservations.js", () => ({ reservationQuote: () => ({ cents: 1, maxTokens: 32 }), reserveInferenceCredits: mocks.balance, failInferenceReservation: vi.fn(async () => {}) }));
 vi.mock("../../auth/middleware.js", () => ({ sessionOrBearerAuth: async (c: { set: (key: string, value: unknown) => void }, next: () => Promise<void>) => {
 	c.set("userId", "account-a"); c.set("apiKey", { id: "key-a" }); await next();
 } }));
@@ -30,7 +31,7 @@ describe("Anthropic customer contract", () => {
 		expect(mocks.parse).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ userId: "account-a", apiKeyId: "key-a", requestId }));
 	});
 	it("checks the prepaid balance before inference", async () => {
-		await send(body); expect(mocks.balance).toHaveBeenCalledWith("account-a", expect.anything(), 2, 32);
+		await send(body); expect(mocks.balance).toHaveBeenCalledWith("account-a", expect.any(String), 1, expect.objectContaining({ requestedModel: body.model }));
 	});
 	it("returns the same estimated token totals that were used for billing when upstream usage is absent", async () => {
 		mocks.parse.mockResolvedValue({ data: { choices: [{ message: { content: "Hi" }, finish_reason: "stop" }] }, promptTokens: 8, outputTokens: 3 });
@@ -91,16 +92,15 @@ describe("Anthropic customer contract", () => {
 		expect(text).toContain('"output_tokens":0');
 		await vi.waitFor(() => expect(mocks.record).toHaveBeenCalledWith(expect.objectContaining({ promptTokens: 0, outputTokens: 0, apiKeyId: "key-a" })));
 	});
-	it("continues past malformed upstream events without losing text, final usage or the stop event", async () => {
+	it("retains observed text but refuses to settle malformed paid upstream events", async () => {
 		const sse = 'data: {"choices":[{"delta":{"content":"Hello"}}]}\n\ndata: {broken JSON}\n\ndata: null\n\ndata: {"choices":[{"delta":{"content":" world"},"finish_reason":"stop"}]}\n\ndata: {"choices":[],"usage":{"prompt_tokens":8,"completion_tokens":3}}\n\ndata: [DONE]\n\n';
 		mocks.route.mockResolvedValue({ actualModelId: body.model, response: new Response(sse) });
 		const text = await (await send({ ...body, stream: true })).text();
 		expect(text).toContain('"text":"Hello"');
 		expect(text).toContain('"text":" world"');
-		expect(text).toContain('"output_tokens":3');
-		expect(text).not.toContain("event: error");
-		expect(text.match(/event: message_stop/g)).toHaveLength(1);
-		expect(mocks.record).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ promptTokens: 8, outputTokens: 3, status: "completed" }));
+		expect(text).toContain("event: error");
+		expect(text).not.toContain("event: message_stop");
+		expect(mocks.record).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ promptTokens: 8, outputTokens: 3, status: "error", usageVerified: false }));
 	});
 	it("cancels the provider and records an aborted API-key request exactly once", async () => {
 		const cancel = vi.fn();

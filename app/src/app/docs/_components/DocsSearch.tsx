@@ -4,6 +4,7 @@ import { ChevronRight, Search, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDialog } from "@/lib/use-dialog";
 import { NAV_ITEMS, type NavItem } from "../_lib/nav-data";
+import { revealDocAnchor } from "../_lib/use-initial-doc-anchor";
 
 interface SearchResult {
 	item: NavItem;
@@ -86,7 +87,7 @@ export function DocsSearch() {
 		const targetId = result.headingId ?? result.item.id;
 		const el = document.getElementById(targetId);
 		if (!el) return; // Heading/section not present in DOM — don't silently swallow.
-		el.scrollIntoView({ behavior: "smooth", block: "start" });
+		revealDocAnchor(targetId, "smooth");
 		// Update URL hash so the result is shareable and back/forward works.
 		if (typeof history !== "undefined") {
 			history.replaceState(null, "", `#${targetId}`);

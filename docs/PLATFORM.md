@@ -56,6 +56,35 @@ The current card credit packs are:
 
 The Postgres credit ledger is the authoritative record of deposits, remaining balance, and usage. Model prices are quoted in US dollars per 1 million input or output tokens. OMA converts the request cost to credits when recording the charge.
 
+Paid OpenAI and Anthropic calls reserve their maximum customer charge in a
+short Postgres transaction before contacting a provider. Concurrent requests
+cannot spend the same credits. The quote covers the eligible primary, client
+fallbacks and server fallbacks, including markup and long-context pricing.
+The input quote uses each eligible model's entire catalog context window,
+including tool schemas, provider framing and remote media. This deliberately
+reserves more than ordinary short prompts consume; unused credits return on
+completion. Missing input-context bounds fail before inference. An omitted OpenAI `max_tokens` gets an
+explicit default of at most 4,096, capped by the primary model's output ceiling.
+Clients can request a smaller output limit to reduce the temporary hold.
+
+The spendable balance excludes held credits. On completion, one transaction
+records usage, settles the actual customer charge, increments lifetime usage
+and refunds the unused hold. The request ID and terminal reservation prevent
+duplicate charges. A verified provider rejection before execution releases the
+hold once. Timeouts, network failures, cancelled streams and uncertain billing
+retain a reconciliation hold rather than assuming upstream work was free.
+Paid calls do not automatically retry or fail over after an ambiguous upstream
+attempt. Reusing the same idempotency key cannot start another paid attempt
+while its hold is unresolved. Holds have no automatic refund expiry; see the
+[settlement runbook](settlement-runbook.md) for reconciliation. Deleting usage
+history does not remove retry claims or reservations; deleting an account
+cascades its account-linked reservations.
+
+Both `/v1/balance` and `/v1/credits/balance` return decimal-string
+`reservedCents` for active requests and `reconciliationCents` for uncertain
+outcomes. These are separate amounts; neither is included in spendable
+`balanceCents`. Terminal settled/released holds are excluded from both fields.
+
 Website chat has a separate free daily allowance for eligible models. API-key requests always use the prepaid balance, including requests to models that are free in browser chat.
 
 ## Funding rails
@@ -84,13 +113,10 @@ Users can fund the same internal balance with USDC on Base mainnet. Direct depos
 
 The browser uses the customer's injected EIP-1193 wallet, discovered through
 EIP-6963 or legacy injection. It does not create a custodial OMA wallet or store
-the customer's private key. WalletConnect QR/mobile sessions are implemented and
-appear only when the website has a valid public `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID`
-from OMA's Reown project. Configure its allowed origins, including the canonical
-website host, before enabling it. The provider loads on an explicit connection
-action, uses `/api/rpc/base` for Base RPC, and forwards account/disconnect events.
-Discovery does not initialize the relay or open a pairing prompt. Until the ID is
-configured, injected wallets remain available and the QR connector is hidden.
+the customer's private key. The website connects installed browser wallets;
+QR/mobile relay connections are not offered. The provider loads on an explicit
+connection action, uses `/api/rpc/base` for Base RPC, and forwards account and
+disconnect events.
 Magic-link users can sign in without a wallet and use card checkout when enabled.
 
 Direct deposits first request `/api/v1/deposit/usdc/challenge` for the account
@@ -126,7 +152,7 @@ and transfer details instead of sending another transfer.
 Three wallet roles are distinct: the customer holds the USDC; the configured
 treasury receives it; the operator's facilitator key pays Base ETH gas for x402
 relaying. A direct deposit instead requires gas in the customer's wallet. The
-admin treasury panel reads each configured role's balance without transferring
+native operator treasury API reads each configured role's balance without transferring
 funds. Configuration flags do not prove a funded gas wallet or successful payment.
 
 Agents can use the x402 funding flow:
@@ -140,6 +166,12 @@ Agents can use the x402 funding flow:
 The standard v2 header is base64-encoded JSON with `x402Version: 2`, `accepted: { scheme: "exact", network: "eip155:8453", asset, amount, payTo }`, and `payload: { signature, authorization }`. Authorization contains `from`, `to`, `value`, `validAfter`, `validBefore`, and `nonce`. The accepted amount and authorization value are integer strings in atomic USDC units (6 decimals) and must match; the accepted recipient must match the signed recipient. The treasury and Base USDC contract are server-pinned. Legacy raw-JSON OMA envelopes and the older base64 `X-PAYMENT` header remain supported.
 
 A successful verify response returns top-level `{ valid: true, txHash, amount, networkId }`, with `amount` in decimal USDC. A successful settle response returns `{ settled: true, receipt, creditedCents }`; `receipt` is a signed string, and `PAYMENT-RESPONSE` is a base64 summary. Settlement accepts network `base` or `eip155:8453`, derives amounts from payment evidence, and preserves fractional credits.
+
+Before signing, read `maxAtomicAmount` from `/x402/info`. Verification rejects
+a top-up above `USDC_DEPOSIT_MAX_CENTS` before entering the transfer path
+($10,000 by default, or `10000000000` atomic USDC units). Positive fractional
+x402 funding remains accepted down to one atomic USDC unit. This ceiling pauses
+new oversized authorizations; settlement can still recover funds already sent.
 
 Crediting is idempotent by transaction hash. If the verification cache is lost after a server restart, settlement can recover a confirmed transfer from Base USDC Transfer logs and bind its payer to the session wallet. The transaction's gas payer is the facilitator and must not be confused with the USDC sender. If funds moved but crediting failed, retry settlement with the same hash and payer session. A 409 `payment_already_credited` or `payment_reconciliation_required` conflict is not retryable; use support reconciliation, without authorizing another payment. A verification timeout can return a hash with `valid: false`; reconcile its chain receipt before authorizing another payment. See [`settlement-runbook.md`](settlement-runbook.md) for recovery procedures.
 
@@ -181,8 +213,10 @@ with different API keys. Postgres atomically admits one worker: concurrent dupli
 return 409 `request_in_progress` and `Retry-After: 5`. The claim spans the response
 stream and token metering. Completed keys return 409 `already_processed` without
 another provider call or charge; clients must retain their response because OMA
-does not store completion bodies. Failed/cancelled attempts release the claim and
-use a new usage ID on retry, avoiding an old failed usage record suppressing billing.
+does not store completion bodies. Verified pre-execution failures release the
+claim and use a new usage ID on retry. Uncertain paid failures or cancellation
+retain both a reconciliation hold and retry protection; the same key cannot
+begin another paid attempt until the original outcome is resolved.
 Abandoned pending worker claims expire after five minutes; completed billing records
 still prevent reclaiming them. Completed claim metadata is retained with the account;
 it contains a key hash and request ID, never raw keys or prompts.
@@ -216,17 +250,38 @@ The contact form delivers through `SUPPORT_WEBHOOK_URL`. It reports success only
 
 Settings opened with `?demo=1` are read-only previews, including when the visitor has a real session. The preview must preserve that flag while navigating, avoid fetching private account data, and disable profile changes, exports, session actions, preference changes, history clearing, and deletion.
 
-## Admin console and usage records
+## Operator APIs and usage records
 
-`/admin` requires an authenticated account with the `admin` role. User accounts and anonymous requests cannot read the private usage, user-management, or site-control endpoints. The console provides:
+The website has no admin console, and its public `/api/v1/admin/*` proxy returns
+404. The native backend retains authenticated operator endpoints under
+`/v1/admin/*`, restricted to the `admin` role. These provide account, credit,
+site-setting, treasury, refund and usage operations. Use the native backend
+through the operator's authorized access path; never expose its credentials in
+the public website. Settings and usage responses are not cacheable.
 
-- A 24-hour, 7-day, or 30-day overview with UTC request/error and charge/cost charts. Charts use persisted usage metadata; anonymous guest requests are counted in Redis and worker HTTP counters instead of these account-linked charts.
-- Spend grouped by model, provider, or account; totals include the entire selected range, even when the group list is truncated. Customer charges exclude refunds and failed credit deductions. Canceled streams and failed requests generate no customer charge.
-- Searchable usage logs with outcome and date filters, 25-row pages, request IDs, requested/served models, provider routes, attempts, tokens, charges, and latency. Prompts and completion content are not stored. Cursor pagination preserves database timestamp precision.
-- Payment configuration and the public x402 treasury recipient. A configured rail does not prove a successful transaction, a funded gas wallet, or sufficient provider credits.
-- User search, lifetime usage, copied account IDs, credit adjustments, suspension, maintenance controls, and per-user rate-limit overrides. The current admin cannot suspend itself. Deductions lock and cap at the available balance; missing/empty balances and zero adjustments are rejected. Responses and audit events retain both the requested and applied amount, with an accurate partial-deduction flag.
+Usage receipts contain request IDs, requested and served models, provider,
+route, attempt count, tokens, customer charges, estimated upstream costs and
+latency. They do not store prompts or completion content. Anonymous website
+requests use quota counters instead of account-linked usage receipts. Completed
+paid charges are distinct from held credits. Failed and cancelled calls record
+observed token/cost estimates and zero settled customer revenue; their retained
+holds must be reviewed separately. UTC usage reports are bounded to 90 days.
 
-The private endpoints include `GET /api/v1/admin/site-settings`, `GET /api/v1/admin/usage/timeline?days=7`, and `GET /api/v1/admin/usage/logs?days=7&limit=25`. Analytics ranges are bounded to 90 days. These responses are not cacheable. The operator settings endpoint includes the maintenance message and raw rail switches; the public settings endpoint reports effective customer availability.
+Paid inference creates a detached `inference_financial_receipts` row before
+contacting any provider. It retains the request ID, model/route pricing snapshot,
+maximum hold and state, then records provider response ID, observed tokens,
+usage verification, estimated upstream cost, customer charge and any credit
+refund. It contains no customer account/wallet/email, API key, prompt or answer
+content and has no account foreign key. It survives account/history deletion,
+including deletion while inference is running. If account-linked billing can
+no longer finish, the detached intent and observed cost remain for manual
+reconciliation; this does not invent a settled customer charge.
+
+Paid completion requires valid provider input/output token counts. SSE also
+requires a terminal marker or finish reason. Missing/malformed usage or cleanly
+truncated streams retain the hold and settle no estimated customer charge.
+Free website requests may continue to use token estimates. Provider costs in
+these records remain estimates until compared with an actual provider invoice.
 
 Venice costs are catalog estimates, not settled invoices. Gonka/OpenBroker costs are paid in GNK; they remain unknown in dollars until a procurement cost basis is recorded. Gross margin is unavailable when the selected range contains unknown costs. Worker HTTP counters reset at restart and are labeled separately from durable usage history.
 
@@ -266,6 +321,14 @@ Set the provider credentials required by the intended catalog routes:
 
 - `VENICE_API_KEY` for Venice routes.
 - `OPENBROKER_API_KEY` for OpenBroker/Gonka routes (`GONKA_API_KEY` and `OBK_API_KEY` are accepted aliases).
+
+`OMMA_ALLOW_NON_PRIVATE_VENICE=false` is the default: only catalog entries
+verified with `privacy: "private"` are routable through Venice. Anonymized and
+unverified Venice entries report unavailable and cannot be used as fallback
+routes. An explicit operator opt-in allows anonymized models. Privacy is model
+metadata from Venice's `/models` contract; there is no `venice_parameters.private`
+request switch. OMA sends `include_venice_system_prompt: false` so Venice does not
+add its own system prompt.
 
 For Base:
 
@@ -316,7 +379,7 @@ The three product IDs must point to the one-time Hobby, Builder, and Scale credi
 
 ### Optional service configuration
 
-- `FREE_SIGNUP_CENTS`: new-account trial credit amount; `0` disables it. The tracked `server/.env.example` ships `100`; set `0` to disable.
+- `FREE_SIGNUP_CENTS`: opt-in promotional credit for a new account, deduplicated per normalized email. The default and tracked `server/.env.example` are `0` (disabled); an explicit `100` enables a $1 offer. Different email addresses or wallets can receive separate grants, so enabling an offer requires an operator-funded promotion budget. Existing deployment environment values override the default: explicitly set `0` there to disable an older offer. Customer deposits fund normal API usage; the browser's free allowance is separate.
 - `DEFAULT_KEY_EXPIRY_DAYS`: API-key lifetime; `0` means keys do not expire by default.
 - `MODEL_OVERRIDES_PATH`: optional durable input/output pricing sidecar, cached by billing for five seconds. The default resolver uses `server/models-overrides.json` in a repository checkout. Legacy `MODELS_CONFIG_PATH` only supplies a directory hint for this sidecar; it does not load a custom catalog. The model catalog is the shared `server/src/inference/model-catalog.json`.
 - `OTEL_EXPORTER_OTLP_ENDPOINT` and `OTEL_SERVICE_NAME`: optional observability settings.

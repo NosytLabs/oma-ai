@@ -59,7 +59,7 @@ export function CodeExample() {
 								One import.
 								<br />
 								<span className="text-text-secondary">
-									Every model underneath.
+									A curated model catalog.
 								</span>
 							</>
 						}
