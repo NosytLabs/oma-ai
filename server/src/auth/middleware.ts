@@ -201,16 +201,16 @@ export async function bearerAuth(c: Context<OmaEnv>, next: Next) {
 		} catch (err) {
 				logger.error(
 						{
-								err: err instanceof Error ? err.message : String(err),
+								err,
 								type: "auth_validation_error",
 						},
 						"[bearerAuth] validateApiKey threw",
 				);
 				return c.json(
 						{
-								error: { message: "Invalid API key", type: "authentication_error" },
+								error: { message: "Account services are temporarily unavailable. Please try again shortly.", type: "service_unavailable", code: "auth_validation_unavailable" },
 						},
-						401,
+						503,
 				);
 		}
 
@@ -237,11 +237,12 @@ export async function bearerAuth(c: Context<OmaEnv>, next: Next) {
 				} catch (err) {
 						logger.error(
 								{
-									err: err instanceof Error ? err.message : String(err),
+									err,
 									type: "cookie_session_validation_error",
 								},
 								"[bearerAuth] failed to validate session for API-key cookie",
 						);
+						return c.json({ error: { message: "Account services are temporarily unavailable. Please try again shortly.", type: "service_unavailable", code: "auth_validation_unavailable" } }, 503);
 				}
 				if (!session?.user || session.user.id !== apiKey.userId) {
 						return c.json(

@@ -39,10 +39,20 @@ it is not a measured compute saving or a quota reset. Retries can wait up to
   dependency checks and remain available during maintenance.
 - Account-readiness polling now records failed/successful checks so its
   existing exponential backoff and recovery reset actually run.
+- Status treats a valid readiness response as proof that the API responded,
+  even if its liveness probe times out. Dependency and chat failures remain
+  degraded rather than becoming an incorrect gateway-unreachable report.
 - Database query-error logging omits SQL, bound values, driver clients and
   nested database messages/stacks. Bounded SQLSTATE/HTTP diagnostics and
   correlation IDs remain. This extends the pool-error protection in
   [PR #46](https://github.com/NosytLabs/oma-ai/pull/46).
+- Authentication preserves the original error for safe logging and reports
+  validation infrastructure failures as 503, rather than rejecting valid
+  credentials as invalid. Ordinary invalid credentials still return 401.
+- Settlement retries retain exhausted receipts for manual reconciliation,
+  exclude exhausted rows before the batch limit and keep them in queue-depth
+  counts. New queue diagnostics are bounded; settlement errors preserve their
+  cause for safe logging. Existing historical diagnostics are not rewritten.
 - Homepage payment copy qualifies card availability. Deployment docs reflect
   the current manual-only Actions workflows and distinguish web/API liveness
   from dependency readiness.
@@ -55,7 +65,7 @@ inactive retry backoff before the fixes. Integration checks use a temporary
 local Postgres database and local provider fixtures; they do not execute
 mainnet payments or paid provider requests.
 
-October 23 local checks passed: 936 frontend tests, 698 API tests with the
+October 23 local checks passed: 937 frontend tests, 703 API tests with the
 real Postgres ledger suites enabled, all 31 real HTTP/auth groups, types,
 lint, both production builds and the frozen-lockfile install contract.
 
