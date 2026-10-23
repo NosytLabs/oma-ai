@@ -30,6 +30,8 @@
       "uuid": ">=11.1.1",
       "ws": ">=8.21.0",
       "source-map-js": ">=1.2.2",
+      "vite": "8.3.5",
+      "next": "^16.4.2",
       "katex": "^0.19.0"
     },
     "onlyBuiltDependencies": [
@@ -45,6 +47,7 @@
     "url": "git+https://github.com/NosytLabs/oma-ai.git"
   },
   "devDependencies": {
+    "vite": "8.3.5",
     "eslint-plugin-react-hooks": "^7.1.1",
     "typescript": "6.0.3"
   }
