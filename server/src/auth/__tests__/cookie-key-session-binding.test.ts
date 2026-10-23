@@ -1,4 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { DrizzleQueryError } from "drizzle-orm/errors";
+import { logger } from "../../lib/logger.js";
 
 const mockValidateApiKey = vi.hoisted(() => vi.fn());
 const mockGetSession = vi.hoisted(() => vi.fn());
@@ -77,10 +79,29 @@ function makeContext(headersInit: Record<string, string>) {
 }
 
 describe("bearerAuth cookie key/session binding", () => {
+	afterEach(() => { vi.unstubAllEnvs(); vi.restoreAllMocks(); });
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockValidateApiKey.mockResolvedValue(apiKey("account-a"));
 		mockGetSession.mockResolvedValue(null);
+	});
+
+	it.each(["key", "session"])("does not log SQL values when %s validation fails", async (failure) => {
+		vi.stubEnv("NODE_ENV", "production");
+		vi.stubEnv("NEON_FUNCTION", "1");
+		const output = vi.spyOn(console, "error").mockImplementation(() => {});
+		const actual = await vi.importActual<typeof import("../../lib/logger.js")>("../../lib/logger.js");
+		vi.mocked(logger.error).mockImplementationOnce((record, message) => actual.logger.error(record, message));
+		const error = new DrizzleQueryError("select private_auth where token = $1", ["synthetic-secret"], Object.assign(new Error("private driver detail"), { code: "08006" }));
+		if (failure === "key") mockValidateApiKey.mockRejectedValueOnce(error);
+		else mockGetSession.mockRejectedValueOnce(error);
+		const context = makeContext({ Cookie: "oma_api_key=oma_sk_account_a" });
+		const response = await bearerAuth(context as unknown as Parameters<typeof bearerAuth>[0], vi.fn());
+		expect(response?.status).toBe(503);
+		const line = output.mock.calls[0][0] as string;
+		expect(line).not.toContain("synthetic-secret");
+		expect(line).not.toContain("private_auth");
+		expect(JSON.parse(line).err).toEqual({ type: "DatabaseError", code: "08006" });
 	});
 
 	it("accepts an API-key cookie owned by the current session", async () => {

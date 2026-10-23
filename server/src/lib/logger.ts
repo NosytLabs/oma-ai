@@ -1,4 +1,5 @@
 import pino, { type DestinationStream, type Logger } from 'pino';
+import { databaseErrorMetadata, isDatabaseError } from './database-error.js';
 
 // NOTE: this module deliberately reads process.env and NEVER imports
 // `config`. config.ts imports logger for its validation messages, so a
@@ -49,6 +50,10 @@ const neonConsoleDestination: DestinationStream = {
 
 export const logger: Logger = pino({
 		level: initialLevel,
+		serializers: {
+				err: serializeError,
+				error: serializeError,
+		},
 		transport: usePretty
 				? {
 								target: 'pino-pretty',
@@ -71,3 +76,10 @@ export const logger: Logger = pino({
 				};
 		},
 }, useJsonOnly ? neonConsoleDestination : undefined);
+
+function serializeError(error: unknown) {
+	// Pino's default serializer includes SQL parameters and nested cause
+	// messages/stacks. Sanitize at the common boundary for all query callers.
+	return isDatabaseError(error) ? databaseErrorMetadata(error) :
+		error instanceof Error ? pino.stdSerializers.err(error) : error;
+}

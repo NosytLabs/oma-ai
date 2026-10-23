@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { DrizzleQueryError } from "drizzle-orm/errors";
 
 vi.mock("../../config.js", () => ({ config: {} }));
 
@@ -19,6 +20,36 @@ afterEach(() => {
 });
 
 describe("Neon Function logging", () => {
+	it.each(["err", "error"])("omits SQL, values and driver credentials from the %s field", async (field) => {
+		const { logger } = await import("../logger.js");
+		const cause = Object.assign(new Error("postgresql://test:synthetic-password@private-db/test"), {
+			code: "23505", status: 402,
+			detail: "Key (email)=(private@example.test) already exists",
+			client: { password: "synthetic-password" },
+		});
+		const err = new DrizzleQueryError("insert into private_accounts values ($1)", ["synthetic-secret"], cause);
+		logger.error({ [field]: err, correlationId: "request-123" }, "request failed");
+
+		const output = vi.mocked(console.error).mock.calls[0][0] as string;
+		for (const privateValue of ["synthetic-password", "synthetic-secret", "private_accounts", "private@example.test", "private-db"]) {
+			expect(output).not.toContain(privateValue);
+		}
+		expect(JSON.parse(output)).toMatchObject({
+			[field]: { type: "DatabaseError", code: "23505", status: 402 },
+			correlationId: "request-123", msg: "request failed",
+		});
+	});
+
+	it("omits wrapped query details from parent error messages and stacks", async () => {
+		const { logger } = await import("../logger.js");
+		const query = new DrizzleQueryError("select private_accounts", ["synthetic-secret"], new Error("driver detail"));
+		logger.error({ err: new Error(`Operation failed: ${query.message}`, { cause: query }) }, "request failed");
+		const output = vi.mocked(console.error).mock.calls[0][0] as string;
+		expect(output).not.toContain("synthetic-secret");
+		expect(output).not.toContain("private_accounts");
+		expect(JSON.parse(output).err).toEqual({ type: "DatabaseError" });
+	});
+
 	it("emits structured diagnostics through the console method matching severity", async () => {
 		const { logger } = await import("../logger.js");
 		logger.trace("trace entry");

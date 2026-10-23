@@ -21,7 +21,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { api } from "@/lib/api";
-import { nextHealthPollMs } from "@/lib/health-backoff";
+import { nextHealthPollMs, recordHealthCheckResult } from "@/lib/health-backoff";
 
 type HealthStatus = "checking" | "online" | "offline";
 
@@ -31,8 +31,10 @@ const HEALTH_QUERY_KEY = ["health", "ready-v3"] as const;
 async function fetchHealth(): Promise<HealthStatus> {
 	try {
 		const ok = await api.healthPing();
+		recordHealthCheckResult(ok);
 		return ok ? "online" : "offline";
 	} catch {
+		recordHealthCheckResult(false);
 		return "offline";
 	}
 }

@@ -5,7 +5,7 @@ import { BreadcrumbListJsonLd } from "@/components/json-ld";
 import { FREE_DEFAULT_CHAT_MODEL } from "@/lib/model-utils";
 
 // The page's entire purpose is to report gateway health *right now*. It reads
-// /health and /v1/models with `cache: "no-store"` and a hard 2.5s abort per
+// /health, /ready and /v1/models with `cache: "no-store"` and a hard 2.5s abort per
 // request, so it is inherently per-request — but Next still prerendered the
 // route as fully static without this export.
 //
@@ -72,9 +72,7 @@ async function fetchJson(url: string, acceptUnavailable = false, ms = 2500): Pro
 	try {
 		const r = await fetch(url, {
 			cache: "no-store",
-			// AbortSignal.timeout is not universally reliable inside serverless
-			// isolates; an explicit controller + hard cap guarantees we return
-			// within ms and never 500 the page for a slow/unreachable backend.
+			// Bound each upstream request so a slow backend cannot stall the page.
 			signal: AbortSignal.timeout(ms),
 		});
 		if (!r.ok && !(acceptUnavailable && r.status === 503)) return null;
@@ -103,11 +101,15 @@ export default async function StatusPage() {
 	]);
 	const apiVersion =
 		typeof backendJson?.version === "string" ? backendJson.version : null;
+	// A dependency failure is still an API response. A slow liveness probe
+	// must not override a readiness response received in the same render.
+	const apiReachable = backendJson !== null ||
+		readinessJson?.status === "ready" || readinessJson?.status === "not_ready";
 	const api: ServiceState = {
 		name: "Inference gateway (API)",
-		ok: backendJson !== null,
+		ok: apiReachable,
 		detail:
-			backendJson !== null
+			apiReachable
 				? `Reachable${apiVersion ? ` — v${apiVersion}` : ""} — dependency readiness is checked separately.`
 				: "Unreachable — chat, key management, and billing may fail. Retry in a moment.",
 	};

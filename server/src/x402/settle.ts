@@ -182,7 +182,7 @@ export async function settlePaymentAsync(
 									// satisfy the NOT NULL columns, so it was unrecoverable.
 									const queued = await addSettlementToDlq(
 										record,
-										lastError?.message || "Unknown error",
+										lastError,
 										1,
 									);
 									if (!queued) {
@@ -191,7 +191,7 @@ export async function settlePaymentAsync(
 											"[FACILITATOR] CRITICAL: settlement neither persisted nor queued",
 										);
 									}
-									throw new Error(`Failed to persist settlement to DB after 3 attempts: ${lastError?.message}`);
+									throw new Error("Failed to persist settlement to DB after 3 attempts", { cause: lastError });
 								}
 
 								// Cache only after durable DB persistence — see AUDIT-X402-2026-06-14 CRITICAL-4.

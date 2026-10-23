@@ -1,8 +1,9 @@
-import { asc, eq, lte, sql } from "drizzle-orm";
+import { and, asc, eq, lt, lte, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { settlementDlq, settlements } from "../db/schema.js";
 import { logger } from "./logger.js";
 import type { SettlementRecord } from "../x402/types.js";
+import { databaseErrorMetadata } from "./database-error.js";
 
 /**
  * Durable retry queue for x402 settlements.
@@ -29,8 +30,8 @@ import type { SettlementRecord } from "../x402/types.js";
  * - Drain inserts into `settlements` with ON CONFLICT DO NOTHING, so running
  *   it concurrently (or re-running after a crash between insert and delete)
  *   cannot double-credit.
- * - Failures back off exponentially and are retried; the row is only deleted
- *   once the settlement is durably present.
+ * - Failures back off exponentially. Exhausted entries remain for manual
+ *   reconciliation; rows are deleted only once the settlement is durable.
  */
 
 
@@ -50,9 +51,13 @@ function backoffMs(attempts: number): number {
  */
 export async function addSettlementToDlq(
 	record: SettlementRecord & { receipt: string },
-	lastError: string,
+	lastError: unknown,
 	attempts: number = 1,
 ): Promise<boolean> {
+	// This queue is entered after database persistence failed. Never duplicate
+	// a query/receipt/credential-bearing message into logs or diagnostic storage.
+	const errorMetadata = databaseErrorMetadata(lastError);
+	const errorText = JSON.stringify(errorMetadata);
 	if (!record.receipt) {
 		// settlements.receipt is NOT NULL, so an entry without one could never
 		// be replayed. Refuse loudly rather than queueing a dead row.
@@ -73,7 +78,7 @@ export async function addSettlementToDlq(
 				receipt: record.receipt,
 				settledAt: new Date(record.settledAt),
 				attempts,
-				lastError,
+				lastError: errorText,
 				nextAttemptAt: new Date(),
 			})
 			// A settlement already queued only needs its error text refreshed;
@@ -81,13 +86,13 @@ export async function addSettlementToDlq(
 			.onConflictDoUpdate({
 				target: [settlementDlq.txHash, settlementDlq.networkId],
 				set: {
-					lastError,
+					lastError: errorText,
 					attempts: sql`GREATEST(${settlementDlq.attempts}, ${attempts})`,
 				},
 			});
 
 		logger.error(
-			{ txHash: record.txHash, networkId: record.networkId, lastError },
+			{ txHash: record.txHash, networkId: record.networkId, err: errorMetadata },
 			"[DLQ] Settlement persisted to queue for retry",
 		);
 		return true;
@@ -123,7 +128,7 @@ export async function drainSettlementDlq(batchSize = 25): Promise<DrainResult> {
 		due = await db
 			.select()
 			.from(settlementDlq)
-			.where(lte(settlementDlq.nextAttemptAt, new Date()))
+			.where(and(lte(settlementDlq.nextAttemptAt, new Date()), lt(settlementDlq.attempts, MAX_ATTEMPTS)))
 			.orderBy(asc(settlementDlq.nextAttemptAt))
 			.limit(batchSize);
 	} catch (err) {
@@ -158,17 +163,7 @@ export async function drainSettlementDlq(batchSize = 25): Promise<DrainResult> {
 		} catch (err) {
 			result.failed++;
 			const attempts = entry.attempts + 1;
-			const errorText = err instanceof Error ? err.message : String(err);
-
-			if (attempts >= MAX_ATTEMPTS) {
-				await db.delete(settlementDlq).where(eq(settlementDlq.id, entry.id));
-				result.abandoned++;
-				logger.error(
-					{ err, txHash: entry.txHash, attempts, errorText },
-					"[DLQ] ABANDONED settlement after max attempts -- manual reconciliation required",
-				);
-				continue;
-			}
+			const errorText = JSON.stringify(databaseErrorMetadata(err));
 
 			await db
 				.update(settlementDlq)
@@ -178,6 +173,13 @@ export async function drainSettlementDlq(batchSize = 25): Promise<DrainResult> {
 					nextAttemptAt: new Date(Date.now() + backoffMs(attempts)),
 				})
 				.where(eq(settlementDlq.id, entry.id));
+			if (attempts >= MAX_ATTEMPTS) {
+				result.abandoned++;
+				logger.error(
+					{ err, txHash: entry.txHash, attempts },
+					"[DLQ] EXHAUSTED settlement retries -- receipt retained for manual reconciliation",
+				);
+			}
 		}
 	}
 

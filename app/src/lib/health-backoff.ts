@@ -1,5 +1,5 @@
 /**
-	* Shared offline-backoff state for the `/api/health` poll in
+	* Shared offline-backoff state for the `/api/ready` poll in
 	* `components/api-status.tsx`.
 	*
 	* Cadence contract (matches the login page's offline banner copy):

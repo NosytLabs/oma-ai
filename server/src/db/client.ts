@@ -14,6 +14,7 @@ import pg from "pg";
 import * as schema from "./schema.js";
 import { config } from "../config.js";
 import { logger } from "../lib/logger.js";
+import { databaseErrorMetadata } from "../lib/database-error.js";
 
 /** Canonical app DB type. Neon HTTP is API-compatible at runtime; we cast
 	*  so call sites keep full `returning()` / query typing without union collapse. */
@@ -23,21 +24,6 @@ let _db: AppDb | null = null;
 let _dbInitFailed = false;
 let _pgPool: pg.Pool | null = null;
 let _neonPool: InstanceType<typeof Pool> | null = null;
-
-function databaseErrorMetadata(error: unknown) {
-	// Driver errors can contain a live client, connectionString, password, or
-	// credentials in their message/stack/cause. Pino's default err serializer
-	// retains those fields. Log only bounded protocol diagnostics here.
-	const metadata: { type: string; code?: string; status?: number } = { type: "DatabaseError" };
-	if (error && typeof error === "object") {
-		const { code, status } = error as { code?: unknown; status?: unknown };
-		if (typeof code === "string" && /^[0-9A-Z]{5}$/.test(code)) metadata.code = code;
-		if (typeof status === "number" && Number.isInteger(status) && status >= 100 && status <= 599) {
-			metadata.status = status;
-		}
-	}
-	return metadata;
-}
 
 function isNeonUrl(url: string): boolean {
 	try {

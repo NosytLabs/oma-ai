@@ -46,6 +46,8 @@ import { settlementCache } from "../x402/settlement-cache.js";
 import { processTransfer } from "../lib/deposit-recovery.js";
 import { db } from "../db/client.js";
 import { sql } from "drizzle-orm";
+import { DrizzleQueryError } from "drizzle-orm/errors";
+import { addSettlementToDlq, drainSettlementDlq, getSettlementDlqLength } from "../lib/dlq.js";
 
 const app = new Hono().route("/", x402Routes);
 let schemaCreated = false;
@@ -78,7 +80,7 @@ describe.skipIf(!fixture.url)("durable credit claims (Postgres)", () => {
 	beforeEach(async () => {
 		fixture.blockTime = BigInt(Math.floor(Date.now() / 1000) + 60);
 		settlementCache.clear();
-		await query('truncate table "user", settlements cascade');
+		await query('truncate table "user", settlements, settlement_dlq cascade');
 		// The optional query lets the regressions run against the old schema.
 		await query(`do $$ begin if to_regclass('payment_credit_claims') is not null then truncate payment_credit_claims; end if; end $$`);
 		await addUser("original");
@@ -87,6 +89,41 @@ describe.skipIf(!fixture.url)("durable credit claims (Postgres)", () => {
 		if (schemaCreated) await query(`drop schema "${fixture.schema}" cascade`);
 		const { testPool } = await import("../db/client.js") as unknown as { testPool: { end(): Promise<void> } };
 		await testPool.end();
+	});
+
+	const queuedRecord = () => ({ txHash: fixture.txHash, amount: "1000", networkId: "eip155:8453", payee: fixture.treasury, receipt: "private-signed-receipt", settledAt: Date.now() });
+
+	it("retains the receipt for manual reconciliation after automatic retries are exhausted", async () => {
+		await addSettlementToDlq(queuedRecord(), "initial database failure", 11);
+		await query("create function reject_settlement() returns trigger language plpgsql as $$ begin raise exception 'synthetic-private-driver-detail'; end $$");
+		await query("create trigger reject_settlement before insert on settlements for each row execute function reject_settlement()");
+		try {
+			expect(await drainSettlementDlq()).toEqual({ scanned: 1, recovered: 0, failed: 1, abandoned: 1 });
+			const { rows } = await query("select attempts, receipt, last_error from settlement_dlq");
+			expect(rows).toHaveLength(1);
+			expect(rows[0]).toMatchObject({ attempts: 12, receipt: "private-signed-receipt" });
+			expect(JSON.parse(rows[0].last_error as string)).toEqual({ type: "DatabaseError", code: "P0001" });
+			expect(await getSettlementDlqLength()).toBe(1);
+		} finally {
+			await query("drop trigger reject_settlement on settlements");
+			await query("drop function reject_settlement()");
+		}
+	});
+
+	it("keeps exhausted entries out of automatic replay even after re-enqueue", async () => {
+		await addSettlementToDlq(queuedRecord(), "database failure", 12);
+		await addSettlementToDlq(queuedRecord(), "repeated failure", 1);
+		await query("update settlement_dlq set next_attempt_at = now() - interval '1 minute'");
+		expect(await drainSettlementDlq()).toEqual({ scanned: 0, recovered: 0, failed: 0, abandoned: 0 });
+		expect((await query("select attempts, receipt from settlement_dlq")).rows).toEqual([{ attempts: 12, receipt: "private-signed-receipt" }]);
+		expect((await query("select count(*)::int as count from settlements")).rows[0].count).toBe(0);
+	});
+
+	it("persists bounded database diagnostics rather than SQL values in the retry queue", async () => {
+		const error = new DrizzleQueryError("insert private_query", ["synthetic-secret"], Object.assign(new Error("private driver detail"), { code: "08006" }));
+		await addSettlementToDlq(queuedRecord(), error);
+		const { rows } = await query("select last_error from settlement_dlq");
+		expect(JSON.parse(rows[0].last_error as string)).toEqual({ type: "DatabaseError", code: "08006" });
 	});
 
 	it("rejects the same payment after account deletion and wallet re-registration", async () => {

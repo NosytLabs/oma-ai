@@ -25,6 +25,21 @@ function mockGateway(ready: boolean, defaultModelAvailable = true) {
 }
 
 describe("public service status", () => {
+	it("recognizes a responding API when liveness times out but readiness reports an outage", async () => {
+		vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+			if (url.endsWith("/health")) throw new DOMException("Timed out", "TimeoutError");
+			if (url.endsWith("/ready")) return Response.json({
+				status: "not_ready", checks: { database: { ok: false }, redis: { ok: true } },
+			}, { status: 503 });
+			return Response.json({ data: [{ id: "minimax-m2-7", provider: "oma-ai", available: true }] });
+		}));
+		render(await StatusPage());
+		expect(screen.getByText(/Reachable — dependency readiness is checked separately/)).toBeInTheDocument();
+		expect(screen.getByText(/Database unavailable/)).toBeInTheDocument();
+		expect(screen.getByText(/Chat availability cannot be confirmed/)).toBeInTheDocument();
+		expect(screen.queryByText(/Unreachable — chat, key management/)).not.toBeInTheDocument();
+	});
+
 	it("reports a failed dependency even when liveness and the model catalog succeed", async () => {
 		mockGateway(false);
 		render(await StatusPage());

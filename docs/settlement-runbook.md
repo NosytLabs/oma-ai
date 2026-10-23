@@ -69,6 +69,16 @@ Settlement recovers after a cold start from the confirmed USDC receipt when the 
 
 Receipt recovery accepts a single unambiguous positive USDC transfer to the configured treasury. Do not guess payer ownership or aggregate ambiguous multi-transfer receipts; investigate those records before taking any manual action.
 
+The settlement retry queue retains its signed receipt after 12 failed
+attempts. Rows with `attempts >= 12` require manual reconciliation and are
+excluded from automatic drains; re-enqueueing does not reset that marker.
+Queue-depth counts include these unresolved rows. Inspect the existing
+transaction/settlement/credit records, fix the underlying failure and reconcile
+the original payment before deliberately resuming a row. Never delete its
+receipt or request another payment merely to clear an alert. New queue failure
+diagnostics contain bounded database metadata rather than SQL values or raw
+driver messages.
+
 ## Pending, failed, or uncertain verification
 
 - A timeout can return `valid: false` with a `txHash`. Save it and inspect the chain receipt before creating another authorization. Once confirmed successfully, settle that same hash.
