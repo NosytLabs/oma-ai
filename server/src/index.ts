@@ -146,6 +146,9 @@ app.use("*", securityHeaders);
 
 
 
+// Logged once: a wildcard origin is a misconfiguration, not a per-request event.
+let wildcardOriginLogged = false;
+
 const corsOptions = {
 		origin: (origin: string | undefined): string | null => {
 				if (!origin) return null;
@@ -158,9 +161,15 @@ const corsOptions = {
 				const allowedOrigins = config.CORS_ORIGIN.split(",").map((o) => o.trim());
 				for (const allowed of allowedOrigins) {
 						if (allowed === "*") {
+							// A wildcard origin is a misconfiguration, not a per-request
+							// event. Logging it on every Origin-bearing request turned
+							// one bad env var into a log amplifier.
+							if (!wildcardOriginLogged) {
+								wildcardOriginLogged = true;
 								logger.warn({ origin }, "[CORS] Wildcard origin '*' is set. Credentials will be denied by browsers. Set specific origins in production.");
 								logger.info({ allowedOrigins }, "[CORS] Allowed origins loaded");
-								return null;
+							}
+							return null;
 						}
 						try {
 								const allowedUrl = new URL(allowed);

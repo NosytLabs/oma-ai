@@ -6,7 +6,6 @@ import { apiKeys, type ApiKey } from "../db/schema.js";
 import { eq, and, or, isNull, gt, inArray } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { config } from "../config.js";
-import { getRedisClient } from "../lib/redis-client.js";
 import { logger } from "../lib/logger.js";
 
 const KEY_ROTATION_WARNING_DAYS = 60;
@@ -300,20 +299,11 @@ export async function listApiKeys(userId: string, includeRevoked = false) {
 				.where(and(eq(apiKeys.userId, userId), eq(apiKeys.active, true)));
 }
 
-
-
 export async function revokeApiKey(userId: string, keyId: string) {
 		const result = await db.update(apiKeys).set({ active: false }).where(
 				and(eq(apiKeys.id, keyId), eq(apiKeys.userId, userId))
 		).returning();
-		if (result.length > 0) {
-				const redis = await getRedisClient();
-				if (redis) {
-						try {
-								await redis.del(`apikey:${result[0].keyHash}`);
-						} catch { /* ignore cache errors */ }
-				}
-		}
+	
 		return result.length > 0 ? result[0] : null;
 }
 
@@ -334,8 +324,6 @@ export function createApiKeyCookieHeader(apiKey: string): string {
 		}
 		return cookie;
 }
-
-
 
 export function createLogoutCookieHeader(): string {
 		const isDev = config.NODE_ENV === "development";

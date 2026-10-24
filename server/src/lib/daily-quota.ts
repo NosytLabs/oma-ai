@@ -26,7 +26,20 @@ function currentCounter(identifier: string) {
 	if (!counter) {
 		if (counters.size >= MAX_LOCAL_COUNTERS) {
 			for (const [oldKey, value] of counters) if (value.resetAt <= now) counters.delete(oldKey);
-			if (counters.size >= MAX_LOCAL_COUNTERS) counters.delete(counters.keys().next().value!);
+			if (counters.size >= MAX_LOCAL_COUNTERS) {
+				// Same rule as the burst counter: drop the least-used counter so
+				// key churn cannot reset an exhausted caller to a full daily
+				// budget.
+				let evictKey: string | undefined;
+				let evictUsed = Number.POSITIVE_INFINITY;
+				for (const [candidate, value] of counters) {
+					if (value.used < evictUsed) {
+						evictUsed = value.used;
+						evictKey = candidate;
+					}
+				}
+				if (evictKey) counters.delete(evictKey);
+			}
 		}
 		counter = { used: 0, resetAt };
 		counters.set(key, counter);

@@ -120,15 +120,30 @@ Run the repository migration command using the approved production connection,
 then verify the journal and expected tables before deploying the function.
 A successful local migration does not establish production schema readiness.
 
-If production database queries return quota-exceeded HTTP402, stop the API
+If a production database query returns quota-exceeded HTTP402, stop the API
 release. Resolve the account quota/plan first, migrate, deploy, and require
 native `/ready` HTTP200 before running paid signup/funding/inference checks.
 Do not replace the production environment with local fixture credentials.
 
+A fresh Neon project is not a schema clone. Before releasing a function to a new
+project, apply every migration and confirm the table count matches
+`server/src/db/schema.ts`, then confirm the scheduled triggers exist:
+
+```bash
+psql "$DATABASE_URL" -c "SELECT count(*) FROM pg_tables WHERE schemaname='public';"
+psql "$DATABASE_URL" -c "SELECT hash FROM drizzle.__drizzle_migrations ORDER BY id;"
+npx --yes neon@6.2.3 triggers list \
+  --project-id gentle-pine-02694891 --branch br-patient-sun-b5k0ln0f
+```
+
+A missing table surfaces as PostgreSQL `42P01` in the function logs (for
+example `[deposit-recovery] internal ticker failed`) and is invisible to a
+`/ready` probe, because readiness only checks that the database answers.
+
 
 The API is a Neon Function, not a Vercel serverless function. The verified
-target is project `empty-bar-94645349` (`oma-ai-prod`), branch
-`br-sweet-rain-b40o54xa` (`main`), function `omaapi`, runtime `nodejs24`.
+target is project `gentle-pine-02694891` (`oma-ai-prod`), branch
+`br-patient-sun-b5k0ln0f` (`main`), function `omaapi`, runtime `nodejs24`.
 
 For a code-only release, deploy the tested entry point with an explicit
 project and branch. This preserves the existing function environment:
@@ -136,8 +151,8 @@ project and branch. This preserves the existing function environment:
 ```bash
 npx --yes neon@6.2.3 functions deploy omaapi \
   --src server/src/index.ts \
-  --project-id empty-bar-94645349 \
-  --branch br-sweet-rain-b40o54xa --wait
+  --project-id gentle-pine-02694891 \
+  --branch br-patient-sun-b5k0ln0f --wait
 ```
 
 Run from the repository root with `NEON_API_KEY` exported. Omit `--env` for
@@ -163,8 +178,8 @@ are both completed, then verify the API's dependencies:
 
 ```bash
 npx --yes neon@6.2.3 functions get omaapi \
-  --project-id empty-bar-94645349 --branch br-sweet-rain-b40o54xa
-curl -fsS https://br-sweet-rain-b40o54xa-omaapi.compute.c-6.us-east-2.aws.neon.tech/ready
+  --project-id gentle-pine-02694891 --branch br-patient-sun-b5k0ln0f
+curl -fsS https://br-patient-sun-b5k0ln0f-omaapi.compute.c-7.us-east-2.aws.neon.tech/ready
 ```
 
 `https://www.oma-ai.com/api/health` checks the web tier only. The native API
