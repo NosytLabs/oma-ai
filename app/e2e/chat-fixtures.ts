@@ -117,10 +117,17 @@ export const test = base.extend<{ chatApi: ChatApi; analyticsConsent: "declined"
 				await route.fulfill({ status: 200, json: { status: "ok" } });
 				return;
 			}
-			if (url.pathname === "/api/v1/chat/completions" && request.method() === "POST") {
+			// The chat playground posts to the same-origin Next proxy
+			// (/api/chat/completions), NOT the public /api/v1 path. Matching the
+			// public path only meant every real chat request fell through to the
+			// "unexpected API call" branch and the suite failed on its own
+			// fixture, not on a product bug.
+			if ((url.pathname === "/api/chat/completions" || url.pathname === "/api/v1/chat/completions") && request.method() === "POST") {
 				const body = request.postDataJSON() as CompletionRequest;
 				expect(["zai-org-glm-5-3", "deepseek-v4-flash-0731-openbroker", "minimax-m2-7"]).toContain(body.model);
-				expect(request.headers()["x-oma-source"]).toBe("website");
+				// The browser must never impersonate the website proxy: the Next
+				// proxy strips any client X-OMA-Source and sets its own.
+				expect(request.headers()["x-oma-source"]).toBeUndefined();
 				requests.push(body);
 				const reply = replies.shift();
 				if (!reply) {
