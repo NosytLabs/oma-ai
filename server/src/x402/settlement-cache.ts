@@ -23,13 +23,17 @@ function cleanExpiredCache(): void {
 }
 
 function evictLRU(): void {
-		if (settlementCache.size >= MAX_CACHE_SIZE && cacheAccessOrder.length > 0) {
-				const firstKey = cacheAccessOrder.shift();
-				if (firstKey !== undefined) {
-						settlementCache.delete(firstKey);
-				}
+		// cacheAccessOrder can hold stale keys (deleted or expired already).
+		// Skip those instead of evicting a key that is still live in the map.
+		while (settlementCache.size >= MAX_CACHE_SIZE && cacheAccessOrder.length > 0) {
+			const firstKey = cacheAccessOrder.shift();
+			if (firstKey === undefined) break;
+			if (settlementCache.has(firstKey)) {
+				settlementCache.delete(firstKey);
+				break;
+			}
 		}
-}
+	}
 
 export function atomicCacheSet(cacheKey: string, record: SettlementRecord): void {
 		if (cacheLock) {
@@ -45,6 +49,10 @@ export function atomicCacheSet(cacheKey: string, record: SettlementRecord): void
 		cacheLock = true;
 		try {
 				evictLRU();
+				// Keep the access order unique: a duplicate entry grew the array
+				// without bound and made evictLRU() drop a key that was still live.
+				const existingIdx = cacheAccessOrder.indexOf(cacheKey);
+				if (existingIdx !== -1) cacheAccessOrder.splice(existingIdx, 1);
 				settlementCache.set(cacheKey, record);
 				cacheAccessOrder.push(cacheKey);
 		} finally {
