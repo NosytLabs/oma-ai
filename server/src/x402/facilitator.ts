@@ -250,7 +250,11 @@ x402Routes.post("/x402/verify", rateLimit({ windowMs: 60_000, maxRequests: 10 })
 });
 
 // Settlement recovers funds already sent; a funding pause must not block crediting.
-x402Routes.post("/x402/settle", sessionAuth, async (c) => {
+x402Routes.post(
+	"/x402/settle",
+	sessionAuth,
+	rateLimit({ windowMs: 60_000, maxRequests: 30 }),
+	async (c) => {
 		const userId = c.get("userId");
 		if (!userId) {
 				return c.json({ error: { message: "Unauthorized", type: "authentication_error" } }, 401);

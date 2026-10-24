@@ -29,6 +29,6 @@ test.describe("Deposit Page Userflow", () => {
     await page.goto("/deposit");
     // Scope to page content; the mobile-only navbar sign-in label is hidden
     // on desktop and is not evidence that the deposit page rendered.
-    await expect(page.getByRole("heading", { name: "Deposit Credits", level: 1 })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Add credits", level: 1 })).toBeVisible();
   });
 });

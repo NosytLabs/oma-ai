@@ -576,7 +576,7 @@ function startServer() {
 						} catch (err) {
 							logger.warn({ error: err }, "[OMA] DB close error");
 						}
-						process.exit(0);
+						process.exit(1);
 				});
 				setTimeout(() => {
 						logger.error("[OMA] Forced shutdown after timeout");

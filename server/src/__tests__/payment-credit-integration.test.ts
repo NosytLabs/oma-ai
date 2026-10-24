@@ -30,7 +30,7 @@ vi.mock("../auth/middleware.js", () => ({ sessionAuth: async (c: { req: { header
 	c.set("userId", c.req.header("Authorization")!);
 	await next();
 } }));
-vi.mock("../lib/redis-client.js", () => ({ getRedisClient: async () => null }));
+vi.mock("../lib/redis-client.js", () => ({ getRedisClient: async () => null, isRedisReady: () => false }));
 vi.mock("../lib/rpc-client.js", async () => {
 	const { USDC_BASE } = await import("../constants.js");
 	const event = parseAbiItem("event Transfer(address indexed from, address indexed to, uint256 value)");

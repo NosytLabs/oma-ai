@@ -3,6 +3,8 @@ name: CI
 # Automatic paid runs are paused for cost containment.
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: read
