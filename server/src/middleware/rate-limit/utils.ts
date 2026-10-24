@@ -31,33 +31,51 @@ const TRUSTED_PROXIES: Set<string> = new Set(
 const INTERNAL_PROXY_SECRET = config.INTERNAL_PROXY_SECRET || "";
 
 /**
- * Decoded once at module load. Config cannot change after startup, and
- * `extractClientIp` runs on every rate-limited request, so re-encoding the
- * secret per call was pure per-request allocation.
+ * Verification keyring, decoded once at module load.
+ *
+ * Config cannot change after startup and `extractClientIp` runs on every
+ * rate-limited request, so re-encoding the secret per call was pure
+ * per-request allocation.
+ *
+ * The web proxy and this API are deployed independently (Vercel and Neon) and
+ * must agree on the secret. Rotating it in place leaves a window where the two
+ * sides disagree, and every request then fails proxy authentication -- which
+ * silently collapses all visitors into one shared rate-limit and free-tier
+ * bucket instead of failing loudly. A previous-secret list makes the rollover
+ * non-destructive: publish the new value to both sides, keep the old value
+ * here for verification only, then drop it once both sides are on the new
+ * value.
  */
-const INTERNAL_PROXY_SECRET_BUF = INTERNAL_PROXY_SECRET
-	? Buffer.from(INTERNAL_PROXY_SECRET, "utf8")
-	: null;
+const INTERNAL_PROXY_SECRET_KEYS: Buffer[] = [
+	...new Set(
+		[INTERNAL_PROXY_SECRET, ...(config.INTERNAL_PROXY_SECRET_PREVIOUS ?? "").split(",")]
+			.map((s) => s.trim())
+			.filter((s) => s.length > 0),
+	),
+].map((s) => Buffer.from(s, "utf8"));
 
 export function proxyIsAuthenticated(headers: {
 	header: (k: string) => string | undefined;
 }): boolean {
 	// An unset/empty configured secret must never match, or an attacker
 	// sending an empty header would authenticate.
-	if (!INTERNAL_PROXY_SECRET_BUF) return false;
+	if (INTERNAL_PROXY_SECRET_KEYS.length === 0) return false;
 	const provided = headers.header("x-oma-proxy-secret");
 	if (!provided) return false;
 	const providedBuf = Buffer.from(provided, "utf8");
-	// Compare ENCODED lengths, not string lengths: a multibyte header would
-	// otherwise pass the string check and then throw inside timingSafeEqual,
-	// turning a hostile request into a swallowed server error.
-	if (providedBuf.length !== INTERNAL_PROXY_SECRET_BUF.length) return false;
-	// Equal-length buffers cannot make timingSafeEqual throw, so no try/catch:
-	// an empty catch here would silently disguise a real bug as "untrusted".
-	return timingSafeEqual(providedBuf, INTERNAL_PROXY_SECRET_BUF);
+	for (const keyBuf of INTERNAL_PROXY_SECRET_KEYS) {
+		// Compare ENCODED lengths, not string lengths: a multibyte header would
+		// otherwise pass the string check and then throw inside timingSafeEqual,
+		// turning a hostile request into a swallowed server error.
+		if (providedBuf.length !== keyBuf.length) continue;
+		// Equal-length buffers cannot make timingSafeEqual throw, so no try/catch:
+		// an empty catch here would silently disguise a real bug as "untrusted".
+		if (timingSafeEqual(providedBuf, keyBuf)) return true;
+	}
+	return false;
 }
 
-if (TRUSTED_PROXIES.size === 0 && !INTERNAL_PROXY_SECRET_BUF && config.NODE_ENV === "production") {
+if (TRUSTED_PROXIES.size === 0 && INTERNAL_PROXY_SECRET_KEYS.length === 0 && config.NODE_ENV === "production") {
 	logger.warn("No authenticated proxy or trusted socket peers configured; forwarded client IPs are ignored. Configure proxy authentication to keep visitors in separate rate-limit buckets.");
 }
 

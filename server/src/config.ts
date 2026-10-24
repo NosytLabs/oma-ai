@@ -134,6 +134,11 @@ const envSchema = z.object({
 	// Shared secret authenticating the Vercel -> Neon hop so the function can
 	// trust Vercel's forwarded client IP. See middleware/rate-limit/utils.ts.
 	INTERNAL_PROXY_SECRET: z.string().optional().default(""),
+	// Comma-separated, verification-only. The web proxy (Vercel) and this API
+	// (Neon) deploy independently, so the shared proxy secret cannot be swapped
+	// in one step without a window where the two disagree and every forwarded
+	// request silently loses its client IP.
+	INTERNAL_PROXY_SECRET_PREVIOUS: z.string().optional().default(""),
 
 		// Build metadata (injected at build time)
 		BUILD_SHA: z.string().optional().default("dev"),

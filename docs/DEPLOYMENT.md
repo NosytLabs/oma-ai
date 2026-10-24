@@ -4,7 +4,7 @@ Canonical deployment facts for OMA-AI. Other docs link here rather than
 restating them — this file is the single source of truth so a deploy
 instruction can't drift between documents.
 
-Production topology was verified on 2026-10-21. See
+Production topology was verified on 2026-10-24. See
 [deployment verification](deployment-health.md) for release checks and failure diagnosis.
 
 ## Canonical host
