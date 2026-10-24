@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { BreadcrumbListJsonLd } from "@/components/json-ld";
 import { MODELS, formatPricePerMillion } from "@/lib/models-data";
+import SITE_URL, { API_BASE, API_V1_BASE } from "@/lib/site";
 import { DocsSearch } from "./_components/DocsSearch";
 import { DocsShell } from "./DocsShell";
 import { buildPublicOpenApiSpec } from "../../../../server/src/routes/openapi-spec";
@@ -9,7 +10,7 @@ import limits from "../../../../server/src/inference/api-limits.json";
 import modelLimits from "../../../../server/src/middleware/rate-limit/model-limits.json";
 
 const spec = buildPublicOpenApiSpec({
-	publicApiUrl: "https://www.oma-ai.com/api",
+	publicApiUrl: API_BASE,
 	localPort: 3001,
 	nodeEnv: "production",
 });
@@ -75,15 +76,15 @@ const anchors: Record<string, string> = {
 	"POST /x402/verify": "ep-x402-verify",
 	"POST /x402/settle": "ep-x402-settle",
 };
-const firstRequest = `curl --fail-with-body https://www.oma-ai.com/api/v1/chat/completions \\
+const firstRequest = `curl --fail-with-body ${API_V1_BASE}/chat/completions \\
   -H "Authorization: Bearer $OMA_API_KEY" \\
   -H 'Content-Type: application/json' \\
   -d '{"model":"minimax-m2-7","max_tokens":256,"messages":[{"role":"user","content":"Hello!"}]}'`;
-const messagesRequest = `curl --fail-with-body https://www.oma-ai.com/api/v1/messages \\
+const messagesRequest = `curl --fail-with-body ${API_V1_BASE}/messages \\
   -H "x-api-key: $OMA_API_KEY" \\
   -H 'Content-Type: application/json' \\
   -d '{"model":"minimax-m2-7","max_tokens":256,"messages":[{"role":"user","content":"Hello!"}]}'`;
-const streamingRequest = `curl --no-buffer --fail-with-body https://www.oma-ai.com/api/v1/chat/completions \\
+const streamingRequest = `curl --no-buffer --fail-with-body ${API_V1_BASE}/chat/completions \\
   -H "Authorization: Bearer $OMA_API_KEY" \\
   -H 'Content-Type: application/json' \\
   -d '{"model":"minimax-m2-7","max_tokens":256,"stream":true,"messages":[{"role":"user","content":"Hello!"}]}'`;
@@ -358,7 +359,7 @@ export function DocsContent() {
 						</li>
 					</ol>
 					<Code>
-						{"curl --fail-with-body https://www.oma-ai.com/api/v1/models"}
+						{`curl --fail-with-body ${API_V1_BASE}/models`}
 					</Code>
 					<p>
 						Set <code>OMA_API_KEY</code> to your saved secret. Replace the
@@ -366,7 +367,7 @@ export function DocsContent() {
 					</p>
 					<Code>{firstRequest}</Code>
 					<p>
-						SDK base URL: <code>https://www.oma-ai.com/api/v1</code>. All
+						SDK base URL: <code>{API_V1_BASE}</code>. All
 						API-key inference spends credits, including models offered free in
 						website chat.
 					</p>
@@ -394,7 +395,7 @@ export function DocsContent() {
 						. Invalid explicit credentials are rejected instead of falling back
 						to guest access. Cookie-authenticated mutations also require an
 						allowed Origin or Referer. Browsers send it automatically; scripts
-						must set Origin: https://www.oma-ai.com.
+						must set Origin: {SITE_URL}.
 					</p>
 				</Section>
 				<Section id="integrations" title="Client configuration">
@@ -405,7 +406,7 @@ export function DocsContent() {
 					</p>
 					<p id="int-claude-code">
 						For the supported Anthropic Messages subset, use base URL{" "}
-						<code>https://www.oma-ai.com/api</code> when the client appends{" "}
+						<code>{API_BASE}</code> when the client appends{" "}
 						<code>/v1/messages</code>. Text and function tools are supported;
 						image/document blocks, extended thinking and prompt-cache fields are
 						rejected.
@@ -421,9 +422,9 @@ export function DocsContent() {
 				</Section>
 				<Section id="endpoints" title="Endpoint reference">
 					<p>
-						Paths below are relative to <code>https://www.oma-ai.com/api</code>.
+						Paths below are relative to <code>{API_BASE}</code>.
 						Funding paths <code>/x402/*</code> are relative to{" "}
-						<code>https://www.oma-ai.com</code>. Optional fields, bounds,
+						<code>{SITE_URL}</code>. Optional fields, bounds,
 						authentication and response formats are shown per operation.
 					</p>
 					<EndpointReference />

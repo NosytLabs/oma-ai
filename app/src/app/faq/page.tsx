@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { API_V1_BASE } from "@/lib/site";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { MODEL_COUNT } from "@/lib/models-data";
@@ -28,11 +29,11 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 		items: [
 			{
 				q: "Can I use OMA inside Claude Code, OpenCode, or Cursor?",
-				a: `Yes. Use the tool-specific setup at /docs#integrations with your oma_sk_... key, then choose an available catalog model. OpenAI-compatible tools use https://www.oma-ai.com/api/v1; the Claude Code guide uses OMA's Anthropic-compatible endpoint. OpenCode, Claude Code, Cursor, and Continue are covered in the docs.`,
+				a: `Yes. Use the tool-specific setup at /docs#integrations with your oma_sk_... key, then choose an available catalog model. OpenAI-compatible tools use ${API_V1_BASE}; the Claude Code guide uses OMA's Anthropic-compatible endpoint. OpenCode, Claude Code, Cursor, and Continue are covered in the docs.`,
 			},
 			{
 				q: "How do I migrate an app that already uses OpenAI?",
-				a: `You keep your request shape and SDK. Change one thing — the base URL is now https://www.oma-ai.com/api/v1 — swap the key, and specify an OMA catalog model per request. The openai-python package, Vercel AI SDK, and anything else that speaks OpenAI's API work as-is.`,
+				a: `You keep your request shape and SDK. Change one thing — the base URL is now ${API_V1_BASE} — swap the key, and specify an OMA catalog model per request. The openai-python package, Vercel AI SDK, and anything else that speaks OpenAI's API work as-is.`,
 			},
 			{
 				q: "Does OMA support the Anthropic Messages API?",

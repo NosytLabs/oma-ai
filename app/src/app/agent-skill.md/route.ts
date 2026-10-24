@@ -1,4 +1,5 @@
 /** Concise discovery guide. Request schemas live in the shared public contract. */
+import SITE_URL, { API_BASE, API_V1_BASE } from "@/lib/site";
 export const dynamic = "force-static";
 export const revalidate = 3600;
 
@@ -8,21 +9,21 @@ const BODY = `# OMA API setup
 
 ## Setup
 
-1. Sign in at https://www.oma-ai.com/login using email or an installed browser wallet.
-2. Create and save an API key at https://www.oma-ai.com/dashboard?tab=api-keys.
-3. Fund the account through an available method at https://www.oma-ai.com/deposit.
-4. Read https://www.oma-ai.com/api/v1/models and select an available model ID. Prices are USD per million input/output tokens.
+1. Sign in at ${SITE_URL}/login using email or an installed browser wallet.
+2. Create and save an API key at ${SITE_URL}/dashboard?tab=api-keys.
+3. Fund the account through an available method at ${SITE_URL}/deposit.
+4. Read ${API_V1_BASE}/models and select an available model ID. Prices are USD per million input/output tokens.
 
-Chat Completions SDK base URL: https://www.oma-ai.com/api/v1. Send Authorization: Bearer $OMA_API_KEY.
-Messages clients that append /v1/messages use https://www.oma-ai.com/api as the base URL. That endpoint also accepts x-api-key.
+Chat Completions SDK base URL: ${API_V1_BASE}. Send Authorization: Bearer $OMA_API_KEY.
+Messages clients that append /v1/messages use ${API_BASE} as the base URL. That endpoint also accepts x-api-key.
 
 ## Contract
 
-- [Endpoint schemas and response formats](https://www.oma-ai.com/api/v1/openapi.json)
-- [Requests and examples](https://www.oma-ai.com/docs#quickstart)
-- [Context and output limits](https://www.oma-ai.com/docs#models)
-- [Rate limits](https://www.oma-ai.com/docs#rate-limits)
-- [Service status](https://www.oma-ai.com/status)
+- [Endpoint schemas and response formats](${API_V1_BASE}/openapi.json)
+- [Requests and examples](${SITE_URL}/docs#quickstart)
+- [Context and output limits](${SITE_URL}/docs#models)
+- [Rate limits](${SITE_URL}/docs#rate-limits)
+- [Service status](${SITE_URL}/status)
 
 The gateway does not implement the OpenAI Responses API. The Messages adapter rejects image/document blocks, extended thinking and prompt-cache fields. Your application executes tools and supplies their results.
 
@@ -32,13 +33,13 @@ Use Idempotency-Key for inference retries, at most 512 UTF-8 bytes. In-progress 
 
 ## x402 funding
 
-Read https://www.oma-ai.com/x402/info before signing. Funding uses /x402/* on the website origin, outside the SDK base URL.
+Read ${SITE_URL}/x402/info before signing. Funding uses /x402/* on the website origin, outside the SDK base URL.
 
 POST /x402/verify broadcasts an authorized USDC transfer on Base mainnet. It is not a dry run. Obtain the wallet owner's approval for the exact recipient and amount. Save any returned transaction hash.
 
 POST /x402/settle credits a confirmed transfer to the payer's SIWE session. It does not send another transfer. API keys do not authenticate settlement. For pending credits, retry settlement with the same hash and payer session. Inspect the confirmed receipt and authorization nonce before signing a replacement payment. A 409 reconciliation conflict requires support.
 
-[Funding format and recovery](https://www.oma-ai.com/docs#x402)
+[Funding format and recovery](${SITE_URL}/docs#x402)
 
 Use only customer endpoints in the public contract. Keep API keys, session cookies, signatures and private keys out of logs and source control.
 `;
