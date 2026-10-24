@@ -4,6 +4,9 @@ import { siteSettings } from "../db/schema.js";
 import { logger } from "../lib/logger.js";
 import type { OmaEnv } from "../types.js";
 
+/** Funding is open until an operator pauses a rail in site_settings. */
+const DEFAULT_RAIL_ENABLED = true;
+
 /** Gate new funding before a wallet authorization or hosted checkout. */
 export function requirePaymentRail(rail: "card" | "crypto"): MiddlewareHandler<OmaEnv> {
 	return async (c, next) => {
@@ -14,7 +17,16 @@ export function requirePaymentRail(rail: "card" | "crypto"): MiddlewareHandler<O
 				cardPaymentsEnabled: siteSettings.cardPaymentsEnabled,
 				cryptoPaymentsEnabled: siteSettings.cryptoPaymentsEnabled,
 			}).from(siteSettings).limit(1);
-			enabled = (rail === "card" ? settings?.cardPaymentsEnabled : settings?.cryptoPaymentsEnabled) ?? true;
+			// Explicit default. The operator's switch lives in site_settings
+			// and is a PAUSE control: funding is open until someone pauses a
+			// rail. A missing row therefore means "not configured", not
+			// "paused" -- but it is also not a silent guess, so it is named,
+			// logged, and reported instead of being buried in a `?? true`.
+			const configured = rail === "card" ? settings?.cardPaymentsEnabled : settings?.cryptoPaymentsEnabled;
+			if (configured === undefined) {
+				logger.warn({ rail }, "[payments] no availability settings row found; using the default (enabled). Seed site_settings so the operator switch is authoritative.");
+			}
+			enabled = configured ?? DEFAULT_RAIL_ENABLED;
 		} catch (err) {
 			logger.error({ err, rail }, "[payments] availability check failed");
 			c.header("Retry-After", "30");

@@ -51,10 +51,20 @@ export function checkMemoryCounter(
 	const now = Date.now();
 
 	if (fallbackCounters.size >= MAX_FALLBACK_ENTRIES) {
-		const oldestKey = fallbackCounters.keys().next().value;
-		if (oldestKey) {
-			fallbackCounters.delete(oldestKey);
+		// Evict the LEAST-used counter, not the oldest-inserted one. Insertion
+		// order could drop an ACTIVE long-lived counter (a 24h daily quota)
+		// whose budget was silently reset to zero mid-window, handing an
+		// exhausted caller a fresh allowance. Dropping the counter with the
+		// least usage loses the least enforcement.
+		let evictKey: string | undefined;
+		let evictCount = Number.POSITIVE_INFINITY;
+		for (const [candidate, candidateEntry] of fallbackCounters) {
+			if (candidateEntry.count < evictCount) {
+				evictCount = candidateEntry.count;
+				evictKey = candidate;
+			}
 		}
+		if (evictKey) fallbackCounters.delete(evictKey);
 	}
 
 	let entry = fallbackCounters.get(key);

@@ -29,7 +29,7 @@ describe("getOpenApiServers", () => {
 		// tell developers to use, and it changes if the branch is recreated.
 		// The canonical public API is the same-origin proxied path.
 		const servers = getOpenApiServers(
-			"https://br-sweet-rain-b40o54xa-omaapi.compute.c-6.us-east-2.aws.neon.tech",
+			"https://br-patient-sun-b5k0ln0f-omaapi.compute.c-7.us-east-2.aws.neon.tech",
 			3001,
 			"https://www.oma-ai.com",
 		);
