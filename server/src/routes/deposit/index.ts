@@ -25,6 +25,7 @@ import { rateLimit } from "../../middleware/rate-limit.js";
 import { requirePaymentRail } from "../../middleware/payment-rail.js";
 import { db } from "../../db/client.js";
 import { readCreditHoldTotals } from "../../lib/credit-holds.js";
+import { publicCreditBalance } from "../../lib/public-credit-balance.js";
 import { creditBalances, deposits, siteSettings } from "../../db/schema.js";
 import { auditLog } from "../../middleware/audit.js";
 import { config } from "../../config.js";
@@ -55,7 +56,7 @@ depositRoutes.get("/v1/balance", sessionOrBearerAuth, async (c) => {
 				const holds = await readCreditHoldTotals(userId);
 				return c.json({
 						userId,
-						balanceCents: row?.balanceCents ?? "0",
+						...publicCreditBalance(row?.balanceCents),
 						...holds,
 						totalDepositedCents: row?.totalDepositedCents ?? "0",
 						totalUsedCents: row?.totalUsedCents ?? "0",

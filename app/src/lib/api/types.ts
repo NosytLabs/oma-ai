@@ -46,6 +46,8 @@ export interface ApiKeyWithSecret extends ApiKey {
 
 export interface BalanceResponse {
 	balanceCents: string;
+	/** Refund shortfall in exact decimal-string cents; future top-ups offset it. */
+	debtCents?: string;
 	/** Budgets held for pending requests, excluded from spendable balance. */
 	reservedCents?: string;
 	/** Uncertain upstream costs awaiting review, excluded from spendable balance. */

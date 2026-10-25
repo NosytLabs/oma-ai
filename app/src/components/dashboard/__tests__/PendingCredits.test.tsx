@@ -21,4 +21,13 @@ describe("pending credit budgets", () => {
 		const { container } = render(<PendingCredits />);
 		expect(container).toBeEmptyDOMElement();
 	});
+	it.each(["0.00000001", "9007199254740993.12345678"])("shows exact refund shortfall %s and a funding action", debtCents => {
+		render(<PendingCredits debtCents={debtCents} />);
+		expect(screen.getByText(new RegExp(`${debtCents.replaceAll(".", "\\.")} credits`))).toBeInTheDocument();
+		expect(screen.getByRole("link", { name: /top up/i })).toHaveAttribute("href", "/deposit");
+	});
+	it("does not show a shortfall for zero debt", () => {
+		const { container } = render(<PendingCredits debtCents="0.00000000" />);
+		expect(container).toBeEmptyDOMElement();
+	});
 });

@@ -125,6 +125,23 @@ describe("credits routes", () => {
 			expect(data.activeBatches[0].remainingCents).toBe("3000");
 			expect(data.balanceCents).toBe("3000");
 		});
+
+		it.each([
+			["-0.00000001", "0.00000001"],
+			["-9007199254740993.12345678", "9007199254740993.12345678"],
+		])("keeps refunded balance %s out of spendable credits with exact debt", async (balanceCents, debtCents) => {
+			mockSelectReturns([], [{ balanceCents }]);
+			const res = await creditRequest("get", "/v1/credits/balance");
+			expect(res.status).toBe(200);
+			expect(await res.json()).toMatchObject({ balanceCents: "0", debtCents, activeBatches: [] });
+		});
+
+		it("omits debt from an ordinary positive balance", async () => {
+			mockSelectReturns([], [{ balanceCents: "0.00000001" }]);
+			const data = await (await creditRequest("get", "/v1/credits/balance")).json();
+			expect(data.balanceCents).toBe("0.00000001");
+			expect(data).not.toHaveProperty("debtCents");
+		});
 	});
 
 	describe("GET /v1/credits/transactions", () => {

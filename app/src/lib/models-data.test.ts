@@ -151,7 +151,7 @@ describe("live model capabilities", () => {
 		const model = await loadEntry({ id: "gemini-3-6-flash" });
 		expect(model.inputModalities).toEqual(["text", "image", "audio", "video"]);
 		expect(model.privacy).toBe("anonymized");
-		expect(model.metadataVerification?.verifiedAt).toBe("2026-10-23");
+		expect(model.metadataVerification?.verifiedAt).toBe("2026-10-25");
 	});
 
 	it("uses supported parameters and the tool flag for an unknown legacy model", async () => {

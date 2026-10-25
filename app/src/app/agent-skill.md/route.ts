@@ -25,7 +25,7 @@ Messages clients that append /v1/messages use ${API_BASE} as the base URL. That 
 - [Rate limits](${SITE_URL}/docs#rate-limits)
 - [Service status](${SITE_URL}/status)
 
-The gateway does not implement the OpenAI Responses API. The Messages adapter rejects image/document blocks, extended thinking and prompt-cache fields. Your application executes tools and supplies their results.
+The gateway does not implement the OpenAI Responses API. The Messages adapter rejects image/document blocks. Extended thinking and prompt-cache fields are ignored and not forwarded. Your application executes tools and supplies their results.
 
 Paid requests reserve the selected model's full configured input-context cost plus the requested output budget before inference. Eligible fallbacks can increase that maximum. Unused credits return after the request cost is confirmed. Interrupted requests can leave credits pending a cost review. Keep the request ID.
 

@@ -68,6 +68,9 @@ initAuth();
 // each run is stateless. `NEON_FUNCTION=1` is set in the neon.ts env.
 // ---------------------------------------------------------------
 const isNeonFunction = process.env.NEON_FUNCTION === "1";
+if (isNeonFunction) {
+	logger.info({ nodeVersion: process.versions.node }, "[startup] Runtime version");
+}
 
 // Deprecated runtime flag kept for old deployments; true when the
 // platform is running us as a function (no PORT binding expected).

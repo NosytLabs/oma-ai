@@ -16,6 +16,11 @@ const inferenceResponseHeaders = {
 	"X-Request-ID": { schema: { type: "string" }, description: "HTTP trace ID. This can differ from the inference and upstream response-body IDs." },
 };
 
+const publicBalanceProperties = {
+	balanceCents: { type: "string", pattern: "^[0-9]+(?:\\.[0-9]+)?$", description: "Nonnegative spendable credits in decimal-string cents. Refund shortfalls are reported separately as debtCents." },
+	debtCents: { type: "string", pattern: "^[0-9]+(?:\\.[0-9]+)?$", description: "Present only for a positive shortfall after a cash refund removes credits already spent or reserved. Exact decimal-string cents. Future top-ups first offset this shortfall before credits become spendable." },
+};
+
 function jsonSuccess<const T extends object>(description: string, schema: T) {
     return { description, content: { "application/json": { schema } } };
 }
@@ -183,7 +188,7 @@ const spec = {
 				required: ["userId", "balanceCents", "totalDepositedCents", "totalUsedCents"],
 				properties: {
 					userId: { type: "string" },
-					balanceCents: { type: "string" },
+					...publicBalanceProperties,
 					totalDepositedCents: { type: "string" },
 					totalUsedCents: { type: "string" },
 					reservedCents: { type: "string", description: "Active inference credit holds, in decimal-string cents." },
@@ -455,7 +460,7 @@ const spec = {
         } },
         "/v1/credits/balance": { get: {
             summary: "Prepaid balance, credit holds and active batches", security: [{ SessionCookie: [] }, { BearerAuth: [] }, { ApiKeyHeader: [] }],
-            responses: { "200": { description: "Current ledger balance and reserved/reconciliation holds in decimal-string cents", content: { "application/json": { schema: { type: "object", required: ["activeBatches", "balanceCents", "reservedCents", "reconciliationCents"], properties: { activeBatches: { type: "array", maxItems: 50, items: { type: "object" } }, balanceCents: { type: "string" }, reservedCents: { type: "string" }, reconciliationCents: { type: "string" } } } } } }, "401": { description: "Authentication required" } },
+            responses: { "200": { description: "Nonnegative spendable balance, optional refund shortfall and reserved/reconciliation holds in decimal-string cents", content: { "application/json": { schema: { type: "object", required: ["activeBatches", "balanceCents", "reservedCents", "reconciliationCents"], properties: { activeBatches: { type: "array", maxItems: 50, items: { type: "object" } }, ...publicBalanceProperties, reservedCents: { type: "string" }, reconciliationCents: { type: "string" } } } } } }, "401": { description: "Authentication required" } },
         } },
 		"/v1/credits/transactions": {
 			get: {
@@ -625,7 +630,7 @@ const spec = {
 			servers: fundingServers,
 			post: {
 				summary: "Credit a confirmed USDC payment to the authenticated payer",
-				description: "Does not initiate another transfer. Requires a SIWE session for the payment sender; an API key is not accepted. Uses the confirmed amount, never a caller-supplied amount. Retries for the same account and transaction credit once; confirmed payments can be recovered after a server restart.",
+				description: "Does not initiate another transfer. Requires a SIWE session for the payment sender; an API key is not accepted. Uses the confirmed amount, never a caller-supplied amount. Retries for the same account and transaction credit once; confirmed payments can be recovered after a server restart. Limited to 30 requests per minute per account and client IP; honor Retry-After on HTTP429.",
 				security: [{ SessionCookie: [] }],
 				requestBody: { required: true, content: { "application/json": { schema: {
 					type: "object", required: ["txHash", "networkId"],
@@ -641,6 +646,7 @@ const spec = {
 					"403": { description: "Session wallet does not own the payment, or account is suspended" },
 					"409": { description: "Non-retryable payment_already_credited or payment_reconciliation_required conflict; contact support when reconciliation is required" },
 					"422": { description: "Settlement rejected" },
+					"429": { description: "Settlement rate limit exceeded; retry after the Retry-After delay with the same transaction hash", headers: { "Retry-After": { schema: { type: "string" }, description: "Seconds until another settlement attempt is allowed" } } },
 					"500": { description: "Credit application failed; retry settlement with the same transaction hash" },
 				},
 			},

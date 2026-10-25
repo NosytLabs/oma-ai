@@ -21,6 +21,7 @@ import type { OmaEnv } from "../types.js";
 import { sessionOrBearerAuth } from "../auth/middleware.js";
 import { db } from "../db/client.js";
 import { readCreditHoldTotals } from "../lib/credit-holds.js";
+import { publicCreditBalance } from "../lib/public-credit-balance.js";
 import {
 		creditBalances,
 		creditBatches,
@@ -67,7 +68,7 @@ creditsRoutes.get("/v1/credits/balance", sessionOrBearerAuth, async (c) => {
 						expiresAt: b.expiresAt.toISOString(),
 						paymentMethod: b.paymentMethod ?? "usdc",
 				})),
-				balanceCents: balances[0]?.balanceCents ?? "0",
+				...publicCreditBalance(balances[0]?.balanceCents),
 				...holds,
 		});
 });

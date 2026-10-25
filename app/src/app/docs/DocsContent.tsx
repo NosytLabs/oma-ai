@@ -408,8 +408,8 @@ export function DocsContent() {
 						For the supported Anthropic Messages subset, use base URL{" "}
 						<code>{API_BASE}</code> when the client appends{" "}
 						<code>/v1/messages</code>. Text and function tools are supported;
-						image/document blocks, extended thinking and prompt-cache fields are
-						rejected.
+						image/document blocks are rejected. Extended thinking and
+						prompt-cache fields are ignored and not forwarded.
 					</p>
 					<Code>{messagesRequest}</Code>
 					<p id="int-opencode">
@@ -586,6 +586,14 @@ export function DocsContent() {
 						requests can retain a budget for review. Use a reasonable{" "}
 						<code>max_tokens</code> to bound cost. Free website chat and paid
 						API usage are separate policies.
+					</p>
+					<p>
+						A cash refund removes the corresponding prepaid credits. If those
+						credits were spent or reserved, the account can have a credit
+						shortfall. Spendable <code>balanceCents</code> stays at zero while
+						<code>debtCents</code> reports the shortfall in decimal-string cents.
+						Future top-ups first offset it before credits become available to
+						spend.
 					</p>
 					<p>
 						Current configured retail examples:{" "}
