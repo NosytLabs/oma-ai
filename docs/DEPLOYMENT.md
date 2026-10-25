@@ -4,7 +4,7 @@ Canonical deployment facts for OMA-AI. Other docs link here rather than
 restating them — this file is the single source of truth so a deploy
 instruction can't drift between documents.
 
-Production topology was verified on 2026-10-24. See
+Production targets are listed below. See
 [deployment verification](deployment-health.md) for release checks and failure diagnosis.
 
 ## Canonical host
@@ -15,9 +15,13 @@ Production topology was verified on 2026-10-24. See
 | `https://oma-ai.com` | Apex. 308-redirects to `www`. Not a deployment target. |
 | `api.oma-ai.com` | **Does not exist (NXDOMAIN) and must not be created.** |
 
-Use `https://www.oma-ai.com` in docs, examples, `NEXT_PUBLIC_APP_URL`,
-`BETTER_AUTH_URL`, `PRIMARY_DOMAIN`, and CORS allowlists. The apex is only
-ever mentioned as "redirects to `www`".
+Use `https://www.oma-ai.com` for public URLs, examples and
+`NEXT_PUBLIC_APP_URL`. `PRIMARY_DOMAIN` is a bare hostname, `oma-ai.com`,
+without a scheme or `www`. Auth origin resolution accepts the apex and `www`
+and derives the canonical SIWE signing domain as `oma-ai.com`; the wallet UI
+uses `https://oma-ai.com` as its SIWE URI. Keep the auth base URL and CORS
+settings consistent with `server/src/auth.ts` and the same-origin proxy.
+Do not copy the website URL into `PRIMARY_DOMAIN`.
 
 Public endpoints, all on the canonical host:
 
@@ -189,7 +193,11 @@ The manifest registers `omaapi` plus the `oma-deposit-recovery` and
 function deploy leaves these existing triggers in place.
 
 After deploying, confirm that the current and active function deployments
-are both completed, then verify the API's dependencies:
+are both completed, then verify the API's dependencies and changed behavior.
+A completion label alone does not prove every request is using the new code:
+compare a changed catalog field or OpenAPI contract, and verify any changed
+runtime setting through an authenticated disposable test account. Repeat the
+behavior check after propagation before declaring the release live:
 
 ```bash
 npx --yes neon@6.2.3 functions get omaapi \

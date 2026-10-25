@@ -199,6 +199,22 @@ When a paid order has not produced credits:
 3. Use the supported webhook retry/redelivery workflow and verify the ledger result. Check for an existing credit before any manual adjustment.
 4. Keep order IDs, transaction hashes, and account IDs in the operational incident record; exclude secrets and payment-card details.
 
+Per-order credit accounting is durable in `polar_webhook_events` with
+`event_type = 'order.credit-ledger.v1'` and key `order-credit:<orderId>`.
+Do not purge those rows with delivery logs. Paid orders grant once; subscription
+lifecycle/trial events do not grant. Refund snapshots contain cumulative amounts,
+so stale or duplicate snapshots do not reverse credits again. The reversed share
+is capped at the original grant, including provider net-refund rounding.
+
+Cash refunds can create an internal credit shortfall when credit is already
+spent or reserved. Public balance endpoints show zero spendable `balanceCents`
+and a positive `debtCents`; new funding and returned holds first repay that debt.
+Do not clamp or erase a negative balance to clear the shortfall. Orders from
+before the durable ledger, changed identities and applied customer balances
+require operator reconciliation. Account deletion does not remove all card-event
+payloads, payment claims or audit metadata; the privacy disclosures describe
+those retained records.
+
 Before rotating a webhook secret, verify the provider's retry behavior and the deployed verifier's key support, then plan the cutover and reconciliation of pending events. Do not assume the verifier supports multiple secrets or that historical deliveries will be re-signed automatically.
 
 ## Deployment and completion checks

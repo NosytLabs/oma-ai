@@ -35,10 +35,9 @@ describe("SITE_REDIRECTS (shipped next.config source)", () => {
 		const bySource = Object.fromEntries(
 			SITE_REDIRECTS.map((r) => [r.source, r.destination]),
 		);
-		// /changelog and /status are live pages (not redirected) — same as /about, /faq
+		// These public product pages remain live.
 		expect(bySource["/about"]).toBeUndefined();
 		expect(bySource["/faq"]).toBeUndefined();
-		expect(bySource["/changelog"]).toBeUndefined();
 		expect(bySource["/status"]).toBeUndefined();
 		expect(bySource["/blog"]).toBe("/docs");
 		expect(bySource["/network"]).toBe("/docs#endpoints");

@@ -18,7 +18,6 @@ const COMPANY: FooterSection = {
 		{ label: "About", href: "/about" },
 		{ label: "Contact", href: "/contact" },
 		{ label: "Status", href: "/status" },
-		{ label: "Changelog", href: "/changelog" },
 		{ label: "Privacy", href: "/privacy" },
 		{ label: "Terms", href: "/terms" },
 		{ label: "Third-party notices", href: "/licenses/third-party-notices.txt" },

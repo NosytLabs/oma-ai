@@ -85,8 +85,8 @@ export function CookieConsent() {
 		>
 			<div className="mx-auto flex max-w-5xl flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
 				<p className="text-[12px] leading-relaxed text-text-secondary">
-					We use Google Analytics to understand how the site is used. No
-					personal data is sold. Read the{" "}
+					Google Analytics helps measure site usage. Accept allows analytics
+					storage; decline keeps it denied. Read the{" "}
 					<a
 						href="/privacy"
 						className="underline-offset-2 hover:text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"

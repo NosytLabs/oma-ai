@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { API_V1_BASE } from "@/lib/site";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, CreditCard, KeyRound, MessageSquare, Rocket, Terminal, Wallet } from "lucide-react";
 import { MODEL_COUNT } from "@/lib/models-data";
@@ -8,15 +9,15 @@ import { CopyableCode } from "@/components/copyable-code";
 import { PageShell } from "@/app/_components/page-shell";
 
 export const metadata: Metadata = {
-	title: { absolute: "Getting started — how to use OMA in 5 minutes" },
+	title: { absolute: "Getting started — chat and API setup" },
 	description:
 		"Use OMA without any prior AI or crypto experience: try the free chat, create an account, make an API key, add credits, and make your first API call.",
 	alternates: { canonical: "/getting-started" },
 	openGraph: {
 		locale: "en_US",
-		title: "How to use OMA — 5-minute walkthrough",
+		title: "Getting started with OMA",
 		description:
-			"No code? No crypto? No problem. Try AI in the free playground, then get your first API key in minutes.",
+			"Try free website chat, then create an account, fund credits and connect your application to the API.",
 		url: "/getting-started",
 		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "Getting started with OMA" }],
 	},
@@ -26,7 +27,7 @@ export const metadata: Metadata = {
 const STEPS = [
 	{
 		icon: MessageSquare,
-		title: "Try it free — no account needed",
+		title: "Try free website chat",
 		body: (
 			<>
 				Open the <Link href="/chat" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">chat playground</Link> and send a
@@ -43,7 +44,7 @@ const STEPS = [
 		body: (
 			<>
 				Head to <Link href="/login" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">login</Link>. Choose{" "}
-				<strong className="text-text-bright"> email magic link</strong> (simplest — we email you a secure sign-in link, no password to remember)
+				<strong className="text-text-bright"> email magic link</strong> to receive a sign-in link
 				or <strong className="text-text-bright">connect wallet</strong> if you already use web3 apps. Signing in increases your free chat allowance and lets you create API keys and fund credits for paid models. Conversations are saved in this browser.
 			</>
 		),
@@ -54,19 +55,19 @@ const STEPS = [
 		body: (
 			<>
 				In your <Link href="/dashboard" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">dashboard</Link>,
-				click &quot;Create Key&quot;. It will look like <code className="font-mono text-accent">oma_sk_...</code>. Copy it
-				and treat it like a password. You use this one single key to talk to any of the models OMA supports. You can easily revoke it later if you need to.
+				open API Keys and choose &quot;Create Key&quot;. It will look like <code className="font-mono text-accent">oma_sk_...</code>. Copy it
+				and treat it like a password. The key can call models allowed by its scope and available credit balance. Revoke it from the dashboard when you no longer need it.
 			</>
 		),
 	},
 	{
 		icon: CreditCard,
-		title: "Add a little credit",
+		title: "Add prepaid credits",
 		body: (
 			<>
 				Go to <Link href="/deposit" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">Buy credits</Link> to see the available funding methods and deposit limits. Use USDC on Base or card checkout when available. Credits never expire while your account is active; how far they go depends on the model and the length of each request and response.
 				<br /><br />
-				<strong>Autonomous Agent option:</strong> If you are writing software agents, you can use our <Link href="/docs#x402" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">x402 settlement flow</Link> to verify and settle USDC into credits, then spend with an API key.
+				<strong>Agent funding:</strong> If you are writing software agents, you can use our <Link href="/docs#x402" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">x402 settlement flow</Link> to verify and settle USDC into credits, then spend with an API key.
 			</>
 		),
 	},
@@ -75,17 +76,17 @@ const STEPS = [
 		title: "Make your first API call",
 		body: (
 			<>
-				In an app, library, or script that supports OpenAI-compatible chat completions, set the base URL to <code className="font-mono text-accent">https://www.oma-ai.com/api/v1</code>, use your new API key, and choose an available model from our <Link href="/models" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">catalog</Link>. Check its capabilities before using tools or image inputs. Try the examples below, or jump to the <Link href="/docs#quickstart" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">developer quickstart</Link>.
+				In an app, library, or script that supports OpenAI-compatible chat completions, set the base URL to <code className="font-mono text-accent">{API_V1_BASE}</code>, use your new API key, and choose an available model from our <Link href="/models" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">catalog</Link>. Check its capabilities before using tools or image inputs. Try the examples below, or jump to the <Link href="/docs#quickstart" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">developer quickstart</Link>.
 			</>
 		),
 	},
 ];
 
-const SAMPLE_CODE = `curl https://www.oma-ai.com/api/v1/chat/completions \\
-	-H "Authorization: Bearer $OMA_KEY" \\
+const SAMPLE_CODE = `curl --fail-with-body ${API_V1_BASE}/chat/completions \\
+	-H "Authorization: Bearer $OMA_API_KEY" \\
 	-H "Content-Type: application/json" \\
 	-d '{
-		"model": "deepseek-v4-flash-0731-openbroker",
+		"model": "minimax-m2-7",
 		"messages": [{"role": "user", "content": "Say hello in one short sentence"}],
 		"max_tokens": 64
 	}'`;
@@ -94,12 +95,13 @@ const SAMPLE_PY = `import os
 from openai import OpenAI
 
 client = OpenAI(
-	base_url="https://www.oma-ai.com/api/v1",
-	api_key=os.environ["OMA_KEY"],
+	base_url="${API_V1_BASE}",
+	api_key=os.environ["OMA_API_KEY"],
 )
 reply = client.chat.completions.create(
-	model="llama-3.3-70b",
+	model="minimax-m2-7",
 	messages=[{"role": "user", "content": "Say hello in one short sentence"}],
+	max_tokens=64,
 )
 print(reply.choices[0].message.content)`;
 
@@ -130,12 +132,10 @@ export default function GettingStartedPage() {
 				</Link>
 
 				<span className="section-eyebrow-caps">First time here?</span>
-				<h1 className="display-headline mt-3 text-text-bright">How to use OMA — 5 minutes, no jargon</h1>
+				<h1 className="display-headline mt-3 text-text-bright">Get started with OMA</h1>
 				<p className="page-intro max-w-2xl">
-					OMA is one account for {MODEL_COUNT} AI models from many providers, paid your way. You do{" "}
-					<em className="text-text-bright">not</em> need to be a developer or a crypto person to start.
-					This is the whole site, in order. Developers: the{" "}
-					<Link href="/docs" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">API docs</Link> are your fast lane.
+					Try website chat, then connect your application to available models with prepaid credits. For the request contract and limits, use the{" "}
+					<Link href="/docs" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">API docs</Link>.
 				</p>
 
 				<ol className="mt-10 space-y-6">
@@ -161,10 +161,10 @@ export default function GettingStartedPage() {
 					<section className="mt-10 rounded-[var(--radius-lg)] border border-border bg-void p-5 sm:p-6" aria-labelledby="try-heading">
 					<h2 id="try-heading" className="flex items-center gap-2 text-base font-display font-medium text-text-bright">
 						<Terminal className="h-4 w-4 text-accent" aria-hidden="true" />
-						Try it right now
+						Send an API request
 					</h2>
 					<p className="mt-2 text-sm text-text-secondary">
-						One request, copy-paste. Set <code className="font-mono text-accent">OMA_KEY</code> to your
+						API requests require prepaid credits, including models that are free in website chat. Set <code className="font-mono text-accent">OMA_API_KEY</code> to your
 						key first and check that the example model is available in the catalog.
 					</p>
 					<div className="mt-4">
