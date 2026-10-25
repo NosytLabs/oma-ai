@@ -11,7 +11,7 @@
 	* user based on the chosen plan. On `order.paid` (via the webhook),
 	* we credit the user's balance with the plan's allocation. Products
 	* are one-time credit purchases (no recurring billing); `order.refunded`
-	* drains the granted credits.
+	* reverses the refunded share of its granted credits.
 	*
 	* Plans (configurable via env):
 	*   hobby   — POLAR_HOBBY_PRODUCT_ID    — 1000 credits ($10)
@@ -33,14 +33,12 @@ import { sessionOrBearerAuth } from "../auth/middleware.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { requirePaymentRail } from "../middleware/payment-rail.js";
 import { db } from "../db/client.js";
-import {
-		creditBalances,
-		polarWebhookEvents,
-} from "../db/schema.js";
+import { polarWebhookEvents } from "../db/schema.js";
 import { config, isProductionEnv } from "../config.js";
 import { logger } from "../lib/logger.js";
 import { logPaymentEvent } from "../lib/payment-observability.js";
 import { errorResponse } from "../lib/error-response.js";
+import { reconcilePolarOrderCredit } from "../lib/polar-order-credit.js";
 
 export const polarRoutes = new Hono<OmaEnv>();
 
@@ -194,6 +192,7 @@ interface WebhookEventPayload {
 				id?: string;
 				status?: string;
 				product?: { id?: string };
+				product_id?: string;
 				metadata?: Record<string, unknown>;
 				customer?: { id?: string; email?: string };
 		};
@@ -209,15 +208,6 @@ function planFromProductId(
 				}
 		}
 		return null;
-}
-
-async function revokeUser(userId: string): Promise<void> {
-		// We don't drain existing credits on cancel — they remain usable.
-		// The user just won't be eligible for the next renewal's allocation.
-		logger.info(
-				{ userId },
-				"[polar] subscription canceled (existing credits retained)",
-		);
 }
 
 /**
@@ -276,7 +266,7 @@ export async function polarWebhookHandler(c: Context<OmaEnv>) {
 		// from webhook metadata. Metadata is attacker-controlled; a compromised
 		// operator secret could otherwise credit any user any amount.
 		// See audit: polar.ts:353-362 IDOR.
-		const plan = planFromProductId(event.data?.product?.id) ?? null;
+		const plan = planFromProductId(event.data?.product_id ?? event.data?.product?.id) ?? null;
 		const credits = plan ? PLAN_CREDITS[plan].credits : null;
 		const metadata = event.data?.metadata ?? {};
 		// userId comes from checkout metadata (Polar echoes it back on every
@@ -294,15 +284,16 @@ export async function polarWebhookHandler(c: Context<OmaEnv>) {
 				);
 		}
 
-		if (event.type === "order.paid") {
+		let appliedOrderDeltaCents: number | undefined;
+		if (event.type === "order.paid" || event.type === "order.refunded") {
 				if (userId && credits) {
 						await processInTransaction(eventId, async (tx) => {
-								await creditUserTx(tx, userId, credits as number, event.type);
+								appliedOrderDeltaCents = await reconcilePolarOrderCredit(tx, eventId, event.data, credits);
 						});
 				} else {
 					logger.error(
 						{ type: event.type, hasUserId: !!userId, hasCredits: !!credits, plan, eventId },
-						"[polar] order.paid missing userId or credits; returning 5xx so Polar retries",
+						"[polar] order event missing userId or credits; returning 5xx so Polar retries",
 					);
 					// SECURITY (audit 2026-09-27 / P0): returning 200 here told Polar
 					// "handled" while the customer paid real money and got nothing —
@@ -319,94 +310,16 @@ export async function polarWebhookHandler(c: Context<OmaEnv>) {
 					return c.json(
 						{
 							error: {
-								message: "order.paid missing userId or credits — not processed",
+								message: "Order event missing userId or credits — not processed",
 								code: "missing_credit_target",
 							},
 						},
 						500,
 					);
 				}
-		} else if (event.type === "order.refunded") {
-				if (userId && credits) {
-						await processInTransaction(eventId, async (tx) => {
-								await drainUserTx(tx, userId, credits as number);
-						});
-				} else {
-						logger.warn(
-								{ type: event.type, hasUserId: !!userId, hasCredits: !!credits, plan },
-								"[polar] order.refunded missing userId or credits; check product/metadata",
-						);
-				}
-		} else if (
-				event.type === "subscription.created" ||
-				event.type === "subscription.active" ||
-				event.type === "subscription.updated"
-		) {
-				if (userId && credits) {
-						if (
-								event.data?.status === "active" ||
-								event.data?.status === "trialing" ||
-								event.type === "subscription.active"
-						) {
-								// SECURITY (audit 2026-09-27 / P0): Polar re-delivers
-								// created/active/updated for the SAME billing period with
-								// DIFFERENT event ids. Event-id idempotency alone let one
-								// monthly period mint credits three times. Insert a
-								// synthetic period row (unique polarEventId) inside the
-								// credit tx; if it already exists, this period was
-								// credited and we must not credit again.
-								const d = event.data as Record<string, unknown> | undefined;
-								const periodStartRaw =
-										(d?.current_period_start ?? d?.ended_at ?? d?.created_at) as
-												| string
-												| number
-												| undefined;
-								const periodStart = String(
-										periodStartRaw ??
-												eventId,
-								);
-								const periodKey = `period-credit-${periodStart}`;
-								await processInTransaction(eventId, async (tx) => {
-										const claimed = await tx
-												.insert(polarWebhookEvents)
-												.values({
-													polarEventId: `${userId}:${periodKey}`,
-													eventType: `${event.type}:period`,
-													payload: JSON.stringify({ userId, period: periodStart }),
-													processed: 1,
-												})
-												.onConflictDoNothing()
-												.returning({ id: polarWebhookEvents.id });
-										if (claimed.length === 0) {
-												logger.warn(
-														{ userId, periodStart, eventId },
-														"[polar] subscription period already credited; skipping duplicate grant",
-												);
-												return;
-										}
-										await creditUserTx(tx, userId, credits as number, event.type);
-								});
-						} else {
-								logger.info(
-										{ userId, type: event.type, status: event.data?.status },
-										"[polar] subscription event with non-active status; no credit",
-								);
-						}
-				} else {
-						logger.warn(
-								{ type: event.type, hasUserId: !!userId, hasCredits: !!credits, plan },
-								"[polar] subscription event missing userId or credits; check product/metadata",
-						);
-				}
-		} else if (
-				event.type === "subscription.canceled" ||
-				event.type === "subscription.revoked"
-		) {
-				if (userId) {
-						await revokeUser(userId);
-				}
 		} else {
-				logger.info({ type: event.type }, "[polar] webhook event (unhandled type)");
+				// Subscription lifecycle/trial state is not evidence of payment.
+				logger.info({ type: event.type }, "[polar] webhook acknowledged without credit");
 				await markEventProcessed(eventId);
 		}
 
@@ -414,7 +327,7 @@ export async function polarWebhookHandler(c: Context<OmaEnv>) {
 				kind: "polar",
 				outcome: "settled",
 				userId: userId ?? undefined,
-				amountCents: credits ?? undefined,
+				amountCents: appliedOrderDeltaCents,
 				signature: eventId,
 				latencyMs: Date.now() - startedAt,
 		});
@@ -458,77 +371,6 @@ async function processInTransaction(
 				);
 				throw err;
 		}
-}
-
-/**
-	* Inside-transaction variant of creditUser. Caller controls the tx.
-	*/
-async function creditUserTx(
-		tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
-		userId: string,
-		credits: number,
-		source: string,
-): Promise<void> {
-		await tx
-				.insert(creditBalances)
-				.values({
-						userId,
-						balanceCents: credits.toString(),
-						totalDepositedCents: credits.toString(),
-						totalUsedCents: "0",
-				})
-				.onConflictDoUpdate({
-						target: creditBalances.userId,
-						set: {
-								balanceCents: sql`${creditBalances.balanceCents}::numeric + ${credits}::numeric`,
-								totalDepositedCents: sql`${creditBalances.totalDepositedCents}::numeric + ${credits}::numeric`,
-								lastActivityAt: sql`NOW()`,
-						},
-				});
-		logger.info({ userId, credits, source }, "[polar] credited user balance");
-}
-
-/**
-	* Inside-transaction variant of drainUser. Caller controls the tx.
-	*/
-async function drainUserTx(
-		tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
-		userId: string,
-		credits: number,
-): Promise<void> {
-		// Known limitation (audit MEDIUM, not yet migrated): this drains the
-		// AGGREGATE balance, not the specific grant the refund belongs to. A
-		// user who buys pack A, spends it, then buys pack B will have pack B's
-		// credits drained when pack A is refunded.
-		//
-		// The correct fix is a per-grant credit-lot ledger (FIFO consume, refund
-		// reverses its own lot) plus a migration. That is a schema change and a
-		// money-semantics decision, so it is NOT done blind here.
-		//
-		// What we DO have: GREATEST(...,0) means the balance can never go
-		// negative, and capturing the post-drain balance makes an over-drain
-		// visible in logs instead of silent.
-		const [after] = await tx
-			.update(creditBalances)
-			.set({
-				balanceCents: sql`GREATEST(${creditBalances.balanceCents}::numeric - ${credits}::numeric, 0)`,
-				totalDepositedCents: sql`GREATEST(${creditBalances.totalDepositedCents}::numeric - ${credits}::numeric, 0)`,
-				lastActivityAt: sql`NOW()`,
-			})
-			.where(eq(creditBalances.userId, userId))
-			.returning({ balanceCents: creditBalances.balanceCents });
-
-		const remaining = after?.balanceCents != null ? Number(after.balanceCents) : null;
-		if (remaining !== null && remaining === 0 && credits > 0) {
-			// We asked to take more than remained. Legitimate if the user
-			// already spent the credits, but it means the refund consumed
-			// balance from other grants — flag it for reconciliation.
-			logger.warn(
-				{ userId, requested: credits, remaining },
-				"[polar] refund drained balance to zero; may have consumed credits from other grants (per-grant lot ledger not yet implemented)",
-			);
-		}
-		logger.info({ userId, credits, remaining }, "[polar] refunded; credits drained");
 }
 
 // Signature verification is the security boundary. Keep webhook delivery

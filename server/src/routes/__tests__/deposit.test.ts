@@ -153,6 +153,23 @@ describe("deposit routes (real handler)", () => {
 			const data = await res.json();
 			expect(data.balanceCents).toBe("5000");
 		});
+
+		it.each([
+			["-0.00000001", "0.00000001"],
+			["-9007199254740993.12345678", "9007199254740993.12345678"],
+		])("presents refunded balance %s as zero spendable credits and exact debt", async (balanceCents, debtCents) => {
+			mockSelectReturns([{ balanceCents, totalDepositedCents: "10000", totalUsedCents: "5000" }]);
+			const res = await depositReq("get", "/v1/balance");
+			expect(res.status).toBe(200);
+			expect(await res.json()).toMatchObject({ balanceCents: "0", debtCents, reservedCents: "0", reconciliationCents: "0" });
+		});
+
+		it.each(["0", "-0.00000000", "0.00000001", "9007199254740993.12345678"])("omits debt when the stored balance %s has no shortfall", async balanceCents => {
+			mockSelectReturns([{ balanceCents }]);
+			const data = await (await depositReq("get", "/v1/balance")).json();
+			expect(data.balanceCents).toBe(balanceCents.startsWith("-") ? "0" : balanceCents);
+			expect(data).not.toHaveProperty("debtCents");
+		});
 	});
 
 	describe("GET /v1/deposit/usdc (instructions)", () => {

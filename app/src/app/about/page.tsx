@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { API_V1_BASE } from "@/lib/site";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Cpu, Shield, Wallet } from "lucide-react";
 import { MODEL_COUNT } from "@/lib/models-data";
@@ -127,7 +128,7 @@ export default function AboutPage() {
 					<div className="mt-4 space-y-3 text-sm text-text-secondary leading-relaxed max-w-2xl">
 						<p>
 							OMA is a single OpenAI-compatible endpoint —
-							<code className="rounded border border-border bg-surface px-1.5 py-0.5 font-mono text-[13px] text-text-bright">https://www.oma-ai.com/api/v1</code> —
+							<code className="rounded border border-border bg-surface px-1.5 py-0.5 font-mono text-[13px] text-text-bright">{API_V1_BASE}</code> —
 							in front of a rotating catalog of chat models routed across
 							multiple upstream providers. Each requested model resolves to
 							its configured upstream route. Circuit breakers stop repeated

@@ -39,7 +39,7 @@ function Sidebar({ activeId }: { activeId: string }) {
 				onClick={() => setMobileOpen(!mobileOpen)}
 				className="fixed bottom-24 right-6 z-[100] flex h-14 w-14 items-center justify-center rounded-full bg-accent text-void shadow-[0_0_20px_var(--color-accent-glow)] lg:hidden active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void"
 				aria-label={
-					mobileOpen ? "Close navigation menu" : "Open navigation menu"
+					mobileOpen ? "Close documentation navigation" : "Open documentation navigation"
 				}
 				aria-expanded={mobileOpen}
 				aria-controls={mobileNavId}
@@ -52,7 +52,7 @@ function Sidebar({ activeId }: { activeId: string }) {
 					type="button"
 					className="fixed inset-0 z-40 bg-void/80 backdrop-blur-sm lg:hidden cursor-default active:scale-[0.97]"
 					onClick={() => setMobileOpen(false)}
-					aria-label="Close navigation menu"
+					aria-label="Close documentation navigation"
 				/>
 			)}
 
@@ -62,7 +62,7 @@ function Sidebar({ activeId }: { activeId: string }) {
 				aria-label="Documentation navigation"
 				aria-hidden={drawerHidden}
 				inert={drawerHidden}
-				className={`fixed left-0 top-14 z-[60] h-[calc(100dvh-3.5rem)] w-72 overflow-y-auto border-r border-border bg-surface transition-transform duration-200 ease-out lg:translate-x-0 ${
+				className={`fixed left-0 top-0 z-[60] h-dvh w-72 overflow-y-auto border-r border-border bg-surface transition-transform duration-200 ease-out lg:sticky lg:top-14 lg:h-[calc(100dvh-3.5rem)] lg:shrink-0 lg:translate-x-0 ${
 					mobileOpen ? "translate-x-0" : "-translate-x-full"
 				}`}
 			>
@@ -148,9 +148,9 @@ export function DocsShell({ children }: { children: React.ReactNode }) {
 	}, []);
 
 	return (
-		<div className="relative bg-surface">
+		<div className="relative bg-surface lg:flex lg:items-start">
 			<Sidebar activeId={activeId} />
-			<div className="min-w-0 lg:pl-72">
+			<div className="min-w-0 lg:flex-1">
 				<div className="mx-auto max-w-5xl min-w-0 px-4 py-10 sm:px-6 lg:px-8">
 					{children}
 				</div>

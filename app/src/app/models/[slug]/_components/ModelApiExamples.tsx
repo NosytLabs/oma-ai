@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { CopyableCode } from "@/components/copyable-code";
 import { ModelDetailTabs } from "./ModelDetailTabs";
+import { API_V1_BASE } from "@/lib/site";
 
 const LANGUAGES = [
 	{ id: "curl", label: "cURL" },
@@ -15,7 +16,7 @@ export function ModelApiExamples({ modelId, name }: { modelId: string; name: str
 	const [language, setLanguage] = useState<(typeof LANGUAGES)[number]["id"]>("curl");
 	const quotedId = JSON.stringify(modelId);
 	const examples = {
-		curl: `curl https://www.oma-ai.com/api/v1/chat/completions \\
+		curl: `curl ${API_V1_BASE}/chat/completions \\
   -H "Content-Type: application/json" \\
   -H "Authorization: Bearer $OMA_API_KEY" \\
   -d '{
@@ -28,7 +29,7 @@ from openai import OpenAI
 
 client = OpenAI(
     api_key=os.environ["OMA_API_KEY"],
-    base_url="https://www.oma-ai.com/api/v1",
+    base_url="${API_V1_BASE}",
 )
 
 response = client.chat.completions.create(
@@ -42,7 +43,7 @@ print(response.choices[0].message.content)`,
 
 const client = new OpenAI({
   apiKey: process.env.OMA_API_KEY,
-  baseURL: "https://www.oma-ai.com/api/v1",
+  baseURL: API_V1_BASE,
 });
 
 const response = await client.chat.completions.create({

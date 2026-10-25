@@ -90,7 +90,7 @@ function CreditBalanceCardComponent({
 					{balance && <p className="mt-2 text-sm text-text-muted">{toDollars(balance.balanceCents).toLocaleString(undefined, { style: "currency", currency: "USD" })} USD · 1 credit = $0.01</p>}
 				</div>
 
-				<PendingCredits reservedCents={balance?.reservedCents} reconciliationCents={balance?.reconciliationCents} />
+				<PendingCredits reservedCents={balance?.reservedCents} reconciliationCents={balance?.reconciliationCents} debtCents={balance?.debtCents} />
 				<div className="mb-4 flex items-center gap-2.5 rounded-[var(--radius-sm)] border border-border/40 bg-surface/50 px-3 py-1.5 text-[11.5px] font-mono text-text-muted shadow-inner w-fit">
 					<span
 						className="inline-block h-2 w-2 rounded-full bg-text-muted/60"

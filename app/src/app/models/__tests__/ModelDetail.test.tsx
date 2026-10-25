@@ -78,16 +78,54 @@ describe("model detail", () => {
 		expect(screen.queryByText("Tool calling")).not.toBeInTheDocument();
 	});
 
+	it("qualifies OpenBroker features, streaming, tools and modalities as configuration", () => {
+		const openbroker = MODELS.find((entry) => entry.id === "minimax-m2-7")!;
+		render(<ModelDetail model={openbroker} availability={true} supportsTools={true} supportsStreaming={true} supportedParameters={["stream", "tools"]} />);
+
+		const features = screen.getByRole("region", { name: "Configured features" });
+		expect(within(features).getByText("Provider support is unverified. Features and modalities below reflect OMA configuration.")).toBeInTheDocument();
+		expect(within(features).getByText("Reasoning (configured)")).toBeInTheDocument();
+		expect(within(features).getByText("Tool calling (configured)")).toBeInTheDocument();
+		expect(within(features).getByText("Streaming (configured)")).toBeInTheDocument();
+		expect(within(features).getByText("Configured input")).toBeInTheDocument();
+		expect(within(features).getByText("Configured output")).toBeInTheDocument();
+		expect(screen.getByRole("heading", { name: "Configured parameters" })).toBeInTheDocument();
+		expect(screen.queryByRole("heading", { name: "Supported parameters" })).not.toBeInTheDocument();
+	});
+
+	it.each([
+		["minimax-m2-7", "180,000"],
+		["zai-org-glm-5-3", "400,000"],
+	])("shows conservative OMA limits without claiming provider maxima for %s", (id, context) => {
+		const openbroker = MODELS.find((entry) => entry.id === id)!;
+		render(<ModelDetail model={openbroker} availability={false} />);
+
+		expect(screen.getByText(`OMA configured limit: ${context} tokens`)).toBeInTheDocument();
+		expect(screen.getByText("OMA configured limit: 16,384 tokens")).toBeInTheDocument();
+		expect(screen.getAllByText("Unverified")).toHaveLength(2);
+		const features = screen.getByRole("region", { name: "Configured features" });
+		expect(within(features).queryByText(/fast|multimodal/i)).not.toBeInTheDocument();
+	});
+
 	it("switches all provider facts and API examples together on a shared model page", () => {
 		const venice = MODELS.find((entry) => entry.id === "deepseek-v4-flash-0731")!;
 		const oma = MODELS.find((entry) => entry.id === "deepseek-v4-flash-0731-openbroker")!;
-		render(<ModelDetail model={venice} availability={true} routes={[{ model: venice, availability: true }, { model: oma, availability: false }]} />);
+		render(<ModelDetail model={venice} availability={true} routes={[{ model: venice, availability: true, supportsTools: true, supportsStreaming: true }, { model: oma, availability: false, supportsTools: true, supportsStreaming: true }]} />);
 		expect(screen.getByText("1M")).toBeInTheDocument();
+		expect(screen.getByRole("region", { name: "Capabilities" })).toBeInTheDocument();
+		expect(screen.queryByText("Provider support is unverified. Features and modalities below reflect OMA configuration.")).not.toBeInTheDocument();
 		fireEvent.click(screen.getByRole("button", { name: /OMA-AI/ }));
 		expect(screen.getByRole("heading", { name: oma.name })).toBeInTheDocument();
 		expect(screen.getByText("OMA configured limit: 400,000 tokens")).toBeInTheDocument();
 		expect(screen.getAllByText("Unverified")).toHaveLength(2);
+		expect(screen.getByText("Tool calling (configured)")).toBeInTheDocument();
+		expect(screen.getByText("Streaming (configured)")).toBeInTheDocument();
 		expect(screen.queryByRole("link", { name: "Try in chat" })).not.toBeInTheDocument();
+		fireEvent.click(screen.getByRole("button", { name: /Venice/ }));
+		expect(screen.getByRole("region", { name: "Capabilities" })).toBeInTheDocument();
+		expect(screen.getByText("Tool calling")).toBeInTheDocument();
+		expect(screen.queryByText("Tool calling (configured)")).not.toBeInTheDocument();
+		fireEvent.click(screen.getByRole("button", { name: /OMA-AI/ }));
 		fireEvent.click(screen.getByRole("tab", { name: "API examples" }));
 		expect(screen.getByLabelText(`${oma.name} cURL example`)).toHaveTextContent('"model": "deepseek-v4-flash-0731-openbroker"');
 	});

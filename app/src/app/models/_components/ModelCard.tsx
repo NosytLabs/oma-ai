@@ -27,6 +27,7 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 	const inModalities = model.inputModalities ?? ["text"];
 	const outModalities = model.outputModalities ?? ["text"];
 	const isNonChat = model.modality !== "chat";
+	const unverified = model.metadataVerification?.status === "unverified";
 
 	// "text" input is universal — every catalog model accepts it — so it
 	// adds no information and just fills the row with identical badges.
@@ -95,6 +96,14 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 					</div>
 				</div>
 
+				{unverified && (
+					<div className="mt-4 space-y-1 text-xs leading-relaxed text-text-muted">
+						<p className="font-medium text-text-secondary">Configured features</p>
+						<p>Provider support is unverified.</p>
+						<p>Configured modalities: {inModalities.join(", ")} input → {outModalities.join(", ")} output</p>
+					</div>
+				)}
+
 				{hasBadges && (
 					<div className="mt-4 flex flex-wrap gap-2">
 						<div className="flex flex-wrap gap-2">
@@ -121,12 +130,12 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 							return (
 								<span
 									key={`${m}-${isOutput ? "out" : "in"}`}
-									title={badge.title}
+									title={unverified ? `${badge.title} is configured by OMA; provider support is unverified` : badge.title}
 									className={`px-2.5 py-1 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider border ${
 										neutral ? "bg-surface text-text-secondary border-border" : badge.cls
 									}`}
 								>
-									{badge.label}
+									{badge.label}{unverified ? " (configured)" : ""}
 								</span>
 							);
 						})}
@@ -138,13 +147,13 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 								key={String(cap)}
 								className="px-2.5 py-1 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-surface text-text-secondary border border-border"
 							>
-								{cap}
+								{unverified && cap === "agents" ? "tool calling" : cap}{unverified ? " (configured)" : ""}
 							</span>
 						))}
 						{displayCaps.length > 3 && (
 							<span
 								className="px-2.5 py-1 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider text-text-muted cursor-help border border-transparent"
-								title={`Additional capabilities: ${displayCaps
+								title={`${unverified ? "Additional configured features (provider unverified)" : "Additional capabilities"}: ${displayCaps
 									.slice(3)
 									.join(", ")}`}
 							>
@@ -158,7 +167,7 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 				<div className="mt-auto pt-4 border-t border-border/50 flex flex-wrap items-center justify-between gap-2 text-xs">
 					<span className="text-[11px] text-text-secondary font-mono tabular-nums">
 						{model.contextLength && model.contextLength !== "0"
-							? model.metadataVerification?.status === "unverified" ? "Context unverified" : `${model.contextLength} ctx`
+							? unverified ? "Context unverified" : `${model.contextLength} ctx`
 							: "—"}
 					</span>
 					<div className="flex items-center gap-2 text-[11px] font-mono tabular-nums">

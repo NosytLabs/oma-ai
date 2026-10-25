@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { ModelCard } from "../_components/ModelCard";
-import type { Model } from "@/lib/models-data";
+import { MODELS, type Model } from "@/lib/models-data";
 
 const base: Model = {
 	id: "claude-opus-5",
@@ -48,6 +48,16 @@ describe("ModelCard availability", () => {
 
 		expect(screen.queryByText(/unavailable/i)).toBeNull();
 		expect(screen.getByText(/try in chat/i)).toBeTruthy();
+	});
+
+	it("labels configured features and modalities when provider support is unverified", () => {
+		const openbroker = MODELS.find((entry) => entry.id === "minimax-m2-7")!;
+		render(<ModelCard model={openbroker} index={0} />);
+
+		expect(screen.getByText("Configured features")).toBeInTheDocument();
+		expect(screen.getByText("Provider support is unverified.")).toBeInTheDocument();
+		expect(screen.getByText("reasoning (configured)")).toBeInTheDocument();
+		expect(screen.getByText("Configured modalities: text input → text output")).toBeInTheDocument();
 	});
 
 	/**

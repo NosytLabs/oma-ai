@@ -43,6 +43,7 @@ const APP_VARS = [
 	// production guard, because fnEnv() only forwards the vars listed here --
 	// having it in the shell/.env file is not sufficient.
 	"INTERNAL_PROXY_SECRET",
+	"INTERNAL_PROXY_SECRET_PREVIOUS",
 	"OPENBROKER_API_KEY",
 	"GONKA_API_KEY",
 	"OBK_API_KEY",
@@ -62,6 +63,7 @@ const APP_VARS = [
 	"TREASURY_BASE_ADDRESS",
 	"FACILITATOR_PRIVATE_KEY",
 	"RECEIPT_HMAC_SECRET",
+	"RECEIPT_HMAC_SECRET_PREVIOUS",
 	"FREE_SIGNUP_CENTS",
 	"USDC_DEPOSIT_ADDRESS",
 	"USDC_DEPOSIT_NETWORK",

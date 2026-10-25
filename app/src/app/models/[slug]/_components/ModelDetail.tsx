@@ -112,7 +112,7 @@ export function ModelDetail({ routes, ...initial }: ModelRouteDetails & { routes
 					{isFreeChatModel(model.id) ? "Free in website chat within the daily limit. API usage is billed at the rates above." : "Pay for the tokens you use. Chat and API usage draw from your account credits."}
 				</p>
 				{model.metadataVerification && (
-					<p className="mb-8 text-xs leading-relaxed text-text-muted">
+					<p className="mb-8 break-words text-xs leading-relaxed text-text-muted">
 						{model.metadataVerification.note}{" "}
 						<a href={model.metadataVerification.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Provider catalog</a>{" "}
 						checked {model.metadataVerification.verifiedAt}.
@@ -123,15 +123,16 @@ export function ModelDetail({ routes, ...initial }: ModelRouteDetails & { routes
 				<div role="tabpanel" id="model-panel-overview" aria-labelledby="model-tab-overview" hidden={tab !== "overview"} tabIndex={0} className="pt-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
 					<div className="grid gap-5 lg:grid-cols-2">
 						<section aria-labelledby="capabilities-heading" className="rounded-[var(--radius-xl)] border border-border bg-panel p-5 sm:p-6">
-							<h2 id="capabilities-heading" className="font-display text-xl font-medium text-text-bright">Capabilities</h2>
+							<h2 id="capabilities-heading" className="font-display text-xl font-medium text-text-bright">{unverified ? "Configured features" : "Capabilities"}</h2>
+							{unverified && <p className="mt-3 text-sm leading-relaxed text-text-muted">Provider support is unverified. Features and modalities below reflect OMA configuration.</p>}
 							<ul className="mt-4 flex flex-wrap gap-2">
-								{model.capabilities.filter((capability) => capability !== "agents").map((capability) => <li key={capability} className={badgeClass}>{CAPABILITY_ICONS[capability]}{CAPABILITY_LABELS[capability]}</li>)}
-								{toolCalling && <li className={badgeClass}><Wrench className="h-3.5 w-3.5" aria-hidden="true" />Tool calling</li>}
-								{supportsStreaming === true && <li className={badgeClass}><Radio className="h-3.5 w-3.5" aria-hidden="true" />Streaming</li>}
+								{model.capabilities.filter((capability) => capability !== "agents").map((capability) => <li key={capability} className={badgeClass}>{CAPABILITY_ICONS[capability]}{CAPABILITY_LABELS[capability]}{unverified ? " (configured)" : ""}</li>)}
+								{toolCalling && <li className={badgeClass}><Wrench className="h-3.5 w-3.5" aria-hidden="true" />Tool calling{unverified ? " (configured)" : ""}</li>}
+								{supportsStreaming === true && <li className={badgeClass}><Radio className="h-3.5 w-3.5" aria-hidden="true" />Streaming{unverified ? " (configured)" : ""}</li>}
 							</ul>
 							<dl className="mt-6 space-y-3 border-t border-border pt-5 text-sm">
-								<div className="flex items-start justify-between gap-4"><dt className="text-text-muted">Input</dt><dd className="text-right capitalize text-text-secondary">{(model.inputModalities ?? ["text"]).join(", ") || "Not specified"}</dd></div>
-								<div className="flex items-start justify-between gap-4"><dt className="text-text-muted">Output</dt><dd className="text-right capitalize text-text-secondary">{(model.outputModalities ?? ["text"]).join(", ") || "Not specified"}</dd></div>
+								<div className="flex items-start justify-between gap-4"><dt className="text-text-muted">{unverified ? "Configured input" : "Input"}</dt><dd className="text-right capitalize text-text-secondary">{(model.inputModalities ?? ["text"]).join(", ") || "Not specified"}</dd></div>
+								<div className="flex items-start justify-between gap-4"><dt className="text-text-muted">{unverified ? "Configured output" : "Output"}</dt><dd className="text-right capitalize text-text-secondary">{(model.outputModalities ?? ["text"]).join(", ") || "Not specified"}</dd></div>
 								{model.privacy && <div className="flex items-start justify-between gap-4"><dt className="text-text-muted">Provider privacy</dt><dd className="text-right capitalize text-text-secondary">{model.privacy}</dd></div>}
 								{model.extendedPricing && <div className="flex items-start justify-between gap-4"><dt className="text-text-muted">Above {model.extendedPricing.contextTokenThreshold.toLocaleString("en-US")} input tokens</dt><dd className="text-right text-text-secondary">{formatPricePerMillion(model.extendedPricing.inputPricePer1M)}/M input · {formatPricePerMillion(model.extendedPricing.outputPricePer1M)}/M output</dd></div>}
 							</dl>
@@ -146,7 +147,7 @@ export function ModelDetail({ routes, ...initial }: ModelRouteDetails & { routes
 					</div>
 					{supportedParameters && supportedParameters.length > 0 && (
 						<section aria-labelledby="parameters-heading" className="mt-5 rounded-[var(--radius-xl)] border border-border bg-panel p-5 sm:p-6">
-							<h2 id="parameters-heading" className="font-display text-xl font-medium text-text-bright">Supported parameters</h2>
+							<h2 id="parameters-heading" className="font-display text-xl font-medium text-text-bright">{unverified ? "Configured parameters" : "Supported parameters"}</h2>
 							<ul className="mt-4 flex flex-wrap gap-2">{supportedParameters.map((parameter) => <li key={parameter} className={badgeClass}><code>{parameter}</code></li>)}</ul>
 						</section>
 					)}

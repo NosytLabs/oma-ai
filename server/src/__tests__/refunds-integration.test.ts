@@ -85,6 +85,25 @@ describe.skipIf(!fixture.url)("usage credit refunds (Postgres)", () => {
 		expect((await query("select action from audit_logs")).rows).toEqual([{ action: "REFUND_GRANTED" }]);
 	});
 
+	it("preserves card refund debt through rejected admin deductions and repays it with a credit", async () => {
+		await query("update credit_balances set balance_cents=-5 where user_id='buyer'");
+		const deduction = await post("/v1/admin/credit-adjust", { userId: "buyer", deltaCents: -1, reason: "Operator deduction" }, "operator");
+		expect(deduction.status).toBe(400);
+		expect((await ledger()).balance_cents).toBe("-5.00000000");
+		const credit = await post("/v1/admin/credit-adjust", { userId: "buyer", deltaCents: 1, reason: "Operator repayment" }, "operator");
+		expect(credit.status).toBe(200);
+		expect(await credit.json()).toMatchObject({ deltaCents: 1, requestedDeltaCents: 1, capped: false });
+		expect((await ledger()).balance_cents).toBe("-4.00000000");
+	});
+
+	it("reports the actual capped admin deduction without creating new debt", async () => {
+		await query("update credit_balances set balance_cents=5.125 where user_id='buyer'");
+		const response = await post("/v1/admin/credit-adjust", { userId: "buyer", deltaCents: -10, reason: "Operator deduction" }, "operator");
+		expect(response.status).toBe(200);
+		expect(await response.json()).toMatchObject({ deltaCents: -5.125, requestedDeltaCents: -10, capped: true });
+		expect((await ledger()).balance_cents).toBe("0.00000000");
+	});
+
 	it("preserves sub-cent charges through intake, approval and transaction history", async () => {
 		const intake = await create(await charge("0.00000234"));
 		const body = await intake.json();

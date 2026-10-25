@@ -120,6 +120,21 @@ Run the repository migration command using the approved production connection,
 then verify the journal and expected tables before deploying the function.
 A successful local migration does not establish production schema readiness.
 
+Use the migration runner rather than `drizzle-kit migrate` by hand — it applies
+pending migrations with drizzle's own migrator (keeping the
+`__drizzle_migrations` journal drizzle-maintained) and then hard-fails if any
+table in `server/src/db/schema.ts` is missing:
+
+```bash
+cd server
+DATABASE_URL="<approved production connection>" node scripts/migrate-prod.mjs
+# verify only, migrate nothing:
+DATABASE_URL="<approved production connection>" node scripts/migrate-prod.mjs --check
+```
+
+A pooled Neon URL is rewritten to the direct endpoint automatically: the
+migrator wraps DDL in a transaction, which pooled connections do not support.
+
 If a production database query returns quota-exceeded HTTP402, stop the API
 release. Resolve the account quota/plan first, migrate, deploy, and require
 native `/ready` HTTP200 before running paid signup/funding/inference checks.
