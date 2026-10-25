@@ -15,11 +15,11 @@ export const TERMS: GlossaryTerm[] = [
 	},
 	{
 		term: "Token",
-		def: "A unit of text that AI models read and write. Roughly 1 token = ¾ of a word in English. Prices, speeds, and limits are all measured in tokens.",
+		def: "A unit a model uses to process input and output. The count depends on the selected model and content. OMA quotes API prices per million tokens and records provider-reported usage.",
 	},
 	{
 		term: "Context window",
-		def: "How much text a model can see at once — your whole conversation, pasted documents, and its answer. OMA offers models with up to 1M token windows: enough to read an entire book in one go.",
+		def: "How much text a model can see at once — your whole conversation, pasted documents, and its answer. The model catalog lists configured context and output limits with their verification sources.",
 	},
 	{
 		term: "Model",
@@ -35,7 +35,7 @@ export const TERMS: GlossaryTerm[] = [
 	},
 	{
 		term: "Streaming",
-		def: "Sending the answer word-by-word as it's generated, instead of waiting for the complete reply. Feels instant; standard in chat apps.",
+		def: "Receiving incremental response chunks as the model generates them. OMA uses server-sent events for streaming API responses.",
 	},
 	{
 		term: "Provider",
@@ -47,7 +47,7 @@ export const TERMS: GlossaryTerm[] = [
 	},
 	{
 		term: "OpenAI-compatible",
-		def: "Speaking the same API language as OpenAI. Tools, SDKs, and tutorials written for OpenAI work with OMA by just changing the base URL to https://www.oma-ai.com/api/v1.",
+		def: "Support for the documented Chat Completions request and response shapes at /api/v1. Configure an OMA key and model ID, and check /docs for supported fields. OMA does not implement the Responses API.",
 	},
 	{
 		term: "Embedding",
@@ -55,7 +55,7 @@ export const TERMS: GlossaryTerm[] = [
 	},
 	{
 		term: "Temperature / top-p",
-		def: "Knobs that control randomness. Lower = more predictable and factual; higher = more creative. Top-p is an alternative way of dialing the same thing. OMA lets you tune both per request.",
+		def: "Sampling controls accepted by the Chat Completions API. Their effect depends on the selected model and provider; see the request bounds in /docs.",
 	},
 	{
 		term: "Latency",
@@ -63,15 +63,15 @@ export const TERMS: GlossaryTerm[] = [
 	},
 	{
 		term: "Rate limit",
-		def: "A cap on how many requests you can send in a time window, protecting the service (and your balance) from runaway loops. OMA enforces per-key limits; see /docs#rate-limits.",
+		def: "A cap on how many requests you can send in a time window, protecting the service (and your balance) from runaway loops. OMA applies account, key, IP and model limits; see /docs#rate-limits.",
 	},
 	{
 		term: "HTTP status 402",
-		def: "Payment Required — usually means your credit balance is too low for the request. On OMA, chat/API calls spend prepaid credits; they are not interrupted mid-request by an x402 challenge.",
+		def: "Payment Required — usually means your credit balance is too low for the request. On OMA, paid API calls require a credit reservation before provider work. Free website chat has separate quotas. x402 funding is a separate operation.",
 	},
 	{
 		term: "Credits",
-		def: "OMA's prepaid balance, denominated in credits. Deposit USDC (or use card checkout when Polar is enabled); each API request deducts its listed cost. Credits never expire while your account is active.",
+		def: "OMA's prepaid balance, denominated in credits. Deposit USDC (or use card checkout when Polar is enabled); paid requests reserve a maximum budget, then settle verified usage and return unused credit. Uncertain outcomes can retain a hold for review.",
 	},
 	{
 		term: "USDC",
@@ -103,23 +103,19 @@ export const TERMS: GlossaryTerm[] = [
 	},
 	{
 		term: "Gas (fee)",
-		def: "The small fee paid to a blockchain for processing a transaction. EIP-3009 transfers on OMA are gasless for you — the gateway pays the gas.",
+		def: "The small fee paid to a blockchain for processing a transaction. OMA's x402 facilitator pays gas for relayed authorizations. Direct wallet deposits require gas in the sending wallet.",
 	},
 	{
 		term: "SDK",
-		def: "Software Development Kit — a ready-made library (Python, Node, etc.) so you don't hand-write HTTP calls. OpenAI's SDKs work with OMA by pointing them at our base URL.",
+		def: "Software Development Kit — a ready-made library (Python, Node, etc.) so you don't hand-write HTTP calls. Use a client that supports a configurable Chat Completions base URL, API key and model. Check the documented subset before relying on client-specific features.",
 	},
 	{
 		term: "MCP",
 		def: "Model Context Protocol — a standard way to give AI models access to tools and data (files, browsers, databases). OMA chat completions accept OpenAI-style tool calls so MCP-aware clients can route tool use through the same /v1/chat/completions endpoint.",
 	},
 	{
-		term: "A2A",
-		def: "Agent-to-Agent — an open standard for independent AI agents to discover capabilities, exchange messages, and coordinate tasks. The project is governed in the Linux Foundation's agentic ecosystem. OMA publishes an agent card at /.well-known/agent-card.json.",
-	},
-	{
 		term: "A2UI",
-		def: "Agent-to-User Interface — an open, JSON-based streaming protocol for agents to describe portable UI that a host app renders with its own components. OMA's playground can demonstrate agent-driven interface output.",
+		def: "Agent-to-User Interface — an open, JSON-based streaming protocol for agents to describe portable UI that a host app renders with its own components. OMA retains a legacy renderer for saved A2UI-shaped output. The current website UI mode uses OpenUI; this does not add an A2UI response format to the API.",
 	},
 	{
 		term: "llms.txt",
@@ -127,7 +123,7 @@ export const TERMS: GlossaryTerm[] = [
 	},
 	{
 		term: "Agent skill",
-		def: "A plain-text instruction file an AI agent can read to learn how to do something autonomously. OMA publishes /agent-skill.md so agents can create an account and start calling the API by themselves.",
+		def: "A plain-text instruction file an AI agent can read to learn how to do something autonomously. OMA publishes /agent-skill.md with API setup, authentication requirements, request examples and optional wallet funding instructions.",
 	},
 	{
 		term: "Zero data retention",
@@ -143,7 +139,7 @@ export const GLOSSARY_SLUGS = [
 	"streaming", "provider", "gateway", "openai-compatible", "embedding",
 	"temperature-top-p", "latency", "rate-limit", "http-status-402", "credits",
 	"usdc", "base", "wallet", "siwe", "magic-link", "x402", "eip-3009",
-	"gas-fee", "sdk", "mcp", "a2a", "a2ui", "llms-txt", "agent-skill",
+	"gas-fee", "sdk", "mcp", "a2ui", "llms-txt", "agent-skill",
 	"zero-data-retention",
 ] as const;
 
@@ -177,7 +173,7 @@ export const RELATED_TERMS: Record<GlossarySlug, readonly GlossarySlug[]> = {
 	siwe: ["wallet", "magic-link", "base"], "magic-link": ["siwe", "api-key", "wallet"],
 	x402: ["http-status-402", "usdc", "eip-3009"], "eip-3009": ["x402", "gas-fee", "usdc"],
 	"gas-fee": ["base", "eip-3009", "wallet"], sdk: ["api", "openai-compatible", "mcp"],
-	mcp: ["a2a", "a2ui", "sdk"], a2a: ["mcp", "agent-skill", "llms-txt"],
-	a2ui: ["a2a", "mcp", "streaming"], "llms-txt": ["agent-skill", "a2a", "api"],
-	"agent-skill": ["a2a", "llms-txt", "api-key"], "zero-data-retention": ["api-key", "prompt", "credits"],
+	mcp: ["api", "a2ui", "sdk"],
+	a2ui: ["sdk", "mcp", "streaming"], "llms-txt": ["agent-skill", "sdk", "api"],
+	"agent-skill": ["api", "llms-txt", "api-key"], "zero-data-retention": ["api-key", "prompt", "credits"],
 };

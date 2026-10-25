@@ -4,15 +4,8 @@ import SITE_URL from "@/lib/site";
 export const dynamic = "force-static";
 export const revalidate = 3600;
 
-/**
-	* Well-known A2A Agent Card for OMA.
-	*
-	* Implements the A2A v0.3 / Bazaar discovery shape: each `skills[]` entry
-	* advertises `inputModes` + `outputModes` + tags so agent directories and
-	* tool-using models can route themselves to the right endpoint without a
-	* follow-up probe request. The x402 payment block mirrors the v2 spec so
-	* the card is self-describing for the x402 settlement + credit spend flow.
-	*/
+/** OMA API discovery metadata. The linked OpenAPI document defines each
+ * supported request format; website UI renderers are not API protocols. */
 const USDC_BASE_MAINNET = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 
 export function GET() {
@@ -21,6 +14,7 @@ export function GET() {
 
 	const agentCard = {
 		name: "OMA AI Gateway",
+		kind: "api-discovery",
 		description: "OpenAI-compatible inference across a curated model catalog. Check live model availability and prices before requesting inference. Fund prepaid credits with USDC on Base, x402, or card checkout when available, then spend with an API key.",
 		url: `${appUrl}/.well-known/agent-card.json`,
 		version: "2.1.0",
@@ -33,7 +27,6 @@ export function GET() {
 			streaming: true,
 			pushNotifications: false,
 			stateTransitionHistory: false,
-			a2ui: true,
 		},
 		authentication: {
 			schemes: ["siwe", "api-key", "magic-link"],
@@ -41,39 +34,35 @@ export function GET() {
 				"Sign in with Ethereum (EIP-4361) for wallet-bound sessions, magic-link email for human sign-in, or use a server-issued API key (`oma_sk_...`) for machine-to-machine calls.",
 		},
 		defaultInputModes: ["text", "image"],
-		defaultOutputModes: [
-			"text",
-			"application/a2ui+json",
-		],
+		defaultOutputModes: ["text"],
 		skills: [
 			{
 				id: "chat-completions",
 				name: "Chat Completions",
-				description: "OpenAI-compatible chat across frontier, premium, mid, and budget tiers. Availability, tool calling, JSON mode, and image-input support depend on the selected model; check the live catalog.",
+				description: "OpenAI-compatible chat across frontier, premium, mid, and budget tiers. Availability, tool calling and image-input support depend on the selected model. Only the documented request fields are forwarded; check the live catalog and OpenAPI contract.",
 				tags: [
 					"openai-compatible",
 					"chat",
 					"multimodal",
 					"streaming",
 					"tool-calling",
-					"json-mode",
 				],
 				inputModes: ["text", "image"],
-				outputModes: ["text", "application/a2ui+json"],
+				outputModes: ["text"],
 				endpoint: `${apiUrl}/v1/chat/completions`,
 				examples: [
 					{
-						input: { model: "llama-3.3-70b", messages: [{ role: "user", content: "Say hi in one short sentence." }], max_tokens: 32 },
-						output: { choices: [{ message: { role: "assistant", content: "Hey there — welcome to OMA." } }] },
+						input: { model: "minimax-m2-7", messages: [{ role: "user", content: "Say hi in one short sentence." }], max_tokens: 32 },
+						output: { choices: [{ message: { role: "assistant", content: "Hello from OMA." } }] },
 					},
 				],
 			},
 			{
 				id: "anthropic-messages",
 				name: "Anthropic Messages API",
-				description: "Anthropic-compatible /v1/messages endpoint. Translates Anthropic Messages API to OpenAI internally, routes through the same provider pool, and translates the response back to Anthropic shape.",
-				tags: ["anthropic-compatible", "chat", "multimodal"],
-				inputModes: ["text", "image"],
+				description: "Messages adapter for text and function tools. Image/document blocks are rejected; extended-thinking and prompt-cache fields are ignored and not forwarded. Uses the same prepaid balance and provider routing as Chat Completions.",
+				tags: ["anthropic-compatible", "chat", "tool-calling"],
+				inputModes: ["text"],
 				outputModes: ["text"],
 				endpoint: `${apiUrl}/v1/messages`,
 			},
@@ -91,7 +80,7 @@ export function GET() {
 					"api-key",
 				],
 				inputModes: ["text"],
-				outputModes: ["text", "application/a2ui+json"],
+				outputModes: ["text"],
 				endpoint: `${appUrl}/x402/verify`,
 				payment: {
 					protocol: "x402",
@@ -131,12 +120,12 @@ export function GET() {
 		rateLimits: {
 			anonymous: "20 requests/day on the website chat (free models only)",
 			authenticated: "100 requests/day on the website chat (free models)",
-			apiKey: "Token bucket per key; see /docs#rate-limits",
+			apiKey: "Account, key, IP and model limits apply; see /docs#rate-limits",
 		},
 		discovery: {
 			llmsTxt: `${appUrl}/llms.txt`,
 			agentSkill: `${appUrl}/agent-skill.md`,
-			openapi: `${apiUrl}/v1/openapi`,
+			openapi: `${apiUrl}/v1/openapi.json`,
 			models: `${apiUrl}/v1/models`,
 			paymentInfo: `${appUrl}/x402/info`,
 		},

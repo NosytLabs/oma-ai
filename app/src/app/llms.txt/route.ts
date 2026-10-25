@@ -45,7 +45,6 @@ export function GET(): Response {
 - [Models](${siteUrl}/models)
 - [Pricing](${siteUrl}/pricing)
 - [Chat Playground](${siteUrl}/chat)
-- [Changelog](${siteUrl}/changelog): release notes and gateway behaviour changes.
 
 ## Authenticated product surfaces
 
@@ -61,8 +60,8 @@ export function GET(): Response {
 ## Agent resources
 
 - [Agent skill (autonomous setup instructions)](${siteUrl}/agent-skill.md)
-- [A2A agent card](${siteUrl}/.well-known/agent-card.json)
-- [OpenAPI spec](${publicApiUrl}/v1/openapi)
+- [API discovery metadata](${siteUrl}/.well-known/agent-card.json)
+- [OpenAPI spec](${publicApiUrl}/v1/openapi.json)
 - [Model catalog](${publicApiUrl}/v1/models): live availability and prices; an unavailable model remains listed for reference.
 - [GitHub](https://github.com/NosytLabs)
 `;

@@ -28,16 +28,16 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 		heading: "Using OMA with your tools",
 		items: [
 			{
-				q: "Can I use OMA inside Claude Code, OpenCode, or Cursor?",
-				a: `Yes. Use the tool-specific setup at /docs#integrations with your oma_sk_... key, then choose an available catalog model. OpenAI-compatible tools use ${API_V1_BASE}; the Claude Code guide uses OMA's Anthropic-compatible endpoint. OpenCode, Claude Code, Cursor, and Continue are covered in the docs.`,
+				q: "Which clients can connect to OMA?",
+				a: `Clients that let you configure a Chat Completions base URL, key and model can use ${API_V1_BASE}. The Messages adapter supports text and function tools. Check /docs#integrations against the features your client requires; client-specific setup and full feature compatibility are not verified.`,
 			},
 			{
 				q: "How do I migrate an app that already uses OpenAI?",
-				a: `You keep your request shape and SDK. Change one thing — the base URL is now ${API_V1_BASE} — swap the key, and specify an OMA catalog model per request. The openai-python package, Vercel AI SDK, and anything else that speaks OpenAI's API work as-is.`,
+				a: `Set the Chat Completions base URL to ${API_V1_BASE}, use an OMA API key and choose an available OMA model ID. Compare your request fields with /docs#endpoints. The Responses API is unsupported, and undocumented Chat Completions fields are ignored.`,
 			},
 			{
 				q: "Does OMA support the Anthropic Messages API?",
-				a: `Yes — OMA exposes an Anthropic-compatible Messages endpoint alongside the OpenAI-compatible /chat/completions path, so tools written against the Anthropic SDK can also point at OMA with the same key. See /docs#endpoints for the exact paths and request shapes.`,
+				a: `OMA exposes a Messages adapter for text and function tools. Image and document blocks are rejected. Extended-thinking and prompt-cache fields are ignored and not forwarded. See /docs#endpoints for the supported request and response shapes.`,
 			},
 		],
 	},
@@ -63,7 +63,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 		items: [
 			{
 				q: "What is OMA?",
-				a: `OMA (Open Model Access) is a single place to use many AI models. Instead of signing up for ten different AI companies, you get one account, one API key, and one way to pay. It works exactly like OpenAI's API, so almost any AI app or tool that supports OpenAI already works with OMA.`,
+				a: `OMA (Open Model Access) provides browser chat and an API gateway for a curated model catalog. One account holds your API keys, prepaid credits and usage records. The API supports Chat Completions and a documented Messages subset.`,
 			},
 			{
 				q: "Do I need to know how to code?",
@@ -71,7 +71,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "How do I start using it?",
-				a: `Three steps: (1) try free website chat on the three OMA-AI models — no account needed; (2) sign in with your email (magic link) or crypto wallet and create an API key; (3) add a little credit and call the API. The full walkthrough is on the /getting-started page.`,
+				a: `Three steps: (1) try free website chat on an available eligible model — no account needed; (2) sign in with your email (magic link) or crypto wallet and create an API key; (3) add a little credit and call the API. The full walkthrough is on the /getting-started page.`,
 			},
 			{
 				q: "What can I do with it?",
@@ -79,7 +79,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "Is there a free tier?",
-				a: "Yes. Website chat has a daily free allowance on eligible OMA-AI models, subject to availability, with more messages once you sign in. Any signup credit depends on the current offer and is shown in your account. API-key calls always spend credits, even on those models; the free tier lives in browser chat. See /pricing for limits.",
+				a: "Yes. Website chat has a daily free allowance on eligible OMA-AI models, subject to availability, with more messages once you sign in. API-key calls always spend credits, even on those models; the free tier lives in browser chat. See /pricing for limits.",
 			},
 		],
 	},
@@ -92,7 +92,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "Do you store my API keys?",
-				a: "Only the SHA-256 hash of your key is stored — not the key itself. The plaintext `oma_sk_...` is shown once when you create it and can't be viewed again; if you lose it, just revoke and create a new one. Keys are tied to your account and can be revoked instantly from the dashboard. The gateway does not persist prompt or completion content. Website chat history stays in your browser. See /privacy for details.",
+				a: "The server database stores a SHA-256 hash and key metadata. The raw key is shown at creation; browser chat can also hold an installed key in an HttpOnly cookie for up to seven days. Revoke lost keys from the dashboard. See /privacy for stored data and retention details.",
 			},
 			{
 				q: "What is a magic link?",
@@ -129,7 +129,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "What happens when I run out of credits?",
-				a: "Requests stop with a clear 'insufficient quota' message until you top up. Your keys, conversations, and account all stay intact.",
+				a: "Paid requests return HTTP 402 when spendable credits cannot cover the required reservation. Pending requests or refund adjustments can reduce available credits. Check your balance and holds in the dashboard before topping up. Your account and keys remain available.",
 			},
 		],
 	},
@@ -142,19 +142,19 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "What is a token?",
-				a: "A token is roughly a piece of a word — 'hello' is about one token, 'hello world' about two. AI prices and limits are measured in tokens (and you'll see 'tokens per second' while chatting). A typical English word is 1–2 tokens.",
+				a: "A token is a unit used by the selected model to process input and output. Token counts vary by model and content. OMA quotes API prices per million tokens and records usage returned by the provider.",
 			},
 			{
 				q: "What is a context window?",
-				a: "The context window is how much text a model can see at once — your whole conversation plus the answer. OMA-AI models currently span 200K to 1M tokens, and several Venice-routed models also reach 1M. Each model page shows its exact limit.",
+				a: "The context budget covers the request input and requested output. Each model page lists the configured context and output ceilings with verification sources. Unpublished provider limits are marked unverified; tokenization can differ between the gateway estimate and provider.",
 			},
 			{
 				q: "What does 'OpenAI-compatible' mean?",
-				a: "It means OMA speaks the same language as OpenAI's API. Apps, libraries, and tutorials written for OpenAI (like the openai-python package or the Vercel AI SDK) work with OMA by changing one line: the API base URL.",
+				a: "OMA supports the Chat Completions fields and response shapes listed in /docs. A client needs a configurable base URL, an OMA key and a catalog model ID. The Responses API is unsupported; check required features before migrating a client.",
 			},
 			{
 				q: "What is streaming?",
-				a: "Streaming shows the answer as it's being written, word by word, instead of waiting for the whole thing. Most chat apps use it — it feels faster and you can read along.",
+				a: "Streaming returns response chunks as they are generated. Clients can display partial output while continuing to read the stream. Handle in-stream errors and retain the request ID if generation is interrupted.",
 			},
 			{
 				q: "Which model should I pick?",
@@ -175,7 +175,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "Is there a quickstart?",
-				a: "Yes — /getting-started walks through your first request in under five minutes with copy-paste code, and /docs#quickstart has the developer version.",
+				a: "Yes. /getting-started covers website chat, account setup, prepaid credits and a first API request. /docs#quickstart provides the API reference version.",
 			},
 			{
 				q: "Can my AI agent use OMA?",

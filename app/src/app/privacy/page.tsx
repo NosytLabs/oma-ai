@@ -19,6 +19,7 @@ import {
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageShell } from "@/app/_components/page-shell";
+import { PRIVACY_MANIFEST, PRIVACY_RETENTION, PRIVACY_UPDATED } from "@/lib/privacy-manifest";
 
 const PRIVACY_DESCRIPTION =
 	"The OMA gateway does not save prompts or responses. Website chat history stays in your browser; inference-provider policies vary.";
@@ -43,7 +44,7 @@ export const metadata: Metadata = {
 	robots: { index: true, follow: true },
 };
 
-const ISSUED = "2026-09-25";
+const ISSUED = PRIVACY_UPDATED;
 
 const SECTIONS = [
 	{ idx: "02", id: "collection", title: "Collection", meta: "what we keep" },
@@ -65,7 +66,7 @@ const SECTIONS = [
 		idx: "07",
 		id: "subprocessors",
 		title: "Sub-processors",
-		meta: "DPA list",
+		meta: "operational vendors",
 	},
 	{ idx: "08", id: "rights", title: "Your rights", meta: "what you control" },
 ] as const;
@@ -272,7 +273,7 @@ export default function PrivacyPage() {
 						<SectionHeading
 							id="collection-heading"
 							title="What we collect"
-							meta="The data we keep and the data we never touch"
+							meta="Account, usage and security records"
 						/>
 
 						<div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
@@ -296,6 +297,10 @@ export default function PrivacyPage() {
 										detail="Used for authentication via SIWE (EVM) signatures."
 									/>
 									<DataPoint
+										term="Session and audit metadata"
+										detail="Can include IP addresses, user agents, timestamps and account actions."
+									/>
+									<DataPoint
 										term="API usage"
 										detail="Token counts and timestamps for billing."
 									/>
@@ -305,7 +310,7 @@ export default function PrivacyPage() {
 									/>
 									<DataPoint
 										term="API keys"
-										detail="Hashed for authentication, prefixed for identification."
+										detail={PRIVACY_MANIFEST.data_stored.api_keys.description}
 									/>
 								</ul>
 							</div>
@@ -328,8 +333,8 @@ export default function PrivacyPage() {
 										tone="warning"
 									/>
 									<DataPoint
-										term="Wallet activity"
-										detail="We do not read balances, NFTs, or transaction history."
+										term="Private keys"
+										detail="Signing stays in your wallet. OMA reads payment-relevant balances and transfer receipts to verify funding."
 										tone="warning"
 									/>
 									<DataPoint
@@ -356,8 +361,8 @@ export default function PrivacyPage() {
 
 						<p className="text-[13px] sm:text-sm text-text-secondary max-w-2xl mb-5">
 							You can authenticate with a passwordless email magic link or
-							Sign-In With Ethereum (SIWE). OMA stores only the identifier
-							needed for the method you choose.
+							Sign-In With Ethereum (SIWE). OMA stores the identifiers for the
+							method you choose, together with session and security metadata.
 						</p>
 
 						<div className="border border-border bg-surface p-5">
@@ -391,7 +396,7 @@ export default function PrivacyPage() {
 						<SectionHeading
 							id="logs-heading"
 							title="Logs and billing"
-							meta="What we meter, what we never see"
+							meta="Usage and content handling"
 						/>
 
 						<div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
@@ -476,16 +481,7 @@ export default function PrivacyPage() {
 						</p>
 
 						<ul className="border border-border bg-surface divide-y divide-border">
-							{[
-								["API logs", "90 days", "for usage reporting"],
-								[
-									"Account data",
-									"until deletion",
-									"email or wallet identifier and account settings",
-								],
-								["Credits", "Until account deletion", "non-redeemable, do not expire"],
-								["API keys", "on revoke", "deletion revokes immediately"],
-							].map(([k, v, note]) => (
+							{PRIVACY_RETENTION.map(([k, v, note]) => (
 								<li
 									key={k}
 									className="grid grid-cols-[minmax(0,1fr)_8rem] sm:grid-cols-[minmax(0,1fr)_10rem_minmax(0,1fr)] items-center gap-3 px-3 sm:px-4 py-3"
@@ -496,7 +492,7 @@ export default function PrivacyPage() {
 									<span className="text-[11px] sm:text-xs text-warning tabular-nums">
 										{v}
 									</span>
-									<span className="hidden sm:inline text-[11px] sm:text-xs text-text-muted">
+									<span className="col-span-2 text-[11px] text-text-muted sm:col-span-1 sm:text-xs">
 										{note}
 									</span>
 								</li>
@@ -546,7 +542,7 @@ export default function PrivacyPage() {
 										{name}
 									</span>
 									<span className="text-[12.5px] text-text-muted">{role}</span>
-									<span className="hidden sm:inline text-[11px] sm:text-xs text-text-muted">
+									<span className="col-span-2 text-[11px] text-text-muted sm:col-span-1 sm:text-xs">
 										{note}
 									</span>
 								</li>
@@ -556,8 +552,12 @@ export default function PrivacyPage() {
 							<span className="text-accent" aria-hidden="true">
 								~
 							</span>{" "}
-							We do not sell, rent, or share any personal data with advertisers
-							or analytics services.
+							When configured, Google Analytics loads on the site and initializes
+							measurement on the production apex and www hosts. Analytics and
+							advertising storage start denied. Accepting the cookie banner grants
+							analytics storage; declining keeps storage denied. The tag can load
+							before that choice. Inference prompts and answers are not explicitly
+							sent as analytics events by the site.
 						</p>
 					</section>
 
@@ -570,27 +570,28 @@ export default function PrivacyPage() {
 						<SectionHeading
 							id="subprocessors-heading"
 							title="Sub-processors"
-							meta="DPA list"
+							meta="Operational vendors"
 						/>
 						<p className="text-[13px] sm:text-sm text-text-secondary max-w-2xl mb-5">
-							Operational vendors that process account, billing, rate-limit, or
-							email data on our behalf. These are separate from the inference
-							providers listed above and do not receive prompt or completion
-							content as part of their operational role. Contact{" "}
+							Hosting services process requests in transit. Other configured
+							vendors handle account, payment, rate-limit, email or analytics data
+							for their service. Contact{" "}
 							<a
 								href="mailto:support@nosytlabs.com"
 								className="text-accent underline underline-offset-2"
 							>
 								support@nosytlabs.com
 							</a>{" "}
-							for a signed DPA.
+							for questions about provider handling and data agreements.
 						</p>
 						<ul className="border border-border bg-surface divide-y divide-border">
 							{[
-								["Neon", "Database hosting", "account metadata, usage meters"],
+								["Vercel", "Website hosting", "web requests and proxied inference content in transit"],
+								["Neon", "API and database", "inference content in transit; stored account, usage and financial records"],
 								["Redis / Upstash", "Rate limiting", "IP + key rate-limit counters"],
 								["Base / on-chain RPC", "Settlement", "tx hashes for deposits"],
-								["Resend", "Email delivery", "transactional magic link emails"],
+								["Resend", "Email delivery", "authentication and support email content"],
+								["Google Analytics", "Site analytics", "configured Google tag and page measurements; storage consent controlled by the cookie banner"],
 								["Polar", "Payment processing", "card checkout; no prompt content"],
 							].map(([name, role, note]) => (
 								<li
@@ -601,7 +602,7 @@ export default function PrivacyPage() {
 										{name}
 									</span>
 									<span className="text-[12.5px] text-text-muted">{role}</span>
-									<span className="hidden sm:inline text-[11px] sm:text-xs text-text-muted">
+									<span className="col-span-2 text-[11px] text-text-muted sm:col-span-1 sm:text-xs">
 										{note}
 									</span>
 								</li>
@@ -625,23 +626,23 @@ export default function PrivacyPage() {
 							{[
 								{
 									icon: CircleAlert,
-									title: "Request deletion (Art. 17 GDPR)",
-									body: "Under Article 17 of the GDPR, you have the right to erasure ('right to be forgotten'). Delete your account and all associated profile, sessions, and API keys immediately and permanently from the Danger Zone under Settings.",
+									title: "Delete your account",
+									body: "Delete your account from Settings. Profile, sessions, keys, usage and account-linked balances are removed. Financial, audit and historical signup-grant records described above can remain. Clear browser chat history separately.",
 								},
 								{
 									icon: Shield,
-									title: "Revoke API keys (Art. 16/18 GDPR)",
-									body: "Under Article 16/18 of the GDPR, you have the right to restrict processing. You can disable or permanently revoke any of your API keys from the dashboard at any time, instantly halting further request metering on those keys.",
+									title: "Revoke API keys",
+									body: "Revoke a key from the dashboard to stop future requests authenticating with it. Requests already in progress can still complete and incur a charge.",
 								},
 								{
 									icon: Eye,
-									title: "Export your data (Art. 15/20 GDPR)",
-									body: "Under Articles 15 & 20 of the GDPR, you have the right to access and data portability. Download your full data-portability bundle (JSON profile, api keys list, active sessions, deposits, credit balances, and audit history) from the Privacy panel under Settings.",
+									title: "Export account data",
+									body: "Download the account export from Settings. It includes the profile, key metadata, active sessions, deposits, balance and account audit history exposed by the export API. Export local conversations separately from Chat history.",
 								},
 								{
 									icon: CheckCircle2,
-									title: "Contact our DPO (Art. 13 GDPR)",
-									body: "Under Article 13 of the GDPR, you have the right to contact us regarding your data. Email support@nosytlabs.com for any privacy, rectification, processing restriction, or data control inquiry. We reply within five business days.",
+									title: "Ask a privacy question",
+									body: "Email support@nosytlabs.com for access, correction, processing or deletion questions, including records retained after account deletion.",
 								},
 							].map((card) => (
 								<div

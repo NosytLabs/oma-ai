@@ -126,7 +126,7 @@ const nextConfig: NextConfig = {
 			// the edge for an hour, which is the exact bug force-dynamic fixes at
 			// the origin. It now falls through to Next's own no-store handling
 			// for dynamic routes.
-			...["/", "/pricing/:path*", "/docs/:path*", "/models/:path*", "/getting-started", "/about", "/faq", "/glossary/:path*", "/privacy", "/terms", "/contact", "/changelog"].map(
+			...["/", "/pricing/:path*", "/docs/:path*", "/models/:path*", "/getting-started", "/about", "/faq", "/glossary/:path*", "/privacy", "/terms", "/contact"].map(
 				(source) => ({
 					source,
 					headers: [

@@ -95,9 +95,19 @@ Polar is the merchant of record for card checkout. Card details are entered on P
 
 Webhook verification uses the versioned Polar SDK, including legacy UTF-8 and
 Standard Webhooks signing keys, multiple signatures, and timestamp validation.
-An atomic event claim runs in the same Postgres transaction as the grant or
-refund. Concurrent deliveries change the balance once; failed transactions
-leave the event retryable. This does not change the aggregate refund policy.
+An atomic delivery claim and durable per-order credit ledger run in the same
+Postgres transaction. Order IDs serialize distinct deliveries, so a paid order
+grants once. Cumulative partial refunds reverse only the increased refunded
+share, capped at the original grant. Refunds retain a negative internal balance
+when credit has already been spent or reserved; subsequent funding and returned
+holds offset that debt. Public balances expose zero spendable credits plus
+`debtCents` until the shortfall is repaid. Subscription/trial lifecycle events
+do not grant credits. Failed transactions leave the delivery retryable.
+
+Retain synthetic `order.credit-ledger.v1` rows in `polar_webhook_events` as
+financial records. Pre-ledger processed orders, changed order identity and
+nonzero applied customer balances require reconciliation; do not retry them
+by granting a new pack manually. See `server/src/lib/polar-order-credit.ts`.
 
 Card checkout is available only when the Polar configuration is complete and the card rail is enabled. If it is unavailable, `POST /api/v1/checkout` returns an error and the deposit UI reports the live rail status.
 
@@ -174,14 +184,6 @@ x402 funding remains accepted down to one atomic USDC unit. This ceiling pauses
 new oversized authorizations; settlement can still recover funds already sent.
 
 Crediting is idempotent by transaction hash. If the verification cache is lost after a server restart, settlement can recover a confirmed transfer from Base USDC Transfer logs and bind its payer to the session wallet. The transaction's gas payer is the facilitator and must not be confused with the USDC sender. If funds moved but crediting failed, retry settlement with the same hash and payer session. A 409 `payment_already_credited` or `payment_reconciliation_required` conflict is not retryable; use support reconciliation, without authorizing another payment. A verification timeout can return a hash with `valid: false`; reconcile its chain receipt before authorizing another payment. See [`settlement-runbook.md`](settlement-runbook.md) for recovery procedures.
-
-## Why there are zero Polar meters
-
-There are intentionally zero Polar usage meters.
-
-The three Polar products are one-time credit packs, not recurring subscriptions. Polar's metered prices require a subscription product and are not a valid mechanism for granting these packs. More importantly, the Postgres credit ledger is OMA's authoritative spendable balance. Adding a second usage entitlement or meter would create conflicting sources of truth for the same balance.
-
-Polar is used to collect the one-time card payment and deliver signed order events. OMA uses those events to issue credits in Postgres, then records API usage in that same ledger. Optional Polar reporting or cost-insight data must not be treated as the customer's spendable balance.
 
 ## Authentication
 
