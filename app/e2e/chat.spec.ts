@@ -85,7 +85,12 @@ test.describe("Chat playground", () => {
 	test("selects a model and sends the prompt to that model", async ({ page, chatApi }) => {
 		await page.getByRole("button", { name: /^Select AI model/ }).click();
 		const menu = page.getByRole("menu", { name: "Available AI models", exact: true });
-		await expect(menu.getByRole("menuitemradio")).toHaveCount(3);
+		// GLM-5.3 and DeepSeek V4 Flash are temporarily paused in the product
+		// (server model-catalog.json disabledReason; the frontend mirrors it via
+		// mapLiveModel's static-catalog AND). Guests get exactly ONE selectable
+		// free model plus an explicit paused-models notice.
+		await expect(menu.getByRole("menuitemradio")).toHaveCount(1);
+		await expect(menu.getByText("2 models are temporarily unavailable.")).toBeVisible();
 		await menu.getByRole("menuitemradio", { name: /^MiniMax M2\.7,/ }).click();
 		await expect(menu).toBeHidden();
 		await expect(page.getByRole("button", { name: /^Select AI model/ })).toHaveAccessibleName(/MiniMax M2\.7/);
@@ -149,17 +154,20 @@ test.describe("Chat playground", () => {
 	test("applies an OpenUI form to the next request without another model call", async ({ page, chatApi }, testInfo) => {
 		const ui = page.getByRole("button", { name: /^Toggle UI mode/ });
 		await ui.click();
-		chatApi.replyNext('root = Card("Tune this request", [settings])\nsettings = SettingsForm("deepseek-v4-flash-0731-openbroker", 0.7, 0.9, 2048)');
+		// The form requests an AVAILABLE free model: DeepSeek V4 Flash and GLM-5.3
+		// are temporarily paused in the product, so the only selectable guest model
+		// is MiniMax M2.7. Keep the test deterministic about that selection.
+		chatApi.replyNext('root = Card("Tune this request", [settings])\nsettings = SettingsForm("minimax-m2-7", 0.7, 0.9, 2048)');
 		const input = page.getByRole("textbox", { name: "Enter your message", exact: true });
 		await input.fill("Give me a form to tune the model settings.");
 		await input.press("Enter");
 		await expect(page.getByText("Tune this request", { exact: true })).toBeVisible();
-		await expect(page.getByRole("combobox", { name: "Model", exact: true })).toHaveValue("deepseek-v4-flash-0731-openbroker");
+		await expect(page.getByRole("combobox", { name: "Model", exact: true })).toHaveValue("minimax-m2-7");
 		await page.getByRole("spinbutton", { name: "Temperature", exact: true }).fill("1.2");
 		await page.getByRole("button", { name: "Apply settings", exact: true }).click();
 		await expect(page.getByRole("status").filter({ hasText: "Settings applied" })).toBeVisible();
 		expect(chatApi.requests).toHaveLength(1);
-		await expect(page.getByRole("button", { name: /^Select AI model/ })).toHaveAccessibleName(/DeepSeek V4 Flash/);
+		await expect(page.getByRole("button", { name: /^Select AI model/ })).toHaveAccessibleName(/MiniMax M2\.7/);
 		const screenshot = testInfo.outputPath("chat-openui-settings.png");
 		await page.screenshot({ path: screenshot, animations: "disabled" });
 		await testInfo.attach("OpenUI form after applying settings", { path: screenshot, contentType: "image/png" });
@@ -171,7 +179,7 @@ test.describe("Chat playground", () => {
 		await expect(page.getByText("The configured request completed.", { exact: true })).toBeVisible();
 		expect(chatApi.requests).toHaveLength(2);
 		expect(chatApi.requests[1]).toMatchObject({
-			model: "deepseek-v4-flash-0731-openbroker",
+			model: "minimax-m2-7",
 			temperature: 1.2,
 			top_p: 0.9,
 			max_tokens: 2048,

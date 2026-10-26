@@ -2,6 +2,14 @@ import { test as base, expect, type Page, type Route } from "@playwright/test";
 
 // Complete public /v1/models entries, matching server/src/routes/models.ts.
 // Deliberately use the three real free-chat IDs; no test can reach a provider.
+//
+// GLM-5.3 (zai-org-glm-5-3) and DeepSeek V4 Flash (deepseek-v4-flash-0731-
+// openbroker) are TEMPORARILY PAUSED in the product: server/inference/model-
+// catalog.json sets a disabledReason, server/src/routes/models.ts reports
+// `available:false` (providerAvailable, models.ts:77), and the frontend
+// mirrors the pause so both surfaces agree. So a guest sees exactly ONE
+// selectable free model (MiniMax M2.7) plus a "temporarily unavailable"
+// notice. These entries mirror that intended state truthfully.
 const MODEL_CATALOG = {
 	object: "list",
 	data: [
@@ -10,14 +18,18 @@ const MODEL_CATALOG = {
 			owned_by: "OMA-AI", display_name: "GLM-5.3 Flash", provider: "OMA-AI",
 			category: "frontier", modality: "chat", context_length: 202752,
 			supports_streaming: true, supports_tools: true, capabilities: ["tools"],
-			available: true, pricing: { prompt: 1, completion: 3.2 },
+			available: false,
+			unavailable_reason: "Temporarily paused after repeated upstream output. Please choose MiniMax M2.7.",
+			pricing: { prompt: 1, completion: 3.2 },
 		},
 		{
 			id: "deepseek-v4-flash-0731-openbroker", object: "model", created: 1791489600,
 			owned_by: "OMA-AI", display_name: "DeepSeek V4 Flash", provider: "OMA-AI",
 			category: "budget", modality: "chat", context_length: 131072,
 			supports_streaming: true, supports_tools: true, capabilities: ["tools"],
-			available: true, pricing: { prompt: 0.14, completion: 0.28 },
+			available: false,
+			unavailable_reason: "Temporarily paused after repeated upstream output. Please choose MiniMax M2.7.",
+			pricing: { prompt: 0.14, completion: 0.28 },
 		},
 		{
 			id: "minimax-m2-7", object: "model", created: 1791489600,
