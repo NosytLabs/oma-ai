@@ -63,7 +63,7 @@ export const PRIVACY_MANIFEST = {
 		inference: ["Venice AI", "OpenBroker/Gonka upstream routes"],
 		payments: ["Polar-hosted card checkout", "Base USDC contracts and configured RPC providers"],
 		operations: ["Vercel frontend hosting", "Neon API and Postgres", "Upstash Redis", "Resend authentication/support email", "Google Analytics when configured"],
-		analytics: "When configured, the Google tag loads after hydration. Measurements are initialized on the production apex/www hosts with analytics and advertising storage denied. The cookie banner can grant analytics storage; declining keeps storage denied and does not block loading the tag.",
+		analytics: "When configured, the Google tag loads after hydration. Measurements are initialized on the production apex/www hosts and run on every pageview with IP addresses anonymized; no advertising signals are collected.",
 		provider_policy: "Providers process requests sent to them. Privacy and retention depend on the selected provider/model; OMA does not promise a uniform upstream zero-retention policy.",
 	},
 	retention_policies: {

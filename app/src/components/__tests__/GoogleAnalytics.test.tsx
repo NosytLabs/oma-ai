@@ -36,6 +36,41 @@ describe("GoogleAnalytics unconditional tag", () => {
 		const { container } = render(<GoogleAnalytics />);
 		expect(container.innerHTML).toBe("");
 	});
+
+	/**
+	 * REGRESSION (2026-10-27): a consent gate was reintroduced on 2026-10-19
+	 * by an automated audit commit, after unconditional measurement had already
+	 * shipped on 2026-10-12.
+	 *
+	 * The gate did not merely delay tracking - it destroyed it. With
+	 * `gtag('consent','default',{analytics_storage:'denied'})` the GA4
+	 * property receives no session, no user and no engagement row, so the
+	 * site looks instrumented while the property stays dark. Measured from the
+	 * property itself: sessions fell from 21/day (2026-10-13) to 0 on
+	 * 2026-10-20 through 2026-10-25, while Search Console kept recording
+	 * brand clicks (4 clicks on 2026-10-22 for "oma ai") - real visitors kept
+	 * arriving and kept being invisible to GA4.
+	 *
+	 * This test pins the invariant so the gate cannot come back unnoticed.
+	 */
+	it("does NOT gate analytics behind a consent default", async () => {
+		const { GoogleAnalytics } = await import("../GoogleAnalytics");
+		const { render } = await import("@testing-library/react");
+		render(<GoogleAnalytics />);
+
+		const init = Array.from(
+			document.querySelectorAll("script:not([src])"),
+		)
+			.map((s) => s.textContent || "")
+			.join("\n");
+
+		expect(init).toContain("gtag('config'");
+		// No consent default and no consent update: nothing may depend on a
+		// banner decision before a measurement is opened.
+		expect(init).not.toContain("'consent'");
+		expect(init).not.toContain("analytics_storage");
+		expect(init).not.toContain("ad_storage");
+	});
 });
 /**
  * REGRESSION: the GA4 'config' command must only be issued on a production

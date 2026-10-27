@@ -25,7 +25,7 @@ compatible Chromium executable.
 
 The managed server uses `NEXT_PUBLIC_API_URL=http://127.0.0.1:3001` and the
 non-production analytics ID `NEXT_PUBLIC_GA_ID=G-OMA-E2E`. If reusing a server,
-build it with the same values so the real consent banner is exercised.
+build it with the same values so no test traffic reaches the real property.
 
 ## Chat coverage and limits
 
@@ -34,8 +34,8 @@ requests with deterministic responses. It blocks external requests. These
 specs do not require the API on port 3001 and do not call paid providers.
 
 The chat specs cover sending/stopping, model selection, Interactive settings,
-conversation migration, drafts through switching/reload, and consent-banner
-layout at phone, tablet, and desktop sizes. The wider suite also checks public
+conversation migration, drafts through switching/reload, and chat layout at
+phone, tablet, and desktop sizes. The wider suite also checks public
 pages, account preview behavior, and unavailable-backend states.
 
 For manual integration exploration, start the local stack with

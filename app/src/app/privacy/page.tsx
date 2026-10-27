@@ -553,11 +553,10 @@ export default function PrivacyPage() {
 								~
 							</span>{" "}
 							When configured, Google Analytics loads on the site and initializes
-							measurement on the production apex and www hosts. Analytics and
-							advertising storage start denied. Accepting the cookie banner grants
-							analytics storage; declining keeps storage denied. The tag can load
-							before that choice. Inference prompts and answers are not explicitly
-							sent as analytics events by the site.
+							measurement on the production apex and www hosts. Measurement runs
+							on every pageview with IP addresses anonymized, and no advertising
+							signals are collected. Inference prompts and answers are not
+							explicitly sent as analytics events by the site.
 						</p>
 					</section>
 
@@ -591,7 +590,7 @@ export default function PrivacyPage() {
 								["Redis / Upstash", "Rate limiting", "IP + key rate-limit counters"],
 								["Base / on-chain RPC", "Settlement", "tx hashes for deposits"],
 								["Resend", "Email delivery", "authentication and support email content"],
-								["Google Analytics", "Site analytics", "configured Google tag and page measurements; storage consent controlled by the cookie banner"],
+								["Google Analytics", "Site analytics", "configured Google tag and page measurements with IP addresses anonymized; no advertising signals"],
 								["Polar", "Payment processing", "card checkout; no prompt content"],
 							].map(([name, role, note]) => (
 								<li

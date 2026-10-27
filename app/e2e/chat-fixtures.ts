@@ -72,9 +72,8 @@ function completionStream(model: string, content: string): string {
 	return frames.map((frame) => `data: ${JSON.stringify(frame)}\n\n`).join("") + "data: [DONE]\n\n";
 }
 
-export const test = base.extend<{ chatApi: ChatApi; analyticsConsent: "declined" | "prompt" }>({
-	analyticsConsent: ["declined", { option: true }],
-	chatApi: [async ({ page, baseURL, analyticsConsent }, use) => {
+export const test = base.extend<{ chatApi: ChatApi }>({
+	chatApi: [async ({ page, baseURL }, use) => {
 		if (!baseURL) throw new Error("Chat tests require a local baseURL.");
 		const appOrigin = new URL(baseURL).origin;
 		const requests: CompletionRequest[] = [];
@@ -84,9 +83,6 @@ export const test = base.extend<{ chatApi: ChatApi; analyticsConsent: "declined"
 		const pageErrors: string[] = [];
 		page.on("pageerror", (error) => pageErrors.push(error.message));
 
-		await page.addInitScript((consent) => {
-			if (consent === "declined") localStorage.setItem("oma_analytics_consent", "declined");
-		}, analyticsConsent);
 		await page.emulateMedia({ reducedMotion: "reduce" });
 
 		await page.route("**/*", async (route) => {

@@ -66,8 +66,8 @@ const ChatPlaygroundShell = nextDynamic(
 
 export default function ChatPage() {
 	return (
-		// Only messages scroll; leave room for the navbar and visible consent banner.
-		<div className="flex h-[calc(100dvh-57px-var(--consent-banner-height,0px))] min-h-0 flex-col overflow-hidden">
+		// Only messages scroll; leave room for the navbar.
+		<div className="flex h-[calc(100dvh-57px)] min-h-0 flex-col overflow-hidden">
 		<ErrorBoundary
 			fallback={
 				<div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center">

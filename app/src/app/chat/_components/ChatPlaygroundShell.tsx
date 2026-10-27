@@ -801,7 +801,7 @@ function ShellContent() {
 						}}
 						/>
 
-					{/* Keep the composer above mobile browser chrome and the consent banner. */}
+					{/* Keep the composer above mobile browser chrome. */}
 					<div
 						className="gutter-page z-10 flex-none border-t border-border bg-[color-mix(in_srgb,var(--color-surface)_60%,transparent)] pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-20px_40px_-20px_rgba(0,0,0,0.6)] backdrop-blur-md sm:pt-4 sm:pb-[max(1.25rem,env(safe-area-inset-bottom))]"
 					>
@@ -892,7 +892,7 @@ function ShellContent() {
 			</div>
 
 			{historyOpen && createPortal(
-				<div className="fixed inset-x-0 top-0 bottom-[var(--consent-banner-height,0px)] z-[80] lg:hidden">
+				<div className="fixed inset-x-0 top-0 bottom-0 z-[80] lg:hidden">
 					<button
 						type="button"
 						aria-label="Close conversation history"

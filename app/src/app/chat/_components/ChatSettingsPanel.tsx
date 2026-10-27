@@ -133,7 +133,7 @@ export function ChatSettingsPanel({
 						animate={{ x: 0 }}
 						exit={{ x: "100%" }}
 						transition={springs.card}
-						className="md:hidden fixed top-0 bottom-[var(--consent-banner-height,0px)] right-0 w-80 max-w-full bg-void border-l border-border z-[80] flex flex-col"
+						className="md:hidden fixed top-0 bottom-0 right-0 w-80 max-w-full bg-void border-l border-border z-[80] flex flex-col"
 					>
 						<div className="flex-none h-12 border-b border-border flex items-center justify-between px-4 bg-void">
 							<h2 className="text-[11px] font-bold text-text-muted uppercase tracking-widest">

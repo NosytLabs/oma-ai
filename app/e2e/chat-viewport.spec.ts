@@ -17,61 +17,58 @@ async function expectNoDocumentOverflow(page: Page) {
 	)), { message: "The chat must fit the document; only the message list should scroll" }).toBeLessThanOrEqual(1);
 }
 
-async function expectAboveConsent(page: Page, control: Locator, label: string) {
-	const consent = page.getByRole("region", { name: "Analytics consent", exact: true });
+/**
+ * The composer must sit fully inside the viewport.
+ *
+ * REWRITE (2026-10-27): this spec previously asserted the composer stayed
+ * ABOVE a consent banner, using `role="region"` / "Analytics consent". That
+ * banner was removed on 2026-10-12 (unconditional GA4 measurement) and
+ * briefly re-introduced on 2026-10-19 with different semantics
+ * (`role="dialog"` / "Cookie consent") - so the assertion had been matching
+ * nothing for a week and the spec could not have been green as written.
+ *
+ * The layout invariant that actually matters is unchanged and is what this
+ * now asserts: the composer controls are fully visible and inside the
+ * viewport, the document never overflows, and no consent banner is mounted
+ * (the GA4 tag must not reintroduce a bottom overlay).
+ */
+async function expectInsideViewport(page: Page, control: Locator, label: string) {
 	await expect(control, `${label} must be visible`).toBeVisible();
-	await expect.poll(async () => {
-		const [controlBox, consentBox] = await Promise.all([control.boundingBox(), consent.boundingBox()]);
-		if (!controlBox || !consentBox) return false;
-		return controlBox.y >= 0 && controlBox.y + controlBox.height <= consentBox.y + 1;
-	}, { message: `${label} must remain fully above the consent banner` }).toBe(true);
+	await expect(control, `${label} must be inside the viewport`).toBeInViewport();
 }
 
 for (const viewport of VIEWPORTS) {
 	test.describe(`chat viewport: ${viewport.name} ${viewport.width}×${viewport.height}`, () => {
-		test.use({ viewport: { width: viewport.width, height: viewport.height }, analyticsConsent: "prompt" });
+		test.use({ viewport: { width: viewport.width, height: viewport.height } });
 
-		test("keeps the composer above consent before and after a real send", async ({ page, chatApi }, testInfo) => {
+		test("keeps the composer reachable and free of a consent overlay", async ({ page, chatApi }, testInfo) => {
 			await openChat(page);
-			const consent = page.getByRole("region", { name: "Analytics consent", exact: true });
-			await expect(consent).toBeVisible();
 			const input = page.getByRole("textbox", { name: "Enter your message", exact: true });
 			const send = page.getByRole("button", { name: "Send message", exact: true });
 			const price = page.getByText("Free chat", { exact: true });
-			await expectAboveConsent(page, input, "message input");
-			await expectAboveConsent(page, send, "send button");
-			await expectAboveConsent(page, price, "cost footer");
-			await expectAboveConsent(page, page.getByText("20 free left", { exact: true }), "quota footer");
+			await expectInsideViewport(page, input, "message input");
+			await expectInsideViewport(page, send, "send button");
+			await expectInsideViewport(page, price, "cost footer");
+			await expectInsideViewport(page, page.getByText("20 free left", { exact: true }), "quota footer");
 			await expectNoDocumentOverflow(page);
+			// No consent banner may be mounted: it would overlay the composer.
+			await expect(page.getByRole("region", { name: "Analytics consent" })).toHaveCount(0);
+			await expect(page.getByRole("dialog", { name: "Cookie consent" })).toHaveCount(0);
 
-			chatApi.replyNext("The composer stays usable with consent still open.\n\n```text\n" + "a-long-value-".repeat(40) + "\n```");
-			await input.fill("Check the layout while the consent banner is open.");
-			await expectAboveConsent(page, send, "enabled send button");
+			chatApi.replyNext("The composer stays usable.\n\n```text\n" + "a-long-value-".repeat(40) + "\n```");
+			await input.fill("Check the layout.");
+			await expectInsideViewport(page, send, "enabled send button");
 			await send.click();
-			await expect(page.getByText("The composer stays usable with consent still open.", { exact: true })).toBeVisible();
-			await expect(consent).toBeVisible();
-			await expectAboveConsent(page, input, "message input after send");
-			await expectAboveConsent(page, send, "send button after send");
-			await expectAboveConsent(page, price, "cost footer after send");
-			await expectAboveConsent(page, page.getByText("19 free left", { exact: true }), "quota footer after send");
-			await expectNoDocumentOverflow(page);
-			if (viewport.name === "phone" || viewport.name === "desktop") {
-				const screenshot = testInfo.outputPath(`chat-${viewport.name}-consent.png`);
-				await page.screenshot({ path: screenshot, animations: "disabled" });
-				await testInfo.attach("Chat with consent visible", { path: screenshot, contentType: "image/png" });
-			}
-
-			// Dismissing consent should return the reserved space to the chat.
-			await consent.getByRole("button", { name: "Decline", exact: true }).click();
-			await expect(consent).toBeHidden();
-			await expect(input).toBeInViewport();
-			await expect(send).toBeInViewport();
-			await expect(price).toBeInViewport();
+			await expect(page.getByText("The composer stays usable.", { exact: true })).toBeVisible();
+			await expectInsideViewport(page, input, "message input after send");
+			await expectInsideViewport(page, send, "send button after send");
+			await expectInsideViewport(page, price, "cost footer after send");
+			await expectInsideViewport(page, page.getByText("19 free left", { exact: true }), "quota footer after send");
 			await expectNoDocumentOverflow(page);
 			if (viewport.name === "phone" || viewport.name === "desktop") {
 				const screenshot = testInfo.outputPath(`chat-${viewport.name}.png`);
 				await page.screenshot({ path: screenshot, animations: "disabled" });
-				await testInfo.attach("Chat after declining analytics", { path: screenshot, contentType: "image/png" });
+				await testInfo.attach("Chat layout", { path: screenshot, contentType: "image/png" });
 			}
 		});
 	});

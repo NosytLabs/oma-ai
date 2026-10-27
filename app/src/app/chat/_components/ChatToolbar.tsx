@@ -165,7 +165,7 @@ export function ChatToolbar({
 					<MoreHorizontal className={iconClass} aria-hidden="true" />
 				</button>
 				{moreMenuOpen && (
-					<div id={menuId} ref={menuRef} role="menu" aria-label="More chat actions" onKeyDown={handleMenuKeyDown} className="absolute right-0 top-full z-[100] mt-2 max-h-[calc(100dvh-8rem-var(--consent-banner-height,0px))] w-64 max-w-[calc(100vw-2rem)] overflow-y-auto rounded-xl border border-border bg-surface p-1.5 shadow-2xl shadow-black/40">
+					<div id={menuId} ref={menuRef} role="menu" aria-label="More chat actions" onKeyDown={handleMenuKeyDown} className="absolute right-0 top-full z-[100] mt-2 max-h-[calc(100dvh-8rem)] w-64 max-w-[calc(100vw-2rem)] overflow-y-auto rounded-xl border border-border bg-surface p-1.5 shadow-2xl shadow-black/40">
 						<button type="button" role="menuitem" onClick={() => runMenuAction(() => setParamsOpen(!paramsOpen))} className={menuItemClass}><Settings2 className={iconClass} />{paramsOpen ? "Hide parameters" : "Parameters"}</button>
 						<button type="button" role="menuitem" onClick={() => runMenuAction(() => setCompareMode(!compareMode))} disabled={loading} className={menuItemClass}><Columns2 className={iconClass} />{compareMode ? "Stop comparing models" : "Compare models"}</button>
 						<button type="button" role="menuitem" onClick={() => runMenuAction(() => setShortcutsOpen(true))} className={menuItemClass}><Keyboard className={iconClass} />Keyboard shortcuts</button>

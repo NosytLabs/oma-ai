@@ -23,8 +23,8 @@ export default defineConfig({
     timeout: 180_000,
     env: {
       NEXT_PUBLIC_API_URL: 'http://127.0.0.1:3001',
-      // Exercise the real consent banner without using a production property.
-      // Chat fixtures block external requests and never accept analytics.
+      // Use a non-production analytics ID so a test run can never report into
+      // the real GA4 property. Chat fixtures block external requests.
       NEXT_PUBLIC_GA_ID: 'G-OMA-E2E',
       NEXT_TELEMETRY_DISABLED: '1',
     },

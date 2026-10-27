@@ -93,12 +93,11 @@ procedures in [Deployment](DEPLOYMENT.md).
 
 The composer keeps Interactive and Web controls visible. Parameters are
 available from More even before the first message. Conversation history uses a
-desktop sidebar and a mobile drawer. The consent banner publishes its measured
-height through `--consent-banner-height`; the chat viewport reserves that space
-so the composer remains reachable before consent is dismissed.
+desktop sidebar and a mobile drawer. The chat viewport reserves only the
+navbar height, so the composer stays reachable at every viewport size.
 Mobile history and parameter panels appear above navigation, with reachable
-close controls and space for the consent banner. The parameters dialog traps
-keyboard focus, closes with Escape, and restores focus to its opener.
+close controls. The parameters dialog traps keyboard focus, closes with
+Escape, and restores focus to its opener.
 
 ## Validation
 
