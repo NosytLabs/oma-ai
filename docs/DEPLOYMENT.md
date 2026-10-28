@@ -4,8 +4,7 @@ Canonical deployment facts for OMA-AI. Other docs link here rather than
 restating them — this file is the single source of truth so a deploy
 instruction can't drift between documents.
 
-Production targets are listed below. See
-[deployment verification](deployment-health.md) for release checks and failure diagnosis.
+Production targets, release procedures, verification and retention guidance follow.
 
 ## Canonical host
 
@@ -23,35 +22,11 @@ uses `https://oma-ai.com` as its SIWE URI. Keep the auth base URL and CORS
 settings consistent with `server/src/auth.ts` and the same-origin proxy.
 Do not copy the website URL into `PRIMARY_DOMAIN`.
 
-Public endpoints, all on the canonical host:
-
-```text
-GET  https://www.oma-ai.com/api/v1/models
-POST https://www.oma-ai.com/api/v1/chat/completions
-POST https://www.oma-ai.com/api/v1/messages
-GET  https://www.oma-ai.com/api/v1/openapi.json
-GET  https://www.oma-ai.com/x402/info
-POST https://www.oma-ai.com/x402/verify
-POST https://www.oma-ai.com/x402/settle
-GET  https://www.oma-ai.com/api/v1/search
-GET  https://www.oma-ai.com/api/v1/usage
-GET  https://www.oma-ai.com/api/v1/usage/summary
-GET  https://www.oma-ai.com/api/v1/usage/today
-GET  https://www.oma-ai.com/api/v1/balance
-GET  https://www.oma-ai.com/api/v1/keys
-POST https://www.oma-ai.com/api/v1/keys (session cookie)
-DELETE https://www.oma-ai.com/api/v1/keys/{id} (session cookie)
-GET  https://www.oma-ai.com/api/v1/credits/balance
-POST https://www.oma-ai.com/api/v1/deposit/usdc
-GET  https://www.oma-ai.com/api/v1/deposit/status
-GET  https://www.oma-ai.com/api/v1/site-settings
-POST https://www.oma-ai.com/api/v1/checkout (session cookie)
-GET  https://www.oma-ai.com/api/v1/privacy
-```
-
-The app's `/docs` page and customer OpenAPI describe supported customer
-request and response shapes. Website settings/privacy endpoints are separate
-operational metadata and are excluded from the customer OpenAPI contract.
+The customer [OpenAPI document](https://www.oma-ai.com/api/v1/openapi.json)
+and `/docs` page describe API requests and responses. Funding also uses
+`/x402/info`, `/x402/verify` and `/x402/settle`; see the
+[platform reference](PLATFORM.md#funding-rails). Website settings and privacy
+endpoints are operational metadata outside the customer OpenAPI contract.
 
 ## What runs where
 
@@ -212,6 +187,58 @@ curl -fsS https://br-patient-sun-b5k0ln0f-omaapi.compute.c-7.us-east-2.aws.neon.
 `https://www.oma-ai.com/api/health` checks the web tier only. The native API
 `/ready` probe checks Postgres and Redis; require a successful readiness
 response as well as a successful frontend health response.
+
+## Release verification
+
+Before release, run `pnpm install --frozen-lockfile` and `pnpm validate` from
+the repository root using the pinned Node and pnpm versions. For chat behavior
+or layout changes, also run the [browser checks](../app/e2e/README.md). The
+fixtures test local UI behavior, not a live provider or paid account flow.
+Commit `pnpm-lock.yaml` with manifest changes and record checks for the release
+commit. A missing CI check is not a passing check.
+
+| Layer | Evidence | What it establishes |
+|-------|----------|---------------------|
+| Frontend release | Deployment serving `www.oma-ai.com` is `READY` at the intended commit | Production received the frontend release |
+| Web runtime | `/chat` and `/api/health` respond | Next.js is reachable; `/api/health` is not a backend probe |
+| API liveness | Native `/health` or `/live` responds | API process responds without querying dependencies |
+| API release | Current and active `omaapi` deployments are complete | Separate API release is active |
+| API dependencies | Native `/ready` reports healthy Postgres and Redis | Required data stores are reachable |
+| Model catalog | `/api/v1/models` returns expected routes | Catalog configuration is present |
+| Inference | A completion succeeds on the selected route | That route served a request at the time of the check |
+
+Probes bypass maintenance settings: `/health/db` checks Postgres and `/ready`
+checks Postgres and Redis. Inspect `/v1/site-settings` separately. Avoid using
+readiness as a frequent idle liveness check: it queries the database and can
+keep serverless compute active. Catalog availability flags describe configured
+routes, not live inference probes. Investigate a degraded dependency before
+changing deployment targets; inspect the upstream response and fallback route
+for provider errors.
+
+If Neon reports quota-exceeded HTTP 402, stop the API release and resolve the
+existing project's quota or plan. Do not replace the database or delete ledger
+records. After recovery, require healthy native `/ready`, readable settings,
+and an authenticated account/API check. Inspect pending deposits and
+settlement retries; do not collect another payment because crediting was
+delayed. Keep both scheduled recovery jobs enabled and verify their schedules
+against `server/neon.ts`.
+
+## Deployment and log retention
+
+Use [Vercel's deployment retention policy](https://vercel.com/docs/deployment-retention)
+and review rollback needs before changing it. Keep the live production
+deployment, the latest tested preview, and at least two production rollback
+candidates. Inspect each candidate's project, state and aliases before removing
+it by explicit ID with `vercel remove DEPLOYMENT_ID --safe --yes --scope nosyt`.
+Remove an old branch alias only after confirming the branch is merged or closed
+and the alias is not a customer domain. Never remove the active production,
+`www` or apex aliases, or pass a project name to this command.
+
+Keep current website/API logs and the latest main-branch validation. Superseded
+CI logs can be removed without deleting their workflow run records using
+`gh api --method DELETE repos/NosytLabs/oma-ai/actions/runs/RUN_ID/logs`.
+Retain payment and recovery records. Avoid putting credentials or customer
+query values into logs, documentation or tickets.
 
 ## DNS
 

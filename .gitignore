@@ -24,6 +24,7 @@ coverage/
 # Tool caches and local package stores
 .cache/
 .vite/
+.vite-temp/
 .nyc_output/
 .pnpm-store/
 .eslintcache

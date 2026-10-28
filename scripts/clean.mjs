@@ -27,7 +27,7 @@ export function clean(root, { dryRun = false, log = console.log } = {}) {
   const tracked = git.stdout.split("\0").filter(Boolean);
   const candidates = new Set(extraGeneratedPaths);
 
-  // Scan only workspace roots, never source, dependencies or local data.
+  // Scan only workspace roots; dependency caches are explicit paths above.
   for (const workspace of workspaces) {
     const directory = join(root, workspace);
     if (!stat(directory)?.isDirectory()) continue;
@@ -41,6 +41,19 @@ export function clean(root, { dryRun = false, log = console.log } = {}) {
 
   const removed = [];
   const skipped = [];
+  // The local fixture cleanup tool stores recovery backups beside disposable
+  // audit reports. Preserve that subtree and clean only its siblings.
+  for (const workspace of workspaces) {
+    const artifacts = workspace ? `${workspace}/.artifacts` : ".artifacts";
+    const backups = `${artifacts}/database-backups`;
+    if (!candidates.has(artifacts) || !stat(join(root, artifacts))?.isDirectory() || !stat(join(root, backups))) continue;
+    candidates.delete(artifacts);
+    skipped.push(backups);
+    log(`Preserved local backups: ${backups}`);
+    for (const entry of readdirSync(join(root, artifacts), { withFileTypes: true })) {
+      if (entry.name !== "database-backups") candidates.add(`${artifacts}/${entry.name}`);
+    }
+  }
   for (const relativePath of [...candidates].sort()) {
     if (!hasRealParents(root, relativePath) || !stat(join(root, relativePath))) continue;
     if (tracked.some((path) => path === relativePath || path.startsWith(`${relativePath}/`))) {

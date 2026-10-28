@@ -26,12 +26,15 @@ test("dry run leaves files intact; cleanup removes generated output and preserve
     "artifacts/brand-kit/card.png", "app/playwright-report/index.html", ".tmp/run.json",
     "server/api.log", "app/debug.log.2.gz", "app/tsconfig.tsbuildinfo", ".eslintcache",
     "tmp/lighthouse/report.html", "app/public/screenshots-ux/home.png", "audit-session.md",
+    "node_modules/.cache/compiler/output", "app/node_modules/.vite/results.json",
+    "server/node_modules/.vite-temp/config.mjs",
   ];
   const preserved = [
     "README.md", "server/.env", "app/.env.local", ".vercel/project.json",
     "node_modules/package/index.js", ".pnpm-store/package", "data/account.json",
     "server/src/index.ts", "app/public/logos/logo.png", "tmp/keep.txt",
     "server/src/debug.log", "app/user-notes.md",
+    "app/node_modules/package/index.js", "server/node_modules/package/index.js",
   ];
   for (const path of [...generated, ...preserved]) put(root, path);
   const options = { log() {} };
@@ -41,6 +44,22 @@ test("dry run leaves files intact; cleanup removes generated output and preserve
   assert.deepEqual(applied.removed, preview.removed);
   for (const path of generated) assert.ok(!existsSync(join(root, path)), path);
   for (const path of preserved) assert.ok(existsSync(join(root, path)), path);
+});
+
+test("cleanup preserves database recovery backups while removing adjacent artifact reports", (t) => {
+  const root = fixture(t);
+  const backups = [".artifacts", "app/.artifacts", "server/.artifacts"].map((directory) => `${directory}/database-backups`);
+  const reports = [".artifacts/provider-audit/report.json", "app/.artifacts/screenshot.png", "server/.artifacts/run.log"];
+  for (const path of backups) put(root, `${path}/local.dump`, "recovery backup");
+  for (const path of reports) put(root, path);
+  const preview = clean(root, { dryRun: true, log() {} });
+  for (const path of reports) assert.ok(existsSync(join(root, path)), path);
+  const applied = clean(root, { log() {} });
+  assert.deepEqual(applied.removed, preview.removed);
+  assert.deepEqual(applied.skipped, backups);
+  for (const path of backups) assert.ok(existsSync(join(root, path, "local.dump")), path);
+  for (const path of reports) assert.ok(!existsSync(join(root, path)), path);
+  assert.deepEqual(clean(root, { log() {} }).removed, []);
 });
 
 test("cleanup preserves tracked files and directories containing tracked content", (t) => {
@@ -60,14 +79,17 @@ test("cleanup never follows workspace or parent symlinks and only unlinks final 
   put(outside, ".next/keep.txt");
   put(outside, "lighthouse/keep.txt");
   put(outside, "keep.log");
+  put(outside, ".vite/keep.json");
   symlinkSync(outside, join(root, "app"), "dir");
   symlinkSync(outside, join(root, "tmp"), "dir");
   symlinkSync(outside, join(root, ".cache"), "dir");
+  symlinkSync(outside, join(root, "node_modules"), "dir");
   const { removed } = clean(root, { log() {} });
   assert.deepEqual(removed, [".cache"]);
   assert.ok(existsSync(join(root, "app")));
   assert.ok(existsSync(join(root, "tmp")));
-  for (const path of [".next/keep.txt", "lighthouse/keep.txt", "keep.log"]) assert.ok(existsSync(join(outside, path)));
+  assert.ok(existsSync(join(root, "node_modules")));
+  for (const path of [".next/keep.txt", "lighthouse/keep.txt", "keep.log", ".vite/keep.json"]) assert.ok(existsSync(join(outside, path)));
 });
 
 test("hygiene distinguishes scratch files from maintained docs, migrations and public assets", () => {

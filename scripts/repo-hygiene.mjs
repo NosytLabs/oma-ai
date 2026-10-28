@@ -2,7 +2,7 @@
 export const workspaces = ["", "app", "server"];
 
 const generatedDirectories = new Set([
-  ".next", "dist", "coverage", ".turbo", ".cache", ".vite",
+  ".next", "dist", "coverage", ".turbo", ".cache", ".vite", ".vite-temp",
   ".nyc_output", ".docusaurus", "test-results", "playwright-report",
   ".playwright-mcp", ".tmp", ".artifacts", "artifacts",
   ".screenshots", "screenshots", "e2e_screenshots", "test-screenshots",
@@ -23,6 +23,9 @@ export function isGeneratedFile(name) {
 export const extraGeneratedPaths = [
   "tmp/lighthouse", "app/tmp/lighthouse", "server/tmp/lighthouse",
   "app/public/screenshots-ux", "app/undefined",
+  ...workspaces.flatMap((workspace) => [".cache", ".vite", ".vite-temp"].map(
+    (cache) => `${workspace ? `${workspace}/` : ""}node_modules/${cache}`,
+  )),
 ];
 
 export function isRootAuditFile(path) {

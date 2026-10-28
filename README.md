@@ -115,8 +115,8 @@ rates, limits and capabilities. Server runtime overrides remain authoritative.
 
 Vercel hosts the frontend; a Neon Function hosts the API and Neon Postgres
 stores the ledger. Deploy both services when both change.
-[Deployment](docs/DEPLOYMENT.md) contains exact targets and release procedures;
-[health checks](docs/deployment-health.md) explain verification.
+[Deployment](docs/DEPLOYMENT.md) contains exact targets, release procedures
+and [verification checks](docs/DEPLOYMENT.md#release-verification).
 
 The canonical host is `www.oma-ai.com`; the apex redirects to it. Customer
 APIs are under `https://www.oma-ai.com/api`. There is no `api.oma-ai.com`.

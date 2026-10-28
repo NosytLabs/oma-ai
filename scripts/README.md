@@ -57,8 +57,11 @@ pnpm clean           # remove generated output, caches, logs and reports
 
 Cleanup scans direct generated output, caches and logs in the root, `app`, and
 `server` workspaces, along with known audit, screenshot and report directories
-such as `artifacts/brand-kit`. It preserves paths containing tracked files,
-source assets, dependencies and package stores, environment files, Vercel
-project linkage, and local data. It does not follow symlinked workspace or
-parent directories. The next development server or build regenerates its
-output; no dependency reinstall is needed.
+such as `artifacts/brand-kit`. It also removes only the `.cache`, `.vite` and
+`.vite-temp` cache directories inside each workspace's `node_modules`.
+
+Tracked content, installed packages, package stores, environment files,
+Vercel project linkage, local data and `.artifacts/database-backups/` recovery
+backups are preserved. Reports beside those backups are still removed. Cleanup
+does not follow symlinked workspace or parent directories. The next development
+server or build regenerates its output; no dependency reinstall is needed.

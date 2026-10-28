@@ -41,7 +41,7 @@ pages, account preview behavior, and unavailable-backend states.
 For manual integration exploration, start the local stack with
 `./scripts/dev/start-dev.sh`. Live authentication and provider checks are
 separate from fixture-backed UI verification; see
-[deployment verification](../../docs/deployment-health.md).
+[deployment verification](../../docs/DEPLOYMENT.md#release-verification).
 
 ## Visual audits and output
 
