@@ -24,6 +24,10 @@ The database helper defaults to a PostgreSQL 16 data-directory path. Set
 PostgreSQL. See the [development setup](../README.md#development) for the
 required permissions and launcher dependencies.
 
+The development launcher waits for the API's liveness endpoint and the frontend
+to respond before reporting success. It exits if a started service fails or
+does not respond within the bounded startup checks.
+
 The Chrome helper requires `lsof` and exits if its debugging port is occupied;
 stop the existing listener or choose another port before starting it. Each port
 uses its own `chrome-bh-PORT` profile and log in the system temporary directory.

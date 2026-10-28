@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import LoginPage from "../_components/LoginPageClient";
 
 const magicLink = vi.hoisted(() => vi.fn());
+const toast = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn(), toast: vi.fn() }));
 const authState = vi.hoisted(() => ({ authenticated: false, replace: vi.fn(), params: new URLSearchParams() }));
 vi.mock("@/lib/auth-client", () => ({ signIn: { magicLink } }));
 vi.mock("next/dynamic", async () => {
@@ -12,6 +13,7 @@ vi.mock("next/dynamic", async () => {
 
 beforeEach(() => {
 	magicLink.mockReset();
+	vi.clearAllMocks();
 	authState.authenticated = false;
 	authState.replace.mockReset();
 	authState.params = new URLSearchParams();
@@ -28,7 +30,7 @@ vi.mock("next/navigation", () => ({
 	useSearchParams: () => authState.params,
 }));
 vi.mock("@/components/ui/Toast", () => ({
-	useToast: () => ({ error: vi.fn(), success: vi.fn(), toast: vi.fn() }),
+	useToast: () => toast,
 }));
 vi.mock("@/components/api-status", () => ({
 	useApiHealth: () => ({ status: "online" as const }),
@@ -38,6 +40,58 @@ vi.mock("@/lib/hooks/useAuth", () => ({
 }));
 
 describe("magic-link form validation", () => {
+	it("ignores an unmounted request while a fresh sign-in form is sending", async () => {
+		let finishOld!: (value: unknown) => void;
+		let finishNew!: (value: unknown) => void;
+		magicLink.mockReturnValueOnce(new Promise(resolve => { finishOld = resolve; }))
+			.mockReturnValueOnce(new Promise(resolve => { finishNew = resolve; }));
+		const old = render(<LoginPage />);
+		fireEvent.change(screen.getByLabelText(/email address/i), { target: { value: "old@example.test" } });
+		fireEvent.click(screen.getByRole("button", { name: "Send magic link" }));
+		old.unmount();
+		render(<LoginPage />);
+		fireEvent.change(screen.getByLabelText(/email address/i), { target: { value: "new@example.test" } });
+		fireEvent.click(screen.getByRole("button", { name: "Send magic link" }));
+		await act(async () => { finishOld({ data: null, error: { message: "Old delivery failed" } }); });
+		expect(toast.error).not.toHaveBeenCalled();
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+		expect(screen.getByRole("button", { name: "Sending…" })).toBeDisabled();
+		await act(async () => { finishNew({ data: { status: true }, error: null }); });
+		expect(screen.getByRole("status")).toHaveTextContent(/check your inbox/i);
+		expect(toast.success).toHaveBeenCalledExactlyOnceWith("Magic link sent to new@example.test");
+	});
+	it("submits only one delivery before React commits pending state", async () => {
+		let finish!: (value: unknown) => void;
+		magicLink.mockReturnValue(new Promise(resolve => { finish = resolve; }));
+		render(<LoginPage />);
+		const input = screen.getByLabelText(/email address/i);
+		fireEvent.change(input, { target: { value: "once@example.test" } });
+		act(() => { fireEvent.submit(input.closest("form")!); fireEvent.submit(input.closest("form")!); });
+		try { expect(magicLink).toHaveBeenCalledOnce(); }
+		finally { await act(async () => { finish({ data: { status: true }, error: null }); }); }
+	});
+
+	it.each(["success", "error", "edit-back"] as const)("does not apply an old delivery %s to an edited email and allows a fresh request", async outcome => {
+		let finish!: (value: unknown) => void;
+		magicLink.mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
+		render(<LoginPage />);
+		const input = screen.getByLabelText(/email address/i);
+		fireEvent.change(input, { target: { value: "first@example.test" } });
+		fireEvent.submit(input.closest("form")!);
+		fireEvent.change(input, { target: { value: "second@example.test" } });
+		if (outcome === "edit-back") fireEvent.change(input, { target: { value: "first@example.test" } });
+		await act(async () => { finish(outcome === "error" ? { data: null, error: { message: "First address delivery failed" } } : { data: { status: true }, error: null }); });
+		expect(screen.queryByRole("status")).not.toBeInTheDocument();
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+		expect(input).not.toHaveAttribute("aria-invalid", "true");
+		expect(screen.getByRole("button", { name: "Send magic link" })).toBeEnabled();
+		magicLink.mockResolvedValueOnce({ data: { status: true }, error: null });
+		fireEvent.click(screen.getByRole("button", { name: "Send magic link" }));
+		await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent(/check your inbox/i));
+		expect(magicLink).toHaveBeenCalledTimes(2);
+		expect(magicLink.mock.calls[1][0].email).toBe(outcome === "edit-back" ? "first@example.test" : "second@example.test");
+	});
+
 	it("keeps a pending email delivery separate from the wallet connect state", async () => {
 		let finish!: (value: unknown) => void;
 		magicLink.mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));

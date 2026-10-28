@@ -129,6 +129,8 @@ function LoginInner() {
 	const [method, setMethod] = useState<Method>("magic");
 	const tabsRef = useRef<HTMLDivElement>(null);
 	const [email, setEmail] = useState("");
+	const emailRevision = useRef(0);
+	const magicRequest = useRef<object | null>(null);
 	const [magicSubmitting, setMagicSubmitting] = useState(false);
 	const [walletSubmitting, setWalletSubmitting] = useState(false);
 	const [magicSent, setMagicSent] = useState(false);
@@ -138,6 +140,7 @@ function LoginInner() {
 		if (value) walletAttemptedRef.current = true;
 		setWalletSubmitting(value);
 	}, []);
+	useEffect(() => () => { magicRequest.current = null; }, []);
 
 	useEffect(() => {
 		setMounted(true);
@@ -188,12 +191,18 @@ function LoginInner() {
 	const handleMagic = useCallback(
 		async (e: FormEvent<HTMLFormElement>) => {
 			e.preventDefault();
+			if (magicRequest.current) return;
 			setError(null);
 			setMagicSent(false);
 			if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
 				setError("Enter a valid email address");
 				return;
 			}
+			const request = {};
+			const revision = emailRevision.current;
+			magicRequest.current = request;
+			const ownsRequest = () => magicRequest.current === request;
+			const ownsFeedback = () => ownsRequest() && emailRevision.current === revision;
 			setMagicSubmitting(true);
 			try {
 				const safeNext = safeLoginNext(next);
@@ -209,12 +218,17 @@ function LoginInner() {
 				if (result.error) {
 					throw new Error(result.error.message ?? "Failed to send magic link");
 				}
-				setMagicSent(true);
-				toast.success(`Magic link sent to ${email}`);
+				if (ownsFeedback()) {
+					setMagicSent(true);
+					toast.success(`Magic link sent to ${email}`);
+				}
 			} catch (err) {
-				handleError(err, "Failed to send magic link");
+				if (ownsFeedback()) handleError(err, "Failed to send magic link");
 			} finally {
-				setMagicSubmitting(false);
+				if (ownsRequest()) {
+					magicRequest.current = null;
+					setMagicSubmitting(false);
+				}
 			}
 		},
 		[email, next, toast, handleError],
@@ -332,7 +346,9 @@ function LoginInner() {
 										placeholder="you@example.com"
 										value={email}
 										onChange={(e) => {
-											setEmail(e.target.value.trim());
+											const value = e.target.value.trim();
+											if (value !== email) emailRevision.current++;
+											setEmail(value);
 											if (magicSent) setMagicSent(false);
 										}}
 										aria-invalid={error ? "true" : undefined}

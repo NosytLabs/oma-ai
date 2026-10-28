@@ -134,7 +134,7 @@ describe("USDC broadcast recovery", () => {
   render(<UnifiedDepositInterface />);
   fireEvent.change(await screen.findByLabelText("Wallet to connect"), { target: { value: "metamask" } });
   fireEvent.click(screen.getByRole("button", { name: "Connect MetaMask" }));
-  await waitFor(() => expect(mocks.connect).toHaveBeenCalledExactlyOnceWith("metamask"));
+  await waitFor(() => expect(mocks.connect).toHaveBeenCalledExactlyOnceWith("metamask", expect.any(Function)));
   expect(mocks.send).not.toHaveBeenCalled();
  });
 

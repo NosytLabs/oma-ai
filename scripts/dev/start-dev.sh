@@ -87,6 +87,27 @@ start_frontend() {
 	FRONTEND_PID=$!
 	echo "   Frontend PID: $FRONTEND_PID"
 }
+
+# Check liveness, not /ready: local development can intentionally run without Redis.
+wait_for_service() {
+	local name="$1" url="$2" attempt
+	for attempt in $(seq 1 30); do
+		if [ -n "$SERVER_PID" ] && ! kill -0 "$SERVER_PID" 2>/dev/null; then
+			echo "ERROR: API process exited before startup completed." >&2
+			return 1
+		fi
+		if [ -n "$FRONTEND_PID" ] && ! kill -0 "$FRONTEND_PID" 2>/dev/null; then
+			echo "ERROR: Frontend process exited before startup completed." >&2
+			return 1
+		fi
+		if curl -fsS --max-time 2 "$url" >/dev/null 2>&1; then
+			return 0
+		fi
+		sleep 1
+	done
+	echo "ERROR: $name startup check timed out." >&2
+	return 1
+}
 # Note: this dev launcher shells into per-package `npm run dev` because
 # the per-package scripts (`server/package.json#dev`, `app/package.json#dev`)
 # are pinned to the right toolchain. pnpm workspaces would also work; the
@@ -110,6 +131,8 @@ echo ""
 start_server
 sleep 2
 start_frontend
+wait_for_service "API" "http://localhost:3001/health"
+wait_for_service "Frontend" "http://localhost:3000/"
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

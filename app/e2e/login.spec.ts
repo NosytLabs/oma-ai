@@ -27,6 +27,41 @@ test("magic link delivery can be retried and preserves a safe callback", async (
 	expect(authApi.magicRequests[1]).toMatchObject({ email: "person@example.test", callbackURL: `${baseURL}${safeNext}`, errorCallbackURL: errorCallback(baseURL!, safeNext) });
 });
 
+test("editing an email during delivery requires a fresh request and pending submits send only once", async ({ page, authApi }) => {
+	const held = new Set<Route>();
+	await page.route("**/api/auth/sign-in/magic-link", route => {
+		authApi.magicRequests.push(route.request().postDataJSON());
+		held.add(route);
+	});
+	const finishDelivery = async () => {
+		expect(held.size).toBe(1);
+		const route = [...held][0];
+		held.delete(route);
+		await route.fulfill({ json: { status: true } });
+	};
+	try {
+		await page.goto("/login");
+		const email = page.getByLabel("Email address");
+		await email.fill("first@example.test");
+		await page.getByRole("button", { name: "Send magic link" }).click();
+		await expect.poll(() => authApi.magicRequests.length).toBe(1);
+		await email.fill("second@example.test");
+		// A form submit can also originate from keyboard/autofill integrations.
+		await email.evaluate(input => (input as HTMLInputElement).form!.requestSubmit());
+		await finishDelivery();
+		await expect(page.getByRole("button", { name: "Send magic link" })).toBeEnabled();
+		await expect(page.locator("form [role=status]")).toHaveCount(0);
+		await expect(page.locator("#email-error")).toHaveCount(0);
+		expect(authApi.magicRequests).toHaveLength(1);
+		await expect(email).toHaveValue("second@example.test");
+		await page.getByRole("button", { name: "Send magic link" }).click();
+		await expect.poll(() => authApi.magicRequests.length).toBe(2);
+		await finishDelivery();
+		await expect(page.locator("form [role=status]")).toContainText(/check your inbox/i);
+		expect(authApi.magicRequests.map(request => request.email)).toEqual(["first@example.test", "second@example.test"]);
+	} finally { for (const route of held) await route.abort("aborted").catch(() => {}); }
+});
+
 test("external next URLs are not accepted for magic-link callbacks", async ({ page, authApi, baseURL }) => {
 	await page.goto(loginUrl("//evil.example/phishing"));
 	await page.getByLabel("Email address").fill("person@example.test");

@@ -195,7 +195,7 @@ function DepositInterfaceContent({ onDeposit }: {
 		setError("");
 		try {
 			const walletId = wallets.find(wallet => wallet.id === selectedWalletId)?.id ?? wallets[0]?.id;
-			const wallet = await connectWallet(walletId);
+			const wallet = await connectWallet(walletId, () => isCurrentAccount.current);
 			if (!isCurrentAccount.current) return;
 			await ensureBaseChain(() => isCurrentAccount.current);
 			if (!isCurrentAccount.current) return;

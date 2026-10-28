@@ -8,6 +8,66 @@ import { fileURLToPath } from "node:url";
 
 const script = fileURLToPath(new URL("./start-dev.sh", import.meta.url));
 
+function readinessFixture(commands) {
+  const dir = mkdtempSync(join(tmpdir(), "oma-dev-ready-"));
+  for (const subdir of ["scripts/dev", "server", "app", "bin"]) mkdirSync(join(dir, subdir), { recursive: true });
+  copyFileSync(script, join(dir, "scripts/dev/start-dev.sh"));
+  writeFileSync(join(dir, "server/.env"), "DATABASE_URL=local\n");
+  for (const [name, body] of Object.entries(commands)) writeFileSync(join(dir, "bin", name), `#!/bin/sh\n${body}\n`, { mode: 0o755 });
+  const result = spawnSync("bash", [join(dir, "scripts/dev/start-dev.sh")], { encoding: "utf8", timeout: 5000, env: { ...process.env, PATH: `${dir}/bin:${process.env.PATH}`, OMA_TEST_DIR: dir } });
+  return { dir, result };
+}
+
+test("a service exiting during startup fails without reporting success", () => {
+  const { dir, result } = readinessFixture({ curl: "exit 1", lsof: "exit 1", npm: "exit 42", sleep: "/bin/sleep 0.03" });
+  try {
+    assert.notEqual(result.status, 0);
+    assert.doesNotMatch(result.stdout, /OMA AI Gateway is running/);
+    assert.match(result.stderr, /API.*exited/i);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("an unready listener times out without reporting success", () => {
+  const { dir, result } = readinessFixture({ curl: "exit 1", lsof: "exit 1", npm: "exec /bin/sleep 4", sleep: "exit 0" });
+  try {
+    assert.notEqual(result.status, 0);
+    assert.doesNotMatch(result.stdout, /OMA AI Gateway is running/);
+    assert.match(result.stderr, /API.*(?:timed out|not ready)/i);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("a frontend exit is detected while waiting for the API", () => {
+  const { dir, result } = readinessFixture({
+    curl: "exit 1", lsof: "exit 1", npm: 'if [ "$(basename "$PWD")" = app ]; then exit 42; fi\nexec /bin/sleep 4', sleep: "/bin/sleep 0.03",
+  });
+  try {
+    assert.notEqual(result.status, 0);
+    assert.doesNotMatch(result.stdout, /OMA AI Gateway is running/);
+    assert.match(result.stderr, /Frontend.*exited/i);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("reports success after newly started services respond", () => {
+  const { dir, result } = readinessFixture({
+    curl: 'case "$*" in *3001*) test -f "$OMA_TEST_DIR/server-ready";; *3000*) test -f "$OMA_TEST_DIR/app-ready";; esac',
+    lsof: "exit 1", npm: 'touch "$OMA_TEST_DIR/$(basename "$PWD")-ready"\nexec /bin/sleep 0.3', sleep: "/bin/sleep 0.03",
+  });
+  try {
+    assert.equal(result.status, 0);
+    assert.match(result.stdout, /OMA AI Gateway is running/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("reports success when both existing services respond", () => {
+  const { dir, result } = readinessFixture({ curl: "exit 0", lsof: "exit 1", npm: "exit 42", sleep: "exit 0" });
+  try {
+    assert.equal(result.status, 0);
+    assert.match(result.stdout, /API server already healthy/);
+    assert.match(result.stdout, /Frontend already responding/);
+    assert.match(result.stdout, /OMA AI Gateway is running/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
 test("a blocked frontend port does not leave a newly started API behind", async () => {
   const dir = mkdtempSync(join(tmpdir(), "oma-dev-test-"));
   let pid;
