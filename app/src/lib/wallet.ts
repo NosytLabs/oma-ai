@@ -206,8 +206,8 @@ export async function signSiweMessage(
 	address: `0x${string}`,
 	nonce: string,
 	domain: string,
+	uri = `https://${domain}`,
 ): Promise<{ message: string; signature: string }> {
-	const client = viemWalletClient();
 	// Defensive: callers may pass a raw (lowercase) account. SIWE requires
 	// EIP-55 checksum case on the address line — normalize before building.
 	let checksummed: `0x${string}`;
@@ -216,11 +216,17 @@ export async function signSiweMessage(
 	} catch {
 		throw new Error("Wallet returned a malformed address — please try a different account");
 	}
+	// Network/permission prompts can change the selected account after connect.
+	// Do not ask the wallet to sign a stale identity or move to another provider.
+	const provider = getProvider();
+	await requireSendingAccount(checksummed);
+	if (getProvider() !== provider) throw new Error("Wallet changed. Reconnect the original wallet and try again.");
+	const client = viemWalletClient();
 	const message = new SiweMessage({
 		domain,
 		address: checksummed,
 		statement: "Sign in to OMA AI",
-		uri: `https://${domain}`,
+		uri,
 		version: "1",
 		chainId: OMA_CHAIN_ID,
 		nonce,
@@ -293,7 +299,7 @@ export function subscribeWalletAccount(listener: (address: `0x${string}` | null)
 async function requireSendingAccount(address: `0x${string}`): Promise<void> {
 	const current = await getConnectedAccount();
 	if (!current || current.toLowerCase() !== address.toLowerCase()) {
-		throw new Error("Wallet account changed. Reconnect the original sending wallet and try again.");
+		throw new Error("Wallet account changed. Reconnect the original wallet and try again.");
 	}
 }
 

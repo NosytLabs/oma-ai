@@ -6,8 +6,11 @@ type ShortcutState = Pick<Parameters<typeof useChatShortcuts>[0],
 	"input" | "loading" | "shortcutsOpen" | "paramsOpen" | "compareMode">;
 
 function mountShortcuts(overrides: Partial<ShortcutState> = {}) {
+	const composer = document.createElement("textarea");
+	document.body.append(composer);
 	const options = {
 		sendMessageRef: { current: vi.fn(async () => {}) },
+		inputRef: { current: composer },
 		input: "A useful question",
 		loading: false,
 		shortcutsOpen: false,
@@ -113,24 +116,33 @@ describe("useChatShortcuts", () => {
 
 	it("does not send an IME composition or a key already handled by the composer", () => {
 		vi.spyOn(navigator, "platform", "get").mockReturnValue("Linux x86_64");
-		const { sendMessageRef } = mountShortcuts();
-		press("Enter", { ctrlKey: true, isComposing: true });
-		const textarea = document.createElement("textarea");
+		const { sendMessageRef, inputRef } = mountShortcuts();
+		press("Enter", { ctrlKey: true, isComposing: true }, inputRef.current);
+		const textarea = inputRef.current;
 		textarea.addEventListener("keydown", (event) => event.preventDefault());
-		document.body.append(textarea);
 		press("Enter", { ctrlKey: true }, textarea);
+		expect(sendMessageRef.current).not.toHaveBeenCalled();
+	});
+
+	it("does not send the draft when the shortcut is pressed in another field", () => {
+		vi.spyOn(navigator, "platform", "get").mockReturnValue("Linux x86_64");
+		const { sendMessageRef } = mountShortcuts();
+		const instructions = document.createElement("textarea");
+		instructions.setAttribute("aria-label", "System prompt");
+		document.body.append(instructions);
+		expect(press("Enter", { ctrlKey: true }, instructions)).toBe(true);
 		expect(sendMessageRef.current).not.toHaveBeenCalled();
 	});
 
 	it("sends through the latest handler and removes its listener on unmount", () => {
 		vi.spyOn(navigator, "platform", "get").mockReturnValue("Linux x86_64");
-		const { sendMessageRef, unmount } = mountShortcuts();
+		const { sendMessageRef, inputRef, unmount } = mountShortcuts();
 		const latest = vi.fn(async () => {});
 		sendMessageRef.current = latest;
-		press("Enter", { ctrlKey: true });
+		press("Enter", { ctrlKey: true }, inputRef.current);
 		expect(latest).toHaveBeenCalledOnce();
 		unmount();
-		press("Enter", { ctrlKey: true });
+		press("Enter", { ctrlKey: true }, inputRef.current);
 		expect(latest).toHaveBeenCalledOnce();
 	});
 });

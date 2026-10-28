@@ -14,6 +14,7 @@ import { auditLog } from "../middleware/audit.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { sessionAuth } from "../auth/middleware.js";
 import { logger } from "../lib/logger.js";
+import { databaseErrorMetadata } from "../lib/database-error.js";
 import {
 		createApiKey,
 		listApiKeys,
@@ -503,8 +504,29 @@ authRoutes.post(
  * paths agree; a hardcoded "oma-ai.com" would silently reject every local and
  * preview deployment.
  */
-const ATTACH_WALLET_EXPECTED_DOMAIN = new URL(authBaseURL).host;
+const ATTACH_WALLET_EXPECTED_DOMAIN = new URL(authBaseURL).host.replace(/^www\./, "");
 const ATTACH_WALLET_EXPECTED_CHAIN_ID = config.BASE_CHAIN_ID;
+const ATTACH_WALLET_NONCE_PREFIX = "wallet-attach:";
+const ATTACH_WALLET_CHALLENGE_MS = 5 * 60_000;
+
+// Separate from SIWE login: the challenge authorizes binding a wallet to the
+// current account, rather than establishing a session for the wallet's owner.
+authRoutes.post(
+	"/v1/user/attach-wallet/nonce",
+	rateLimit({ windowMs: 60_000, maxRequests: 10, failClosed: true }),
+	sessionAuth,
+	async (c) => {
+		const nonce = crypto.randomUUID().replaceAll("-", "");
+		const expiresAt = new Date(Date.now() + ATTACH_WALLET_CHALLENGE_MS);
+		const { internalAdapter } = await auth.$context;
+		await internalAdapter.createVerificationValue({
+			identifier: `${ATTACH_WALLET_NONCE_PREFIX}${nonce}`,
+			value: c.get("userId"), expiresAt,
+		});
+		c.header("Cache-Control", "private, no-store");
+		return c.json({ nonce, expiresAt: expiresAt.toISOString(), domain: ATTACH_WALLET_EXPECTED_DOMAIN, chainId: ATTACH_WALLET_EXPECTED_CHAIN_ID });
+	},
+);
 
 const attachWalletSchema = z.object({
 	message: z.string().min(1),
@@ -560,6 +582,17 @@ authRoutes.post(
 				);
 			}
 			checksummed = await verifySiweSignature({ address, message, signature });
+			// Consume only after verifying the signed message. Better Auth performs
+			// an atomic delete and expiry check, so concurrent submissions cannot
+			// replay a signature or reuse a login challenge for attachment.
+			if (!parsedMessage.nonce || !/^[a-zA-Z0-9]{8,250}$/.test(parsedMessage.nonce)) {
+				throw new SiweVerificationError("Missing wallet attachment challenge", "malformed_message");
+			}
+			const { internalAdapter } = await auth.$context;
+			const challenge = await internalAdapter.consumeVerificationValue(`${ATTACH_WALLET_NONCE_PREFIX}${parsedMessage.nonce}`);
+			if (!challenge || challenge.value !== userId) {
+				throw new SiweVerificationError("Invalid wallet attachment challenge", "malformed_message");
+			}
 		} catch (err) {
 			const isVerificationError = err instanceof SiweVerificationError;
 			logger.warn(
@@ -666,12 +699,7 @@ authRoutes.post(
 			return c.json({ success: true, address: checksummed });
 		} catch (err) {
 			// Unique constraint violation is the real safety net.
-			if (
-				err &&
-				typeof err === "object" &&
-				"code" in err &&
-				(err as { code: string }).code === "23505"
-			) {
+			if (databaseErrorMetadata(err).code === "23505") {
 				return c.json(
 					{
 						error: {

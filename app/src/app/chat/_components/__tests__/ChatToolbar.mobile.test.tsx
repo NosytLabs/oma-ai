@@ -40,6 +40,7 @@ const baseProps = {
 	searching: false,
 	isAuthenticated: false,
 	balance: null,
+	balanceLoading: false,
 	balanceDollars: 0,
 	isLowBalance: false,
 	compareMode: false,
@@ -96,5 +97,17 @@ describe("ChatToolbar — single WEB / COMPARE path", () => {
 		fireEvent.click(copyLink);
 
 		expect(copyModelLink).toHaveBeenCalledTimes(1);
+	});
+
+	it("shows an unavailable balance and funding link after a balance request fails", () => {
+		render(<ChatToolbar {...baseProps} isAuthenticated balanceLoading={false} />);
+		expect(screen.queryByLabelText("Loading credit balance")).not.toBeInTheDocument();
+		expect(screen.getByRole("link", { name: /balance unavailable.*add credits/i })).toHaveAttribute("href", "/deposit");
+	});
+
+	it("shows the loading state while the initial balance request is pending", () => {
+		render(<ChatToolbar {...baseProps} isAuthenticated balanceLoading />);
+		expect(screen.getByLabelText("Loading credit balance")).toBeInTheDocument();
+		expect(screen.queryByRole("link", { name: /balance unavailable/i })).not.toBeInTheDocument();
 	});
 });

@@ -5,6 +5,8 @@
   "/sessions",
   "/sessions/*",
   "/account",
+  "/v1/user/attach-wallet",
+  "/v1/user/attach-wallet/nonce",
   "/v1/deposit/usdc",
   "/v1/deposit/usdc/*",
   "/v1/checkout",

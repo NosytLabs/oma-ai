@@ -174,6 +174,21 @@ describe("wallet", () => {
 	});
 
 	describe("signSiweMessage", () => {
+		it("uses the supplied HTTP origin for a local wallet sign-in", async () => {
+			install(makeProvider().provider);
+			const { message } = await signSiweMessage(
+				ADDRESS, "a1b2c3d4e5f6a7b8", "localhost:3000", "http://localhost:3000",
+			);
+			expect(message).toContain("URI: http://localhost:3000");
+		});
+
+		it("does not ask for a signature after the authorized account changes", async () => {
+			const { provider, calls } = makeProvider({ accounts: ["0x0000000000000000000000000000000000000001"] });
+			install(provider);
+			await expect(signSiweMessage(ADDRESS, "a1b2c3d4e5f6a7b8", "oma-ai.com")).rejects.toThrow(/account changed/i);
+			expect(calls.some(call => call.method === "personal_sign")).toBe(false);
+		});
+
 		it("produces a message the server can verify back to the signer", async () => {
 			// The real assertion: recover the address from the signature and
 			// confirm it matches. A malformed SIWE payload would fail here even
@@ -224,6 +239,7 @@ describe("wallet", () => {
 		it("propagates a user rejection from the wallet", async () => {
 			install({
 				request: async ({ method }: Request) => {
+					if (method === "eth_accounts") return [ADDRESS];
 					if (method === "personal_sign") throw new Error("User rejected the request");
 					return null;
 				},
@@ -251,6 +267,7 @@ describe("wallet", () => {
 
 	it("does not retry a failing signature prompt automatically", async () => {
 		const request = vi.fn(async ({ method }: { method: string }) => {
+			if (method === "eth_accounts") return [ADDRESS];
 			if (method === "personal_sign") throw new Error("Wallet disconnected");
 			return [];
 		});

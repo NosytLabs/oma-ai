@@ -22,6 +22,29 @@ vi.mock("@/lib/hooks/useAuth", () => ({
 }));
 
 describe("magic-link form validation", () => {
+	it("moves selection and focus between sign-in tabs with arrow, Home and End keys", () => {
+		render(<LoginPage />);
+		const magic = screen.getByRole("tab", { name: "Magic link" });
+		const wallet = screen.getByRole("tab", { name: "Wallet" });
+		expect(magic).toHaveAttribute("tabindex", "0");
+		expect(wallet).toHaveAttribute("tabindex", "-1");
+		magic.focus();
+		fireEvent.keyDown(magic, { key: "ArrowRight" });
+		expect(wallet).toHaveFocus();
+		expect(wallet).toHaveAttribute("aria-selected", "true");
+		expect(wallet).toHaveAttribute("tabindex", "0");
+		expect(magic).toHaveAttribute("tabindex", "-1");
+		fireEvent.keyDown(wallet, { key: "Home" });
+		expect(magic).toHaveFocus();
+		expect(magic).toHaveAttribute("aria-selected", "true");
+		fireEvent.keyDown(magic, { key: "End" });
+		expect(wallet).toHaveFocus();
+		fireEvent.keyDown(wallet, { key: "ArrowLeft" });
+		expect(magic).toHaveFocus();
+		fireEvent.click(wallet);
+		expect(wallet).toHaveAttribute("aria-selected", "true");
+		expect(wallet).toHaveAttribute("tabindex", "0");
+	});
 	it("shows a returned delivery error without telling the user to check their inbox", async () => {
 		magicLink.mockResolvedValue({ data: null, error: { message: "Please wait before requesting another link", status: 429 } });
 		render(<LoginPage />);

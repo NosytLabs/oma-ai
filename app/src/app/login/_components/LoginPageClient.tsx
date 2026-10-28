@@ -29,9 +29,11 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
 	type FormEvent,
+	type KeyboardEvent,
 	Suspense,
 	useCallback,
 	useEffect,
+	useRef,
 	useState,
 } from "react";
 import dynamic from "next/dynamic";
@@ -101,16 +103,20 @@ function LoginInner() {
 	const { status: apiStatus } = useApiHealth();
 	const { isAuthenticated, isDemo, isReady } = useAuth();
 	const [mounted, setMounted] = useState(false);
+	// Once a wallet attempt starts, its own session check must authorize any
+	// redirect. A background session refresh may belong to a different user.
+	const walletAttemptedRef = useRef(false);
 	const connectionInterrupted = mounted && apiStatus === "offline";
 
 	// Already signed in — don't show the form, go where they were headed.
 	useEffect(() => {
-		if (isReady && isAuthenticated && !isDemo) {
+		if (isReady && isAuthenticated && !isDemo && !walletAttemptedRef.current) {
 			router.replace(defaultNext());
 		}
 	}, [isReady, isAuthenticated, isDemo, router]);
 
 	const [method, setMethod] = useState<Method>("magic");
+	const tabsRef = useRef<HTMLDivElement>(null);
 	const [email, setEmail] = useState("");
 	const [submitting, setSubmitting] = useState(false);
 	const [magicSent, setMagicSent] = useState(false);
@@ -136,6 +142,29 @@ function LoginInner() {
 		},
 		[toast],
 	);
+
+	const handleTabKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+		if (!(event.target instanceof HTMLElement) || event.target.getAttribute("role") !== "tab") return;
+		let nextMethod: Method;
+		switch (event.key) {
+			case "ArrowLeft":
+			case "ArrowRight":
+				nextMethod = event.target.id === "tab-magic" ? "wallet" : "magic";
+				break;
+			case "Home":
+				nextMethod = "magic";
+				break;
+			case "End":
+				nextMethod = "wallet";
+				break;
+			default:
+				return;
+		}
+		event.preventDefault();
+		setMethod(nextMethod);
+		setError(null);
+		event.currentTarget.querySelector<HTMLButtonElement>(`#tab-${nextMethod}`)?.focus();
+	};
 
 	const handleMagic = useCallback(
 		async (e: FormEvent<HTMLFormElement>) => {
@@ -225,8 +254,10 @@ function LoginInner() {
 						</div>
 
 						<div
+							ref={tabsRef}
 							role="tablist"
 							aria-label="Authentication method"
+							onKeyDown={handleTabKeyDown}
 							className="mt-5 grid grid-cols-2 gap-1 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-1"
 						>
 							<TabButton
@@ -335,10 +366,16 @@ function LoginInner() {
 								>
 									<LazyWalletSignInPanel
 										submitting={submitting}
-										setSubmitting={setSubmitting}
+										setSubmitting={(value) => {
+											if (value) walletAttemptedRef.current = true;
+											setSubmitting(value);
+										}}
 										onError={handleError}
 										onSuccess={(msg) => toast.success(msg)}
-										onUseMagicLink={() => setMethod("magic")}
+										onUseMagicLink={() => {
+											setMethod("magic");
+											tabsRef.current?.querySelector<HTMLButtonElement>("#tab-magic")?.focus();
+										}}
 									/>
 								</div>
 							)}
@@ -384,6 +421,7 @@ function TabButton({ id, label, selected, icon, onSelect }: TabButtonProps) {
 			id={id}
 			role="tab"
 			aria-selected={selected}
+			tabIndex={selected ? 0 : -1}
 			aria-controls={panelId}
 			onClick={onSelect}
 			className={`inline-flex items-center justify-center gap-2 rounded-[var(--radius-sm)] px-3 py-3 min-h-11 text-xs font-semibold transition-[color,background-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] ${

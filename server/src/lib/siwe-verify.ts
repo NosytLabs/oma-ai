@@ -10,9 +10,8 @@
  *
  * What this does NOT do: nonce, domain, or expiry validation. Those are
  * better-auth's job for the sign-in path (it issued the nonce and owns the
- * session). The attach endpoint deliberately does not accept a better-auth
- * nonce at all — see `assertSelfContainedMessage` below — so the two concerns
- * stay separated rather than being half-implemented twice.
+ * session). The attach endpoint consumes a separate, account-bound challenge
+ * after signature verification; a login nonce cannot authorize attachment.
  */
 import { verifyMessage, getAddress } from "viem";
 import { logger } from "./logger.js";
@@ -29,6 +28,8 @@ export interface ParsedSiweMessage {
 	domain: string;
 	address: string;
 	chainId: number;
+	/** Server-issued challenge; its purpose and owner are checked by the route. */
+	nonce: string | null;
 	/** ISO-8601 expiry, or null when the message carries no expiration. */
 	expirationTime: string | null;
 }
@@ -88,6 +89,7 @@ export function parseSiweMessage(message: string): ParsedSiweMessage {
 
 	let chainId: number | null = null;
 	let expirationTime: string | null = null;
+	let nonce: string | null = null;
 	for (const line of lines.slice(2)) {
 		if (line.startsWith("Chain ID: ")) {
 			const raw = line.slice("Chain ID: ".length).trim();
@@ -97,6 +99,8 @@ export function parseSiweMessage(message: string): ParsedSiweMessage {
 			chainId = Number(raw);
 		} else if (line.startsWith("Expiration Time: ")) {
 			expirationTime = line.slice("Expiration Time: ".length).trim();
+		} else if (line.startsWith("Nonce: ")) {
+			nonce = line.slice("Nonce: ".length).trim();
 		}
 	}
 
@@ -107,6 +111,7 @@ export function parseSiweMessage(message: string): ParsedSiweMessage {
 		// wallet_address.chain_id and must not guess it from config.
 		chainId: chainId ?? Number.NaN,
 		expirationTime,
+		nonce,
 	};
 }
 

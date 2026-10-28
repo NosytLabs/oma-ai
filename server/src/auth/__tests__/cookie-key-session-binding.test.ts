@@ -45,7 +45,7 @@ vi.mock("../../db/client.js", () => ({
 	},
 }));
 
-import { bearerAuth } from "../middleware.js";
+import { bearerAuth, optionalAuth, sessionAuth, sessionOrBearerAuth } from "../middleware.js";
 
 function apiKey(userId: string) {
 	return {
@@ -84,6 +84,60 @@ describe("bearerAuth cookie key/session binding", () => {
 		vi.clearAllMocks();
 		mockValidateApiKey.mockResolvedValue(apiKey("account-a"));
 		mockGetSession.mockResolvedValue(null);
+	});
+
+	it.each([sessionAuth, sessionOrBearerAuth, optionalAuth])("returns a retryable safe error when session lookup fails", async (middleware) => {
+		mockGetSession.mockRejectedValueOnce(new Error("private session storage diagnostic"));
+		const context = makeContext({ Cookie: "oma.session_token=session-a" });
+		const next = vi.fn();
+		const response = await middleware(context as unknown as Parameters<typeof sessionAuth>[0], next);
+		expect(response?.status).toBe(503);
+		expect(await response?.json()).toEqual({ error: {
+			message: "Account services are temporarily unavailable. Please try again shortly.",
+			type: "service_unavailable", code: "auth_validation_unavailable",
+		} });
+		expect(next).not.toHaveBeenCalled();
+	});
+
+	it.each(["Authorization", "x-api-key"])("mixed auth honors explicit %s credentials over another account's session", async (header) => {
+		mockGetSession.mockResolvedValue({ user: { id: "account-b" }, session: { id: "session-b" } });
+		const context = makeContext({ [header]: header === "Authorization" ? "Bearer oma_sk_account_a" : "oma_sk_account_a", Cookie: "oma.session_token=session-b" });
+		const next = vi.fn();
+		await sessionOrBearerAuth(context as unknown as Parameters<typeof sessionOrBearerAuth>[0], next);
+		expect(context.get("userId")).toBe("account-a");
+		expect(context.get("apiKey")).toMatchObject({ userId: "account-a" });
+		expect(mockGetSession).not.toHaveBeenCalled();
+		expect(next).toHaveBeenCalledOnce();
+	});
+
+	it("mixed auth rejects a revoked explicit API key despite a valid browser session", async () => {
+		mockGetSession.mockResolvedValue({ user: { id: "account-b" }, session: { id: "session-b" } });
+		mockValidateApiKey.mockResolvedValueOnce(null);
+		const context = makeContext({ Authorization: "Bearer revoked_key", Cookie: "oma.session_token=session-b" });
+		const next = vi.fn();
+		const response = await sessionOrBearerAuth(context as unknown as Parameters<typeof sessionOrBearerAuth>[0], next);
+		expect(response?.status).toBe(401);
+		expect(next).not.toHaveBeenCalled();
+	});
+
+	it.each([bearerAuth, optionalAuth, sessionOrBearerAuth])("rejects unsupported Authorization schemes instead of using a cookie", async (middleware) => {
+		mockGetSession.mockResolvedValue({ user: { id: "account-a" }, session: { id: "session-a" } });
+		const context = makeContext({ Authorization: "Basic rejected", Cookie: "oma.session_token=session-a; oma_api_key=oma_sk_account_a" });
+		const next = vi.fn();
+		const response = await middleware(context as unknown as Parameters<typeof bearerAuth>[0], next);
+		expect(response?.status).toBe(401);
+		expect(next).not.toHaveBeenCalled();
+		expect(mockValidateApiKey).not.toHaveBeenCalled();
+	});
+
+	it.each(["Authorization", "x-api-key"])("rejects an empty explicit %s instead of using a cookie", async (header) => {
+		mockGetSession.mockResolvedValue({ user: { id: "account-a" }, session: { id: "session-a" } });
+		const context = makeContext({ [header]: "", Cookie: "oma.session_token=session-a; oma_api_key=oma_sk_account_a" });
+		const next = vi.fn();
+		const response = await optionalAuth(context as unknown as Parameters<typeof optionalAuth>[0], next);
+		expect(response?.status).toBe(401);
+		expect(next).not.toHaveBeenCalled();
+		expect(mockValidateApiKey).not.toHaveBeenCalled();
 	});
 
 	it.each(["key", "session"])("does not log SQL values when %s validation fails", async (failure) => {
