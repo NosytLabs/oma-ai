@@ -155,7 +155,8 @@ export interface WalletState {
  * `listWallets()` when several extensions are installed. Returns the first
  * authorized address.
  */
-export async function connectWallet(walletId?: string): Promise<WalletState> {
+export async function connectWallet(walletId?: string, isActive?: () => boolean): Promise<WalletState> {
+	requireActiveOperation(isActive);
 	const wallets = listWallets();
 	const chosen = walletId
 		? wallets.find((wallet) => wallet.id === walletId)
@@ -168,10 +169,12 @@ export async function connectWallet(walletId?: string): Promise<WalletState> {
 	const accounts = (await chosen.provider.request({
 		method: "eth_requestAccounts",
 	})) as string[];
+	requireActiveOperation(isActive);
 	if (!accounts || accounts.length === 0) {
 		throw new Error("Wallet returned no accounts — user rejected the request");
 	}
 	const chainIdHex = (await chosen.provider.request({ method: "eth_chainId" })) as string;
+	requireActiveOperation(isActive);
 	const chainId = Number.parseInt(chainIdHex, 16);
 	// Normalize to EIP-55 checksum case. Some wallets return all-lowercase
 	// accounts, which the `siwe` package rejects at message build time
@@ -188,7 +191,7 @@ export async function connectWallet(walletId?: string): Promise<WalletState> {
 }
 
 function requireActiveOperation(isActive?: () => boolean): void {
-	if (isActive && !isActive()) throw new Error("This deposit request is no longer active.");
+	if (isActive && !isActive()) throw new Error("This wallet request is no longer active.");
 }
 
 function guardedProvider(eth: Eip1193Provider, isActive?: () => boolean): Eip1193Provider {
@@ -218,7 +221,9 @@ export async function signSiweMessage(
 	nonce: string,
 	domain: string,
 	uri = `https://${domain}`,
+	isActive?: () => boolean,
 ): Promise<{ message: string; signature: string }> {
+	requireActiveOperation(isActive);
 	// Defensive: callers may pass a raw (lowercase) account. SIWE requires
 	// EIP-55 checksum case on the address line — normalize before building.
 	let checksummed: `0x${string}`;
@@ -231,8 +236,9 @@ export async function signSiweMessage(
 	// Do not ask the wallet to sign a stale identity or move to another provider.
 	const provider = getProvider();
 	await requireSendingAccount(checksummed);
+	requireActiveOperation(isActive);
 	if (getProvider() !== provider) throw new Error("Wallet changed. Reconnect the original wallet and try again.");
-	const client = viemWalletClient();
+	const client = viemWalletClient(isActive);
 	const message = new SiweMessage({
 		// An omitted EIP-4361 scheme means HTTPS, including on localhost.
 		// State the requesting URI's scheme so HTTP development stays explicit.

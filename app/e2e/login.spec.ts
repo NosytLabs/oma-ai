@@ -1,4 +1,5 @@
 import { test, expect, installWallet, address, nonce, signature } from "./auth-fixtures";
+import type { Route } from "@playwright/test";
 
 const safeNext = "/about?from=wallet#credits";
 const errorCallback = (origin: string, next: string) => `${origin}/login?${new URLSearchParams({ method: "magic", next })}`;
@@ -117,6 +118,42 @@ test("wallet rejection is retryable and successful SIWE signs the local origin",
 	expect(message).toContain("Chain ID: 8453");
 	expect(message).toContain(`Nonce: ${nonce}`);
 	expect(signed).toBe(signature);
+});
+
+test("leaving a pending wallet connection releases email sign-in and ignores its late result", async ({ page, authApi, baseURL }) => {
+	await installWallet(page, false, { holdFirstConnect: true });
+	let delivery: Route | undefined;
+	await page.route("**/api/auth/sign-in/magic-link", route => {
+		authApi.magicRequests.push(route.request().postDataJSON());
+		delivery = route;
+	});
+	try {
+		await page.setViewportSize({ width: 390, height: 844 });
+		await page.goto(loginUrl(safeNext));
+		await page.getByRole("tab", { name: "Wallet" }).click();
+		await page.getByRole("button", { name: "Connect MetaMask" }).click();
+		await expect.poll(() => page.evaluate(() => (window as unknown as { authWalletCalls: string[] }).authWalletCalls)).toEqual(["eth_requestAccounts"]);
+		await page.getByRole("tab", { name: "Magic link" }).click();
+		await expect(page.getByRole("button", { name: "Send magic link" })).toBeEnabled();
+		await page.getByLabel("Email address").fill("method-switch@example.test");
+		await page.getByRole("button", { name: "Send magic link" }).click();
+		await expect.poll(() => !!delivery).toBe(true);
+		await page.evaluate(async () => {
+			(window as unknown as { releaseAuthWalletConnect: () => void }).releaseAuthWalletConnect();
+			await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+		});
+		await expect(page.getByRole("button", { name: "Sending…", exact: true })).toBeDisabled();
+		expect(await page.evaluate(() => (window as unknown as { authWalletCalls: string[] }).authWalletCalls)).toEqual(["eth_requestAccounts"]);
+		expect(authApi.verifyRequests).toHaveLength(0);
+		await expect(page).toHaveURL(/\/login\?/);
+		await delivery!.fulfill({ json: { status: true } });
+		delivery = undefined;
+		await expect(page.locator("form [role=status]")).toContainText(/check your inbox/i);
+		await page.getByRole("tab", { name: "Wallet" }).click();
+		await page.getByRole("button", { name: "Connect MetaMask" }).click();
+		await expect(page).toHaveURL(`${baseURL}${safeNext}`);
+		expect(authApi.verifyRequests).toHaveLength(1);
+	} finally { await delivery?.abort("aborted").catch(() => {}); }
 });
 
 for (const failure of ["nonce", "verify"] as const) {

@@ -44,6 +44,11 @@ export const authRoutes = new Hono<OmaEnv>();
 
 // ─── Session helpers ──────────────────────────────────────────────────────────
 
+function credentialServiceUnavailable(c: Context, error: unknown, operation: string) {
+	logger.error({ operation, error: databaseErrorMetadata(error) }, "[auth] credential storage unavailable");
+	return c.json({ error: { message: "Account services are temporarily unavailable. Please try again shortly.", type: "service_unavailable", code: "auth_validation_unavailable" } }, 503);
+}
+
 /** Pull the Better Auth session from request headers (Hono → fetch). */
 async function getSession(c: Context) {
 		const headers = new Headers();
@@ -461,14 +466,11 @@ authRoutes.delete("/v1/history", sessionAuth, async (c) => {
 						);
 				}
 				const sessionUserId = c.get("userId");
-				let apiKey: Awaited<ReturnType<typeof validateApiKey>> = null;
+				let apiKey: Awaited<ReturnType<typeof validateApiKey>>;
 				try {
 					apiKey = await validateApiKey(parsed.data.key);
 				} catch (error) {
-					logger.warn(
-						{ error },
-						"Failed to validate API key during browser cookie installation",
-					);
+					return credentialServiceUnavailable(c, error, "install-api-key");
 				}
 				const expired =
 					apiKey?.expiresAt != null && new Date(apiKey.expiresAt) < new Date();
@@ -533,11 +535,15 @@ authRoutes.post(
 	async (c) => {
 		const nonce = crypto.randomUUID().replaceAll("-", "");
 		const expiresAt = new Date(Date.now() + ATTACH_WALLET_CHALLENGE_MS);
-		const { internalAdapter } = await auth.$context;
-		await internalAdapter.createVerificationValue({
-			identifier: `${ATTACH_WALLET_NONCE_PREFIX}${nonce}`,
-			value: c.get("userId"), expiresAt,
-		});
+		try {
+			const { internalAdapter } = await auth.$context;
+			await internalAdapter.createVerificationValue({
+				identifier: `${ATTACH_WALLET_NONCE_PREFIX}${nonce}`,
+				value: c.get("userId"), expiresAt,
+			});
+		} catch (error) {
+			return credentialServiceUnavailable(c, error, "create-wallet-challenge");
+		}
 		c.header("Cache-Control", "private, no-store");
 		return c.json({ nonce, expiresAt: expiresAt.toISOString(), domain: ATTACH_WALLET_EXPECTED_DOMAIN, chainId: ATTACH_WALLET_EXPECTED_CHAIN_ID });
 	},
@@ -606,8 +612,13 @@ authRoutes.post(
 			if (!parsedMessage.nonce || !/^[a-zA-Z0-9]{8,250}$/.test(parsedMessage.nonce)) {
 				throw new SiweVerificationError("Missing wallet attachment challenge", "malformed_message");
 			}
-			const { internalAdapter } = await auth.$context;
-			const challenge = await internalAdapter.consumeVerificationValue(`${ATTACH_WALLET_NONCE_PREFIX}${parsedMessage.nonce}`);
+			let challenge;
+			try {
+				const { internalAdapter } = await auth.$context;
+				challenge = await internalAdapter.consumeVerificationValue(`${ATTACH_WALLET_NONCE_PREFIX}${parsedMessage.nonce}`);
+			} catch (error) {
+				return credentialServiceUnavailable(c, error, "consume-wallet-challenge");
+			}
 			if (!challenge || challenge.value !== userId) {
 				throw new SiweVerificationError("Invalid wallet attachment challenge", "malformed_message");
 			}

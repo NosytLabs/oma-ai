@@ -3,6 +3,9 @@
 # Usage: ./scripts/dev/start-dev.sh
 
 set -euo pipefail
+# Give each owned background service its own process group, so cleanup can
+# signal npm and the server processes it starts without touching reused services.
+set -m
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
@@ -14,6 +17,32 @@ echo ""
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
+
+SERVER_PID=""
+FRONTEND_PID=""
+cleanup() {
+	for pid in "$SERVER_PID" "$FRONTEND_PID"; do
+		if [ -n "$pid" ]; then
+			kill -TERM -- "-$pid" 2>/dev/null || true
+			# Wait up to one second for the owned group to exit, then force-stop
+			# remaining members. Once absent, never signal that group again.
+			alive=1
+			for attempt in 1 2 3 4 5 6 7 8 9 10; do
+				if ! kill -0 -- "-$pid" 2>/dev/null; then
+					alive=0
+					break
+				fi
+				/bin/sleep 0.1
+			done
+			if [ "$alive" -eq 1 ] && kill -0 -- "-$pid" 2>/dev/null; then
+				kill -KILL -- "-$pid" 2>/dev/null || true
+			fi
+		fi
+	done
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 # Check the database configuration used by local development.
 check_env() {
@@ -36,7 +65,7 @@ start_server() {
 		exit 1
 	fi
 	echo -e "${GREEN}▶ Starting API server...${NC}"
-	(cd "$ROOT/server" && npm run dev) &
+	(cd "$ROOT/server" && exec npm run dev) &
 	SERVER_PID=$!
 	echo "   Server PID: $SERVER_PID"
 }
@@ -54,7 +83,7 @@ start_frontend() {
 		exit 1
 	fi
 	echo -e "${GREEN}▶ Starting Frontend...${NC}"
-	(cd "$ROOT/app" && npm run dev) &
+	(cd "$ROOT/app" && exec npm run dev) &
 	FRONTEND_PID=$!
 	echo "   Frontend PID: $FRONTEND_PID"
 }
@@ -96,6 +125,7 @@ echo "   Press Ctrl+C to stop"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-# Wait for interrupt
-trap "echo 'Stopping...' ; [ -n \"${SERVER_PID:-}\" ] && kill $SERVER_PID 2>/dev/null || true; [ -n \"${FRONTEND_PID:-}\" ] && kill $FRONTEND_PID 2>/dev/null || true; exit" INT TERM
+# Do not signal already reaped processes after a normal wait.
 wait
+SERVER_PID=""
+FRONTEND_PID=""

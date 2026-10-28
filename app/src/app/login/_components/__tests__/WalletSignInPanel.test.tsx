@@ -90,6 +90,56 @@ describe("WalletSignInPanel", () => {
 		expect(onUseMagicLink).toHaveBeenCalledOnce();
 	});
 
+	it.each(["connect", "nonce", "signature", "verify", "session"] as const)("ignores a pending %s result after leaving the wallet method", async stage => {
+		let finish!: (value: never) => void;
+		const pending = new Promise<never>(resolve => { finish = resolve; });
+		if (stage === "connect") vi.mocked(connectWallet).mockReturnValueOnce(pending);
+		if (stage === "nonce") vi.mocked(authClient.siwe.nonce).mockReturnValueOnce(pending);
+		if (stage === "signature") vi.mocked(signSiweMessage).mockReturnValueOnce(pending);
+		if (stage === "verify") vi.mocked(authClient.siwe.verify).mockReturnValueOnce(pending);
+		if (stage === "session") vi.mocked(authClient.getSession).mockReturnValueOnce(pending);
+		const assign = vi.fn();
+		Object.defineProperty(window, "location", { value: { ...originalLocation, protocol: "http:", host: "localhost:3000", origin: "http://localhost:3000", search: "", assign }, configurable: true });
+		const onError = vi.fn(); const onSuccess = vi.fn(); const setSubmitting = vi.fn();
+		const view = renderPanel({ onError, onSuccess, setSubmitting });
+		await act(async () => fireEvent.click(screen.getByRole("button", { name: /connect wallet/i })));
+		view.unmount();
+		expect(setSubmitting).toHaveBeenLastCalledWith(false);
+		if (stage === "nonce") expect(vi.mocked(authClient.siwe.nonce).mock.calls[0][1]?.signal?.aborted).toBe(true);
+		if (stage === "verify") expect(vi.mocked(authClient.siwe.verify).mock.calls[0][1]?.signal?.aborted).toBe(true);
+		setSubmitting.mockClear();
+		await act(async () => {
+			finish((stage === "connect" ? { address: "0x0000000000000000000000000000000000000001", chainId: 8453 }
+				: stage === "nonce" ? { data: { nonce: "12345678" }, error: null }
+					: stage === "signature" ? { message: "old-message", signature: "old-signature" }
+						: stage === "verify" ? { data: { success: true, user: { id: "wallet-user" } }, error: null }
+							: { data: { user: { id: "wallet-user" } }, error: null }) as never);
+		});
+		expect(onError).not.toHaveBeenCalled();
+		expect(onSuccess).not.toHaveBeenCalled();
+		expect(setSubmitting).not.toHaveBeenCalled();
+		expect(assign).not.toHaveBeenCalled();
+		if (stage === "connect") expect(ensureBaseChain).not.toHaveBeenCalled();
+		if (stage === "nonce") expect(signSiweMessage).not.toHaveBeenCalled();
+		if (stage === "signature") expect(authClient.siwe.verify).not.toHaveBeenCalled();
+		if (stage === "verify") expect(authClient.getSession).not.toHaveBeenCalled();
+	});
+
+	it("aborts session confirmation and cancels its retry timer when leaving the wallet method", async () => {
+		vi.useFakeTimers();
+		const onError = vi.fn();
+		const view = renderPanel({ onError });
+		await act(async () => fireEvent.click(screen.getByRole("button", { name: /connect wallet/i })));
+		expect(authClient.getSession).toHaveBeenCalledOnce();
+		const signal = vi.mocked(authClient.getSession).mock.calls[0][0]?.fetchOptions?.signal;
+		view.unmount();
+		expect(signal?.aborted).toBe(true);
+		expect(vi.getTimerCount()).toBe(0);
+		await act(async () => vi.advanceTimersByTimeAsync(4100));
+		expect(authClient.getSession).toHaveBeenCalledOnce();
+		expect(onError).not.toHaveBeenCalled();
+	});
+
 	it("reports a failed session confirmation after a successful signature and verification", async () => {
 		vi.useFakeTimers();
 		const onError = vi.fn();
@@ -138,7 +188,7 @@ describe("WalletSignInPanel", () => {
 		await act(async () => vi.advanceTimersByTimeAsync(250));
 		expect(assign).toHaveBeenCalledExactlyOnceWith("/chat?model=gpt");
 		expect(signSiweMessage).toHaveBeenCalledWith(
-			"0x0000000000000000000000000000000000000001", "12345678", "localhost:3000", "http://localhost:3000",
+			"0x0000000000000000000000000000000000000001", "12345678", "localhost:3000", "http://localhost:3000", expect.any(Function),
 		);
 	});
 
@@ -148,7 +198,7 @@ describe("WalletSignInPanel", () => {
 		vi.mocked(authClient.getSession).mockResolvedValue({ data: { user: { id: "wallet-user" } }, error: null } as never);
 		renderPanel();
 		await act(async () => fireEvent.click(screen.getByRole("button", { name: /connect wallet/i })));
-		expect(signSiweMessage).toHaveBeenCalledWith("0x0000000000000000000000000000000000000001", "12345678", url.host, url.origin);
+		expect(signSiweMessage).toHaveBeenCalledWith("0x0000000000000000000000000000000000000001", "12345678", url.host, url.origin, expect.any(Function));
 	});
 
 	it.each([

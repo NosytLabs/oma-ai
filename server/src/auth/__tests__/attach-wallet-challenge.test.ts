@@ -32,6 +32,7 @@ vi.mock("../../lib/logger.js", () => ({ logger: { info: vi.fn(), warn: vi.fn(), 
 
 import { auth } from "../../auth.js";
 import { authRoutes } from "../../routes/auth.js";
+import { logger } from "../../lib/logger.js";
 
 const wallet = privateKeyToAccount("0x0123456789012345678901234567890123456789012345678901234567890123");
 const app = new Hono().route("/", authRoutes);
@@ -59,6 +60,28 @@ beforeEach(() => {
 });
 
 describe("account-bound wallet attachment", () => {
+	it("returns a retryable error when challenge storage is unavailable", async () => {
+		const { internalAdapter } = await auth.$context;
+		vi.spyOn(internalAdapter, "createVerificationValue").mockRejectedValueOnce(new Error("challenge store disconnected"));
+		const response = await post("/v1/user/attach-wallet/nonce", {});
+		expect(response.status).toBe(503);
+		expect(await response.json()).toMatchObject({ error: { type: "service_unavailable", code: "auth_validation_unavailable" } });
+		expect(memory.verification).toHaveLength(0);
+		expect(storage.transaction).not.toHaveBeenCalled();
+	});
+
+	it("does not classify a challenge-consumption outage as an invalid signature", async () => {
+		const { nonce } = await challenge();
+		const { internalAdapter } = await auth.$context;
+		vi.spyOn(internalAdapter, "consumeVerificationValue").mockRejectedValueOnce(new DrizzleQueryError("delete from verification", [nonce], new Error("challenge store disconnected")));
+		const response = await post("/v1/user/attach-wallet", await signed(nonce));
+		expect(response.status).toBe(503);
+		expect(await response.json()).toMatchObject({ error: { type: "service_unavailable", code: "auth_validation_unavailable" } });
+		expect(storage.transaction).not.toHaveBeenCalled();
+		expect(storage.bindings).toHaveLength(0);
+		expect(JSON.stringify(vi.mocked(logger.error).mock.calls)).not.toContain(nonce);
+	});
+
 	it.each([
 		["http://localhost:3000", null], ["http://localhost:3000", "https"],
 		["http://untrusted.example", "http"], ["http://user:pass@localhost:3000", "http"],

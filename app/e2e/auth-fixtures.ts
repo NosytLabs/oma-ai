@@ -67,13 +67,21 @@ export const test = base.extend<{ authApi: AuthApi }>({
 });
 
 /** Install a synthetic EIP-1193 provider before navigating to the app. */
-export async function installWallet(page: Page, rejectFirst = false) {
-	await page.addInitScript(({ walletAddress, fakeSignature, reject }) => {
+export async function installWallet(page: Page, rejectFirst = false, { holdFirstConnect = false } = {}) {
+	await page.addInitScript(({ walletAddress, fakeSignature, reject, hold }) => {
 		let rejectNext = reject;
+		let firstConnect = true;
+		const calls: string[] = [];
+		Object.defineProperty(window, "authWalletCalls", { value: calls });
 		Object.defineProperty(window, "ethereum", { configurable: true, value: {
 			isMetaMask: true,
 			request: async ({ method }: { method: string }) => {
+				calls.push(method);
 				if (method === "eth_requestAccounts") {
+					if (hold && firstConnect) {
+						firstConnect = false;
+						await new Promise<void>(resolve => Object.defineProperty(window, "releaseAuthWalletConnect", { value: resolve }));
+					}
 					if (rejectNext) { rejectNext = false; throw Object.assign(new Error("User rejected"), { code: 4001 }); }
 					return [walletAddress];
 				}
@@ -84,7 +92,7 @@ export async function installWallet(page: Page, rejectFirst = false) {
 			},
 			on() {}, removeListener() {},
 		} });
-	}, { walletAddress: address, fakeSignature: signature, reject: rejectFirst });
+	}, { walletAddress: address, fakeSignature: signature, reject: rejectFirst, hold: holdFirstConnect });
 }
 
 export { expect, address, nonce, signature };

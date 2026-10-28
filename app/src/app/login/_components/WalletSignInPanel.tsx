@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import {
@@ -15,19 +15,20 @@ import { resolveSiweDomain } from "./siwe-domain";
 import { safeLoginNext } from "@/lib/login-href";
 
 /** Confirm the newly verified identity through the browser's session cookie. */
-async function confirmSession(userId: string, timeoutMs = 4000): Promise<void> {
+async function confirmSession(userId: string, signal: AbortSignal, isActive: () => boolean, timeoutMs = 4000): Promise<void> {
 	const deadline = Date.now() + timeoutMs;
 	// getSession() is relative to the same-origin auth proxy by default.
-	while (Date.now() < deadline) {
+	while (Date.now() < deadline && isActive()) {
 		try {
 			const { data } = await authClient.getSession({
 				query: { disableCookieCache: true },
 				fetchOptions: {
 					cache: "no-store",
 					// Keep the deadline active through response-body parsing too.
-					signal: AbortSignal.timeout(Math.max(1, deadline - Date.now())),
+					signal: AbortSignal.any([signal, AbortSignal.timeout(Math.max(1, deadline - Date.now()))]),
 				},
 			});
+			if (!isActive()) return;
 			if (data?.user?.id === userId) {
 				// Reload the authenticated app instead of preserving stale client state.
 				window.location.assign(
@@ -38,9 +39,16 @@ async function confirmSession(userId: string, timeoutMs = 4000): Promise<void> {
 		} catch {
 			// Transient: retry until the deadline.
 		}
+		if (!isActive()) return;
 		const remaining = deadline - Date.now();
-		if (remaining > 0) await new Promise((resolve) => setTimeout(resolve, Math.min(250, remaining)));
+		if (remaining > 0) await new Promise<void>(resolve => {
+			const done = () => { clearTimeout(timer); signal.removeEventListener("abort", done); resolve(); };
+			const timer = setTimeout(done, Math.min(250, remaining));
+			signal.addEventListener("abort", done, { once: true });
+			if (signal.aborted) done();
+		});
 	}
+	if (!isActive()) return;
 	throw new Error(
 		"Signed, but the session did not persist. Please try again — if this repeats, use the magic link.",
 	);
@@ -65,19 +73,36 @@ export default function WalletSignInPanel({
 }: WalletSignInPanelProps) {
 	const [wallets, setWallets] = useState<DiscoveredWallet[]>([]);
 	// Which wallet row the visitor actually clicked. `submitting` alone is
-	// shared across every row and tab, so without this every button claims to
+	// shared across every wallet row, so without this every button claims to
 	// be connecting while a single popup is open.
 	const [pendingWalletId, setPendingWalletId] = useState<string | undefined>(undefined);
+	const attemptRef = useRef<AbortController | null>(null);
 	useEffect(() => subscribeWallets(() => setWallets(listWallets())), []);
+	useEffect(() => () => {
+		const attempt = attemptRef.current;
+		if (!attempt) return;
+		attemptRef.current = null;
+		// A dispatched wallet prompt cannot be dismissed programmatically.
+		// Ignore its eventual result and stop any remaining HTTP/polling work.
+		attempt.abort();
+		setSubmitting(false);
+	}, [setSubmitting]);
 
 	const handleSiwe = useCallback(async (walletId?: string) => {
+		if (submitting || attemptRef.current) return;
+		const attempt = new AbortController();
+		attemptRef.current = attempt;
+		const isActive = () => attemptRef.current === attempt;
 		setPendingWalletId(walletId);
 		setSubmitting(true);
 		try {
-			const wallet = await connectWallet(walletId);
-			await ensureBaseChain();
+			const wallet = await connectWallet(walletId, isActive);
+			if (!isActive()) return;
+			await ensureBaseChain(isActive);
+			if (!isActive()) return;
 
-			const nonceResp = await authClient.siwe.nonce({});
+			const nonceResp = await authClient.siwe.nonce({}, { signal: attempt.signal });
+			if (!isActive()) return;
 			if (!nonceResp.data?.nonce) {
 				throw new Error(
 					nonceResp.error?.message ?? "Failed to get SIWE nonce from server",
@@ -90,21 +115,25 @@ export default function WalletSignInPanel({
 				nonceResp.data.nonce,
 				domain,
 				window.location.origin,
+				isActive,
 			);
+			if (!isActive()) return;
 
 			const verifyResp = await authClient.siwe.verify({
 				message,
 				signature,
-			});
+			}, { signal: attempt.signal });
+			if (!isActive()) return;
 			if (verifyResp.error) {
 				throw new Error(verifyResp.error.message ?? "Signature verification failed");
 			}
 			if (!verifyResp.data?.success || !verifyResp.data.user?.id) {
 				throw new Error("Wallet verification did not return an account. Please try again.");
 			}
-			await confirmSession(verifyResp.data.user.id);
-			onSuccess("Wallet connected");
+			await confirmSession(verifyResp.data.user.id, attempt.signal, isActive);
+			if (isActive()) onSuccess("Wallet connected");
 		} catch (err) {
+			if (!isActive()) return;
 			const details = err && typeof err === "object" ? err as { code?: unknown; message?: unknown } : undefined;
 			const error = Number(details?.code) === 4001
 				? new Error("Wallet request canceled. You can try again when ready.")
@@ -114,10 +143,13 @@ export default function WalletSignInPanel({
 						: new Error(typeof details?.message === "string" ? details.message : "Wallet sign-in failed");
 			onError(error, "Wallet sign-in failed");
 		} finally {
-			setSubmitting(false);
-			setPendingWalletId(undefined);
+			if (isActive()) {
+				attemptRef.current = null;
+				setSubmitting(false);
+				setPendingWalletId(undefined);
+			}
 		}
-	}, [onError, onSuccess, setSubmitting]);
+	}, [onError, onSuccess, setSubmitting, submitting]);
 
 	return (
 		<div className="space-y-3 animate-fade-in">

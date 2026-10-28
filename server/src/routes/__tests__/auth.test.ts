@@ -19,6 +19,7 @@
  */
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { Hono } from "hono";
+import { DrizzleQueryError } from "drizzle-orm/errors";
 
 // ─── Mocks ──────────────────────────────────────────────────────────────────
 
@@ -114,6 +115,7 @@ vi.mock("../../db/schema.js", () => ({
 
 import { authRoutes } from "../auth.js";
 import { auditLog } from "../../middleware/audit.js";
+import { logger } from "../../lib/logger.js";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -397,6 +399,15 @@ describe("auth routes", () => {
 	});
 
 	describe("POST /v1/keys/install", () => {
+		it("returns a retryable error without setting a cookie when key validation is unavailable", async () => {
+			mockValidateApiKey.mockRejectedValueOnce(new DrizzleQueryError("select api_keys", ["oma_sk_valid_key_here"], new Error("key store disconnected")));
+			const response = await authReq("post", "/v1/keys/install", { key: "oma_sk_valid_key_here" }, authedHeaders);
+			expect(response.status).toBe(503);
+			expect(await response.json()).toMatchObject({ error: { type: "service_unavailable", code: "auth_validation_unavailable" } });
+			expect(response.headers.get("Set-Cookie")).toBeNull();
+			expect(JSON.stringify(vi.mocked(logger.error).mock.calls)).not.toContain("oma_sk_valid_key_here");
+		});
+
 		it("rejects missing key with 400", async () => {
 			const res = await authReq("post", "/v1/keys/install", {}, authedHeaders);
 			expect(res.status).toBe(400);

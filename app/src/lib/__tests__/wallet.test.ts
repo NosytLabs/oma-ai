@@ -93,6 +93,18 @@ describe("wallet", () => {
 	});
 
 	describe("connectWallet", () => {
+		it("does not select a canceled connection after its wallet prompt resolves", async () => {
+			let active = true;
+			const original = makeProvider();
+			const late = makeProvider({ accounts: ["0x0000000000000000000000000000000000000001"] });
+			const request = late.provider.request;
+			late.provider.request = async args => { const result = await request(args); if (args.method === "eth_chainId") active = false; return result; };
+			install({ providers: [original.provider, late.provider] });
+			const [first, second] = listWallets();
+			await connectWallet(first.id);
+			await expect(connectWallet(second.id, () => active)).rejects.toThrow(/no longer active/i);
+			expect(await getConnectedAccount()).toBe(ADDRESS);
+		});
 		it("throws a message naming real wallets when none is injected", async () => {
 			await expect(connectWallet()).rejects.toThrow(/MetaMask|Rabby|Coinbase/);
 		});
@@ -175,6 +187,15 @@ describe("wallet", () => {
 	});
 
 	describe("signSiweMessage", () => {
+		it("does not open a signature prompt after sign-in is canceled during account preflight", async () => {
+			let active = true;
+			const { provider, calls } = makeProvider();
+			const request = provider.request;
+			provider.request = async args => { const result = await request(args); if (args.method === "eth_accounts") active = false; return result; };
+			install(provider);
+			await expect(signSiweMessage(ADDRESS, "CancelSigninNonce123", "oma-ai.com", "https://oma-ai.com", () => active)).rejects.toThrow(/no longer active/i);
+			expect(calls.some(call => call.method === "personal_sign")).toBe(false);
+		});
 		it("uses the supplied HTTP origin for a local wallet sign-in", async () => {
 			install(makeProvider().provider);
 			const { message } = await signSiweMessage(

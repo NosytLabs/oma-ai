@@ -129,10 +129,15 @@ function LoginInner() {
 	const [method, setMethod] = useState<Method>("magic");
 	const tabsRef = useRef<HTMLDivElement>(null);
 	const [email, setEmail] = useState("");
-	const [submitting, setSubmitting] = useState(false);
+	const [magicSubmitting, setMagicSubmitting] = useState(false);
+	const [walletSubmitting, setWalletSubmitting] = useState(false);
 	const [magicSent, setMagicSent] = useState(false);
 	const [error, setError] = useState<string | null>(() => verificationFailed ? magicLinkVerificationError(verificationCode) : null);
 	const [next, setNext] = useState("/dashboard");
+	const handleWalletSubmitting = useCallback((value: boolean) => {
+		if (value) walletAttemptedRef.current = true;
+		setWalletSubmitting(value);
+	}, []);
 
 	useEffect(() => {
 		setMounted(true);
@@ -189,7 +194,7 @@ function LoginInner() {
 				setError("Enter a valid email address");
 				return;
 			}
-			setSubmitting(true);
+			setMagicSubmitting(true);
 			try {
 				const safeNext = safeLoginNext(next);
 				const absoluteCallback = `${window.location.origin}${safeNext}`;
@@ -209,7 +214,7 @@ function LoginInner() {
 			} catch (err) {
 				handleError(err, "Failed to send magic link");
 			} finally {
-				setSubmitting(false);
+				setMagicSubmitting(false);
 			}
 		},
 		[email, next, toast, handleError],
@@ -340,10 +345,10 @@ function LoginInner() {
 									/>
 									<button
 										type="submit"
-										disabled={submitting}
+										disabled={magicSubmitting}
 										className="btn-primary min-h-12 w-full justify-center disabled:cursor-not-allowed disabled:opacity-50"
 									>
-										{submitting ? (
+										{magicSubmitting ? (
 											<>
 												<Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
 												Sending…
@@ -360,14 +365,14 @@ function LoginInner() {
 											<span>Check your inbox. The link expires in 5 minutes.</span>
 											<button
 												type="button"
-												disabled={submitting || !email}
+												disabled={magicSubmitting || !email}
 												onClick={() => {
-													if (submitting || !email) return;
+													if (magicSubmitting || !email) return;
 													void handleMagic({ preventDefault: () => {} } as React.FormEvent<HTMLFormElement>);
 												}}
 												className="text-text-secondary underline-offset-2 hover:text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50 disabled:hover:text-text-secondary disabled:hover:no-underline"
 											>
-												{submitting ? "Sending…" : "Resend"}
+												{magicSubmitting ? "Sending…" : "Resend"}
 											</button>
 										</p>
 									)}
@@ -382,11 +387,8 @@ function LoginInner() {
 									aria-labelledby="tab-wallet"
 								>
 									<LazyWalletSignInPanel
-										submitting={submitting}
-										setSubmitting={(value) => {
-											if (value) walletAttemptedRef.current = true;
-											setSubmitting(value);
-										}}
+										submitting={walletSubmitting}
+										setSubmitting={handleWalletSubmitting}
 										onError={handleError}
 										onSuccess={(msg) => toast.success(msg)}
 										onUseMagicLink={() => {

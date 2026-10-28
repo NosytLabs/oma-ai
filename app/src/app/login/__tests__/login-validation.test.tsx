@@ -1,10 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import LoginPage from "../_components/LoginPageClient";
 
 const magicLink = vi.hoisted(() => vi.fn());
 const authState = vi.hoisted(() => ({ authenticated: false, replace: vi.fn(), params: new URLSearchParams() }));
 vi.mock("@/lib/auth-client", () => ({ signIn: { magicLink } }));
+vi.mock("next/dynamic", async () => {
+	const { default: WalletSignInPanel } = await import("../_components/WalletSignInPanel");
+	return { default: () => WalletSignInPanel };
+});
 
 beforeEach(() => {
 	magicLink.mockReset();
@@ -34,6 +38,22 @@ vi.mock("@/lib/hooks/useAuth", () => ({
 }));
 
 describe("magic-link form validation", () => {
+	it("keeps a pending email delivery separate from the wallet connect state", async () => {
+		let finish!: (value: unknown) => void;
+		magicLink.mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
+		render(<LoginPage />);
+		fireEvent.change(screen.getByLabelText(/email address/i), { target: { value: "pending@example.test" } });
+		fireEvent.click(screen.getByRole("button", { name: "Send magic link" }));
+		fireEvent.click(screen.getByRole("tab", { name: "Wallet" }));
+		try {
+			const wallet = screen.getByRole("button", { name: /Connect wallet|Check your wallet/ });
+			expect(wallet).toHaveTextContent("Connect wallet");
+			expect(wallet).toBeEnabled();
+			fireEvent.click(screen.getByRole("tab", { name: "Magic link" }));
+			expect(screen.getByRole("button", { name: "Sending…" })).toBeDisabled();
+		} finally { await act(async () => { finish({ data: { status: true }, error: null }); }); }
+		await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent(/check your inbox/i));
+	});
 	it.each(["/chat?model=example#conversation", "//evil.example/phishing"])("sets a same-origin error callback preserving only safe next %s", async next => {
 		visit({ next });
 		magicLink.mockResolvedValue({ data: { status: true }, error: null });
