@@ -44,12 +44,14 @@ The OMA mark is a **folded O/M loop**: two rounded peaks meet above an open cent
 | **Brand Card** | `app/public/logos/oma-brand-card.svg`, `oma-brand-card.png` | Social card in vector and raster formats |
 | **Apple Touch Icon** | `app/public/apple-touch-icon.png` | iOS home-screen icon featuring a solid void background |
 | **Open Graph Card** | `app/public/og-image.png` | 1280×720 branding image (includes slogan, no raw hex codes) |
-| **Marketing kit** | `app/public/logos/brand-kit/` | Promo/lockup rasters only — not a second copy of live vectors |
+| **Marketing kit** | `artifacts/brand-kit/` (optional, untracked) | High-resolution promo/lockup exports; excluded from deployed assets |
 
-> Run `pnpm --filter app brand:generate` after editing the shared geometry. The script regenerates SVGs, PNGs, a real multi-resolution ICO, app icons, social cards and the marketing kit using Sharp. Do not maintain separate hand-edited copies of the mark.
+> Run `pnpm --filter app brand:generate` after editing the shared geometry. The script regenerates deployed SVGs, PNGs, a real multi-resolution ICO, app icons and social cards using Sharp. Do not maintain separate hand-edited copies of the mark.
 
-`app/public/favicon.ico` contains 16, 32 and 48 pixel entries. The marketing
-kit contains `oma-icon-promo.jpg` (the mark on a dark canvas),
+`app/public/favicon.ico` contains 16, 32 and 48 pixel entries. Run
+`pnpm --filter app brand:generate --brand-kit` when promotional files are needed.
+The optional kit is written to the ignored `artifacts/brand-kit/` directory,
+outside the deployed `app/public/` tree. It contains `oma-icon-promo.jpg` (the mark on a dark canvas),
 `oma-lockup-horizontal.png` and `.jpg` (horizontal lockup), and
 `oma-brand-card.png` (high-resolution social card). All are generated from the
 same geometry; do not edit them independently. Preserve proportions and clear
@@ -72,6 +74,10 @@ mapping and avoid introducing a remote CDN dependency.
 
 The monochrome OpenAI tile uses a white fill for contrast against the app's
 fixed dark background. Keep colored provider marks in their original colors.
+Do not keep unused provider tiles as fallback inventory: Ethereum intentionally
+uses initials because the former upstream SVG did not render correctly at UI sizes.
+The Venice tile remains in use by model-page structured data even though
+`ModelLogo` uses initials for Venice.
 
 ### Brand Kit Checklist
 

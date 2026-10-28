@@ -306,14 +306,14 @@ Production requires durable Postgres and Redis-compatible rate-limit state, real
 - `PUBLIC_APP_URL=https://www.oma-ai.com`
 - `PUBLIC_API_URL=https://www.oma-ai.com/api`
 - `CORS_ORIGIN=https://www.oma-ai.com` (or a comma-separated explicit allowlist; never `*` in production)
-- `PRIMARY_DOMAIN=www.oma-ai.com`
+- `PRIMARY_DOMAIN=oma-ai.com`
 - `BETTER_AUTH_URL=https://www.oma-ai.com`
-- `BETTER_AUTH_SECRET`: unique high-entropy secret, shared with the frontend deployment that verifies sessions.
+- `BETTER_AUTH_SECRET`: unique high-entropy secret for Better Auth on the API.
 - `ENCRYPTION_KEY`: unique production secret, at least 40 characters (enforced by config validation), used for deposit challenges.
 - `RESEND_API_KEY` and `RESEND_FROM`: required for production magic-link email.
 - `ADMIN_WALLET_ADDRESSES`: comma-separated admin addresses, if admin access is enabled.
 
-The app also needs `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_APP_URL`, and the same `BETTER_AUTH_SECRET` used by the server. In normal production, browser traffic uses the website's same-origin `/api/*` and `/x402/*` proxies.
+The app also needs `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_APP_URL`, and the same `INTERNAL_PROXY_SECRET` used by the server. Better Auth verifies sessions on the API; the frontend forwards the cookies. In normal production, browser traffic uses the website's same-origin `/api/*` and `/x402/*` proxies.
 
 Sponsored website chat uses `POST /api/chat/completions`, forwarded to the backend's `/website/chat/completions`. The frontend requires the same origin and rejects cross-site Fetch Metadata; the production backend requires the authenticated proxy secret and configured application origin. Generic API proxies strip caller sponsorship headers and block `/website/*`. Public `/api/v1/chat/completions` is always prepaid, even when a client copies website headers. The daily quota and billing gate share the same eligibility check. Secretless development is restricted to loopback backend requests; production never accepts that fallback. This separates the API contract from website sponsorship, but does not claim browser headers prevent automated use of the public website. Shared quotas, rate limits, and abuse controls remain necessary.
 

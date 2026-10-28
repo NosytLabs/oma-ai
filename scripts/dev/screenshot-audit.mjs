@@ -27,47 +27,48 @@ const PAGES = [
 async function main() {
 	mkdirSync(DIR, { recursive: true });
 
-	const browser = await chromium.launch({ headless: true });
-  
-  // Desktop screenshots
-  console.log('=== DESKTOP (1440x900) ===');
-  const desktopCtx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
-  for (const page of PAGES) {
-    try {
-      const p = await desktopCtx.newPage();
-      // domcontentloaded: /chat holds a stream open so networkidle never fires.
-      await p.goto(`${BASE}${page.path}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
-      await p.waitForTimeout(2500);
-      const path = `${DIR}/${page.name}-desktop.png`;
-      await p.screenshot({ path, fullPage: true });
-      console.log(`  ✓ ${page.name}: ${path}`);
-      await p.close();
-    } catch (e) {
-      console.log(`  ✗ ${page.name}: ${e.message}`);
+	const browser = await chromium.launch({
+    headless: true,
+    ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+      ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH }
+      : {}),
+  });
+  let failures = 0;
+  try {
+    for (const [label, viewport] of [
+      ['desktop', { width: 1440, height: 900 }],
+      ['mobile', { width: 375, height: 812 }],
+    ]) {
+      console.log(`\n=== ${label.toUpperCase()} (${viewport.width}x${viewport.height}) ===`);
+      const context = await browser.newContext({ viewport });
+      try {
+        for (const page of PAGES) {
+          let tab;
+          try {
+            tab = await context.newPage();
+            // /chat can hold a stream open, so networkidle is not suitable.
+            const response = await tab.goto(`${BASE}${page.path}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+            if (!response || !response.ok()) throw new Error(`Navigation failed: HTTP ${response?.status() ?? 'no response'}`);
+            await tab.waitForTimeout(2500);
+            const path = `${DIR}/${page.name}-${label}.png`;
+            await tab.screenshot({ path, fullPage: true });
+            console.log(`  ✓ ${page.name}: ${path}`);
+          } catch (error) {
+            failures++;
+            console.error(`  ✗ ${page.name}: ${error.message}`);
+          } finally {
+            await tab?.close();
+          }
+        }
+      } finally {
+        await context.close();
+      }
     }
+  } finally {
+    await browser.close();
   }
-  await desktopCtx.close();
-
-  // Mobile screenshots
-  console.log('\n=== MOBILE (375x812) ===');
-  const mobileCtx = await browser.newContext({ viewport: { width: 375, height: 812 } });
-  for (const page of PAGES) {
-    try {
-      const p = await mobileCtx.newPage();
-      await p.goto(`${BASE}${page.path}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
-      await p.waitForTimeout(2500);
-      const path = `${DIR}/${page.name}-mobile.png`;
-      await p.screenshot({ path, fullPage: true });
-      console.log(`  ✓ ${page.name}: ${path}`);
-      await p.close();
-    } catch (e) {
-      console.log(`  ✗ ${page.name}: ${e.message}`);
-    }
-  }
-  await mobileCtx.close();
-  
-  await browser.close();
-  console.log('\nDone! Screenshots saved to /tmp/oma-audit/');
+  console.log(`\nScreenshots saved to ${DIR}; ${failures} capture(s) failed.`);
+  if (failures) process.exitCode = 1;
 }
 
 main().catch(e => { console.error(e); process.exit(1); });

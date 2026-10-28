@@ -16,13 +16,17 @@ in [Deployment](../docs/DEPLOYMENT.md); account and API test tools live in
 ./scripts/dev/start-dev.sh          # app + server
 ./scripts/dev/local-db-up.sh        # start an initialized local Postgres cluster
 ./scripts/dev/start-chrome-debug.sh # Chrome CDP for browser harness
-./scripts/dev/screenshot-audit.mjs  # full-page Playwright screenshots for visual review
+node scripts/dev/screenshot-audit.mjs # full-page Playwright screenshots for visual review
 ```
 
 The database helper defaults to a PostgreSQL 16 data-directory path. Set
 `PGDATA` for a different initialized cluster; it does not install or initialize
 PostgreSQL. See the [development setup](../README.md#development) for the
 required permissions and launcher dependencies.
+
+The screenshot audit uses `http://localhost:3000` and writes to `oma-audit` in
+the system temporary directory by default. Set `BASE_URL` and `DIR` to override
+the site and output directory. Failed captures produce a nonzero exit status.
 
 ## Root monorepo
 
@@ -38,16 +42,23 @@ pnpm run validate:lint
 pnpm run validate:test
 ```
 
+CI uses the `packageManager` version in the root `package.json` and caches the
+pnpm store by `pnpm-lock.yaml`. Every job still performs a frozen-lockfile
+install; generated build output and `node_modules` are not cached.
+
 ## Clear generated output
 
 Stop running development and test servers before cleaning:
 
 ```bash
 pnpm clean --dry-run # list generated paths first
-pnpm clean           # remove build output, tool caches, coverage and browser reports
+pnpm clean           # remove generated output, caches, logs and reports
 ```
 
-Cleanup is limited to known paths in the root, `app`, and `server` workspaces.
-It preserves source assets, dependencies, environment files, Vercel project
-linkage, and local data. The next development server or build regenerates its
+Cleanup scans direct generated output, caches and logs in the root, `app`, and
+`server` workspaces, along with known audit, screenshot and report directories
+such as `artifacts/brand-kit`. It preserves paths containing tracked files,
+source assets, dependencies and package stores, environment files, Vercel
+project linkage, and local data. It does not follow symlinked workspace or
+parent directories. The next development server or build regenerates its
 output; no dependency reinstall is needed.

@@ -50,7 +50,9 @@ local data directory. It starts PostgreSQL with `pg_ctl` if needed, then creates
 the `oma` development role and database. Set `PGDATA` if the data directory is
 not at the helper's default path. The connecting PostgreSQL user must be able
 to create roles and databases. Alternatively, configure an existing local
-database in `server/.env`. The launcher also requires `curl` and `lsof`.
+database in `server/.env`. The migration command reads `server/.env`; an
+explicitly supplied `DATABASE_URL` takes precedence. The launcher also requires
+`curl` and `lsof`.
 
 Shared quotas require `UPSTASH_REDIS_REST_URL` and
 `UPSTASH_REDIS_REST_TOKEN`. A plain Redis daemon or `redis://` URL cannot

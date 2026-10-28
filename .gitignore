@@ -15,6 +15,8 @@ website/node_modules/
 !.env.example
 !.env.prod.example
 *.log
+*.log.[0-9]*
+*.log.gz
 .DS_Store
 Thumbs.db
 .hallmark/
@@ -43,11 +45,8 @@ e2e_screenshots/
 test-screenshots/
 audit-screenshots/
 .audit-screenshots/
-.audit-2026-08-01/
-.audit-fix/
 .audit/
-.audit-r3/
-.audit-r4/
+.audit-*/
 .visual-audit/
 screenshots/
 # Audit reports left at repo root after a session
@@ -99,16 +98,18 @@ data/
 # Accidental Playwright path dumps (page.screenshot with undefined path)
 app/undefined/
 
-# Accidental npm/bun lockfiles (this monorepo uses pnpm)
+# Accidental lockfiles from other package managers (this monorepo uses pnpm)
 package-lock.json
+npm-shrinkwrap.json
 bun.lock
+bun.lockb
+yarn.lock
 
 # Audit screenshots at repo root (transient)
 audit-*.jpeg
 audit-*.png
 audit-*.jpg
 audit-lh/
-.audit-2026-08-16/
 lh-audit*/
 
 # Playwright MCP runtime dumps

@@ -118,8 +118,9 @@ merely to make a check green.
 ## Backend deploy (Neon)
 
 Apply pending database migrations **before** releasing dependent API code.
-Migration `0006` adds persistent inference idempotency. Migration `0007` adds
-credit reservations, detached financial receipts and provider response IDs.
+Migration `0005` adds persistent inference idempotency, `0006` increases refund
+precision, and `0007` adds credit reservations, detached financial receipts
+and provider response IDs.
 Run the repository migration command using the approved production connection,
 then verify the journal and expected tables before deploying the function.
 A successful local migration does not establish production schema readiness.
