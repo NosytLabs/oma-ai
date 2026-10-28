@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Hono } from "hono";
 
-const mocks = vi.hoisted(() => ({ execute: vi.fn(), error: vi.fn() }));
+const mocks = vi.hoisted(() => ({ execute: vi.fn(), error: vi.fn(), redis: vi.fn().mockResolvedValue({ status: "ok", latency: 1 }) }));
 vi.mock("../../db/client.js", () => ({ db: { execute: mocks.execute } }));
 vi.mock("../../lib/logger.js", () => ({ logger: { error: mocks.error } }));
 vi.mock("../../lib/redis-client.js", () => ({
-  redisHealthCheck: vi.fn().mockResolvedValue({ status: "ok", latency: 1 }),
+  redisHealthCheck: mocks.redis,
 }));
 
 import { healthRoutes } from "../health.js";
@@ -31,6 +31,16 @@ describe("public liveness probes", () => {
     expect(body.status).toBe("ok");
     expect(body.service).toBe("oma-ai");
     expect(typeof body.timestamp).toBe("string");
+  });
+});
+
+describe("dependency readiness", () => {
+  it.each(["disconnected", "not_configured", "unknown"])("reports Redis %s as unavailable", async (status) => {
+    mocks.execute.mockResolvedValueOnce([]);
+    mocks.redis.mockResolvedValueOnce({ status });
+    const response = await app.request("/ready");
+    expect(response.status).toBe(503);
+    expect(await response.json()).toMatchObject({ status: "not_ready", checks: { database: { ok: true }, redis: { ok: false, status: "degraded" } } });
   });
 });
 

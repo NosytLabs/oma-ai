@@ -37,11 +37,8 @@ describe("SIWE domain selection", () => {
 
 		const domain = resolveSiweDomain();
 
-		// better-auth's SIWE verifier does not normalise "www." away, so the
-		// client must collapse "www.oma-ai.com" and "oma-ai.com" to the
-		// same canonical form before signing. Otherwise users on the apex
-		// get rejected when the server is configured for www and vice versa.
-		expect(domain).toBe("oma-ai.com");
+		// The signed authority must match the wallet request's origin exactly.
+		expect(domain).toBe("www.oma-ai.com");
 	});
 
 	it("prefers the live host on the apex domain too", () => {
@@ -53,6 +50,11 @@ describe("SIWE domain selection", () => {
 		});
 
 		expect(resolveSiweDomain()).toBe("oma-ai.com");
+	});
+
+	it("preserves www on a custom deployment and its non-default port", () => {
+		Object.defineProperty(window, "location", { value: { ...window.location, host: "www.preview.example:8443" }, configurable: true, writable: true });
+		expect(resolveSiweDomain()).toBe("www.preview.example:8443");
 	});
 
 	it("keeps the dev host so local sign-in matches the local server", () => {

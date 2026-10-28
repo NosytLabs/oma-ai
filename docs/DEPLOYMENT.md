@@ -17,10 +17,16 @@ Production targets, release procedures, verification and retention guidance foll
 Use `https://www.oma-ai.com` for public URLs, examples and
 `NEXT_PUBLIC_APP_URL`. `PRIMARY_DOMAIN` is a bare hostname, `oma-ai.com`,
 without a scheme or `www`. Auth origin resolution accepts the apex and `www`
-and derives the canonical SIWE signing domain as `oma-ai.com`; the wallet UI
-uses `https://oma-ai.com` as its SIWE URI. Keep the auth base URL and CORS
-settings consistent with `server/src/auth.ts` and the same-origin proxy.
+and resolves the production auth base URL to `https://www.oma-ai.com`.
+The SIWE signing domain is `www.oma-ai.com`, matching the page that requests
+the signature; the wallet UI uses that page's actual origin as its SIWE URI.
+Local signing preserves the HTTP scheme and port. Keep the auth base URL and
+CORS settings consistent with `server/src/auth.ts` and the same-origin proxy.
 Do not copy the website URL into `PRIMARY_DOMAIN`.
+
+Release changes to the SIWE signing origin in the frontend and API together.
+Older cached tabs and in-flight signatures need a reload and a fresh nonce
+after the change. Existing sessions and stored wallet bindings need no migration.
 
 The customer [OpenAPI document](https://www.oma-ai.com/api/v1/openapi.json)
 and `/docs` page describe API requests and responses. Funding also uses
@@ -108,8 +114,8 @@ pnpm check:deployment https://your-preview.vercel.app
 It requires both responses above, rejects redirects and exits nonzero on a
 missing function, unhealthy dependency or unexpected session response. It sends
 no cookies or credentials; an access-protected preview needs an authenticated
-check through Vercel. Verify isolated Redis configuration separately: the API
-currently treats an unconfigured Redis as healthy in its readiness response.
+check through Vercel. Missing Redis credentials cause readiness to report a
+degraded dependency.
 
 Use an empty or [schema-only Neon branch](https://neon.com/docs/guides/branching-schema-only),
 isolated Redis, and independent auth/proxy secrets. Set the preview API's

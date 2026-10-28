@@ -54,6 +54,8 @@ interface PendingCompletion {
 }
 
 interface ChatApi {
+	userId: string | null;
+	switchAccount: (userId: string | null) => Promise<void>;
 	requests: CompletionRequest[];
 	replyNext: (content: string) => void;
 	holdNextCompletion: () => PendingCompletion;
@@ -100,7 +102,8 @@ export const test = base.extend<{ chatApi: ChatApi }>({
 				return;
 			}
 			if (url.pathname === "/api/auth/get-session") {
-				await route.fulfill({ status: 200, json: null });
+				const id = chatApi.userId;
+				await route.fulfill({ status: 200, json: id ? { user: { id, name: id, email: `${id}@example.test`, emailVerified: true, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z" }, session: { id: `session-${id}`, userId: id, token: "synthetic", expiresAt: "2099-01-01T00:00:00Z" } } : null });
 				return;
 			}
 			if (url.pathname === "/api/v1/models") {
@@ -116,6 +119,7 @@ export const test = base.extend<{ chatApi: ChatApi }>({
 				return;
 			}
 			if (url.pathname === "/api/v1/balance") {
+				if (chatApi.userId) { await route.fulfill({ json: { balanceCents: "1000", totalDepositedCents: "1000", totalUsedCents: "0", lastActivityAt: null } }); return; }
 				// A guest has no account balance. Do not fake a signed-in balance
 				// if a background refresh asks for this endpoint.
 				await route.fulfill({ status: 401, json: { error: { message: "Authentication required", type: "authentication_error" } } });
@@ -166,6 +170,13 @@ export const test = base.extend<{ chatApi: ChatApi }>({
 		});
 
 		const chatApi: ChatApi = {
+			userId: null,
+			switchAccount: async userId => {
+				chatApi.userId = userId;
+				const response = page.waitForResponse(result => new URL(result.url()).pathname === "/api/auth/get-session");
+				await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+				expect((await (await response).json())?.user?.id ?? null).toBe(userId);
+			},
 			requests,
 			replyNext: (content) => replies.push({ kind: "reply", content }),
 			holdNextCompletion: () => {

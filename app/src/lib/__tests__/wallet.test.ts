@@ -183,6 +183,15 @@ describe("wallet", () => {
 			expect(message).toContain("URI: http://localhost:3000");
 		});
 
+		it.each(["https://www.oma-ai.com", "https://www.preview.example:8443", "http://127.0.0.1:3123"])("signs the exact scheme, authority and URI for %s", async origin => {
+			install(makeProvider().provider);
+			const url = new URL(origin);
+			const { message, signature } = await signSiweMessage(ADDRESS, "OriginFixtureNonce123", url.host, url.origin);
+			expect(message.split("\n")[0]).toBe(`${url.origin} wants you to sign in with your Ethereum account:`);
+			expect(message).toContain(`URI: ${url.origin}`);
+			expect(await verifyMessage({ address: ADDRESS, message, signature: signature as `0x${string}` })).toBe(true);
+		});
+
 		it("does not ask for a signature after the authorized account changes", async () => {
 			const { provider, calls } = makeProvider({ accounts: ["0x0000000000000000000000000000000000000001"] });
 			install(provider);
@@ -217,7 +226,7 @@ describe("wallet", () => {
 				"oma-ai.com",
 			);
 			const lines = message.split("\n");
-			expect(lines[0]).toBe("oma-ai.com wants you to sign in with your Ethereum account:");
+			expect(lines[0]).toBe("https://oma-ai.com wants you to sign in with your Ethereum account:");
 			expect(lines[1]).toBe(ADDRESS);
 			expect(message).toContain("oma-ai.com wants you to sign in with your Ethereum account:");
 			expect(message).toContain("Sign in to OMA AI");

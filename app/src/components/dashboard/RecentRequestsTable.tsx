@@ -256,12 +256,13 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 				</div>
 			)}
 			<RequestRefundModal
+				ownerId={ownerId}
 				record={canRefund ? refundTarget : null}
 				onDismiss={() => setRefundTarget(null)}
 				onSubmitted={() => {
-					void queryClient.invalidateQueries({ queryKey: ["usage"] });
-					void queryClient.invalidateQueries({ queryKey: ["balance"] });
-					void queryClient.invalidateQueries({ queryKey: ["refunds"] });
+					void queryClient.invalidateQueries({ queryKey: ["usage", ownerId] });
+					void queryClient.invalidateQueries({ queryKey: ["balance", ownerId] });
+					void queryClient.invalidateQueries({ queryKey: ["refunds", ownerId] });
 				}}
 			/>
 		</div>

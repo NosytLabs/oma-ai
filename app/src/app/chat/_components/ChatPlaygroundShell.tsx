@@ -920,6 +920,7 @@ function ShellContent() {
 			/>
 
 			<LazyModelComparePanel
+				key={user?.id ?? "guest"}
 				open={compareMode}
 				onClose={() => setCompareMode(false)}
 				primaryModel={model}

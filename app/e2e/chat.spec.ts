@@ -1,5 +1,36 @@
 import { test, expect, openChat } from "./chat-fixtures";
 
+test("comparison transcripts and drafts stay with the account that created them", async ({ page, chatApi }) => {
+	chatApi.userId = "synthetic-chat-a";
+	await page.goto("/chat?model=minimax-m2-7");
+	await expect(page.getByRole("textbox", { name: "Enter your message", exact: true })).toBeEnabled();
+	await page.getByRole("button", { name: "More chat actions" }).click();
+	await page.getByRole("menuitem", { name: "Compare models" }).click();
+	const panel = page.getByRole("complementary", { name: "Model comparison panel" });
+	await expect(panel).toBeVisible();
+	await panel.getByPlaceholder("Type to compare...").fill("Synthetic private prompt A");
+	chatApi.replyNext("Synthetic account A response");
+	chatApi.replyNext("Synthetic account A response");
+	await panel.getByRole("button", { name: "SEND TO BOTH" }).click();
+	await expect(panel.getByText("Synthetic account A response", { exact: true })).toBeVisible();
+	await expect(panel.getByRole("button", { name: "SEND TO BOTH" })).toBeEnabled();
+	await panel.getByPlaceholder("Type to compare...").fill("Synthetic unsent comparison draft A");
+	await chatApi.switchAccount("synthetic-chat-b");
+	await expect(panel).toBeHidden();
+	await expect(page.getByText("Synthetic private prompt A", { exact: true })).toHaveCount(0);
+	await expect(page.getByRole("textbox", { name: "Enter your message", exact: true })).toBeEnabled();
+	await page.getByRole("button", { name: "More chat actions" }).click();
+	await page.getByRole("menuitem", { name: "Compare models" }).click();
+	await expect(panel.getByPlaceholder("Type to compare...")).toHaveValue("");
+	await panel.getByPlaceholder("Type to compare...").fill("Synthetic independent prompt B");
+	chatApi.replyNext("Synthetic account B response");
+	chatApi.replyNext("Synthetic account B response");
+	await panel.getByRole("button", { name: "SEND TO BOTH" }).click();
+	await expect(panel.getByText("Synthetic account B response", { exact: true })).toBeVisible();
+	expect(chatApi.requests).toHaveLength(4);
+	for (const request of chatApi.requests.slice(2)) expect(request.messages).toEqual([{ role: "user", content: "Synthetic independent prompt B" }]);
+});
+
 test.describe("Chat playground", () => {
 	test.beforeEach(async ({ page }) => {
 		await openChat(page);

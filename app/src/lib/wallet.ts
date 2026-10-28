@@ -234,6 +234,9 @@ export async function signSiweMessage(
 	if (getProvider() !== provider) throw new Error("Wallet changed. Reconnect the original wallet and try again.");
 	const client = viemWalletClient();
 	const message = new SiweMessage({
+		// An omitted EIP-4361 scheme means HTTPS, including on localhost.
+		// State the requesting URI's scheme so HTTP development stays explicit.
+		scheme: new URL(uri).protocol.slice(0, -1),
 		domain,
 		address: checksummed,
 		statement: "Sign in to OMA AI",

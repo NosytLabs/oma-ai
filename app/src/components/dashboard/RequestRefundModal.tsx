@@ -27,6 +27,7 @@ const MAX_REASON_LEN = 1000;
 
 interface RequestRefundModalProps {
 	record: UsageRecord | null;
+	ownerId?: string;
 	onDismiss: () => void;
 	/** Called after a successful submission so the parent can invalidate its query cache. */
 	onSubmitted?: () => void;
@@ -40,30 +41,30 @@ function billedCentsString(record: UsageRecord | null): string {
 	return n.toString();
 }
 
-export function RequestRefundModal({
+export function RequestRefundModal(props: RequestRefundModalProps) {
+	if (!props.record) return null;
+	return <RefundRequestForm key={`${props.ownerId ?? "account"}:${props.record.id}`} {...props} record={props.record} />;
+}
+
+function RefundRequestForm({
 	record,
 	onDismiss,
 	onSubmitted,
-}: RequestRefundModalProps) {
+}: Omit<RequestRefundModalProps, "record"> & { record: UsageRecord }) {
 	const panelRef = useRef<HTMLDivElement>(null);
 	const toast = useToast();
 	const [reason, setReason] = useState("");
 	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const currentView = useRef(true);
+	const pending = useRef(false);
 
 	useFocusTrap({ active: !!record, containerRef: panelRef, onClose: onDismiss });
 
-	// Reset state every time we open for a new record so we don't carry the
-	// previous row's reason / error into the next open.
 	useEffect(() => {
-		if (record) {
-			setReason("");
-			setError(null);
-			setSubmitting(false);
-		}
-	}, [record?.id]);
-
-	if (!record) return null;
+		currentView.current = true;
+		return () => { currentView.current = false; };
+	}, []);
 
 	const trimmed = reason.trim();
 	const tooShort = trimmed.length > 0 && trimmed.length < MIN_REASON_LEN;
@@ -72,20 +73,26 @@ export function RequestRefundModal({
 
 	const handleSubmit = async (event: React.FormEvent) => {
 		event.preventDefault();
-		if (!canSubmit) return;
+		if (!canSubmit || pending.current) return;
+		pending.current = true;
 		setSubmitting(true);
 		setError(null);
 		try {
 			await api.refunds.create({ usageId: record.id, reason: trimmed });
-			toast.success("Refund request submitted. Check Refund activity for the decision.");
+			// The submitted mutation may finish after this view closes. Refresh
+			// its owner's data, but never dismiss or edit another row's dialog.
 			onSubmitted?.();
+			if (!currentView.current) return;
+			toast.success("Refund request submitted. Check Refund activity for the decision.");
 			onDismiss();
 		} catch (e) {
+			if (!currentView.current) return;
 			const msg = e instanceof Error ? e.message : "Request failed. Try again in a moment.";
 			setError(msg);
 			toast.error(msg);
 		} finally {
-			setSubmitting(false);
+			pending.current = false;
+			if (currentView.current) setSubmitting(false);
 		}
 	};
 

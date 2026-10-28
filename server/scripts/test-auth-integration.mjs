@@ -882,7 +882,7 @@ try {
 	const wallet = privateKeyToAccount(generatePrivateKey());
 	const nonce = (await request("/api/auth/siwe/nonce", { method: "POST", body: {} })).data.nonce;
 	const message = createSiweMessage({
-		address: wallet.address, chainId: 8453, domain: new URL(origin).host,
+		address: wallet.address, scheme: "http", chainId: 8453, domain: new URL(origin).host,
 		nonce, uri: origin, version: "1", statement: "Sign in to OMA AI.",
 	});
 	const signature = await wallet.signMessage({ message });
@@ -905,7 +905,7 @@ try {
 		await delay(250);
 	}
 	async function attachmentBody(challenge) {
-		const message = createSiweMessage({ address: attachWallet.address, chainId: challenge.chainId, domain: challenge.domain,
+		const message = createSiweMessage({ address: attachWallet.address, scheme: "http", chainId: challenge.chainId, domain: challenge.domain,
 			nonce: challenge.nonce, uri: origin, version: "1" });
 		return { address: attachWallet.address, message, signature: await attachWallet.signMessage({ message }) };
 	}

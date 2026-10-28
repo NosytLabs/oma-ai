@@ -128,7 +128,7 @@ describe("WalletSignInPanel", () => {
 		vi.useFakeTimers();
 		const assign = vi.fn();
 		Object.defineProperty(window, "location", { value: {
-			...originalLocation, protocol: "http:", host: "localhost:3000", search: "?next=%2Fchat%3Fmodel%3Dgpt", assign,
+			...originalLocation, protocol: "http:", host: "localhost:3000", origin: "http://localhost:3000", search: "?next=%2Fchat%3Fmodel%3Dgpt", assign,
 		}, configurable: true, writable: true });
 		vi.mocked(authClient.getSession).mockResolvedValue({ data: { user: { id: "old-user" } }, error: null } as never);
 		renderPanel();
@@ -140,6 +140,15 @@ describe("WalletSignInPanel", () => {
 		expect(signSiweMessage).toHaveBeenCalledWith(
 			"0x0000000000000000000000000000000000000001", "12345678", "localhost:3000", "http://localhost:3000",
 		);
+	});
+
+	it.each(["https://www.oma-ai.com", "https://www.preview.example:8443", "http://127.0.0.1:3123"])("uses the actual requesting origin %s for wallet sign-in", async origin => {
+		const url = new URL(origin);
+		Object.defineProperty(window, "location", { value: { ...originalLocation, protocol: url.protocol, host: url.host, origin: url.origin, search: "", assign: vi.fn() }, configurable: true, writable: true });
+		vi.mocked(authClient.getSession).mockResolvedValue({ data: { user: { id: "wallet-user" } }, error: null } as never);
+		renderPanel();
+		await act(async () => fireEvent.click(screen.getByRole("button", { name: /connect wallet/i })));
+		expect(signSiweMessage).toHaveBeenCalledWith("0x0000000000000000000000000000000000000001", "12345678", url.host, url.origin);
 	});
 
 	it.each([

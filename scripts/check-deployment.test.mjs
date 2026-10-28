@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { checkDeployment } from "./check-deployment.mjs";
 
-const ready = { status: "ready", service: "oma-ai", checks: { database: { ok: true }, redis: { ok: true } } };
+const ready = { status: "ready", service: "oma-ai", checks: { database: { ok: true, status: "ok" }, redis: { ok: true, status: "ok" } } };
 const json = (body, status = 200) => Response.json(body, { status });
 const run = (responses, url = "https://preview.example.test", options = {}) => {
   const calls = [];
@@ -40,13 +40,23 @@ test("distinguishes protection, redirects, invalid JSON and unhealthy dependenci
     [new Response(null, { status: 302, headers: { location: "https://elsewhere.test" } }), /redirect/i],
     [new Response("not json"), /json/i],
     [json({ ...ready, status: "not_ready", checks: { ...ready.checks, database: { ok: false } } }, 503), /dependenc|readiness/i],
-    [json({ ...ready, checks: { ...ready.checks, redis: { ok: true, status: "not_configured" } } }), /redis/i],
   ]) {
     await assert.rejects(run([response]).result, expected);
   }
   await assert.rejects(run([json(ready), json({ user: "unexpected" })]).result, /session/i);
   await assert.rejects(run([json(ready, 201)]).result, /readiness/i);
   await assert.rejects(run([json(ready), json(null, 201)]).result, /session/i);
+});
+
+test("requires healthy status as well as ok for each dependency", async () => {
+  for (const dependency of ["database", "redis"]) {
+    for (const status of ["not_configured", "degraded", "unknown", undefined]) {
+      const body = { ...ready, checks: { ...ready.checks, [dependency]: { ok: true, status } } };
+      for (const target of ["https://preview.example.test", "http://localhost:3000"]) {
+        await assert.rejects(run([json(body)], target).result, /dependenc|readiness/i);
+      }
+    }
+  }
 });
 
 test("deadline includes a stalled response body and caps response size", async () => {

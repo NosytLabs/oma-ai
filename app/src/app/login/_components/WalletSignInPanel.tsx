@@ -89,7 +89,7 @@ export default function WalletSignInPanel({
 				wallet.address,
 				nonceResp.data.nonce,
 				domain,
-				`${window.location.protocol}//${domain}`,
+				window.location.origin,
 			);
 
 			const verifyResp = await authClient.siwe.verify({

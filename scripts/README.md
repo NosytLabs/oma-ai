@@ -55,8 +55,7 @@ install; generated build output and `node_modules` are not cached.
 Run `pnpm check:deployment https://preview.example.com` against an explicit
 deployment origin to check proxied API readiness and a signed-out session.
 It sends no credentials; access-protected previews require a separate check.
-Readiness alone cannot prove Redis credentials are configured when the API
-reports an unconfigured Redis as healthy; verify hosted configuration separately.
+Missing Redis credentials cause readiness to report a degraded dependency.
 
 ## Clear generated output
 

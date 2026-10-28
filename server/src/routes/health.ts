@@ -72,7 +72,7 @@ healthRoutes.get("/ready", async (c) => {
 
   try {
     const redis = await redisHealthCheck();
-    const redisOk = redis.status === "ok" || redis.status === "not_configured";
+    const redisOk = redis.status === "ok";
     checks.redis = {
       ok: redisOk,
       status: redisOk ? "ok" : "degraded",

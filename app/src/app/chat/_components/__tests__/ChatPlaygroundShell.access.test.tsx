@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ChatPlaygroundShell } from "../ChatPlaygroundShell";
 import { Navbar } from "@/components/navbar";
@@ -77,6 +77,37 @@ function clickSignIn(link: HTMLElement) {
 }
 
 describe("guest chat model access", () => {
+	it("removes account A's comparison transcript before account B can display or send it", async () => {
+		fixtures.auth.isAuthenticated = true;
+		fixtures.auth.user = { id: "user-a" };
+		fixtures.searchParams = new URLSearchParams("model=minimax-m2-7");
+		fixtures.fetch.mockImplementation(async () => new Response('data: {"choices":[{"delta":{"content":"Synthetic comparison reply"}}]}\n\ndata: [DONE]\n\n', { headers: { "Content-Type": "text/event-stream" } }));
+		const view = renderChat();
+		const composer = await screen.findByRole("textbox", { name: "Enter your message" });
+		await waitFor(() => expect(composer).toBeEnabled());
+		fireEvent.click(screen.getByRole("button", { name: /more chat actions/i }));
+		fireEvent.click(screen.getByRole("menuitem", { name: "Compare models" }));
+		const compare = await screen.findByRole("complementary", { name: "Model comparison panel" });
+		fireEvent.change(within(compare).getByPlaceholderText("Type to compare..."), { target: { value: "A private comparison prompt" } });
+		fireEvent.click(within(compare).getByRole("button", { name: "SEND TO BOTH" }));
+		await waitFor(() => expect(within(compare).getByRole("button", { name: "SEND TO BOTH" })).toBeEnabled());
+		expect(within(compare).getByText("A private comparison prompt", { selector: "p" })).toBeInTheDocument();
+		const sentByA = fixtures.fetch.mock.calls.filter(([url]) => String(url).includes("chat/completions")).length;
+		fixtures.auth.user = { id: "user-b" };
+		await act(async () => { view.rerender(<ChatPlaygroundShell />); });
+		await waitFor(() => expect(screen.getByRole("textbox", { name: "Enter your message" })).toBeEnabled());
+		expect(screen.queryAllByText("A private comparison prompt")).toHaveLength(0);
+		fireEvent.click(screen.getByRole("button", { name: /more chat actions/i }));
+		fireEvent.click(screen.getByRole("menuitem", { name: "Compare models" }));
+		const freshCompare = await screen.findByRole("complementary", { name: "Model comparison panel" });
+		fireEvent.change(within(freshCompare).getByPlaceholderText("Type to compare..."), { target: { value: "B independent prompt" } });
+		fireEvent.click(within(freshCompare).getByRole("button", { name: "SEND TO BOTH" }));
+		await waitFor(() => expect(fixtures.fetch.mock.calls.filter(([url]) => String(url).includes("chat/completions"))).toHaveLength(sentByA + 2));
+		for (const [, options] of fixtures.fetch.mock.calls.filter(([url]) => String(url).includes("chat/completions")).slice(sentByA)) {
+			expect(JSON.parse(options.body).messages).toEqual([{ role: "user", content: "B independent prompt" }]);
+		}
+	});
+
 	it("migrates the legacy chat into searchable history and keeps it when starting a new chat", async () => {
 		localStorage.setItem(
 			conversationStorageKey(null),

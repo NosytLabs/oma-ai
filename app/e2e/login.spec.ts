@@ -111,7 +111,7 @@ test("wallet rejection is retryable and successful SIWE signs the local origin",
 	expect(authApi.verifyRequests).toHaveLength(1);
 	const { message, signature: signed } = authApi.verifyRequests[0];
 	const url = new URL(baseURL!);
-	expect(message).toContain(`${url.host} wants you to sign in`);
+	expect(message.split("\n")[0]).toBe(`${url.origin} wants you to sign in with your Ethereum account:`);
 	expect(message).toContain(address);
 	expect(message).toContain(`URI: ${url.origin}`);
 	expect(message).toContain("Chain ID: 8453");

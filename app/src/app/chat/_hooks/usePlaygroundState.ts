@@ -41,6 +41,17 @@ function readStoredModel(userId: string | null | undefined): string | null {
 	}
 }
 
+interface ComparisonFields {
+	mode: boolean;
+	model: string;
+	messages: Message[];
+	error: string | null;
+}
+interface ComparisonOwner { key: string | null }
+function emptyComparison(owner: ComparisonOwner): ComparisonFields & { owner: ComparisonOwner } {
+	return { owner, mode: false, model: FREE_DEFAULT_CHAT_MODEL, messages: [], error: null };
+}
+
 export interface UsePlaygroundStateOptions {
 	/**
 	 * Override the default model. Useful for tests and for callers that
@@ -222,7 +233,6 @@ export function usePlaygroundState(
 	const [input, setInput] = useState<string>("");
 	const [loading, setLoading] = useState<boolean>(false);
 	const [error, setError] = useState<string | null>(null);
-	const [compareError, setCompareError] = useState<string | null>(null);
 
 	// --- Settings panel + model params ---
 	const [paramsOpen, setParamsOpen] = useState<boolean>(false);
@@ -332,9 +342,29 @@ export function usePlaygroundState(
 	// --- Compare mode ---
 	// Default the compare slot to a free OMA-AI peer so guests can run
 	// side-by-side without signing in for Venice models.
-	const [compareMode, setCompareMode] = useState<boolean>(false);
-	const [compareModel, setCompareModel] = useState<string>(FREE_DEFAULT_CHAT_MODEL);
-	const [compareMessages, setCompareMessages] = useState<Message[]>([]);
+	const comparisonOwner = options.authReady ? modelStorageKey(options.userId) : null;
+	const [comparison, setComparison] = useState(() => emptyComparison({ key: comparisonOwner }));
+	// Primary threads have their own persisted identity buckets. Comparison
+	// transcripts are transient and must disappear before a new owner can send.
+	// Adjust this state owner before children commit, rather than mutating a
+	// render ref or leaving private content visible until a passive effect.
+	const visibleComparison = comparison.owner.key === comparisonOwner ? comparison : emptyComparison({ key: comparisonOwner });
+	if (visibleComparison !== comparison) setComparison(visibleComparison);
+	const comparisonScope = visibleComparison.owner;
+	const { mode: compareMode, model: compareModel, messages: compareMessages, error: compareError } = visibleComparison;
+	const updateComparison = useCallback(<K extends keyof ComparisonFields>(field: K, next: SetStateAction<ComparisonFields[K]>) => {
+		setComparison(previous => {
+			// The scope object is a transition generation, so a first-A setter
+			// stays invalid after A to B to A, even though the key matches again.
+			if (previous.owner !== comparisonScope) return previous;
+			const value = typeof next === "function" ? (next as (value: ComparisonFields[K]) => ComparisonFields[K])(previous[field]) : next;
+			return { ...previous, [field]: value };
+		});
+	}, [comparisonScope]);
+	const setCompareMode = useCallback<Dispatch<SetStateAction<boolean>>>(next => updateComparison("mode", next), [updateComparison]);
+	const setCompareModel = useCallback<Dispatch<SetStateAction<string>>>(next => updateComparison("model", next), [updateComparison]);
+	const setCompareMessages = useCallback<Dispatch<SetStateAction<Message[]>>>(next => updateComparison("messages", next), [updateComparison]);
+	const setCompareError = useCallback<Dispatch<SetStateAction<string | null>>>(next => updateComparison("error", next), [updateComparison]);
 
 	// --- Misc UI ---
 	const [shortcutsOpen, setShortcutsOpen] = useState<boolean>(false);

@@ -72,6 +72,45 @@ describe("usePlaygroundState — atomic request settings", () => {
 	});
 });
 
+describe("usePlaygroundState — comparison account boundaries", () => {
+	it("retains active comparison state on a same-owner rerender", () => {
+		const { result, rerender } = renderHook(({ owner }) => usePlaygroundState({ userId: owner, authReady: true }), { initialProps: { owner: "account-a" } });
+		act(() => {
+			result.current.setCompareMode(true);
+			result.current.setCompareMessages([{ id: "active-a", role: "assistant", content: "Keep this active comparison", timestamp: 1 }]);
+		});
+		rerender({ owner: "account-a" });
+		expect(result.current.compareMode).toBe(true);
+		expect(result.current.compareMessages[0]?.content).toBe("Keep this active comparison");
+	});
+
+	it("does not revive a stale first-A comparison setter after an A to B to A transition", () => {
+		const { result, rerender } = renderHook(({ owner }) => usePlaygroundState({ userId: owner, authReady: true }), { initialProps: { owner: "account-a" } });
+		const staleFirstA = result.current.setCompareMessages;
+		rerender({ owner: "account-b" });
+		rerender({ owner: "account-a" });
+		act(() => { staleFirstA([{ id: "stale-first-a", role: "user", content: "Old A private comparison", timestamp: 1 }]); });
+		expect(result.current.compareMessages).toEqual([]);
+		act(() => { result.current.setCompareMessages([{ id: "fresh-a", role: "user", content: "Fresh A comparison", timestamp: 2 }]); });
+		expect(result.current.compareMessages[0]?.content).toBe("Fresh A comparison");
+	});
+
+	it.each(["account-b", null])("clears comparison data when account A changes to %s and rejects its stale setters", (userId) => {
+		const { result, rerender } = renderHook(({ owner }) => usePlaygroundState({ userId: owner, authReady: true }), { initialProps: { owner: "account-a" as string | null } });
+		act(() => {
+			result.current.setCompareMode(true);
+			result.current.setCompareModel("claude-sonnet-4-6");
+			result.current.setCompareMessages([{ id: "private-a", role: "user", content: "A private comparison", timestamp: 1 }]);
+			result.current.setCompareError("A comparison error");
+		});
+		const staleMessages = result.current.setCompareMessages;
+		rerender({ owner: userId });
+		expect(result.current).toMatchObject({ compareMode: false, compareModel: FREE_DEFAULT_CHAT_MODEL, compareMessages: [], compareError: null });
+		act(() => { staleMessages([{ id: "late-a", role: "assistant", content: "A late response", timestamp: 2 }]); });
+		expect(result.current.compareMessages).toEqual([]);
+	});
+});
+
 describe("usePlaygroundState — model persistence", () => {
 	it("starts from the static default when no URL or storage entry exists", () => {
 		const { result } = renderHook(() => usePlaygroundState({ authReady: true }));

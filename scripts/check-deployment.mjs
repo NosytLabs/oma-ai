@@ -82,11 +82,9 @@ export async function checkDeployment(rawTarget, { fetchImpl = fetch, timeoutMs 
     await Promise.race([(async () => {
       const readiness = await probe("/api/ready");
       if (readiness?.status !== "ready" || readiness?.service !== "oma-ai" ||
-          readiness?.checks?.database?.ok !== true || readiness?.checks?.redis?.ok !== true) {
+          readiness?.checks?.database?.ok !== true || readiness?.checks?.database?.status !== "ok" ||
+          readiness?.checks?.redis?.ok !== true || readiness?.checks?.redis?.status !== "ok") {
         throw new Error("API readiness or a dependency failed; inspect database and Redis.");
-      }
-      if (readiness.checks.redis.status === "not_configured" && !["localhost", "127.0.0.1", "[::1]"].includes(new URL(origin).hostname)) {
-        throw new Error("Redis is not configured for this hosted deployment.");
       }
       const session = await probe("/api/auth/get-session");
       if (session !== null) throw new Error("Signed-out session response was unexpected; check the auth service.");

@@ -26,6 +26,7 @@ import {
 		isValidIpOrCidr,
 } from "../auth/api-keys.js";
 import { auth, authBaseURL } from "../auth.js";
+import { isSiweOriginValid } from "../auth/siwe-origin.js";
 import { SESSION_FRESH_AGE_SECONDS } from "../auth/session-policy.js";
 import { config } from "../config.js";
 import type { OmaEnv } from "../types.js";
@@ -518,7 +519,7 @@ authRoutes.post(
  * paths agree; a hardcoded "oma-ai.com" would silently reject every local and
  * preview deployment.
  */
-const ATTACH_WALLET_EXPECTED_DOMAIN = new URL(authBaseURL).host.replace(/^www\./, "");
+const ATTACH_WALLET_EXPECTED_DOMAIN = new URL(authBaseURL).host;
 const ATTACH_WALLET_EXPECTED_CHAIN_ID = config.BASE_CHAIN_ID;
 const ATTACH_WALLET_NONCE_PREFIX = "wallet-attach:";
 const ATTACH_WALLET_CHALLENGE_MS = 5 * 60_000;
@@ -584,6 +585,9 @@ authRoutes.post(
 		let checksummed: string;
 		try {
 			const parsedMessage = parseSiweMessage(message);
+			if (!isSiweOriginValid(parsedMessage, authBaseURL)) {
+				throw new SiweVerificationError("Message origin does not match this site", "malformed_message");
+			}
 			assertSelfContainedMessage(
 				parsedMessage,
 				ATTACH_WALLET_EXPECTED_DOMAIN,

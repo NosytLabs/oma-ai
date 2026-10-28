@@ -38,8 +38,8 @@ const app = new Hono().route("/", authRoutes);
 function post(path: string, body: unknown, owner = "account-a") {
 	return app.request(`http://localhost:3000${path}`, { method: "POST", headers: { cookie: owner, "content-type": "application/json" }, body: JSON.stringify(body) });
 }
-async function signed(nonce: string, domain = "localhost:3000", chainId = 8453) {
-	const message = createSiweMessage({ address: wallet.address, domain, chainId, nonce, uri: "http://localhost:3000", version: "1" });
+async function signed(nonce: string, domain = "localhost:3000", chainId = 8453, uri = "http://localhost:3000", scheme: string | null = "http") {
+	const message = createSiweMessage({ address: wallet.address, domain, chainId, nonce, ...(scheme ? { scheme } : {}), uri, version: "1" });
 	return { message, signature: await wallet.signMessage({ message }), address: wallet.address };
 }
 async function challenge(owner = "account-a") {
@@ -59,6 +59,16 @@ beforeEach(() => {
 });
 
 describe("account-bound wallet attachment", () => {
+	it.each([
+		["http://localhost:3000", null], ["http://localhost:3000", "https"],
+		["http://untrusted.example", "http"], ["http://user:pass@localhost:3000", "http"],
+	])("rejects attachment URI %s and header scheme %s before binding", async (uri, scheme) => {
+		const { nonce } = await challenge();
+		const response = await post("/v1/user/attach-wallet", await signed(nonce, "localhost:3000", 8453, uri!, scheme));
+		expect(response.status).toBe(400);
+		expect(storage.transaction).not.toHaveBeenCalled();
+	});
+
 	it("issues a five-minute challenge bound to this account and canonical local origin", async () => {
 		const result = await challenge();
 		expect(result).toMatchObject({ domain: "localhost:3000", chainId: 8453 });

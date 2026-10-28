@@ -35,6 +35,8 @@ import { logger } from "./lib/logger.js";
 
 import { getRedisClient } from "./lib/redis-client.js";
 import { shouldUseSecureCookies, resolveTrustedOrigins, resolveAuthBaseURL, isLocalDomain } from "./auth/origins.js";
+import { isSiweOriginValid } from "./auth/siwe-origin.js";
+import { parseSiweMessage } from "./lib/siwe-verify.js";
 import { SESSION_FRESH_AGE_SECONDS } from "./auth/session-policy.js";
 
 const RESEND_FROM = config.RESEND_FROM ?? "OMA-AI <noreply@oma-ai.com>";
@@ -462,14 +464,9 @@ user: {
 				}),
 
 			siwe({
-					// EIP-4361 requires the signed `domain` to equal the configured
-					// one exactly. The client now strips the `www.` prefix (see
-					// app/src/app/login/_components/siwe-domain.ts) so apex and
-					// www collapse to the same canonical form before signing.
-					// Mirror that here: never let the configured domain be
-					// "www.oma-ai.com" while users on "oma-ai.com" get rejected.
-					// EIP-4361 uses the full authority, including a non-default port.
-					domain: new URL(authBaseURL).host.replace(/^www\./, ""),
+					// Match the canonical app authority exactly; www is part of the
+					// wallet request's origin, rather than an interchangeable alias.
+					domain: new URL(authBaseURL).host,
 					emailDomainName: "oma-ai.com",
 						// Wallet-only signups don't need an email. The wallet address is
 						// already a strong identity signal; we attach it to the user row
@@ -480,6 +477,11 @@ user: {
 						},
 						verifyMessage: async ({ message, signature, address }: { message: string; signature: string; address: string }) => {
 							try {
+								const parsedMessage = parseSiweMessage(message);
+								// Better Auth normalizes away paths and nested schemes. The
+								// signed authority itself must equal our canonical host.
+								if (parsedMessage.domain.toLowerCase() !== new URL(authBaseURL).host.toLowerCase() ||
+									!isSiweOriginValid(parsedMessage, authBaseURL)) return false;
 								const valid = await verifyMessage({
 									address: getAddress(address) as `0x${string}`,
 									message,
