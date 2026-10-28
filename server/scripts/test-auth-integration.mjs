@@ -9,6 +9,7 @@ import assert from "node:assert/strict";
 import { randomBytes, createHash } from "node:crypto";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
+import { stopAuthTestProcess } from "./auth-test-process.mjs";
 import { createServer } from "node:net";
 import { createServer as createHttpServer } from "node:http";
 import { userInfo } from "node:os";
@@ -979,13 +980,13 @@ try {
 	console.log(`All ${passed} real auth integration checks passed.`);
 } finally {
 	providerRelease?.(); provider.closeAllConnections(); await new Promise(resolve => provider.close(resolve));
-	if (backend && backend.exitCode === null) {
-		const stopped = once(backend, "exit");
-		backend.kill("SIGTERM");
-		await stopped;
+	try {
+		await stopAuthTestProcess(backend);
+	} finally {
+		// A shutdown error must not skip the remaining isolated fixture cleanup.
+		redisFixture.closeAllConnections(); await new Promise(resolve => redisFixture.close(resolve));
+		if (pool) await pool.end();
+		if (databaseCreated) await admin.query(`DROP DATABASE "${databaseName}" WITH (FORCE)`);
+		await admin.end();
 	}
-	redisFixture.closeAllConnections(); await new Promise(resolve => redisFixture.close(resolve));
-	if (pool) await pool.end();
-	if (databaseCreated) await admin.query(`DROP DATABASE "${databaseName}" WITH (FORCE)`);
-	await admin.end();
 }

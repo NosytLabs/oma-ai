@@ -72,7 +72,7 @@ export interface SignOutOptions {
 	[key: string]: unknown;
 }
 
-function clearDemoSessionCookie(): void {
+export function clearDemoSessionCookie(): void {
 	if (typeof document === "undefined") return;
 	const suffix = document.location.protocol === "https:" ? "; Secure" : "";
 	document.cookie = `oma-demo-public=; Max-Age=0; Path=/; SameSite=Lax${suffix}`;

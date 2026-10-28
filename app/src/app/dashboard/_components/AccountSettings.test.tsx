@@ -18,6 +18,8 @@ const mocks = vi.hoisted(() => ({
 	exportData: vi.fn(),
 	updateUser: vi.fn(),
 	signOut: vi.fn(),
+	clearDemoSessionCookie: vi.fn(),
+	navigate: vi.fn(),
 	toast: { success: vi.fn(), error: vi.fn() },
 }));
 
@@ -31,6 +33,7 @@ const user = {
 };
 
 let signedInUser = user;
+const originalLocation = window.location;
 
 vi.mock("next/navigation", () => ({
 	useRouter: () => mocks.router,
@@ -41,7 +44,7 @@ vi.mock("@/lib/hooks/useAuth", () => ({
 }));
 vi.mock("@/components/shared/UnauthCallout", () => ({ UnauthCallout: () => null }));
 vi.mock("@/components/ui/Toast", () => ({ useToast: () => mocks.toast }));
-vi.mock("@/lib/auth-client", () => ({ authClient: { updateUser: mocks.updateUser } }));
+vi.mock("@/lib/auth-client", () => ({ authClient: { updateUser: mocks.updateUser }, clearDemoSessionCookie: mocks.clearDemoSessionCookie }));
 vi.mock("@/lib/api", () => ({
 	api: {
 		auth: { listSessions: mocks.listSessions, revokeSession: mocks.revokeSession, revokeOtherSessions: mocks.revokeOtherSessions, deleteAccount: mocks.deleteAccount, clearHistory: mocks.clearHistory },
@@ -70,9 +73,15 @@ beforeEach(() => {
 	mocks.listSessions.mockResolvedValue({ sessions: [] });
 	mocks.balance.mockResolvedValue({ balanceCents: 100 });
 	mocks.updateUser.mockResolvedValue({ error: null });
+	mocks.deleteAccount.mockReset();
+	mocks.signOut.mockReset();
+	Object.defineProperty(window, "location", { configurable: true, value: { origin: originalLocation.origin, protocol: originalLocation.protocol, assign: mocks.navigate } });
 	localStorage.clear();
 });
-afterEach(cleanup);
+afterEach(() => {
+	cleanup();
+	Object.defineProperty(window, "location", { configurable: true, value: originalLocation });
+});
 
 describe("settings demo isolation", () => {
 	it("keeps account profile changes disabled even with a real session", () => {
@@ -140,6 +149,58 @@ describe("profile name state", () => {
 
 
 describe("settings account boundaries", () => {
+	it("navigates after confirmed deletion without waiting for a second sign-out request", async () => {
+		mocks.params = new URLSearchParams("tab=settings&section=danger");
+		let finishDeletion!: () => void;
+		mocks.deleteAccount.mockReturnValueOnce(new Promise<void>(resolve => { finishDeletion = resolve; }));
+		mocks.signOut.mockRejectedValueOnce(new Error("Auth service unavailable"));
+		renderSettings();
+		fireEvent.click(screen.getByRole("button", { name: "Delete account" }));
+		const confirmation = screen.getByRole("textbox", { name: "Confirm by typing DELETE" });
+		fireEvent.change(confirmation, { target: { value: "DELETE" } });
+		fireEvent.keyDown(confirmation, { key: "Enter" });
+		expect(mocks.deleteAccount).toHaveBeenCalledOnce();
+		await act(async () => { finishDeletion(); });
+		expect(mocks.navigate).toHaveBeenCalledWith("/");
+		expect(mocks.signOut).not.toHaveBeenCalled();
+		expect(mocks.clearDemoSessionCookie).toHaveBeenCalledOnce();
+		expect(screen.getByRole("button", { name: "Deleting…" })).toBeDisabled();
+	});
+
+	it("does not submit account deletion twice before React commits its pending state", async () => {
+		mocks.params = new URLSearchParams("tab=settings&section=danger");
+		let finish!: () => void;
+		mocks.deleteAccount.mockReturnValue(new Promise<void>(resolve => { finish = resolve; }));
+		const view = renderSettings();
+		fireEvent.click(screen.getByRole("button", { name: "Delete account" }));
+		const confirmation = screen.getByRole("textbox", { name: "Confirm by typing DELETE" });
+		fireEvent.change(confirmation, { target: { value: "DELETE" } });
+		act(() => { fireEvent.keyDown(confirmation, { key: "Enter" }); fireEvent.keyDown(confirmation, { key: "Enter" }); });
+		try { expect(mocks.deleteAccount).toHaveBeenCalledOnce(); }
+		finally { view.unmount(); await act(async () => { finish(); }); }
+	});
+
+	it("keeps a failed deletion visible and retryable without navigating", async () => {
+		mocks.params = new URLSearchParams("tab=settings&section=danger");
+		mocks.deleteAccount.mockRejectedValueOnce(new Error("Deletion temporarily unavailable"));
+		let finishRetry!: () => void;
+		mocks.deleteAccount.mockReturnValueOnce(new Promise<void>(resolve => { finishRetry = resolve; }));
+		const view = renderSettings();
+		fireEvent.click(screen.getByRole("button", { name: "Delete account" }));
+		fireEvent.change(screen.getByRole("textbox", { name: "Confirm by typing DELETE" }), { target: { value: "DELETE" } });
+		fireEvent.click(screen.getByRole("button", { name: "Delete my account" }));
+		expect(await screen.findByRole("alert")).toHaveTextContent("Deletion temporarily unavailable");
+		expect(screen.getByRole("button", { name: "Delete my account" })).toBeEnabled();
+		expect(mocks.signOut).not.toHaveBeenCalled();
+		expect(mocks.navigate).not.toHaveBeenCalled();
+		fireEvent.click(screen.getByRole("button", { name: "Delete my account" }));
+		expect(mocks.deleteAccount).toHaveBeenCalledTimes(2);
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+		expect(screen.getByRole("button", { name: "Deleting…" })).toBeDisabled();
+		view.unmount();
+		await act(async () => { finishRetry(); });
+	});
+
 	it("does not sign out a new account when an old account deletion finishes", async () => {
 		mocks.params = new URLSearchParams("tab=settings&section=danger");
 		let finishDeletion!: () => void;
@@ -154,6 +215,8 @@ describe("settings account boundaries", () => {
 		refreshSession();
 		await act(async () => { finishDeletion(); });
 		expect(mocks.signOut).not.toHaveBeenCalled();
+		expect(mocks.navigate).not.toHaveBeenCalled();
+		expect(mocks.clearDemoSessionCookie).not.toHaveBeenCalled();
 		expect(screen.getByRole("button", { name: "Delete account" })).toBeEnabled();
 	});
 

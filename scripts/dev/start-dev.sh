@@ -1,6 +1,6 @@
 #!/bin/bash
 # OMA AI Gateway - Quick Start Script
-# Usage: ./scripts/dev/start-dev.sh  (or ./scripts/start-dev.sh)
+# Usage: ./scripts/dev/start-dev.sh
 
 set -euo pipefail
 
@@ -15,14 +15,10 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Check for required environment variables
+# Check the database configuration used by local development.
 check_env() {
     if [ -z "${DATABASE_URL:-}" ] && ! grep -q '^DATABASE_URL=' "$ROOT/server/.env" 2>/dev/null; then
         echo -e "${YELLOW}⚠️  Warning: DATABASE_URL not set${NC}"
-        echo "   Please set it in server/.env"
-    fi
-    if [ -z "${VENICE_API_KEY:-}" ] && ! grep -q '^VENICE_API_KEY=' "$ROOT/server/.env" 2>/dev/null; then
-        echo -e "${YELLOW}⚠️  Warning: VENICE_API_KEY not set${NC}"
         echo "   Please set it in server/.env"
     fi
 }
@@ -36,7 +32,7 @@ start_server() {
 	fi
 	if lsof -nP -iTCP:3001 -sTCP:LISTEN >/dev/null 2>&1; then
 		echo -e "${YELLOW}⚠️  Port 3001 is occupied but /health is unavailable${NC}"
-		echo "   Stop the existing process or configure a different API port before retrying."
+		echo "   Stop the existing process before retrying this launcher."
 		exit 1
 	fi
 	echo -e "${GREEN}▶ Starting API server...${NC}"
@@ -54,7 +50,7 @@ start_frontend() {
 	fi
 	if lsof -nP -iTCP:3000 -sTCP:LISTEN >/dev/null 2>&1; then
 		echo -e "${YELLOW}⚠️  Port 3000 is occupied but the frontend is not responding${NC}"
-		echo "   Stop the existing process or configure a different frontend port before retrying."
+		echo "   Stop the existing process before retrying this launcher."
 		exit 1
 	fi
 	echo -e "${GREEN}▶ Starting Frontend...${NC}"

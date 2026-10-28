@@ -15,6 +15,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { springs } from "@/lib/animation";
 import { api } from "@/lib/api";
+import { clearDemoSessionCookie } from "@/lib/auth-client";
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { UnauthCallout } from "@/components/shared/UnauthCallout";
@@ -102,6 +103,7 @@ function AccountSettingsContent() {
 	const error = actionError ?? (activeTab === "sessions" && sessionsQuery.error instanceof Error ? sessionsQuery.error.message : null);
 
 	const [deleting, setDeleting] = useState(false);
+	const deletionPending = useRef(false);
 	const isCurrentAccount = useRef(true);
 	useEffect(() => {
 		isCurrentAccount.current = true;
@@ -138,21 +140,24 @@ function AccountSettingsContent() {
 	};
 
 	const handleDeleteAccount = async () => {
-		if (isDemoView || !hasRealSession) return;
+		if (isDemoView || !hasRealSession || deletionPending.current) return;
+		deletionPending.current = true;
+		setError(null);
 		setDeleting(true);
 		try {
 			await api.auth.deleteAccount();
-			if (!isCurrentAccount.current) return;
-			try {
-				await signOut({ callbackURL: "/" });
-			} catch {
-				/* session may already be gone */
-			}
 		} catch (e: unknown) {
+			if (!isCurrentAccount.current) return;
+			deletionPending.current = false;
 			setError(e instanceof Error ? e.message : "Account deletion failed");
-		} finally {
 			setDeleting(false);
+			return;
 		}
+		if (!isCurrentAccount.current) return;
+		// Deletion already expires the server session. Discard the authenticated
+		// client state without depending on a second sign-out network request.
+		clearDemoSessionCookie();
+		window.location.assign("/");
 	};
 
 	const handleRevokeSession = async (id: string) => {

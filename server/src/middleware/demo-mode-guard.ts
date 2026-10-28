@@ -1,34 +1,10 @@
 /**
-	* Demo mode guard.
-	*
-	* The Next.js middleware (app/src/middleware.ts) sets the HttpOnly
-	* `oma-demo` cookie when an unauthenticated visitor lands on a
-	* protected page with `?demo=1`. The page renders with sample data,
-	* but the visitor is NOT signed in — they have no session, no API
-	* key, and no credits. Without this guard, a curl/JS demo client
-	* could bypass the (intentionally non-existent) client UI and POST
-	* directly to mutation endpoints, minting API keys, recording fake
-	* deposits, or wiping history on an unauthenticated identity.
-	*
-	* This middleware short-circuits any mutation (POST / PUT / PATCH /
-	* DELETE) under `/v1/*` when the demo cookie is present. GETs
-	* (and HEAD / OPTIONS) are allowed through so the demo UI can
-	* still render data — but those endpoints will fail their own
-	* auth check (401) because the demo cookie is not a Better Auth
-	* session, which is the correct UX ("this action requires sign-in").
-	*
-	* The `oma-demo-public` cookie is the client-readable mirror set by
-	* the same Next.js middleware for client-side hooks (useAuth's
-	* `isDemo` flag). The server MUST NOT trust it — anything a client
-	* can set, a client can forge. Only the HttpOnly `oma-demo` cookie
-	* is consulted here.
-	*
-	* Mounted as `app.use('/v1/*', demoModeGuard)` so it covers every
-	* mutation route without per-route edits, and so non-/v1 paths
-	* (notably the Polar webhook at `/webhooks/polar`, which is a
-	* mutation signed with the webhook secret — not a user request)
-	* are unaffected.
-	*/
+ * Read-only demo UX guard for mutations under /v1/* and /website/*.
+ * app/src/proxy.ts sets oma-demo when entering the demo view. HttpOnly
+ * restricts script access, but does not authenticate a client-supplied cookie.
+ * Downstream session/API-key checks still own authorization. Ignore malformed
+ * demo values so this auxiliary flag cannot crash unrelated account requests.
+ */
 import type { Context, Next } from "hono";
 import type { OmaEnv } from "../types.js";
 import { logger } from "../lib/logger.js";
@@ -44,7 +20,8 @@ function readCookie(header: string | undefined, name: string): string | null {
 	for (const part of header.split(";")) {
 		const trimmed = part.trim();
 		if (trimmed.startsWith(needle)) {
-			return decodeURIComponent(trimmed.slice(needle.length));
+			try { return decodeURIComponent(trimmed.slice(needle.length)); }
+			catch { return null; }
 		}
 	}
 	return null;

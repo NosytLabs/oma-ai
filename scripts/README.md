@@ -31,8 +31,9 @@ Existing profiles and Chromium lock files are left intact.
 Set `OMA_CHROME_BIN` to an absolute executable path to select a specific browser.
 
 The screenshot audit uses `http://localhost:3000` and writes to `oma-audit` in
-the system temporary directory by default. Set `BASE_URL` and `DIR` to override
-the site and output directory. Failed captures produce a nonzero exit status.
+the system temporary directory by default. Set `BASE_URL` (or `PORT` for a
+local site) and `DIR` to override the site and output directory. Failed captures
+produce a nonzero exit status.
 
 ## Root monorepo
 

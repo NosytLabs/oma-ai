@@ -80,4 +80,5 @@ node scripts/dev/screenshot-audit.mjs
 
 - Playwright reports and artifacts: `app/playwright-report/` and
   `app/test-results/` (gitignored).
-- Visual audit screenshots: `/tmp/oma-audit/`.
+- Visual audit screenshots: `oma-audit/` in the system temporary directory by
+  default; set `DIR` to choose another output directory.

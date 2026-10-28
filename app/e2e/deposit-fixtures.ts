@@ -4,8 +4,8 @@ export const walletAddress = "0x1111111111111111111111111111111111111111";
 const treasury = "0x2222222222222222222222222222222222222222";
 type HeldRequest = { started: Promise<void>; release: () => Promise<void> };
 interface DepositApi {
-	userId: string;
-	sessionUsers: string[];
+	userId: string | null;
+	sessionUsers: Array<string | null>;
 	externalNavigations: string[];
 	holdCheckout: () => HeldRequest;
 	holdChallenge: () => HeldRequest;
@@ -62,6 +62,7 @@ export const test = base.extend<{ depositApi: DepositApi }>({
 			if (url.pathname === "/api/auth/get-session") {
 				const id = api.userId;
 				api.sessionUsers.push(id);
+				if (!id) { await route.fulfill({ json: null }); return; }
 				await route.fulfill({ json: { user: { id, name: id, email: `${id}@example.test`, emailVerified: true, evmAddress: walletAddress, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z" }, session: { id: `session-${id}`, userId: id, token: "synthetic", expiresAt: "2099-01-01T00:00:00Z" } } }); return;
 			}
 			const receiver = receive.get(url.pathname);
