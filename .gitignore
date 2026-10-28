@@ -19,6 +19,12 @@ website/node_modules/
 Thumbs.db
 .hallmark/
 coverage/
+# Tool caches and local package stores
+.cache/
+.vite/
+.nyc_output/
+.pnpm-store/
+.eslintcache
 
 # Images: ignore stray screenshots everywhere, but keep real app/public assets
 *.png

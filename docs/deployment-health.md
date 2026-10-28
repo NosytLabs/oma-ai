@@ -19,10 +19,11 @@ For changes to chat interactions or layout, also run the
 `pnpm validate:server` for a change limited to one workspace.
 
 Commit `pnpm-lock.yaml` whenever a workspace manifest changes. Vercel installs
-the pnpm workspace with a frozen lockfile. Both the `Deployment lockfile`
-install-contract check and the full CI workflow require manual dispatch for
-Actions cost control. A missing automatic check is not a passing check; record
-the local validation or manually dispatched run for the exact release commit.
+the pnpm workspace with a frozen lockfile. The full CI workflow runs for pull
+requests targeting `main` and can also be dispatched manually. The `Deployment
+lockfile` install-contract workflow requires manual dispatch. A missing check
+is not a passing check; record local validation or a relevant workflow run for
+the exact release commit.
 
 ## Verify each layer
 
@@ -97,6 +98,12 @@ Inspect pending deposits and settlement retries after recovery; do not collect
 a second payment merely because crediting was delayed.
 
 ## Build-output cleanup
+
+Use [Vercel's deployment retention policy](https://vercel.com/docs/deployment-retention)
+for ongoing cleanup of canceled, failed, preview, and superseded production
+deployments. Review the project's existing policy and rollback needs before
+changing durations. Vercel retains deployments with production aliases and the
+latest preview for active branches; manual removal is for reviewed exceptions.
 
 Keep the logs for the current website/API sources and the latest main-branch
 validation. Superseded CI/build logs can be removed without deleting their

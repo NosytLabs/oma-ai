@@ -1,6 +1,6 @@
 /**
  * Provider logos load from local SVGs, with additional local tiles or initials
- * as fallbacks. See public/logos/providers/README.md.
+ * as fallbacks. See the provider tile guidance in BRAND.md.
  */
 /* eslint-disable @next/next/no-img-element */
 import { useState, type CSSProperties } from "react";

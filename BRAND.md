@@ -36,14 +36,42 @@ The OMA mark is a **folded O/M loop**: two rounded peaks meet above an open cent
 | **Vector Favicon** | `app/public/favicon.svg` | Void-backed browser favicon |
 | **Master Icon Badge** | `app/public/logos/oma-icon.svg` | Generated void badge SVG |
 | **Raster Favicons** | `app/public/favicon-16x16.png`, `favicon-32x32.png` | Standard browser tab fallback graphics |
-| **App Icons** | `app/public/logos/oma-icon-192.png`, `oma-icon-512.png` | Manifest assets generated from shared geometry |
+| **App Icons** | `app/public/logos/oma-icon-{192,512,1024}.png`, `oma-icon-maskable-512.png` | Manifest assets generated from shared geometry; maskable icon has extra padding |
+| **Symbol** | `app/public/logos/oma-mark.svg` | Transparent folded-loop mark |
 | **Lockup Logo** | `app/public/logos/oma-logo.svg` | Formal horizontal logo lockup with wordmark |
 | **Wordmark Alias** | `app/public/logos/oma-wordmark.svg` | Same lockup as `oma-logo.svg` (stable URL for external consumers) |
+| **Raster Wordmark** | `app/public/logos/oma-wordmark.png` | Horizontal lockup |
+| **Brand Card** | `app/public/logos/oma-brand-card.svg`, `oma-brand-card.png` | Social card in vector and raster formats |
 | **Apple Touch Icon** | `app/public/apple-touch-icon.png` | iOS home-screen icon featuring a solid void background |
 | **Open Graph Card** | `app/public/og-image.png` | 1280×720 branding image (includes slogan, no raw hex codes) |
 | **Marketing kit** | `app/public/logos/brand-kit/` | Promo/lockup rasters only — not a second copy of live vectors |
 
 > Run `pnpm --filter app brand:generate` after editing the shared geometry. The script regenerates SVGs, PNGs, a real multi-resolution ICO, app icons, social cards and the marketing kit using Sharp. Do not maintain separate hand-edited copies of the mark.
+
+`app/public/favicon.ico` contains 16, 32 and 48 pixel entries. The marketing
+kit contains `oma-icon-promo.jpg` (the mark on a dark canvas),
+`oma-lockup-horizontal.png` and `.jpg` (horizontal lockup), and
+`oma-brand-card.png` (high-resolution social card). All are generated from the
+same geometry; do not edit them independently. Preserve proportions and clear
+space: never stretch the symbol or crop its peaks.
+
+### Provider Tiles
+
+`app/public/logos/providers/` contains separate provider marks and is unchanged
+by the OMA brand generator. `ModelLogo` uses same-origin SVG paths and the
+mappings in `app/src/components/ui/model-logo.tsx`. Providers without a mapped
+tile render a colored initials badge. If a primary image fails, an additional
+local tile is used when configured, otherwise initials are shown.
+
+The primary tiles were sourced from
+[homarr-labs/dashboard-icons](https://github.com/homarr-labs/dashboard-icons);
+the Mercury, Coinbase and Gonka tiles are custom. When adding a tile, check its
+viewBox and visible shapes in a browser at the 20–36 pixel sizes used by the
+interface before adding its mapping. Keep the local logo tests aligned with the
+mapping and avoid introducing a remote CDN dependency.
+
+The monochrome OpenAI tile uses a white fill for contrast against the app's
+fixed dark background. Keep colored provider marks in their original colors.
 
 ### Brand Kit Checklist
 

@@ -4,10 +4,12 @@ describe("GET /api/v1/models", () => {
 	beforeEach(() => {
 		vi.restoreAllMocks();
 		vi.resetModules();
+		vi.stubEnv("NEXT_PUBLIC_API_URL", "http://localhost:3001");
 	});
 
 	afterEach(() => {
 		vi.restoreAllMocks();
+		vi.unstubAllEnvs();
 	});
 
 	it("proxies GET to the upstream /v1/models endpoint", async () => {

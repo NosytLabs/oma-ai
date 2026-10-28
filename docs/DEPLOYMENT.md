@@ -136,8 +136,11 @@ DATABASE_URL="<approved production connection>" node scripts/migrate-prod.mjs
 DATABASE_URL="<approved production connection>" node scripts/migrate-prod.mjs --check
 ```
 
-A pooled Neon URL is rewritten to the direct endpoint automatically: the
-migrator wraps DDL in a transaction, which pooled connections do not support.
+A pooled Neon URL is rewritten to the direct endpoint automatically for
+migrations. Neon supports transactions through its pooler, but transaction
+pooling does not preserve session state between transactions. A direct
+connection avoids those limitations for migration and administrative tools;
+see [Neon's connection guidance](https://neon.com/docs/connect/connection-pooling#when-to-use-pooled-vs-direct-connections).
 
 If a production database query returns quota-exceeded HTTP402, stop the API
 release. Resolve the account quota/plan first, migrate, deploy, and require
