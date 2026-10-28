@@ -41,10 +41,19 @@ vi.mock("../../lib/logger.js", () => ({
 const mockAuthApi = vi.hoisted(() => ({
 	getSession: vi.fn(),
 }));
-vi.mock("../../auth.js", () => ({
-	auth: { api: mockAuthApi },
-	authBaseURL: "http://localhost:3000",
-}));
+vi.mock("../../auth.js", async () => {
+	const { getCookies } = await import("better-auth/cookies");
+	return {
+		auth: {
+			api: mockAuthApi,
+			$context: Promise.resolve({ authCookies: getCookies({
+				baseURL: "https://www.oma-ai.com",
+				advanced: { cookiePrefix: "oma", useSecureCookies: true, crossSubDomainCookies: { enabled: true, domain: "www.oma-ai.com" } },
+			}) }),
+		},
+		authBaseURL: "http://localhost:3000",
+	};
+});
 
 // Auth middleware mock — sessionAuth sets userId/session/user when authorised.
 vi.mock("../../auth/middleware.js", () => ({
@@ -154,6 +163,17 @@ describe("auth routes", () => {
 			const data = await res.json();
 			expect(data.id).toBe("u1");
 			expect(data.email).toBe("a@b.com");
+		});
+	});
+
+	describe.each([["get", "/user"], ["delete", "/account"]])("session store outage on %s %s", (method, path) => {
+		it("returns a retryable JSON error without running account mutations", async () => {
+			mockAuthApi.getSession.mockRejectedValueOnce(new Error("session store disconnected"));
+			const response = await authReq(method, path, undefined, authedHeaders);
+			expect(response.status).toBe(503);
+			expect(await response.json()).toMatchObject({ error: { code: "auth_validation_unavailable", type: "service_unavailable" } });
+			expect(mockDb.delete).not.toHaveBeenCalled();
+			expect(auditLog).not.toHaveBeenCalled();
 		});
 	});
 
@@ -488,6 +508,13 @@ describe("auth routes", () => {
 				expect.stringMatching(/^oma\.session_token=;.*Max-Age=0/),
 				expect.stringMatching(/^__Secure-oma\.session_token=;.*Max-Age=0/),
 			]));
+			// A host-only tombstone cannot remove Better Auth's deployed domain cookie.
+			for (const name of ["session_token", "session_data", "dont_remember", "account_data"]) {
+				expect(cookies.some(cookie =>
+					cookie.startsWith(`__Secure-oma.${name}=`) && cookie.includes("Domain=www.oma-ai.com") &&
+					cookie.includes("Max-Age=0") && cookie.includes("Path=/"),
+				)).toBe(true);
+			}
 			// ACCOUNT_DELETE_REQUESTED is written before the user row is deleted.
 			expect(auditLog).toHaveBeenCalledWith(
 				expect.objectContaining({ action: "ACCOUNT_DELETE_REQUESTED" }),

@@ -156,24 +156,32 @@ function AccountSettingsContent() {
 	};
 
 	const handleRevokeSession = async (id: string) => {
-		if (isDemoView || !hasRealSession) return;
+		if (isDemoView || !hasRealSession) return false;
+		setError(null);
 		try {
 			await api.auth.revokeSession(id);
+			if (!isCurrentAccount.current) return false;
 			await sessionsQuery.refetch();
+			return true;
 		} catch (e: unknown) {
 			setError(e instanceof Error ? e.message : "Failed to revoke session");
+			return false;
 		}
 	};
 
 	const handleRevokeOtherSessions = async () => {
-		if (isDemoView || !hasRealSession) return;
+		if (isDemoView || !hasRealSession) return false;
+		setError(null);
 		try {
 			await api.auth.revokeOtherSessions();
+			if (!isCurrentAccount.current) return false;
 			await sessionsQuery.refetch();
+			return true;
 		} catch (e: unknown) {
 			setError(
 				e instanceof Error ? e.message : "Failed to revoke other sessions",
 			);
+			return false;
 		}
 	};
 

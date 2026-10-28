@@ -24,6 +24,12 @@ The database helper defaults to a PostgreSQL 16 data-directory path. Set
 PostgreSQL. See the [development setup](../README.md#development) for the
 required permissions and launcher dependencies.
 
+The Chrome helper requires `lsof` and exits if its debugging port is occupied;
+stop the existing listener or choose another port before starting it. Each port
+uses its own `chrome-bh-PORT` profile and log in the system temporary directory.
+Existing profiles and Chromium lock files are left intact.
+Set `OMA_CHROME_BIN` to an absolute executable path to select a specific browser.
+
 The screenshot audit uses `http://localhost:3000` and writes to `oma-audit` in
 the system temporary directory by default. Set `BASE_URL` and `DIR` to override
 the site and output directory. Failed captures produce a nonzero exit status.

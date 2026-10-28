@@ -187,13 +187,24 @@ export async function connectWallet(walletId?: string): Promise<WalletState> {
 	return { address, chainId };
 }
 
-function viemWalletClient(): WalletClient {
+function requireActiveOperation(isActive?: () => boolean): void {
+	if (isActive && !isActive()) throw new Error("This deposit request is no longer active.");
+}
+
+function guardedProvider(eth: Eip1193Provider, isActive?: () => boolean): Eip1193Provider {
+	return { request: (args) => {
+		requireActiveOperation(isActive);
+		return eth.request(args);
+	} };
+}
+
+function viemWalletClient(isActive?: () => boolean): WalletClient {
 	const eth = getProvider();
 	if (!eth) throw new Error("No wallet available");
 	return createWalletClient({
 		chain: base,
 		// A wallet prompt must be explicitly retried by the user, never automatically.
-		transport: custom(eth as never, { retryCount: 0 }),
+		transport: custom(guardedProvider(eth, isActive) as never, { retryCount: 0 }),
 	});
 }
 
@@ -304,12 +315,14 @@ async function requireSendingAccount(address: `0x${string}`): Promise<void> {
 }
 
 /** Switches the connected wallet to Base mainnet, prompting when needed. */
-export async function ensureBaseChain(): Promise<void> {
+export async function ensureBaseChain(isActive?: () => boolean): Promise<void> {
+	requireActiveOperation(isActive);
 	const eth = getProvider();
 	if (!eth) {
 		throw new Error(NO_WALLET);
 	}
 	const hex = (await eth.request({ method: "eth_chainId" })) as string;
+	requireActiveOperation(isActive);
 	if (Number.parseInt(hex, 16) === OMA_CHAIN_ID) return;
 	try {
 		await eth.request({
@@ -321,6 +334,7 @@ export async function ensureBaseChain(): Promise<void> {
 			`Switch your wallet to Base mainnet (chain id ${OMA_CHAIN_ID}) and try again.`,
 		);
 	}
+	requireActiveOperation(isActive);
 }
 
 const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as const;
@@ -354,9 +368,12 @@ export async function signDepositMessage(args: {
 	depositAddress: string;
 	txHash?: string;
 	amountUsd?: number | string;
+	isActive?: () => boolean;
 }): Promise<string> {
+	requireActiveOperation(args.isActive);
 	await requireSendingAccount(args.fromAddress);
-	const client = viemWalletClient();
+	requireActiveOperation(args.isActive);
+	const client = viemWalletClient(args.isActive);
 	const message = buildDepositSignMessage({
 		fromAddress: args.fromAddress,
 		challengeToken: args.challengeToken,
@@ -392,10 +409,12 @@ export async function sendUsdcTransfer({
 	to,
 	amountUsd,
 	from,
+	isActive,
 }: {
 	to: `0x${string}`;
 	amountUsd: number;
 	from: `0x${string}`;
+	isActive?: () => boolean;
 }): Promise<{ txHash: `0x${string}` }> {
 	// Never round a customer's transfer upward or silently send zero USDC.
 	const decimal = String(amountUsd);
@@ -407,14 +426,17 @@ export async function sendUsdcTransfer({
 	if (!eth) {
 		throw new Error(NO_WALLET);
 	}
+	requireActiveOperation(isActive);
 	await requireSendingAccount(from);
-	await ensureBaseChain();
+	requireActiveOperation(isActive);
+	await ensureBaseChain(isActive);
 	// A chain-switch prompt can also change the wallet's selected account.
 	await requireSendingAccount(from);
+	requireActiveOperation(isActive);
 	if (getProvider() !== eth) throw new Error("Wallet changed. Reconnect the original sending wallet and try again.");
 	const client = createWalletClient({
 		chain: base,
-		transport: custom(eth as never, { retryCount: 0 }),
+		transport: custom(guardedProvider(eth, isActive) as never, { retryCount: 0 }),
 	});
 	const txHash = await client.sendTransaction({
 		account: from,

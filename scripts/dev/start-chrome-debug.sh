@@ -18,10 +18,21 @@
 set -euo pipefail
 
 PORT="${1:-9222}"
-PROFILE="${TMPDIR:-/tmp}/chrome-bh"
+if [[ ! "$PORT" =~ ^[0-9]{1,5}$ ]] || (( 10#$PORT < 1 || 10#$PORT > 65535 )); then
+  echo "ERROR: debugging port must be an integer from 1 to 65535." >&2
+  exit 1
+fi
+PORT=$((10#$PORT))
+PROFILE="${TMPDIR:-/tmp}/chrome-bh-$PORT"
 
 # Detect Chrome binary (macOS, Linux, Windows/Git Bash)
-if [ -x "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" ]; then
+if [ -n "${OMA_CHROME_BIN:-}" ]; then
+  if [[ "$OMA_CHROME_BIN" != /* ]] || [ ! -f "$OMA_CHROME_BIN" ] || [ ! -x "$OMA_CHROME_BIN" ]; then
+    echo "ERROR: OMA_CHROME_BIN must be an absolute executable file path." >&2
+    exit 1
+  fi
+  CHROME="$OMA_CHROME_BIN"
+elif [ -x "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" ]; then
   CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 elif command -v google-chrome &>/dev/null; then
   CHROME="google-chrome"
@@ -36,12 +47,15 @@ else
   exit 1
 fi
 
-# Kill stale Chrome on our port
-lsof -ti ":$PORT" 2>/dev/null | xargs kill -9 2>/dev/null || true
-sleep 1
-
-# Clean up lock files from previous run
-rm -f "$PROFILE/SingletonLock" "$PROFILE/SingletonSocket" 2>/dev/null || true
+# Never terminate an existing listener: it may belong to an unrelated service.
+if ! command -v lsof >/dev/null; then
+  echo "ERROR: lsof is required to check whether port $PORT is in use." >&2
+  exit 1
+fi
+if lsof -nP -iTCP:"$PORT" -sTCP:LISTEN -t >/dev/null 2>&1; then
+  echo "ERROR: port $PORT is in use; stop its listener or choose another port." >&2
+  exit 1
+fi
 
 echo "Starting Chrome (port $PORT, profile $PROFILE)..."
 
@@ -60,7 +74,7 @@ nohup "$CHROME" \
   --disable-dev-shm-usage \
   --hide-crash-restore-bubble \
   http://localhost:3000 \
-  > "${TMPDIR:-/tmp}/chrome-bh.log" 2>&1 &
+  > "${TMPDIR:-/tmp}/chrome-bh-$PORT.log" 2>&1 &
 
 CHROME_PID=$!
 

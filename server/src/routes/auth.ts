@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { setCookie } from "hono/cookie";
 import type { Context } from "hono";
 import { z } from "zod";
 import { db } from "../db/client.js";
@@ -46,7 +47,12 @@ export const authRoutes = new Hono<OmaEnv>();
 async function getSession(c: Context) {
 		const headers = new Headers();
 		for (const [k, v] of c.req.raw.headers) headers.set(k, v);
-		return auth.api.getSession({ headers });
+		try {
+			return await auth.api.getSession({ headers });
+		} catch (err) {
+			logger.error({ err }, "[auth] session validation failed");
+			return c.json({ error: { message: "Account services are temporarily unavailable. Please try again shortly.", type: "service_unavailable", code: "auth_validation_unavailable" } }, 503);
+		}
 }
 
 // ============================================================
@@ -54,6 +60,7 @@ async function getSession(c: Context) {
 // ============================================================
 authRoutes.get("/user", async (c) => {
 		const session = await getSession(c);
+		if (session instanceof Response) return session;
 		if (!session?.user) {
 			return c.json(
 				{ error: { message: "Unauthorized", type: "authentication_error" } },
@@ -201,6 +208,7 @@ authRoutes.delete(
 		rateLimit({ windowMs: 60_000, maxRequests: 5 }),
 		async (c) => {
 		const session = await getSession(c);
+		if (session instanceof Response) return session;
 		if (!session?.user) {
 				return c.json(
 						{ error: { message: "Unauthorized", type: "authentication_error" } },
@@ -266,8 +274,14 @@ authRoutes.delete(
 		// (cascade) but the cookie would still be sent on subsequent
 		// requests until it expires (7 days).
 		c.header("Set-Cookie", createLogoutCookieHeader());
-		// This custom deletion bypasses Better Auth's logout handler. Expire
-		// its session cookies too, including either environment's cookie name.
+		// Cookie deletion must use the original Domain and Path. Deployed Better
+		// Auth cookies have an explicit domain; host-only tombstones leave them
+		// in the browser even though the database session has been removed.
+		const { authCookies } = await auth.$context;
+		for (const cookie of Object.values(authCookies)) {
+			setCookie(c, cookie.name, "", { ...cookie.attributes, sameSite: "Lax", maxAge: 0 });
+		}
+		// Also clean up host-only cookies left by either local/secure setup.
 		for (const prefix of ["oma.", "__Secure-oma."]) {
 			for (const name of ["session_token", "session_data", "dont_remember"]) {
 				const secure = prefix.startsWith("__Secure-") ? "; Secure" : "";

@@ -10,6 +10,8 @@ const mocks = vi.hoisted(() => ({
 	params: new URLSearchParams(),
 	router: { replace: vi.fn() },
 	listSessions: vi.fn(),
+	revokeSession: vi.fn(),
+	revokeOtherSessions: vi.fn(),
 	balance: vi.fn(),
 	deleteAccount: vi.fn(),
 	clearHistory: vi.fn(),
@@ -42,7 +44,7 @@ vi.mock("@/components/ui/Toast", () => ({ useToast: () => mocks.toast }));
 vi.mock("@/lib/auth-client", () => ({ authClient: { updateUser: mocks.updateUser } }));
 vi.mock("@/lib/api", () => ({
 	api: {
-		auth: { listSessions: mocks.listSessions, deleteAccount: mocks.deleteAccount, clearHistory: mocks.clearHistory },
+		auth: { listSessions: mocks.listSessions, revokeSession: mocks.revokeSession, revokeOtherSessions: mocks.revokeOtherSessions, deleteAccount: mocks.deleteAccount, clearHistory: mocks.clearHistory },
 		balance: { get: mocks.balance },
 		exportData: { accountBundle: mocks.exportData },
 	},
@@ -173,5 +175,29 @@ describe("settings account boundaries", () => {
 		expect(mocks.deleteAccount).not.toHaveBeenCalled();
 		expect(mocks.clearHistory).not.toHaveBeenCalled();
 		await waitFor(() => expect(mocks.balance).toHaveBeenCalledTimes(2));
+	});
+});
+
+describe("session revocation recovery", () => {
+	it.each(["one", "others"] as const)("keeps the %s revocation confirmation retryable after failure and clears a recovered error", async (mode) => {
+		mocks.params = new URLSearchParams("tab=settings&section=sessions");
+		const current = { id: "current", isCurrent: true, userAgent: "Chrome/130", createdAt: "2026-01-01T00:00:00Z", expiresAt: "2099-01-01T00:00:00Z", ipAddress: null };
+		mocks.listSessions.mockResolvedValue({ sessions: [current, { ...current, id: "remote", isCurrent: false }] });
+		const revoke = mode === "one" ? mocks.revokeSession : mocks.revokeOtherSessions;
+		revoke.mockRejectedValueOnce(new Error("Revocation temporarily unavailable"));
+		revoke.mockImplementationOnce(async () => {
+			mocks.listSessions.mockResolvedValue({ sessions: [current] });
+			return { success: true };
+		});
+		renderSettings();
+		fireEvent.click(await screen.findByRole("button", { name: mode === "one" ? "Revoke" : "Sign out 1 other device" }));
+		fireEvent.click(screen.getByRole("button", { name: "Confirm" }));
+		expect(await screen.findByRole("alert")).toHaveTextContent("Revocation temporarily unavailable");
+		const retry = screen.getByRole("button", { name: "Confirm" });
+		expect(retry).toBeEnabled();
+		fireEvent.click(retry);
+		await waitFor(() => expect(screen.queryByRole("button", { name: "Confirm" })).not.toBeInTheDocument());
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+		expect(screen.queryByRole("button", { name: "Revoke" })).not.toBeInTheDocument();
 	});
 });

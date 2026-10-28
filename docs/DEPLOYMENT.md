@@ -90,6 +90,30 @@ does not produce a ready deployment, inspect its build status before using
 the explicit production deploy command above. Do not add `VERCEL_TOKEN`
 merely to make a check green.
 
+## Preview environments
+
+A Vercel preview also needs a live, isolated API deployment. A `READY` frontend
+and `/api/health` HTTP 200 do not verify the backend. Before testing accounts,
+require `/api/ready` HTTP 200 with healthy dependencies and
+`/api/auth/get-session` HTTP 200 with JSON `null` in a signed-out request.
+A plain `function not found` response means the configured API function or
+branch is missing; verify that target before changing authentication code.
+
+Use an empty or [schema-only Neon branch](https://neon.com/docs/guides/branching-schema-only),
+isolated Redis, and independent auth/proxy secrets. Set the preview API's
+`PRIMARY_DOMAIN` to the stable preview hostname, and `PUBLIC_APP_URL` and
+`BETTER_AUTH_URL` to its matching HTTPS origin.
+Point Vercel's preview-scoped `NEXT_PUBLIC_API_URL` to that API and keep its
+`INTERNAL_PROXY_SECRET` in sync with the preview backend. Check environment
+targets before editing a variable shared with development or production.
+
+The current server validates live payment configuration for public preview
+environments. An auth-only hosted preview therefore needs a supported
+payments-disabled mode before provisioning. Do not bypass that validation
+with development flags or reuse production payment credentials. The local
+`test:auth:integration` harness and browser fixtures provide isolated auth
+coverage while that deployment capability is unavailable.
+
 ## Backend deploy (Neon)
 
 Apply pending database migrations **before** releasing dependent API code.

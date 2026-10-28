@@ -6,6 +6,20 @@ import { GET, POST } from "@/app/api/auth/[...path]/route";
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 
 describe("auth callback proxy", () => {
+	it.each(["../../admin", "..\\..\\internal", ".."])(
+		"rejects a decoded auth path escape before forwarding credentials: %s",
+		async (segment) => {
+			const fetchMock = vi.fn().mockResolvedValue(Response.json({ ok: true }));
+			vi.stubGlobal("fetch", fetchMock);
+			const response = await GET(new NextRequest(`https://www.oma-ai.com/api/auth/${encodeURIComponent(segment)}`), {
+				params: Promise.resolve({ path: [segment] }),
+			});
+			expect(response.status).toBe(400);
+			expect(await response.json()).toEqual({ error: "Invalid auth path" });
+			expect(fetchMock).not.toHaveBeenCalled();
+		},
+	);
+
 	it("retains the platform IP behind the authenticated Vercel auth proxy", async () => {
 		vi.stubEnv("VERCEL", "1");
 		vi.stubEnv("INTERNAL_PROXY_SECRET", "server-owned-secret");
@@ -24,6 +38,18 @@ describe("auth callback proxy", () => {
 		vi.stubGlobal("fetch", fetchMock);
 		await GET(new NextRequest("https://www.oma-ai.com/api/auth/get-session", { headers: { "x-neon-trigger-invocation-id": "forged", "x-neon-custom": "forged" } }), { params: Promise.resolve({ path: ["get-session"] }) });
 		expect(Object.keys(fetchMock.mock.calls[0][1].headers).some(key => key.startsWith("x-neon-"))).toBe(false);
+	});
+
+	it("does not restore a cookie scoped to the incoming connection", async () => {
+		const fetchMock = vi.fn().mockResolvedValue(Response.json(null));
+		vi.stubGlobal("fetch", fetchMock);
+		await GET(new NextRequest("https://www.oma-ai.com/api/auth/get-session", { headers: {
+			connection: "Cookie, Transfer-Encoding", cookie: "oma.session_token=local-only", "transfer-encoding": "chunked",
+		} }), { params: Promise.resolve({ path: ["get-session"] }) });
+		const headers = fetchMock.mock.calls[0][1].headers;
+		expect(headers.cookie).toBeUndefined();
+		expect(headers.connection).toBeUndefined();
+		expect(headers["transfer-encoding"]).toBeUndefined();
 	});
 
 	it("does not expose upstream connection diagnostics to the browser", async () => {

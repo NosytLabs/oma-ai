@@ -6,7 +6,7 @@ import { m } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";
 import nextDynamic from "next/dynamic";
 import { AnimatePresence } from "@/lib/framer-motion-client";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Banknote, Coins, Zap } from "lucide-react";
 
 import { UnifiedDepositHeader } from "./_components/UnifiedDepositHeader";
@@ -236,6 +236,7 @@ function X402Info() {
 
 export default function DepositPage() {
 	const [method, setMethod] = useState<MethodKey>("crypto");
+	const methodChosen = useRef(false);
 	const [siteSettings, setSiteSettings] = useState<SitePaymentSettings | null>(
 		null,
 	);
@@ -251,7 +252,7 @@ export default function DepositPage() {
 			normalized === "card" ||
 			normalized === "x402" ||
 			normalized === "crypto";
-		if (hasExplicitMethod) setMethod(normalized);
+		if (hasExplicitMethod && !methodChosen.current) setMethod(normalized);
 
 		fetch("/api/v1/site-settings", { credentials: "same-origin" })
 			.then((r) => (r.ok ? r.json() : null))
@@ -262,7 +263,7 @@ export default function DepositPage() {
 				// When the URL did not pin a rail, open the first actionable one
 				// so local/dev without USDC_DEPOSIT_ADDRESS lands on card/x402
 				// instead of a dead "USDC not available" panel.
-				if (hasExplicitMethod) return;
+				if (hasExplicitMethod || methodChosen.current) return;
 				const preferred = METHODS.find((m) => {
 					const rail = railByKey(settings, m.rail);
 					return rail.actionable;
@@ -296,6 +297,18 @@ export default function DepositPage() {
 				role="tablist"
 				id={tablistId}
 				aria-label="Choose a payment method"
+				onKeyDown={(event) => {
+					if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+					event.preventDefault();
+					const index = METHODS.findIndex((item) => item.key === method);
+					const nextIndex = event.key === "Home" ? 0 : event.key === "End" ? METHODS.length - 1
+						: (index + (event.key === "ArrowRight" ? 1 : -1) + METHODS.length) % METHODS.length;
+					const next = METHODS[nextIndex];
+					if (!next) return;
+					methodChosen.current = true;
+					setMethod(next.key);
+					document.getElementById(`${tablistId}-tab-${next.key}`)?.focus();
+				}}
 				className="mt-6 grid grid-cols-3 gap-1 rounded-[var(--radius-lg)] border border-border bg-surface/40 p-1 sm:gap-2"
 			>
 				{METHODS.map((m) => {
@@ -310,7 +323,7 @@ export default function DepositPage() {
 							aria-selected={isActive}
 							aria-controls={`${tablistId}-panel-${m.key}`}
 							tabIndex={isActive ? 0 : -1}
-							onClick={() => setMethod(m.key)}
+							onClick={() => { methodChosen.current = true; setMethod(m.key); }}
 							className={`flex min-w-0 flex-col items-center gap-0.5 rounded-[var(--radius-md)] px-1.5 py-2 text-center transition-[background-color,color,box-shadow] duration-200 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void sm:items-start sm:gap-1 sm:px-3 sm:py-2.5 sm:text-left ${
 								isActive
 									? "bg-accent/10 text-accent shadow-[inset_0_0_0_1px_var(--color-accent)]"

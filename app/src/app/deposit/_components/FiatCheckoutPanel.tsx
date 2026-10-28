@@ -20,7 +20,7 @@ import {
 	ShieldCheck,
 	Sparkles,
 } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { request } from "@/lib/api";
@@ -68,11 +68,21 @@ function CardBrandIcons() {
 }
 
 export function FiatCheckoutPanel() {
+	const { isDemo, user } = useAuth();
+	return <CheckoutContent key={isDemo ? "demo" : user?.id ?? "signed-out"} />;
+}
+
+function CheckoutContent() {
 	const { isAuthenticated, isDemo } = useAuth();
 	const toast = useToast();
 	const [selected, setSelected] = useState<PlanCard>(PLANS[1]);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState("");
+	const isCurrentAccount = useRef(true);
+	useEffect(() => {
+		isCurrentAccount.current = true;
+		return () => { isCurrentAccount.current = false; };
+	}, []);
 
 	const handleCheckout = useCallback(async () => {
 		if (!isAuthenticated || isDemo) return;
@@ -86,11 +96,13 @@ export function FiatCheckoutPanel() {
 					successUrl: `${window.location.origin}/dashboard?deposit=success`,
 				}),
 			});
+			if (!isCurrentAccount.current) return;
 			if (!res?.url) {
 				throw new Error("Checkout session did not return a URL");
 			}
 			window.location.href = res.url;
 		} catch (err) {
+			if (!isCurrentAccount.current) return;
 			const msg =
 				err instanceof Error
 					? err.message

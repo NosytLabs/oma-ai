@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { UnifiedDepositInterface } from "../UnifiedDepositInterface";
+import { readPendingDeposit, savePendingDeposit } from "@/lib/deposit-recovery";
+import { StrictMode } from "react";
 
 const mocks = vi.hoisted(() => ({ request: vi.fn(), send: vi.fn(), sign: vi.fn(), connect: vi.fn(), connected: true, userId: "deposit-test-user", toast: { success: vi.fn(), error: vi.fn() } }));
 const ADDRESS = "0x0000000000000000000000000000000000000001" as const;
@@ -25,13 +27,14 @@ vi.mock("@/lib/framer-motion-client", () => ({
  m: { div: ({ children, className }: { children: React.ReactNode; className?: string }) => <div className={className}>{children}</div> },
 }));
 
-async function pay() {
- render(<UnifiedDepositInterface />);
+async function pay(strictMode = false) {
+ const view = render(<UnifiedDepositInterface />, strictMode ? { wrapper: StrictMode } : undefined);
  const amount = await screen.findByLabelText("Amount (USD)");
  await waitFor(() => expect(screen.getByRole("button", { name: "Send 0 USDC" })).toBeDisabled());
  fireEvent.change(amount, { target: { value: "10" } });
  await waitFor(() => expect(screen.getByRole("button", { name: "Send 10 USDC" })).toBeEnabled());
  fireEvent.click(screen.getByRole("button", { name: "Send 10 USDC" }));
+ return view;
 }
 
 describe("USDC broadcast recovery", () => {
@@ -146,5 +149,117 @@ describe("USDC broadcast recovery", () => {
   fireEvent.click(screen.getByRole("button", { name: "Connect MetaMask" }));
   await waitFor(() => expect(retry).toBeEnabled());
   expect(mocks.send).toHaveBeenCalledOnce();
+ });
+
+ it("clears the amount and reloads deposit history when the signed-in account changes", async () => {
+  const view = render(<UnifiedDepositInterface />);
+  fireEvent.change(await screen.findByLabelText("Amount (USD)"), { target: { value: "10" } });
+  const previousRequests = mocks.request.mock.calls.filter(([path]) => path === "/v1/deposit/status").length;
+  mocks.userId = "another-user";
+  view.rerender(<UnifiedDepositInterface />);
+  expect(await screen.findByLabelText("Amount (USD)")).toHaveValue("");
+  await waitFor(() => expect(mocks.request.mock.calls.filter(([path]) => path === "/v1/deposit/status")).toHaveLength(previousRequests + 1));
+ });
+
+ it("does not open a transfer after the initiating account changes while its challenge is loading", async () => {
+  let finishChallenge!: (value: unknown) => void;
+  const original = mocks.request.getMockImplementation()!;
+  mocks.request.mockImplementation((path: string, options: unknown) => path.endsWith("/challenge")
+   ? new Promise(resolve => { finishChallenge = resolve; }) : original(path, options));
+  const view = await pay();
+  mocks.userId = "another-user";
+  view.rerender(<UnifiedDepositInterface />);
+  await act(async () => { finishChallenge({ token: "old-account-challenge" }); });
+  expect(mocks.send).not.toHaveBeenCalled();
+  expect(mocks.sign).not.toHaveBeenCalled();
+ });
+
+ it("does not show a previous account's history when its response arrives late", async () => {
+  let finishHistory!: (value: unknown) => void;
+  const original = mocks.request.getMockImplementation()!;
+  let histories = 0;
+  mocks.request.mockImplementation((path: string, options: unknown) => path === "/v1/deposit/status" && ++histories === 1
+   ? new Promise(resolve => { finishHistory = resolve; }) : original(path, options));
+  const view = render(<UnifiedDepositInterface />);
+  await screen.findByLabelText("Amount (USD)");
+  mocks.userId = "another-user";
+  view.rerender(<UnifiedDepositInterface />);
+  await screen.findByLabelText("Amount (USD)");
+  await act(async () => { finishHistory({ deposits: [{ id: "private-deposit", status: "completed", amountUsd: "123.45", txHash: TX, depositAddress: RECEIVER, createdAt: "2026-01-01T00:00:00Z", completedAt: "2026-01-01T00:01:00Z" }] }); });
+  expect(screen.queryByText(/123.45/)).toBeNull();
+ });
+
+ it("keeps a late broadcast recoverable for its owner without requesting a proof from the new account", async () => {
+  let finishTransfer!: (value: { txHash: string }) => void;
+  mocks.send.mockReturnValueOnce(new Promise(resolve => { finishTransfer = resolve; }));
+  const view = await pay();
+  await waitFor(() => expect(mocks.send).toHaveBeenCalledOnce());
+  mocks.userId = "another-user";
+  view.rerender(<UnifiedDepositInterface />);
+  await act(async () => { finishTransfer({ txHash: TX }); });
+  expect(readPendingDeposit("deposit-test-user")).toMatchObject({ txHash: TX });
+  expect(readPendingDeposit("another-user")).toBeNull();
+  expect(mocks.sign).not.toHaveBeenCalled();
+  expect(screen.queryByRole("button", { name: "Retry registration" })).toBeNull();
+ });
+
+ it("does not register a proof after its initiating account changes", async () => {
+  let finishProof!: (value: string) => void;
+  mocks.sign.mockReturnValueOnce(new Promise(resolve => { finishProof = resolve; }));
+  const view = await pay();
+  await waitFor(() => expect(mocks.sign).toHaveBeenCalledOnce());
+  mocks.userId = "another-user";
+  view.rerender(<UnifiedDepositInterface />);
+  await act(async () => { finishProof("0xproof"); });
+  expect(mocks.request.mock.calls.filter(([path, options]) => path === "/v1/deposit/usdc" && options?.method === "POST")).toHaveLength(0);
+  expect(readPendingDeposit("deposit-test-user")).toMatchObject({ txHash: TX });
+ });
+
+ it("blocks a duplicate transfer after remount and shows a late broadcast immediately for its original owner", async () => {
+  let finishTransfer!: (value: { txHash: string }) => void;
+  mocks.send.mockReturnValueOnce(new Promise(resolve => { finishTransfer = resolve; }));
+  const view = await pay(true);
+  await waitFor(() => expect(mocks.send).toHaveBeenCalledOnce());
+  mocks.userId = "another-user";
+  view.rerender(<UnifiedDepositInterface />);
+  await screen.findByLabelText("Amount (USD)");
+  mocks.userId = "deposit-test-user";
+  view.rerender(<UnifiedDepositInterface />);
+  await screen.findByText("Waiting for your existing wallet deposit request…");
+  expect(screen.queryByLabelText("Amount (USD)")).toBeNull();
+  await act(async () => { finishTransfer({ txHash: TX }); });
+  expect(await screen.findByRole("button", { name: "Retry registration" })).toBeEnabled();
+  expect(screen.getByRole("link", { name: /view transfer/i })).toHaveAttribute("href", `https://basescan.io/tx/${TX}`);
+  expect(mocks.send).toHaveBeenCalledOnce();
+  expect(mocks.sign).not.toHaveBeenCalled();
+ });
+
+ it("recovers a late broadcast for a remounted owner when session storage refuses the write", async () => {
+  let finishTransfer!: (value: { txHash: string }) => void;
+  mocks.send.mockReturnValueOnce(new Promise(resolve => { finishTransfer = resolve; }));
+  const view = await pay(true);
+  await waitFor(() => expect(mocks.send).toHaveBeenCalledOnce());
+  mocks.userId = "another-user";
+  view.rerender(<UnifiedDepositInterface />);
+  await screen.findByLabelText("Amount (USD)");
+  mocks.userId = "deposit-test-user";
+  view.rerender(<UnifiedDepositInterface />);
+  await screen.findByText("Waiting for your existing wallet deposit request…");
+  const storage = sessionStorage;
+  const write = vi.fn(() => { throw new DOMException("Storage quota exhausted", "QuotaExceededError"); });
+  vi.stubGlobal("sessionStorage", { getItem: storage.getItem.bind(storage), removeItem: storage.removeItem.bind(storage), setItem: write });
+  try {
+   await act(async () => { finishTransfer({ txHash: TX }); });
+   expect(await screen.findByRole("button", { name: "Retry registration" })).toBeEnabled();
+   expect(screen.getByRole("link", { name: /view transfer/i })).toHaveAttribute("href", `https://basescan.io/tx/${TX}`);
+   expect(readPendingDeposit("another-user")).toBeNull();
+   expect(mocks.send).toHaveBeenCalledOnce();
+   expect(mocks.sign).not.toHaveBeenCalled();
+   expect(write).toHaveBeenCalledOnce();
+  } finally {
+   vi.stubGlobal("sessionStorage", storage);
+   act(() => savePendingDeposit("deposit-test-user", null));
+  }
+  expect(readPendingDeposit("deposit-test-user")).toBeNull();
  });
 });

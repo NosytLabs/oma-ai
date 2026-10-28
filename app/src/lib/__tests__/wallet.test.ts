@@ -13,6 +13,7 @@ import {
 	subscribeWallets,
 	subscribeWalletAccount,
 	sendUsdcTransfer,
+	signDepositMessage,
 } from "../wallet";
 
 /**
@@ -334,6 +335,45 @@ describe("wallet", () => {
 		});
 		install({ request });
 		await expect(sendUsdcTransfer({ to: "0x0000000000000000000000000000000000000002", from: ADDRESS, amountUsd: 10 })).rejects.toThrow(/account changed/i);
+		expect(request.mock.calls.some(([args]) => args.method === "eth_sendTransaction")).toBe(false);
+	});
+
+	it.each(["chain-read", "chain-switch"] as const)("stops a canceled deposit during %s before the next wallet prompt", async (stage) => {
+		let active = true;
+		const request = vi.fn(async ({ method }: Request) => {
+			if (method === "eth_accounts") return [ADDRESS];
+			if (method === "eth_chainId") { if (stage === "chain-read") active = false; return "0x1"; }
+			if (method === "wallet_switchEthereumChain") { active = false; return null; }
+			return `0x${"a".repeat(64)}`;
+		});
+		install({ request });
+		await expect(sendUsdcTransfer({ to: "0x0000000000000000000000000000000000000002", from: ADDRESS, amountUsd: 10, isActive: () => active })).rejects.toThrow(/no longer active/i);
+		expect(request.mock.calls.some(([args]) => args.method === "eth_sendTransaction")).toBe(false);
+		if (stage === "chain-read") expect(request.mock.calls.some(([args]) => args.method === "wallet_switchEthereumChain")).toBe(false);
+	});
+
+	it("stops a canceled proof after its account preflight before requesting a signature", async () => {
+		let active = true;
+		const request = vi.fn(async ({ method }: Request) => {
+			if (method === "eth_accounts") { active = false; return [ADDRESS]; }
+			return `0x${"a".repeat(130)}`;
+		});
+		install({ request });
+		await expect(signDepositMessage({ fromAddress: ADDRESS, challengeToken: "challenge", depositAddress: "0x0000000000000000000000000000000000000002", isActive: () => active })).rejects.toThrow(/no longer active/i);
+		expect(request.mock.calls.some(([args]) => args.method === "personal_sign")).toBe(false);
+	});
+
+	it("checks cancellation at the transport boundary after viem's own transaction preflight", async () => {
+		let active = true;
+		let chainReads = 0;
+		const request = vi.fn(async ({ method }: Request) => {
+			if (method === "eth_accounts") return [ADDRESS];
+			if (method === "eth_chainId") { if (++chainReads === 2) active = false; return "0x2105"; }
+			return `0x${"a".repeat(64)}`;
+		});
+		install({ request });
+		await expect(sendUsdcTransfer({ to: "0x0000000000000000000000000000000000000002", from: ADDRESS, amountUsd: 10, isActive: () => active })).rejects.toThrow(/no longer active/i);
+		expect(chainReads).toBe(2);
 		expect(request.mock.calls.some(([args]) => args.method === "eth_sendTransaction")).toBe(false);
 	});
 

@@ -37,7 +37,12 @@ async function proxyToAuth(req: NextRequest, { params }: { params: Promise<{ pat
 	const base = resolveAuthBackend();
 	const resolvedParams = await params;
 	const path = resolvedParams?.path ?? [];
-	const endpoint = buildAuthEndpoint(base, path);
+	let endpoint: string;
+	try {
+		endpoint = buildAuthEndpoint(base, path);
+	} catch {
+		return NextResponse.json({ error: 'Invalid auth path' }, { status: 400 });
+	}
 		const search = req.nextUrl.search ? req.nextUrl.search : '';
 		const url = endpoint + search;
 
@@ -59,11 +64,6 @@ async function proxyToAuth(req: NextRequest, { params }: { params: Promise<{ pat
 				delete headers[name];
 			},
 		});
-
-		// Forward cookies manually
-		if (req.headers.has('cookie')) {
-				headers['cookie'] = req.headers.get('cookie')!;
-		}
 
 		const signal = AbortSignal.any([req.signal, AbortSignal.timeout(AUTH_TIMEOUT_MS)]);
 		try {

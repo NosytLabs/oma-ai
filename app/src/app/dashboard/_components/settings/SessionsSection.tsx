@@ -17,9 +17,9 @@ interface SessionsSectionProps {
 	/** Ends the current browser session (parent signOut). */
 	onSignOutCurrent?: () => Promise<void> | void;
 	/** Revoke a remote session by id (parent invalidates the list). */
-	onRevokeSession?: (id: string) => Promise<void> | void;
+	onRevokeSession?: (id: string) => Promise<boolean | void> | boolean | void;
 	/** Revoke every session except the current device. */
-	onRevokeOthers?: () => Promise<void> | void;
+	onRevokeOthers?: () => Promise<boolean | void> | boolean | void;
 }
 
 function getDeviceName(userAgent: string | null): string {
@@ -63,8 +63,7 @@ export function SessionsSection({
 		if (!onRevokeSession || revokingId) return;
 		setRevokingId(id);
 		try {
-			await onRevokeSession(id);
-			setConfirmRevokeId(null);
+			if (await onRevokeSession(id) !== false) setConfirmRevokeId(null);
 		} finally {
 			setRevokingId(null);
 		}
@@ -74,8 +73,7 @@ export function SessionsSection({
 		if (!onRevokeOthers || revokingOthers || otherSessions.length === 0) return;
 		setRevokingOthers(true);
 		try {
-			await onRevokeOthers();
-			setConfirmRevokeOthers(false);
+			if (await onRevokeOthers() !== false) setConfirmRevokeOthers(false);
 		} finally {
 			setRevokingOthers(false);
 		}
