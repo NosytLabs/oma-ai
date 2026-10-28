@@ -2,7 +2,7 @@
 
 import { Download, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { api } from "@/lib/api";
 import type { BetterAuthUser } from "@/lib/hooks/useAuth";
@@ -16,25 +16,44 @@ interface PrivacySectionProps {
 export function PrivacySection({ user, readOnly = false }: PrivacySectionProps) {
 	const toast = useToast();
 	const [downloading, setDownloading] = useState(false);
+	const pending = useRef<AbortController | null>(null);
+	useEffect(() => {
+		setDownloading(false);
+		return () => {
+			pending.current?.abort();
+			pending.current = null;
+		};
+	}, [user?.id, readOnly]);
 
 	const handleDownload = async () => {
-		if (readOnly || downloading) return;
+		if (readOnly || !user?.id || pending.current) return;
+		const controller = new AbortController();
+		pending.current = controller;
+		const isCurrent = () => pending.current === controller && !controller.signal.aborted;
 		setDownloading(true);
 		try {
-			const blob = await api.exportData.accountBundle();
+			const blob = await api.exportData.accountBundle(controller.signal);
+			if (!isCurrent()) return;
 			const url = window.URL.createObjectURL(blob);
 			const anchor = document.createElement("a");
-			anchor.href = url;
-			anchor.download = `oma-data-export-${user?.id ?? "account"}.json`;
-			document.body.appendChild(anchor);
-			anchor.click();
-			anchor.remove();
-			window.URL.revokeObjectURL(url);
-			toast.success("Your data download is ready");
+			try {
+				anchor.href = url;
+				anchor.download = `oma-data-export-${user.id}.json`;
+				document.body.appendChild(anchor);
+				if (!isCurrent()) return;
+				anchor.click();
+			} finally {
+				anchor.remove();
+				window.URL.revokeObjectURL(url);
+			}
+			if (isCurrent()) toast.success("Your data download is ready");
 		} catch (error) {
-			toast.error(error instanceof Error ? error.message : "Download failed");
+			if (isCurrent()) toast.error(error instanceof Error ? error.message : "Download failed");
 		} finally {
-			setDownloading(false);
+			if (pending.current === controller) {
+				pending.current = null;
+				setDownloading(false);
+			}
 		}
 	};
 

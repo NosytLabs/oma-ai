@@ -190,7 +190,8 @@ async function deliverySince(offset, expression) {
 async function magicSignIn(email) {
 	const offset = logs.length;
 	await request("/api/auth/sign-in/magic-link", {
-		method: "POST", body: { email, name: "Integration User", callbackURL: `${origin}/settings` },
+		method: "POST", body: { email, name: "Integration User", callbackURL: `${origin}/settings`,
+			errorCallbackURL: `${origin}/login?${new URLSearchParams({ method: "magic", next: "/settings" })}` },
 	});
 	const url = new URL(await deliverySince(offset, /magicLink:\s*"([^"]+)"/));
 	const token = url.searchParams.get("token");
@@ -325,8 +326,30 @@ try {
 	const balance = await pool.query("SELECT balance_cents FROM credit_balances WHERE user_id = $1", [profile.id]);
 	assert.equal(Number(balance.rows[0].balance_cents), 100);
 	const replay = await request(first.path, { expected: 302 });
-	assert.match(replay.response.headers.get("location"), /error=INVALID_TOKEN/);
-	assert.doesNotMatch(replay.cookie, /session_token=[^;]/);
+	const assertMagicErrorReturn = (result) => {
+		const target = new URL(result.response.headers.get("location"));
+		assert.equal(target.origin, origin);
+		assert.equal(target.pathname, "/login");
+		assert.equal(target.searchParams.get("method"), "magic");
+		assert.equal(target.searchParams.get("next"), "/settings");
+		assert.equal(target.searchParams.get("error"), "INVALID_TOKEN");
+		assert.doesNotMatch(result.cookie, /session_token=[^;]/);
+	};
+	assertMagicErrorReturn(replay);
+	const expiredMagicToken = randomBytes(24).toString("hex");
+	await pool.query("INSERT INTO verification(id,identifier,value,expires_at) VALUES($1,$2,$3,now()-interval '1 second')", [
+		"expired-magic-link-fixture",
+		`magic-link:${createHash("sha256").update(expiredMagicToken).digest("base64url")}`,
+		JSON.stringify({ type: "magic-link", email: "expired-link@local.test" }),
+	]);
+	for (const token of ["unknown-magic-link-fixture", expiredMagicToken]) {
+		const failedLink = new URL(first.path, origin);
+		failedLink.searchParams.set("token", token);
+		assertMagicErrorReturn(await request(`${failedLink.pathname}${failedLink.search}`, { cookie: first.cookie, expected: 302 }));
+	}
+	assert.equal((await request("/api/auth/get-session", { cookie: first.cookie })).data.user.id, profile.id,
+		"A failed magic link must preserve the previous session without claiming a new sign-in");
+	pass("invalid, expired and consumed magic links return to sign-in with a safe next and preserve the previous session");
 	pass("magic-link signup creates a verified user and one trial grant; used links are rejected");
 	const accountBalance = await request("/v1/balance", { cookie: first.cookie });
 	assert.equal(accountBalance.data.userId, profile.id); assert.equal(Number(accountBalance.data.balanceCents), 100);

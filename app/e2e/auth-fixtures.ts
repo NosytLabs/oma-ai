@@ -7,7 +7,7 @@ const signature = `0x${"11".repeat(65)}`;
 
 type SessionMode = "matching" | "wrong" | "hold";
 type AuthApi = {
-	magicRequests: Array<{ email: string; callbackURL: string }>;
+	magicRequests: Array<{ email: string; callbackURL: string; errorCallbackURL: string }>;
 	verifyRequests: Array<{ message: string; signature: string }>;
 	magicStatus: number;
 	nonceStatus: number;

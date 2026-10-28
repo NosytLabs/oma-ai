@@ -70,10 +70,11 @@ const exportData = {
 			* DATA_EXPORT_REQUESTED audit row. Returned as a Blob so the browser
 			* triggers a download via anchor.click().
 			*/
-		accountBundle() {
+		accountBundle(signal?: AbortSignal) {
 				return request<Blob>("/v1/export/account", {
 						method: "GET",
 						responseType: "blob",
+						signal,
 				});
 		},
 };

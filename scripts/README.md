@@ -52,6 +52,12 @@ CI uses the `packageManager` version in the root `package.json` and caches the
 pnpm store by `pnpm-lock.yaml`. Every job still performs a frozen-lockfile
 install; generated build output and `node_modules` are not cached.
 
+Run `pnpm check:deployment https://preview.example.com` against an explicit
+deployment origin to check proxied API readiness and a signed-out session.
+It sends no credentials; access-protected previews require a separate check.
+Readiness alone cannot prove Redis credentials are configured when the API
+reports an unconfigured Redis as healthy; verify hosted configuration separately.
+
 ## Clear generated output
 
 Stop running development and test servers before cleaning:

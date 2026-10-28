@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
 import nextDynamic from "next/dynamic";
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { UnauthCallout } from "@/components/shared/UnauthCallout";
@@ -70,6 +70,15 @@ export default function DashboardPage() {
 }
 
 function DashboardPageInner() {
+	const { isDemo, user } = useAuth();
+	const searchParams = useSearchParams();
+	const demo = searchParams?.get("demo") === "1" || isDemo;
+	// Private drafts and one-time secrets belong to the authenticated account,
+	// including the state that supplies the child dashboard widgets.
+	return <DashboardAccount key={demo ? "demo" : user?.id ?? "guest"} />;
+}
+
+function DashboardAccount() {
 	const { isAuthenticated, isDemo, isReady, evmAddress, user } = useAuth();
 	const toast = useToast();
 	const queryClient = useQueryClient();
@@ -115,6 +124,15 @@ function DashboardPageInner() {
 	const [revokingId, setRevokingId] = useState<string | null>(null);
 	const [copied, setCopied] = useState<string | null>(null);
 	const [refreshTick, setRefreshTick] = useState(0);
+	const accountCurrent = useRef(true);
+	const keyRequest = useRef<AbortController | null>(null);
+	useEffect(() => {
+		accountCurrent.current = true;
+		return () => {
+			accountCurrent.current = false;
+			keyRequest.current?.abort();
+		};
+	}, []);
 	useEffect(() => { setPage(1); }, [timeRange, user?.id]);
 
 	useEffect(() => {
@@ -188,10 +206,13 @@ function DashboardPageInner() {
 	);
 
 	const handleCreateKey = useCallback(async (options: ApiKeyCreateOptions = {}) => {
-		if (!newKeyName.trim()) return;
+		if (!canLoadDashboard || !newKeyName.trim() || keyRequest.current) return;
+		const controller = new AbortController();
+		keyRequest.current = controller;
 		setCreating(true);
 		try {
-			const key = await api.auth.createKey(newKeyName.trim(), undefined, options);
+			const key = await api.auth.createKey(newKeyName.trim(), controller.signal, options);
+			if (controller.signal.aborted || !accountCurrent.current) return;
 			setCreatedKey(key);
 			setNewKeyName("");
 			setShowCreateForm(false);
@@ -213,26 +234,32 @@ function DashboardPageInner() {
 				],
 			}));
 		} catch (e: unknown) {
+			if (controller.signal.aborted || !accountCurrent.current) return;
 			const msg = e instanceof Error ? e.message : "Failed to create key";
 			toast.error(msg);
 		} finally {
-			setCreating(false);
+			if (keyRequest.current === controller) {
+				keyRequest.current = null;
+				if (accountCurrent.current) setCreating(false);
+			}
 		}
-	}, [newKeyName, queryClient, toast, user?.id]);
+	}, [canLoadDashboard, newKeyName, queryClient, toast, user?.id]);
 
 	const handleRevokeKey = useCallback(
 		async (keyId: string) => {
 			setRevokingId(keyId);
 			try {
 				await api.auth.deleteKey(keyId);
+				if (!accountCurrent.current) return;
 				queryClient.setQueryData<{ keys: ApiKey[] }>(["apiKeys", user?.id], (prev) => ({
 					keys: (prev?.keys ?? []).filter((k) => k.id !== keyId),
 				}));
 			} catch (e: unknown) {
+				if (!accountCurrent.current) return;
 				const msg = e instanceof Error ? e.message : "Failed to revoke key";
 				toast.error(msg);
 			} finally {
-				setRevokingId(null);
+				if (accountCurrent.current) setRevokingId(null);
 			}
 		},
 		[queryClient, toast, user?.id],

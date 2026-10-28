@@ -99,6 +99,18 @@ require `/api/ready` HTTP 200 with healthy dependencies and
 A plain `function not found` response means the configured API function or
 branch is missing; verify that target before changing authentication code.
 
+Run the bounded, read-only check against the exact deployment origin:
+
+```bash
+pnpm check:deployment https://your-preview.vercel.app
+```
+
+It requires both responses above, rejects redirects and exits nonzero on a
+missing function, unhealthy dependency or unexpected session response. It sends
+no cookies or credentials; an access-protected preview needs an authenticated
+check through Vercel. Verify isolated Redis configuration separately: the API
+currently treats an unconfigured Redis as healthy in its readiness response.
+
 Use an empty or [schema-only Neon branch](https://neon.com/docs/guides/branching-schema-only),
 isolated Redis, and independent auth/proxy secrets. Set the preview API's
 `PRIMARY_DOMAIN` to the stable preview hostname, and `PUBLIC_APP_URL` and

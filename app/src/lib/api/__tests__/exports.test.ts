@@ -17,3 +17,22 @@ describe("usage report downloads", () => {
 		expect(await report.blob.text()).toBe(csv);
 	});
 });
+
+describe("private account bundle downloads", () => {
+	it("aborts a pending response body when its owning view cancels the export", async () => {
+		let started!: () => void;
+		const bodyStarted = new Promise<void>(resolve => { started = resolve; });
+		vi.stubGlobal("fetch", vi.fn(async (_url, options: RequestInit) => new Response(new ReadableStream({
+			start(controller) {
+				options.signal?.addEventListener("abort", () => controller.error(new DOMException("Aborted", "AbortError")), { once: true });
+				started();
+			},
+		}), { headers: { "content-type": "application/json" } })));
+		const controller = new AbortController();
+		const request = api.exportData.accountBundle(controller.signal);
+		const canceled = expect(request).rejects.toThrow("Aborted");
+		await bodyStarted;
+		controller.abort();
+		await canceled;
+	});
+});

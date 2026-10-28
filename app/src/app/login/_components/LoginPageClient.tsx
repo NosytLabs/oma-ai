@@ -57,6 +57,14 @@ const LazyWalletSignInPanel = dynamic(
 
 type Method = "magic" | "wallet";
 
+function magicLinkVerificationError(code: string): string {
+	// Better Auth consumes tokens once; invalid, expired and reused links all
+	// return INVALID_TOKEN. Never reflect URL-supplied error descriptions.
+	return code === "INVALID_TOKEN"
+		? "This sign-in link is no longer valid. It may have expired or already been used. Enter your email to request a new link."
+		: "We couldn't complete sign-in with this link. Please request a new magic link and try again.";
+}
+
 function defaultNext(): string {
 	if (typeof window === "undefined") return "/dashboard";
 	const params = new URLSearchParams(window.location.search);
@@ -102,6 +110,9 @@ function LoginInner() {
 	const toast = useToast();
 	const { status: apiStatus } = useApiHealth();
 	const { isAuthenticated, isDemo, isReady } = useAuth();
+	const searchParams = useSearchParams();
+	const verificationFailed = searchParams?.has("error") ?? false;
+	const verificationCode = searchParams?.get("error") ?? "";
 	const [mounted, setMounted] = useState(false);
 	// Once a wallet attempt starts, its own session check must authorize any
 	// redirect. A background session refresh may belong to a different user.
@@ -110,28 +121,31 @@ function LoginInner() {
 
 	// Already signed in — don't show the form, go where they were headed.
 	useEffect(() => {
-		if (isReady && isAuthenticated && !isDemo && !walletAttemptedRef.current) {
+		if (isReady && isAuthenticated && !isDemo && !verificationFailed && !walletAttemptedRef.current) {
 			router.replace(defaultNext());
 		}
-	}, [isReady, isAuthenticated, isDemo, router]);
+	}, [isReady, isAuthenticated, isDemo, verificationFailed, router]);
 
 	const [method, setMethod] = useState<Method>("magic");
 	const tabsRef = useRef<HTMLDivElement>(null);
 	const [email, setEmail] = useState("");
 	const [submitting, setSubmitting] = useState(false);
 	const [magicSent, setMagicSent] = useState(false);
-	const [error, setError] = useState<string | null>(null);
+	const [error, setError] = useState<string | null>(() => verificationFailed ? magicLinkVerificationError(verificationCode) : null);
 	const [next, setNext] = useState("/dashboard");
-	const searchParams = useSearchParams();
 
 	useEffect(() => {
 		setMounted(true);
 		setNext(defaultNext());
 		const requested = searchParams?.get("method");
-		if (requested === "wallet" || requested === "magic") {
+		if (verificationFailed) {
+			setMethod("magic");
+			setMagicSent(false);
+			setError(magicLinkVerificationError(verificationCode));
+		} else if (requested === "wallet" || requested === "magic") {
 			setMethod(requested);
 		}
-	}, [searchParams]);
+	}, [searchParams, verificationFailed, verificationCode]);
 
 	const handleError = useCallback(
 		(err: unknown, fallback: string) => {
@@ -177,12 +191,15 @@ function LoginInner() {
 			}
 			setSubmitting(true);
 			try {
-				const absoluteCallback = next.startsWith("/")
-					? `${window.location.origin}${next}`
-					: next;
+				const safeNext = safeLoginNext(next);
+				const absoluteCallback = `${window.location.origin}${safeNext}`;
+				const errorCallback = new URL("/login", window.location.origin);
+				errorCallback.searchParams.set("method", "magic");
+				errorCallback.searchParams.set("next", safeNext);
 				const result = await signIn.magicLink({
 					email,
 					callbackURL: absoluteCallback,
+					errorCallbackURL: errorCallback.toString(),
 				});
 				if (result.error) {
 					throw new Error(result.error.message ?? "Failed to send magic link");
