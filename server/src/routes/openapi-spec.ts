@@ -1,8 +1,6 @@
 import originGuardPaths from "../middleware/origin-guard-paths.json" with { type: "json" };
 /**
  * Public contract shared by the HTTP spec and the server-rendered reference.
- * Bounds and envelopes verified against route implementations and isolated real
- * HTTP/Postgres checks on 2026-10-23. See work/launch/public-api-contract.md.
  */
 export interface OpenApiOptions {
  publicApiUrl: string;

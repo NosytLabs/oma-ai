@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach, vi } from "vitest";
+import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 import {
 	freeLeftLabel,
 	GUEST_DAILY_LIMIT_DEFAULT,
@@ -32,14 +32,27 @@ describe("quotaFromServer", () => {
 });
 
 describe("freeLeftLabel", () => {
+	afterEach(() => vi.useRealTimers());
+
 	it("defaults to full guest budget when quota unknown", () => {
 		expect(freeLeftLabel(null)).toBe(GUEST_DAILY_LIMIT_DEFAULT);
 	});
 
 	it("never shows negative free left", () => {
 		expect(
-			freeLeftLabel({ remaining: -2, limit: 20, date: "2099-01-01" }),
+			freeLeftLabel({ remaining: -2, limit: 20, date: new Date().toISOString().slice(0, 10) }),
 		).toBe(0);
+	});
+
+	it("expires an exhausted in-memory quota at the UTC day boundary", () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-10-27T23:59:59Z"));
+		const quota = { remaining: 0, limit: 20, date: "2026-10-27" };
+		expect(freeLeftLabel(quota)).toBe(0);
+
+		vi.setSystemTime(new Date("2026-10-28T00:00:00Z"));
+
+		expect(freeLeftLabel(quota)).toBe(20);
 	});
 });
 

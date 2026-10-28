@@ -2,9 +2,8 @@ import { describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
 import { ModelLogo } from "../model-logo";
 
-// Slugs here mirror the upstream homarr-labs/dashboard-icons repo names
-// (renamed in app/public/logos/providers/README.md to match the canonical
-// upstream slug — see https://github.com/homarr-labs/dashboard-icons).
+// Slugs here mirror the upstream homarr-labs/dashboard-icons repo names;
+// see the provider tile guidance in BRAND.md.
 describe("ModelLogo — locally-vendored dashboard-icons provider marks", () => {
 	it("uses locally-vendored dashboard-icons tile for GPT-family ids", () => {
 		const { container } = render(<ModelLogo modelId="openai-gpt-54" size={24} />);

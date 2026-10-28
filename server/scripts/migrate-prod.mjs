@@ -1,25 +1,9 @@
 /**
  * Production migration runner + schema preflight.
  *
- * WHY THIS EXISTS
- * ---------------
- * A Neon Function release against a *fresh* project silently shipped broken:
- * the target database's `drizzle.__drizzle_migrations` journal only recorded
- * migration 0005, so migrations 0001/0006/0007 were never applied. The
- * function started fine, `/ready` returned 200 (readiness only proves the
- * database answers), and then the scheduled deposit-recovery ticker died with
- * `42P01 undefined_table` on every 15-minute tick.
- *
- * The failure was invisible until a money path needed the missing table. This
- * script makes it loud and pre-release:
- *
- *   1. Applies pending migrations with drizzle's OWN migrator, so the
- *      `__drizzle_migrations` journal is maintained by drizzle instead of by
- *      hand. (drizzle's migrator records each applied file with its hash and
- *      skips files already in the journal.)
- *   2. Verifies every table declared in `src/db/schema.ts` actually exists.
- *      A missing table is a hard failure -- we refuse to release onto a
- *      database that is not schema-complete.
+ * Applies pending migrations with Drizzle's migrator, preserving its journal,
+ * then verifies every table declared in `src/db/schema.ts`. A missing table is
+ * a hard failure: /ready establishes connectivity, not schema completeness.
  *
  * Usage:
  *   node scripts/migrate-prod.mjs            # migrate, then verify
@@ -27,8 +11,8 @@
  *
  * Env:
  *   DATABASE_URL  required. A pooled Neon URL is rewritten to the direct
- *                 endpoint: the migrator wraps DDL in a transaction and needs
- *                 a session-capable connection, which a pooler cannot give.
+ *                 endpoint for migrations and administrative work. See
+ *                 docs/DEPLOYMENT.md for connection guidance.
  */
 
 import { readFileSync, existsSync } from "node:fs";
@@ -52,9 +36,8 @@ function fail(message, detail) {
 }
 
 /**
- * Neon pooler hosts embed "-pooler". Transaction-pooled connections cannot
- * hold a session for the migrator's transaction block, so use the direct
- * endpoint when one is derivable.
+ * Neon pooler hosts embed "-pooler". Prefer a direct connection for migrations
+ * to avoid transaction pooling's session-state limitations between transactions.
  */
 function directConnectionString(rawUrl) {
 	try {

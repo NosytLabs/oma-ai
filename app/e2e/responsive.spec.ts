@@ -117,13 +117,23 @@ test.describe("desktop-only navbar interactions", () => {
 
   test("models page renders brand logos for every card", async ({ page }) => {
     await page.goto("/models", { waitUntil: "load" });
-    await page.waitForTimeout(1500);
-    const broken = await page.evaluate(() => {
-      return Array.from(document.querySelectorAll("img.model-logo-svg")).filter(
-        (img) => !(img as HTMLImageElement).complete || (img as HTMLImageElement).naturalWidth === 0,
-      ).map((img) => (img as HTMLImageElement).src);
-    });
-    expect(broken).toEqual([]);
+    const logos = page.locator("img.model-logo-svg");
+    await expect(logos.first()).toBeAttached();
+    const logoCount = await logos.count();
+    expect(logoCount).toBeGreaterThan(0);
+
+    for (let index = 0; index < logoCount; index++) {
+      const logo = logos.nth(index);
+      // Offscreen provider tiles load lazily; exercise their actual loading
+      // behavior before checking whether an asset failed to decode.
+      await logo.scrollIntoViewIfNeeded();
+      await expect.poll(() => logo.evaluate((img: HTMLImageElement) =>
+        img.complete && img.naturalWidth > 0,
+      )).toBe(true);
+    }
+    // A failed image must not make this check pass by disappearing into a
+    // component fallback while the remaining images are being inspected.
+    await expect(logos).toHaveCount(logoCount);
   });
 
   test("docs page renders code blocks without overflow", async ({ page }) => {

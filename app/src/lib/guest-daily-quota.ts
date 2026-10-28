@@ -98,6 +98,8 @@ export function writeStoredGuestQuota(quota: GuestQuota): void {
 }
 
 export function freeLeftLabel(quota: GuestQuota | null, fallbackLimit = GUEST_DAILY_LIMIT_DEFAULT): number {
-	if (!quota) return fallbackLimit;
+	// A mounted chat tab can outlive the UTC day stored in its state. Treat
+	// that value as unknown, just as readStoredGuestQuota does on a reload.
+	if (!quota || quota.date !== todayUtc()) return fallbackLimit;
 	return Math.max(0, quota.remaining);
 }

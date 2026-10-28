@@ -1,6 +1,6 @@
 name: CI
 
-# Automatic paid runs are paused for cost containment.
+# Pull requests to main run CI; other branches can use manual dispatch.
 on:
   workflow_dispatch:
   pull_request:

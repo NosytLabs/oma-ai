@@ -78,6 +78,15 @@ export function useGuestQuota(opts: UseGuestQuotaOptions): UseGuestQuotaResult {
 		};
 	}, [opts.isAuthenticated, applyGuestQuota]);
 
+	// Expire the visible cache as well as the send gate when a tab remains
+	// mounted overnight. The next request obtains the new day's server quota.
+	useEffect(() => {
+		if (opts.isAuthenticated || !guestQuota) return;
+		const resetAt = Date.parse(`${guestQuota.date}T00:00:00Z`) + 86_400_000;
+		const timer = window.setTimeout(() => setGuestQuota(null), Math.max(0, resetAt - Date.now()));
+		return () => window.clearTimeout(timer);
+	}, [guestQuota, opts.isAuthenticated]);
+
 	const onDailyQuota = useCallback(
 		(info: DailyQuota) => {
 			if (opts.isAuthenticated) return;
