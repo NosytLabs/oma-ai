@@ -13,7 +13,11 @@ Run the account tools from `server/`. Never use production credentials for local
 - `node scripts/migrate-prod.mjs`: applies pending migrations with Drizzle's migrator, preserving its journal, then verifies every table in `src/db/schema.ts`. A missing table is a hard failure. `--check` verifies without migrating. Requires `DATABASE_URL`; pooled Neon URLs are rewritten to the direct endpoint for migration and administrative work (see [connection guidance](../../docs/DEPLOYMENT.md#backend-deploy-neon)). Run before every backend release: readiness probes establish connectivity, not schema completeness.
 - `local-test-context.mjs`: the guard every local test tool calls before touching a database or app origin. It throws outside `development`/`test`, and it requires both the database host and the app origin to be loopback, so no local script can mutate a remote database or a production environment. Use it instead of reading `DATABASE_URL`/`PUBLIC_APP_URL` directly in new tooling.
 - `check-admin-binding.mjs`: read-only inspection of admin wallet binding.
-- `backfill-evm-address.sql` / `check-backfill-sql.mjs`: review historical wallet-binding candidates and the guarded query.
-- `run-backfill.mjs`: dry-run report by default. Only `--apply` executes the guarded wallet binding transaction. Review candidates and obtain authorization for the target database first.
+
+For a wallet-linked account missing `evmAddress`, sign in again with that wallet.
+The verified SIWE hook repairs the profile binding; `src/auth/__tests__/siwe-profile.test.ts`
+covers existing accounts. Use the read-only admin-binding diagnostic if access
+still fails. Historical bulk backfill scripts have been retired; migrations
+and their metadata remain unchanged.
 
 Backups may contain private account data. Keep them outside version control and restrict access.

@@ -4,14 +4,8 @@ title = "OMA-AI Gitleaks Config"
 description = "OMA AI allowlist rules"
 paths = [
   '''docs/.*\.md$''',
-  '''deploy/.*\.md$''',
   '''app/src/app/docs/.*''',
   '''app/src/app/models/page\.tsx$''',
-  '''app/src/app/use-cases/.*''',
-  '''app/src/components/landing/.*''',
-  '''app/src/components/models/.*''',
-  '''app/src/public/llms-full\.txt$''',
-  '''render\.yaml$''',
   '''server/src/__tests__/.*\.test\.ts$''',
   '''server/vitest\.setup\.ts$''',
   '''app/src/.*\.test\.ts$''',

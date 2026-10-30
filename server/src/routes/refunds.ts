@@ -78,9 +78,11 @@ refundsRoutes.get("/v1/refunds", sessionOrBearerAuth, async (c) => {
 
 const enforceOrigin = originGuard();
 refundsRoutes.post("/v1/refunds", sessionOrBearerAuth, async (c, next) => {
-	// Check the credential actually selected by authentication. SDK callers
-	// with an API key need no browser Origin; cookie-authenticated writes do.
-	return c.get("session") ? enforceOrigin(c, next) : next();
+	// Credential precedence determines the owner, while cookies independently
+	// identify a browser mutation that still needs CSRF protection. A Bearer
+	// header must not bypass that check when the request also carries cookies.
+	const hasCookies = Boolean(c.req.header("Cookie")?.trim());
+	return hasCookies || c.get("session") ? enforceOrigin(c, next) : next();
 }, async (c) => {
 	c.header("Cache-Control", "no-store");
 	const userId = c.get("userId");

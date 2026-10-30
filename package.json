@@ -11,7 +11,8 @@
   "scripts": {
     "clean": "node scripts/clean.mjs",
     "validate": "pnpm validate:hygiene && pnpm --filter app run typecheck && pnpm --filter app run lint && pnpm --filter app test && pnpm --filter app run build && pnpm --filter oma-server run typecheck && pnpm --filter oma-server run lint && pnpm --filter oma-server test && pnpm --filter oma-server run build",
-    "validate:hygiene": "bash scripts/check-repo-hygiene.sh",
+    "validate:hygiene": "node scripts/check-repo-hygiene.mjs && node --test scripts/repo-hygiene.test.mjs scripts/dev/start-chrome-debug.test.mjs scripts/dev/start-dev.test.mjs scripts/check-deployment.test.mjs",
+    "check:deployment": "node scripts/check-deployment.mjs",
     "validate:app": "pnpm --filter app run typecheck && pnpm --filter app run lint && pnpm --filter app test && pnpm --filter app run build",
     "validate:server": "pnpm --filter oma-server run typecheck && pnpm --filter oma-server run lint && pnpm --filter oma-server test && pnpm --filter oma-server run build",
     "validate:typecheck": "pnpm -r run typecheck",

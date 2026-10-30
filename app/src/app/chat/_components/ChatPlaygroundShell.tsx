@@ -668,6 +668,7 @@ function ShellContent() {
 
 	useChatShortcuts({
 		sendMessageRef: gatedSendRef,
+		inputRef,
 		input,
 		loading,
 		shortcutsOpen,
@@ -710,6 +711,7 @@ function ShellContent() {
 				searching={searching}
 				isAuthenticated={isAuthenticated}
 				balance={balance}
+				balanceLoading={balanceLoading}
 				balanceDollars={balanceDollars}
 				isLowBalance={isLowBalance}
 				compareMode={compareMode}
@@ -918,6 +920,7 @@ function ShellContent() {
 			/>
 
 			<LazyModelComparePanel
+				key={user?.id ?? "guest"}
 				open={compareMode}
 				onClose={() => setCompareMode(false)}
 				primaryModel={model}

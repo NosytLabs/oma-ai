@@ -53,6 +53,15 @@ async function sign(message: string) {
 }
 
 describe("parseSiweMessage", () => {
+	it("reads an explicit HTTP origin including an IPv6 loopback authority", () => {
+		const message = `http://[::1]:3123 wants you to sign in with your Ethereum account:\n${account.address}\n\nSign in.\n\nURI: http://[::1]:3123/login\nChain ID: 8453`;
+		expect(parseSiweMessage(message)).toMatchObject({ domain: "[::1]:3123", scheme: "http", uri: "http://[::1]:3123/login" });
+	});
+	it("rejects ambiguous duplicate URI fields", () => {
+		const message = `${buildMessage({})}\nURI: https://www.oma-ai.com\nURI: https://untrusted.example`;
+		expect(() => parseSiweMessage(message)).toThrow(SiweVerificationError);
+	});
+
 	it("extracts domain, address, chain and expiry", () => {
 		const expiry = new Date(Date.now() + 60_000).toISOString();
 		const parsed = parseSiweMessage(

@@ -1,10 +1,12 @@
 #!/usr/bin/env node
-/** Regenerate the entire brand kit from the shared vector geometry. */
+/** Regenerate deployed brand assets; optionally export the marketing kit. */
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { parseArgs } from "node:util";
 import sharp from "sharp";
 
+const { values } = parseArgs({ options: { "brand-kit": { type: "boolean", default: false } } });
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const pub = join(root, "public");
 const mark = JSON.parse(await readFile(join(root, "src/lib/brand-mark.json"), "utf8"));
@@ -22,7 +24,7 @@ const lockup = svg(480, 120, background(480, 120, 16) + `<g transform="translate
 const card = svg(1200, 630, background(1200, 630) + `<g transform="translate(500 100) scale(2)">${symbol}</g>` + text(600, 392, 76, "OMA", colors.text, 'text-anchor="middle" letter-spacing="5"') + text(600, 445, 18, "OPEN MODEL ACCESS", colors.accent, 'text-anchor="middle" letter-spacing="4"') + text(600, 536, 22, "One gateway. Every model. No lock-in.", colors.muted, 'text-anchor="middle"'));
 const og = svg(1280, 720, background(1280, 720) + `<g transform="translate(76 70) scale(.8)">${symbol}</g>` + text(183, 131, 48, "OMA", colors.text, 'letter-spacing="3"') + text(80, 324, 70, "One gateway.") + text(80, 410, 70, "Every model.", colors.accent) + text(82, 488, 34, "No lock-in.", colors.muted) + text(82, 641, 19, "OPEN MODEL ACCESS", colors.muted, 'letter-spacing="3"') + `<g transform="translate(854 254) scale(3)">${symbol}</g>`);
 
-await mkdir(join(pub, "logos/brand-kit"), { recursive: true });
+await mkdir(join(pub, "logos"), { recursive: true });
 for (const [path, content] of Object.entries({
   "favicon.svg": favicon,
   "logos/oma-mark.svg": svg(100, 100, symbol),
@@ -32,9 +34,9 @@ for (const [path, content] of Object.entries({
   "logos/oma-brand-card.svg": card,
 })) await writeFile(join(pub, path), content);
 
-async function png(source, path, width, height = width) {
+async function png(source, path, width, height = width, outputDir = pub) {
   const buffer = await sharp(Buffer.from(source)).resize(width, height).png().toBuffer();
-  await writeFile(join(pub, path), buffer);
+  await writeFile(join(outputDir, path), buffer);
   return buffer;
 }
 const iconImages = [];
@@ -65,8 +67,15 @@ await png(maskable, "logos/oma-icon-maskable-512.png", 512);
 await png(lockup, "logos/oma-wordmark.png", 960, 240);
 await png(card, "logos/oma-brand-card.png", 1200, 630);
 await png(og, "og-image.png", 1280, 720);
-await png(card, "logos/brand-kit/oma-brand-card.png", 2400, 1260);
-await png(lockup, "logos/brand-kit/oma-lockup-horizontal.png", 1440, 360);
-await sharp(Buffer.from(lockup)).resize(1440, 360).jpeg({ quality: 92 }).toFile(join(pub, "logos/brand-kit/oma-lockup-horizontal.jpg"));
-await sharp(Buffer.from(icon)).resize(1024, 1024).flatten({ background: colors.void }).jpeg({ quality: 92 }).toFile(join(pub, "logos/brand-kit/oma-icon-promo.jpg"));
-console.log("Regenerated OMA SVGs, PNGs, ICO, app icons, social cards and brand kit.");
+console.log("Regenerated OMA SVGs, PNGs, ICO, app icons and social cards.");
+
+// Promotional exports are optional build artifacts, not deployed website assets.
+if (values["brand-kit"]) {
+  const marketingDir = join(root, "..", "artifacts", "brand-kit");
+  await mkdir(marketingDir, { recursive: true });
+  await png(card, "oma-brand-card.png", 2400, 1260, marketingDir);
+  await png(lockup, "oma-lockup-horizontal.png", 1440, 360, marketingDir);
+  await sharp(Buffer.from(lockup)).resize(1440, 360).jpeg({ quality: 92 }).toFile(join(marketingDir, "oma-lockup-horizontal.jpg"));
+  await sharp(Buffer.from(icon)).resize(1024, 1024).flatten({ background: colors.void }).jpeg({ quality: 92 }).toFile(join(marketingDir, "oma-icon-promo.jpg"));
+  console.log(`Exported optional marketing kit to ${marketingDir}.`);
+}

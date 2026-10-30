@@ -1,14 +1,4 @@
-const HOP_BY_HOP_HEADERS = new Set([
-	"connection",
-	"keep-alive",
-	"proxy-authenticate",
-	"proxy-authorization",
-	"te",
-	"trailer",
-	"transfer-encoding",
-	"upgrade",
-	"host",
-]);
+import { stripHopByHopHeaders } from "./hop-headers";
 
 type CookieHeaders = Headers & {
 	getSetCookie?: () => string[];
@@ -21,11 +11,12 @@ type CookieHeaders = Headers & {
 	* The body remains a stream so SSE/chat responses are not buffered.
 	*/
 export function proxyResponse(upstream: Response): Response {
+	const filteredHeaders = new Headers(upstream.headers);
+	const excluded = stripHopByHopHeaders(filteredHeaders);
 	const headers = new Headers();
-	for (const [key, value] of upstream.headers.entries()) {
+	for (const [key, value] of filteredHeaders.entries()) {
 		const normalized = key.toLowerCase();
 		if (
-			HOP_BY_HOP_HEADERS.has(normalized) ||
 			normalized === "set-cookie" ||
 			// Node's fetch transparently decodes compressed upstream bodies;
 			// never tell the browser to decode the stream a second time.
@@ -38,10 +29,10 @@ export function proxyResponse(upstream: Response): Response {
 	}
 
 	const cookieHeaders = upstream.headers as CookieHeaders;
-	const cookies = cookieHeaders.getSetCookie?.() ?? [];
+	const cookies = excluded.has("set-cookie") ? [] : cookieHeaders.getSetCookie?.() ?? [];
 	if (cookies.length > 0) {
 		for (const cookie of cookies) headers.append("set-cookie", cookie);
-	} else {
+	} else if (!excluded.has("set-cookie")) {
 		// Older runtimes expose one cookie through get() but not getSetCookie().
 		const cookie = upstream.headers.get("set-cookie");
 		if (cookie) headers.append("set-cookie", cookie);

@@ -205,7 +205,16 @@ Usage downloads use the selected dashboard range and the summary's UTC snapshot 
 
 API key creation, listing and revocation require a Better Auth session; a bearer key cannot manage credentials. Keys expire after 90 days by default. Creation accepts `expiresInDays` from 1 to 365 and an optional `allowedModels` list of catalog IDs. The list constrains the primary model and all client/server fallback routes on both inference APIs. Optional `ipAllowlist` accepts up to 20 IPv4/IPv6 addresses or CIDR ranges; callers outside those ranges receive 403. Omit it for unrestricted access. Use the application's public outbound address, not its private network address. Restrictions cannot be edited; revoke and replace the key. Metadata includes expiry, last use and restrictions; expired keys cannot authenticate even if still listed. Website chat uses the account session, so creating a key does not install it in a browser cookie. `max_tokens` cannot exceed the selected model's published output limit; smaller-limit fallbacks are skipped. Provider credential failures are gateway errors, not customer authentication failures.
 
-Key validity is read from Postgres on each request, with only concurrent in-flight reads shared. Positive Redis records do not authorize a revoked, expired or deleted key. Explicit invalid API credentials return 401 rather than becoming guest chat requests. Protected requests also require an existing, active account; failure to verify account status returns a safe 503. User IDs in query strings or request bodies never select the owner for personal keys, sessions, usage, exports or account deletion. On mixed session/key usage endpoints, the authenticated browser session takes precedence.
+Key validity is read from Postgres on each request, with only concurrent in-flight reads shared. Positive Redis records do not authorize a revoked, expired or deleted key. On endpoints accepting sessions or API keys, an explicit `Authorization` or `x-api-key` header selects the key's account; invalid explicit credentials return 401 without falling back to browser cookies or guest chat. Without explicit credentials, a valid browser session is used. Protected requests also require an existing, active account; failure to verify authentication state returns a safe 503. User IDs in query strings or request bodies never select the owner for personal keys, sessions, usage, exports or account deletion. Cookie-bearing refund mutations still require a trusted `Origin` or `Referer`, including when an explicit API key selects the account; cookie-free SDK refunds do not require these headers.
+
+Wallet attachment requires a separate challenge tied to the signed-in account.
+`POST /v1/user/attach-wallet/nonce` returns `nonce`, `expiresAt`, `domain` and
+`chainId`. Sign an ERC-4361 message with those values, then send `address`,
+`message` and `signature` to `POST /v1/user/attach-wallet`. Both endpoints require
+a session and a trusted `Origin` or `Referer`. The challenge expires after five
+minutes and is consumed once; a login nonce or an old standalone signature
+cannot authorize attachment. An address already owned by another account
+returns 409, including concurrent claims.
 
 Database URLs and provider/operator secrets belong only in server environment variables. The browser receives public API origins and account-scoped responses, not direct database access. Both website proxies discard incoming `x-neon-*` headers, and `/api/internal/*` is blocked. Internal recovery jobs accept the operator recovery token or a native Neon scheduler header only in the Neon runtime, never through the website proxy. Neon removes client-supplied runtime headers on the native function boundary; this platform behavior is documented in [Neon's scheduler guide](https://neon.com/blog/your-neon-functions-can-now-run-on-a-schedule).
 
@@ -306,14 +315,14 @@ Production requires durable Postgres and Redis-compatible rate-limit state, real
 - `PUBLIC_APP_URL=https://www.oma-ai.com`
 - `PUBLIC_API_URL=https://www.oma-ai.com/api`
 - `CORS_ORIGIN=https://www.oma-ai.com` (or a comma-separated explicit allowlist; never `*` in production)
-- `PRIMARY_DOMAIN=www.oma-ai.com`
+- `PRIMARY_DOMAIN=oma-ai.com`
 - `BETTER_AUTH_URL=https://www.oma-ai.com`
-- `BETTER_AUTH_SECRET`: unique high-entropy secret, shared with the frontend deployment that verifies sessions.
+- `BETTER_AUTH_SECRET`: unique high-entropy secret for Better Auth on the API.
 - `ENCRYPTION_KEY`: unique production secret, at least 40 characters (enforced by config validation), used for deposit challenges.
 - `RESEND_API_KEY` and `RESEND_FROM`: required for production magic-link email.
 - `ADMIN_WALLET_ADDRESSES`: comma-separated admin addresses, if admin access is enabled.
 
-The app also needs `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_APP_URL`, and the same `BETTER_AUTH_SECRET` used by the server. In normal production, browser traffic uses the website's same-origin `/api/*` and `/x402/*` proxies.
+The app also needs `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_APP_URL`, and the same `INTERNAL_PROXY_SECRET` used by the server. Better Auth verifies sessions on the API; the frontend forwards the cookies. In normal production, browser traffic uses the website's same-origin `/api/*` and `/x402/*` proxies.
 
 Sponsored website chat uses `POST /api/chat/completions`, forwarded to the backend's `/website/chat/completions`. The frontend requires the same origin and rejects cross-site Fetch Metadata; the production backend requires the authenticated proxy secret and configured application origin. Generic API proxies strip caller sponsorship headers and block `/website/*`. Public `/api/v1/chat/completions` is always prepaid, even when a client copies website headers. The daily quota and billing gate share the same eligibility check. Secretless development is restricted to loopback backend requests; production never accepts that fallback. This separates the API contract from website sponsorship, but does not claim browser headers prevent automated use of the public website. Shared quotas, rate limits, and abuse controls remain necessary.
 

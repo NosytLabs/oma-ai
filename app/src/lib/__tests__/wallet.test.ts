@@ -13,6 +13,7 @@ import {
 	subscribeWallets,
 	subscribeWalletAccount,
 	sendUsdcTransfer,
+	signDepositMessage,
 } from "../wallet";
 
 /**
@@ -92,6 +93,18 @@ describe("wallet", () => {
 	});
 
 	describe("connectWallet", () => {
+		it("does not select a canceled connection after its wallet prompt resolves", async () => {
+			let active = true;
+			const original = makeProvider();
+			const late = makeProvider({ accounts: ["0x0000000000000000000000000000000000000001"] });
+			const request = late.provider.request;
+			late.provider.request = async args => { const result = await request(args); if (args.method === "eth_chainId") active = false; return result; };
+			install({ providers: [original.provider, late.provider] });
+			const [first, second] = listWallets();
+			await connectWallet(first.id);
+			await expect(connectWallet(second.id, () => active)).rejects.toThrow(/no longer active/i);
+			expect(await getConnectedAccount()).toBe(ADDRESS);
+		});
 		it("throws a message naming real wallets when none is injected", async () => {
 			await expect(connectWallet()).rejects.toThrow(/MetaMask|Rabby|Coinbase/);
 		});
@@ -174,6 +187,39 @@ describe("wallet", () => {
 	});
 
 	describe("signSiweMessage", () => {
+		it("does not open a signature prompt after sign-in is canceled during account preflight", async () => {
+			let active = true;
+			const { provider, calls } = makeProvider();
+			const request = provider.request;
+			provider.request = async args => { const result = await request(args); if (args.method === "eth_accounts") active = false; return result; };
+			install(provider);
+			await expect(signSiweMessage(ADDRESS, "CancelSigninNonce123", "oma-ai.com", "https://oma-ai.com", () => active)).rejects.toThrow(/no longer active/i);
+			expect(calls.some(call => call.method === "personal_sign")).toBe(false);
+		});
+		it("uses the supplied HTTP origin for a local wallet sign-in", async () => {
+			install(makeProvider().provider);
+			const { message } = await signSiweMessage(
+				ADDRESS, "a1b2c3d4e5f6a7b8", "localhost:3000", "http://localhost:3000",
+			);
+			expect(message).toContain("URI: http://localhost:3000");
+		});
+
+		it.each(["https://www.oma-ai.com", "https://www.preview.example:8443", "http://127.0.0.1:3123"])("signs the exact scheme, authority and URI for %s", async origin => {
+			install(makeProvider().provider);
+			const url = new URL(origin);
+			const { message, signature } = await signSiweMessage(ADDRESS, "OriginFixtureNonce123", url.host, url.origin);
+			expect(message.split("\n")[0]).toBe(`${url.origin} wants you to sign in with your Ethereum account:`);
+			expect(message).toContain(`URI: ${url.origin}`);
+			expect(await verifyMessage({ address: ADDRESS, message, signature: signature as `0x${string}` })).toBe(true);
+		});
+
+		it("does not ask for a signature after the authorized account changes", async () => {
+			const { provider, calls } = makeProvider({ accounts: ["0x0000000000000000000000000000000000000001"] });
+			install(provider);
+			await expect(signSiweMessage(ADDRESS, "a1b2c3d4e5f6a7b8", "oma-ai.com")).rejects.toThrow(/account changed/i);
+			expect(calls.some(call => call.method === "personal_sign")).toBe(false);
+		});
+
 		it("produces a message the server can verify back to the signer", async () => {
 			// The real assertion: recover the address from the signature and
 			// confirm it matches. A malformed SIWE payload would fail here even
@@ -201,7 +247,7 @@ describe("wallet", () => {
 				"oma-ai.com",
 			);
 			const lines = message.split("\n");
-			expect(lines[0]).toBe("oma-ai.com wants you to sign in with your Ethereum account:");
+			expect(lines[0]).toBe("https://oma-ai.com wants you to sign in with your Ethereum account:");
 			expect(lines[1]).toBe(ADDRESS);
 			expect(message).toContain("oma-ai.com wants you to sign in with your Ethereum account:");
 			expect(message).toContain("Sign in to OMA AI");
@@ -224,6 +270,7 @@ describe("wallet", () => {
 		it("propagates a user rejection from the wallet", async () => {
 			install({
 				request: async ({ method }: Request) => {
+					if (method === "eth_accounts") return [ADDRESS];
 					if (method === "personal_sign") throw new Error("User rejected the request");
 					return null;
 				},
@@ -251,6 +298,7 @@ describe("wallet", () => {
 
 	it("does not retry a failing signature prompt automatically", async () => {
 		const request = vi.fn(async ({ method }: { method: string }) => {
+			if (method === "eth_accounts") return [ADDRESS];
 			if (method === "personal_sign") throw new Error("Wallet disconnected");
 			return [];
 		});
@@ -317,6 +365,45 @@ describe("wallet", () => {
 		});
 		install({ request });
 		await expect(sendUsdcTransfer({ to: "0x0000000000000000000000000000000000000002", from: ADDRESS, amountUsd: 10 })).rejects.toThrow(/account changed/i);
+		expect(request.mock.calls.some(([args]) => args.method === "eth_sendTransaction")).toBe(false);
+	});
+
+	it.each(["chain-read", "chain-switch"] as const)("stops a canceled deposit during %s before the next wallet prompt", async (stage) => {
+		let active = true;
+		const request = vi.fn(async ({ method }: Request) => {
+			if (method === "eth_accounts") return [ADDRESS];
+			if (method === "eth_chainId") { if (stage === "chain-read") active = false; return "0x1"; }
+			if (method === "wallet_switchEthereumChain") { active = false; return null; }
+			return `0x${"a".repeat(64)}`;
+		});
+		install({ request });
+		await expect(sendUsdcTransfer({ to: "0x0000000000000000000000000000000000000002", from: ADDRESS, amountUsd: 10, isActive: () => active })).rejects.toThrow(/no longer active/i);
+		expect(request.mock.calls.some(([args]) => args.method === "eth_sendTransaction")).toBe(false);
+		if (stage === "chain-read") expect(request.mock.calls.some(([args]) => args.method === "wallet_switchEthereumChain")).toBe(false);
+	});
+
+	it("stops a canceled proof after its account preflight before requesting a signature", async () => {
+		let active = true;
+		const request = vi.fn(async ({ method }: Request) => {
+			if (method === "eth_accounts") { active = false; return [ADDRESS]; }
+			return `0x${"a".repeat(130)}`;
+		});
+		install({ request });
+		await expect(signDepositMessage({ fromAddress: ADDRESS, challengeToken: "challenge", depositAddress: "0x0000000000000000000000000000000000000002", isActive: () => active })).rejects.toThrow(/no longer active/i);
+		expect(request.mock.calls.some(([args]) => args.method === "personal_sign")).toBe(false);
+	});
+
+	it("checks cancellation at the transport boundary after viem's own transaction preflight", async () => {
+		let active = true;
+		let chainReads = 0;
+		const request = vi.fn(async ({ method }: Request) => {
+			if (method === "eth_accounts") return [ADDRESS];
+			if (method === "eth_chainId") { if (++chainReads === 2) active = false; return "0x2105"; }
+			return `0x${"a".repeat(64)}`;
+		});
+		install({ request });
+		await expect(sendUsdcTransfer({ to: "0x0000000000000000000000000000000000000002", from: ADDRESS, amountUsd: 10, isActive: () => active })).rejects.toThrow(/no longer active/i);
+		expect(chainReads).toBe(2);
 		expect(request.mock.calls.some(([args]) => args.method === "eth_sendTransaction")).toBe(false);
 	});
 

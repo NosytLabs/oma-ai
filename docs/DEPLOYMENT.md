@@ -4,8 +4,7 @@ Canonical deployment facts for OMA-AI. Other docs link here rather than
 restating them — this file is the single source of truth so a deploy
 instruction can't drift between documents.
 
-Production targets are listed below. See
-[deployment verification](deployment-health.md) for release checks and failure diagnosis.
+Production targets, release procedures, verification and retention guidance follow.
 
 ## Canonical host
 
@@ -18,40 +17,22 @@ Production targets are listed below. See
 Use `https://www.oma-ai.com` for public URLs, examples and
 `NEXT_PUBLIC_APP_URL`. `PRIMARY_DOMAIN` is a bare hostname, `oma-ai.com`,
 without a scheme or `www`. Auth origin resolution accepts the apex and `www`
-and derives the canonical SIWE signing domain as `oma-ai.com`; the wallet UI
-uses `https://oma-ai.com` as its SIWE URI. Keep the auth base URL and CORS
-settings consistent with `server/src/auth.ts` and the same-origin proxy.
+and resolves the production auth base URL to `https://www.oma-ai.com`.
+The SIWE signing domain is `www.oma-ai.com`, matching the page that requests
+the signature; the wallet UI uses that page's actual origin as its SIWE URI.
+Local signing preserves the HTTP scheme and port. Keep the auth base URL and
+CORS settings consistent with `server/src/auth.ts` and the same-origin proxy.
 Do not copy the website URL into `PRIMARY_DOMAIN`.
 
-Public endpoints, all on the canonical host:
+Release changes to the SIWE signing origin in the frontend and API together.
+Older cached tabs and in-flight signatures need a reload and a fresh nonce
+after the change. Existing sessions and stored wallet bindings need no migration.
 
-```text
-GET  https://www.oma-ai.com/api/v1/models
-POST https://www.oma-ai.com/api/v1/chat/completions
-POST https://www.oma-ai.com/api/v1/messages
-GET  https://www.oma-ai.com/api/v1/openapi.json
-GET  https://www.oma-ai.com/x402/info
-POST https://www.oma-ai.com/x402/verify
-POST https://www.oma-ai.com/x402/settle
-GET  https://www.oma-ai.com/api/v1/search
-GET  https://www.oma-ai.com/api/v1/usage
-GET  https://www.oma-ai.com/api/v1/usage/summary
-GET  https://www.oma-ai.com/api/v1/usage/today
-GET  https://www.oma-ai.com/api/v1/balance
-GET  https://www.oma-ai.com/api/v1/keys
-POST https://www.oma-ai.com/api/v1/keys (session cookie)
-DELETE https://www.oma-ai.com/api/v1/keys/{id} (session cookie)
-GET  https://www.oma-ai.com/api/v1/credits/balance
-POST https://www.oma-ai.com/api/v1/deposit/usdc
-GET  https://www.oma-ai.com/api/v1/deposit/status
-GET  https://www.oma-ai.com/api/v1/site-settings
-POST https://www.oma-ai.com/api/v1/checkout (session cookie)
-GET  https://www.oma-ai.com/api/v1/privacy
-```
-
-The app's `/docs` page and customer OpenAPI describe supported customer
-request and response shapes. Website settings/privacy endpoints are separate
-operational metadata and are excluded from the customer OpenAPI contract.
+The customer [OpenAPI document](https://www.oma-ai.com/api/v1/openapi.json)
+and `/docs` page describe API requests and responses. Funding also uses
+`/x402/info`, `/x402/verify` and `/x402/settle`; see the
+[platform reference](PLATFORM.md#funding-rails). Website settings and privacy
+endpoints are operational metadata outside the customer OpenAPI contract.
 
 ## What runs where
 
@@ -115,11 +96,48 @@ does not produce a ready deployment, inspect its build status before using
 the explicit production deploy command above. Do not add `VERCEL_TOKEN`
 merely to make a check green.
 
+## Preview environments
+
+A Vercel preview also needs a live, isolated API deployment. A `READY` frontend
+and `/api/health` HTTP 200 do not verify the backend. Before testing accounts,
+require `/api/ready` HTTP 200 with healthy dependencies and
+`/api/auth/get-session` HTTP 200 with JSON `null` in a signed-out request.
+A plain `function not found` response means the configured API function or
+branch is missing; verify that target before changing authentication code.
+
+Run the bounded, read-only check against the exact deployment origin:
+
+```bash
+pnpm check:deployment https://your-preview.vercel.app
+```
+
+It requires both responses above, rejects redirects and exits nonzero on a
+missing function, unhealthy dependency or unexpected session response. It sends
+no cookies or credentials; an access-protected preview needs an authenticated
+check through Vercel. Missing Redis credentials cause readiness to report a
+degraded dependency.
+
+Use an empty or [schema-only Neon branch](https://neon.com/docs/guides/branching-schema-only),
+isolated Redis, and independent auth/proxy secrets. Set the preview API's
+`PRIMARY_DOMAIN` to the stable preview hostname, and `PUBLIC_APP_URL` and
+`BETTER_AUTH_URL` to its matching HTTPS origin.
+Point Vercel's preview-scoped `NEXT_PUBLIC_API_URL` to that API and keep its
+`INTERNAL_PROXY_SECRET` in sync with the preview backend. Check environment
+targets before editing a variable shared with development or production.
+
+The current server validates live payment configuration for public preview
+environments. An auth-only hosted preview therefore needs a supported
+payments-disabled mode before provisioning. Do not bypass that validation
+with development flags or reuse production payment credentials. The local
+`test:auth:integration` harness and browser fixtures provide isolated auth
+coverage while that deployment capability is unavailable.
+
 ## Backend deploy (Neon)
 
 Apply pending database migrations **before** releasing dependent API code.
-Migration `0006` adds persistent inference idempotency. Migration `0007` adds
-credit reservations, detached financial receipts and provider response IDs.
+Migration `0005` adds persistent inference idempotency, `0006` increases refund
+precision, and `0007` adds credit reservations, detached financial receipts
+and provider response IDs.
 Run the repository migration command using the approved production connection,
 then verify the journal and expected tables before deploying the function.
 A successful local migration does not establish production schema readiness.
@@ -211,6 +229,58 @@ curl -fsS https://br-patient-sun-b5k0ln0f-omaapi.compute.c-7.us-east-2.aws.neon.
 `https://www.oma-ai.com/api/health` checks the web tier only. The native API
 `/ready` probe checks Postgres and Redis; require a successful readiness
 response as well as a successful frontend health response.
+
+## Release verification
+
+Before release, run `pnpm install --frozen-lockfile` and `pnpm validate` from
+the repository root using the pinned Node and pnpm versions. For chat behavior
+or layout changes, also run the [browser checks](../app/e2e/README.md). The
+fixtures test local UI behavior, not a live provider or paid account flow.
+Commit `pnpm-lock.yaml` with manifest changes and record checks for the release
+commit. A missing CI check is not a passing check.
+
+| Layer | Evidence | What it establishes |
+|-------|----------|---------------------|
+| Frontend release | Deployment serving `www.oma-ai.com` is `READY` at the intended commit | Production received the frontend release |
+| Web runtime | `/chat` and `/api/health` respond | Next.js is reachable; `/api/health` is not a backend probe |
+| API liveness | Native `/health` or `/live` responds | API process responds without querying dependencies |
+| API release | Current and active `omaapi` deployments are complete | Separate API release is active |
+| API dependencies | Native `/ready` reports healthy Postgres and Redis | Required data stores are reachable |
+| Model catalog | `/api/v1/models` returns expected routes | Catalog configuration is present |
+| Inference | A completion succeeds on the selected route | That route served a request at the time of the check |
+
+Probes bypass maintenance settings: `/health/db` checks Postgres and `/ready`
+checks Postgres and Redis. Inspect `/v1/site-settings` separately. Avoid using
+readiness as a frequent idle liveness check: it queries the database and can
+keep serverless compute active. Catalog availability flags describe configured
+routes, not live inference probes. Investigate a degraded dependency before
+changing deployment targets; inspect the upstream response and fallback route
+for provider errors.
+
+If Neon reports quota-exceeded HTTP 402, stop the API release and resolve the
+existing project's quota or plan. Do not replace the database or delete ledger
+records. After recovery, require healthy native `/ready`, readable settings,
+and an authenticated account/API check. Inspect pending deposits and
+settlement retries; do not collect another payment because crediting was
+delayed. Keep both scheduled recovery jobs enabled and verify their schedules
+against `server/neon.ts`.
+
+## Deployment and log retention
+
+Use [Vercel's deployment retention policy](https://vercel.com/docs/deployment-retention)
+and review rollback needs before changing it. Keep the live production
+deployment, the latest tested preview, and at least two production rollback
+candidates. Inspect each candidate's project, state and aliases before removing
+it by explicit ID with `vercel remove DEPLOYMENT_ID --safe --yes --scope nosyt`.
+Remove an old branch alias only after confirming the branch is merged or closed
+and the alias is not a customer domain. Never remove the active production,
+`www` or apex aliases, or pass a project name to this command.
+
+Keep current website/API logs and the latest main-branch validation. Superseded
+CI logs can be removed without deleting their workflow run records using
+`gh api --method DELETE repos/NosytLabs/oma-ai/actions/runs/RUN_ID/logs`.
+Retain payment and recovery records. Avoid putting credentials or customer
+query values into logs, documentation or tickets.
 
 ## DNS
 

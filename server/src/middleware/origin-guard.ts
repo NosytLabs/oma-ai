@@ -1,4 +1,6 @@
 import type { Context, Next } from "hono";
+import { config } from "../config.js";
+import { resolveTrustedOrigins } from "../auth/origins.js";
 
 /**
  * Origin/Referer check for cookie-authenticated mutations.
@@ -67,8 +69,14 @@ export function originGuard(options: OriginGuardOptions = {}) {
 
 		const origin = c.req.header("origin");
 		const referer = c.req.header("referer");
-		const appUrl = c.env?.PUBLIC_APP_URL ?? process.env.PUBLIC_APP_URL ?? "";
-		const allowed = [appUrl, ...allowedOrigins].filter(Boolean);
+		// Match Better Auth's configured origins, including the local default and
+		// canonical deployed host. A stale localhost URL must not become trusted
+		// on a deployed domain merely because it exists in the raw environment.
+		const allowed = [...resolveTrustedOrigins({
+			NODE_ENV: config.NODE_ENV,
+			PRIMARY_DOMAIN: config.PRIMARY_DOMAIN,
+			PUBLIC_APP_URL: c.env?.PUBLIC_APP_URL ?? config.PUBLIC_APP_URL,
+		}), ...allowedOrigins];
 
 		if (!origin && !referer) {
 			if (allowMissing) return next();

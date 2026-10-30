@@ -32,7 +32,6 @@ const DEPLOY_DOCS = [
 	"docs/DEPLOYMENT.md",
 	"docs/PLATFORM.md",
 	"docs/settlement-runbook.md",
-	"docs/deployment-health.md",
 ] as const;
 
 /** Only these OMA hosts may appear in a `https://` URL in deploy docs. */

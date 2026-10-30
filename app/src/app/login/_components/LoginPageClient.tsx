@@ -29,9 +29,11 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
 	type FormEvent,
+	type KeyboardEvent,
 	Suspense,
 	useCallback,
 	useEffect,
+	useRef,
 	useState,
 } from "react";
 import dynamic from "next/dynamic";
@@ -54,6 +56,14 @@ const LazyWalletSignInPanel = dynamic(
 );
 
 type Method = "magic" | "wallet";
+
+function magicLinkVerificationError(code: string): string {
+	// Better Auth consumes tokens once; invalid, expired and reused links all
+	// return INVALID_TOKEN. Never reflect URL-supplied error descriptions.
+	return code === "INVALID_TOKEN"
+		? "This sign-in link is no longer valid. It may have expired or already been used. Enter your email to request a new link."
+		: "We couldn't complete sign-in with this link. Please request a new magic link and try again.";
+}
 
 function defaultNext(): string {
 	if (typeof window === "undefined") return "/dashboard";
@@ -100,32 +110,50 @@ function LoginInner() {
 	const toast = useToast();
 	const { status: apiStatus } = useApiHealth();
 	const { isAuthenticated, isDemo, isReady } = useAuth();
+	const searchParams = useSearchParams();
+	const verificationFailed = searchParams?.has("error") ?? false;
+	const verificationCode = searchParams?.get("error") ?? "";
 	const [mounted, setMounted] = useState(false);
+	// Once a wallet attempt starts, its own session check must authorize any
+	// redirect. A background session refresh may belong to a different user.
+	const walletAttemptedRef = useRef(false);
 	const connectionInterrupted = mounted && apiStatus === "offline";
 
 	// Already signed in — don't show the form, go where they were headed.
 	useEffect(() => {
-		if (isReady && isAuthenticated && !isDemo) {
+		if (isReady && isAuthenticated && !isDemo && !verificationFailed && !walletAttemptedRef.current) {
 			router.replace(defaultNext());
 		}
-	}, [isReady, isAuthenticated, isDemo, router]);
+	}, [isReady, isAuthenticated, isDemo, verificationFailed, router]);
 
 	const [method, setMethod] = useState<Method>("magic");
+	const tabsRef = useRef<HTMLDivElement>(null);
 	const [email, setEmail] = useState("");
-	const [submitting, setSubmitting] = useState(false);
+	const emailRevision = useRef(0);
+	const magicRequest = useRef<object | null>(null);
+	const [magicSubmitting, setMagicSubmitting] = useState(false);
+	const [walletSubmitting, setWalletSubmitting] = useState(false);
 	const [magicSent, setMagicSent] = useState(false);
-	const [error, setError] = useState<string | null>(null);
+	const [error, setError] = useState<string | null>(() => verificationFailed ? magicLinkVerificationError(verificationCode) : null);
 	const [next, setNext] = useState("/dashboard");
-	const searchParams = useSearchParams();
+	const handleWalletSubmitting = useCallback((value: boolean) => {
+		if (value) walletAttemptedRef.current = true;
+		setWalletSubmitting(value);
+	}, []);
+	useEffect(() => () => { magicRequest.current = null; }, []);
 
 	useEffect(() => {
 		setMounted(true);
 		setNext(defaultNext());
 		const requested = searchParams?.get("method");
-		if (requested === "wallet" || requested === "magic") {
+		if (verificationFailed) {
+			setMethod("magic");
+			setMagicSent(false);
+			setError(magicLinkVerificationError(verificationCode));
+		} else if (requested === "wallet" || requested === "magic") {
 			setMethod(requested);
 		}
-	}, [searchParams]);
+	}, [searchParams, verificationFailed, verificationCode]);
 
 	const handleError = useCallback(
 		(err: unknown, fallback: string) => {
@@ -137,33 +165,70 @@ function LoginInner() {
 		[toast],
 	);
 
+	const handleTabKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+		if (!(event.target instanceof HTMLElement) || event.target.getAttribute("role") !== "tab") return;
+		let nextMethod: Method;
+		switch (event.key) {
+			case "ArrowLeft":
+			case "ArrowRight":
+				nextMethod = event.target.id === "tab-magic" ? "wallet" : "magic";
+				break;
+			case "Home":
+				nextMethod = "magic";
+				break;
+			case "End":
+				nextMethod = "wallet";
+				break;
+			default:
+				return;
+		}
+		event.preventDefault();
+		setMethod(nextMethod);
+		setError(null);
+		event.currentTarget.querySelector<HTMLButtonElement>(`#tab-${nextMethod}`)?.focus();
+	};
+
 	const handleMagic = useCallback(
 		async (e: FormEvent<HTMLFormElement>) => {
 			e.preventDefault();
+			if (magicRequest.current) return;
 			setError(null);
 			setMagicSent(false);
 			if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
 				setError("Enter a valid email address");
 				return;
 			}
-			setSubmitting(true);
+			const request = {};
+			const revision = emailRevision.current;
+			magicRequest.current = request;
+			const ownsRequest = () => magicRequest.current === request;
+			const ownsFeedback = () => ownsRequest() && emailRevision.current === revision;
+			setMagicSubmitting(true);
 			try {
-				const absoluteCallback = next.startsWith("/")
-					? `${window.location.origin}${next}`
-					: next;
+				const safeNext = safeLoginNext(next);
+				const absoluteCallback = `${window.location.origin}${safeNext}`;
+				const errorCallback = new URL("/login", window.location.origin);
+				errorCallback.searchParams.set("method", "magic");
+				errorCallback.searchParams.set("next", safeNext);
 				const result = await signIn.magicLink({
 					email,
 					callbackURL: absoluteCallback,
+					errorCallbackURL: errorCallback.toString(),
 				});
 				if (result.error) {
 					throw new Error(result.error.message ?? "Failed to send magic link");
 				}
-				setMagicSent(true);
-				toast.success(`Magic link sent to ${email}`);
+				if (ownsFeedback()) {
+					setMagicSent(true);
+					toast.success(`Magic link sent to ${email}`);
+				}
 			} catch (err) {
-				handleError(err, "Failed to send magic link");
+				if (ownsFeedback()) handleError(err, "Failed to send magic link");
 			} finally {
-				setSubmitting(false);
+				if (ownsRequest()) {
+					magicRequest.current = null;
+					setMagicSubmitting(false);
+				}
 			}
 		},
 		[email, next, toast, handleError],
@@ -225,8 +290,10 @@ function LoginInner() {
 						</div>
 
 						<div
+							ref={tabsRef}
 							role="tablist"
 							aria-label="Authentication method"
+							onKeyDown={handleTabKeyDown}
 							className="mt-5 grid grid-cols-2 gap-1 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-1"
 						>
 							<TabButton
@@ -279,7 +346,9 @@ function LoginInner() {
 										placeholder="you@example.com"
 										value={email}
 										onChange={(e) => {
-											setEmail(e.target.value.trim());
+											const value = e.target.value.trim();
+											if (value !== email) emailRevision.current++;
+											setEmail(value);
 											if (magicSent) setMagicSent(false);
 										}}
 										aria-invalid={error ? "true" : undefined}
@@ -292,10 +361,10 @@ function LoginInner() {
 									/>
 									<button
 										type="submit"
-										disabled={submitting}
+										disabled={magicSubmitting}
 										className="btn-primary min-h-12 w-full justify-center disabled:cursor-not-allowed disabled:opacity-50"
 									>
-										{submitting ? (
+										{magicSubmitting ? (
 											<>
 												<Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
 												Sending…
@@ -312,14 +381,14 @@ function LoginInner() {
 											<span>Check your inbox. The link expires in 5 minutes.</span>
 											<button
 												type="button"
-												disabled={submitting || !email}
+												disabled={magicSubmitting || !email}
 												onClick={() => {
-													if (submitting || !email) return;
+													if (magicSubmitting || !email) return;
 													void handleMagic({ preventDefault: () => {} } as React.FormEvent<HTMLFormElement>);
 												}}
 												className="text-text-secondary underline-offset-2 hover:text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50 disabled:hover:text-text-secondary disabled:hover:no-underline"
 											>
-												{submitting ? "Sending…" : "Resend"}
+												{magicSubmitting ? "Sending…" : "Resend"}
 											</button>
 										</p>
 									)}
@@ -334,11 +403,14 @@ function LoginInner() {
 									aria-labelledby="tab-wallet"
 								>
 									<LazyWalletSignInPanel
-										submitting={submitting}
-										setSubmitting={setSubmitting}
+										submitting={walletSubmitting}
+										setSubmitting={handleWalletSubmitting}
 										onError={handleError}
 										onSuccess={(msg) => toast.success(msg)}
-										onUseMagicLink={() => setMethod("magic")}
+										onUseMagicLink={() => {
+											setMethod("magic");
+											tabsRef.current?.querySelector<HTMLButtonElement>("#tab-magic")?.focus();
+										}}
 									/>
 								</div>
 							)}
@@ -384,6 +456,7 @@ function TabButton({ id, label, selected, icon, onSelect }: TabButtonProps) {
 			id={id}
 			role="tab"
 			aria-selected={selected}
+			tabIndex={selected ? 0 : -1}
 			aria-controls={panelId}
 			onClick={onSelect}
 			className={`inline-flex items-center justify-center gap-2 rounded-[var(--radius-sm)] px-3 py-3 min-h-11 text-xs font-semibold transition-[color,background-color,box-shadow,transform] duration-200 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] ${

@@ -24,14 +24,14 @@ import {
 	ShieldCheck,
 	Wallet,
 } from "lucide-react";
-import { useCallback, useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { deposit, type DepositInstructions, type UserDeposit } from "@/lib/api/deposit";
 import { isAuthError } from "@/lib/api/client";
 import { formatUsd } from "@/lib/utils";
 import { depositStatusLabel } from "@/lib/deposit-status";
-import { readPendingDeposit, savePendingDeposit, type BroadcastDeposit } from "@/lib/deposit-recovery";
+import { beginDepositOperation, depositOperationPending, endDepositOperation, readPendingDeposit, savePendingDeposit, subscribePendingDeposit, type BroadcastDeposit } from "@/lib/deposit-recovery";
 import {
 	connectWallet,
 	ensureBaseChain,
@@ -86,6 +86,13 @@ export function UnifiedDepositInterface({
 }: {
 	onDeposit?: (d: PendingDeposit) => void;
 }) {
+	const { isDemo, user } = useAuth();
+	return <DepositInterfaceContent key={isDemo ? "demo" : user?.id ?? "signed-out"} onDeposit={onDeposit} />;
+}
+
+function DepositInterfaceContent({ onDeposit }: {
+	onDeposit?: (d: PendingDeposit) => void;
+}) {
 	const [step, setStep] = useState<"select" | "processing" | "complete" | "error">(
 		"select",
 	);
@@ -104,20 +111,35 @@ export function UnifiedDepositInterface({
 	const id = useId();
 	const { isAuthenticated, isDemo, user } = useAuth();
 	const userId = user?.id;
+	const isCurrentAccount = useRef(true);
+	const ownsOperation = useRef(false);
+	useEffect(() => {
+		isCurrentAccount.current = true;
+		return () => { isCurrentAccount.current = false; };
+	}, []);
 
 	useEffect(() => {
-		const pending = userId ? readPendingDeposit(userId) : null;
-		setBroadcastDeposit(pending);
-		setStep(pending ? "error" : "select");
-		setError(pending ? "This transfer still needs registration. Connect its sending wallet and retry below; do not send another transfer." : "");
+		const syncPending = () => {
+			if (ownsOperation.current) return;
+			const pending = userId ? readPendingDeposit(userId) : null;
+			const inFlight = userId ? depositOperationPending(userId) : false;
+			setBroadcastDeposit(pending);
+			setStep(inFlight ? "processing" : pending ? "error" : "select");
+			if (inFlight) setProcessingStep("Waiting for your existing wallet deposit request…");
+			setError(pending ? "This transfer still needs registration. Connect its sending wallet and retry below; do not send another transfer." : "");
+		};
+		syncPending();
+		return userId ? subscribePendingDeposit(userId, syncPending) : undefined;
 	}, [userId]);
 
 	const fetchInstructions = useCallback(async () => {
 		setLoadingInstructions(true);
 		try {
 			const data = await deposit.instructions();
+			if (!isCurrentAccount.current) return;
 			setInstructions(data);
 		} catch (err) {
+			if (!isCurrentAccount.current) return;
 			// Demo sessions hit the backend with a cookie the deposit route
 			// rejects (sessionOrBearerAuth requires a real Better-Auth token,
 			// not the public-preview cookie). Hide the raw "[401] ..." text
@@ -137,6 +159,7 @@ export function UnifiedDepositInterface({
 	const fetchRecent = useCallback(async () => {
 		try {
 			const data = await deposit.list();
+			if (!isCurrentAccount.current) return;
 			setRecent(data.deposits);
 		} catch {
 			// Guest/demo sessions can't reach this endpoint — swallow quietly.
@@ -172,11 +195,14 @@ export function UnifiedDepositInterface({
 		setError("");
 		try {
 			const walletId = wallets.find(wallet => wallet.id === selectedWalletId)?.id ?? wallets[0]?.id;
-			const wallet = await connectWallet(walletId);
-			await ensureBaseChain();
+			const wallet = await connectWallet(walletId, () => isCurrentAccount.current);
+			if (!isCurrentAccount.current) return;
+			await ensureBaseChain(() => isCurrentAccount.current);
+			if (!isCurrentAccount.current) return;
 			setConnectedAddress(wallet.address);
 			toast.success("Wallet connected");
 		} catch (err) {
+			if (!isCurrentAccount.current) return;
 			setError(err instanceof Error ? err.message : "Wallet connection failed");
 		} finally {
 			setConnecting(false);
@@ -184,18 +210,23 @@ export function UnifiedDepositInterface({
 	}, [toast, wallets, selectedWalletId]);
 
 	const registerTransfer = useCallback(async (transfer: BroadcastDeposit, challenge?: { token: string }) => {
+		if (!isCurrentAccount.current) return;
 		setProcessingStep("Signing deposit proof…");
 		const freshChallenge = challenge ?? await deposit.challenge(transfer.fromAddress);
+		if (!isCurrentAccount.current) return;
 		const signature = await signDepositMessage({
 			fromAddress: transfer.fromAddress,
 			challengeToken: freshChallenge.token,
 			depositAddress: transfer.depositAddress,
 			txHash: transfer.txHash,
 			amountUsd: transfer.amountUsd,
+			isActive: () => isCurrentAccount.current,
 		});
+		if (!isCurrentAccount.current) return;
 		setProcessingStep("Submitting deposit for verification…");
 		const result = await deposit.usdc({ amountUsd: transfer.amountUsd, txHash: transfer.txHash, fromAddress: transfer.fromAddress, challengeToken: freshChallenge.token, signature });
 		if (userId) savePendingDeposit(userId, null);
+		if (!isCurrentAccount.current) return;
 		setBroadcastDeposit(null);
 		toast.success(`Deposit recorded. ${result.status === "pending" ? "Awaiting on-chain confirmation." : ""}`);
 		onDeposit?.({ id: result.depositId, status: result.status, amountCents: String(result.amountCents), createdAt: new Date().toISOString() });
@@ -204,6 +235,7 @@ export function UnifiedDepositInterface({
 	}, [fetchRecent, onDeposit, toast, userId]);
 
 	const handlePay = useCallback(async () => {
+		if (!isCurrentAccount.current || ownsOperation.current) return;
 		setError("");
 		const amount = parseFloat(amountUsd);
 		if (!amount || amount <= 0) {
@@ -232,6 +264,9 @@ export function UnifiedDepositInterface({
 			setError("Connect your wallet first");
 			return;
 		}
+		if (!userId) return;
+		ownsOperation.current = true;
+		if (!beginDepositOperation(userId)) { ownsOperation.current = false; return; }
 
 		setStep("processing");
 		setProcessingStep("Preparing deposit verification…");
@@ -239,11 +274,13 @@ export function UnifiedDepositInterface({
 		try {
 			// Check account-bound verification before any funds can leave the wallet.
 			const challenge = await deposit.challenge(connectedAddress);
+			if (!isCurrentAccount.current) return;
 			setProcessingStep("Confirm the USDC transfer in your wallet…");
 			const { txHash } = await sendUsdcTransfer({
 				to: instructions.depositAddress as `0x${string}`,
 				amountUsd: amount,
 				from: connectedAddress,
+				isActive: () => isCurrentAccount.current,
 			});
 			txSent = true;
 
@@ -255,9 +292,13 @@ export function UnifiedDepositInterface({
 			};
 			// Retain the transaction before the next wallet prompt can fail.
 			if (userId) savePendingDeposit(userId, pendingDeposit);
+			// A wallet prompt may finish after sign-out or navigation. Preserve
+			// the transfer for its owner, but stop before another prompt or API call.
+			if (!isCurrentAccount.current) return;
 			setBroadcastDeposit(pendingDeposit);
 			await registerTransfer(pendingDeposit, challenge);
 		} catch (e) {
+			if (!isCurrentAccount.current) return;
 			const errMsg = e instanceof Error ? e.message : "Deposit failed";
 			// Distinguish a wallet popup rejection (nothing left the account)
 			// from a submission failure after the tx was already broadcast.
@@ -274,15 +315,20 @@ export function UnifiedDepositInterface({
 				toast.error(errMsg);
 				setStep("error");
 			}
+		} finally {
+			endDepositOperation(userId);
+			ownsOperation.current = false;
 		}
 	}, [amountUsd, instructions, connectedAddress, toast, registerTransfer, userId]);
 
 	const handleRetryRegistration = useCallback(async () => {
-		if (!broadcastDeposit) return;
+		if (!isCurrentAccount.current || ownsOperation.current || !broadcastDeposit || !userId) return;
 		if (connectedAddress?.toLowerCase() !== broadcastDeposit.fromAddress.toLowerCase()) {
 			setError("Connect the wallet that sent this transfer before retrying registration.");
 			return;
 		}
+		ownsOperation.current = true;
+		if (!beginDepositOperation(userId)) { ownsOperation.current = false; return; }
 		setError("");
 		setStep("processing");
 		setProcessingStep("Retrying deposit registration…");
@@ -291,14 +337,18 @@ export function UnifiedDepositInterface({
 			// and signature for this same transaction, never another transfer.
 			await registerTransfer(broadcastDeposit);
 		} catch (err) {
+			if (!isCurrentAccount.current) return;
 			setError(
 				err instanceof Error
 					? err.message
 					: "We still could not register this transfer. Please try again in a moment.",
 			);
 			setStep("error");
+		} finally {
+			endDepositOperation(userId);
+			ownsOperation.current = false;
 		}
-	}, [broadcastDeposit, connectedAddress, registerTransfer]);
+	}, [broadcastDeposit, connectedAddress, registerTransfer, userId]);
 
 	const handleReset = () => {
 		setStep("select");

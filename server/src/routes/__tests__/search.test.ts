@@ -32,11 +32,12 @@ vi.mock("../../middleware/rate-limit.js", () => ({
 }));
 
 import { dedupeResults, searchRoutes } from "../search.js";
+import { logger } from "../../lib/logger.js";
 
-function request(path: string) {
+function request(path: string, signal?: AbortSignal) {
 	const app = new Hono();
 	app.route("/", searchRoutes);
-	return app.request(`http://localhost${path}`);
+	return app.request(`http://localhost${path}`, { signal });
 }
 
 function ddgHtmlPage(
@@ -60,6 +61,48 @@ beforeEach(() => {
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
 
 describe("/v1/search", () => {
+	it("does not dispatch a dependency lookup for an already canceled request", async () => {
+		const caller = new AbortController();
+		caller.abort();
+		const response = await request("/v1/search?query=cancel", caller.signal);
+		expect(response.status).toBe(200);
+		expect((await response.json()).results).toEqual([]);
+		expect(state.fetchMock).not.toHaveBeenCalled();
+	});
+
+	it.each(["html", "instant"])("cancels a stalled %s dependency body with its caller and does not start another lookup", async stalled => {
+		vi.useFakeTimers();
+		const warn = vi.spyOn(logger, "warn");
+		const caller = new AbortController();
+		let upstreamSignal: AbortSignal | undefined;
+		let releaseBody!: () => void;
+		state.fetchMock.mockImplementation(async (url: string, init: RequestInit) => {
+			const isHtml = String(url).includes("html.duckduckgo.com");
+			if ((stalled === "html") !== isHtml) return new Response("");
+			upstreamSignal = init.signal ?? undefined;
+			return new Response(new ReadableStream({ start(controller) {
+				releaseBody = () => controller.close();
+				init.signal?.addEventListener("abort", () => controller.error(init.signal?.reason), { once: true });
+			} }));
+		});
+		let response: Response | undefined;
+		const pending = Promise.resolve(request("/v1/search?query=cancel", caller.signal)).then(value => { response = value; });
+		await vi.advanceTimersByTimeAsync(0);
+		caller.abort();
+		await vi.advanceTimersByTimeAsync(0);
+		try {
+			expect(upstreamSignal?.aborted).toBe(true);
+			expect(response?.status).toBe(200);
+			expect(state.fetchMock).toHaveBeenCalledTimes(stalled === "html" ? 1 : 2);
+			expect(vi.getTimerCount()).toBe(0);
+			expect(warn).not.toHaveBeenCalled();
+		} finally {
+			if (!upstreamSignal?.aborted) releaseBody();
+			await pending;
+			warn.mockRestore();
+		}
+	});
+
 	it.each(["html", "instant"])("bounds a stalled %s response body instead of hanging web search", async stalled => {
 		vi.useFakeTimers();
 		let abortBody!: () => void;
@@ -211,9 +254,8 @@ describe("/v1/search", () => {
 	});
 
 	it("returns empty results when every DDG path fails", async () => {
-		// Silence the expected console.error logs for this test
-		const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-		state.fetchMock.mockRejectedValue(new Error("network down"));
+		const warn = vi.spyOn(logger, "warn");
+		state.fetchMock.mockRejectedValue(new Error("network failure at https://html.duckduckgo.com/?q=private-query-value"));
 
 		const res = await request("/v1/search?query=throw");
 		expect(res.status).toBe(200);
@@ -223,7 +265,8 @@ describe("/v1/search", () => {
 		};
 		expect(json.results).toEqual([]);
 		expect(json.provider).toBe("duckduckgo");
-		consoleSpy.mockRestore();
+		expect(JSON.stringify(warn.mock.calls)).not.toContain("private-query-value");
+		warn.mockRestore();
 	});
 
 	it("never calls tinyfish hosts", async () => {

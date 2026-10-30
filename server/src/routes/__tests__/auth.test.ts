@@ -19,6 +19,7 @@
  */
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { Hono } from "hono";
+import { DrizzleQueryError } from "drizzle-orm/errors";
 
 // ─── Mocks ──────────────────────────────────────────────────────────────────
 
@@ -41,10 +42,19 @@ vi.mock("../../lib/logger.js", () => ({
 const mockAuthApi = vi.hoisted(() => ({
 	getSession: vi.fn(),
 }));
-vi.mock("../../auth.js", () => ({
-	auth: { api: mockAuthApi },
-	authBaseURL: "http://localhost:3000",
-}));
+vi.mock("../../auth.js", async () => {
+	const { getCookies } = await import("better-auth/cookies");
+	return {
+		auth: {
+			api: mockAuthApi,
+			$context: Promise.resolve({ authCookies: getCookies({
+				baseURL: "https://www.oma-ai.com",
+				advanced: { cookiePrefix: "oma", useSecureCookies: true, crossSubDomainCookies: { enabled: true, domain: "www.oma-ai.com" } },
+			}) }),
+		},
+		authBaseURL: "http://localhost:3000",
+	};
+});
 
 // Auth middleware mock — sessionAuth sets userId/session/user when authorised.
 vi.mock("../../auth/middleware.js", () => ({
@@ -105,6 +115,7 @@ vi.mock("../../db/schema.js", () => ({
 
 import { authRoutes } from "../auth.js";
 import { auditLog } from "../../middleware/audit.js";
+import { logger } from "../../lib/logger.js";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -154,6 +165,17 @@ describe("auth routes", () => {
 			const data = await res.json();
 			expect(data.id).toBe("u1");
 			expect(data.email).toBe("a@b.com");
+		});
+	});
+
+	describe.each([["get", "/user"], ["delete", "/account"]])("session store outage on %s %s", (method, path) => {
+		it("returns a retryable JSON error without running account mutations", async () => {
+			mockAuthApi.getSession.mockRejectedValueOnce(new Error("session store disconnected"));
+			const response = await authReq(method, path, undefined, authedHeaders);
+			expect(response.status).toBe(503);
+			expect(await response.json()).toMatchObject({ error: { code: "auth_validation_unavailable", type: "service_unavailable" } });
+			expect(mockDb.delete).not.toHaveBeenCalled();
+			expect(auditLog).not.toHaveBeenCalled();
 		});
 	});
 
@@ -377,6 +399,15 @@ describe("auth routes", () => {
 	});
 
 	describe("POST /v1/keys/install", () => {
+		it("returns a retryable error without setting a cookie when key validation is unavailable", async () => {
+			mockValidateApiKey.mockRejectedValueOnce(new DrizzleQueryError("select api_keys", ["oma_sk_valid_key_here"], new Error("key store disconnected")));
+			const response = await authReq("post", "/v1/keys/install", { key: "oma_sk_valid_key_here" }, authedHeaders);
+			expect(response.status).toBe(503);
+			expect(await response.json()).toMatchObject({ error: { type: "service_unavailable", code: "auth_validation_unavailable" } });
+			expect(response.headers.get("Set-Cookie")).toBeNull();
+			expect(JSON.stringify(vi.mocked(logger.error).mock.calls)).not.toContain("oma_sk_valid_key_here");
+		});
+
 		it("rejects missing key with 400", async () => {
 			const res = await authReq("post", "/v1/keys/install", {}, authedHeaders);
 			expect(res.status).toBe(400);
@@ -488,6 +519,13 @@ describe("auth routes", () => {
 				expect.stringMatching(/^oma\.session_token=;.*Max-Age=0/),
 				expect.stringMatching(/^__Secure-oma\.session_token=;.*Max-Age=0/),
 			]));
+			// A host-only tombstone cannot remove Better Auth's deployed domain cookie.
+			for (const name of ["session_token", "session_data", "dont_remember", "account_data"]) {
+				expect(cookies.some(cookie =>
+					cookie.startsWith(`__Secure-oma.${name}=`) && cookie.includes("Domain=www.oma-ai.com") &&
+					cookie.includes("Max-Age=0") && cookie.includes("Path=/"),
+				)).toBe(true);
+			}
 			// ACCOUNT_DELETE_REQUESTED is written before the user row is deleted.
 			expect(auditLog).toHaveBeenCalledWith(
 				expect.objectContaining({ action: "ACCOUNT_DELETE_REQUESTED" }),

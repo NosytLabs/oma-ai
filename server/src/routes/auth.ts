@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { setCookie } from "hono/cookie";
 import type { Context } from "hono";
 import { z } from "zod";
 import { db } from "../db/client.js";
@@ -14,6 +15,7 @@ import { auditLog } from "../middleware/audit.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { sessionAuth } from "../auth/middleware.js";
 import { logger } from "../lib/logger.js";
+import { databaseErrorMetadata } from "../lib/database-error.js";
 import {
 		createApiKey,
 		listApiKeys,
@@ -24,6 +26,7 @@ import {
 		isValidIpOrCidr,
 } from "../auth/api-keys.js";
 import { auth, authBaseURL } from "../auth.js";
+import { isSiweOriginValid } from "../auth/siwe-origin.js";
 import { SESSION_FRESH_AGE_SECONDS } from "../auth/session-policy.js";
 import { config } from "../config.js";
 import type { OmaEnv } from "../types.js";
@@ -41,11 +44,21 @@ export const authRoutes = new Hono<OmaEnv>();
 
 // ─── Session helpers ──────────────────────────────────────────────────────────
 
+function credentialServiceUnavailable(c: Context, error: unknown, operation: string) {
+	logger.error({ operation, error: databaseErrorMetadata(error) }, "[auth] credential storage unavailable");
+	return c.json({ error: { message: "Account services are temporarily unavailable. Please try again shortly.", type: "service_unavailable", code: "auth_validation_unavailable" } }, 503);
+}
+
 /** Pull the Better Auth session from request headers (Hono → fetch). */
 async function getSession(c: Context) {
 		const headers = new Headers();
 		for (const [k, v] of c.req.raw.headers) headers.set(k, v);
-		return auth.api.getSession({ headers });
+		try {
+			return await auth.api.getSession({ headers });
+		} catch (err) {
+			logger.error({ err }, "[auth] session validation failed");
+			return c.json({ error: { message: "Account services are temporarily unavailable. Please try again shortly.", type: "service_unavailable", code: "auth_validation_unavailable" } }, 503);
+		}
 }
 
 // ============================================================
@@ -53,6 +66,7 @@ async function getSession(c: Context) {
 // ============================================================
 authRoutes.get("/user", async (c) => {
 		const session = await getSession(c);
+		if (session instanceof Response) return session;
 		if (!session?.user) {
 			return c.json(
 				{ error: { message: "Unauthorized", type: "authentication_error" } },
@@ -200,6 +214,7 @@ authRoutes.delete(
 		rateLimit({ windowMs: 60_000, maxRequests: 5 }),
 		async (c) => {
 		const session = await getSession(c);
+		if (session instanceof Response) return session;
 		if (!session?.user) {
 				return c.json(
 						{ error: { message: "Unauthorized", type: "authentication_error" } },
@@ -265,8 +280,14 @@ authRoutes.delete(
 		// (cascade) but the cookie would still be sent on subsequent
 		// requests until it expires (7 days).
 		c.header("Set-Cookie", createLogoutCookieHeader());
-		// This custom deletion bypasses Better Auth's logout handler. Expire
-		// its session cookies too, including either environment's cookie name.
+		// Cookie deletion must use the original Domain and Path. Deployed Better
+		// Auth cookies have an explicit domain; host-only tombstones leave them
+		// in the browser even though the database session has been removed.
+		const { authCookies } = await auth.$context;
+		for (const cookie of Object.values(authCookies)) {
+			setCookie(c, cookie.name, "", { ...cookie.attributes, sameSite: "Lax", maxAge: 0 });
+		}
+		// Also clean up host-only cookies left by either local/secure setup.
 		for (const prefix of ["oma.", "__Secure-oma."]) {
 			for (const name of ["session_token", "session_data", "dont_remember"]) {
 				const secure = prefix.startsWith("__Secure-") ? "; Secure" : "";
@@ -445,14 +466,11 @@ authRoutes.delete("/v1/history", sessionAuth, async (c) => {
 						);
 				}
 				const sessionUserId = c.get("userId");
-				let apiKey: Awaited<ReturnType<typeof validateApiKey>> = null;
+				let apiKey: Awaited<ReturnType<typeof validateApiKey>>;
 				try {
 					apiKey = await validateApiKey(parsed.data.key);
 				} catch (error) {
-					logger.warn(
-						{ error },
-						"Failed to validate API key during browser cookie installation",
-					);
+					return credentialServiceUnavailable(c, error, "install-api-key");
 				}
 				const expired =
 					apiKey?.expiresAt != null && new Date(apiKey.expiresAt) < new Date();
@@ -505,6 +523,31 @@ authRoutes.post(
  */
 const ATTACH_WALLET_EXPECTED_DOMAIN = new URL(authBaseURL).host;
 const ATTACH_WALLET_EXPECTED_CHAIN_ID = config.BASE_CHAIN_ID;
+const ATTACH_WALLET_NONCE_PREFIX = "wallet-attach:";
+const ATTACH_WALLET_CHALLENGE_MS = 5 * 60_000;
+
+// Separate from SIWE login: the challenge authorizes binding a wallet to the
+// current account, rather than establishing a session for the wallet's owner.
+authRoutes.post(
+	"/v1/user/attach-wallet/nonce",
+	rateLimit({ windowMs: 60_000, maxRequests: 10, failClosed: true }),
+	sessionAuth,
+	async (c) => {
+		const nonce = crypto.randomUUID().replaceAll("-", "");
+		const expiresAt = new Date(Date.now() + ATTACH_WALLET_CHALLENGE_MS);
+		try {
+			const { internalAdapter } = await auth.$context;
+			await internalAdapter.createVerificationValue({
+				identifier: `${ATTACH_WALLET_NONCE_PREFIX}${nonce}`,
+				value: c.get("userId"), expiresAt,
+			});
+		} catch (error) {
+			return credentialServiceUnavailable(c, error, "create-wallet-challenge");
+		}
+		c.header("Cache-Control", "private, no-store");
+		return c.json({ nonce, expiresAt: expiresAt.toISOString(), domain: ATTACH_WALLET_EXPECTED_DOMAIN, chainId: ATTACH_WALLET_EXPECTED_CHAIN_ID });
+	},
+);
 
 const attachWalletSchema = z.object({
 	message: z.string().min(1),
@@ -548,6 +591,9 @@ authRoutes.post(
 		let checksummed: string;
 		try {
 			const parsedMessage = parseSiweMessage(message);
+			if (!isSiweOriginValid(parsedMessage, authBaseURL)) {
+				throw new SiweVerificationError("Message origin does not match this site", "malformed_message");
+			}
 			assertSelfContainedMessage(
 				parsedMessage,
 				ATTACH_WALLET_EXPECTED_DOMAIN,
@@ -560,6 +606,22 @@ authRoutes.post(
 				);
 			}
 			checksummed = await verifySiweSignature({ address, message, signature });
+			// Consume only after verifying the signed message. Better Auth performs
+			// an atomic delete and expiry check, so concurrent submissions cannot
+			// replay a signature or reuse a login challenge for attachment.
+			if (!parsedMessage.nonce || !/^[a-zA-Z0-9]{8,250}$/.test(parsedMessage.nonce)) {
+				throw new SiweVerificationError("Missing wallet attachment challenge", "malformed_message");
+			}
+			let challenge;
+			try {
+				const { internalAdapter } = await auth.$context;
+				challenge = await internalAdapter.consumeVerificationValue(`${ATTACH_WALLET_NONCE_PREFIX}${parsedMessage.nonce}`);
+			} catch (error) {
+				return credentialServiceUnavailable(c, error, "consume-wallet-challenge");
+			}
+			if (!challenge || challenge.value !== userId) {
+				throw new SiweVerificationError("Invalid wallet attachment challenge", "malformed_message");
+			}
 		} catch (err) {
 			const isVerificationError = err instanceof SiweVerificationError;
 			logger.warn(
@@ -666,12 +728,7 @@ authRoutes.post(
 			return c.json({ success: true, address: checksummed });
 		} catch (err) {
 			// Unique constraint violation is the real safety net.
-			if (
-				err &&
-				typeof err === "object" &&
-				"code" in err &&
-				(err as { code: string }).code === "23505"
-			) {
+			if (databaseErrorMetadata(err).code === "23505") {
 				return c.json(
 					{
 						error: {

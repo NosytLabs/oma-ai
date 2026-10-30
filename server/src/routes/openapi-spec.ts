@@ -679,11 +679,11 @@ for (const [path, item] of Object.entries(spec.paths)) {
    in: "header", name: "Origin", required: false, schema: { type: "string", format: "uri" },
    description: globallyGuarded
  ? "Required unless Referer supplies the allowed website origin, including when a Bearer key is used. Browsers send this automatically. Scripts must send Origin matching the website (production: https://www.oma-ai.com). Missing or disallowed origin returns 403 csrf_error."
- : "Required for session-cookie authentication unless Referer supplies the allowed website origin. Not required for Bearer API-key refunds. Missing or disallowed session origin returns 403 csrf_error.",
+ : "Required whenever cookies accompany the request, including when a Bearer key is selected, unless Referer supplies the allowed website origin. Not required for cookie-free Bearer API-key refunds. Missing or disallowed browser origin returns 403 csrf_error.",
   }];
   if (operation.responses) {
    const existing = operation.responses["403"]?.description;
-   operation.responses["403"] = { ...operation.responses["403"], description: [existing, globallyGuarded ? "Origin/Referer missing or disallowed (csrf_error)" : "Session-cookie Origin/Referer missing or disallowed (csrf_error)"].filter(Boolean).join("; ") };
+   operation.responses["403"] = { ...operation.responses["403"], description: [existing, globallyGuarded ? "Origin/Referer missing or disallowed (csrf_error)" : "Cookie-bearing request Origin/Referer missing or disallowed (csrf_error)"].filter(Boolean).join("; ") };
   }
  }
 }

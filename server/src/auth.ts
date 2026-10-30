@@ -34,6 +34,9 @@ import { config } from "./config.js";
 import { logger } from "./lib/logger.js";
 
 import { getRedisClient } from "./lib/redis-client.js";
+import { shouldUseSecureCookies, resolveTrustedOrigins, resolveAuthBaseURL, isLocalDomain } from "./auth/origins.js";
+import { isSiweOriginValid } from "./auth/siwe-origin.js";
+import { parseSiweMessage } from "./lib/siwe-verify.js";
 import { SESSION_FRESH_AGE_SECONDS } from "./auth/session-policy.js";
 
 const RESEND_FROM = config.RESEND_FROM ?? "OMA-AI <noreply@oma-ai.com>";
@@ -269,112 +272,9 @@ const ensClient = createPublicClient({
 // `staging` was the one that actually shipped — silently defaulted to
 // secure:false on a real HTTPS host. Fail closed instead: anything that
 // is not explicitly local development or test gets Secure cookies.
-export function shouldUseSecureCookies(nodeEnv: string | undefined): boolean {
-	return nodeEnv !== "development" && nodeEnv !== "test";
-}
-
+export { shouldUseSecureCookies, resolveTrustedOrigins, resolveAuthBaseURL } from "./auth/origins.js";
+export type { AuthOriginConfig } from "./auth/origins.js";
 const isSecureCookieEnv = shouldUseSecureCookies(config.NODE_ENV);
-
-/** Environment fields the origin resolvers read. */
-export interface AuthOriginConfig {
-	BETTER_AUTH_URL?: string | undefined;
-	PUBLIC_APP_URL?: string | undefined;
-	PRIMARY_DOMAIN?: string | undefined;
-	NODE_ENV?: string | undefined;
-}
-
-/**
- * Strip scheme, path, port and case from a configured domain.
- *
- * Single source of truth: the trusted-origin list, the auth base URL and the
- * SIWE domain previously each normalized PRIMARY_DOMAIN by hand, and the
- * copies had already drifted (only one of them treated `::1` as local).
- */
-function normalizePrimaryDomain(raw: string | undefined): string {
-	if (!raw?.trim()) return "";
-	try {
-		const value = raw.trim();
-		return new URL(/^https?:\/\//i.test(value) ? value : `https://${value}`).hostname.toLowerCase();
-	} catch {
-		return "";
-	}
-}
-
-/** True when a normalized domain refers to the local machine, not a site. */
-function isLocalDomain(domain: string): boolean {
-	if (!domain) return true;
-	if (domain === "::1" || domain === "[::1]") return true;
-	if (domain === "localhost" || domain.endsWith(".localhost")) return true;
-	if (/^127\./.test(domain)) return true;
-	return false;
-}
-
-/**
- * The canonical public origins for a real domain: apex and www.
- *
- * Deriving these from PRIMARY_DOMAIN is what stops a stale PUBLIC_APP_URL from
- * locking real users out of sign-in (a misconfigured localhost value used to
- * make Better Auth 403 the live site with INVALID_ORIGIN). Only real,
- * non-local domains get fabricated https origins; dev keeps its explicit
- * localhost list below.
- */
-export function resolveTrustedOrigins(input: AuthOriginConfig): string[] {
-	const isProd = shouldUseSecureCookies(input.NODE_ENV);
-	const origins = new Set<string>();
-
-	// The configured app origin (dev/preview/staging deployments).
-	if (input.PUBLIC_APP_URL) {
-		try {
-			const appUrl = new URL(input.PUBLIC_APP_URL);
-			if (["http:", "https:"].includes(appUrl.protocol) && (!isProd || !isLocalDomain(appUrl.hostname))) {
-				origins.add(appUrl.origin);
-			}
-		} catch {
-			// Ignore malformed optional app URLs; PRIMARY_DOMAIN remains canonical.
-		}
-	}
-
-	const domain = normalizePrimaryDomain(input.PRIMARY_DOMAIN);
-	if (isProd && !isLocalDomain(domain)) {
-		const apex = domain.replace(/^www\./, "");
-		origins.add(`https://${apex}`);
-		origins.add(`https://www.${apex}`);
-	}
-
-	// Local dev/preview ports, retained so local sign-in keeps working.
-	// SECURITY (audit): only add localhost when the environment is actually
-	// local (non-secure-cookie env = development/test). Trusting localhost in
-	// production/staging/preview means any process able to serve content on
-	// localhost — or a DNS-rebinding-style host — is a trusted origin for
-	// magic-link, OTP and SIWE endpoints on the live site.
-	if (!isProd) {
-		origins.add("http://localhost:3000");
-		origins.add("http://127.0.0.1:3000");
-		origins.add("http://localhost:3123");
-		origins.add("http://127.0.0.1:3123");
-	}
-
-	return [...origins];
-}
-
-/**
- * The base URL Better Auth uses to build callback URLs (magic-link redirects,
- * email verification links).
- *
- * Must resolve to the SAME canonical origin as resolveTrustedOrigins: if the
- * two disagree, a link can be accepted for sending yet emailed pointing
- * somewhere unusable. In a deployed environment PRIMARY_DOMAIN wins, with
- * OMA's apex normalized to www; explicit custom and preview hosts stay intact.
- */
-export function resolveAuthBaseURL(input: AuthOriginConfig): string {
-	const isProd = shouldUseSecureCookies(input.NODE_ENV);
-	const domain = normalizePrimaryDomain(input.PRIMARY_DOMAIN);
-	if (isProd && !isLocalDomain(domain)) {
-		// Only OMA's apex redirects to www. Keep explicit preview/custom hosts.
-		return `https://${domain === "oma-ai.com" ? "www.oma-ai.com" : domain}`;
-	}
-	return input.BETTER_AUTH_URL ?? input.PUBLIC_APP_URL ?? "http://localhost:3000";
-}
 
 export const authBaseURL = resolveAuthBaseURL(config);
 const authHostname = new URL(authBaseURL).hostname;
@@ -564,14 +464,9 @@ user: {
 				}),
 
 			siwe({
-					// EIP-4361 requires the signed `domain` to equal the configured
-					// one exactly. The client now strips the `www.` prefix (see
-					// app/src/app/login/_components/siwe-domain.ts) so apex and
-					// www collapse to the same canonical form before signing.
-					// Mirror that here: never let the configured domain be
-					// "www.oma-ai.com" while users on "oma-ai.com" get rejected.
-					// EIP-4361 uses the full authority, including a non-default port.
-					domain: new URL(authBaseURL).host.replace(/^www\./, ""),
+					// Match the canonical app authority exactly; www is part of the
+					// wallet request's origin, rather than an interchangeable alias.
+					domain: new URL(authBaseURL).host,
 					emailDomainName: "oma-ai.com",
 						// Wallet-only signups don't need an email. The wallet address is
 						// already a strong identity signal; we attach it to the user row
@@ -582,6 +477,11 @@ user: {
 						},
 						verifyMessage: async ({ message, signature, address }: { message: string; signature: string; address: string }) => {
 							try {
+								const parsedMessage = parseSiweMessage(message);
+								// Better Auth normalizes away paths and nested schemes. The
+								// signed authority itself must equal our canonical host.
+								if (parsedMessage.domain.toLowerCase() !== new URL(authBaseURL).host.toLowerCase() ||
+									!isSiweOriginValid(parsedMessage, authBaseURL)) return false;
 								const valid = await verifyMessage({
 									address: getAddress(address) as `0x${string}`,
 									message,

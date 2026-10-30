@@ -5,6 +5,7 @@ import { useEffect } from "react";
 
 interface UseChatShortcutsOptions {
 	sendMessageRef: RefObject<(prompt?: string) => Promise<void>>;
+	inputRef: RefObject<HTMLTextAreaElement | null>;
 	input: string;
 	loading: boolean;
 	shortcutsOpen: boolean;
@@ -20,6 +21,7 @@ interface UseChatShortcutsOptions {
 /** Chat shortcuts run after focused controls have handled their own keys. */
 export function useChatShortcuts({
 	sendMessageRef,
+	inputRef,
 	input,
 	loading,
 	shortcutsOpen,
@@ -93,6 +95,7 @@ export function useChatShortcuts({
 			}
 
 			if (e[modKey] && e.key === "Enter") {
+				if (e.target !== inputRef.current) return;
 				e.preventDefault();
 				if (input.trim() && !loading) {
 					void sendMessageRef.current();
@@ -109,6 +112,7 @@ export function useChatShortcuts({
 		compareMode,
 		shortcutsOpen,
 		sendMessageRef,
+		inputRef,
 		setShortcutsOpen,
 		setParamsOpen,
 		setCompareMode,

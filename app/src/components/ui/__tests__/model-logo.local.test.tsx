@@ -86,12 +86,11 @@ describe("ModelLogo — locally-vendored dashboard-icons provider marks", () => 
 		expect(container.textContent).toBeTruthy();
 	});
 
-	it("falls back to initials badge for Ethereum (no viewBox attribute)", () => {
+	it("uses initials for Ethereum after omitting the unsuitable upstream tile", () => {
 		const { container } = render(<ModelLogo modelId="ethereum-testnet" />);
-		// ethereum.svg ships with no viewBox attribute; the unwrapped
-		// <path> fills the entire image bounding box and renders as a
-		// stretched-blank diamond at 36×36. The "ethereum" mapping is
-		// intentionally absent.
+		// The former ethereum.svg had no viewBox attribute: its unwrapped
+		// <path> stretched across the image box at 36×36. The unused tile
+		// was removed, and the "ethereum" mapping remains intentionally absent.
 		expect(container.querySelector("img")).toBeNull();
 		expect(container.textContent).toBeTruthy();
 	});

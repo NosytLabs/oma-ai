@@ -52,8 +52,9 @@ export async function proxy(req: NextRequest, options: { websiteChat?: boolean }
 	const headers = new Headers(req.headers);
 	headers.delete("host");
 	headers.delete("X-OMA-Source");
-	if (options.websiteChat) headers.set("X-OMA-Source", "website");
 	applyTrustedProxyHeaders(headers);
+	// This marker belongs to this proxy hop, after filtering client options.
+	if (options.websiteChat) headers.set("X-OMA-Source", "website");
 
 	try {
 		const res = await fetch(url, {

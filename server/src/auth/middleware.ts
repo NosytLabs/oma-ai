@@ -159,13 +159,17 @@ export async function bearerAuth(c: Context<OmaEnv>, next: Next) {
 		let rawKey: string | null = null;
 		let keySource: "authorization" | "x-api-key" | "cookie" | null = null;
 		const authHeader = c.req.header("Authorization");
-		if (authHeader && /^Bearer\s+/i.test(authHeader)) {
-				rawKey = authHeader.replace(/^Bearer\s+/i, "").trim();
-				keySource = "authorization";
+		if (authHeader !== undefined) {
+				// An explicit but unsupported credential must never fall back to a
+				// browser cookie (potentially belonging to a different account).
+				if (/^Bearer\s+/i.test(authHeader)) {
+						rawKey = authHeader.replace(/^Bearer\s+/i, "").trim();
+						keySource = "authorization";
+				}
 		} else {
 				// Anthropic SDK / Claude Code send `x-api-key: sk-…`
 				const xApiKey = c.req.header("x-api-key") ?? c.req.header("X-Api-Key");
-				if (xApiKey?.trim()) {
+				if (xApiKey !== undefined) {
 						rawKey = xApiKey.trim();
 						keySource = "x-api-key";
 				} else {
@@ -302,10 +306,18 @@ export async function bearerAuth(c: Context<OmaEnv>, next: Next) {
 	* via `auth.api.getSession`. Sets the same Hono context keys as bearerAuth
 	* so downstream route handlers don't have to care which path was used.
 	*/
+async function readSession(c: Context<OmaEnv>) {
+		try {
+				return await auth.api.getSession({ headers: c.req.raw.headers });
+		} catch (err) {
+				logger.error({ err }, "[auth] session validation failed");
+				return c.json({ error: { message: "Account services are temporarily unavailable. Please try again shortly.", type: "service_unavailable", code: "auth_validation_unavailable" } }, 503);
+		}
+}
+
 export async function sessionAuth(c: Context<OmaEnv>, next: Next) {
-		const headers = new Headers();
-		for (const [k, v] of c.req.raw.headers) headers.set(k, v);
-		const session = await auth.api.getSession({ headers });
+		const session = await readSession(c);
+		if (session instanceof Response) return session;
 		if (!session?.user) {
 				return c.json(
 						{
@@ -337,10 +349,13 @@ export async function sessionOrBearerAuth(
 		c: Context<OmaEnv>,
 		next: Next,
 ) {
-		// Try session first.
-		const headers = new Headers();
-		for (const [k, v] of c.req.raw.headers) headers.set(k, v);
-		const session = await auth.api.getSession({ headers });
+		// A caller supplying an API key expects that key's owner and restrictions,
+		// even if the same browser also carries a session for another account.
+		if (c.req.header("Authorization") !== undefined || c.req.header("x-api-key") !== undefined) {
+				return bearerAuth(c, next);
+		}
+		const session = await readSession(c);
+		if (session instanceof Response) return session;
 		if (session?.user) {
 				// Keep this branch equivalent to sessionAuth: mixed-auth routes must not
 				// become a suspension bypass just because the caller is using a browser
@@ -365,13 +380,12 @@ export async function sessionOrBearerAuth(
 export async function optionalAuth(c: Context<OmaEnv>, next: Next) {
 	// Explicit credentials must be accepted or rejected, never downgraded to
 	// anonymous free-tier access. Reuse the same expiry, IP and suspension gates.
-	if (c.req.header("Authorization") || c.req.header("x-api-key")) {
+	if (c.req.header("Authorization") !== undefined || c.req.header("x-api-key") !== undefined) {
 		return bearerAuth(c, next);
 	}
 	// Without explicit credentials, website chat may use a session or guest access.
-	const headers = new Headers();
-	for (const [k, v] of c.req.raw.headers) headers.set(k, v);
-	const session = await auth.api.getSession({ headers });
+	const session = await readSession(c);
+	if (session instanceof Response) return session;
 	if (session?.user) {
 		// SECURITY (audit 2026-09-27 / P1): same suspension gate for the
 		// cookie/session path of optionalAuth.

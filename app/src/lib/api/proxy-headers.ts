@@ -1,4 +1,5 @@
 import { isIP } from "node:net";
+import { stripHopByHopHeaders } from "./hop-headers";
 
 /**
  * Request-header trust policy for the Vercel -> backend hop.
@@ -42,10 +43,10 @@ export function getTrustedPlatformIp(headers: Pick<ProxyHeaderSink, "get">): str
 }
 
 /**
- * Apply the authenticated-proxy trust policy to an outgoing header container.
+ * Normalize connection-scoped headers and apply authenticated proxy trust.
  *
- * Order matters: the secret is set AFTER deleting the client forwarding
- * headers so a spoofed value can never survive alongside it.
+ * Order matters: capture platform identity before filtering, then set server
+ * credentials AFTER stripping Connection options and client forwarding fields.
  */
 export function applyTrustedProxyHeaders(headers: ProxyHeaderSink): void {
 	// Vercel supplies this header from its edge connection; local/custom
@@ -53,6 +54,7 @@ export function applyTrustedProxyHeaders(headers: ProxyHeaderSink): void {
 	// Read before deletion so both chat/quota and auth use the same visitor
 	// identity rather than a changing Vercel egress address.
 	const platformIp = getTrustedPlatformIp(headers);
+	stripHopByHopHeaders(headers);
 	// Runtime provenance headers must never originate from a website visitor.
 	for (const name of [...headers.keys()]) {
 		if (name.toLowerCase().startsWith("x-neon-")) headers.delete(name);

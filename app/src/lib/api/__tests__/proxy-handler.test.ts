@@ -6,6 +6,44 @@ import { proxy } from "../proxy-handler";
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.restoreAllMocks(); });
 
 describe("gateway proxy cancellation", () => {
+	it("strips transport and Connection-nominated request headers before fetch", async () => {
+		const fetchMock = vi.fn().mockResolvedValue(Response.json({ ok: true }));
+		vi.stubGlobal("fetch", fetchMock);
+		const response = await proxy(new NextRequest("https://www.oma-ai.com/api/v1/chat/completions", {
+			method: "POST", body: "{\"model\":\"test\"}", headers: {
+				connection: "keep-alive, X-Transport-Only", "x-transport-only": "private-hop",
+				"transfer-encoding": "chunked", "keep-alive": "timeout=5", "proxy-connection": "keep-alive",
+				te: "trailers", trailer: "x-checksum", upgrade: "websocket",
+				"proxy-authorization": "Basic transport", "proxy-authenticate": "Basic realm=transport",
+				authorization: "Bearer oma_sk_valid", cookie: "oma.session_token=session", origin: "https://www.oma-ai.com",
+			},
+		}));
+		expect(response.status).toBe(200);
+		const headers = fetchMock.mock.calls[0][1].headers as Headers;
+		for (const name of ["connection", "x-transport-only", "transfer-encoding", "keep-alive", "proxy-connection", "te", "trailer", "upgrade", "proxy-authorization", "proxy-authenticate"]) expect(headers.has(name)).toBe(false);
+		expect(headers.get("authorization")).toBe("Bearer oma_sk_valid");
+		expect(headers.get("cookie")).toBe("oma.session_token=session");
+		expect(headers.get("origin")).toBe("https://www.oma-ai.com");
+		expect(await new Response(fetchMock.mock.calls[0][1].body).text()).toBe("{\"model\":\"test\"}");
+	});
+
+	it("reapplies authenticated proxy identity and website sponsorship after hop filtering", async () => {
+		vi.stubEnv("VERCEL", "1");
+		vi.stubEnv("INTERNAL_PROXY_SECRET", "server-owned-secret");
+		const fetchMock = vi.fn().mockResolvedValue(Response.json({}));
+		vi.stubGlobal("fetch", fetchMock);
+		await proxy(new NextRequest("https://www.oma-ai.com/api/chat/completions", { method: "POST", headers: {
+			origin: "https://www.oma-ai.com", "sec-fetch-site": "same-origin",
+			connection: "x-oma-proxy-secret, x-vercel-forwarded-for, x-oma-source, x-caller-hop",
+			"x-oma-proxy-secret": "visitor-owned", "x-vercel-forwarded-for": "203.0.113.42", "x-caller-hop": "drop",
+		} }), { websiteChat: true });
+		const headers = fetchMock.mock.calls[0][1].headers as Headers;
+		expect(headers.get("x-oma-proxy-secret")).toBe("server-owned-secret");
+		expect(headers.get("x-vercel-forwarded-for")).toBe("203.0.113.42");
+		expect(headers.get("x-oma-source")).toBe("website");
+		expect(headers.has("x-caller-hop")).toBe(false);
+	});
+
 	it.each([
 		["/api/webhook/polar", "/api/webhook/polar"],
 		["/api/webhooks/polar", "/webhooks/polar"],

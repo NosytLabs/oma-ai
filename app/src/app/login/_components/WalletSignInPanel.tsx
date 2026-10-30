@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import {
@@ -14,46 +14,23 @@ import {
 import { resolveSiweDomain } from "./siwe-domain";
 import { safeLoginNext } from "@/lib/login-href";
 
-/**
- * The SIWE `domain` in the signed message MUST equal the host the server's
- * better-auth instance checks against.
- *
- * Sign from the host the browser is ACTUALLY on. Previously this preferred
- * NEXT_PUBLIC_APP_URL, which Next inlines at BUILD time — so the shipped
- * bundle could disagree with the live host (it carried "oma-ai.com" while
- * the site is served from www.oma-ai.com). better-auth then rejected the
- * message with "SIWE message does not match the expected nonce, domain,
- * address, or chain ID" and wallet sign-in never created an account.
- *
- * `window.location.host` is the single source of truth for what the user is
- * looking at; production redirects the apex to the server's canonical www
- * host before sign-in. The logic lives in
- * `./siwe-domain` so it is unit-testable without rendering this component.
- */
-const SIWE_DOMAIN = resolveSiweDomain();
-
-/**
- * Wait until the server actually reports an authenticated session.
- *
- * better-auth's siwe.verify resolves as soon as its fetch returns; the
- * Set-Cookie it carries is committed by the browser independently. A
- * client-side navigation issued in the same tick can therefore arrive before
- * the cookie is visible, and the destination renders signed-out. This polls
- * get-session briefly rather than assuming success, then forces a full page
- * load so navigation can never race the cookie again.
- *
- * Throws if no session appears, so the caller surfaces a real error instead
- * of silently dropping the visitor on a signed-out page.
- */
-async function confirmSession(timeoutMs = 4000): Promise<void> {
+/** Confirm the newly verified identity through the browser's session cookie. */
+async function confirmSession(userId: string, signal: AbortSignal, isActive: () => boolean, timeoutMs = 4000): Promise<void> {
 	const deadline = Date.now() + timeoutMs;
 	// getSession() is relative to the same-origin auth proxy by default.
-	while (Date.now() < deadline) {
+	while (Date.now() < deadline && isActive()) {
 		try {
-			const { data } = await authClient.getSession({ fetchOptions: { cache: "no-store" } });
-			if (data?.user) {
-				// Cookie is confirmed. A hard navigation guarantees it is
-				// applied on the next render, with no client-cache to rehydrate.
+			const { data } = await authClient.getSession({
+				query: { disableCookieCache: true },
+				fetchOptions: {
+					cache: "no-store",
+					// Keep the deadline active through response-body parsing too.
+					signal: AbortSignal.any([signal, AbortSignal.timeout(Math.max(1, deadline - Date.now()))]),
+				},
+			});
+			if (!isActive()) return;
+			if (data?.user?.id === userId) {
+				// Reload the authenticated app instead of preserving stale client state.
 				window.location.assign(
 					safeLoginNext(new URLSearchParams(window.location.search).get("next")),
 				);
@@ -62,8 +39,16 @@ async function confirmSession(timeoutMs = 4000): Promise<void> {
 		} catch {
 			// Transient: retry until the deadline.
 		}
-		await new Promise((resolve) => setTimeout(resolve, 250));
+		if (!isActive()) return;
+		const remaining = deadline - Date.now();
+		if (remaining > 0) await new Promise<void>(resolve => {
+			const done = () => { clearTimeout(timer); signal.removeEventListener("abort", done); resolve(); };
+			const timer = setTimeout(done, Math.min(250, remaining));
+			signal.addEventListener("abort", done, { once: true });
+			if (signal.aborted) done();
+		});
 	}
+	if (!isActive()) return;
 	throw new Error(
 		"Signed, but the session did not persist. Please try again — if this repeats, use the magic link.",
 	);
@@ -88,58 +73,83 @@ export default function WalletSignInPanel({
 }: WalletSignInPanelProps) {
 	const [wallets, setWallets] = useState<DiscoveredWallet[]>([]);
 	// Which wallet row the visitor actually clicked. `submitting` alone is
-	// shared across every row and tab, so without this every button claims to
+	// shared across every wallet row, so without this every button claims to
 	// be connecting while a single popup is open.
 	const [pendingWalletId, setPendingWalletId] = useState<string | undefined>(undefined);
+	const attemptRef = useRef<AbortController | null>(null);
 	useEffect(() => subscribeWallets(() => setWallets(listWallets())), []);
+	useEffect(() => () => {
+		const attempt = attemptRef.current;
+		if (!attempt) return;
+		attemptRef.current = null;
+		// A dispatched wallet prompt cannot be dismissed programmatically.
+		// Ignore its eventual result and stop any remaining HTTP/polling work.
+		attempt.abort();
+		setSubmitting(false);
+	}, [setSubmitting]);
 
 	const handleSiwe = useCallback(async (walletId?: string) => {
+		if (submitting || attemptRef.current) return;
+		const attempt = new AbortController();
+		attemptRef.current = attempt;
+		const isActive = () => attemptRef.current === attempt;
 		setPendingWalletId(walletId);
 		setSubmitting(true);
 		try {
-			const wallet = await connectWallet(walletId);
-			await ensureBaseChain();
+			const wallet = await connectWallet(walletId, isActive);
+			if (!isActive()) return;
+			await ensureBaseChain(isActive);
+			if (!isActive()) return;
 
-			const nonceResp = await authClient.siwe.nonce({});
+			const nonceResp = await authClient.siwe.nonce({}, { signal: attempt.signal });
+			if (!isActive()) return;
 			if (!nonceResp.data?.nonce) {
 				throw new Error(
 					nonceResp.error?.message ?? "Failed to get SIWE nonce from server",
 				);
 			}
 
+			const domain = resolveSiweDomain();
 			const { message, signature } = await signSiweMessage(
 				wallet.address,
 				nonceResp.data.nonce,
-				SIWE_DOMAIN,
+				domain,
+				window.location.origin,
+				isActive,
 			);
+			if (!isActive()) return;
 
 			const verifyResp = await authClient.siwe.verify({
 				message,
 				signature,
-			});
+			}, { signal: attempt.signal });
+			if (!isActive()) return;
 			if (verifyResp.error) {
 				throw new Error(verifyResp.error.message ?? "Signature verification failed");
 			}
-
-			// `siwe.verify` is a fetch, so the Set-Cookie lands asynchronously.
-			// A client-side router.replace() can win that race and land on
-			// /dashboard before the browser has committed the session, which
-			// renders "SIGN IN REQUIRED" and looks like sign-in silently failed.
-			// The magic-link path never hit this because it redirects through
-			// callbackURL, i.e. a full page load, so the cookie is always set.
-			//
-			// Confirm the session actually exists before navigating.
-			// On success confirmSession() performs the hard navigation itself,
-			// so it never returns here; only the throw path falls through.
-			await confirmSession();
-			onSuccess("Wallet connected");
+			if (!verifyResp.data?.success || !verifyResp.data.user?.id) {
+				throw new Error("Wallet verification did not return an account. Please try again.");
+			}
+			await confirmSession(verifyResp.data.user.id, attempt.signal, isActive);
+			if (isActive()) onSuccess("Wallet connected");
 		} catch (err) {
-			onError(err, "Wallet sign-in failed");
+			if (!isActive()) return;
+			const details = err && typeof err === "object" ? err as { code?: unknown; message?: unknown } : undefined;
+			const error = Number(details?.code) === 4001
+				? new Error("Wallet request canceled. You can try again when ready.")
+				: Number(details?.code) === -32002
+					? new Error("A wallet request is already open. Check your wallet before trying again.")
+					: err instanceof Error ? err
+						: new Error(typeof details?.message === "string" ? details.message : "Wallet sign-in failed");
+			onError(error, "Wallet sign-in failed");
 		} finally {
-			setSubmitting(false);
-			setPendingWalletId(undefined);
+			if (isActive()) {
+				attemptRef.current = null;
+				setSubmitting(false);
+				setPendingWalletId(undefined);
+			}
 		}
-	}, [onError, onSuccess, setSubmitting]);
+	}, [onError, onSuccess, setSubmitting, submitting]);
 
 	return (
 		<div className="space-y-3 animate-fade-in">
@@ -148,7 +158,7 @@ export default function WalletSignInPanel({
 				(EIP-4361). No transaction — just a signature.
 			</p>
 			<p className="text-[11px] text-text-muted">
-				No wallet yet? This creates your account and binds it to your
+				New to OMA? Signing in creates an account linked to your wallet
 				address.
 			</p>
 			{wallets.length > 1 ? (
@@ -203,9 +213,8 @@ export default function WalletSignInPanel({
 				<div className="rounded-[var(--radius-lg)] border border-border/60 bg-surface/40 p-4 text-sm">
 					<p className="font-semibold text-text-primary">No wallet extension detected</p>
 					<p className="mt-1 text-xs text-text-muted">
-						SIWE needs an EIP-1193 provider. Install one, or use the magic
-						link instead — it needs no extension and creates the same
-						account.
+						Install a browser wallet, or use an email magic link to sign
+						in without an extension.
 					</p>
 					<ul className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs">
 						<li>

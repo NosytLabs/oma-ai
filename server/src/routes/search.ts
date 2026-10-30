@@ -81,7 +81,8 @@ async function fetchWithTimeout<T>(
 	const controller = new AbortController();
 	const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 	try {
-		const response = await fetch(url, { ...init, signal: controller.signal });
+		const signal = init.signal ? AbortSignal.any([init.signal, controller.signal]) : controller.signal;
+		const response = await fetch(url, { ...init, signal });
 		return await read(response);
 	} finally {
 		clearTimeout(timer);
@@ -114,10 +115,12 @@ export function dedupeResults(results: SearchResult[]): SearchResult[] {
 	*/
 async function searchDuckDuckGoHtml(
 	query: string,
+	signal: AbortSignal,
 ): Promise<SearchResult[]> {
 	const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
 	const html = await fetchWithTimeout(url, {
 		method: "GET",
+		signal,
 		headers: {
 			Accept: "text/html",
 			"User-Agent": DDG_UA,
@@ -173,9 +176,11 @@ async function searchDuckDuckGoHtml(
 /** DuckDuckGo Instant Answer API (no key) — abstract + RelatedTopics. */
 async function searchDuckDuckGoInstant(
 	query: string,
+	signal: AbortSignal,
 ): Promise<SearchResult[]> {
 	const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`;
 	const data = (await fetchWithTimeout(url, {
+		signal,
 		headers: { Accept: "application/json", "User-Agent": DDG_UA },
 	}, async resp => {
 		if (!resp.ok) {
@@ -237,24 +242,28 @@ async function searchDuckDuckGoInstant(
 	* DuckDuckGo-only search. HTML first, Instant Answer if empty.
 	* Exported for unit tests with mocked fetch.
 	*/
-async function runWebSearch(query: string): Promise<{
+async function runWebSearch(query: string, signal: AbortSignal): Promise<{
 	results: SearchResult[];
 	provider: "duckduckgo";
 }> {
+	if (signal.aborted) return { results: [], provider: "duckduckgo" };
 	try {
-		const html = await searchDuckDuckGoHtml(query);
+		const html = await searchDuckDuckGoHtml(query, signal);
+		if (signal.aborted) return { results: [], provider: "duckduckgo" };
 		if (html.length > 0) {
 			return { results: html, provider: "duckduckgo" };
 		}
-	} catch (err) {
-		logger.warn({ err }, "[search] ddg-html failed — trying instant answer");
+	} catch {
+		if (signal.aborted) return { results: [], provider: "duckduckgo" };
+		logger.warn("[search] ddg-html failed — trying instant answer");
 	}
 
 	try {
-		const instant = await searchDuckDuckGoInstant(query);
+		const instant = await searchDuckDuckGoInstant(query, signal);
+		if (signal.aborted) return { results: [], provider: "duckduckgo" };
 		return { results: instant, provider: "duckduckgo" };
-	} catch (err) {
-		logger.warn({ err }, "[search] ddg-instant failed");
+	} catch {
+		if (!signal.aborted) logger.warn("[search] ddg-instant failed");
 		return { results: [], provider: "duckduckgo" };
 	}
 }
@@ -275,11 +284,11 @@ searchRoutes.get("/v1/search", async (c) => {
 	const { query } = parsed.data;
 
 	try {
-		const { results, provider } = await runWebSearch(query);
+		const { results, provider } = await runWebSearch(query, c.req.raw.signal);
 		c.header("X-Search-Provider", provider);
 		return c.json({ query, results, provider });
-	} catch (err) {
-		logger.warn({ err }, "[search] unexpected failure");
+	} catch {
+		if (!c.req.raw.signal.aborted) logger.warn("[search] unexpected failure");
 		c.header("X-Search-Provider", "duckduckgo");
 		return c.json({ query, results: [], provider: "duckduckgo" as const });
 	}

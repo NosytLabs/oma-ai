@@ -39,7 +39,7 @@ function NavbarContent({ search }: { search: string }) {
 	useEffect(() => {
 		setMobileOpen(false);
 		setToolsOpen(false);
-	}, [pathname, search]);
+	}, [pathname, search, user?.id]);
 
 	useEffect(() => {
 		const media = window.matchMedia("(min-width: 1024px)");
@@ -80,7 +80,7 @@ function NavbarContent({ search }: { search: string }) {
 					{isPending ? (
 						<div className="h-10 w-20 animate-pulse rounded-sm border border-border bg-surface" aria-label="Loading account" role="status" />
 					) : isConnected ? (
-						<NavbarUserMenu evmAddress={evmAddress} email={user?.email ?? null} onSignOut={() => signOut({ callbackURL: "/" })} />
+						<NavbarUserMenu key={user?.id ?? "account"} evmAddress={evmAddress} email={user?.email ?? null} onSignOut={() => signOut({ callbackURL: "/" })} />
 					) : (
 						<Link href={loginHref} onClick={() => saveChatDraftForSignIn()} aria-label="Sign in or create an account" className="btn-mono btn-primary inline-flex px-3 text-xs sm:px-4">Sign in</Link>
 					)}
@@ -90,7 +90,7 @@ function NavbarContent({ search }: { search: string }) {
 						{mobileOpen ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
 					</button>
 				</div>
-				<NavbarMobileMenu open={mobileOpen} onOpenChange={setMobileOpen} toggleRef={mobileToggleRef} isConnected={isConnected} loginHref={loginHref} onDisconnect={() => signOut({ callbackURL: "/" })} />
+				<NavbarMobileMenu key={user?.id ?? "guest"} open={mobileOpen} onOpenChange={setMobileOpen} toggleRef={mobileToggleRef} isConnected={isConnected} loginHref={loginHref} onDisconnect={() => signOut({ callbackURL: "/" })} />
 			</nav>
 		</header>
 	);

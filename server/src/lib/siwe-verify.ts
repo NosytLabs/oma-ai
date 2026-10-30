@@ -10,9 +10,8 @@
  *
  * What this does NOT do: nonce, domain, or expiry validation. Those are
  * better-auth's job for the sign-in path (it issued the nonce and owns the
- * session). The attach endpoint deliberately does not accept a better-auth
- * nonce at all — see `assertSelfContainedMessage` below — so the two concerns
- * stay separated rather than being half-implemented twice.
+ * session). The attach endpoint consumes a separate, account-bound challenge
+ * after signature verification; a login nonce cannot authorize attachment.
  */
 import { verifyMessage, getAddress } from "viem";
 import { logger } from "./logger.js";
@@ -27,8 +26,12 @@ const NUMERIC_FIELD = /^\d{1,78}$/;
 /** The SIWE fields this codebase reads off a signed message. */
 export interface ParsedSiweMessage {
 	domain: string;
+	scheme: string | null;
+	uri: string | null;
 	address: string;
 	chainId: number;
+	/** Server-issued challenge; its purpose and owner are checked by the route. */
+	nonce: string | null;
 	/** ISO-8601 expiry, or null when the message carries no expiration. */
 	expirationTime: string | null;
 }
@@ -64,7 +67,7 @@ export function parseSiweMessage(message: string): ParsedSiweMessage {
 	// The first line is "<domain> wants you to sign in with your Ethereum account:"
 	const header = message.split("\n", 1)[0] ?? "";
 	const headerMatch =
-		/^(?<domain>\S+) wants you to sign in with your Ethereum account:$/.exec(
+		/^(?:(?<scheme>[a-zA-Z][a-zA-Z0-9+.-]*):\/\/)?(?<domain>\S+) wants you to sign in with your Ethereum account:$/.exec(
 			header.trim(),
 		);
 	if (!headerMatch?.groups?.domain) {
@@ -88,8 +91,13 @@ export function parseSiweMessage(message: string): ParsedSiweMessage {
 
 	let chainId: number | null = null;
 	let expirationTime: string | null = null;
+	let nonce: string | null = null;
+	let uri: string | null = null;
 	for (const line of lines.slice(2)) {
-		if (line.startsWith("Chain ID: ")) {
+		if (line.startsWith("URI: ")) {
+			if (uri !== null) throw new SiweVerificationError("Duplicate URI", "malformed_message");
+			uri = line.slice("URI: ".length);
+		} else if (line.startsWith("Chain ID: ")) {
 			const raw = line.slice("Chain ID: ".length).trim();
 			if (!NUMERIC_FIELD.test(raw)) {
 				throw new SiweVerificationError("Malformed Chain ID", "bad_chain");
@@ -97,16 +105,21 @@ export function parseSiweMessage(message: string): ParsedSiweMessage {
 			chainId = Number(raw);
 		} else if (line.startsWith("Expiration Time: ")) {
 			expirationTime = line.slice("Expiration Time: ".length).trim();
+		} else if (line.startsWith("Nonce: ")) {
+			nonce = line.slice("Nonce: ".length).trim();
 		}
 	}
 
 	return {
 		domain: headerMatch.groups.domain,
+		scheme: headerMatch.groups.scheme ?? null,
+		uri,
 		address,
 		// A message with no Chain ID line is not usable for binding: we record
 		// wallet_address.chain_id and must not guess it from config.
 		chainId: chainId ?? Number.NaN,
 		expirationTime,
+		nonce,
 	};
 }
 

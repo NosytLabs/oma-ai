@@ -9,6 +9,7 @@ import assert from "node:assert/strict";
 import { randomBytes, createHash } from "node:crypto";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
+import { stopAuthTestProcess } from "./auth-test-process.mjs";
 import { createServer } from "node:net";
 import { createServer as createHttpServer } from "node:http";
 import { userInfo } from "node:os";
@@ -21,6 +22,7 @@ import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { createSiweMessage } from "viem/siwe";
 import { writeFile } from "node:fs/promises";
 import { stripVTControlCharacters } from "node:util";
+import { FIXED_WINDOW_SCRIPT } from "../src/middleware/rate-limit/lua-scripts.ts";
 
 const serverDir = fileURLToPath(new URL("../", import.meta.url));
 const adminUrl = new URL(process.env.AUTH_TEST_POSTGRES_URL ??
@@ -43,6 +45,36 @@ let providerAutoRelease = false;
 let lastProviderRequest;
 let publicSpec;
 const publicObservations = [];
+// Wallet attachment deliberately fails closed without distributed limiting.
+// Keep Redis unavailable for the outage checks, then use a bounded local REST
+// fixture for the final auth flow. Auth, signatures and PostgreSQL stay real.
+let redisFixtureReady = false;
+const redisCounters = new Map();
+const redisFixture = createHttpServer(async (req, res) => {
+	res.setHeader("Content-Type", "application/json");
+	if (!redisFixtureReady) { res.writeHead(503); res.end(JSON.stringify({ error: "Local Redis fixture is unavailable" })); return; }
+	try {
+		assert.equal(req.headers.authorization, "Bearer isolated-local-redis-fixture");
+		let text = ""; for await (const chunk of req) text += chunk;
+		const input = JSON.parse(text);
+		const execute = command => {
+			if (String(command[0]).toLowerCase() === "ping") return { result: "PONG" };
+			assert.equal(String(command[0]).toLowerCase(), "eval", "Unexpected Redis command in wallet auth fixture");
+			assert.equal(command[1], FIXED_WINDOW_SCRIPT, "Only the real fixed-window limiter script is supported");
+			assert.equal(Number(command[2]), 1);
+			const [, , , key, rawWindow, rawLimit] = command;
+			const now = Date.now(); const windowMs = Number(rawWindow); const limit = Number(rawLimit);
+			assert.ok(windowMs > 0 && limit > 0);
+			let counter = redisCounters.get(key);
+			if (!counter || counter.expiresAt <= now) { counter = { count: 0, expiresAt: now + windowMs }; redisCounters.set(key, counter); }
+			counter.count++;
+			return { result: [counter.count <= limit ? 1 : 0, counter.count, counter.expiresAt - now] };
+		};
+		res.end(JSON.stringify(Array.isArray(input[0]) ? input.map(execute) : execute(input)));
+	} catch (error) {
+		res.writeHead(400); res.end(JSON.stringify({ error: error.message }));
+	}
+});
 const provider = createHttpServer(async (req, res) => {
 	let body = ""; for await (const chunk of req) body += chunk;
 	const input = JSON.parse(body); lastProviderRequest = input; providerCalls++; providerEntered?.();
@@ -159,7 +191,8 @@ async function deliverySince(offset, expression) {
 async function magicSignIn(email) {
 	const offset = logs.length;
 	await request("/api/auth/sign-in/magic-link", {
-		method: "POST", body: { email, name: "Integration User", callbackURL: `${origin}/settings` },
+		method: "POST", body: { email, name: "Integration User", callbackURL: `${origin}/settings`,
+			errorCallbackURL: `${origin}/login?${new URLSearchParams({ method: "magic", next: "/settings" })}` },
 	});
 	const url = new URL(await deliverySince(offset, /magicLink:\s*"([^"]+)"/));
 	const token = url.searchParams.get("token");
@@ -192,6 +225,7 @@ async function assertSignedOut(cookie) {
 try {
 	provider.listen(0, "127.0.0.1"); await once(provider, "listening");
 	const providerOrigin = `http://127.0.0.1:${provider.address().port}`;
+	redisFixture.listen(0, "127.0.0.1"); await once(redisFixture, "listening");
 	await admin.query(`CREATE DATABASE "${databaseName}"`);
 	databaseCreated = true;
 	pool = new pg.Pool({ connectionString: databaseUrl.toString() });
@@ -218,6 +252,8 @@ try {
 			PUBLIC_API_URL: origin,
 			CORS_ORIGIN: origin,
 			ETH_RPC_URL: "http://127.0.0.1:1",
+			UPSTASH_REDIS_REST_URL: `http://127.0.0.1:${redisFixture.address().port}`,
+			UPSTASH_REDIS_REST_TOKEN: "isolated-local-redis-fixture",
 			LOG_LEVEL: "info",
 			OTEL_SDK_DISABLED: "true",
 			VENICE_API_URL: providerOrigin,
@@ -291,8 +327,30 @@ try {
 	const balance = await pool.query("SELECT balance_cents FROM credit_balances WHERE user_id = $1", [profile.id]);
 	assert.equal(Number(balance.rows[0].balance_cents), 100);
 	const replay = await request(first.path, { expected: 302 });
-	assert.match(replay.response.headers.get("location"), /error=INVALID_TOKEN/);
-	assert.doesNotMatch(replay.cookie, /session_token=[^;]/);
+	const assertMagicErrorReturn = (result) => {
+		const target = new URL(result.response.headers.get("location"));
+		assert.equal(target.origin, origin);
+		assert.equal(target.pathname, "/login");
+		assert.equal(target.searchParams.get("method"), "magic");
+		assert.equal(target.searchParams.get("next"), "/settings");
+		assert.equal(target.searchParams.get("error"), "INVALID_TOKEN");
+		assert.doesNotMatch(result.cookie, /session_token=[^;]/);
+	};
+	assertMagicErrorReturn(replay);
+	const expiredMagicToken = randomBytes(24).toString("hex");
+	await pool.query("INSERT INTO verification(id,identifier,value,expires_at) VALUES($1,$2,$3,now()-interval '1 second')", [
+		"expired-magic-link-fixture",
+		`magic-link:${createHash("sha256").update(expiredMagicToken).digest("base64url")}`,
+		JSON.stringify({ type: "magic-link", email: "expired-link@local.test" }),
+	]);
+	for (const token of ["unknown-magic-link-fixture", expiredMagicToken]) {
+		const failedLink = new URL(first.path, origin);
+		failedLink.searchParams.set("token", token);
+		assertMagicErrorReturn(await request(`${failedLink.pathname}${failedLink.search}`, { cookie: first.cookie, expected: 302 }));
+	}
+	assert.equal((await request("/api/auth/get-session", { cookie: first.cookie })).data.user.id, profile.id,
+		"A failed magic link must preserve the previous session without claiming a new sign-in");
+	pass("invalid, expired and consumed magic links return to sign-in with a safe next and preserve the previous session");
 	pass("magic-link signup creates a verified user and one trial grant; used links are rejected");
 	const accountBalance = await request("/v1/balance", { cookie: first.cookie });
 	assert.equal(accountBalance.data.userId, profile.id); assert.equal(Number(accountBalance.data.balanceCents), 100);
@@ -360,6 +418,7 @@ try {
 	await request("/v1/chat/completions", { method: "POST", headers: keyHeaders, expected: 401, body: { model: "minimax-m2-7", messages: [{ role: "user", content: "Expired key check" }], max_tokens: 16 } });
 	await request(`/v1/keys/${scopedKey.id}`, { method: "DELETE", cookie: first.cookie });
 	await request("/v1/usage", { headers: keyHeaders, expected: 401 });
+	await request("/v1/usage", { cookie: first.cookie, headers: keyHeaders, expected: 401 });
 	pass("API keys require a session to mint, persist expiry/scope, deny unauthorized models on both APIs and reject expired or revoked credentials");
 
 	const localKey = (await request("/v1/keys", { method: "POST", cookie: first.cookie, body: { name: "Local IP restriction", ipAllowlist: [" 127.0.0.1/32 ", "::1/128", "127.0.0.1/32"] } })).data;
@@ -383,10 +442,20 @@ try {
 	 VALUES ($1, 'usdc_direct', 25, 2500, 'completed'), ($2, 'usdc_direct', 50, 5000, 'pending') RETURNING id, user_id`, [profile.id, otherProfile.id])).rows;
 	const ownDepositId = privateDeposits.find(deposit => deposit.user_id === profile.id).id;
 	const otherDepositId = privateDeposits.find(deposit => deposit.user_id === otherProfile.id).id;
+	for (const headers of [otherHeaders, { "x-api-key": otherKey.key }]) {
+		const mixed = (await request("/v1/deposit/status", { cookie: first.cookie, headers })).data.deposits;
+		assert.ok(mixed.some(deposit => deposit.id === otherDepositId));
+		assert.ok(!mixed.some(deposit => deposit.id === ownDepositId));
+	}
+	for (const headers of [{ Authorization: "Basic rejected" }, { "x-api-key": "" }]) {
+		await request("/v1/usage", { cookie: first.cookie, headers, expected: 401 });
+	}
+	pass("mixed credentials honor the explicit API key's account and reject revoked, empty or unsupported credentials despite a valid session");
 	for (const headers of [{}, otherHeaders]) {
-		const ownDeposits = (await request(`/v1/deposit/status?userId=${otherProfile.id}`, { cookie: first.cookie, headers })).data.deposits;
-		assert.deepEqual(ownDeposits.map(deposit => deposit.id), [ownDepositId]);
-		assert.equal(Number(ownDeposits[0].amountUsd), 25, "Payment history amounts are dollars, not cents");
+		const explicitKey = Boolean(headers.Authorization);
+		const ownDeposits = (await request(`/v1/deposit/status?userId=${explicitKey ? profile.id : otherProfile.id}`, { cookie: first.cookie, headers })).data.deposits;
+		assert.deepEqual(ownDeposits.map(deposit => deposit.id), [explicitKey ? otherDepositId : ownDepositId]);
+		assert.equal(Number(ownDeposits[0].amountUsd), explicitKey ? 50 : 25, "Payment history amounts are dollars, not cents");
 	}
 	assert.deepEqual((await request("/v1/deposit/status", { headers: otherHeaders })).data.deposits.map(deposit => deposit.id), [otherDepositId]);
 	await request("/v1/deposit/status", { expected: 401 });
@@ -408,7 +477,7 @@ try {
 	}
 	assert.equal((await request(`/v1/usage?model=${encodeURIComponent("' OR 1=1 --")}`, { cookie: first.cookie })).data.data.length, 0, "SQL-like filter text remains a literal model filter");
 	await request(`/v1/usage?api_key_id=${encodeURIComponent("' OR 1=1 --")}`, { cookie: first.cookie, expected: 400 });
-	assert.equal((await request("/v1/usage", { cookie: first.cookie, headers: otherHeaders })).data.data.length, 0, "Mixed-auth usage must resolve to the browser session owner");
+	assert.equal((await request("/v1/usage", { cookie: first.cookie, headers: otherHeaders })).data.data[0].requestId, "cross-account-private", "Mixed-auth usage must resolve to the explicit key owner");
 	assert.equal((await request("/v1/usage", { headers: otherHeaders })).data.data[0].requestId, "cross-account-private");
 	const isolatedExport = (await request(`/v1/export/account?userId=${otherProfile.id}`, { cookie: first.cookie })).data;
 	assert.equal(isolatedExport.profile.id, profile.id);
@@ -814,7 +883,7 @@ try {
 	const wallet = privateKeyToAccount(generatePrivateKey());
 	const nonce = (await request("/api/auth/siwe/nonce", { method: "POST", body: {} })).data.nonce;
 	const message = createSiweMessage({
-		address: wallet.address, chainId: 8453, domain: new URL(origin).host,
+		address: wallet.address, scheme: "http", chainId: 8453, domain: new URL(origin).host,
 		nonce, uri: origin, version: "1", statement: "Sign in to OMA AI.",
 	});
 	const signature = await wallet.signMessage({ message });
@@ -822,6 +891,68 @@ try {
 	assert.equal((await request("/user", { cookie: walletSession.cookie })).data.evmAddress, wallet.address);
 	await request("/api/auth/siwe/verify", { method: "POST", body: { message, signature }, expected: 401 });
 	pass("SIWE verifies a real local signature, binds the wallet, and rejects nonce replay");
+
+	const attachOwner = await magicSignIn("attach-owner@local.test");
+	const attachOther = await magicSignIn("attach-other@local.test");
+	const attachOwnerId = (await request("/user", { cookie: attachOwner.cookie })).data.id;
+	const attachWallet = privateKeyToAccount(generatePrivateKey());
+	redisFixtureReady = true;
+	const redisRecoveryDeadline = Date.now() + 35_000;
+	while (true) {
+		const readiness = await fetch(`${origin}/ready`, { signal: AbortSignal.timeout(20_000) });
+		await readiness.arrayBuffer();
+		if (readiness.ok) break;
+		assert.ok(Date.now() < redisRecoveryDeadline, "The local Redis REST fixture did not become ready");
+		await delay(250);
+	}
+	async function attachmentBody(challenge) {
+		const message = createSiweMessage({ address: attachWallet.address, scheme: "http", chainId: challenge.chainId, domain: challenge.domain,
+			nonce: challenge.nonce, uri: origin, version: "1" });
+		return { address: attachWallet.address, message, signature: await attachWallet.signMessage({ message }) };
+	}
+	async function attachmentChallenge() {
+		return (await request("/v1/user/attach-wallet/nonce", { method: "POST", cookie: attachOwner.cookie, body: {} })).data;
+	}
+	await request("/v1/user/attach-wallet/nonce", { method: "POST", body: {}, expected: 401 });
+	const staleBody = await attachmentBody({ nonce: "oldsignature123", chainId: 8453, domain: new URL(origin).host });
+	for (const path of ["/v1/user/attach-wallet/nonce", "/v1/user/attach-wallet"]) {
+		for (const Origin of ["", "https://untrusted.example"]) {
+			await request(path, { method: "POST", cookie: attachOwner.cookie,
+				body: path.endsWith("/nonce") ? {} : staleBody, headers: { Origin }, expected: 403 });
+		}
+	}
+	await request("/v1/user/attach-wallet", { method: "POST", cookie: attachOwner.cookie, body: staleBody, expected: 400 });
+	const wrongPurposeNonce = (await request("/api/auth/siwe/nonce", { method: "POST", body: {} })).data.nonce;
+	await request("/v1/user/attach-wallet", { method: "POST", cookie: attachOwner.cookie,
+		body: await attachmentBody({ nonce: wrongPurposeNonce, chainId: 8453, domain: new URL(origin).host }), expected: 400 });
+	const crossAccount = await attachmentChallenge();
+	await request("/v1/user/attach-wallet", { method: "POST", cookie: attachOther.cookie, body: await attachmentBody(crossAccount), expected: 400 });
+	const expiredAttach = await attachmentChallenge();
+	await pool.query("UPDATE verification SET expires_at=now()-interval '1 second' WHERE identifier=$1", [`wallet-attach:${expiredAttach.nonce}`]);
+	await request("/v1/user/attach-wallet", { method: "POST", cookie: attachOwner.cookie, body: await attachmentBody(expiredAttach), expected: 400 });
+	assert.equal((await pool.query("SELECT 1 FROM wallet_address WHERE address=$1", [attachWallet.address])).rowCount, 0);
+	const validAttach = await attachmentChallenge();
+	assert.equal(validAttach.domain, new URL(origin).host);
+	assert.equal(validAttach.chainId, 8453);
+	const signedAttach = await attachmentBody(validAttach);
+	// Bypass the helper's single-status assertion for this deliberate race.
+	const concurrentAttach = await Promise.all([1, 2].map(() => fetch(`${origin}/v1/user/attach-wallet`, {
+		method: "POST", headers: { Origin: origin, Cookie: attachOwner.cookie, "Content-Type": "application/json" }, body: JSON.stringify(signedAttach), signal: AbortSignal.timeout(20_000),
+	})));
+	assert.deepEqual(concurrentAttach.map(response => response.status).sort(), [200, 400]);
+	for (const response of concurrentAttach) await response.arrayBuffer();
+	await request("/v1/user/attach-wallet", { method: "POST", cookie: attachOwner.cookie, body: signedAttach, expected: 400 });
+	const attached = await pool.query("SELECT user_id, chain_id FROM wallet_address WHERE address=$1", [attachWallet.address]);
+	assert.equal(attached.rowCount, 1); assert.equal(attached.rows[0].user_id, attachOwnerId); assert.equal(attached.rows[0].chain_id, 8453);
+	assert.equal((await request("/user", { cookie: attachOwner.cookie })).data.evmAddress, attachWallet.address);
+	pass("wallet attachment binds a fresh single-use account/purpose challenge and rejects stale, expired, cross-account and concurrent replay signatures");
+	const attachedLoginNonce = (await request("/api/auth/siwe/nonce", { method: "POST", body: {} })).data.nonce;
+	const attachedLogin = await attachmentBody({ nonce: attachedLoginNonce, domain: validAttach.domain, chainId: validAttach.chainId });
+	const attachedSession = await request("/api/auth/siwe/verify", { method: "POST", body: { message: attachedLogin.message, signature: attachedLogin.signature } });
+	assert.equal(attachedSession.data.user.id, attachOwnerId);
+	assert.equal((await request("/user", { cookie: attachedSession.cookie })).data.id, attachOwnerId);
+	assert.equal((await pool.query('SELECT count(*)::int AS count FROM "user" WHERE evm_address=$1', [attachWallet.address])).rows[0].count, 1);
+	pass("email signup followed by wallet attachment and SIWE sign-in keeps the same account and verified wallet");
 
 	const seeder = spawn(process.execPath, ["scripts/seed-test-auth.mjs"], {
 		cwd: serverDir,
@@ -849,12 +980,13 @@ try {
 	console.log(`All ${passed} real auth integration checks passed.`);
 } finally {
 	providerRelease?.(); provider.closeAllConnections(); await new Promise(resolve => provider.close(resolve));
-	if (backend && backend.exitCode === null) {
-		const stopped = once(backend, "exit");
-		backend.kill("SIGTERM");
-		await stopped;
+	try {
+		await stopAuthTestProcess(backend);
+	} finally {
+		// A shutdown error must not skip the remaining isolated fixture cleanup.
+		redisFixture.closeAllConnections(); await new Promise(resolve => redisFixture.close(resolve));
+		if (pool) await pool.end();
+		if (databaseCreated) await admin.query(`DROP DATABASE "${databaseName}" WITH (FORCE)`);
+		await admin.end();
 	}
-	if (pool) await pool.end();
-	if (databaseCreated) await admin.query(`DROP DATABASE "${databaseName}" WITH (FORCE)`);
-	await admin.end();
 }

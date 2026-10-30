@@ -23,6 +23,16 @@ function buildApp(extraHandler?: (c: any) => any) {
 }
 
 describe("demoModeGuard", () => {
+	it.each(["%", "%E0%A4%A", "%FF"])("does not turn malformed demo-cookie encoding %s into a protected mutation failure", async value => {
+		const app = new Hono<OmaEnv>();
+		app.use("/v1/*", demoModeGuard);
+		// This auxiliary display cookie cannot authenticate the request.
+		app.post("/v1/protected", c => c.json({ error: "Authentication required" }, 401));
+		const response = await app.request("/v1/protected", { method: "POST", headers: { cookie: `oma-demo=${value}` } });
+		expect(response.status).toBe(401);
+		expect(await response.json()).toEqual({ error: "Authentication required" });
+	});
+
 	// `logger` is a module singleton — re-spying in beforeEach without
 	// restoring the previous spy would chain them, so we install the
 	// spy once and `mockClear` its call log between tests.

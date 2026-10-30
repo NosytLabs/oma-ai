@@ -30,6 +30,17 @@ beforeEach(async () => {
 afterEach(() => vi.useRealTimers());
 
 describe("Redis dependency recovery", () => {
+	it("reports disconnected when Redis credentials are missing", async () => {
+		const token = mocks.config.UPSTASH_REDIS_REST_TOKEN;
+		mocks.config.UPSTASH_REDIS_REST_TOKEN = "";
+		try {
+			expect(await redisHealthCheck()).toEqual({ status: "disconnected" });
+			expect(mocks.ping).not.toHaveBeenCalled();
+		} finally {
+			mocks.config.UPSTASH_REDIS_REST_TOKEN = token;
+		}
+	});
+
 	it("retries a transient startup failure after a cooldown and returns a healthy client", async () => {
 		mocks.ping.mockRejectedValueOnce(new Error("fetch failed"));
 		expect(await getRedisClient()).toBeNull();

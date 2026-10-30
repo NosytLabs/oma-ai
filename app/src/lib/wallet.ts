@@ -155,7 +155,8 @@ export interface WalletState {
  * `listWallets()` when several extensions are installed. Returns the first
  * authorized address.
  */
-export async function connectWallet(walletId?: string): Promise<WalletState> {
+export async function connectWallet(walletId?: string, isActive?: () => boolean): Promise<WalletState> {
+	requireActiveOperation(isActive);
 	const wallets = listWallets();
 	const chosen = walletId
 		? wallets.find((wallet) => wallet.id === walletId)
@@ -168,10 +169,12 @@ export async function connectWallet(walletId?: string): Promise<WalletState> {
 	const accounts = (await chosen.provider.request({
 		method: "eth_requestAccounts",
 	})) as string[];
+	requireActiveOperation(isActive);
 	if (!accounts || accounts.length === 0) {
 		throw new Error("Wallet returned no accounts — user rejected the request");
 	}
 	const chainIdHex = (await chosen.provider.request({ method: "eth_chainId" })) as string;
+	requireActiveOperation(isActive);
 	const chainId = Number.parseInt(chainIdHex, 16);
 	// Normalize to EIP-55 checksum case. Some wallets return all-lowercase
 	// accounts, which the `siwe` package rejects at message build time
@@ -187,13 +190,24 @@ export async function connectWallet(walletId?: string): Promise<WalletState> {
 	return { address, chainId };
 }
 
-function viemWalletClient(): WalletClient {
+function requireActiveOperation(isActive?: () => boolean): void {
+	if (isActive && !isActive()) throw new Error("This wallet request is no longer active.");
+}
+
+function guardedProvider(eth: Eip1193Provider, isActive?: () => boolean): Eip1193Provider {
+	return { request: (args) => {
+		requireActiveOperation(isActive);
+		return eth.request(args);
+	} };
+}
+
+function viemWalletClient(isActive?: () => boolean): WalletClient {
 	const eth = getProvider();
 	if (!eth) throw new Error("No wallet available");
 	return createWalletClient({
 		chain: base,
 		// A wallet prompt must be explicitly retried by the user, never automatically.
-		transport: custom(eth as never, { retryCount: 0 }),
+		transport: custom(guardedProvider(eth, isActive) as never, { retryCount: 0 }),
 	});
 }
 
@@ -206,8 +220,10 @@ export async function signSiweMessage(
 	address: `0x${string}`,
 	nonce: string,
 	domain: string,
+	uri = `https://${domain}`,
+	isActive?: () => boolean,
 ): Promise<{ message: string; signature: string }> {
-	const client = viemWalletClient();
+	requireActiveOperation(isActive);
 	// Defensive: callers may pass a raw (lowercase) account. SIWE requires
 	// EIP-55 checksum case on the address line — normalize before building.
 	let checksummed: `0x${string}`;
@@ -216,11 +232,21 @@ export async function signSiweMessage(
 	} catch {
 		throw new Error("Wallet returned a malformed address — please try a different account");
 	}
+	// Network/permission prompts can change the selected account after connect.
+	// Do not ask the wallet to sign a stale identity or move to another provider.
+	const provider = getProvider();
+	await requireSendingAccount(checksummed);
+	requireActiveOperation(isActive);
+	if (getProvider() !== provider) throw new Error("Wallet changed. Reconnect the original wallet and try again.");
+	const client = viemWalletClient(isActive);
 	const message = new SiweMessage({
+		// An omitted EIP-4361 scheme means HTTPS, including on localhost.
+		// State the requesting URI's scheme so HTTP development stays explicit.
+		scheme: new URL(uri).protocol.slice(0, -1),
 		domain,
 		address: checksummed,
 		statement: "Sign in to OMA AI",
-		uri: `https://${domain}`,
+		uri,
 		version: "1",
 		chainId: OMA_CHAIN_ID,
 		nonce,
@@ -293,17 +319,19 @@ export function subscribeWalletAccount(listener: (address: `0x${string}` | null)
 async function requireSendingAccount(address: `0x${string}`): Promise<void> {
 	const current = await getConnectedAccount();
 	if (!current || current.toLowerCase() !== address.toLowerCase()) {
-		throw new Error("Wallet account changed. Reconnect the original sending wallet and try again.");
+		throw new Error("Wallet account changed. Reconnect the original wallet and try again.");
 	}
 }
 
 /** Switches the connected wallet to Base mainnet, prompting when needed. */
-export async function ensureBaseChain(): Promise<void> {
+export async function ensureBaseChain(isActive?: () => boolean): Promise<void> {
+	requireActiveOperation(isActive);
 	const eth = getProvider();
 	if (!eth) {
 		throw new Error(NO_WALLET);
 	}
 	const hex = (await eth.request({ method: "eth_chainId" })) as string;
+	requireActiveOperation(isActive);
 	if (Number.parseInt(hex, 16) === OMA_CHAIN_ID) return;
 	try {
 		await eth.request({
@@ -315,6 +343,7 @@ export async function ensureBaseChain(): Promise<void> {
 			`Switch your wallet to Base mainnet (chain id ${OMA_CHAIN_ID}) and try again.`,
 		);
 	}
+	requireActiveOperation(isActive);
 }
 
 const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as const;
@@ -348,9 +377,12 @@ export async function signDepositMessage(args: {
 	depositAddress: string;
 	txHash?: string;
 	amountUsd?: number | string;
+	isActive?: () => boolean;
 }): Promise<string> {
+	requireActiveOperation(args.isActive);
 	await requireSendingAccount(args.fromAddress);
-	const client = viemWalletClient();
+	requireActiveOperation(args.isActive);
+	const client = viemWalletClient(args.isActive);
 	const message = buildDepositSignMessage({
 		fromAddress: args.fromAddress,
 		challengeToken: args.challengeToken,
@@ -386,10 +418,12 @@ export async function sendUsdcTransfer({
 	to,
 	amountUsd,
 	from,
+	isActive,
 }: {
 	to: `0x${string}`;
 	amountUsd: number;
 	from: `0x${string}`;
+	isActive?: () => boolean;
 }): Promise<{ txHash: `0x${string}` }> {
 	// Never round a customer's transfer upward or silently send zero USDC.
 	const decimal = String(amountUsd);
@@ -401,14 +435,17 @@ export async function sendUsdcTransfer({
 	if (!eth) {
 		throw new Error(NO_WALLET);
 	}
+	requireActiveOperation(isActive);
 	await requireSendingAccount(from);
-	await ensureBaseChain();
+	requireActiveOperation(isActive);
+	await ensureBaseChain(isActive);
 	// A chain-switch prompt can also change the wallet's selected account.
 	await requireSendingAccount(from);
+	requireActiveOperation(isActive);
 	if (getProvider() !== eth) throw new Error("Wallet changed. Reconnect the original sending wallet and try again.");
 	const client = createWalletClient({
 		chain: base,
-		transport: custom(eth as never, { retryCount: 0 }),
+		transport: custom(guardedProvider(eth, isActive) as never, { retryCount: 0 }),
 	});
 	const txHash = await client.sendTransaction({
 		account: from,

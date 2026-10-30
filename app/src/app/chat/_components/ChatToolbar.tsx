@@ -37,6 +37,7 @@ interface ChatToolbarProps {
 	searching: boolean;
 	isAuthenticated: boolean;
 	balance: BalanceResponse | null;
+	balanceLoading: boolean;
 	balanceDollars: number;
 	isLowBalance: boolean;
 	compareMode: boolean;
@@ -57,7 +58,7 @@ interface ChatToolbarProps {
 
 export function ChatToolbar({
 	model, setModel, paramsOpen, setParamsOpen, searching,
-	isAuthenticated, balance, balanceDollars, isLowBalance, compareMode,
+	isAuthenticated, balance, balanceLoading, balanceDollars, isLowBalance, compareMode,
 	setCompareMode, modelLinkStatus, copyModelLink, exportConversation,
 	importConversation, newConversation, clearChat, messagesLength,
 	deferredMessages, setShortcutsOpen, loading = false, historyOpen = false,
@@ -153,7 +154,11 @@ export function ChatToolbar({
 					<Link href="/deposit" aria-label={`Credit balance: ${Math.round(parseFloat(balance.balanceCents))} credits. Add credits.`} data-state={isLowBalance ? "low" : "ok"} className={`${toolbarButtonClass} hidden sm:inline-flex data-[state=low]:!border-warning/40 data-[state=low]:!bg-warning/10 data-[state=low]:!text-warning`} title="Add credits">
 						{isLowBalance ? <AlertTriangle className={iconClass} /> : <Coins className={iconClass} />}<span className="text-xs tabular-nums">{formatCreditsShort(balanceDollars)}</span>
 					</Link>
-				) : <span className={`${toolbarButtonClass} hidden opacity-60 sm:inline-flex`} aria-label="Loading credit balance"><Coins className={iconClass} /><span>…</span></span>
+				) : balanceLoading ? (
+					<span className={`${toolbarButtonClass} hidden opacity-60 sm:inline-flex`} aria-label="Loading credit balance"><Coins className={iconClass} /><span>…</span></span>
+				) : (
+					<Link href="/deposit" aria-label="Credit balance unavailable. Add credits." className={`${toolbarButtonClass} hidden sm:inline-flex`} title="Balance unavailable; add credits"><Coins className={iconClass} /><span className="text-xs">Balance unavailable</span></Link>
+				)
 			)}
 			{newConversation && (
 				<button type="button" onClick={newConversation} disabled={loading} aria-label="New conversation" title={loading ? "Stop the response before starting a new conversation" : "New conversation"} className={toolbarButtonClass}>

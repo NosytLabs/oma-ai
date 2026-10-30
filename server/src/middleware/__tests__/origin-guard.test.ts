@@ -1,13 +1,19 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { originGuard } from "../origin-guard.js";
+
+const originConfig = vi.hoisted(() => ({
+	NODE_ENV: "test", PUBLIC_APP_URL: "http://localhost:3000", PRIMARY_DOMAIN: "localhost",
+}));
+vi.mock("../../config.js", () => ({ config: originConfig }));
+beforeEach(() => Object.assign(originConfig, {	NODE_ENV: "test", PUBLIC_APP_URL: "http://localhost:3000", PRIMARY_DOMAIN: "localhost" }));
 
 const APP = "https://oma-ai.com";
 
-function ctx(method: string, headers: Record<string, string>) {
+function ctx(method: string, headers: Record<string, string>, env: Record<string, string> = { PUBLIC_APP_URL: APP }) {
 	const h = { ...headers };
 	return {
 		req: { method, header: (k: string) => h[k.toLowerCase()] },
-		env: { PUBLIC_APP_URL: APP },
+		env,
 		header: () => {},
 		json: (_b: unknown, status: number) => ({ status }),
 	} as never;
@@ -16,6 +22,20 @@ function ctx(method: string, headers: Record<string, string>) {
 const next = async () => {};
 
 describe("originGuard", () => {
+	it("uses the parsed local default when PUBLIC_APP_URL is absent from the request environment", async () => {
+		await expect(originGuard()(ctx("POST", { origin: "http://localhost:3000" }, {}), next)).resolves.toBeUndefined();
+	});
+
+	it("accepts the canonical deployed origin when PUBLIC_APP_URL is stale localhost", async () => {
+		Object.assign(originConfig, { NODE_ENV: "production", PRIMARY_DOMAIN: "oma-ai.com" });
+		await expect(originGuard()(ctx("POST", { origin: "https://www.oma-ai.com" }, {}), next)).resolves.toBeUndefined();
+	});
+
+	it("rejects stale localhost origins on a deployed domain", async () => {
+		Object.assign(originConfig, { NODE_ENV: "production", PRIMARY_DOMAIN: "oma-ai.com" });
+		expect(await originGuard()(ctx("POST", { origin: "http://localhost:3000" }, { PUBLIC_APP_URL: "http://localhost:3000" }), next)).toMatchObject({ status: 403 });
+	});
+
 	it("passes same-origin mutations", async () => {
 		const mw = originGuard();
 		await expect(mw(ctx("POST", { origin: APP }), next)).resolves.toBeUndefined();
