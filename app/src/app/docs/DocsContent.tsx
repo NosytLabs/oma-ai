@@ -349,7 +349,14 @@ export function DocsContent() {
 				<Section id="quickstart" title="Quick start">
 					<ol className="list-decimal space-y-2 pl-5">
 						<li id="qs-step-key">
-							Sign in, then create and save an API key in the dashboard.
+							Sign in, then create and save an{" "}
+							<Link
+								href="/glossary/api-key"
+								className="text-accent underline underline-offset-2 hover:text-accent/80"
+							>
+								API key
+							</Link>{" "}
+							in the dashboard.
 						</li>
 						<li id="qs-step-request">
 							Add prepaid credits using an available method on Buy credits.
@@ -380,7 +387,14 @@ export function DocsContent() {
 						another API key.
 					</p>
 					<p id="auth-magic">
-						Email sign-in uses a magic link.{" "}
+						Email sign-in uses a{" "}
+						<Link
+							href="/glossary/magic-link"
+							className="text-accent underline underline-offset-2 hover:text-accent/80"
+						>
+							magic link
+						</Link>
+						.{" "}
 						<span id="auth-wallet">
 							Wallet sign-in uses SIWE. Account, key-management and x402
 							settlement routes require the session cookie specified in the
@@ -681,21 +695,34 @@ export function DocsContent() {
 						differ.
 					</p>
 					<dl id="err-common" className="grid gap-3 sm:grid-cols-2">
-						{[
-							["400", "Invalid JSON, parameters or context/output budget."],
+						{(
 							[
-								"401 / 403",
-								"Missing credentials, invalid credentials or restricted access.",
-							],
-							["402", "Insufficient spendable credits."],
-							["404", "Unknown model or route."],
-							["409", "Retry-key or payment reconciliation conflict."],
-							["429", "Rate or daily limit reached."],
-							["502 / 504", "Provider or transport failure, or timeout."],
-							["503", "Required service, model or funding method unavailable."],
-						].map(([status, text]) => (
+								["400", "Invalid JSON, parameters or context/output budget."],
+								[
+									"401 / 403",
+									"Missing credentials, invalid credentials or restricted access.",
+								],
+								["402", "Insufficient spendable credits.", "/glossary/http-status-402"],
+								["404", "Unknown model or route."],
+								["409", "Retry-key or payment reconciliation conflict."],
+								["429", "Rate or daily limit reached."],
+								["502 / 504", "Provider or transport failure, or timeout."],
+								["503", "Required service, model or funding method unavailable."],
+							] as [string, string, string?][]
+						).map(([status, text, glossary]) => (
 							<div key={status}>
-								<dt className="font-mono text-accent">{status}</dt>
+								<dt className="font-mono text-accent">
+									{glossary ? (
+										<Link
+											href={glossary}
+											className="underline underline-offset-2 hover:text-accent/80"
+										>
+											{status}
+										</Link>
+									) : (
+										status
+									)}
+								</dt>
 								<dd>{text}</dd>
 							</div>
 						))}
