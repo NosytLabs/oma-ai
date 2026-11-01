@@ -1,10 +1,15 @@
-import test from "node:test";
+import nodeTest from "node:test";
 import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+
+// Every test in this file drives the POSIX shell script scripts/dev/start-dev.sh with
+// /bin/sh mocks (curl, lsof, sleep). Windows has no such script runtime, so the suite is
+// POSIX-only; CI runs it on ubuntu.
+const test = process.platform === "win32" ? nodeTest.skip : nodeTest;
 
 const script = fileURLToPath(new URL("./start-dev.sh", import.meta.url));
 

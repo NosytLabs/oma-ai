@@ -46,7 +46,16 @@ test("does not wait for a past exit when the auth-test child was already signale
 	assert.equal(await withinDeadline(stopAuthTestProcess(child, { graceMs: 50 }), t.signal), "stopped");
 });
 
-test("bounds shutdown when the auth-test child ignores SIGTERM", { timeout: 5000 }, async t => {
+test("bounds shutdown when the auth-test child ignores SIGTERM", {
+	timeout: 5000,
+	// Windows has no catchable SIGTERM: child.kill("SIGTERM") maps to TerminateProcess, so the
+	// child's handler never runs and the process dies at the first signal. The SIGKILL
+	// escalation this test exercises is therefore unreachable there, and CI on ubuntu is
+	// where that path stays covered.
+	skip: process.platform === "win32"
+		? "Windows cannot catch SIGTERM, so the SIGKILL escalation path is unreachable"
+		: false,
+}, async t => {
 	const child = await startChild(t, "process.on('SIGTERM', () => {}); console.log('ready'); setInterval(() => {}, 1000)", true);
 	assert.equal(await withinDeadline(stopAuthTestProcess(child, { graceMs: 50 }), t.signal), "stopped");
 	assert.equal(child.signalCode, "SIGKILL");
