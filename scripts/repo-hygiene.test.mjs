@@ -11,6 +11,12 @@ function fixture(t) {
   const root = mkdtempSync(join(tmpdir(), "oma-hygiene-"));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   execFileSync("git", ["init", "--quiet", root]);
+  // Keep the fixture hermetic. Without this the developer's own global excludes file
+  // (core.excludesFile) leaks into the fixture repo, and a global "*.log" or ".cache/"
+  // rule makes `git add` reject fixture paths. That fails this suite on any developer
+  // machine that has such a rule, while CI on ubuntu (no global excludes) passes.
+  execFileSync("git", ["-C", root, "config", "core.excludesFile", join(root, ".git", "no-global-excludes")]);
+  execFileSync("git", ["-C", root, "config", "core.attributesFile", join(root, ".git", "no-global-attributes")]);
   return root;
 }
 
@@ -108,7 +114,14 @@ test("hygiene distinguishes scratch files from maintained docs, migrations and p
   ]) assert.ok(!isTransientPath(path), path);
 });
 
-test("hygiene CLI rejects force-added ignored files, including paths with newlines", (t) => {
+test("hygiene CLI rejects force-added ignored files, including paths with newlines", {
+	// Windows cannot create a filename containing a newline - writeFileSync fails with ENOENT -
+	// so the fixture itself cannot be built there. The CLI's newline handling stays covered by
+	// CI on ubuntu.
+	skip: process.platform === "win32"
+		? "Windows cannot create a filename containing a newline"
+		: false,
+}, (t) => {
   const root = fixture(t);
   mkdirSync(join(root, "scripts"));
   for (const file of ["check-repo-hygiene.mjs", "repo-hygiene.mjs"]) {
