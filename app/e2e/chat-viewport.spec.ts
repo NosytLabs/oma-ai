@@ -32,7 +32,7 @@ async function expectNoDocumentOverflow(page: Page) {
  * viewport, the document never overflows, and no consent banner is mounted
  * (the GA4 tag must not reintroduce a bottom overlay).
  */
-async function expectInsideViewport(page: Page, control: Locator, label: string) {
+async function expectInsideViewport(_page: Page, control: Locator, label: string) {
 	await expect(control, `${label} must be visible`).toBeVisible();
 	await expect(control, `${label} must be inside the viewport`).toBeInViewport();
 }

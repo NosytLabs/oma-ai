@@ -28,7 +28,7 @@ interface TransferEvent {
 }
 
 export async function processTransfer(
-		client: DepositRecoveryClient,
+		_client: DepositRecoveryClient,
 		event: TransferEvent,
 		depositAddress: string,
 ): Promise<void> {
