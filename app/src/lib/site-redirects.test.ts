@@ -57,17 +57,36 @@ describe("SITE_REDIRECTS (shipped next.config source)", () => {
 		expect(bySource["/account"]).toBe("/settings");
 		expect(bySource["/api-keys"]).toBe("/dashboard?tab=api-keys");
 	});
+
+	// AUDIT 2026-11-01 (GSC, 90d): Google still had these three URLs in its
+	// index and still earned impressions on them, but the pages were removed
+	// and answered 404 — burning an impression Google had already paid for.
+	// Each must now 301 to a live page.
+	it("maps URLs Google still indexes to live pages instead of 404", () => {
+		const bySource = Object.fromEntries(
+			SITE_REDIRECTS.map((r) => [r.source, r.destination]),
+		);
+		expect(bySource["/changelog"]).toBe("/");
+		expect(bySource["/mcps"]).toBe("/glossary/mcp");
+		expect(bySource["/glossary/a2a"]).toBe("/glossary");
+	});
 });
 
 describe("sitemap excludes removed marketing routes", () => {
 	it("does not list any REMOVED_PUBLIC_PATHS URL", async () => {
 		const urls = (await sitemap()).map((e) => e.url);
 		for (const path of REMOVED_PUBLIC_PATHS) {
-			const hit = urls.some(
-				(u) =>
-					u === `https://oma-ai.com${path}` ||
-					u.startsWith(`https://oma-ai.com${path}/`),
-			);
+			// AUDIT 2026-11-01: this comparison was VACUOUS. It built the
+			// comparison URL as `https://oma-ai.com${path}`, but the sitemap
+			// emits SITE_URL = "https://www.oma-ai.com". The `www.` prefix
+			// made every `===`/`startsWith` false, so the test passed for
+			// EVERY path regardless of whether the sitemap listed it — it
+			// could not fail. Normalize both sides (same regex the
+			// seo-infrastructure test uses) so the guard actually guards.
+			const hit = urls.some((u) => {
+				const p = u.replace(/^https:\/\/(www\.)?oma-ai\.com/, "");
+				return p === path || p.startsWith(`${path}/`);
+			});
 			expect(hit, `sitemap still lists ${path}`).toBe(false);
 		}
 	});

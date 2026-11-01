@@ -54,6 +54,25 @@ export const SITE_REDIRECTS: readonly SiteRedirect[] = [
 	// Internal motion/design-system reference page removed — point at docs.
 	{ source: "/design", destination: "/docs" },
 	{ source: "/design/:path*", destination: "/docs" },
+	// AUDIT 2026-11-01 (GSC, 90d): these three URLs are still IN Google's
+	// index and still earning impressions, but the pages were removed and
+	// answer 404. Each 404 wastes an impression Google already paid to
+	// earn — measured 38 impressions over 90d on the property.
+	//
+	//   /changelog     27 impr, avg pos 4.7 — ranks for the BRAND queries
+	//                  ("ai oma" pos 9.5, "oma ai" pos 9, "oma ia" pos 8)
+	//                  while the homepage already ranks "oma ai" at pos 2.4.
+	//                  The impressions are for the homepage's own query, so
+	//                  they belong on the homepage: 301 → "/".
+	//   /mcps          6 impr, avg pos 4.0 — the retired "MCP Marketplace".
+	//                  The live MCP reference page is the glossary entry.
+	//   /glossary/a2a  5 impr, pos 7.4 for "what is a2a" — the A2A glossary
+	//                  entry was retired in 50e4824b (the slug no longer
+	//                  exists in GLOSSARY_SLUGS, so /glossary/[slug] 404s).
+	//                  The glossary index is the live page for it.
+	{ source: "/changelog", destination: "/" },
+	{ source: "/mcps", destination: "/glossary/mcp" },
+	{ source: "/glossary/a2a", destination: "/glossary" },
 ] as const;
 
 /** Exact legacy paths that must never appear as live sitemap URLs. */
@@ -83,4 +102,10 @@ export const REMOVED_PUBLIC_PATHS = [
 	"/api-keys",
 	"/aup",
 	"/design",
+	// AUDIT 2026-11-01: still indexed by Google, but the pages were removed.
+	// Listed here so the sitemap can never re-add them AND so
+	// site-redirects.test.ts enforces a permanent mapping for each.
+	"/changelog",
+	"/mcps",
+	"/glossary/a2a",
 ] as const;
