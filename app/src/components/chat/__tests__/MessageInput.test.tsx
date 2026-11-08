@@ -157,6 +157,33 @@ describe("MessageInput", () => {
 		expect(screen.getByRole("textbox")).toBeDisabled();
 	});
 
+	it("names the stop button after the request phase when one is known", () => {
+		const { unmount } = render(
+			<MessageInput
+				input=""
+				setInput={noop}
+				onSubmit={noop}
+				onStop={noop}
+				loading={true}
+				requestPhase="sending"
+			/>,
+		);
+		expect(screen.getByRole("button", { name: /stop waiting for the response/i })).toBeInTheDocument();
+		unmount();
+
+		render(
+			<MessageInput
+				input=""
+				setInput={noop}
+				onSubmit={noop}
+				onStop={noop}
+				loading={true}
+				requestPhase="streaming"
+			/>,
+		);
+		expect(screen.getByRole("button", { name: /stop generating/i })).toBeInTheDocument();
+	});
+
 	it("toggles web search when setWebSearchEnabled is provided", () => {
 		const setWebSearchEnabled = vi.fn();
 		render(

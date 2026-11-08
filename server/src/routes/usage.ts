@@ -6,6 +6,8 @@ import type { OmaEnv } from "../types.js";
 import { sessionOrBearerAuth } from "../auth/middleware.js";
 import { db } from "../db/client.js";
 import { usageRecords } from "../db/schema.js";
+import { normalizeUsageStatus } from "../lib/usage-status.js";
+import { logger } from "../lib/logger.js";
 
 export const usageRoutes = new Hono<OmaEnv>();
 const timestamp = z.string().datetime({ offset: true });
@@ -64,6 +66,8 @@ usageRoutes.get("/v1/usage", sessionOrBearerAuth, async (c) => {
 		object: "list",
 		data: data.map(({ cursorAt: _cursorAt, ...r }) => ({
 			...r, promptTokens: r.inputTokens, completionTokens: r.outputTokens,
+			status: normalizeUsageStatus(r.status, (value) =>
+				logger.warn({ value }, "[usage] unknown usage status; reporting as error")),
 			createdAt: r.createdAt.toISOString(), refundedAt: r.refundedAt?.toISOString() ?? null,
 		})),
 		next_cursor: rows.length > limit && last ? `${last.cursorAt}|${last.id}` : null,

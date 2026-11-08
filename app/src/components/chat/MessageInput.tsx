@@ -20,6 +20,7 @@ import { Search, Send, Wand2 } from "lucide-react";
 import type { Ref } from "react";
 import { forwardRef, useCallback, useEffect, useRef, useState } from "react";
 import { Magnetic, EASE_SPRING } from "@/lib/animation";
+import { CHAT_REQUEST_PHASE, type ChatRequestPhase } from "@/lib/chat/chat-request-state";
 
 interface MessageInputProps {
 	input: string;
@@ -52,6 +53,13 @@ interface MessageInputProps {
 	setUiMode?: (v: boolean) => void;
 	/** Whether the advanced composer tool rail should be visible. Defaults on for standalone callers. */
 	showAdvancedTools?: boolean;
+	/**
+	 * The explicit phase of the in-flight request ("sending" | "streaming" | …).
+	 * Optional: the composer still works with `loading` alone, but with the
+	 * phase it can tell the user (and a screen reader) whether the request is
+	 * still waiting for the first token or already streaming.
+	 */
+	requestPhase?: ChatRequestPhase;
 }
 
 export const MessageInput = forwardRef<
@@ -73,6 +81,7 @@ export const MessageInput = forwardRef<
 		uiMode = false,
 		setUiMode,
 		showAdvancedTools = true,
+		requestPhase,
 	},
 	forwardedRef,
 ) {
@@ -236,7 +245,13 @@ export const MessageInput = forwardRef<
 									<button
 										type="button"
 										onClick={onStop}
-										aria-label="Stop generation"
+										aria-label={
+											requestPhase === CHAT_REQUEST_PHASE.Streaming
+												? "Stop generating"
+												: requestPhase === CHAT_REQUEST_PHASE.Sending
+													? "Stop waiting for the response"
+													: "Stop generation"
+										}
 										className="relative flex h-11 w-11 items-center justify-center rounded-[var(--radius-lg)] border border-[var(--color-danger)]/40 bg-[color-mix(in_srgb,var(--color-danger)_15%,transparent)] text-[var(--color-danger)] transition-[background-color,border-color,transform,box-shadow] duration-200 ease-out hover:bg-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] active:scale-[0.97] focus-ring"
 									>
 										{!reduceMotion && (

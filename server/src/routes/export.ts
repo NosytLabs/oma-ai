@@ -17,6 +17,7 @@ import { auditLog } from "../middleware/audit.js";
 import { logger } from "../lib/logger.js";
 import { extractClientIpOrNull } from "../middleware/rate-limit/utils.js";
 import { toCsv } from "../lib/csv.js";
+import { normalizeUsageStatus } from "../lib/usage-status.js";
 
 export const exportRoutes = new Hono<OmaEnv>();
 
@@ -75,7 +76,11 @@ exportRoutes.get("/v1/export/usage", sessionAuth, async (c) => {
 				.where(and(...conditions))
 				.orderBy(desc(usageRecords.createdAt), desc(usageRecords.id))
 				.limit(USAGE_EXPORT_LIMIT + 1);
-		const rows = result.slice(0, USAGE_EXPORT_LIMIT);
+		const rows = result.slice(0, USAGE_EXPORT_LIMIT).map((row) => ({
+			...row,
+			status: normalizeUsageStatus(row.status, (value) =>
+				logger.warn({ value }, "[export] unknown usage status; exporting as error")),
+		}));
 
 		const filename = `oma-usage-${new Date().toISOString().slice(0, 10)}.${format}`;
 		const response = format === "json"
@@ -319,7 +324,8 @@ exportRoutes.get("/v1/export/account", sessionAuth, async (c) => {
 						markupCents: u.markupCents,
 						totalCents: u.totalCents,
 						latencyMs: u.latencyMs,
-						status: u.status,
+						status: normalizeUsageStatus(u.status, (value) =>
+						logger.warn({ value }, "[export] unknown usage status; exporting as error")),
 						createdAt: u.createdAt?.toISOString() ?? null,
 				})),
 				deposits: depositsRows.map((d) => ({

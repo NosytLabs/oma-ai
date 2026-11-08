@@ -6,6 +6,7 @@ import { springs } from "@/lib/animation";
 import { ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { api, type UsageRecord } from "@/lib/api";
+import { isBillableUsageStatus, usageStatusLabel } from "@/lib/api/usage-status";
 import { formatTime, formatUsdPrecise } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
 import { resolveModelDisplayName, usageBilledDollars } from "@/lib/dashboard-aggregate";
@@ -180,7 +181,7 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 												? formatUsdPrecise(dollars)
 												: "—";
 										})()}
-										<span className="mt-1 block text-[10px] font-normal text-text-muted">{row.refundedAt ? "Refunded" : row.status === "free_tier" ? "Free chat" : row.status === "aborted" ? "Canceled" : row.status === "error" ? "Error" : "Completed"}</span>
+										<span className="mt-1 block text-[10px] font-normal text-text-muted">{row.refundedAt ? "Refunded" : usageStatusLabel(row.status)}</span>
 									</td>
 									<td className="px-6 py-4 text-[12.5px] text-text-secondary text-right font-mono transition-colors duration-200 ease-out group-hover:text-text-bright">
 										{typeof row.latencyMs === "number" &&
@@ -206,7 +207,7 @@ export const RecentRequestsTable = memo(function RecentRequestsTable({
 									<time dateTime={row.createdAt} title={new Date(row.createdAt).toLocaleString()}>{formatTime(row.createdAt)}</time>
 								</td>
 								<td className="px-4 py-4 text-right">
-										{canRefund && !row.refundedAt && row.status === "completed" && usageBilledDollars(row) > 0 ? (
+										{canRefund && !row.refundedAt && isBillableUsageStatus(row.status) && usageBilledDollars(row) > 0 ? (
 										<button
 											type="button"
 											aria-label={`Request a refund for this ${row.model} request`}

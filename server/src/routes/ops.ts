@@ -23,6 +23,7 @@ import { usageRecords } from "../db/schema.js";
 import { getMetricsSnapshot } from "./metrics.js";
 import { config } from "../config.js";
 import { logger } from "../lib/logger.js";
+import { USAGE_STATUS } from "../lib/usage-status.js";
 
 export const opsRoutes = new Hono<OmaEnv>();
 
@@ -60,7 +61,7 @@ async function fetchChat24h(): Promise<Chat24h> {
 								completions: sql<number>`count(*)::int`,
 								inputTokens: sql<string>`coalesce(sum(${usageRecords.inputTokens}), 0)::text`,
 								outputTokens: sql<string>`coalesce(sum(${usageRecords.outputTokens}), 0)::text`,
-								errors: sql<number>`count(*) filter (where ${usageRecords.status} = 'error')::int`,
+								errors: sql<number>`count(*) filter (where ${usageRecords.status} = ${USAGE_STATUS.Error})::int`,
 								activeModels: sql<number>`count(distinct ${usageRecords.model})::int`,
 								p95LatencyMs: sql<number | null>`percentile_cont(0.95) within group (order by ${usageRecords.latencyMs})::int`,
 						})

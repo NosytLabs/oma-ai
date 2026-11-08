@@ -21,6 +21,7 @@ import {
 	isFreeChatModel,
 } from "@/lib/model-utils";
 import { estimateTokens } from "@/lib/text";
+import { CHAT_REQUEST_PHASE, type ChatRequestPhase } from "@/lib/chat/chat-request-state";
 import { appendCapped, parseStreamData } from "./stream-parser";
 
 // Same-origin /api proxy so the Better Auth cookie is sent. Hitting
@@ -80,6 +81,11 @@ interface UseStreamingChatOptions {
 	setInput: Dispatch<SetStateAction<string>>;
 	setMessages: Dispatch<SetStateAction<Message[]>>;
 	setLoading: Dispatch<SetStateAction<boolean>>;
+	/**
+	 * Move the explicit request machine to a phase. Optional so existing
+	 * callers (and tests) that only know about `loading` keep working.
+	 */
+	setRequestPhase?: (phase: ChatRequestPhase, error?: string | null) => void;
 	setError: Dispatch<SetStateAction<string | null>>;
 	/**
 	 * Compare-mode failures belong to the compare panel, not the primary
@@ -529,11 +535,15 @@ export function useStreamingChat(
 					if (!d) return;
 					if (d.content) {
 						receivedDelta = true;
+						// The first token arrived: the request is no longer
+						// "waiting for the server" but actively streaming.
+						live.setRequestPhase?.(CHAT_REQUEST_PHASE.Streaming);
 						router.route(d.content);
 						flushToState();
 					}
 					if (d.reasoning) {
 						receivedDelta = true;
+						live.setRequestPhase?.(CHAT_REQUEST_PHASE.Streaming);
 						appendToReasoning(d.reasoning);
 						flushToState();
 					}
@@ -777,6 +787,9 @@ export function useStreamingChat(
 					abortController.signal.aborted ||
 					(err instanceof Error && err.name === "AbortError");
 				if (aborted) {
+					// The caller stopped the run: record it as canceled rather
+					// than failed, so the UI can say what happened.
+					live.setRequestPhase?.(CHAT_REQUEST_PHASE.Canceled);
 					if (options?.throwOnError) throw new Error("Response stopped.");
 				} else {
 					// Network failures (backend down / CORS) surface as TypeError —
@@ -791,6 +804,7 @@ export function useStreamingChat(
 						message = "Unknown error";
 					}
 					live.setError(message);
+					live.setRequestPhase?.(CHAT_REQUEST_PHASE.Failed, message);
 					if (options?.throwOnError) throw new Error(message);
 				}
 			} finally {

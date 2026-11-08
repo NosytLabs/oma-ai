@@ -5,8 +5,11 @@
 
 import { getCached, STALE_TTL, setCache } from "./client.js";
 import type { BalanceResponse, ModelsResponse, UsageRecord, UsageSummary } from "./types.js";
+import { parseUsageStatus, USAGE_STATUS } from "./usage-status.js";
 
-type RawUsageRecord = UsageRecord & {
+type RawUsageRecord = Omit<UsageRecord, "status"> & {
+	/** The wire value: the server normalises it, but the client does not trust that. */
+	status?: string;
 	inputTokens?: number;
 	outputTokens?: number;
 };
@@ -17,6 +20,10 @@ export function normalizeUsageRecord(raw: RawUsageRecord): UsageRecord {
 	return {
 		...raw,
 		apiKeyId: raw.apiKeyId ?? null,
+		// An unrecognised status means the outcome is unknown. Reporting it as
+		// an error is the conservative reading — the alternative (falling
+		// through to "completed") would show a failed request as a success.
+		status: parseUsageStatus(raw.status) ?? USAGE_STATUS.Error,
 		promptTokens: Number.isFinite(promptTokens) ? promptTokens : 0,
 		completionTokens: Number.isFinite(completionTokens) ? completionTokens : 0,
 		latencyMs:

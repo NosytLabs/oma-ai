@@ -6,6 +6,7 @@ import { db } from "../db/client.js";
 import { sessionOrBearerAuth, requireAdmin } from "../auth/middleware.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { logger } from "../lib/logger.js";
+import { USAGE_STATUSES, type UsageStatus } from "../lib/usage-status.js";
 
 export const adminAnalyticsRoutes = new Hono<OmaEnv>();
 const readLimit = rateLimit({ windowMs: 60_000, maxRequests: 60, failClosed: false });
@@ -15,7 +16,7 @@ const logsSchema = windowSchema.extend({
 	cursor: z.string().max(512).optional(),
 	q: z.string().trim().max(100).optional(),
 	model: z.string().max(150).optional(),
-	status: z.enum(["completed", "free_tier", "aborted", "error"]).optional(),
+	status: z.enum(USAGE_STATUSES as [UsageStatus, ...UsageStatus[]]).optional(),
 });
 const cursorSchema = z.object({ createdAt: z.string().datetime({ offset: true }), id: z.uuid() });
 

@@ -7,6 +7,7 @@ import { logger } from "../lib/logger.js";
 import { rewriteSseModelField } from "./fallback.js";
 import { ProviderError } from "./provider-route.js";
 import { estimateTokens, flattenMessageContent } from "./token-utils.js";
+import { INFERENCE_PHASE, type InferencePhase } from "../lib/usage-status.js";
 import {
 	recordUsage,
 	type RecordUsageArgs,
@@ -37,7 +38,7 @@ export interface StreamingProxyArgs {
 	apiKeyId?: string | null;
 	reservation?: boolean;
 	/** Signal the terminal inference outcome before an outer response guard sees EOF. */
-	onFinalized?: (status: "completed" | "error" | "aborted") => void;
+	onFinalized?: (status: InferencePhase) => void;
 }
 
 /**
@@ -68,12 +69,12 @@ export function createStreamingProxy(
 		let usageFinalized = false;
 		let sseCarry = "";
 		let terminated = false;
-		async function finishUsage(status: "completed" | "error" | "aborted") {
+		async function finishUsage(status: InferencePhase) {
 			if (usageFinalized) return;
 			usageFinalized = true;
 			const usageVerified = finalPromptTokens !== null && finalOutputTokens !== null && !malformedFrame;
-			const missingPaidUsage = recordArgs.reservation && status === "completed" && (!usageVerified || !terminalSeen || !completionFrameSeen);
-			let finalizedStatus = missingPaidUsage ? "error" as const : status;
+			const missingPaidUsage = recordArgs.reservation && status === INFERENCE_PHASE.Completed && (!usageVerified || !terminalSeen || !completionFrameSeen);
+			let finalizedStatus: InferencePhase = missingPaidUsage ? INFERENCE_PHASE.Error : status;
 			try {
 				await recordUsage({
 					...recordArgs,
@@ -87,7 +88,7 @@ export function createStreamingProxy(
 			} catch (err) {
 				logger.warn({ err, status }, "[proxy] recordUsage failed");
 				if (recordArgs.reservation) {
-					finalizedStatus = "error";
+					finalizedStatus = INFERENCE_PHASE.Error;
 					throw err;
 				}
 			} finally {
@@ -141,7 +142,7 @@ export function createStreamingProxy(
 										}
 										// Use upstream-reported usage when available (OMA-AI sends a final
 										// usage chunk at the end of the stream), falling back to estimates.
-										await finishUsage("completed");
+										await finishUsage(INFERENCE_PHASE.Completed);
 										terminated = true;
 										// Admission guards must observe persisted usage before EOF.
 										controller.close();
@@ -162,7 +163,7 @@ export function createStreamingProxy(
 									logger.warn({ err }, "[proxy] stream read failed");
 									// Retain consumed-token cost estimates for operations. Failed
 									// completions are recorded without a customer credit deduction.
-									await finishUsage("error");
+									await finishUsage(INFERENCE_PHASE.Error);
 									controller.error(err);
 									try {
 										await reader.cancel();
@@ -177,7 +178,7 @@ export function createStreamingProxy(
 								reader.cancel().catch(() => {});
 								// Canceled streams retain token/cost estimates without charging
 								// customer credits, so the admin can account for the expense.
-								await finishUsage("aborted");
+								await finishUsage(INFERENCE_PHASE.Aborted);
 								},
 		});
 }
@@ -216,7 +217,7 @@ export async function parseNonStreamingResponse(
 				...recordArgs,
 				promptTokens: finalPromptTokens,
 				outputTokens: completionTokens,
-				status: missingPaidUsage ? "error" : "completed",
+				status: missingPaidUsage ? INFERENCE_PHASE.Error : INFERENCE_PHASE.Completed,
 				providerResponseId: typeof data.id === "string" ? data.id.slice(0, 256) : undefined,
 				usageVerified,
 		});

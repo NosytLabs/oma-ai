@@ -232,6 +232,8 @@ function ShellContent() {
 		setInput,
 		loading,
 		setLoading,
+		requestPhase,
+		setRequestPhase,
 		error,
 		setError,
 		compareError,
@@ -443,6 +445,7 @@ function ShellContent() {
 		setInput,
 		setMessages,
 		setLoading,
+		setRequestPhase,
 		setError,
 		setCompareError,
 		model,
@@ -524,6 +527,9 @@ function ShellContent() {
 	}, [isReady, conversationHistory.hydrated, loading, catalogStatus, availableModelIds, isAuthenticated, applyChatParams, setModel]);
 
 	const stopGeneration = useCallback(() => {
+		// The abort settles the request a tick later; the request machine
+		// records the cancel then. Clearing the in-flight flag here would
+		// let a second send start while the first is still unwinding.
 		abortRef.current?.abort();
 	}, [abortRef]);
 
@@ -829,6 +835,7 @@ function ShellContent() {
 									onSubmit={() => { void gatedSend(); }}
 									onStop={stopGeneration}
 									loading={loading}
+								requestPhase={requestPhase}
 									textareaRef={inputRef}
 									disabled={!isReady || !conversationHistory.hydrated}
 									disabledReason="Restoring your chats…"

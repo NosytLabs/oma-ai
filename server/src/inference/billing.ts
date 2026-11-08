@@ -11,6 +11,11 @@ import { and, eq, sql } from "drizzle-orm";
 import { getModelPricing, pricingForContext } from "./billing-service.js";
 import { ProviderError } from "./provider-route.js";
 import { settleInferenceReservation, recordFinancialOutcome } from "./credit-reservations.js";
+import {
+	INFERENCE_PHASE,
+	type InferencePhase,
+	toStoredUsageStatus,
+} from "../lib/usage-status.js";
 
 export type UsageProvider = "venice" | "litellm" | "tinyfish" | "surplus" | "oma-ai";
 
@@ -29,7 +34,7 @@ export interface RecordUsageArgs {
 	outputTokens: number;
 	pricing: ReturnType<typeof getModelPricing>;
 	requestId: string;
-	status: "completed" | "error" | "aborted";
+	status: InferencePhase;
 	/**
 	 * Epoch ms captured when the request entered the handler, so latency_ms
 	 * measures the whole round-trip including the upstream stream.
@@ -157,7 +162,7 @@ export async function recordUsage(args: RecordUsageArgs): Promise<void> {
 			((promptTokens / 1_000_000) * (appliedPricing.costInputPer1M ?? appliedPricing.inputPer1M) +
 			 (outputTokens / 1_000_000) * (appliedPricing.costOutputPer1M ?? appliedPricing.outputPer1M)) * 100;
 		const userCostCents = estimateUserCostCents(appliedPricing, promptTokens, outputTokens);
-		const shouldCharge = status === "completed" && !skipBilling;
+		const shouldCharge = status === INFERENCE_PHASE.Completed && !skipBilling;
 		const markupCents = appliedPricing.costKnown === false ? 0 : (shouldCharge ? userCostCents : 0) - upstreamCostCents;
 
 		// Anonymous free-tier requests have no BetterAuth user. The DB schema
@@ -215,7 +220,7 @@ export async function recordUsage(args: RecordUsageArgs): Promise<void> {
 								markupCents: markupCents.toFixed(8),
 								totalCents: shouldCharge ? userCostCents.toFixed(8) : "0",
 								latencyMs,
-								status: skipBilling && status === "completed" ? "free_tier" : status,
+								status: toStoredUsageStatus(status, { freeTier: skipBilling }),
 							})
 							.onConflictDoNothing({ target: usageRecords.requestId })
 							.returning({ requestId: usageRecords.requestId });

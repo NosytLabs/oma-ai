@@ -13,6 +13,21 @@ import {
 } from "@/lib/chat-params-storage";
 import { MODELS } from "@/lib/models-data";
 import { FREE_DEFAULT_CHAT_MODEL } from "@/lib/model-utils";
+import {
+	CHAT_REQUEST_EVENT,
+	CHAT_REQUEST_PHASE,
+	INITIAL_CHAT_REQUEST_STATE,
+	applyChatRequestEvent,
+	isChatRequestInFlight,
+	type ChatRequestPhase,
+	type ChatRequestState,
+} from "@/lib/chat/chat-request-state";
+import {
+	CHAT_PANEL,
+	CLOSED_CHAT_PANELS,
+	setPanelOpen,
+	type ChatPanelState,
+} from "@/lib/chat/panel-state";
 
 /** localStorage key for the user-scoped model preference. Mirrors the
 	*  `conversationStorageKey` pattern: guests get their own bucket so a
@@ -96,6 +111,14 @@ export interface PlaygroundState {
 	setInput: Dispatch<SetStateAction<string>>;
 	loading: boolean;
 	setLoading: Dispatch<SetStateAction<boolean>>;
+	/**
+	 * The explicit phase of the current request. `loading` is derived from
+	 * it, so this is the value to read when you need to know WHAT is
+	 * happening (waiting for the first token vs. streaming vs. failed).
+	 */
+	requestPhase: ChatRequestPhase;
+	/** Move the request machine to an explicit phase. */
+	setRequestPhase: (phase: ChatRequestPhase, error?: string | null) => void;
 	error: string | null;
 	setError: Dispatch<SetStateAction<string | null>>;
 	/** Compare-panel errors. Kept out of `error` so an unrelated side
@@ -231,12 +254,66 @@ export function usePlaygroundState(
 	}, []);
 	const [messages, setMessages] = useState<Message[]>([]);
 	const [input, setInput] = useState<string>("");
-	const [loading, setLoading] = useState<boolean>(false);
+	// The request lifecycle is one explicit state, not a boolean plus a
+	// separate abort ref. `loading` below is DERIVED from it, so the
+	// composer can never disagree with the machine about what is running.
+	const [requestState, setRequestState] = useState<ChatRequestState>(INITIAL_CHAT_REQUEST_STATE);
+	const loading = isChatRequestInFlight(requestState);
+	/**
+	 * Adapter for the existing `Dispatch<SetStateAction<boolean>>` contract.
+	 * `true` starts a request; `false` settles one that is still running
+	 * (a failed or cancelled request keeps its terminal phase so the UI can
+	 * say what happened).
+	 */
+	const setLoading = useCallback<Dispatch<SetStateAction<boolean>>>((next) => {
+		setRequestState((prev) => {
+			const value = typeof next === "function" ? next(isChatRequestInFlight(prev)) : next;
+			if (value) {
+				return applyChatRequestEvent(prev, CHAT_REQUEST_EVENT.Send);
+			}
+			if (isChatRequestInFlight(prev)) {
+				return applyChatRequestEvent(prev, CHAT_REQUEST_EVENT.Settled);
+			}
+			return prev;
+		});
+	}, []);
+	/** The explicit phase of the current request ("idle" | "sending" | …). */
+	const requestPhase: ChatRequestPhase = requestState.phase;
+	/** Move the request machine to an explicit phase. */
+	const setRequestPhase = useCallback((phase: ChatRequestPhase, error: string | null = null) => {
+		setRequestState((prev) => {
+			const event =
+				phase === CHAT_REQUEST_PHASE.Streaming
+					? CHAT_REQUEST_EVENT.FirstToken
+					: phase === CHAT_REQUEST_PHASE.Failed
+						? CHAT_REQUEST_EVENT.Fail
+						: phase === CHAT_REQUEST_PHASE.Canceled
+							? CHAT_REQUEST_EVENT.Cancel
+							: phase === CHAT_REQUEST_PHASE.Idle
+								? CHAT_REQUEST_EVENT.Settled
+								: CHAT_REQUEST_EVENT.Send;
+			return applyChatRequestEvent(prev, event, error);
+		});
+	}, []);
 	const [error, setError] = useState<string | null>(null);
 
 	// --- Settings panel + model params ---
-	const [paramsOpen, setParamsOpen] = useState<boolean>(false);
-	const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
+	// One explicit panel state instead of four independent booleans. The
+	// per-panel booleans below are DERIVED, so the setter contract that
+	// components already use keeps working unchanged.
+	const [panelState, setPanelState] = useState<ChatPanelState>(CLOSED_CHAT_PANELS);
+	const paramsOpen = panelState[CHAT_PANEL.Params];
+	const setParamsOpen = useCallback<Dispatch<SetStateAction<boolean>>>((next) => {
+		setPanelState((prev) =>
+			setPanelOpen(prev, CHAT_PANEL.Params, typeof next === "function" ? next(prev[CHAT_PANEL.Params]) : next),
+		);
+	}, []);
+	const showAdvanced = panelState[CHAT_PANEL.Advanced];
+	const setShowAdvanced = useCallback<Dispatch<SetStateAction<boolean>>>((next) => {
+		setPanelState((prev) =>
+			setPanelOpen(prev, CHAT_PANEL.Advanced, typeof next === "function" ? next(prev[CHAT_PANEL.Advanced]) : next),
+		);
+	}, []);
 
 	// BUG-I: parameters used to be pure component state. They now hydrate
 	// from localStorage and every change is written back; a failed write
@@ -337,7 +414,12 @@ export function usePlaygroundState(
 
 	// --- System prompt ---
 	const [systemPrompt, setSystemPrompt] = useState<string>("");
-	const [systemPromptOpen, setSystemPromptOpen] = useState<boolean>(false);
+	const systemPromptOpen = panelState[CHAT_PANEL.SystemPrompt];
+	const setSystemPromptOpen = useCallback<Dispatch<SetStateAction<boolean>>>((next) => {
+		setPanelState((prev) =>
+			setPanelOpen(prev, CHAT_PANEL.SystemPrompt, typeof next === "function" ? next(prev[CHAT_PANEL.SystemPrompt]) : next),
+		);
+	}, []);
 
 	// --- Compare mode ---
 	// Default the compare slot to a free OMA-AI peer so guests can run
@@ -367,7 +449,12 @@ export function usePlaygroundState(
 	const setCompareError = useCallback<Dispatch<SetStateAction<string | null>>>(next => updateComparison("error", next), [updateComparison]);
 
 	// --- Misc UI ---
-	const [shortcutsOpen, setShortcutsOpen] = useState<boolean>(false);
+	const shortcutsOpen = panelState[CHAT_PANEL.Shortcuts];
+	const setShortcutsOpen = useCallback<Dispatch<SetStateAction<boolean>>>((next) => {
+		setPanelState((prev) =>
+			setPanelOpen(prev, CHAT_PANEL.Shortcuts, typeof next === "function" ? next(prev[CHAT_PANEL.Shortcuts]) : next),
+		);
+	}, []);
 
 	// Rehydrate once auth resolves and again whenever the mounted account
 	// changes. A valid URL model wins only for the first resolved identity;
@@ -469,6 +556,8 @@ export function usePlaygroundState(
 		setInput,
 		loading,
 		setLoading,
+		requestPhase,
+		setRequestPhase,
 		error,
 		setError,
 		compareError,

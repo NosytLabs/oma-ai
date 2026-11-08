@@ -1,7 +1,9 @@
 /**
-	* Shared API response types for the oma-ai frontend.
-	* Mirrors the shapes returned by the Hono backend in `server/src/routes/`.
-	*/
+* Shared API response types for the oma-ai frontend.
+* Mirrors the shapes returned by the Hono backend in `server/src/routes/`.
+*/
+
+import type { UsageStatus } from "./usage-status.js";
 
 // ─── Auth ──────────────────────────────────────────────────────────────────────
 
@@ -82,8 +84,8 @@ export interface UsageRecord {
 	/** Amount billed to the user in cents (decimal string). */
 	totalCents: string;
 	latencyMs: number | null;
-	/** "completed" | "error" | "free_tier" | future values. */
-	status: string;
+	/** One of the terminal usage statuses: completed | free_tier | error | aborted. */
+	status: UsageStatus;
 	createdAt: string;
 }
 
