@@ -1,5 +1,9 @@
 import originGuardPaths from "../middleware/origin-guard-paths.json" with { type: "json" };
 import { REFUND_STATUSES } from "../lib/refund-status.js";
+import {
+	MODEL_METADATA_VERIFICATION_STATUSES,
+	MODEL_PRIVACY_VALUES,
+} from "../inference/model-metadata.js";
 /**
  * Public contract shared by the HTTP spec and the server-rendered reference.
  */
@@ -115,9 +119,9 @@ const spec = {
 					object: { type: "string", enum: ["model"] },
 					created: { type: "integer", enum: [0], description: "0 means the provider creation timestamp is not supplied. It is not the time of this request." },
 					owned_by: { type: "string" },
-					privacy: { type: "string", enum: ["private", "anonymized", "unverified"], description: "Provider route privacy, verified from its catalog when available." },
+					privacy: { type: "string", enum: [...MODEL_PRIVACY_VALUES], description: "Provider route privacy, verified from its catalog when available." },
 					architecture: { type: "object", required: ["input_modalities", "output_modalities"], properties: { input_modalities: { type: "array", items: { type: "string" } }, output_modalities: { type: "array", items: { type: "string" } } } },
-					metadata_verification: { type: "object", required: ["status", "source_url", "verified_at", "note"], properties: { status: { type: "string", enum: ["verified", "unverified"] }, source_url: { type: "string", format: "uri" }, verified_at: { type: "string", format: "date" }, note: { type: "string" } }, description: "Unverified provider limits are OMA configuration, not confirmed upstream context/output guarantees. Retail prices are set by OMA." },
+					metadata_verification: { type: "object", required: ["status", "source_url", "verified_at", "note"], properties: { status: { type: "string", enum: [...MODEL_METADATA_VERIFICATION_STATUSES] }, source_url: { type: "string", format: "uri" }, verified_at: { type: "string", format: "date" }, note: { type: "string" } }, description: "Unverified provider limits are OMA configuration, not confirmed upstream context/output guarantees. Retail prices are set by OMA." },
 					available: { type: "boolean", description: "Enabled by configured credentials, policy and pause flags; does not prove a successful live inference request." },
 					unavailable_reason: { type: "string" },
 					context_length: { type: "integer" },

@@ -1,4 +1,5 @@
 import { formatContextLength, resolveModelCapabilities, type Model, type ModelCapabilityMetadata } from "@/lib/models-data";
+import { parseModelMetadataVerification, parseModelPrivacy } from "@/lib/api/model-metadata";
 
 /** Fields returned by OMA's /v1/models endpoint. Prices are already per 1M. */
 export interface LiveModelDetails extends ModelCapabilityMetadata {
@@ -29,9 +30,9 @@ export function withLiveModelDetails(model: Model, live: LiveModelDetails | null
 		: model.contextTokens;
 	return {
 		...model,
-		privacy: live.privacy ?? model.privacy,
+		privacy: parseModelPrivacy(live.privacy) ?? model.privacy,
 		metadataVerification: live.metadata_verification ? {
-			status: live.metadata_verification.status,
+			status: parseModelMetadataVerification(live.metadata_verification.status),
 			sourceUrl: live.metadata_verification.source_url,
 			verifiedAt: live.metadata_verification.verified_at,
 			note: live.metadata_verification.note,

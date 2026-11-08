@@ -47,6 +47,18 @@ export const STATE_CONTRACTS = [
 		appFile: "app/src/lib/api/refund-status.ts",
 		constName: "REFUND_STATUS",
 	},
+	{
+		name: "model metadata verification",
+		serverFile: "server/src/inference/model-metadata.ts",
+		appFile: "app/src/lib/api/model-metadata.ts",
+		constName: "MODEL_METADATA_VERIFICATION",
+	},
+	{
+		name: "model privacy",
+		serverFile: "server/src/inference/model-metadata.ts",
+		appFile: "app/src/lib/api/model-metadata.ts",
+		constName: "MODEL_PRIVACY",
+	},
 ];
 
 /**

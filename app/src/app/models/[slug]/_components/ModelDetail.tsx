@@ -7,6 +7,10 @@ import { ModelLogo } from "@/components/ui/model-logo";
 import { CAPABILITY_ICONS, CAPABILITY_LABELS } from "@/app/models/_lib/capabilities";
 import { TIER_LABELS } from "@/app/models/_lib/labels";
 import { formatPricePerMillion, type Model } from "@/lib/models-data";
+import {
+	MODEL_METADATA_VERIFICATION,
+	modelMetadataVerificationLabel,
+} from "@/lib/api/model-metadata";
 import { isFreeChatModel } from "@/lib/model-utils";
 import { playgroundHrefForModel } from "@/lib/playground-href";
 import { Stat, RelatedModels } from "./ModelDetailShared";
@@ -39,7 +43,16 @@ export function ModelDetail({ routes, ...initial }: ModelRouteDetails & { routes
 		routes?.find((route) => route.model.id === selectedRouteId) ?? initial;
 	const [tab, setTab] = useState<(typeof DETAIL_TABS)[number]["id"]>("overview");
 	const unavailable = availability === false;
-	const unverified = model.metadataVerification?.status === "unverified";
+	// Verification has three states, not two: verified, unverified, and a
+	// status this client does not know. An unknown status is never treated as
+	// verified -- it is shown as unknown.
+	const verificationStatus = model.metadataVerification?.status ?? null;
+	const unverified = verificationStatus === MODEL_METADATA_VERIFICATION.Unverified;
+	const verificationUnknown =
+		model.metadataVerification != null && verificationStatus === null;
+	// Anything the provider has not confirmed is labelled as OMA
+	// configuration rather than presented as a provider guarantee.
+	const limitsUnconfirmed = unverified || verificationUnknown;
 	// The curated registry calls tool-capable models "agents". Present that
 	// as the concrete API feature, and let an explicit live flag override it.
 	const toolCalling = supportsTools ?? model.capabilities.includes("agents");
@@ -105,8 +118,8 @@ export function ModelDetail({ routes, ...initial }: ModelRouteDetails & { routes
 				<div className="mb-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
 					<Stat label="Input price" value={formatPricePerMillion(model.inputPricePer1M)} unit="USD per 1M tokens" />
 					<Stat label="Output price" value={formatPricePerMillion(model.outputPricePer1M)} unit="USD per 1M tokens" />
-					<Stat label="Context window" value={unverified ? "Unverified" : model.contextLength} unit={unverified ? `OMA configured limit: ${model.contextTokens.toLocaleString("en-US")} tokens` : `${model.contextTokens.toLocaleString("en-US")} tokens`} />
-					<Stat label="Maximum output" value={unverified ? "Unverified" : model.maxOutputTokens?.toLocaleString("en-US") ?? "Not specified"} unit={unverified ? `OMA configured limit: ${model.maxOutputTokens?.toLocaleString("en-US") ?? "not specified"} tokens` : "tokens per response"} />
+					<Stat label="Context window" value={limitsUnconfirmed ? modelMetadataVerificationLabel(verificationStatus) : model.contextLength} unit={limitsUnconfirmed ? `OMA configured limit: ${model.contextTokens.toLocaleString("en-US")} tokens` : `${model.contextTokens.toLocaleString("en-US")} tokens`} />
+					<Stat label="Maximum output" value={limitsUnconfirmed ? modelMetadataVerificationLabel(verificationStatus) : model.maxOutputTokens?.toLocaleString("en-US") ?? "Not specified"} unit={limitsUnconfirmed ? `OMA configured limit: ${model.maxOutputTokens?.toLocaleString("en-US") ?? "not specified"} tokens` : "tokens per response"} />
 				</div>
 				<p className="mb-8 text-xs leading-relaxed text-text-muted">
 					{isFreeChatModel(model.id) ? "Free in website chat within the daily limit. API usage is billed at the rates above." : "Pay for the tokens you use. Chat and API usage draw from your account credits."}
@@ -123,16 +136,17 @@ export function ModelDetail({ routes, ...initial }: ModelRouteDetails & { routes
 				<div role="tabpanel" id="model-panel-overview" aria-labelledby="model-tab-overview" hidden={tab !== "overview"} tabIndex={0} className="pt-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
 					<div className="grid gap-5 lg:grid-cols-2">
 						<section aria-labelledby="capabilities-heading" className="rounded-[var(--radius-xl)] border border-border bg-panel p-5 sm:p-6">
-							<h2 id="capabilities-heading" className="font-display text-xl font-medium text-text-bright">{unverified ? "Configured features" : "Capabilities"}</h2>
+							<h2 id="capabilities-heading" className="font-display text-xl font-medium text-text-bright">{limitsUnconfirmed ? "Configured features" : "Capabilities"}</h2>
 							{unverified && <p className="mt-3 text-sm leading-relaxed text-text-muted">Provider support is unverified. Features and modalities below reflect OMA configuration.</p>}
+					{verificationUnknown && <p className="mt-3 text-sm leading-relaxed text-text-muted">The provider catalog status could not be read, so provider support is not confirmed. Features and modalities below reflect OMA configuration.</p>}
 							<ul className="mt-4 flex flex-wrap gap-2">
-								{model.capabilities.filter((capability) => capability !== "agents").map((capability) => <li key={capability} className={badgeClass}>{CAPABILITY_ICONS[capability]}{CAPABILITY_LABELS[capability]}{unverified ? " (configured)" : ""}</li>)}
-								{toolCalling && <li className={badgeClass}><Wrench className="h-3.5 w-3.5" aria-hidden="true" />Tool calling{unverified ? " (configured)" : ""}</li>}
-								{supportsStreaming === true && <li className={badgeClass}><Radio className="h-3.5 w-3.5" aria-hidden="true" />Streaming{unverified ? " (configured)" : ""}</li>}
+								{model.capabilities.filter((capability) => capability !== "agents").map((capability) => <li key={capability} className={badgeClass}>{CAPABILITY_ICONS[capability]}{CAPABILITY_LABELS[capability]}{limitsUnconfirmed ? " (configured)" : ""}</li>)}
+								{toolCalling && <li className={badgeClass}><Wrench className="h-3.5 w-3.5" aria-hidden="true" />Tool calling{limitsUnconfirmed ? " (configured)" : ""}</li>}
+								{supportsStreaming === true && <li className={badgeClass}><Radio className="h-3.5 w-3.5" aria-hidden="true" />Streaming{limitsUnconfirmed ? " (configured)" : ""}</li>}
 							</ul>
 							<dl className="mt-6 space-y-3 border-t border-border pt-5 text-sm">
-								<div className="flex items-start justify-between gap-4"><dt className="text-text-muted">{unverified ? "Configured input" : "Input"}</dt><dd className="text-right capitalize text-text-secondary">{(model.inputModalities ?? ["text"]).join(", ") || "Not specified"}</dd></div>
-								<div className="flex items-start justify-between gap-4"><dt className="text-text-muted">{unverified ? "Configured output" : "Output"}</dt><dd className="text-right capitalize text-text-secondary">{(model.outputModalities ?? ["text"]).join(", ") || "Not specified"}</dd></div>
+								<div className="flex items-start justify-between gap-4"><dt className="text-text-muted">{limitsUnconfirmed ? "Configured input" : "Input"}</dt><dd className="text-right capitalize text-text-secondary">{(model.inputModalities ?? ["text"]).join(", ") || "Not specified"}</dd></div>
+								<div className="flex items-start justify-between gap-4"><dt className="text-text-muted">{limitsUnconfirmed ? "Configured output" : "Output"}</dt><dd className="text-right capitalize text-text-secondary">{(model.outputModalities ?? ["text"]).join(", ") || "Not specified"}</dd></div>
 								{model.privacy && <div className="flex items-start justify-between gap-4"><dt className="text-text-muted">Provider privacy</dt><dd className="text-right capitalize text-text-secondary">{model.privacy}</dd></div>}
 								{model.extendedPricing && <div className="flex items-start justify-between gap-4"><dt className="text-text-muted">Above {model.extendedPricing.contextTokenThreshold.toLocaleString("en-US")} input tokens</dt><dd className="text-right text-text-secondary">{formatPricePerMillion(model.extendedPricing.inputPricePer1M)}/M input · {formatPricePerMillion(model.extendedPricing.outputPricePer1M)}/M output</dd></div>}
 							</dl>
@@ -147,7 +161,7 @@ export function ModelDetail({ routes, ...initial }: ModelRouteDetails & { routes
 					</div>
 					{supportedParameters && supportedParameters.length > 0 && (
 						<section aria-labelledby="parameters-heading" className="mt-5 rounded-[var(--radius-xl)] border border-border bg-panel p-5 sm:p-6">
-							<h2 id="parameters-heading" className="font-display text-xl font-medium text-text-bright">{unverified ? "Configured parameters" : "Supported parameters"}</h2>
+							<h2 id="parameters-heading" className="font-display text-xl font-medium text-text-bright">{limitsUnconfirmed ? "Configured parameters" : "Supported parameters"}</h2>
 							<ul className="mt-4 flex flex-wrap gap-2">{supportedParameters.map((parameter) => <li key={parameter} className={badgeClass}><code>{parameter}</code></li>)}</ul>
 						</section>
 					)}

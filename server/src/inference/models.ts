@@ -8,15 +8,26 @@ import { config } from "../config.js";
 import { logger } from "../lib/logger.js";
 import catalogData from "./model-catalog.json" with { type: "json" };
 import { isModelPrivacyAllowed } from "./provider-route.js";
+import {
+	MODEL_METADATA_VERIFICATION,
+	parseModelMetadataVerification,
+	type ModelMetadataVerification,
+	type ModelPrivacy,
+} from "./model-metadata.js";
 
 export interface ModelDef {
 		description?: string;
 		id: string;
 		provider: string;
-		privacy?: "private" | "anonymized" | "unverified";
+		privacy?: ModelPrivacy;
 		inputModalities?: string[];
 		outputModalities?: string[];
-		metadataVerification?: { status: string; sourceUrl: string; verifiedAt: string; note: string };
+		metadataVerification?: {
+		status: ModelMetadataVerification;
+		sourceUrl: string;
+		verifiedAt: string;
+		note: string;
+	};
 		inputPricePer1M: number;
 		outputPricePer1M: number;
 		markupPercent: number;
@@ -47,7 +58,27 @@ let _catalog: ModelDef[] | null = null;
 
 /** Shared with the frontend fallback; upstream prices verified 2026-10-10. */
 function defaultCatalog(): ModelDef[] {
-	return catalogData as ModelDef[];
+	const catalog = catalogData as ModelDef[];
+	// The catalog is authored in-repo but loaded through a cast, so a typo in
+	// a verification status would otherwise publish itself as verified.
+	// Unknown values are demoted to "unverified" and logged loudly: the safe
+	// direction is "we did not verify this", never "we did".
+	return catalog.map((model) => {
+		if (!model.metadataVerification) return model;
+		const status = parseModelMetadataVerification(model.metadataVerification.status);
+		if (status === model.metadataVerification.status) return model;
+		logger.error(
+			{ modelId: model.id, status: model.metadataVerification.status },
+			"[models] unknown metadata verification status; treating as unverified",
+		);
+		return {
+			...model,
+			metadataVerification: {
+				...model.metadataVerification,
+				status: MODEL_METADATA_VERIFICATION.Unverified,
+			},
+		};
+	});
 }
 
 export async function ensureCatalogLoaded(): Promise<void> {

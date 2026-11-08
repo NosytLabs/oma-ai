@@ -2,6 +2,12 @@
 // The live API refreshes availability and administrative price overrides.
 
 import catalogData from "../../../server/src/inference/model-catalog.json";
+import {
+	parseModelMetadataVerification,
+	parseModelPrivacy,
+	type ModelMetadataVerification,
+	type ModelPrivacy,
+} from "@/lib/api/model-metadata";
 
 function deriveCapabilities(
 	id: string,
@@ -115,9 +121,13 @@ export interface Model {
 	modelId: string;
 	inputModalities?: string[];
 	outputModalities?: string[];
-	privacy?: string;
+	privacy?: ModelPrivacy;
+	/**
+	 * `null` means the status could not be read. It is not "verified" --
+	 * surfaces must show it as unknown.
+	 */
 	metadataVerification?: {
-		status: string;
+		status: ModelMetadataVerification | null;
 		sourceUrl: string;
 		verifiedAt: string;
 		note: string;
@@ -243,9 +253,22 @@ interface RawEntry {
 	inputModalities?: string[];
 	outputModalities?: string[];
 	privacy?: string;
-	metadataVerification?: Model["metadataVerification"];
+	metadataVerification?: {
+		status: string;
+		sourceUrl: string;
+		verifiedAt: string;
+		note: string;
+	};
 	creditsPerMillionInput?: number;
 	creditsPerMillionOutput?: number;
+}
+
+/** Narrow a raw catalog entry's metadata block to the typed vocabulary. */
+function toMetadataVerification(
+	value: RawEntry["metadataVerification"],
+): Model["metadataVerification"] | undefined {
+	if (!value) return undefined;
+	return { ...value, status: parseModelMetadataVerification(value.status) };
 }
 
 interface RawCatalog {
@@ -415,8 +438,8 @@ function toModel(entry: RawEntry): Model {
 		modelId: entry.upstreamId ?? entry.veniceId ?? entry.id,
 		inputModalities: entry.inputModalities ?? ["text"],
 		outputModalities: entry.outputModalities ?? ["text"],
-		privacy: entry.privacy,
-		metadataVerification: entry.metadataVerification,
+		privacy: parseModelPrivacy(entry.privacy) ?? undefined,
+		metadataVerification: toMetadataVerification(entry.metadataVerification),
 		...(entry.disabledReason ? { available: false, unavailableReason: entry.disabledReason } : {}),
 	};
 }
@@ -590,9 +613,9 @@ const tier: Tier =
 						modelId: entry.id,
 						inputModalities: entry.architecture?.input_modalities ?? curated?.inputModalities ?? ["text"],
 						outputModalities: entry.architecture?.output_modalities ?? curated?.outputModalities ?? ["text"],
-						privacy: entry.privacy ?? curated?.privacy,
+						privacy: parseModelPrivacy(entry.privacy) ?? curated?.privacy,
 						metadataVerification: entry.metadata_verification ? {
-							status: entry.metadata_verification.status,
+							status: parseModelMetadataVerification(entry.metadata_verification.status),
 							sourceUrl: entry.metadata_verification.source_url,
 							verifiedAt: entry.metadata_verification.verified_at,
 							note: entry.metadata_verification.note,
