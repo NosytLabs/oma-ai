@@ -249,8 +249,7 @@ authRoutes.delete(
 				userAgent,
 		});
 		// Cascade FKs wipe session, account, wallet_address, api_keys,
-		// deposits, credit_balances, usage_records, credit_batches,
-		// auto_reload_settings, refund_requests, webhook_subscriptions
+		// deposits, credit_balances, usage_records, refund_requests
 		// for this user. audit_logs rows are preserved with userId=NULL
 		// (set null on the FK) so a forensic trail remains.
 		await db.delete(user).where(eq(user.id, userId));

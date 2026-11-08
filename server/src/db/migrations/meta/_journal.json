@@ -64,6 +64,13 @@
       "when": 1794178672482,
       "tag": "0008_reconcile_deposit_recovery_state",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794180707900,
+      "tag": "0009_drop_unwired_tables",
+      "breakpoints": true
     }
   ]
 }

@@ -97,6 +97,59 @@ async function repairJournalSequence(pool) {
 	);
 }
 
+/**
+ * Audits the journal against the migration files.
+ *
+ * Drizzle decides what to apply by timestamp, not by identity: it applies
+ * only the journal-file entries newer than the last applied row. A migration
+ * file whose hash is absent from the journal and whose timestamp is older
+ * than that row is therefore skipped FOREVER, silently -- the deploy reports
+ * success and the change never lands.
+ *
+ * After a migration run every migration file must be recorded. A file that is
+ * still missing is a hard failure: either it was skipped by the timestamp
+ * rule, or it was applied and edited afterwards (in which case the recorded
+ * hash no longer matches the file).
+ */
+async function auditJournal(pool) {
+	const journalPath = join(MIGRATIONS_FOLDER, "meta", "_journal.json");
+	if (!existsSync(journalPath)) return null;
+	const journal = JSON.parse(readFileSync(journalPath, "utf8"));
+	const entries = [...(journal.entries ?? [])].sort((a, b) => a.idx - b.idx);
+
+	const { createHash } = await import("node:crypto");
+	const { readFileSync: read } = await import("node:fs");
+	const { rows } = await pool.query(
+		"SELECT hash, created_at FROM drizzle.__drizzle_migrations",
+	);
+	const known = new Set(rows.map((row) => row.hash));
+
+	const unmatched = [];
+	for (const entry of entries) {
+		const path = join(MIGRATIONS_FOLDER, `${entry.tag}.sql`);
+		if (!existsSync(path)) {
+			unmatched.push(`${entry.tag}.sql (listed in the journal file, file missing)`);
+			continue;
+		}
+		const hash = createHash("sha256").update(read(path)).digest("hex");
+		if (!known.has(hash)) unmatched.push(`${entry.tag}.sql`);
+	}
+
+	if (unmatched.length) {
+		fail(
+			`${unmatched.length} migration file(s) are not recorded in the journal: ${unmatched.join(", ")}`,
+			"Drizzle applies migrations by timestamp, so a file older than the last\n" +
+				"applied row is skipped silently. Run scripts/repair-journal.mjs to\n" +
+				"record them (or, if a file was edited after it was applied, restore the\n" +
+				"original contents and add a new migration instead).",
+		);
+	}
+	console.log(
+		`[migrate-prod] journal audit: ${entries.length} migration file(s), all recorded`,
+	);
+	return entries.length;
+}
+
 async function main() {
 	const rawUrl = process.env.DATABASE_URL;
 	if (!rawUrl || !rawUrl.includes("://")) {
@@ -127,6 +180,7 @@ async function main() {
 		console.log(
 			`[migrate-prod] journal records ${journal.rows[0]?.applied ?? 0} applied migration(s)`,
 		);
+		await auditJournal(pool);
 
 		// Schema completeness: every pgTable in schema.ts must exist, with the
 		// columns and indexes it declares. A table-name-only check passes while

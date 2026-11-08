@@ -2,17 +2,14 @@
 	* GET /v1/credits/balance — active credit batches + aggregate balance.
 	* GET /v1/credits/transactions — combined deposit + usage history.
 	*
-	* Backed by the `credit_batches`, `credit_balances`, `deposits`,
-	* `usage_records` tables. All routes require a
-	* session or bearer token (same as /v1/balance).
+	* Backed by the `credit_balances`, `deposits` and `usage_records` tables.
+	* All routes require a session or bearer token (same as /v1/balance).
 	*
-	* KNOWN GAP: `credit_batches` is never written. Grepping the server for
-	* `insert(creditBatches)` returns nothing, so `activeBatches` is always an
-	* empty array and any UI rendering it shows nothing. The aggregate
-	* `balanceCents` is accurate and is the authoritative figure. Populating
-	* batches requires an expiry policy decision (the column is NOT NULL and the
-	* site currently promises "credits never expire"), so it is deliberately
-	* not backfilled with invented data here.
+	* RESOLVED: the legacy `credit_batches` table (which had an expiry policy
+	* the site does not offer -- credits never expire -- and no writer
+	* anywhere) was dropped in migration 0009. `activeBatches` stays in the
+	* response as an empty array so the wire shape is unchanged;
+	* `balanceCents` is the authoritative figure.
 	*/
 import { Hono } from "hono";
 import { z } from "zod";
@@ -48,12 +45,11 @@ creditsRoutes.get("/v1/credits/balance", sessionOrBearerAuth, async (c) => {
 		]);
 
 		return c.json({
-				// `credit_batches` is a legacy table: it has no writer anywhere in the
-				// server and is empty in production (verified against the live
-				// database), so querying it only cost a round trip per balance read to
-				// produce an empty array. The field stays in the response so the wire
-				// shape is unchanged; `balanceCents` is the authoritative figure. See
-				// the KNOWN GAP note above.
+				// `credit_batches` was a legacy table with no writer anywhere in the
+				// server and no rows in production; querying it only cost a round trip
+				// per balance read to produce an empty array. The table was dropped in
+				// migration 0009 and the field stays in the response so the wire shape
+				// is unchanged; `balanceCents` is the authoritative figure.
 				activeBatches: [],
 				...publicCreditBalance(balances[0]?.balanceCents),
 				...holds,

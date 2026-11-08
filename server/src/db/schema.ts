@@ -16,13 +16,12 @@
 	*   - signingKeys                           (pinning scheme was experimental)
 	*   - audit_action enum removed twoFactor enum (kept the rest)
 	*
-	* Tables present in the schema but NOT wired to any code path (verified by
-	* whole-tree search, 2026-09-24). They are intentionally left in place rather
-	* than dropped: removing a table from the schema generates a DROP TABLE
-	* migration, which is irreversible and buys nothing while the rows are empty.
-	* Do NOT assume these features work because the tables exist:
-	*   - webhookSubscriptions - no subscription create/list/deliver path exists
-	*   - autoReloadSettings   - no admin surface reads or writes it
+	* Tables that were present in the schema but NOT wired to any code path
+	* (creditBatches, autoReloadSettings, webhookSubscriptions) were dropped in
+	* migration 0009: none of them had a create/list/delete path, none had rows
+	* in production, and their presence invited the false assumption that those
+	* features worked. The credit balance response keeps its legacy
+	* `activeBatches: []` field so the public API shape is unchanged.
 	*/
 import {
 		pgTable,
@@ -514,78 +513,7 @@ export const usageRecords = pgTable(
 		],
 );
 
-/**
- * Legacy table. `credit_balances` superseded it: balances are a single row
- * per user, and nothing in the server writes a batch. The table is empty in
- * production (verified against the live database) and the balance route no
- * longer queries it -- it still returns `activeBatches: []` so the response
- * shape is unchanged.
- *
- * Kept in the schema for compatibility; dropping it needs a migration.
- */
-export const creditBatches = pgTable(
-		"credit_batches",
-		{
-				id: uuid("id").defaultRandom().primaryKey(),
-				userId: text("user_id")
-						.references(() => user.id, { onDelete: "cascade" })
-						.notNull(),
-				amountCents: numeric("amount_cents", { precision: 18, scale: 2 }).notNull(),
-				remainingCents: numeric("remaining_cents", {
-						precision: 18,
-						scale: 2,
-				}).notNull(),
-				expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-				usedAt: timestamp("used_at", { withTimezone: true }),
-				paymentMethod: text("payment_method").default("usdc"),
-				depositId: uuid("deposit_id").references(() => deposits.id, {
-						onDelete: "set null",
-				}),
-				createdAt: timestamp("created_at", { withTimezone: true })
-						.defaultNow()
-						.notNull(),
-		},
-		(t) => [
-				index("idx_credit_batches_user").on(t.userId),
-				index("idx_credit_batches_deposit").on(t.depositId),
-				index("idx_credit_batches_expiry").on(t.expiresAt),
-				index("idx_credit_batches_user_expiry_remaining").on(
-						t.userId,
-						t.expiresAt,
-						t.remainingCents,
-				),
-				index("idx_credit_batches_remaining_positive")
-						.on(t.userId)
-						.where(sql`${t.remainingCents} > 0`),
-		],
-);
 
-export const autoReloadSettings = pgTable("auto_reload_settings", {
-		userId: text("user_id")
-				.references(() => user.id, { onDelete: "cascade" })
-				.primaryKey(),
-		enabled: boolean("enabled").default(false).notNull(),
-		thresholdCents: numeric("threshold_cents", { precision: 18, scale: 2 })
-				.default("500")
-				.notNull(),
-		reloadAmountCents: numeric("reload_amount_cents", {
-				precision: 18,
-				scale: 2,
-		})
-				.default("10000")
-				.notNull(),
-		spendLimitCents: numeric("spend_limit_cents", { precision: 18, scale: 2 })
-				.default("100000")
-				.notNull(),
-		paymentMethod: text("payment_method").default("usdc"),
-		createdAt: timestamp("created_at", { withTimezone: true })
-				.defaultNow()
-				.notNull(),
-		updatedAt: timestamp("updated_at", { withTimezone: true })
-				.defaultNow()
-				.notNull()
-				.$onUpdateFn(() => new Date()),
-});
 
 /**
  * Durable retry queue for x402 settlements that were accepted on-chain but
@@ -699,38 +627,6 @@ export const polarWebhookEvents = pgTable(
 		],
 );
 
-/**
- * Legacy table. No subscription create/list/deliver path exists anywhere in
- * the server, and `last_notification_status` is never read or written. The
- * table is empty in production. Kept in the schema for compatibility;
- * dropping it needs a migration.
- */
-export const webhookSubscriptions = pgTable(
-		"webhook_subscriptions",
-		{
-				id: uuid("id").defaultRandom().primaryKey(),
-				userId: text("user_id")
-						.references(() => user.id, { onDelete: "cascade" })
-						.notNull(),
-				url: text("url").notNull(),
-				event: text("event").notNull(),
-				events: text("events").array(),
-				secret: text("secret"),
-				active: boolean("active").default(true).notNull(),
-				lastNotificationAt: timestamp("last_notification_at", {
-						withTimezone: true,
-				}),
-				lastNotificationStatus: text("last_notification_status"),
-				notificationCount: integer("notification_count").default(0).notNull(),
-				createdAt: timestamp("created_at", { withTimezone: true })
-						.defaultNow()
-						.notNull(),
-		},
-		(t) => [
-				index("idx_webhook_subscriptions_user").on(t.userId),
-				index("idx_webhook_subscriptions_active").on(t.userId, t.active),
-		],
-);
 
 export const auditLogs = pgTable(
 		"audit_logs",
