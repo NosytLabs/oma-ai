@@ -21,6 +21,12 @@ import { fileURLToPath } from "node:url";
 import pg from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
+import {
+	declaredTables as declaredTablesFromSchema,
+	diffSchema,
+	readDatabaseState,
+	reportDrift,
+} from "./schema-drift-check.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SERVER_ROOT = resolve(__dirname, "..");
@@ -67,6 +73,30 @@ function declaredTables() {
 	return [...names].sort();
 }
 
+/**
+ * Keeps the migration journal's id sequence ahead of its rows.
+ *
+ * The journal table is `id SERIAL PRIMARY KEY`. An environment whose journal
+ * was baselined by hand (rows inserted with explicit ids) leaves the
+ * sequence behind: the next `migrate()` asks for an id the table already
+ * holds and fails with `duplicate key value violates unique constraint
+ * "__drizzle_migrations_pkey"`, so the deployment stops for a reason that
+ * has nothing to do with the migration itself.
+ *
+ * `setval` is idempotent and only moves the sequence forward.
+ */
+async function repairJournalSequence(pool) {
+	const { rows } = await pool.query(
+		`SELECT setval(
+		   pg_get_serial_sequence('drizzle.__drizzle_migrations', 'id'),
+		   GREATEST((SELECT COALESCE(max(id), 0) FROM drizzle.__drizzle_migrations), 1)
+		 ) AS next_id`,
+	);
+	console.log(
+		`[migrate-prod] journal id sequence set to ${rows[0]?.next_id ?? "?"}`,
+	);
+}
+
 async function main() {
 	const rawUrl = process.env.DATABASE_URL;
 	if (!rawUrl || !rawUrl.includes("://")) {
@@ -81,6 +111,7 @@ async function main() {
 
 	try {
 		if (!checkOnly) {
+			await repairJournalSequence(pool);
 			console.log(`[migrate-prod] applying migrations from ${MIGRATIONS_FOLDER}`);
 			const db = drizzle(pool);
 			await migrate(db, { migrationsFolder: MIGRATIONS_FOLDER });
@@ -97,27 +128,48 @@ async function main() {
 			`[migrate-prod] journal records ${journal.rows[0]?.applied ?? 0} applied migration(s)`,
 		);
 
-		// Schema completeness: every pgTable in schema.ts must exist.
-		const tables = declaredTables();
-		const { rows } = await pool.query(
-			`SELECT table_name FROM information_schema.tables
-			  WHERE table_schema = 'public' AND table_type = 'BASE TABLE'`,
-		);
-		const present = new Set(rows.map((r) => r.table_name));
-		const missing = tables.filter((t) => !present.has(t));
-		const extra = [...present].filter((t) => !tables.includes(t));
-
-		console.log(
-			`[migrate-prod] schema check: ${tables.length} declared, ${present.size} present in public`,
-		);
-		if (extra.length) {
-			console.log(`[migrate-prod] note: ${extra.length} table(s) present but not declared: ${extra.join(", ")}`);
-		}
-		if (missing.length) {
-			fail(
-				`${missing.length} declared table(s) missing from the database: ${missing.join(", ")}`,
-				"Refusing to release. Apply migrations, then re-run. A missing table surfaces at runtime as 42P01.",
+		// Schema completeness: every pgTable in schema.ts must exist, with the
+		// columns and indexes it declares. A table-name-only check passes while
+		// a declared UNIQUE INDEX is missing -- and "ON CONFLICT (request_id)
+		// DO NOTHING" fails outright without that constraint.
+		const compiledSchema = join(SERVER_ROOT, "dist", "db", "schema.js");
+		if (existsSync(compiledSchema)) {
+			const schemaModule = await import(`file://${compiledSchema}`);
+			const declared = declaredTablesFromSchema(schemaModule);
+			const live = await readDatabaseState(pool);
+			const drift = diffSchema(declared, live);
+			const hasDrift = reportDrift(declared, live, drift);
+			console.log(
+				`[migrate-prod] schema check: ${declared.length} declared, ${live.size} present in public`,
 			);
+			if (hasDrift) {
+				fail(
+					"the database does not match the declared schema (see the drift above)",
+					"Refusing to release. Apply migrations, then re-run. A missing column surfaces as 42703, a missing unique index as 42P10.",
+				);
+			}
+		} else {
+			// No compiled schema available: fall back to the table-name check.
+			const tables = declaredTables();
+			const { rows } = await pool.query(
+				`SELECT table_name FROM information_schema.tables
+				  WHERE table_schema = 'public' AND table_type = 'BASE TABLE'`,
+			);
+			const present = new Set(rows.map((r) => r.table_name));
+			const missing = tables.filter((t) => !present.has(t));
+			const extra = [...present].filter((t) => !tables.includes(t));
+			console.log(
+				`[migrate-prod] schema check: ${tables.length} declared, ${present.size} present in public (table names only; build the server for a full check)`,
+			);
+			if (extra.length) {
+				console.log(`[migrate-prod] note: ${extra.length} table(s) present but not declared: ${extra.join(", ")}`);
+			}
+			if (missing.length) {
+				fail(
+					`${missing.length} declared table(s) missing from the database: ${missing.join(", ")}`,
+					"Refusing to release. Apply migrations, then re-run. A missing table surfaces at runtime as 42P01.",
+				);
+			}
 		}
 		console.log("[migrate-prod] OK: schema complete");
 	} finally {

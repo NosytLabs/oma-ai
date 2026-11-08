@@ -19,7 +19,8 @@
     "start:dev": "node --env-file=.env --import tsx/esm src/index.ts",
     "test": "vitest run",
     "test:auth:integration": "node --test --test-timeout=10000 scripts/auth-test-process.test.mjs && node scripts/test-auth-integration.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:check-schema": "node scripts/schema-drift-check.mjs"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.5",
