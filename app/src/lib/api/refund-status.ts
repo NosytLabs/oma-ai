@@ -57,7 +57,7 @@ export function refundStatusLabel(status: string | null | undefined): string {
 	return parsed ? LABELS[parsed] : "Unknown";
 }
 
-export type RefundStatusTone = "warning" | "success" | "error" | "muted";
+type RefundStatusTone = "warning" | "success" | "error" | "muted";
 
 const TONES: Record<RefundStatus, RefundStatusTone> = {
 	[REFUND_STATUS.Pending]: "warning",

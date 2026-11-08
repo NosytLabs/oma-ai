@@ -21,7 +21,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-export interface UseRevealInViewOptions {
+interface UseRevealInViewOptions {
 	/** Fraction of the element that must be visible to trigger (0-1). */
 	amount?: number;
 	/** Keep revealed after first trigger (default true). */

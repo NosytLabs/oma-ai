@@ -54,6 +54,12 @@ export const STATE_CONTRACTS = [
 		constName: "MODEL_METADATA_VERIFICATION",
 	},
 	{
+		name: "model unavailability cause",
+		serverFile: "server/src/inference/model-unavailability-cause.ts",
+		appFile: "app/src/lib/model-availability.ts",
+		constName: "MODEL_UNAVAILABILITY_CAUSE",
+	},
+	{
 		name: "model privacy",
 		serverFile: "server/src/inference/model-metadata.ts",
 		appFile: "app/src/lib/api/model-metadata.ts",

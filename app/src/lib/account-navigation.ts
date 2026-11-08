@@ -1,5 +1,5 @@
 /** One account workspace, including compatibility for older settings links. */
-export type SettingsSection = "profile" | "appearance" | "sessions" | "danger";
+type SettingsSection = "profile" | "appearance" | "sessions" | "danger";
 
 export function settingsSection(raw: string | null | undefined): SettingsSection {
 	if (raw === "theme" || raw === "appearance") return "appearance";

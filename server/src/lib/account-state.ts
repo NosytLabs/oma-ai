@@ -23,11 +23,11 @@ export const ACCOUNT_ACCESS_STATE = {
 	Suspended: "suspended",
 } as const;
 
-export type AccountAccessState =
+type AccountAccessState =
 	(typeof ACCOUNT_ACCESS_STATE)[keyof typeof ACCOUNT_ACCESS_STATE];
 
 /** The subset of the user row the derivation needs. */
-export interface AccountAccessFlags {
+interface AccountAccessFlags {
 	banned?: boolean | null;
 	suspended?: boolean | null;
 }

@@ -8,7 +8,7 @@ import type { HTMLAttributes } from "react";
 	* and accessibility considerations.
 	*/
 
-export interface SkeletonProps extends HTMLAttributes<HTMLDivElement> {
+interface SkeletonProps extends HTMLAttributes<HTMLDivElement> {
 	/** Tailwind-friendly class to override shape (e.g. "h-4 w-32 rounded-full") */
 	shapeClassName?: string;
 	/** Number of text-like lines to render (staggered widths for paragraph look) */

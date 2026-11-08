@@ -92,7 +92,7 @@ export async function checkRpmLimit(
 }
 
 // Traditional fixed-window Rate Limiter (Fail-closed for security/auth routes)
-export interface RateLimitOptions {
+interface RateLimitOptions {
 		windowMs: number;
 		maxRequests: number;
 		keyPrefix?: string;

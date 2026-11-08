@@ -5,7 +5,7 @@ export function shouldUseSecureCookies(nodeEnv: string | undefined): boolean {
 
 
 /** Environment fields the origin resolvers read. */
-export interface AuthOriginConfig {
+interface AuthOriginConfig {
 	BETTER_AUTH_URL?: string | undefined;
 	PUBLIC_APP_URL?: string | undefined;
 	PRIMARY_DOMAIN?: string | undefined;

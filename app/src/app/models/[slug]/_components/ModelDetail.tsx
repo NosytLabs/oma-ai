@@ -11,6 +11,7 @@ import {
 	MODEL_METADATA_VERIFICATION,
 	modelMetadataVerificationLabel,
 } from "@/lib/api/model-metadata";
+import { modelUnavailabilityCauseLabel } from "@/lib/model-availability";
 import { isFreeChatModel } from "@/lib/model-utils";
 import { playgroundHrefForModel } from "@/lib/playground-href";
 import { Stat, RelatedModels } from "./ModelDetailShared";
@@ -20,7 +21,7 @@ import { ModelDetailTabs } from "./ModelDetailTabs";
 const DETAIL_TABS = [{ id: "overview", label: "Overview" }, { id: "api", label: "API examples" }] as const;
 const badgeClass = "inline-flex items-center gap-2 rounded-[var(--radius-md)] border border-border bg-surface px-3 py-2 text-sm text-text-secondary";
 
-export interface ModelRouteDetails {
+interface ModelRouteDetails {
 	model: Model;
 	availability: boolean | null;
 	supportedParameters?: string[];
@@ -43,6 +44,12 @@ export function ModelDetail({ routes, ...initial }: ModelRouteDetails & { routes
 		routes?.find((route) => route.model.id === selectedRouteId) ?? initial;
 	const [tab, setTab] = useState<(typeof DETAIL_TABS)[number]["id"]>("overview");
 	const unavailable = availability === false;
+	// The server names why a model is unavailable when it knows; otherwise
+	// fall back to the generic copy rather than guessing a reason.
+	const unavailableNote =
+		model.unavailableReason ??
+		modelUnavailabilityCauseLabel(model.unavailableCause) ??
+		"This model is not accepting requests right now. Pricing and API examples remain available for reference.";
 	// Verification has three states, not two: verified, unverified, and a
 	// status this client does not know. An unknown status is never treated as
 	// verified -- it is shown as unknown.
@@ -111,7 +118,7 @@ export function ModelDetail({ routes, ...initial }: ModelRouteDetails & { routes
 
 				{availability !== true && (
 					<p role="status" className={`mb-6 rounded-[var(--radius-lg)] border px-4 py-3 text-sm leading-relaxed ${unavailable ? "border-amber/25 bg-amber/5 text-text-secondary" : "border-border bg-panel text-text-muted"}`}>
-						{unavailable ? model.unavailableReason ?? "This model is not accepting requests right now. Pricing and API examples remain available for reference." : "Live availability could not be confirmed. Catalog details are shown for reference; availability is checked when you start a chat."}
+						{unavailable ? unavailableNote : "Live availability could not be confirmed. Catalog details are shown for reference; availability is checked when you start a chat."}
 					</p>
 				)}
 

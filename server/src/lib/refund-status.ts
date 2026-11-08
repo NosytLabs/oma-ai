@@ -31,8 +31,6 @@ export const REFUND_DECISIONS = [
 	REFUND_STATUS.Denied,
 ] as const;
 
-export type RefundDecision = (typeof REFUND_DECISIONS)[number];
-
 /**
  * Legal transitions.
  *

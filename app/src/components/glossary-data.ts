@@ -1,4 +1,4 @@
-export interface GlossaryTerm {
+interface GlossaryTerm {
 	term: string;
 	aka?: string;
 	def: string;

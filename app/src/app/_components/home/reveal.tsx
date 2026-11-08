@@ -20,7 +20,7 @@ import { useRevealInView } from "@/lib/use-reveal-in-view";
 import { cn } from "@/components/ui/utils";
 import type { ReactNode } from "react";
 
-export interface RevealProps {
+interface RevealProps {
 	children: ReactNode;
 	className?: string;
 	delay?: number;
@@ -37,7 +37,7 @@ export interface RevealProps {
  * variants, the `reveal-child` class is applied to each item to animate them
  * staggered.
  */
-export interface RevealStaggerProps {
+interface RevealStaggerProps {
 	children: ReactNode;
 	className?: string;
 	amount?: number;

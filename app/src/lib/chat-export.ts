@@ -3,7 +3,7 @@
 import type { Message } from "@/components/chat/chat-message-shared";
 import { isChatMessage } from "@/lib/chat-message-validation";
 
-export type ExportFormat = "json" | "txt" | "md";
+type ExportFormat = "json" | "txt" | "md";
 
 const ROLE_NAMES = { user: "User", assistant: "Assistant", system: "System" } as const;
 const CONTENT_TYPES = { json: "application/json", md: "text/markdown", txt: "text/plain" } as const;

@@ -21,7 +21,7 @@ export interface NavItem {
 	desc?: string;
 }
 
-export interface NavGroup {
+interface NavGroup {
 	title: string;
 	links: NavItem[];
 	caption?: string;

@@ -4,10 +4,9 @@
  * Venice catalog prices and long-context tiers were verified 2026-10-10.
  * Provider IDs remain internal routing targets; clients use the public IDs.
  */
-import { config } from "../config.js";
 import { logger } from "../lib/logger.js";
 import catalogData from "./model-catalog.json" with { type: "json" };
-import { isModelPrivacyAllowed } from "./provider-route.js";
+import { modelAvailability } from "./model-availability.js";
 import {
 	MODEL_METADATA_VERIFICATION,
 	parseModelMetadataVerification,
@@ -98,29 +97,7 @@ export function getModelById(id: string): ModelDef | undefined {
 		return listAllModels().find((m) => m.id === id);
 }
 
-/**
-	* Whether a model's backing provider has a configured API key. Venice
-	* models report unavailable when VENICE_API_KEY is missing or a known
-	* placeholder so clients can grey them out instead of surfacing a raw
-	* upstream 401. OMA-AI models check their specific upstream key.
-	*/
+/** Whether the model's backing provider is configured. */
 export function providerAvailable(m: ModelDef): boolean {
-	if (m.disabledReason || !isModelPrivacyAllowed(m)) return false;
-	if (m.provider === "venice") return isConfiguredKey(config.VENICE_API_KEY);
-	if (m.provider === "oma-ai") {
-		// Only "openbroker" upstream remains after Zyloo removal (2026-08-17).
-		return isConfiguredKey(config.OPENBROKER_API_KEY);
-	}
-	return false;
-}
-
-function isConfiguredKey(key: string | undefined): boolean {
-		if (!key || key.length < 16) return false;
-		if (/placeholder|changeme|your-key|example/i.test(key)) return false;
-		// Only reject obvious dummy prefixes — real Venice keys start with VENICE_.
-		if (/^(plch-|your-|dev-)/i.test(key)) return false;
-		if (/^(openbroker_|surplus_)(placeh|changeme|your|xxx|dummy)/i.test(key)) {
-				return false;
-		}
-		return true;
+	return modelAvailability(m).available;
 }

@@ -126,7 +126,7 @@ const USDC_EIP3009_ABI = parseAbi([
 		"function balanceOf(address account) view returns (uint256)",
 ]);
 
-export interface Eip3009Authorization {
+interface Eip3009Authorization {
 		from: string;
 		to: string;
 		value: string;

@@ -9,7 +9,11 @@ import { databaseErrorMetadata, isDatabaseError } from './database-error.js';
 // caller (`getLoggerEnv`); nothing here needs resolved config, and
 // removing the edge entirely is safer than managing it.
 // Resolve initial values from process.env only.
-const initialNodeEnv = process.env.NODE_ENV ?? 'production';
+// Widened to `string`: the app's TypeScript program narrows
+// `process.env.NODE_ENV` to Next's own union, under which comparing
+// against 'staging' is a type error even though the value can be
+// 'staging' at runtime.
+const initialNodeEnv: string = process.env.NODE_ENV ?? 'production';
 const isDevelopment = initialNodeEnv !== 'production' && initialNodeEnv !== 'staging';
 const initialLevel = process.env.LOG_LEVEL ?? (isDevelopment ? 'debug' : 'info');
 

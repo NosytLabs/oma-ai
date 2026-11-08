@@ -10,7 +10,7 @@ import {
 import { omaOpenUILibrary } from "@/lib/openui";
 import { OpenUIActionPendingContext } from "@/lib/openui-action-state";
 
-export interface OpenUIRendererProps {
+interface OpenUIRendererProps {
 	response: string;
 	isStreaming: boolean;
 	onAction?: OpenUIActionHandler;

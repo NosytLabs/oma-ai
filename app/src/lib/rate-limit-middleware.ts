@@ -22,7 +22,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import type { RateLimiter, RateLimitResult } from "./rate-limiter";
 import { getTrustedPlatformIp } from "./api/proxy-headers";
 
-export interface RateLimitOptions {
+interface RateLimitOptions {
 	/** The RateLimiter instance to use (determines limit/window). */
 	limiter: RateLimiter;
 	/** A logical route name used as the rate-limit key (e.g. '/api/auth/login'). */

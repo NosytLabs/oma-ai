@@ -24,7 +24,7 @@ const SIGNATURE_REGEX = /^0x[a-fA-F0-9]{130}$/;
 const NUMERIC_FIELD = /^\d{1,78}$/;
 
 /** The SIWE fields this codebase reads off a signed message. */
-export interface ParsedSiweMessage {
+interface ParsedSiweMessage {
 	domain: string;
 	scheme: string | null;
 	uri: string | null;

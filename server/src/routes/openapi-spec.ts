@@ -4,10 +4,11 @@ import {
 	MODEL_METADATA_VERIFICATION_STATUSES,
 	MODEL_PRIVACY_VALUES,
 } from "../inference/model-metadata.js";
+import { MODEL_UNAVAILABILITY_CAUSES } from "../inference/model-unavailability-cause.js";
 /**
  * Public contract shared by the HTTP spec and the server-rendered reference.
  */
-export interface OpenApiOptions {
+interface OpenApiOptions {
  publicApiUrl: string;
  localPort: number;
  appUrl?: string;
@@ -124,6 +125,7 @@ const spec = {
 					metadata_verification: { type: "object", required: ["status", "source_url", "verified_at", "note"], properties: { status: { type: "string", enum: [...MODEL_METADATA_VERIFICATION_STATUSES] }, source_url: { type: "string", format: "uri" }, verified_at: { type: "string", format: "date" }, note: { type: "string" } }, description: "Unverified provider limits are OMA configuration, not confirmed upstream context/output guarantees. Retail prices are set by OMA." },
 					available: { type: "boolean", description: "Enabled by configured credentials, policy and pause flags; does not prove a successful live inference request." },
 					unavailable_reason: { type: "string" },
+					unavailable_cause: { type: "string", enum: [...MODEL_UNAVAILABILITY_CAUSES], description: "Why the model is unavailable: paused by an operator, missing provider credential, blocked by deployment policy, or an unknown provider." },
 					context_length: { type: "integer" },
 					max_output_tokens: { type: "integer", description: "Maximum response token budget, distinct from the context window" },
 					supports_streaming: { type: "boolean" },

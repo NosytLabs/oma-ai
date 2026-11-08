@@ -167,7 +167,7 @@ export function resetWalletDiscoveryForTests(): void {
 
 export const OMA_CHAIN_ID = base.id; // 8453 — Base mainnet.
 
-export interface WalletState {
+interface WalletState {
 	address: `0x${string}`;
 	chainId: number;
 }

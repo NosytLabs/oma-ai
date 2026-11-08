@@ -18,7 +18,7 @@ export const CLAIM_STATE = {
 	Completed: "completed",
 } as const;
 
-export type ClaimState = (typeof CLAIM_STATE)[keyof typeof CLAIM_STATE];
+type ClaimState = (typeof CLAIM_STATE)[keyof typeof CLAIM_STATE];
 
 /**
  * The outcome that is represented by the absence of a row rather than by a

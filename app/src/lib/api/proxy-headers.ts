@@ -28,7 +28,7 @@ const CLIENT_FORWARDING_HEADERS = [
 const PROXY_SECRET_HEADER = "x-oma-proxy-secret";
 
 /** Minimal surface both proxy routes can satisfy. */
-export interface ProxyHeaderSink {
+interface ProxyHeaderSink {
 	get(name: string): string | null;
 	set(name: string, value: string): void;
 	delete(name: string): void;

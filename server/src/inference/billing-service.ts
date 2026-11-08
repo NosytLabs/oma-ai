@@ -15,7 +15,7 @@ import {
 		type ModelPricingOverride,
 } from "../lib/model-overrides.js";
 
-export interface ModelPricing {
+interface ModelPricing {
 		inputPer1M: number;
 		outputPer1M: number;
 		markup: number;

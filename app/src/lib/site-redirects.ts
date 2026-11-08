@@ -2,7 +2,7 @@
 	* Permanent redirects for removed marketing / legacy surfaces.
 	* Single source of truth — consumed by `next.config.ts` and unit tests.
 	*/
-export type SiteRedirect = {
+type SiteRedirect = {
 	source: string;
 	destination: string;
 };

@@ -9,7 +9,7 @@
  * thinking field, and a final usage frame.
  */
 
-export type StreamDelta = {
+type StreamDelta = {
 	/** Assistant text for this frame, if present. */
 	content?: string;
 	/** Thinking/reasoning text for this frame, if present. */

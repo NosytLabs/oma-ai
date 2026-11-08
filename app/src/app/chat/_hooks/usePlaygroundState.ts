@@ -67,7 +67,7 @@ function emptyComparison(owner: ComparisonOwner): ComparisonFields & { owner: Co
 	return { owner, mode: false, model: FREE_DEFAULT_CHAT_MODEL, messages: [], error: null };
 }
 
-export interface UsePlaygroundStateOptions {
+interface UsePlaygroundStateOptions {
 	/**
 	 * Override the default model. Useful for tests and for callers that
 	 * already resolved the search-param-derived value elsewhere. Defaults
@@ -97,7 +97,7 @@ export interface UsePlaygroundStateOptions {
 	authReady?: boolean;
 }
 
-export interface PlaygroundState {
+interface PlaygroundState {
 	// --- Core chat ---
 	model: string;
 	/** URL/storage model hydration has finished for the current account identity. */

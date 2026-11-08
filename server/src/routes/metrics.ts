@@ -56,7 +56,7 @@ interface RouteMetric {
 		p95ms: number;
 }
 
-export interface MetricsSnapshot {
+interface MetricsSnapshot {
 		totalRequests: number;
 		totalErrors: number;
 		routes: RouteMetric[];

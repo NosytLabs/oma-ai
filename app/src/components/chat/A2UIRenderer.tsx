@@ -946,7 +946,7 @@ function renderComponent(
 
 /* ───────────────────── top-level renderer ───────────────────── */
 
-export interface A2UIRendererProps {
+interface A2UIRendererProps {
 	payload: unknown;
 	onAction?: (event: A2UIActionEvent) => void;
 }

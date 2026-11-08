@@ -19,9 +19,9 @@ export type SitePaymentSettings = {
 	x402Configured?: boolean;
 };
 
-export type RailKey = "usdc" | "card" | "x402";
+type RailKey = "usdc" | "card" | "x402";
 
-export type RailStatus = {
+type RailStatus = {
 	key: RailKey;
 	label: string;
 	/** Short badge text for cards. */

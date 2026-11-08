@@ -30,7 +30,7 @@ export interface RefundListResponse {
 	creditRefundsAvailable?: boolean;
 }
 
-export interface RequestRefundInput {
+interface RequestRefundInput {
 	usageId: string;
 	reason: string;
 	amountCents?: number;

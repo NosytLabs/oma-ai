@@ -41,7 +41,7 @@ export const USAGE_STATUSES: readonly UsageStatus[] = [
 ];
 
 /** Visual weight of a status in the UI. */
-export type UsageStatusTone = "success" | "muted" | "danger";
+type UsageStatusTone = "success" | "muted" | "danger";
 
 /**
  * Accepts the union plus any future string, so a server that adds a status

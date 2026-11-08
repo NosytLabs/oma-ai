@@ -12,7 +12,7 @@
 	* `MotionConfig reducedMotion="user"` in motion-provider.tsx already
 	* no-ops these for users with prefers-reduced-motion: reduce.
 	*/
-export type SpringName = "card" | "counter" | "tab" | "toast" | "magnet" | "soft";
+type SpringName = "card" | "counter" | "tab" | "toast" | "magnet" | "soft";
 
 export const springs: Record<SpringName, { type: "spring"; stiffness: number; damping: number; mass?: number }> = {
 	// spring(320, 24) — Card Resize. Height/width transitions that overshoot

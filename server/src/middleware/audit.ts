@@ -6,7 +6,7 @@ import { extractClientIp } from "./rate-limit/utils.js";
 
 type AuditAction = typeof auditLogs.$inferInsert.action;
 
-export interface AuditLogParams {
+interface AuditLogParams {
 		userId?: string;
 		action: AuditAction;
 		resource: string;

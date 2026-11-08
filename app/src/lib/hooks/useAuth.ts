@@ -46,7 +46,7 @@ interface BetterAuthSession {
 	};
 }
 
-export interface UseAuthResult {
+interface UseAuthResult {
 	data: BetterAuthSession | null;
 	user: BetterAuthUser | null;
 	isAuthenticated: boolean;

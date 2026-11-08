@@ -55,7 +55,7 @@ interface PendingThreadApplication {
 	model: string;
 }
 
-export interface UseConversationHistoryResult {
+interface UseConversationHistoryResult {
 	hydrated: boolean;
 	threads: ConversationThread[];
 	activeThreadId: string;

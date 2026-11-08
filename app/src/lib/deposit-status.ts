@@ -9,9 +9,6 @@
 export {
 	depositStatusLabel,
 	depositStatusTone,
-	parseDepositStatus,
-	DEPOSIT_STATUS,
-	DEPOSIT_STATUSES,
 	type DepositStatus,
 	type DepositStatusTone,
 } from "./api/deposit-status.js";

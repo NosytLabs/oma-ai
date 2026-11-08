@@ -54,7 +54,7 @@ export const CHAT_REQUEST_EVENT = {
 	Cancel: "cancel",
 } as const;
 
-export type ChatRequestEvent = (typeof CHAT_REQUEST_EVENT)[keyof typeof CHAT_REQUEST_EVENT];
+type ChatRequestEvent = (typeof CHAT_REQUEST_EVENT)[keyof typeof CHAT_REQUEST_EVENT];
 
 export interface ChatRequestState {
 	phase: ChatRequestPhase;

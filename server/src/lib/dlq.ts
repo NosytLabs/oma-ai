@@ -107,7 +107,7 @@ export async function addSettlementToDlq(
 	}
 }
 
-export interface DrainResult {
+interface DrainResult {
 	scanned: number;
 	recovered: number;
 	failed: number;
@@ -204,7 +204,7 @@ export async function getSettlementDlqLength(): Promise<number> {
 // because a webhook entry is replayed to the PROVIDER, not into Postgres.
 // ---------------------------------------------------------------------------
 
-export interface DlqEntry {
+interface DlqEntry {
 	provider: string;
 	body: string;
 	error: string;

@@ -93,7 +93,7 @@ const LazyModelComparePanel = dynamic(
 	{ ssr: false, loading: () => null },
 );
 
-export interface RegeneratePlan {
+interface RegeneratePlan {
 	prompt: string;
 	primaryMessages: Message[];
 	compareMessages: Message[];

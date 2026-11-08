@@ -27,7 +27,7 @@ export const RESERVATION_STATE = {
 	Settled: "settled",
 } as const;
 
-export type ReservationState =
+type ReservationState =
 	(typeof RESERVATION_STATE)[keyof typeof RESERVATION_STATE];
 
 /** Every reservation state. */

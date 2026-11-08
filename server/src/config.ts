@@ -181,7 +181,7 @@ const envSchema = z.object({
 		POLAR_SCALE_PRODUCT_ID: z.string().min(1).optional(),
 });
 
-export type Config = z.infer<typeof envSchema>;
+type Config = z.infer<typeof envSchema>;
 
 type PolarConfiguration = Pick<
 	Config,

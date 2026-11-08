@@ -1,5 +1,9 @@
 import { formatContextLength, resolveModelCapabilities, type Model, type ModelCapabilityMetadata } from "@/lib/models-data";
-import { parseModelMetadataVerification, parseModelPrivacy } from "@/lib/api/model-metadata";
+import {
+	parseModelMetadataVerification,
+	parseModelPrivacy,
+} from "@/lib/api/model-metadata";
+import { parseModelUnavailabilityCause } from "@/lib/model-availability";
 
 /** Fields returned by OMA's /v1/models endpoint. Prices are already per 1M. */
 export interface LiveModelDetails extends ModelCapabilityMetadata {
@@ -8,6 +12,7 @@ export interface LiveModelDetails extends ModelCapabilityMetadata {
 	metadata_verification?: { status: string; source_url: string; verified_at: string; note: string };
 	available?: boolean;
 	unavailable_reason?: string;
+	unavailable_cause?: string;
 	context_length?: number | null;
 	max_output_tokens?: number;
 	pricing?: { prompt?: string | number | null; completion?: string | number | null;
@@ -39,6 +44,7 @@ export function withLiveModelDetails(model: Model, live: LiveModelDetails | null
 		} : model.metadataVerification,
 		available: live.available,
 		unavailableReason: live.unavailable_reason ?? model.unavailableReason,
+		unavailableCause: parseModelUnavailabilityCause(live.unavailable_cause) ?? model.unavailableCause,
 		inputPricePer1M: priceOrFallback(live.pricing?.prompt, model.inputPricePer1M),
 		outputPricePer1M: priceOrFallback(live.pricing?.completion, model.outputPricePer1M),
 		contextTokens: context,

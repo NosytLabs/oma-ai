@@ -19,7 +19,7 @@ import {
 	type RedisEvalResult,
 } from "./utils.js";
 
-export interface TokenBucketConfig {
+interface TokenBucketConfig {
 	bucketSize: number;
 	refillRate: number; // tokens per second
 }
@@ -142,7 +142,7 @@ export async function checkTokenBucket(
 		}
 
 		// Middleware options
-	export interface TokenBucketOptions {
+	interface TokenBucketOptions {
 		bucketSize?: number;
 		refillRate?: number;
 		keyPrefix?: string;
@@ -273,7 +273,7 @@ export function tokenBucket(options: TokenBucketOptions = {}) {
 		};
 }
 
-export interface ModelRateLimitOptions extends TokenBucketOptions {
+interface ModelRateLimitOptions extends TokenBucketOptions {
 	/** Disable the TPM (tokens-per-minute) layer. */
 	skipTpm?: boolean;
 }

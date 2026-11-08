@@ -53,7 +53,7 @@ export type DecideRefundBody = z.infer<typeof decideRefundSchema>;
  * so the schema doesn't need a migration. Stable key order keeps
  * equal envelopes producing equal strings (hashable, dedupable).
  */
-export type Envelope = { u?: string; n?: string };
+type Envelope = { u?: string; n?: string };
 
 export function encodeEnvelope(env: Envelope): string {
 	return JSON.stringify({ u: env.u, n: env.n });

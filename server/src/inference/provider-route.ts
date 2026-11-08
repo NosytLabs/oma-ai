@@ -11,7 +11,7 @@ import { logger } from "../lib/logger.js";
 import type { ModelDef } from "./models.js";
 
 /** Provider-specific request envelope. All backends are OpenAI-compatible. */
-export interface ProviderRoute {
+interface ProviderRoute {
 	baseUrl: string;
 	apiKey: string;
 	/**

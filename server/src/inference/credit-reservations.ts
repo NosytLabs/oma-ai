@@ -7,7 +7,7 @@ import { buildFallbackChain } from "./fallback.js";
 import { boundedDefaultOutput } from "./token-utils.js";
 import { ProviderError, isModelPrivacyAllowed, resolveProvider } from "./provider-route.js";
 
-export type BillingTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+type BillingTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 /** Provider tokenizers/framing have no verified local bound. Reserve each
  * candidate's full catalog context window for input (including tools/media),

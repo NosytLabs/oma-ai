@@ -200,7 +200,7 @@ function validateIpAllowlist(
 
 // ─── API key CRUD ──────────────────────────────────────────────────────────────
 
-export interface CreateApiKeyOptions {
+interface CreateApiKeyOptions {
 		expiresAt?: Date | null;
 		ipAllowlist?: string[] | null;
 		allowedModels?: string[] | null;

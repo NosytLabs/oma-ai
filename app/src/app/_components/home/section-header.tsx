@@ -12,7 +12,7 @@ import type { ReactNode } from "react";
 	*    the looser editorial feel (e.g. docs landing hero).
 	*/
 
-export interface SectionHeaderProps {
+interface SectionHeaderProps {
 	eyebrow?: string;
 	headline: ReactNode;
 	subhead?: ReactNode;

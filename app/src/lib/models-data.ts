@@ -8,6 +8,10 @@ import {
 	type ModelMetadataVerification,
 	type ModelPrivacy,
 } from "@/lib/api/model-metadata";
+import {
+	parseModelUnavailabilityCause,
+	type ModelUnavailabilityCause,
+} from "@/lib/model-availability";
 
 function deriveCapabilities(
 	id: string,
@@ -141,6 +145,8 @@ export interface Model {
 	 */
 	available?: boolean;
 	unavailableReason?: string;
+	/** Why the model is unavailable, when the server named a cause. */
+	unavailableCause?: ModelUnavailabilityCause | null;
 }
 
 export type Capability =
@@ -259,6 +265,8 @@ interface RawEntry {
 		verifiedAt: string;
 		note: string;
 	};
+	/** Raw unavailability cause; parsed into the vocabulary on the way to Model. */
+	unavailableCause?: string;
 	creditsPerMillionInput?: number;
 	creditsPerMillionOutput?: number;
 }
@@ -440,6 +448,7 @@ function toModel(entry: RawEntry): Model {
 		outputModalities: entry.outputModalities ?? ["text"],
 		privacy: parseModelPrivacy(entry.privacy) ?? undefined,
 		metadataVerification: toMetadataVerification(entry.metadataVerification),
+		unavailableCause: parseModelUnavailabilityCause(entry.unavailableCause),
 		...(entry.disabledReason ? { available: false, unavailableReason: entry.disabledReason } : {}),
 	};
 }
@@ -459,6 +468,7 @@ interface ApiModelEntry extends ModelCapabilityMetadata {
 	privacy?: string;
 	metadata_verification?: { status: string; source_url: string; verified_at: string; note: string };
 	unavailable_reason?: string;
+	unavailable_cause?: string;
 	/** Customer-facing name from the server catalog; never derive this when present. */
 	display_name?: string;
 	owned_by?: string;
@@ -625,6 +635,7 @@ const tier: Tier =
 						// a working model.
 						available: entry.available !== false,
 						unavailableReason: entry.unavailable_reason,
+					unavailableCause: parseModelUnavailabilityCause(entry.unavailable_cause),
 					};
 				});
 			_liveModels = models;

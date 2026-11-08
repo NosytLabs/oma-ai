@@ -1,12 +1,12 @@
 import { isA2UI } from "@/components/chat/A2UIRenderer";
 import type { Message } from "@/components/chat/chat-message-shared";
 
-export type MessageClassification =
+type MessageClassification =
 	| { kind: "plain" }
 	| { kind: "a2ui"; payload: unknown }
 	| { kind: "openui"; response: string };
 
-export interface ClassifyMessageOptions {
+interface ClassifyMessageOptions {
 	format?: Message["format"];
 	isStreaming?: boolean;
 	/** OpenUI's catalog-aware parser; injectable so this helper remains pure. */

@@ -24,7 +24,7 @@ import { resolveTrustedOrigins } from "../auth/origins.js";
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
-export interface OriginGuardOptions {
+interface OriginGuardOptions {
 	/** Extra origins beyond the configured app URL. */
 	allowedOrigins?: string[];
 	/** Allow requests that carry neither Origin nor Referer. */

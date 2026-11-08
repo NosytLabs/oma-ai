@@ -29,12 +29,12 @@ export function stripPendingAssistant(messages: Message[]): Message[] {
 	return messages;
 }
 
-export interface ThinkRouterHandlers {
+interface ThinkRouterHandlers {
 	onContent: (chunk: string) => void;
 	onReasoning: (chunk: string) => void;
 }
 
-export interface ThinkRouter {
+interface ThinkRouter {
 	route: (token: string) => void;
 	flushTail: () => void;
 }
@@ -184,7 +184,7 @@ export async function consumeSSE(
 	}
 }
 
-export interface ChatResponseOptions {
+interface ChatResponseOptions {
 	freeModel: boolean;
 	onDailyQuota?: (quota: DailyQuota) => void;
 }

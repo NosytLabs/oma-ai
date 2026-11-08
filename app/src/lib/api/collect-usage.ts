@@ -1,6 +1,6 @@
 import type { UsageRecord } from "./types";
 
-export interface UsagePage {
+interface UsagePage {
 	records: UsageRecord[];
 	nextCursor: string | null;
 }

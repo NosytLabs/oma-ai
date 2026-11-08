@@ -1,4 +1,9 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import {
+	MODEL_UNAVAILABILITY_CAUSE,
+	modelUnavailabilityCauseLabel,
+	parseModelUnavailabilityCause,
+} from "../model-availability";
 
 /**
  * GET /v1/models already tells the truth about availability: an entry is
@@ -62,5 +67,49 @@ describe("loadModels carries upstream availability", () => {
 		const models = await loadModels();
 
 		expect(models[0]?.available).toBe(true);
+	});
+});
+
+describe("parseModelUnavailabilityCause", () => {
+	it("parses the known causes", () => {
+		expect(parseModelUnavailabilityCause("disabled")).toBe(
+			MODEL_UNAVAILABILITY_CAUSE.Disabled,
+		);
+		expect(parseModelUnavailabilityCause("missing_credential")).toBe(
+			MODEL_UNAVAILABILITY_CAUSE.MissingCredential,
+		);
+		expect(parseModelUnavailabilityCause("policy_blocked")).toBe(
+			MODEL_UNAVAILABILITY_CAUSE.PolicyBlocked,
+		);
+		expect(parseModelUnavailabilityCause("unknown_provider")).toBe(
+			MODEL_UNAVAILABILITY_CAUSE.UnknownProvider,
+		);
+	});
+
+	it("returns null for an unknown cause", () => {
+		expect(parseModelUnavailabilityCause("paused")).toBeNull();
+		expect(parseModelUnavailabilityCause(undefined)).toBeNull();
+	});
+});
+
+describe("modelUnavailabilityCauseLabel", () => {
+	it("explains every known cause", () => {
+		expect(modelUnavailabilityCauseLabel(MODEL_UNAVAILABILITY_CAUSE.Disabled)).toBe(
+			"Paused by an operator",
+		);
+		expect(
+			modelUnavailabilityCauseLabel(MODEL_UNAVAILABILITY_CAUSE.MissingCredential),
+		).toContain("credential");
+		expect(
+			modelUnavailabilityCauseLabel(MODEL_UNAVAILABILITY_CAUSE.PolicyBlocked),
+		).toContain("policy");
+		expect(
+			modelUnavailabilityCauseLabel(MODEL_UNAVAILABILITY_CAUSE.UnknownProvider),
+		).toBe("Provider is not configured on this deployment");
+	});
+
+	it("returns null for an unknown cause so the caller keeps its generic copy", () => {
+		expect(modelUnavailabilityCauseLabel(null)).toBeNull();
+		expect(modelUnavailabilityCauseLabel(undefined)).toBeNull();
 	});
 });

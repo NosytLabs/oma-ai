@@ -147,7 +147,7 @@ export function setCache<T>(key: string, data: T, ttl = DEFAULT_TTL): void {
 	* with a `responseType` discriminator so callers can ask for a `Blob`
 	* (CSV/JSON export downloads) instead of the default JSON parse.
 	*/
-export interface RequestOptions extends RequestInit {
+interface RequestOptions extends RequestInit {
 		responseType?: "json" | "blob";
 		/** Read download metadata while the shared timeout still bounds body reads. */
 		onResponseHeaders?: (headers: Headers) => void;

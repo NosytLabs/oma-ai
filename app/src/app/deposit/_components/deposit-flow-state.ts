@@ -40,7 +40,7 @@ export type DepositFlowStep =
  * reload, so the screen can come back to a flow that is already running
  * (in flight) or that still needs to be registered (pending).
  */
-export type DepositFlowEvent =
+type DepositFlowEvent =
 	| "submit"
 	| "registered"
 	| "wallet-rejected"
@@ -52,7 +52,7 @@ export type DepositFlowEvent =
 	| "sync-in-flight";
 
 /** The step each event leads to. */
-export const DEPOSIT_FLOW_EVENT_STEP: Record<
+const DEPOSIT_FLOW_EVENT_STEP: Record<
 	DepositFlowEvent,
 	DepositFlowStep
 > = {
@@ -75,7 +75,7 @@ export const DEPOSIT_FLOW_EVENT_STEP: Record<
  * `complete` and `error` can start a new flow; `processing` can finish,
  * fail, or return to the form when the wallet rejects the transfer.
  */
-export const DEPOSIT_FLOW_TRANSITIONS: Record<
+const DEPOSIT_FLOW_TRANSITIONS: Record<
 	DepositFlowStep,
 	readonly DepositFlowStep[]
 > = {

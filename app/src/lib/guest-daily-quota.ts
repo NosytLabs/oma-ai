@@ -17,7 +17,7 @@ export type GuestQuota = {
 	date: string;
 };
 
-export type ServerQuotaPayload = {
+type ServerQuotaPayload = {
 	remaining?: number | null;
 	limit?: number | null;
 	used?: number | null;

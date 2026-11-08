@@ -53,7 +53,7 @@ import {
 	type DiscoveredWallet,
 } from "@/lib/wallet";
 
-export interface PendingDeposit {
+interface PendingDeposit {
 	id: string;
 	status: UserDeposit["status"];
 	amountCents: string;

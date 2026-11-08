@@ -28,7 +28,7 @@ export interface CreditTransaction {
  * vocabulary: deposits carry deposit statuses, usage and refunds carry
  * usage statuses. The row type decides which one applies.
  */
-export type CreditTransactionStatus = DepositStatus | UsageStatus;
+type CreditTransactionStatus = DepositStatus | UsageStatus;
 
 /**
  * The row's status, narrowed to the vocabulary its type owns.
@@ -45,7 +45,7 @@ export function creditTransactionStatus(
 		: parseUsageStatus(tx.status);
 }
 
-export interface CreditTransactionsResponse {
+interface CreditTransactionsResponse {
 	transactions: CreditTransaction[];
 }
 

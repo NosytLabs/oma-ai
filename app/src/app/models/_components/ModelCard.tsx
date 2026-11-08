@@ -17,6 +17,7 @@ import {
 	MODEL_METADATA_VERIFICATION,
 	modelMetadataVerificationLabel,
 } from "@/lib/api/model-metadata";
+import { modelUnavailabilityCauseLabel } from "@/lib/model-availability";
 
 interface ModelCardProps {
 	model: Model;
@@ -60,6 +61,12 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 	// dead-end rather than advertising something that cannot run. An omitted
 	// flag means "no signal" (static fallback catalog) and stays available.
 	const unavailable = model.available === false;
+	// Say why the model is unavailable when the server named a cause; fall
+	// back to the generic notice rather than inventing a reason.
+	const unavailableNote =
+		model.unavailableReason ??
+		modelUnavailabilityCauseLabel(model.unavailableCause) ??
+		"This model is currently unavailable. Prices are listed for reference; check availability before sending a request.";
 
 	return (
 		<InViewFade key={model.id} delay={index * 0.05} eager>
@@ -100,7 +107,7 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 						)}
 						{unavailable && (
 							<span
-								title="This model is currently unavailable. Prices are listed for reference; check availability before sending a request."
+								title={unavailableNote}
 								className="px-2.5 py-1 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider border border-amber/30 bg-amber/10 text-amber"
 							>
 								Unavailable

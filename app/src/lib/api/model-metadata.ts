@@ -24,7 +24,7 @@ export type ModelMetadataVerification =
 	(typeof MODEL_METADATA_VERIFICATION)[keyof typeof MODEL_METADATA_VERIFICATION];
 
 /** Every metadata verification status, in wire order. */
-export const MODEL_METADATA_VERIFICATION_STATUSES: readonly ModelMetadataVerification[] = [
+const MODEL_METADATA_VERIFICATION_STATUSES: readonly ModelMetadataVerification[] = [
 	MODEL_METADATA_VERIFICATION.Verified,
 	MODEL_METADATA_VERIFICATION.Unverified,
 ];
@@ -42,7 +42,7 @@ export const MODEL_PRIVACY = {
 export type ModelPrivacy = (typeof MODEL_PRIVACY)[keyof typeof MODEL_PRIVACY];
 
 /** Every privacy value, in wire order. */
-export const MODEL_PRIVACY_VALUES: readonly ModelPrivacy[] = [
+const MODEL_PRIVACY_VALUES: readonly ModelPrivacy[] = [
 	MODEL_PRIVACY.Private,
 	MODEL_PRIVACY.Anonymized,
 	MODEL_PRIVACY.Unverified,
@@ -83,7 +83,7 @@ export function modelMetadataVerificationLabel(
 }
 
 /** How a metadata verification status should be tinted. */
-export type ModelMetadataVerificationTone = "success" | "warning" | "muted";
+type ModelMetadataVerificationTone = "success" | "warning" | "muted";
 
 /** The tone for a metadata verification status. Unknown is muted, not green. */
 export function modelMetadataVerificationTone(

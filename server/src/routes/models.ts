@@ -1,11 +1,7 @@
 import { Hono } from "hono";
 import type { OmaEnv } from "../types.js";
-import {
-		ensureCatalogLoaded,
-		listAllModels,
-		providerAvailable,
-		type ModelDef,
-} from "../inference/models.js";
+import { ensureCatalogLoaded, listAllModels, type ModelDef } from "../inference/models.js";
+import { modelAvailability } from "../inference/model-availability.js";
 import { userFacingFor } from "../inference/billing-service.js";
 
 export const modelRoutes = new Hono<OmaEnv>();
@@ -32,6 +28,7 @@ function facingPrices(m: ModelDef) {
 
 /** One serialization contract for both catalog endpoints. */
 function serializeModel(m: ModelDef) {
+    const availability = modelAvailability(m);
     return {
         id: m.id,
         object: "model",
@@ -56,8 +53,9 @@ function serializeModel(m: ModelDef) {
             verified_at: m.metadataVerification.verifiedAt,
             note: m.metadataVerification.note,
         } } : {}),
-        available: providerAvailable(m),
-        ...(m.disabledReason ? { unavailable_reason: m.disabledReason } : {}),
+        available: availability.available,
+        ...(availability.cause ? { unavailable_cause: availability.cause } : {}),
+        ...(availability.reason ? { unavailable_reason: availability.reason } : {}),
         pricing: facingPrices(m),
     };
 }

@@ -25,7 +25,7 @@ export interface UserDeposit {
 	completedAt: string | null;
 }
 
-export interface DepositSubmission {
+interface DepositSubmission {
 	amountUsd: number;
 	txHash: string;
 	fromAddress: `0x${string}`;

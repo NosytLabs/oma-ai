@@ -31,7 +31,7 @@ export const DEPOSIT_STATUSES = [
 ] as const;
 
 /** Statuses that mean the deposit has reached a decided state. */
-export const TERMINAL_DEPOSIT_STATUSES: readonly DepositStatus[] = [
+const TERMINAL_DEPOSIT_STATUSES: readonly DepositStatus[] = [
 	DEPOSIT_STATUS.Completed,
 	DEPOSIT_STATUS.Failed,
 	DEPOSIT_STATUS.Expired,
@@ -39,7 +39,7 @@ export const TERMINAL_DEPOSIT_STATUSES: readonly DepositStatus[] = [
 ];
 
 /** Statuses where the deposit is still working towards a decision. */
-export const PENDING_DEPOSIT_STATUSES: readonly DepositStatus[] = [
+const PENDING_DEPOSIT_STATUSES: readonly DepositStatus[] = [
 	DEPOSIT_STATUS.Pending,
 	DEPOSIT_STATUS.Settling,
 ];

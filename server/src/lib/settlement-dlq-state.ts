@@ -23,7 +23,7 @@ export const SETTLEMENT_DLQ_STATE = {
 	Abandoned: "abandoned",
 } as const;
 
-export type SettlementDlqState =
+type SettlementDlqState =
 	(typeof SETTLEMENT_DLQ_STATE)[keyof typeof SETTLEMENT_DLQ_STATE];
 
 /** Retries before an entry is abandoned for manual reconciliation. */

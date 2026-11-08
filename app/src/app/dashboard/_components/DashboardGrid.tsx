@@ -114,7 +114,7 @@ function EmptyState({
 
 /** Wraps a lazy component in a mini error boundary so one failing widget
 	* doesn't crater the whole dashboard. */
-export function WidgetErrorBoundary({
+function WidgetErrorBoundary({
 	children,
 	title,
 }: {

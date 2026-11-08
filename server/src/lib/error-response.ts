@@ -16,7 +16,7 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
  * `type` defaults to the OpenAI-compatible "api_error" for 5xx and
  * "invalid_request_error" for 4xx — both well-known values SDK clients handle.
  */
-export type ErrorType =
+type ErrorType =
 	| "invalid_request_error"
 	| "authentication_error"
 	| "permission_error"

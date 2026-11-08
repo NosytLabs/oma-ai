@@ -18,7 +18,7 @@ import { databaseErrorMetadata } from "../lib/database-error.js";
 
 /** Canonical app DB type. Neon HTTP is API-compatible at runtime; we cast
 	*  so call sites keep full `returning()` / query typing without union collapse. */
-export type AppDb = NodePgDatabase<typeof schema>;
+type AppDb = NodePgDatabase<typeof schema>;
 
 let _db: AppDb | null = null;
 let _dbInitFailed = false;

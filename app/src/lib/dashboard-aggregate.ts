@@ -2,13 +2,13 @@ import { MODEL_NAME_OVERRIDES, MODELS, type Model } from "@/lib/models-data"
 import type { UsageRecord, UsageSummary } from "@/lib/api"
 import { toDollars } from "@/lib/utils"
 
-export interface UsageByDay {
+interface UsageByDay {
 	date: string
 	requests: number
 	cost: number
 }
 
-export interface ModelSlice {
+interface ModelSlice {
 	name: string
 	value: number
 	color: string

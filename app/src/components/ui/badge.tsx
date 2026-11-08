@@ -11,7 +11,7 @@ import type { HTMLAttributes, KeyboardEvent, MouseEvent } from "react";
 type BadgeVariant =
 	"subtle" | "accent" | "success" | "warning" | "outline" | "solid";
 
-export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
+interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
 	variant?: BadgeVariant;
 	showDot?: boolean;
 	pulseDot?: boolean;

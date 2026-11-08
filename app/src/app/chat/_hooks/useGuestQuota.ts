@@ -30,7 +30,7 @@ interface UseGuestQuotaOptions {
  * The state is explicit now, and `guestQuota` stays as a derived view of it
  * so every existing call site keeps working unchanged.
  */
-export type GuestQuotaState =
+type GuestQuotaState =
 	/** The visitor is signed in: the anonymous daily quota does not apply. */
 	| { kind: "not-applicable" }
 	/** A guest visitor whose quota is not known yet. */

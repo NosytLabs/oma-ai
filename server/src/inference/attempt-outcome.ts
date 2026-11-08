@@ -29,11 +29,11 @@ export const INFERENCE_FAILURE_OUTCOME = {
 	Failed: "failed",
 } as const;
 
-export type InferenceFailureOutcome =
+type InferenceFailureOutcome =
 	(typeof INFERENCE_FAILURE_OUTCOME)[keyof typeof INFERENCE_FAILURE_OUTCOME];
 
 /** The signals a failed attempt produced. */
-export interface InferenceFailureInput {
+interface InferenceFailureInput {
 	/** The provider was reached and started work. */
 	providerStarted: boolean;
 	/** The provider explicitly rejected the request before doing work. */

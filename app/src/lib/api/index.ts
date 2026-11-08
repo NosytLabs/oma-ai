@@ -17,10 +17,7 @@ export {
 	request,
 } from "./client.js";
 
-export type {
-	CreditTransaction,
-	CreditTransactionStatus,
-} from "./credits.js";
+export type { CreditTransaction } from "./credits.js";
 export {
 	creditTransactionStatus,
 } from "./credits.js";
