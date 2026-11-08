@@ -136,22 +136,56 @@ coverage while that deployment capability is unavailable.
 
 Apply pending database migrations **before** releasing dependent API code.
 Migration `0005` adds persistent inference idempotency, `0006` increases refund
-precision, and `0007` adds credit reservations, detached financial receipts
-and provider response IDs.
+precision, `0007` adds credit reservations, detached financial receipts
+and provider response IDs, and `0008` reconciles the deposit-recovery
+checkpoint table for environments whose migration journal was baselined
+before `0001` ran.
 Run the repository migration command using the approved production connection,
 then verify the journal and expected tables before deploying the function.
 A successful local migration does not establish production schema readiness.
 
 Use the migration runner rather than `drizzle-kit migrate` by hand — it applies
 pending migrations with drizzle's own migrator (keeping the
-`__drizzle_migrations` journal drizzle-maintained) and then hard-fails if any
-table in `server/src/db/schema.ts` is missing:
+`__drizzle_migrations` journal drizzle-maintained), repairs the journal's id
+sequence, and then hard-fails if the database does not match
+`server/src/db/schema.ts`:
 
 ```bash
 cd server
 DATABASE_URL="<approved production connection>" node scripts/migrate-prod.mjs
 # verify only, migrate nothing:
 DATABASE_URL="<approved production connection>" node scripts/migrate-prod.mjs --check
+# schema drift only (tables, columns and indexes), no migration:
+DATABASE_URL="<approved production connection>" node scripts/schema-drift-check.mjs
+```
+
+The preflight compares **tables, columns and indexes**, not just table names.
+A declared UNIQUE INDEX can be missing while every declared table exists, and
+the usage ledger depends on `ON CONFLICT (request_id) DO NOTHING`, which
+Postgres rejects outright without the constraint. The drift check exits
+non-zero and lists exactly what is missing.
+
+The journal's `id SERIAL` sequence is repaired before every migration: a
+journal that was baselined by hand (rows inserted with explicit ids) leaves
+the sequence behind, and the next migrate would fail with `duplicate key
+value violates unique constraint "__drizzle_migrations_pkey"` for a reason
+unrelated to the migration itself.
+
+### Hand-written migrations need a snapshot
+
+Drizzle diffs new migrations against the **last snapshot** in
+`server/src/db/migrations/meta/`, not against the SQL files. A hand-written
+migration without a matching snapshot leaves the chain stale, and the next
+`drizzle-kit generate` emits a migration that re-creates tables that already
+exist — which fails against production with "relation already exists".
+
+After adding a migration by hand, refresh the snapshot so the chain stays
+coherent and confirm that generation is clean:
+
+```bash
+cd server
+pnpm exec drizzle-kit check      # chain is internally consistent
+pnpm exec drizzle-kit generate   # must print "No schema changes, nothing to migrate"
 ```
 
 A pooled Neon URL is rewritten to the direct endpoint automatically for
