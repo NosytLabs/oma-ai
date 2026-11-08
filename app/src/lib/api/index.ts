@@ -19,6 +19,10 @@ export {
 
 export type {
 	CreditTransaction,
+	CreditTransactionStatus,
+} from "./credits.js";
+export {
+	creditTransactionStatus,
 } from "./credits.js";
 export type {
 	RefundRecord,

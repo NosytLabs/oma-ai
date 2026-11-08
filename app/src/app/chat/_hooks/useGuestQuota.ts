@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { DailyQuota } from "@/lib/chat-stream";
 import {
 	freeLeftLabel,
@@ -17,8 +17,34 @@ interface UseGuestQuotaOptions {
 	onExhausted?: () => void;
 }
 
+/**
+ * The guest quota machine.
+ *
+ * The quota used to be a single `GuestQuota | null`, where `null` meant three
+ * different things: "signed in, so no guest quota applies", "still loading",
+ * and "yesterday's quota rolled over". A caller could not tell them apart,
+ * so the UI showed the same "Free daily allowance" text for a signed-in
+ * visitor, a visitor whose quota was still being fetched, and a visitor
+ * whose free allowance had just reset.
+ *
+ * The state is explicit now, and `guestQuota` stays as a derived view of it
+ * so every existing call site keeps working unchanged.
+ */
+export type GuestQuotaState =
+	/** The visitor is signed in: the anonymous daily quota does not apply. */
+	| { kind: "not-applicable" }
+	/** A guest visitor whose quota is not known yet. */
+	| { kind: "hydrating" }
+	/** The guest quota is known. */
+	| { kind: "ready"; quota: GuestQuota }
+	/** The guest quota was known and its day has rolled over. */
+	| { kind: "expired" };
+
 interface UseGuestQuotaResult {
+	/** Derived view of the state: the quota when it is known, otherwise null. */
 	guestQuota: GuestQuota | null;
+	/** The explicit state, for UI that needs to tell the cases apart. */
+	quotaState: GuestQuotaState;
 	/** Wire the stream hook's onDailyQuota to this to mirror server quota. */
 	onDailyQuota: (info: DailyQuota) => void;
 	/**
@@ -30,16 +56,37 @@ interface UseGuestQuotaResult {
 }
 
 /**
-	* Guest free-tier daily quota for website chat. Server is the source of
-	* truth (X-DailyLimit-* headers + 429 body); localStorage is a soft cache
-	* hydrated on load and refreshed from GET /v1/usage/today.
-	*/
+ * A short label for the guest allowance.
+ *
+ * The label used to be one line with a `guestQuota ? ... : ...` ternary, so
+ * "not known yet" and "reset at midnight" rendered identically. Each state
+ * now says what it means.
+ */
+export function guestQuotaLabel(state: GuestQuotaState): string {
+	switch (state.kind) {
+		case "ready":
+			return `${state.quota.remaining} free left`;
+		case "expired":
+			return "Free allowance resets at midnight";
+		case "hydrating":
+		case "not-applicable":
+			return "Free daily allowance";
+	}
+}
+
+/**
+ * Guest free-tier daily quota for website chat. Server is the source of
+ * truth (X-DailyLimit-* headers + 429 body); localStorage is a soft cache
+ * hydrated on load and refreshed from GET /v1/usage/today.
+ */
 export function useGuestQuota(opts: UseGuestQuotaOptions): UseGuestQuotaResult {
-	const [guestQuota, setGuestQuota] = useState<GuestQuota | null>(null);
+	const [quotaState, setQuotaState] = useState<GuestQuotaState>({
+		kind: "hydrating",
+	});
 
 	const applyGuestQuota = useCallback(
 		(next: GuestQuota) => {
-			setGuestQuota(next);
+			setQuotaState({ kind: "ready", quota: next });
 			writeStoredGuestQuota(next);
 		},
 		[],
@@ -48,11 +95,11 @@ export function useGuestQuota(opts: UseGuestQuotaOptions): UseGuestQuotaResult {
 	// Hydrate from localStorage, then refresh from GET /v1/usage/today.
 	useEffect(() => {
 		if (opts.isAuthenticated) {
-			setGuestQuota(null);
+			setQuotaState({ kind: "not-applicable" });
 			return;
 		}
 		const cached = readStoredGuestQuota();
-		if (cached) setGuestQuota(cached);
+		if (cached) setQuotaState({ kind: "ready", quota: cached });
 
 		let cancelled = false;
 		(async () => {
@@ -80,10 +127,16 @@ export function useGuestQuota(opts: UseGuestQuotaOptions): UseGuestQuotaResult {
 
 	// Expire the visible cache as well as the send gate when a tab remains
 	// mounted overnight. The next request obtains the new day's server quota.
+	// The state records "expired" rather than going back to "unknown", so the
+	// UI can say the allowance reset instead of pretending it is still loading.
+	const guestQuota = quotaState.kind === "ready" ? quotaState.quota : null;
 	useEffect(() => {
 		if (opts.isAuthenticated || !guestQuota) return;
 		const resetAt = Date.parse(`${guestQuota.date}T00:00:00Z`) + 86_400_000;
-		const timer = window.setTimeout(() => setGuestQuota(null), Math.max(0, resetAt - Date.now()));
+		const timer = window.setTimeout(
+			() => setQuotaState({ kind: "expired" }),
+			Math.max(0, resetAt - Date.now()),
+		);
 		return () => window.clearTimeout(timer);
 	}, [guestQuota, opts.isAuthenticated]);
 
@@ -116,5 +169,8 @@ export function useGuestQuota(opts: UseGuestQuotaOptions): UseGuestQuotaResult {
 		return true;
 	}, [guestQuota, opts.isAuthenticated, opts.onExhausted]);
 
-	return { guestQuota, onDailyQuota, allowGuestSend };
+	return useMemo(
+		() => ({ guestQuota, quotaState, onDailyQuota, allowGuestSend }),
+		[guestQuota, quotaState, onDailyQuota, allowGuestSend],
+	);
 }

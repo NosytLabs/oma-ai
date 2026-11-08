@@ -9,7 +9,8 @@ import {
 	RotateCcw,
 } from "lucide-react";
 import Link from "next/link";
-import type { CreditTransaction } from "@/lib/api";
+import { creditTransactionStatus, type CreditTransaction } from "@/lib/api";
+import { DEPOSIT_STATUS, depositStatusLabel } from "@/lib/api/deposit-status";
 import { resolveModelDisplayName } from "@/lib/dashboard-aggregate";
 import { formatTime, formatUsdPrecise, toDollars } from "@/lib/utils";
 
@@ -88,10 +89,18 @@ export function RecentTransactions({ transactions, isDemo = false }: RecentTrans
 					const Icon = TX_ICONS[tx.type] ?? ArrowDownLeft;
 					const iconStyle =
 						TX_ICON_STYLES[tx.type] ?? { text: "text-text-muted", hoverBorder: "" };
-					const label = (TX_LABELS[tx.type] ?? tx.type) + (tx.type === "deposit" && tx.status !== "completed" ? ` · ${tx.status}` : "");
+					// The status vocabulary belongs to the row type: deposits carry
+					// deposit statuses, usage and refunds carry usage statuses. An
+					// unknown value is labelled "Unknown" and never counted as
+					// posted, so a drifted row cannot look like a settled deposit.
+					const isDeposit = tx.type === "deposit";
+					const status = creditTransactionStatus(tx);
+					const label =
+						(TX_LABELS[tx.type] ?? tx.type) +
+						(isDeposit && status !== DEPOSIT_STATUS.Completed ? ` · ${depositStatusLabel(status)}` : "");
 						// Sign comes from the actual amount, not the type — a refund shows
 						// as +$X (money back in), a negative usage as -$X.
-						const posted = tx.type !== "deposit" || tx.status === "completed";
+						const posted = !isDeposit || status === DEPOSIT_STATUS.Completed;
 						const isCredit = tx.amountCents > 0 && posted;
 						const sign = !posted || tx.amountCents === 0 ? "" : isCredit ? "+" : "−";
 						const amountClass = isCredit

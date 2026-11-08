@@ -45,7 +45,7 @@ import { useConversationHistory } from "../_hooks/useConversationHistory";
 import { useChatScroll } from "../_hooks/useChatScroll";
 import { useChatShortcuts } from "../_hooks/useChatShortcuts";
 import { useModelLinkShare } from "../_hooks/useModelLinkShare";
-import { useGuestQuota } from "../_hooks/useGuestQuota";
+import { guestQuotaLabel, useGuestQuota } from "../_hooks/useGuestQuota";
 import { usePlaygroundState } from "../_hooks/usePlaygroundState";
 import { useStreamingChat, type SendMessageOptions } from "../_hooks/useStreamingChat";
 import {
@@ -338,7 +338,7 @@ function ShellContent() {
 		setAuthPromptReason("message-limit");
 		setAuthPromptOpen(true);
 	}, []);
-	const { guestQuota, onDailyQuota, allowGuestSend } = useGuestQuota({
+	const { guestQuota, quotaState, onDailyQuota, allowGuestSend } = useGuestQuota({
 		isAuthenticated,
 		onExhausted: handleQuotaExhausted,
 	});
@@ -851,7 +851,7 @@ function ShellContent() {
 									<p className="text-[11px] text-text-muted/80 tracking-wide font-mono min-w-0 break-words select-none">
 										{isReady && !isAuthenticated && verifiedFreeSelection && (
 											<span className="text-accent/80 font-semibold">
-												{guestQuota ? `${guestQuota.remaining} free left` : "Free daily allowance"}
+												{guestQuotaLabel(quotaState)}
 											</span>
 										)}
 										{guestNeedsSignIn && <Link href={loginHref} onClick={() => saveChatDraftForSignIn()} className="text-accent hover:underline">Sign in to use {modelName}</Link>}
