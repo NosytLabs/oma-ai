@@ -185,10 +185,6 @@ function useLiveModelCatalog(enabled = true): LiveModelCatalog {
 	return catalog;
 }
 
-export function useLiveModels(enabled = true): ModelOption[] {
-	return useLiveModelCatalog(enabled).models;
-}
-
 const LiveModelsContext = createContext<LiveModelCatalog | null>(null);
 
 export function LiveModelsProvider({ children }: { children: React.ReactNode }) {

@@ -100,24 +100,10 @@ async function settleAndCredit(
 export { parseUsdcAtomic };
 export { verifyPayment } from "./verify.js";
 export {
-		getSettlementReceipt,
-		getSettlementReceiptAsync,
-		isSettled,
-		isSettledAsync,
-		settlePayment,
-		settlePaymentAsync,
-		verifySettlementReceipt,
+	getSettlementReceiptAsync,
+	settlePayment,
 } from "./settle.js";
-export type {
-		PaymentMiddlewareConfig,
-		PaymentPayload,
-		PaymentRequired,
-		PaymentResponse,
-		PaymentSignature,
-		SettlementRecord,
-		SettlementResponse,
-		X402Version,
-} from "./types.js";
+export type { PaymentSignature } from "./types.js";
 
 // ============================================================
 // Hono Routes
@@ -570,7 +556,7 @@ x402Routes.post("/x402/middleware-test", async (c) => {
 // Payment Middleware
 // ============================================================
 
-export function paymentMiddleware(
+function paymentMiddleware(
 		middlewareConfig: PaymentMiddlewareConfig,
 ): MiddlewareHandler<OmaEnv> {
 		const {

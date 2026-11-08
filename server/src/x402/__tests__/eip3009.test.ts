@@ -118,7 +118,6 @@ vi.mock('../../lib/rpc-client.js', () => ({
 			// model a mined, successful transfer.
 			waitForTransactionReceipt: receiptMock,
 		})),
-		resetPublicClient: vi.fn(),
 	}))
 
 // ── Config mock ──────────────────────────────────────────

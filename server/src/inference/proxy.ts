@@ -13,25 +13,14 @@ import { buildFallbackChain } from "./fallback.js";
 import { logger } from "../lib/logger.js";
 
 // Decomposed modules — re-export for backward compatibility.
-export {
-		ProviderError,
-		resolveProvider,
-		type ProviderRoute,
-} from "./provider-route.js";
+export { ProviderError } from "./provider-route.js";
 export { estimateTokens, flattenMessageContent } from "./token-utils.js";
-export {
-		assertSufficientBalance,
-		recordUsage,
-		type RecordUsageArgs,
-} from "./billing.js";
+
 export {
 		createStreamingProxy,
 		parseNonStreamingResponse,
-		type StreamingProxyArgs,
 } from "./streaming.js";
 
-// Re-export for existing test/route imports that pull helpers from proxy.
-export { FALLBACK_MAP, buildFallbackChain, rewriteSseModelField } from "./fallback.js";
 
 import { ProviderAuthenticationError, ProviderError, resolveProvider, isModelPrivacyAllowed } from "./provider-route.js";
 

@@ -46,17 +46,17 @@ import {
 } from "lucide-react";
 import { useCallback, useId, useMemo, useRef, useState, type ReactNode } from "react";
 
-const A2UI_VERSION = "0.9.1";
-
-/* ─────────────────────────── types ─────────────────────────── */
-
-export interface A2UIComponent {
+interface A2UIComponent {
 	id: string;
 	component: string;
 	children?: string[];
 	child?: string;
 	[key: string]: unknown;
 }
+
+const A2UI_VERSION = "0.9.1";
+
+/* ─────────────────────────── types ─────────────────────────── */
 
 interface A2UICreateSurface {
 	surfaceId: string;

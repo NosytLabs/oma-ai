@@ -4,11 +4,7 @@ import { settlements } from "../db/schema.js";
 import { addSettlementToDlq } from "../lib/dlq.js";
 import { logger } from "../lib/logger.js";
 import { getRedisClient } from "../lib/redis-client.js";
-import {
-		createReceiptPayload,
-		signReceipt,
-		verifyReceipt,
-} from "./facilitator-signing.js";
+import { createReceiptPayload, signReceipt } from "./facilitator-signing.js";
 import {
 		atomicCacheDelete,
 		atomicCacheSet,
@@ -255,19 +251,6 @@ export function settlePayment(
 		return { settled: true, receipt };
 }
 
-export async function isSettledAsync(txHash: string, networkId: string): Promise<boolean> {
-		const cacheKey = getSettlementCacheKey(networkId, txHash);
-		if (settlementCache.has(cacheKey)) {
-				return true;
-		}
-		const existing = await db.select().from(settlements).where(and(eq(settlements.txHash, txHash), eq(settlements.networkId, networkId))).limit(1);
-		return existing.length > 0;
-}
-
-export function isSettled(txHash: string, networkId: string): boolean {
-		return settlementCache.has(getSettlementCacheKey(networkId, txHash));
-}
-
 export async function getSettlementReceiptAsync(txHash: string, networkId: string): Promise<string | null> {
 		const cacheKey = getSettlementCacheKey(networkId, txHash);
 		const cached = settlementCache.get(cacheKey);
@@ -278,23 +261,3 @@ export async function getSettlementReceiptAsync(txHash: string, networkId: strin
 		return existing[0]?.receipt ?? null;
 }
 
-export function getSettlementReceipt(txHash: string, networkId: string): string | null {
-		const record = settlementCache.get(getSettlementCacheKey(networkId, txHash));
-		return record?.receipt ?? null;
-}
-
-export function verifySettlementReceipt(
-		txHash: string,
-		amount: string,
-		networkId: string,
-		payee: string,
-		settledAt: number,
-		receipt: string,
-		receiptExpiry?: number,
-): boolean {
-		if (receiptExpiry !== undefined && Date.now() > receiptExpiry * 1000) {
-				return false;
-		}
-		const payload = createReceiptPayload(txHash, amount, networkId, payee, settledAt);
-		return verifyReceipt(payload, receipt);
-}

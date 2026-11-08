@@ -1,6 +1,6 @@
 import { test as base, expect, type Page, type Route } from "@playwright/test";
 
-export const walletAddress = "0x1111111111111111111111111111111111111111";
+const walletAddress = "0x1111111111111111111111111111111111111111";
 const treasury = "0x2222222222222222222222222222222222222222";
 type HeldRequest = { started: Promise<void>; release: () => Promise<void> };
 interface DepositApi {

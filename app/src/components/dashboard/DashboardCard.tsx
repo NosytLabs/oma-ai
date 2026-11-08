@@ -18,7 +18,7 @@
 import type { ReactNode } from "react";
 import { cn } from "@/components/ui/utils";
 
-export type DashboardCardTone = "accent" | "success" | "info" | "warn" | "none";
+type DashboardCardTone = "accent" | "success" | "info" | "warn" | "none";
 
 interface DashboardCardProps {
 	/** Strip + hover color tone. */

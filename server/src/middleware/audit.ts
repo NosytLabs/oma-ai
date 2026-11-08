@@ -67,36 +67,3 @@ export function createAuditLogger(params: { action: AuditAction; resource: strin
 		};
 }
 
-/**
-	* Middleware factory for write-operation audit logs with dynamic resourceId
-	* and metadata resolved from the request context.
-	*
-	* SECURITY (audit 5.4): use this in mutation routes so audit logging is
-	* consistent across the operator surface. The middleware fires AFTER the
-	* handler completes, so the audit entry reflects the actual outcome (the
-	* `c.get("auditMetadata")` value set by the handler).
-	*/
-export function auditWriteOp(
-		action: AuditAction,
-		resource: string,
-		resourceIdFn: (c: Context) => string | undefined,
-		metadataFn: (c: Context) => Record<string, unknown> | undefined,
-) {
-		return async (c: Context, next: Next) => {
-				await next();
-				const userId = c.get("userId") as string | undefined;
-				const ipAddress = extractClientIp(c);
-				const userAgent = c.req.header("user-agent") ?? null;
-				await auditLog({
-						userId,
-						action,
-						resource,
-						resourceId: resourceIdFn(c),
-						metadata: metadataFn(c),
-						ipAddress,
-						userAgent: userAgent ?? undefined,
-				});
-		};
-}
-
-

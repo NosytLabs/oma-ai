@@ -15,7 +15,7 @@
  *
  * Adding a model here explicitly sponsors its upstream inference costs.
  */
-export const FREE_WEBSITE_MODEL_IDS = new Set([
+const FREE_WEBSITE_MODEL_IDS = new Set([
 	"deepseek-v4-flash-0731-openbroker", // OpenBroker DeepSeek V4 Flash (0731)
 	"minimax-m2-7", //                    OpenBroker MiniMax M2.7
 	"zai-org-glm-5-3", //                 OpenBroker GLM-5.3 Flash

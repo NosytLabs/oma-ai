@@ -215,7 +215,7 @@ function planFromProductId(
 	* /api/webhook/polar so operators can point the Polar dashboard at either
 	* URL without breaking delivery.
 	*/
-export async function polarWebhookHandler(c: Context<OmaEnv>) {
+async function polarWebhookHandler(c: Context<OmaEnv>) {
 	if (!config.POLAR_WEBHOOK_SECRET) {
 		return errorResponse(c, "Webhook secret not configured on the server. Set POLAR_WEBHOOK_SECRET in server/.env.", 503, { type: "not_configured", code: "polar_webhook_secret_missing" });
 	}

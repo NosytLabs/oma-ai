@@ -5,6 +5,18 @@
 
 import type { UsageStatus } from "./usage-status.js";
 
+interface UsageTotals {
+	requests: number;
+	errors: number;
+	aborted: number;
+	free_requests: number;
+	active_models: number;
+	input_tokens: number;
+	output_tokens: number;
+	billed_cents: string;
+	avg_latency_ms: number | null;
+}
+
 // ─── Auth ──────────────────────────────────────────────────────────────────────
 
 export interface User {
@@ -89,18 +101,6 @@ export interface UsageRecord {
 	createdAt: string;
 }
 
-export interface UsageTotals {
-	requests: number;
-	errors: number;
-	aborted: number;
-	free_requests: number;
-	active_models: number;
-	input_tokens: number;
-	output_tokens: number;
-	billed_cents: string;
-	avg_latency_ms: number | null;
-}
-
 export interface UsageModelSummary {
 	model: string;
 	requests: number;
@@ -126,7 +126,7 @@ export interface UsageSummary {
 
 // ─── Models ───────────────────────────────────────────────────────────────────
 
-export interface Model {
+interface Model {
 	id: string;
 	object: string;
 	created: number;

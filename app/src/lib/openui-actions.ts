@@ -1,6 +1,6 @@
 import { CHAT_PARAM_BOUNDS } from "@/lib/chat-params-storage";
 
-export interface OpenUIChatSettings {
+interface OpenUIChatSettings {
 	model?: string;
 	temperature?: number;
 	topP?: number;

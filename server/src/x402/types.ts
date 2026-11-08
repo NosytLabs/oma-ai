@@ -2,7 +2,7 @@
 // Extracted from facilitator.ts (2026-07-26 module split) — the public
 // surface is still re-exported from "./facilitator.js".
 
-export type X402Version = "1" | "2";
+type X402Version = "1" | "2";
 
 export interface PaymentPayload {
 		x402Version: X402Version;

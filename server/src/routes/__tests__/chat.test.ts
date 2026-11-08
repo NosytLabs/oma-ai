@@ -98,7 +98,6 @@ vi.mock("../../inference/proxy.js", () => ({
 	},
 	estimateTokens: vi.fn(() => 10),
 	flattenMessageContent: vi.fn((c: unknown) => String(c)),
-	assertSufficientBalance: vi.fn(),
 	routeRequestWithFallback: mockRouteRequest,
 	createStreamingProxy: mockCreateStreamingProxy,
 	parseNonStreamingResponse: mockParseNonStreaming,

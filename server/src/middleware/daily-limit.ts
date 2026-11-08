@@ -21,7 +21,7 @@ import { getModelById } from "../inference/models.js";
 import { isFreeWebsiteModel } from "../inference/free-website-model.js";
 import { isWebsiteChatRequest } from "../inference/website-chat-request.js";
 import { consumeDailyQuota, DAILY_LIMIT_ANONYMOUS, DAILY_LIMIT_REGISTERED } from "../lib/daily-quota.js";
-export { DAILY_LIMIT_ANONYMOUS, DAILY_LIMIT_REGISTERED } from "../lib/daily-quota.js";
+export { DAILY_LIMIT_ANONYMOUS } from "../lib/daily-quota.js";
 
 /**
 	* Middleware to enforce daily usage limits for website chat.

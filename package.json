@@ -18,7 +18,8 @@
     "validate:typecheck": "pnpm -r run typecheck",
     "validate:lint": "pnpm -r run lint",
     "validate:test": "pnpm -r test",
-    "licenses:generate": "node scripts/generate-third-party-notices.mjs"
+    "licenses:generate": "node scripts/generate-third-party-notices.mjs",
+    "audit:dead": "knip --no-progress"
   },
   "pnpm": {
     "overrides": {
@@ -54,7 +55,6 @@
   },
   "devDependencies": {
     "eslint-plugin-react-hooks": "^7.1.1",
-    "vite": "~8.2.4",
-    "typescript": "6.0.3"
+    "knip": "^5.63.0"
   }
 }

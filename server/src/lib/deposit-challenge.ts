@@ -61,7 +61,7 @@ function hmac(data: string): Buffer {
 }
 
 /** Generate a random nonce from a CSPRNG (never Math.random). */
-export function generateNonce(): string {
+function generateNonce(): string {
 	return randomBytes(16).toString("hex");
 }
 
@@ -152,7 +152,7 @@ export function verifyDepositChallenge(args: {
 }
 
 /** Canonical text the depositor's wallet signs to prove ownership. */
-export function buildDepositSignMessage(args: {
+function buildDepositSignMessage(args: {
 	fromAddress: string;
 	challengeToken: string;
 	depositAddress: string;

@@ -12,7 +12,7 @@ vi.mock("../../inference/models.js", () => ({ getModelById: () => ({ id: "minima
 vi.mock("../../inference/billing-service.js", () => ({ getModelPricing: () => ({ inputPer1M: 0.02, outputPer1M: 0.02 }) }));
 vi.mock("../../inference/billing.js", () => ({ recordUsage: mocks.record }));
 vi.mock("../../inference/proxy.js", () => ({
-	routeRequestWithFallback: mocks.route, parseNonStreamingResponse: mocks.parse, assertSufficientBalance: mocks.balance,
+	routeRequestWithFallback: mocks.route, parseNonStreamingResponse: mocks.parse,
 	estimateTokens: () => 2, flattenMessageContent: (value: unknown) => String(value),
 	ProviderError: class extends Error { status: number; constructor(message: string, status: number) { super(message); this.status = status; } },
 }));

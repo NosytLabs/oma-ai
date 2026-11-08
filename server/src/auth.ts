@@ -48,7 +48,7 @@ const RESEND_FROM = config.RESEND_FROM ?? "OMA-AI <noreply@oma-ai.com>";
 // gates the request.
 const EMAIL_SEND_COOLDOWN_SECONDS = 60;
 
-export async function checkEmailSendCooldown(
+async function checkEmailSendCooldown(
 	email: string,
 	kind: "magic" | "otp",
 ): Promise<{ ok: true } | { ok: false; retryAfter: number }> {
@@ -272,8 +272,7 @@ const ensClient = createPublicClient({
 // `staging` was the one that actually shipped — silently defaulted to
 // secure:false on a real HTTPS host. Fail closed instead: anything that
 // is not explicitly local development or test gets Secure cookies.
-export { shouldUseSecureCookies, resolveTrustedOrigins, resolveAuthBaseURL } from "./auth/origins.js";
-export type { AuthOriginConfig } from "./auth/origins.js";
+export { resolveTrustedOrigins, resolveAuthBaseURL } from "./auth/origins.js";
 const isSecureCookieEnv = shouldUseSecureCookies(config.NODE_ENV);
 
 export const authBaseURL = resolveAuthBaseURL(config);

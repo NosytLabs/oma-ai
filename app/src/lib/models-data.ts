@@ -3,6 +3,33 @@
 
 import catalogData from "../../../server/src/inference/model-catalog.json";
 
+function deriveCapabilities(
+	id: string,
+	displayName: string,
+	description: string | undefined,
+	serverCaps: readonly string[] | undefined,
+): Capability[] {
+	const out = new Set<Capability>();
+	const capSet = new Set((serverCaps ?? []).map((c) => c.toLowerCase()));
+	const haystack = `${id} ${displayName} ${description ?? ""}`.toLowerCase();
+
+	for (const capability of ["chat", "reasoning", "coding", "multimodal", "vision", "fast", "uncensored", "agents", "math"] as const) {
+		if (capSet.has(capability)) out.add(capability);
+	}
+	if (capSet.has("video-input") || capSet.has("audio-input"))
+		out.add("multimodal");
+	if (capSet.has("tools") || capSet.has("function-calling") || capSet.has("function_calling")) out.add("agents");
+
+	if (serverCaps === undefined) {
+		out.add("chat");
+		if (/uncensored|heretic/.test(haystack)) out.add("uncensored");
+		if (/(?:^|[-_/])coder(?:[-_/]|$)|codex/.test(id.toLowerCase()))
+			out.add("coding");
+	}
+
+	return [...out];
+}
+
 export type Tier = "budget" | "mid" | "premium" | "frontier";
 
 /**
@@ -234,33 +261,6 @@ export function formatContextLength(maxTokens: number): string {
 	}
 	const k = Math.round(maxTokens / 1000);
 	return `${k}K`;
-}
-
-export function deriveCapabilities(
-	id: string,
-	displayName: string,
-	description: string | undefined,
-	serverCaps: readonly string[] | undefined,
-): Capability[] {
-	const out = new Set<Capability>();
-	const capSet = new Set((serverCaps ?? []).map((c) => c.toLowerCase()));
-	const haystack = `${id} ${displayName} ${description ?? ""}`.toLowerCase();
-
-	for (const capability of ["chat", "reasoning", "coding", "multimodal", "vision", "fast", "uncensored", "agents", "math"] as const) {
-		if (capSet.has(capability)) out.add(capability);
-	}
-	if (capSet.has("video-input") || capSet.has("audio-input"))
-		out.add("multimodal");
-	if (capSet.has("tools") || capSet.has("function-calling") || capSet.has("function_calling")) out.add("agents");
-
-	if (serverCaps === undefined) {
-		out.add("chat");
-		if (/uncensored|heretic/.test(haystack)) out.add("uncensored");
-		if (/(?:^|[-_/])coder(?:[-_/]|$)|codex/.test(id.toLowerCase()))
-			out.add("coding");
-	}
-
-	return [...out];
 }
 
 export interface ModelCapabilityMetadata {
@@ -707,4 +707,3 @@ export function getModelsByTier(models: Model[]): Record<Tier, Model[]> {
 // Marketing counts derive from the shared catalog.
 /** Distinct public model identities; provider routes can share one model. */
 export const MODEL_COUNT = MODEL_PAGES.length;
-export const MODEL_ROUTE_COUNT = MODELS.length;

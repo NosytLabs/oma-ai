@@ -61,7 +61,8 @@ export const authClient = createAuthClient({
 	plugins: [magicLinkClient(), siweClient()],
 });
 
-export const { signIn, signOut: rawSignOut, useSession } = authClient;
+const { signIn, signOut: rawSignOut, useSession } = authClient;
+export { signIn, useSession };
 
 export interface SignOutOptions {
 	callbackURL?: string;

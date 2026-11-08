@@ -19,7 +19,36 @@ import { createWalletClient, custom, encodeFunctionData, getAddress, parseUnits,
 import { base } from "viem/chains";
 import { SiweMessage } from "siwe";
 
-export type Eip1193Provider = {
+/** Canonical deposit authorization message a wallet signs (must match server). */
+function buildDepositSignMessage(args: {
+	fromAddress: string;
+	challengeToken: string;
+	depositAddress: string;
+	/** Optional on-chain tx hash this authorization is bound to. */
+	txHash?: string;
+	/** Optional declared USD amount this authorization is bound to. */
+	amountUsd?: number | string;
+}): string {
+	const lines = [
+		"OMA-AI deposit authorization",
+		"",
+		`Sending wallet: ${args.fromAddress}`,
+		`Deposit to: ${args.depositAddress}`,
+		`Challenge: ${args.challengeToken}`,
+	];
+	if (args.txHash) lines.push(`Transaction: ${args.txHash}`);
+	if (args.amountUsd !== undefined) lines.push(`Amount USD: ${args.amountUsd}`);
+	return lines.join("\n");
+}
+
+/** Ask injected wallets to announce. Safe to call more than once. */
+function requestWalletDiscovery(): void {
+	installEip6963Listener();
+	if (typeof window === "undefined") return;
+	window.dispatchEvent(new Event("eip6963:requestProvider"));
+}
+
+type Eip1193Provider = {
 	request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
 	on?: (event: string, handler: (...args: unknown[]) => void) => void;
 	removeListener?: (event: string, handler: (...args: unknown[]) => void) => void;
@@ -79,13 +108,6 @@ function installEip6963Listener() {
 		});
 		notifyWallets();
 	});
-}
-
-/** Ask injected wallets to announce. Safe to call more than once. */
-export function requestWalletDiscovery(): void {
-	installEip6963Listener();
-	if (typeof window === "undefined") return;
-	window.dispatchEvent(new Event("eip6963:requestProvider"));
 }
 
 export function subscribeWallets(listener: () => void): () => void {
@@ -347,28 +369,6 @@ export async function ensureBaseChain(isActive?: () => boolean): Promise<void> {
 }
 
 const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as const;
-
-/** Canonical deposit authorization message a wallet signs (must match server). */
-export function buildDepositSignMessage(args: {
-	fromAddress: string;
-	challengeToken: string;
-	depositAddress: string;
-	/** Optional on-chain tx hash this authorization is bound to. */
-	txHash?: string;
-	/** Optional declared USD amount this authorization is bound to. */
-	amountUsd?: number | string;
-}): string {
-	const lines = [
-		"OMA-AI deposit authorization",
-		"",
-		`Sending wallet: ${args.fromAddress}`,
-		`Deposit to: ${args.depositAddress}`,
-		`Challenge: ${args.challengeToken}`,
-	];
-	if (args.txHash) lines.push(`Transaction: ${args.txHash}`);
-	if (args.amountUsd !== undefined) lines.push(`Amount USD: ${args.amountUsd}`);
-	return lines.join("\n");
-}
 
 /** Sign the canonical deposit message with the connected wallet. */
 export async function signDepositMessage(args: {

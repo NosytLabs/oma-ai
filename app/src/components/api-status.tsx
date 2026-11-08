@@ -64,4 +64,3 @@ export function useApiHealth() {
 	return { status, refresh, lastCheckedAt: dataUpdatedAt };
 }
 
-export type { HealthStatus };

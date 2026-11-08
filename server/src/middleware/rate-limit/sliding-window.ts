@@ -27,7 +27,7 @@ interface FixedWindowResult {
  * The previous three-round-trip version could orphan a key without a TTL if
  * the process died between INCR and EXPIRE, which 429'd that client forever.
  */
-export async function checkFixedWindow(
+async function checkFixedWindow(
 	redis: NonNullable<Awaited<ReturnType<typeof getRedisClient>>>,
 	key: string,
 	maxRequests: number,

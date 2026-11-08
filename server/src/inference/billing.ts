@@ -74,33 +74,6 @@ function estimateUserCostCents(
 }
 
 /**
-	* Legacy read-only affordability helper. Paid HTTP routes additionally reserve
-	* credit atomically before inference; this helper alone does not admit work.
-	*/
-export async function assertSufficientBalance(
-		userId: string,
-		pricing: ReturnType<typeof getModelPricing>,
-		promptTokens: number,
-		maxOutputTokens?: number,
-): Promise<void> {
-		const [balance] = await db
-				.select({ balanceCents: creditBalances.balanceCents })
-				.from(creditBalances)
-				.where(eq(creditBalances.userId, userId))
-				.limit(1);
-		const available = Number(balance?.balanceCents ?? 0);
-		const estimated = estimateUserCostCents(pricing, promptTokens, maxOutputTokens);
-		// A zero estimate can occur for a catalog entry with missing upstream
-		// pricing; allow it through so the provider/config error remains visible.
-		if (estimated > 0 && available < estimated) {
-				throw new ProviderError(
-						`Insufficient credits. Add credits to continue (estimated maximum: $${(estimated / 100).toFixed(4)}).`,
-						402,
-				);
-		}
-}
-
-/**
 	* Conditionally deduct `costCents` from the user balance.
 	* Returns true when a row was updated (balance was sufficient).
 	* Never floors below zero and never re-seeds free-trial credits.

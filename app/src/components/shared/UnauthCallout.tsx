@@ -17,7 +17,7 @@ import Link from "next/link";
 import { m } from "@/lib/framer-motion-client";
 import { springs } from "@/lib/animation";
 
-export type UnauthCalloutVariant = "dashboard" | "settings" | "deposit";
+type UnauthCalloutVariant = "dashboard" | "settings" | "deposit";
 
 interface UnauthCalloutProps {
 	variant: UnauthCalloutVariant;

@@ -72,10 +72,6 @@ vi.mock("../../middleware/audit.js", () => ({
 								ipAddress: c.req.header("x-real-ip") ?? "unknown",
 						});
 				},
-		auditWriteOp: () =>
-				async (_c: unknown, next: () => Promise<void>) => {
-						await next();
-				},
 }));
 
 vi.mock("../../lib/logger.js", () => ({ logger: mockLogger }));

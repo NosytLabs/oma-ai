@@ -89,7 +89,3 @@ export function getPublicClient(): BasePublicClient {
 		return cachedClient;
 }
 
-/** Reset cached client (for tests). */
-export function resetPublicClient(): void {
-		cachedClient = null;
-}

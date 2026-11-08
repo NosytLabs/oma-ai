@@ -1,9 +1,9 @@
 import type { Message } from "@/components/chat";
 import { isChatMessage } from "@/lib/chat-message-validation";
 
-export const CONVERSATION_HISTORY_VERSION = 1 as const;
-export const UNTITLED_CONVERSATION = "New chat";
+const UNTITLED_CONVERSATION = "New chat";
 
+export const CONVERSATION_HISTORY_VERSION = 1 as const;
 interface StorageAdapter {
 	getItem(key: string): string | null;
 	setItem(key: string, value: string): void;
