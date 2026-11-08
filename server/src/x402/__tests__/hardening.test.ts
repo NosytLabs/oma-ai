@@ -19,6 +19,7 @@ vi.mock("../../lib/logger.js", () => ({
 import { verifyPayment } from "../verify.js";
 import { atomicCacheSet, getSettlementCacheKey, settlementCache } from "../settlement-cache.js";
 import type { PaymentSignature } from "../types.js";
+import { SETTLEMENT_STATE } from "../types.js";
 
 function payment(): PaymentSignature {
 		const now = Math.floor(Date.now() / 1000);
@@ -60,6 +61,7 @@ describe("x402 launch hardening", () => {
 		it("normalizes settlement tx hashes in cache keys", () => {
 				const txHash = `0x${"AB".repeat(32)}`;
 				atomicCacheSet(getSettlementCacheKey("base", txHash), {
+						state: SETTLEMENT_STATE.Verified,
 						txHash, amount: "1.00", networkId: "base", payee: "treasury", settledAt: Date.now(),
 				});
 				expect(settlementCache.get(getSettlementCacheKey("base", txHash.toLowerCase()))?.amount).toBe("1.00");

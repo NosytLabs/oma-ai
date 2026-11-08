@@ -190,6 +190,20 @@ describe("credits routes", () => {
 			const res = await creditRequest("get", "/v1/credits/transactions?limit=5");
 			expect((await res.json()).transactions).toEqual([expect.objectContaining({ id: "old-request-refund", type: "refund", amountCents: 0.000006 })]);
 		});
+
+		it("reports the refunded request's real status instead of a hardcoded completed", async () => {
+			mockSelectReturns([], [], [{ id: "errored-request", totalCents: "10", model: "m", status: "error", refundedAt: new Date("2026-10-10T22:00:00Z") }]);
+			const res = await creditRequest("get", "/v1/credits/transactions?limit=5");
+			const rows = (await res.json()).transactions as { type: string; status: string }[];
+			expect(rows[0]).toMatchObject({ type: "refund", status: "error" });
+		});
+
+		it("normalizes an unknown stored usage status on the credit feed", async () => {
+			mockSelectReturns([], [{ id: "usage_1", totalCents: "50", status: "not-a-status", createdAt: new Date("2026-09-02T10:00:00Z"), model: "m" }], []);
+			const res = await creditRequest("get", "/v1/credits/transactions?limit=5");
+			const rows = (await res.json()).transactions as { type: string; status: string }[];
+			expect(rows[0]).toMatchObject({ type: "usage", status: "error" });
+		});
 	});
 
 });

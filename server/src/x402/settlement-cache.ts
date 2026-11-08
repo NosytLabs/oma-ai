@@ -1,5 +1,5 @@
 import { CACHE_TTL_MS } from "../constants.js";
-import type { PaymentPayload, PaymentResponse, SettlementRecord } from "./types.js";
+import { SETTLEMENT_STATE, type PaymentPayload, type PaymentResponse, type SettlementRecord } from "./types.js";
 import { logger } from "../lib/logger.js";
 
 // ============================================================
@@ -94,6 +94,7 @@ export function cacheVerifiedRecord(
 ): void {
 		if (result.valid && result.txHash) {
 				const record: SettlementRecord = {
+						state: SETTLEMENT_STATE.Verified,
 						txHash: result.txHash,
 						amount: result.amount ?? payload.amount,
 						networkId: result.networkId ?? payload.networkId,

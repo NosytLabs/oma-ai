@@ -63,6 +63,10 @@ export const PENDING_DEPOSIT_STATUSES: readonly DepositStatus[] = [
  * not currently write `settling` (the enum allows it and the client renders
  * it), so the transition table documents the intended lifecycle rather than
  * inventing behaviour.
+ *
+ * A terminal deposit is decided, but `completed` can still move to
+ * `refunded` — a refund is a later fact about a settled deposit, not a
+ * continuation of the deposit flow.
  */
 export const DEPOSIT_STATUS_TRANSITIONS: Record<
 	DepositStatus,

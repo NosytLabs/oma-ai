@@ -50,7 +50,26 @@ export interface PaymentResponse {
 		error?: string;
 }
 
-export interface SettlementRecord {
+/**
+ * Settlement cache state.
+ *
+ * The cache used to tell "verified but not settled" from "settled" by the
+ * presence of `receipt`: a missing receipt meant "not settled yet". That rule
+ * lived only in comments and in `if (record.receipt)` checks, so a settled
+ * record could be written without a receipt, and a reader could not tell the
+ * two apart without already knowing the convention.
+ *
+ * The state is now explicit and the type system enforces the pairing: a
+ * settled record always carries its receipt, a verified record never does.
+ */
+export const SETTLEMENT_STATE = {
+	/** The payment was verified on-chain; no receipt has been issued yet. */
+	Verified: "verified",
+	/** The payment was settled and a receipt was issued. */
+	Settled: "settled",
+} as const;
+
+interface SettlementRecordBase {
 	txHash: string;
 	amount: string;
 	networkId: string;
@@ -63,12 +82,34 @@ export interface SettlementRecord {
 	// claim a verified-but-unsettled payment.
 	payFrom?: string;
 	settledAt: number;
-		// receipt is optional on a *cached verified record* written by
-		// /x402/verify. The full settlement (with receipt) is written by
-		// settlePayment/settlePaymentAsync. This makes the cache state
-		// distinguishable: `receipt` undefined = verified-but-not-settled;
-		// `receipt` present = fully settled (idempotent re-lookup).
-		receipt?: string;
+}
+
+/** A verified payment that has not been settled yet. */
+interface VerifiedSettlementRecord extends SettlementRecordBase {
+	state: typeof SETTLEMENT_STATE.Verified;
+}
+
+/** A settled payment: the receipt exists and can be replayed. */
+export interface SettledSettlementRecord extends SettlementRecordBase {
+	state: typeof SETTLEMENT_STATE.Settled;
+	receipt: string;
+}
+
+/** A cached settlement in either state. */
+export type SettlementRecord =
+	| VerifiedSettlementRecord
+	| SettledSettlementRecord;
+
+/**
+ * True when the cached record is a completed settlement.
+ *
+ * Replaces the old "does it have a receipt?" test: the state is part of the
+ * record, so a settled record can never be missing its receipt.
+ */
+export function isSettledRecord(
+	record: SettlementRecord | null | undefined,
+): record is SettledSettlementRecord {
+	return record?.state === SETTLEMENT_STATE.Settled;
 }
 
 export interface SettlementResponse {

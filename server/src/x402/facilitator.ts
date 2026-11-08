@@ -20,6 +20,7 @@
 import { Hono } from "hono";
 import type { Context, Next, MiddlewareHandler } from "hono";
 import { config, isProductionEnv } from "../config.js";
+import { SETTLEMENT_STATE } from "./types.js";
 import { buildV2Challenge, buildXPaymentResponse, CAIP2_BASE_MAINNET, parsePaymentSignatureHeader, parseXPaymentHeader } from "./v2.js";
 import type { OmaEnv } from "../types.js";
 import { sessionAuth } from "../auth/middleware.js";
@@ -417,6 +418,7 @@ x402Routes.post(
 				// Repopulate the cache and credit if this settle has not yet
 				// been applied to a user balance (idempotent via deposits.tx_hash).
 				atomicCacheSet(cacheKey, {
+						state: SETTLEMENT_STATE.Settled,
 						txHash: existingSettlement[0].txHash,
 						amount: existingSettlement[0].amount,
 						networkId: existingSettlement[0].networkId,
@@ -456,7 +458,7 @@ x402Routes.post(
 		if (recovered) {
 			const [u] = await db.select({ evmAddress: userTable.evmAddress }).from(userTable).where(eq(userTable.id, userId)).limit(1);
 			if (!u?.evmAddress || u.evmAddress.toLowerCase() !== recovered.payFrom) return c.json(paymentError("x402_payer_mismatch", "Payment sender does not match the authenticated wallet", false), 403);
-			atomicCacheSet(cacheKey, { txHash: body.txHash, amount: recovered.amount, networkId: "base", payee: expectedPayee, payFrom: recovered.payFrom, settledAt: 0 });
+			atomicCacheSet(cacheKey, { state: SETTLEMENT_STATE.Verified, txHash: body.txHash, amount: recovered.amount, networkId: "base", payee: expectedPayee, payFrom: recovered.payFrom, settledAt: 0 });
 			try {
 				const result = await settleAndCredit(userId, body.txHash, recovered.amount, "base", expectedPayee, recovered.payFrom);
 				if (result.settled) c.header("PAYMENT-RESPONSE", buildXPaymentResponse({ txHash: body.txHash, payer: recovered.payFrom }));

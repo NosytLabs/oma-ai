@@ -11,7 +11,7 @@ import {
 		getSettlementCacheKey,
 		settlementCache,
 } from "./settlement-cache.js";
-import type { SettlementRecord, SettlementResponse } from "./types.js";
+import { isSettledRecord, SETTLEMENT_STATE, type SettledSettlementRecord, type SettlementResponse } from "./types.js";
 
 const LOCK_TTL_SECONDS = 30;
 
@@ -59,10 +59,10 @@ export async function settlePaymentAsync(
 		const cacheKey = getSettlementCacheKey(networkId, txHash);
 
 		const existing = settlementCache.get(cacheKey);
-		// a cached verified record (no receipt) is NOT a settled record;
-		// fall through to write a real settlement. Only short-circuit when the
-		// existing record carries a receipt (i.e. previously settled).
-		if (existing?.receipt) {
+		// A verified record is NOT a settled record: fall through to write a
+		// real settlement. Only short-circuit when the cached record is in the
+		// settled state (i.e. it carries a receipt).
+		if (isSettledRecord(existing)) {
 				return { settled: true, receipt: existing.receipt };
 		}
 
@@ -70,7 +70,7 @@ export async function settlePaymentAsync(
 		if (!lockAcquired) {
 				await new Promise((resolve) => setTimeout(resolve, 100));
 				const existingAfterLock = settlementCache.get(cacheKey);
-				if (existingAfterLock?.receipt) {
+				if (isSettledRecord(existingAfterLock)) {
 						return { settled: true, receipt: existingAfterLock.receipt };
 				}
 				const lockRetry = await acquireSettlementLock(cacheKey);
@@ -82,7 +82,8 @@ export async function settlePaymentAsync(
 		try {
 				const existingDb = await db.select().from(settlements).where(and(eq(settlements.txHash, txHash), eq(settlements.networkId, networkId))).limit(1);
 				if (existingDb.length > 0) {
-						const record: SettlementRecord = {
+						const record: SettledSettlementRecord = {
+								state: SETTLEMENT_STATE.Settled,
 								txHash: existingDb[0].txHash,
 								amount: existingDb[0].amount,
 								networkId: existingDb[0].networkId,
@@ -115,13 +116,11 @@ export async function settlePaymentAsync(
 								const receiptPayload = createReceiptPayload(txHash, amount, networkId, payee, settledAt);
 								const receipt = signReceipt(receiptPayload);
 
-								// Narrower than the shared SettlementRecord: this record is built
-						// from a freshly signed receipt, so `receipt` is definitely present.
-						// The shared type keeps receipt optional because a verified-but-not-
-						// settled cache entry has none. The DLQ needs the receipt to rebuild
-						// the NOT NULL settlements column, so state that here rather than
-						// casting at the call site.
-						const record: SettlementRecord & { receipt: string } = {
+								// A settled record always carries its receipt: the type says so, so
+								// the DLQ can rebuild the NOT NULL settlements column without a cast
+								// and no settled record can be written without one.
+						const record: SettledSettlementRecord = {
+										state: SETTLEMENT_STATE.Settled,
 										txHash,
 										amount,
 										networkId,
@@ -224,11 +223,12 @@ export function settlePayment(
 
 		const existing = settlementCache.get(cacheKey);
 		// C2 — only short-circuit on cache hit if the existing record is a
-		// *complete settlement* (has a receipt) AND the amount matches. The
-		// /x402/verify path caches a placeholder record (settledAt:0, no receipt)
-		// so settle can derive `amount` from the verify cache. Without this guard,
-		// settlePayment would return `{ settled: true, receipt: undefined }`.
-		if (existing?.receipt && existing.amount === amount) {
+		// *complete settlement* (settled state, so it has a receipt) AND the
+		// amount matches. The /x402/verify path caches a verified record
+		// (settledAt:0, no receipt) so settle can derive `amount` from the
+		// verify cache. Without this guard, settlePayment would return
+		// `{ settled: true, receipt: undefined }`.
+		if (isSettledRecord(existing) && existing.amount === amount) {
 				return { settled: true, receipt: existing.receipt };
 		}
 
@@ -236,7 +236,8 @@ export function settlePayment(
 		const receiptPayload = createReceiptPayload(txHash, amount, networkId, payee, settledAt);
 		const receipt = signReceipt(receiptPayload);
 
-		const record: SettlementRecord = {
+		const record: SettledSettlementRecord = {
+				state: SETTLEMENT_STATE.Settled,
 				txHash,
 				amount,
 				networkId,
@@ -254,7 +255,7 @@ export function settlePayment(
 export async function getSettlementReceiptAsync(txHash: string, networkId: string): Promise<string | null> {
 		const cacheKey = getSettlementCacheKey(networkId, txHash);
 		const cached = settlementCache.get(cacheKey);
-		if (cached?.receipt) {
+		if (isSettledRecord(cached)) {
 				return cached.receipt;
 		}
 		const existing = await db.select().from(settlements).where(and(eq(settlements.txHash, txHash), eq(settlements.networkId, networkId))).limit(1);

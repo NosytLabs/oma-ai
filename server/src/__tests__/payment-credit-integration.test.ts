@@ -48,6 +48,7 @@ import { db } from "../db/client.js";
 import { sql } from "drizzle-orm";
 import { DrizzleQueryError } from "drizzle-orm/errors";
 import { addSettlementToDlq, drainSettlementDlq, getSettlementDlqLength } from "../lib/dlq.js";
+import { SETTLEMENT_STATE } from "../x402/types.js";
 
 const app = new Hono().route("/", x402Routes);
 let schemaCreated = false;
@@ -91,7 +92,7 @@ describe.skipIf(!fixture.url)("durable credit claims (Postgres)", () => {
 		await testPool.end();
 	});
 
-	const queuedRecord = () => ({ txHash: fixture.txHash, amount: "1000", networkId: "eip155:8453", payee: fixture.treasury, receipt: "private-signed-receipt", settledAt: Date.now() });
+	const queuedRecord = () => ({ state: SETTLEMENT_STATE.Settled, txHash: fixture.txHash, amount: "1000", networkId: "eip155:8453", payee: fixture.treasury, receipt: "private-signed-receipt", settledAt: Date.now() });
 
 	it("retains the receipt for manual reconciliation after automatic retries are exhausted", async () => {
 		await addSettlementToDlq(queuedRecord(), "initial database failure", 11);

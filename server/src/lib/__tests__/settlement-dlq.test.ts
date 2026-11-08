@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { SETTLEMENT_STATE } from "../../x402/types.js";
 
 /**
  * The settlement DLQ is the only record that a payment was accepted on-chain
@@ -69,6 +70,7 @@ function updateChain() {
 }
 
 const RECORD = {
+	state: SETTLEMENT_STATE.Settled,
 	txHash: "0xabc",
 	amount: "1000",
 	networkId: "base",

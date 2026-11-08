@@ -2,7 +2,7 @@ import { and, asc, eq, lt, lte, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { settlementDlq, settlements } from "../db/schema.js";
 import { logger } from "./logger.js";
-import type { SettlementRecord } from "../x402/types.js";
+import type { SettledSettlementRecord } from "../x402/types.js";
 import { databaseErrorMetadata } from "./database-error.js";
 
 /**
@@ -50,7 +50,7 @@ function backoffMs(attempts: number): number {
  * original failure, not this one.
  */
 export async function addSettlementToDlq(
-	record: SettlementRecord & { receipt: string },
+	record: SettledSettlementRecord,
 	lastError: unknown,
 	attempts: number = 1,
 ): Promise<boolean> {

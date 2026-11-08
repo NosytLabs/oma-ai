@@ -5,12 +5,16 @@ import type { OmaEnv } from "../types.js";
 import { db } from "../db/client.js";
 import { sessionOrBearerAuth, requireAdmin } from "../auth/middleware.js";
 import { rateLimit } from "../middleware/rate-limit.js";
+import { OPEN_RESERVATION_STATES, RESERVATION_STATES } from "../lib/credit-reservation-state.js";
 
 /** Native operator diagnostics; the website blocks /api/v1/admin/* entirely. */
 export const adminCreditHoldsRoutes = new Hono<OmaEnv>();
+
+/** States where money may still be owed — the default filter for live holds. */
+const openStates = sql.join(OPEN_RESERVATION_STATES.map((reservationState) => sql`${reservationState}`), sql`, `);
 adminCreditHoldsRoutes.use("/v1/admin/credit-holds*", sessionOrBearerAuth, requireAdmin(), rateLimit({ windowMs: 60_000, maxRequests: 30, failClosed: false }));
 const parameters = z.object({
-	state: z.enum(["held", "reconciliation", "settled", "released"]).optional(),
+	state: z.enum(RESERVATION_STATES).optional(),
 	userId: z.string().min(1).max(256).optional(),
 	limit: z.coerce.number().int().min(1).max(100).default(25),
 	offset: z.coerce.number().int().min(0).max(10000).default(0),
@@ -22,7 +26,7 @@ adminCreditHoldsRoutes.get("/v1/admin/credit-holds", async c => {
 	const { state, userId, limit, offset } = parsed.data;
 	const result = await db.execute(sql`SELECT request_id AS "requestId",user_id AS "userId",reserved_cents AS "reservedCents",state,
 		created_at AS "createdAt",updated_at AS "updatedAt" FROM inference_credit_reservations
-		WHERE ${state ? sql`state=${state}` : sql`state IN ('held','reconciliation')`}
+		WHERE ${state ? sql`state=${state}` : sql`state IN (${openStates})`}
 		AND ${userId ? sql`user_id=${userId}` : sql`true`}
 		ORDER BY created_at,request_id LIMIT ${limit} OFFSET ${offset}`);
 	return c.json({ holds: result.rows, limit, offset });
@@ -44,7 +48,7 @@ adminCreditHoldsRoutes.get("/v1/admin/credit-holds-receipts", async c => {
 	c.header("Cache-Control", "no-store");
 	const parsed = z.coerce.number().int().min(1).max(100).default(25).safeParse(c.req.query("limit"));
 	if (!parsed.success) return c.json({ error: { message: "Invalid limit" } }, 400);
-	const result = await db.execute(sql`SELECT * FROM inference_financial_receipts WHERE state IN ('held','reconciliation') ORDER BY created_at LIMIT ${parsed.data}`);
+	const result = await db.execute(sql`SELECT * FROM inference_financial_receipts WHERE state IN (${openStates}) ORDER BY created_at LIMIT ${parsed.data}`);
 	return c.json({ receipts: result.rows });
 });
 adminCreditHoldsRoutes.get("/v1/admin/credit-holds-receipts/:requestId", async c => {

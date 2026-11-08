@@ -17,6 +17,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { and, desc, eq, gt, isNull, isNotNull } from "drizzle-orm";
+import { normalizeUsageStatus } from "../lib/usage-status.js";
 import type { OmaEnv } from "../types.js";
 import { sessionOrBearerAuth } from "../auth/middleware.js";
 import { db } from "../db/client.js";
@@ -120,15 +121,18 @@ creditsRoutes.get(
 								txHash: d.txHash,
 						})),
 						...usageRows.map((u) => ({
-								id: u.id,
-								type: "usage" as const,
-								amountCents: -Number(u.totalCents),
-								status: u.status,
-								createdAt: u.createdAt.toISOString(),
-								model: u.model,
-							})),
+							id: u.id,
+							type: "usage" as const,
+							amountCents: -Number(u.totalCents),
+							// The stored column is free text; the wire only ever carries a known status.
+							status: normalizeUsageStatus(u.status),
+							createdAt: u.createdAt.toISOString(),
+							model: u.model,
+						})),
+						// A refund row is a usage record that was refunded: report its real usage
+						// status instead of a hardcoded "completed" that hid drifted values.
 						...refundRows.map(u => ({ id: `${u.id}-refund`, type: "refund" as const,
-							amountCents: Number(u.totalCents), status: "completed", createdAt: u.refundedAt!.toISOString(), model: u.model })),
+							amountCents: Number(u.totalCents), status: normalizeUsageStatus(u.status), createdAt: u.refundedAt!.toISOString(), model: u.model })),
 				]
 						.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
 						.slice(0, limit);
