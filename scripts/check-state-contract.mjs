@@ -2,9 +2,9 @@
 /**
  * State contract guard.
  *
- * The client and the server describe the same usage lifecycle in two files
- * (one per package). Types cannot cross the package boundary, so nothing in
- * the compiler stops the two lists from drifting: the server adds a status,
+ * The client and the server describe the same lifecycle in two files (one
+ * per package). Types cannot cross the package boundary, so nothing in the
+ * compiler stops the two lists from drifting: the server adds a status,
  * the client keeps rendering the old vocabulary, and the mismatch only shows
  * up as a wrong word in a dashboard table.
  *
@@ -20,6 +20,34 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+
+/**
+ * The lifecycles that both sides must agree on.
+ *
+ * Every entry pairs a server module with its client mirror and names the
+ * const object that holds the vocabulary. Adding a lifecycle to the server
+ * without adding it to the client (or the other way round) fails here.
+ */
+export const STATE_CONTRACTS = [
+	{
+		name: "usage status",
+		serverFile: "server/src/lib/usage-status.ts",
+		appFile: "app/src/lib/api/usage-status.ts",
+		constName: "USAGE_STATUS",
+	},
+	{
+		name: "deposit status",
+		serverFile: "server/src/lib/deposit-status.ts",
+		appFile: "app/src/lib/api/deposit-status.ts",
+		constName: "DEPOSIT_STATUS",
+	},
+	{
+		name: "refund status",
+		serverFile: "server/src/lib/refund-status.ts",
+		appFile: "app/src/lib/api/refund-status.ts",
+		constName: "REFUND_STATUS",
+	},
+];
 
 /**
  * Extracts the `Key: "value"` pairs of a `export const NAME = { ... } as const`
@@ -60,19 +88,22 @@ export function missingFrom(a, b) {
 	return a.filter((value) => !b.includes(value));
 }
 
-const SERVER_FILE = join(ROOT, "server/src/lib/usage-status.ts");
-const APP_FILE = join(ROOT, "app/src/lib/api/usage-status.ts");
+/**
+ * Checks one vocabulary pair.
+ *
+ * Three kinds of drift are caught: a value one side does not know, a
+ * developer-facing key that was renamed on one side only, and a status the
+ * client has no label/tone for (which would render as "Unknown").
+ */
+export function checkContract(contract) {
+	const serverSource = readFileSync(join(ROOT, contract.serverFile), "utf8");
+	const appSource = readFileSync(join(ROOT, contract.appFile), "utf8");
 
-export function checkStateContract() {
-	const serverSource = readFileSync(SERVER_FILE, "utf8");
-	const appSource = readFileSync(APP_FILE, "utf8");
-
-	const serverEntries = extractConstMap(serverSource, "USAGE_STATUS");
-	const appEntries = extractConstMap(appSource, "USAGE_STATUS");
+	const serverEntries = extractConstMap(serverSource, contract.constName);
+	const appEntries = extractConstMap(appSource, contract.constName);
 
 	const serverValues = valuesOf(serverEntries);
 	const appValues = valuesOf(appEntries);
-
 	const problems = [];
 
 	const missingOnApp = missingFrom(serverValues, appValues);
@@ -94,26 +125,49 @@ export function checkStateContract() {
 		}
 	}
 
-	// Every status must have a human-readable label on the client, otherwise
-	// the UI falls back to "Unknown" for a state the server can produce.
-	const labelSwitch = appSource.slice(appSource.indexOf("export function usageStatusLabel"));
+	// Every status must be handled on the client, otherwise the UI falls
+	// back to "Unknown" for a state the server can produce.
 	for (const [key, value] of serverEntries) {
-		if (!labelSwitch.includes(`USAGE_STATUS.${key}`) && !labelSwitch.includes(`"${value}"`)) {
-			problems.push(`client has no label for status "${value}"`);
-		}
+		const handled =
+			appSource.includes(`${contract.constName}.${key}`) ||
+			appSource.includes(`"${value}"`);
+		if (!handled) problems.push(`client has no label for status "${value}"`);
 	}
 
 	return { problems, serverValues, appValues };
 }
 
+export function checkStateContract() {
+	const problems = [];
+	const contracts = [];
+	for (const contract of STATE_CONTRACTS) {
+		const result = checkContract(contract);
+		contracts.push({ name: contract.name, ...result });
+		for (const problem of result.problems) {
+			problems.push(`[${contract.name}] ${problem}`);
+		}
+	}
+
+	const usage = contracts.find((c) => c.name === "usage status");
+	return {
+		problems,
+		serverValues: usage?.serverValues ?? [],
+		appValues: usage?.appValues ?? [],
+		contracts,
+	};
+}
+
 function main() {
-	const { problems, serverValues } = checkStateContract();
+	const { problems, contracts } = checkStateContract();
 	if (problems.length) {
 		console.error("State contract FAILED:");
 		for (const problem of problems) console.error(`  - ${problem}`);
 		process.exit(1);
 	}
-	console.log(`State contract OK: ${serverValues.length} usage status(es) agree across client and server.`);
+	const summary = contracts
+		.map((c) => `${c.name} (${c.serverValues.length})`)
+		.join(", ");
+	console.log(`State contract OK: ${summary} agree across client and server.`);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url))) {

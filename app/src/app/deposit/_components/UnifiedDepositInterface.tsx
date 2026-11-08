@@ -30,7 +30,17 @@ import { useAuth } from "@/lib/hooks/useAuth";
 import { deposit, type DepositInstructions, type UserDeposit } from "@/lib/api/deposit";
 import { isAuthError } from "@/lib/api/client";
 import { formatUsd } from "@/lib/utils";
-import { depositStatusLabel } from "@/lib/deposit-status";
+import {
+	depositStatusLabel,
+	depositStatusTone,
+	type DepositStatusTone,
+} from "@/lib/deposit-status";
+import {
+	DEPOSIT_FLOW_STEP,
+	depositFlowStepFor,
+	depositFlowStepIndex,
+	type DepositFlowStep,
+} from "./deposit-flow-state";
 import { beginDepositOperation, depositOperationPending, endDepositOperation, readPendingDeposit, savePendingDeposit, subscribePendingDeposit, type BroadcastDeposit } from "@/lib/deposit-recovery";
 import {
 	connectWallet,
@@ -49,6 +59,14 @@ export interface PendingDeposit {
 	amountCents: string;
 	createdAt: string;
 }
+
+/** Badge classes per deposit tone. Statuses come from the shared vocabulary. */
+const DEPOSIT_BADGE_CLASS: Record<DepositStatusTone, string> = {
+	success: "bg-success/10 text-success",
+	warning: "bg-warning/10 text-warning",
+	error: "bg-error/10 text-error",
+	muted: "bg-surface text-text-muted",
+};
 
 function shortAddr(a: string): string {
 	if (a.length <= 12) return a;
@@ -93,9 +111,7 @@ export function UnifiedDepositInterface({
 function DepositInterfaceContent({ onDeposit }: {
 	onDeposit?: (d: PendingDeposit) => void;
 }) {
-	const [step, setStep] = useState<"select" | "processing" | "complete" | "error">(
-		"select",
-	);
+	const [step, setStep] = useState<DepositFlowStep>(DEPOSIT_FLOW_STEP.Select);
 	const [instructions, setInstructions] = useState<DepositInstructions | null>(null);
 	const [amountUsd, setAmountUsd] = useState("");
 	const [error, setError] = useState("");
@@ -124,7 +140,11 @@ function DepositInterfaceContent({ onDeposit }: {
 			const pending = userId ? readPendingDeposit(userId) : null;
 			const inFlight = userId ? depositOperationPending(userId) : false;
 			setBroadcastDeposit(pending);
-			setStep(inFlight ? "processing" : pending ? "error" : "select");
+			setStep(
+				depositFlowStepFor(
+					inFlight ? "sync-in-flight" : pending ? "sync-pending" : "sync-none",
+				),
+			);
 			if (inFlight) setProcessingStep("Waiting for your existing wallet deposit request…");
 			setError(pending ? "This transfer still needs registration. Connect its sending wallet and retry below; do not send another transfer." : "");
 		};
@@ -231,7 +251,7 @@ function DepositInterfaceContent({ onDeposit }: {
 		toast.success(`Deposit recorded. ${result.status === "pending" ? "Awaiting on-chain confirmation." : ""}`);
 		onDeposit?.({ id: result.depositId, status: result.status, amountCents: String(result.amountCents), createdAt: new Date().toISOString() });
 		void fetchRecent();
-		setStep("complete");
+		setStep(depositFlowStepFor("registered"));
 	}, [fetchRecent, onDeposit, toast, userId]);
 
 	const handlePay = useCallback(async () => {
@@ -268,7 +288,7 @@ function DepositInterfaceContent({ onDeposit }: {
 		ownsOperation.current = true;
 		if (!beginDepositOperation(userId)) { ownsOperation.current = false; return; }
 
-		setStep("processing");
+		setStep(depositFlowStepFor("submit"));
 		setProcessingStep("Preparing deposit verification…");
 		let txSent = false;
 		try {
@@ -304,7 +324,7 @@ function DepositInterfaceContent({ onDeposit }: {
 			// from a submission failure after the tx was already broadcast.
 			if (!txSent && /rejected|denied|user refused/i.test(errMsg)) {
 				toast.error("Transfer rejected in your wallet");
-				setStep("select");
+				setStep(depositFlowStepFor("wallet-rejected"));
 				setError("The transfer was rejected in your wallet. No funds left your account.");
 			} else {
 				setError(
@@ -313,7 +333,7 @@ function DepositInterfaceContent({ onDeposit }: {
 						: errMsg,
 				);
 				toast.error(errMsg);
-				setStep("error");
+				setStep(depositFlowStepFor("failed"));
 			}
 		} finally {
 			endDepositOperation(userId);
@@ -330,7 +350,7 @@ function DepositInterfaceContent({ onDeposit }: {
 		ownsOperation.current = true;
 		if (!beginDepositOperation(userId)) { ownsOperation.current = false; return; }
 		setError("");
-		setStep("processing");
+		setStep(depositFlowStepFor("retry"));
 		setProcessingStep("Retrying deposit registration…");
 		try {
 			// A proof may have expired or been refused. Retry with a fresh nonce
@@ -343,7 +363,7 @@ function DepositInterfaceContent({ onDeposit }: {
 					? err.message
 					: "We still could not register this transfer. Please try again in a moment.",
 			);
-			setStep("error");
+			setStep(depositFlowStepFor("failed"));
 		} finally {
 			endDepositOperation(userId);
 			ownsOperation.current = false;
@@ -351,7 +371,7 @@ function DepositInterfaceContent({ onDeposit }: {
 	}, [broadcastDeposit, connectedAddress, registerTransfer, userId]);
 
 	const handleReset = () => {
-		setStep("select");
+		setStep(depositFlowStepFor("reset"));
 		setAmountUsd("");
 		setError("");
 		setProcessingStep("");
@@ -382,13 +402,11 @@ function DepositInterfaceContent({ onDeposit }: {
 	}
 
 	const STEPS = [
-		{ key: "select" as const, label: "Pay with wallet" },
-		{ key: "processing" as const, label: "Verify" },
-		{ key: "complete" as const, label: "Done" },
+		{ key: DEPOSIT_FLOW_STEP.Select, label: "Pay with wallet" },
+		{ key: DEPOSIT_FLOW_STEP.Processing, label: "Verify" },
+		{ key: DEPOSIT_FLOW_STEP.Complete, label: "Done" },
 	];
-	const currentStepIdx = step === "error"
-		? Math.max(0, STEPS.findIndex((s) => s.key === "processing"))
-		: STEPS.findIndex((s) => s.key === step);
+	const currentStepIdx = depositFlowStepIndex(step);
 
 	return (
 		<div className="space-y-6">
@@ -574,13 +592,7 @@ function DepositInterfaceContent({ onDeposit }: {
 													>
 														<div className="flex min-w-0 flex-wrap items-center gap-2 text-text-secondary">
 															<span
-																className={`inline-flex rounded-[var(--radius-sm)] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
-																	d.status === "completed"
-																		? "bg-success/10 text-success"
-																		: d.status === "pending" || d.status === "settling"
-																			? "bg-warning/10 text-warning"
-																			: d.status === "failed" ? "bg-error/10 text-error" : "bg-surface text-text-muted"
-																}`}
+																className={`inline-flex rounded-[var(--radius-sm)] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${DEPOSIT_BADGE_CLASS[depositStatusTone(d.status)]}`}
 															>
 																{depositStatusLabel(d.status)}
 															</span>

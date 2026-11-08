@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm";
+import { RESERVATION_STATE } from "../lib/credit-reservation-state.js";
 import { db } from "../db/client.js";
 import { getModelById } from "./models.js";
 import { getModelPricing, pricingForContext } from "./billing-service.js";
@@ -67,14 +68,14 @@ export async function reserveInferenceCredits(userId: string, requestId: string,
  * the hold for reconciliation; never silently refund a possible provider bill. */
 export async function failInferenceReservation(requestId: string, release: boolean): Promise<void> {
 	await db.transaction(async tx => {
-		const held = await tx.execute(sql`UPDATE inference_credit_reservations SET state=${release ? "released" : "reconciliation"},updated_at=NOW()
-			WHERE request_id=${requestId} AND state='held' RETURNING user_id,reserved_cents`);
+		const held = await tx.execute(sql`UPDATE inference_credit_reservations SET state=${release ? RESERVATION_STATE.Released : RESERVATION_STATE.Reconciliation},updated_at=NOW()
+			WHERE request_id=${requestId} AND state=${RESERVATION_STATE.Held} RETURNING user_id,reserved_cents`);
 		if (release && held.rows.length) {
 			const row = held.rows[0];
 			await tx.execute(sql`UPDATE credit_balances SET balance_cents=balance_cents+${String(row.reserved_cents)}::numeric,updated_at=NOW() WHERE user_id=${String(row.user_id)}`);
 		}
-		await tx.execute(sql`UPDATE inference_financial_receipts SET state=${release ? "released" : "reconciliation"},updated_at=NOW()
-			WHERE request_id=${requestId} AND state='held'`);
+		await tx.execute(sql`UPDATE inference_financial_receipts SET state=${release ? RESERVATION_STATE.Released : RESERVATION_STATE.Reconciliation},updated_at=NOW()
+			WHERE request_id=${requestId} AND state=${RESERVATION_STATE.Held}`);
 	});
 }
 
@@ -84,21 +85,22 @@ export async function failInferenceReservation(requestId: string, release: boole
 export async function recordFinancialOutcome(tx: BillingTransaction, data: {
 	requestId: string; model: string; provider: string; providerResponseId?: string;
 	promptTokens: number; outputTokens: number; costCents: number; chargedCents: number;
-	costKnown: boolean; usageVerified: boolean; state: "settled" | "reconciliation";
+	costKnown: boolean; usageVerified: boolean;
+	state: typeof RESERVATION_STATE.Settled | typeof RESERVATION_STATE.Reconciliation;
 }): Promise<void> {
 	await tx.execute(sql`UPDATE inference_financial_receipts SET model=${data.model},provider=${data.provider},provider_response_id=${data.providerResponseId?.slice(0,256) ?? null},
 		input_tokens=${data.promptTokens},output_tokens=${data.outputTokens},cost_cents=${data.costCents.toFixed(8)}::numeric,charged_cents=${data.chargedCents.toFixed(8)}::numeric,
 		cost_known=${data.costKnown},usage_verified=${data.usageVerified},state=${data.state},updated_at=NOW()
-		WHERE request_id=${data.requestId} AND state IN ('held','reconciliation')`);
+		WHERE request_id=${data.requestId} AND state IN (${RESERVATION_STATE.Held}, ${RESERVATION_STATE.Reconciliation})`);
 }
 
 /** Called in the same transaction as the unique usage receipt. */
 export async function settleInferenceReservation(tx: BillingTransaction, userId: string, requestId: string, chargeCents: number, completed: boolean): Promise<boolean> {
 	const result = await tx.execute(sql`SELECT user_id,reserved_cents,state FROM inference_credit_reservations WHERE request_id=${requestId} FOR UPDATE`);
 	const hold = result.rows[0];
-	if (!hold || hold.user_id !== userId || hold.state !== "held") throw new ProviderError("Credit reservation requires reconciliation", 503);
+	if (!hold || hold.user_id !== userId || hold.state !== RESERVATION_STATE.Held) throw new ProviderError("Credit reservation requires reconciliation", 503);
 	if (!completed) {
-		await tx.execute(sql`UPDATE inference_credit_reservations SET state='reconciliation',updated_at=NOW() WHERE request_id=${requestId}`);
+		await tx.execute(sql`UPDATE inference_credit_reservations SET state=${RESERVATION_STATE.Reconciliation},updated_at=NOW() WHERE request_id=${requestId}`);
 		return true;
 	}
 	const ledgerUnits = (value: string) => {
@@ -109,13 +111,13 @@ export async function settleInferenceReservation(tx: BillingTransaction, userId:
 	const reserved = ledgerUnits(String(hold.reserved_cents));
 	const charged = ledgerUnits(charge);
 	if (charged > reserved) {
-		await tx.execute(sql`UPDATE inference_credit_reservations SET state='reconciliation',updated_at=NOW() WHERE request_id=${requestId}`);
+		await tx.execute(sql`UPDATE inference_credit_reservations SET state=${RESERVATION_STATE.Reconciliation},updated_at=NOW() WHERE request_id=${requestId}`);
 		return false;
 	}
 	const unused = reserved - charged;
 	const refund = `${unused / 100_000_000n}.${(unused % 100_000_000n).toString().padStart(8, "0")}`;
 	await tx.execute(sql`UPDATE credit_balances SET balance_cents=balance_cents+${refund}::numeric,
 		total_used_cents=total_used_cents+${charge}::numeric,last_activity_at=NOW(),updated_at=NOW() WHERE user_id=${userId}`);
-	await tx.execute(sql`UPDATE inference_credit_reservations SET state='settled',updated_at=NOW() WHERE request_id=${requestId}`);
+	await tx.execute(sql`UPDATE inference_credit_reservations SET state=${RESERVATION_STATE.Settled},updated_at=NOW() WHERE request_id=${requestId}`);
 	return true;
 }

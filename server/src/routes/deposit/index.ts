@@ -24,6 +24,7 @@ import { sessionOrBearerAuth } from "../../auth/middleware.js";
 import { rateLimit } from "../../middleware/rate-limit.js";
 import { requirePaymentRail } from "../../middleware/payment-rail.js";
 import { db } from "../../db/client.js";
+import { DEPOSIT_STATUS } from "../../lib/deposit-status.js";
 import { readCreditHoldTotals } from "../../lib/credit-holds.js";
 import { publicCreditBalance } from "../../lib/public-credit-balance.js";
 import { creditBalances, deposits, siteSettings } from "../../db/schema.js";
@@ -313,7 +314,7 @@ const [created] = await db
 										txHash,
 										depositAddress,
 										fromAddress,
-										status: "pending",
+										status: DEPOSIT_STATUS.Pending,
 								})
 								.returning();
 						await auditLog({
@@ -325,7 +326,7 @@ const [created] = await db
 						});
 						return c.json({
 								depositId: created.id,
-								status: "pending" as const,
+								status: DEPOSIT_STATUS.Pending,
 								amountCents,
 								txHash,
 								network,

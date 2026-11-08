@@ -1,13 +1,17 @@
-const labels: Record<string, string> = {
-	pending: "Pending",
-	settling: "Confirming",
-	completed: "Completed",
-	failed: "Failed",
-	expired: "Expired",
-	refunded: "Refunded",
-};
-
-/** Customer labels for the deposit states returned by the gateway. */
-export function depositStatusLabel(status: string): string {
-	return labels[status] ?? "Unknown";
-}
+/**
+ * Deposit status labels.
+ *
+ * The vocabulary now lives in `app/src/lib/api/deposit-status.ts`, next to
+ * the rest of the deposit lifecycle, so the label table and the status
+ * constants cannot drift apart. This module keeps the original import path
+ * working for existing callers.
+ */
+export {
+	depositStatusLabel,
+	depositStatusTone,
+	parseDepositStatus,
+	DEPOSIT_STATUS,
+	DEPOSIT_STATUSES,
+	type DepositStatus,
+	type DepositStatusTone,
+} from "./api/deposit-status.js";

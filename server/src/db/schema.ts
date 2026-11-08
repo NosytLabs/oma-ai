@@ -40,6 +40,8 @@ import {
 		check,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+import { DEPOSIT_STATUSES } from "../lib/deposit-status.js";
+import { REFUND_STATUSES } from "../lib/refund-status.js";
 
 /** Durable admission guard for concurrent API retries; completed keys remain blocked. */
 export const inferenceRequestClaims = pgTable("inference_request_claims", {
@@ -58,14 +60,10 @@ export const inferenceRequestClaims = pgTable("inference_request_claims", {
 // Enums
 // =============================================================================
 
-export const depositStatusEnum = pgEnum("deposit_status", [
-		"pending",
-		"settling",
-		"completed",
-		"failed",
-		"expired",
-		"refunded",
-]);
+// The enum values come from the lifecycle modules: one vocabulary, one
+// source of truth. The order matches the type created in Postgres, so this
+// refactor implies no migration.
+export const depositStatusEnum = pgEnum("deposit_status", DEPOSIT_STATUSES);
 
 export const depositTypeEnum = pgEnum("deposit_type", [
 		"usdc_direct",
@@ -83,11 +81,7 @@ export const providerEnum = pgEnum("provider", [
 		"oma-ai",
 ]);
 
-export const refundStatusEnum = pgEnum("refund_status", [
-		"pending",
-		"granted",
-		"denied",
-]);
+export const refundStatusEnum = pgEnum("refund_status", REFUND_STATUSES);
 
 export const auditActionEnum = pgEnum("audit_action", [
 		"USER_LOGIN",

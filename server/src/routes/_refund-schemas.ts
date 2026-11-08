@@ -10,6 +10,7 @@
  * pick it up automatically. No drift.
  */
 import { z } from "zod";
+import { REFUND_DECISIONS, REFUND_STATUSES } from "../lib/refund-status.js";
 
 /** POST /v1/refunds body. */
 export const createRefundSchema = z.object({
@@ -27,26 +28,24 @@ export const createRefundSchema = z.object({
 
 /** GET /v1/refunds query. */
 export const listRefundsSchema = z.object({
-	status: z.enum(["pending", "granted", "denied"]).optional(),
+	status: z.enum(REFUND_STATUSES).optional(),
 	limit: z.coerce.number().int().min(1).max(200).default(50),
 });
 
 /** GET /v1/admin/refunds query. */
 export const listAdminRefundsSchema = z.object({
-	status: z.enum(["pending", "granted", "denied"]).optional(),
+	status: z.enum(REFUND_STATUSES).optional(),
 	limit: z.coerce.number().int().min(1).max(200).default(50),
 });
 
 /** POST /v1/admin/refunds body. */
 export const decideRefundSchema = z.object({
 	id: z.string().uuid(),
-	decision: z.enum(["granted", "denied"]),
+	decision: z.enum(REFUND_DECISIONS),
 	adminNote: z.string().max(1000).optional(),
 });
 
 export type CreateRefundBody = z.infer<typeof createRefundSchema>;
-export type ListRefundsQuery = z.infer<typeof listRefundsSchema>;
-export type ListAdminRefundsQuery = z.infer<typeof listAdminRefundsSchema>;
 export type DecideRefundBody = z.infer<typeof decideRefundSchema>;
 
 /**

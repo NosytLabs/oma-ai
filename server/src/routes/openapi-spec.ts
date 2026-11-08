@@ -1,4 +1,5 @@
 import originGuardPaths from "../middleware/origin-guard-paths.json" with { type: "json" };
+import { REFUND_STATUSES } from "../lib/refund-status.js";
 /**
  * Public contract shared by the HTTP spec and the server-rendered reference.
  */
@@ -490,7 +491,7 @@ const spec = {
 					} },
 				},
 				responses: {
-					"200": jsonSuccess("Refund request created", { type: "object", required: ["id", "usageId", "amountCents", "status", "createdAt"], properties: { id: { type: "string", format: "uuid" }, usageId: { type: "string", format: "uuid" }, amountCents: { type: "number", exclusiveMinimum: 0 }, status: { type: "string", enum: ["pending"] }, createdAt: { type: "string", format: "date-time" } } }),
+					"200": jsonSuccess("Refund request created", { type: "object", required: ["id", "usageId", "amountCents", "status", "createdAt"], properties: { id: { type: "string", format: "uuid" }, usageId: { type: "string", format: "uuid" }, amountCents: { type: "number", exclusiveMinimum: 0 }, status: { type: "string", enum: [REFUND_STATUSES[0]] }, createdAt: { type: "string", format: "date-time" } } }),
 					"400": { description: "Validation error" },
 					"401": { description: "Authentication required" },
 					"404": { description: "usageId not found" },
@@ -501,7 +502,7 @@ const spec = {
 			get: {
 				summary: "List the caller's refund requests (newest first)",
 				security: [{ SessionCookie: [] }, { BearerAuth: [] }, { ApiKeyHeader: [] }],
-				parameters: [{ in: "query", name: "status", schema: { type: "string", enum: ["pending", "granted", "denied"] } }, { in: "query", name: "limit", schema: { type: "integer", minimum: 1, maximum: 200, default: 50 } }],
+				parameters: [{ in: "query", name: "status", schema: { type: "string", enum: [...REFUND_STATUSES] } }, { in: "query", name: "limit", schema: { type: "integer", minimum: 1, maximum: 200, default: 50 } }],
                 responses: { "200": jsonSuccess("Owner-scoped refund requests", { type: "object", required: ["data", "creditRefundsAvailable"], properties: { data: { type: "array", maxItems: 200, items: { type: "object" } }, creditRefundsAvailable: { type: "boolean" } } }) },
 			},
 		},

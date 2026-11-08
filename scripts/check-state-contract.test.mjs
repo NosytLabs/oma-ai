@@ -9,6 +9,30 @@ test("client and server agree on the usage status vocabulary", () => {
 	assert.deepEqual(serverValues, appValues);
 });
 
+test("client and server agree on the deposit status vocabulary", () => {
+	const { contracts } = checkStateContract();
+	const deposit = contracts.find((c) => c.name === "deposit status");
+	assert.ok(deposit, "deposit status contract is not checked");
+	assert.deepEqual(deposit.problems, [], deposit.problems.join("\n"));
+	assert.deepEqual(deposit.serverValues, deposit.appValues);
+	assert.deepEqual(deposit.serverValues, [
+		"completed",
+		"expired",
+		"failed",
+		"pending",
+		"refunded",
+		"settling",
+	]);
+});
+
+test("client and server agree on the refund status vocabulary", () => {
+	const { contracts } = checkStateContract();
+	const refund = contracts.find((c) => c.name === "refund status");
+	assert.ok(refund, "refund status contract is not checked");
+	assert.deepEqual(refund.problems, [], refund.problems.join("\n"));
+	assert.deepEqual(refund.serverValues, ["denied", "granted", "pending"]);
+});
+
 test("extractConstMap reads a const object of string values", () => {
 	const source = `export const THING = {\n\tA: "a",\n\tB: "b",\n} as const;`;
 	assert.deepEqual(extractConstMap(source, "THING"), [

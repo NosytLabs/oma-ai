@@ -1,5 +1,6 @@
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
+import { DEPOSIT_STATUS } from "./deposit-status.js";
 import { creditBalances, deposits, paymentCreditClaims, paymentCreditPolicy } from "../db/schema.js";
 import { config } from "../config.js";
 import { getPublicClient } from "./rpc-client.js";
@@ -41,7 +42,9 @@ export async function creditConfirmedUsdcPayment(payment: ConfirmedPayment): Pro
 		if (deposit && deposit.userId !== payment.userId) throw new PaymentCreditConflictError("Payment already recorded for another account", "payment_already_credited");
 		if (deposit?.fromAddress && deposit.fromAddress.toLowerCase() !== payment.payFrom.toLowerCase()) throw new PaymentCreditConflictError("Payment requires manual reconciliation: recorded sender differs from confirmed sender", "payment_reconciliation_required");
 
-		const alreadyCompleted = deposit?.status === "completed" || deposit?.status === "refunded";
+		const alreadyCompleted =
+		deposit?.status === DEPOSIT_STATUS.Completed ||
+		deposit?.status === DEPOSIT_STATUS.Refunded;
 		if (!alreadyCompleted) {
 			const mock = config.FACILITATOR_MODE === "mock" && ["development", "test"].includes(config.NODE_ENV);
 			if (!mock) {
@@ -71,7 +74,7 @@ export async function creditConfirmedUsdcPayment(payment: ConfirmedPayment): Pro
 		const data = {
 			userId: payment.userId, type: "usdc_direct" as const, amountUsd: amount.amountUsd,
 			creditsIssued: credits, fromAddress: payment.payFrom.toLowerCase(), txHash,
-			depositAddress: payment.depositAddress, status: "completed" as const, completedAt: new Date(),
+			depositAddress: payment.depositAddress, status: DEPOSIT_STATUS.Completed, completedAt: new Date(),
 		};
 		if (deposit) await tx.update(deposits).set(data).where(eq(deposits.id, deposit.id));
 		else await tx.insert(deposits).values(data);

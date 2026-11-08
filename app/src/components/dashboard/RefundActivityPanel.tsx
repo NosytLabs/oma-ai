@@ -23,6 +23,13 @@ import { CheckCircle2, Clock, FileQuestion, Loader2, RotateCcw, XCircle } from "
 import Link from "next/link";
 import { api, type RefundRecord, type RefundStatus } from "@/lib/api";
 
+/** Shown when the server sends a refund status this client does not know. */
+const UNKNOWN_TONE = {
+	label: "Unknown",
+	classes: "border-border bg-surface text-text-muted",
+	icon: Clock,
+};
+
 const STATUS_TONE: Record<
 	RefundStatus,
 	{ label: string; classes: string; icon: typeof Clock }
@@ -126,7 +133,7 @@ export function RefundActivityPanel({ ownerId }: { ownerId?: string }) {
 			) : (
 				<ul className="mt-5 border border-border/50 rounded-[var(--radius-md)] overflow-hidden bg-void shadow-sm">
 					{items.map((r) => {
-						const tone = STATUS_TONE[r.status] ?? STATUS_TONE.pending;
+						const tone = r.status ? STATUS_TONE[r.status] : UNKNOWN_TONE;
 						const ToneIcon = tone.icon;
 						return (
 							<li

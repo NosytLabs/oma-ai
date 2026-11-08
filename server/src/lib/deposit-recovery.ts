@@ -1,5 +1,6 @@
 import { parseAbi, getAddress, formatUnits } from "viem";
 import { db } from "../db/client.js";
+import { DEPOSIT_STATUS } from "./deposit-status.js";
 import { deposits } from "../db/schema.js";
 import { eq, sql } from "drizzle-orm";
 import { logger } from "../lib/logger.js";
@@ -62,7 +63,7 @@ export async function processTransfer(
 		}
 
 		if (existingDeposit) {
-				if (existingDeposit.status === "completed") {
+				if (existingDeposit.status === DEPOSIT_STATUS.Completed) {
 						logPaymentEvent({
 								kind: "usdc_deposit",
 								outcome: "double_spend_blocked",
@@ -85,7 +86,7 @@ export async function processTransfer(
 						if (sender !== recorded) {
 								await db
 										.update(deposits)
-										.set({ status: "failed" })
+										.set({ status: DEPOSIT_STATUS.Failed })
 										.where(eq(deposits.id, existingDeposit.id));
 								logPaymentEvent({
 										kind: "usdc_deposit",
@@ -110,7 +111,7 @@ export async function processTransfer(
 			if (declaredAmountCents !== verifiedAmountCents) {
 				await db
 					.update(deposits)
-					.set({ status: "failed" })
+					.set({ status: DEPOSIT_STATUS.Failed })
 					.where(eq(deposits.id, existingDeposit.id));
 				logPaymentEvent({
 					kind: "usdc_deposit",

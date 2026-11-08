@@ -16,14 +16,20 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { formatTime, formatUsd } from "@/lib/utils";
-import { depositStatusLabel } from "@/lib/deposit-status";
+import {
+	depositStatusLabel,
+	depositStatusTone,
+	type DepositStatus,
+	type DepositStatusTone,
+} from "@/lib/deposit-status";
 import { useAuth } from "@/lib/hooks/useAuth";
 
 type Notification = {
 	id: string;
 	depositId: string;
 	type: string;
-	status: string;
+	/** null = the server sent a deposit status this client does not know. */
+	status: DepositStatus | null;
 	amountUsd: string | null;
 	creditsIssued: string | null;
 	txHash: string | null;
@@ -32,13 +38,13 @@ type Notification = {
 	notifiedAt: string | null;
 };
 
-const STATUS_COLOR: Record<string, string> = {
-	completed: "text-success",
-	pending: "text-warning",
-	settling: "text-warning",
-	failed: "text-error",
-	expired: "text-text-muted",
-	refunded: "text-text-muted",
+/** Badge colour per deposit tone. The tone comes from the shared vocabulary,
+ * so this map only styles tones — it no longer lists statuses. */
+const TONE_COLOR: Record<DepositStatusTone, string> = {
+	success: "text-success",
+	warning: "text-warning",
+	error: "text-error",
+	muted: "text-text-muted",
 };
 
 interface NotificationBellProps {
@@ -265,7 +271,7 @@ function NotificationRow({
 	n: Notification;
 	onActivate: (id: string, href?: string) => void;
 }) {
-	const statusColor = STATUS_COLOR[n.status] ?? "text-text-muted";
+	const statusColor = TONE_COLOR[depositStatusTone(n.status)];
 	const statusLabel = depositStatusLabel(n.status);
 	const amountUsd = n.amountUsd == null ? NaN : Number(n.amountUsd);
 	const amount = Number.isFinite(amountUsd) ? formatUsd(amountUsd) : null;

@@ -3,6 +3,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { auditLogs, creditBalances, refundRequests, usageRecords, user } from "../db/schema.js";
 import { createRefundSchema, decodeEnvelope, encodeEnvelope, type CreateRefundBody, type DecideRefundBody } from "../routes/_refund-schemas.js";
+import { REFUND_STATUS } from "./refund-status.js";
 
 export class RefundError extends Error {
 	constructor(message: string, public readonly status: 400 | 404 | 409 | 429) {
@@ -34,14 +35,14 @@ export async function createUsageRefund(userId: string, input: CreateRefundBody)
 			throw new RefundError("Only full usage-charge refunds are supported; omit amountCents", 400);
 		}
 		const pending = await tx.select({ notes: refundRequests.notes }).from(refundRequests)
-			.where(and(eq(refundRequests.userId, userId), eq(refundRequests.status, "pending"))).limit(MAX_OPEN_REQUESTS + 1);
+			.where(and(eq(refundRequests.userId, userId), eq(refundRequests.status, REFUND_STATUS.Pending))).limit(MAX_OPEN_REQUESTS + 1);
 		if (pending.some(row => decodeEnvelope(row.notes).usageId === usage.id)) {
 			throw new RefundError("A refund request for this charge is already pending", 409);
 		}
 		if (pending.length >= MAX_OPEN_REQUESTS) throw new RefundError("You already have 5 open refund requests. Wait for a review before opening more.", 429);
 		const [row] = await tx.insert(refundRequests).values({
 			userId, amountCents: usage.totalCents, reason: input.reason,
-			notes: encodeEnvelope({ u: usage.id }), status: "pending",
+			notes: encodeEnvelope({ u: usage.id }), status: REFUND_STATUS.Pending,
 		}).returning();
 		return { id: row.id, usageId: usage.id, amountCents: Number(row.amountCents), status: row.status, createdAt: row.createdAt };
 	});
@@ -51,9 +52,9 @@ export async function decideUsageRefund(adminId: string, input: DecideRefundBody
 	return db.transaction(async tx => {
 		const [row] = await tx.select().from(refundRequests).where(eq(refundRequests.id, input.id)).for("update");
 		if (!row) throw new RefundError("Refund request not found", 404);
-		if (row.status !== "pending") throw new RefundError(`Already ${row.status}; decisions are terminal`, 409);
+		if (row.status !== REFUND_STATUS.Pending) throw new RefundError(`Already ${row.status}; decisions are terminal`, 409);
 		const { usageId } = decodeEnvelope(row.notes);
-		if (input.decision === "granted") {
+		if (input.decision === REFUND_STATUS.Granted) {
 			if (!usageId || !createRefundSchema.shape.usageId.safeParse(usageId).success) throw new RefundError("Refund has no valid usage charge; review it before granting", 409);
 			// Lock the usage row as well: old duplicate requests must not each
 			// restore the same charge. Compare amounts in Postgres, not floats.
@@ -80,7 +81,7 @@ export async function decideUsageRefund(adminId: string, input: DecideRefundBody
 		// Audit and money changes commit together; a failed decision remains
 		// pending with its charge and balance untouched, ready for a retry.
 		await tx.insert(auditLogs).values({
-			userId: adminId, action: input.decision === "granted" ? "REFUND_GRANTED" : "REFUND_DENIED",
+			userId: adminId, action: input.decision === REFUND_STATUS.Granted ? "REFUND_GRANTED" : "REFUND_DENIED",
 			resource: "usage_refund", resourceId: row.id,
 			metadata: { userId: row.userId, usageId, amountCents: row.amountCents },
 		});

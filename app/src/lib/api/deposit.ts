@@ -1,4 +1,9 @@
 import { request } from "./client.js";
+import {
+	DEPOSIT_STATUS,
+	parseDepositStatus,
+	type DepositStatus,
+} from "./deposit-status.js";
 
 export interface DepositInstructions {
 	depositAddress: string;
@@ -12,7 +17,7 @@ export interface DepositInstructions {
 
 export interface UserDeposit {
 	id: string;
-	status: "pending" | "settling" | "completed" | "failed" | "refunded" | "expired";
+	status: DepositStatus;
 	amountUsd: string;
 	txHash: string | null;
 	depositAddress: string | null;
@@ -100,12 +105,17 @@ export const deposit = {
 				id: `dep-${d.id}:${d.status}`,
 				depositId: d.id,
 				type: "deposit",
-				status: d.status,
+				// Unknown statuses stay unknown: they must never render as a
+				// successful deposit.
+				status: parseDepositStatus(d.status),
 				amountUsd: d.amountUsd != null ? String(d.amountUsd) : null,
 				creditsIssued: d.creditsIssued != null ? String(d.creditsIssued) : null,
 				txHash: d.txHash ?? null,
 				method: "usdc",
-				createdAt: d.status === "completed" ? d.completedAt ?? d.createdAt : d.createdAt,
+				createdAt:
+					d.status === DEPOSIT_STATUS.Completed
+						? d.completedAt ?? d.createdAt
+						: d.createdAt,
 				notifiedAt: seen[`${d.id}:${d.status}`] ?? null,
 			})),
 		};

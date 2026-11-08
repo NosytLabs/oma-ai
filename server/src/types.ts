@@ -5,6 +5,7 @@
 	* need to distinguish can read both.
 	*/
 import type { ApiKey } from "./db/schema.js";
+import type { InferencePhase } from "./lib/usage-status.js";
 
 type AuthMethod = "session" | "apiKey";
 
@@ -16,7 +17,7 @@ export type OmaEnv = {
 				apiKey: ApiKey | null;
 				correlationId?: string;
 				inferenceRequestId?: string;
-				inferenceOutcome?: "completed" | "error" | "aborted";
+				inferenceOutcome?: InferencePhase;
 				payment?: { txHash?: string; amount: string; networkId: string };
 				teamRole?: string;
 				// Set by route handlers when using the audit middleware factories

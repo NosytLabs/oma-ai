@@ -7,14 +7,16 @@
  * HttpOnly session cookie.
  */
 import { request } from "./client.js";
+import { parseRefundStatus, type RefundStatus } from "./refund-status.js";
 
-export type RefundStatus = "pending" | "granted" | "denied";
+export type { RefundStatus } from "./refund-status.js";
 
 export interface RefundRecord {
 	id: string;
 	usageId?: string | null;
 	receiptId?: string | null;
-	status: RefundStatus;
+	/** null = the server sent a refund status this client does not know. */
+	status: RefundStatus | null;
 	reason?: string;
 	amountCents?: number | null;
 	createdAt: string;
@@ -52,6 +54,15 @@ export const refunds = {
 		const qs = new URLSearchParams({ limit: String(limit) });
 		if (status) qs.set("status", status);
 		const response = await request<{ data: RefundRecord[]; creditRefundsAvailable?: unknown }>(`/v1/refunds?${qs.toString()}`);
-		return { items: response.data, nextCursor: null, creditRefundsAvailable: response.creditRefundsAvailable === true };
+		return {
+			items: (response.data ?? []).map((item) => ({
+				...item,
+				// Unknown statuses stay unknown: a refund must never look
+				// granted (or pending) because the server sent something new.
+				status: parseRefundStatus(item.status),
+			})),
+			nextCursor: null,
+			creditRefundsAvailable: response.creditRefundsAvailable === true,
+		};
 	},
 };

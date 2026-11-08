@@ -4,6 +4,9 @@ import { createHash, randomUUID } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { logger } from "../lib/logger.js";
+import { CLAIM_STATE } from "../lib/inference-claim-state.js";
+import { RESERVATION_STATE } from "../lib/credit-reservation-state.js";
+import { INFERENCE_PHASE, USAGE_STATUS } from "../lib/usage-status.js";
 
 /** Shared by both API formats. Postgres admits one worker without holding a connection during inference. */
 export function inferenceIdempotency(): MiddlewareHandler<OmaEnv> {
@@ -28,21 +31,21 @@ export function inferenceIdempotency(): MiddlewareHandler<OmaEnv> {
 		try {
 			// Preserve the completed-key contract for records created before this guard.
 			const legacyId = `idem-${userId}-${keyHash}`;
-			const legacy = await db.execute(sql`SELECT request_id FROM usage_records WHERE user_id=${userId} AND request_id=${legacyId} AND status='completed' LIMIT 1`);
+			const legacy = await db.execute(sql`SELECT request_id FROM usage_records WHERE user_id=${userId} AND request_id=${legacyId} AND status=${USAGE_STATUS.Completed} LIMIT 1`);
 			if (legacy.rows.length) return conflict(true, legacyId);
 			const admitted = await db.execute(sql`
 				INSERT INTO inference_request_claims (user_id,key_hash,request_id,state,expires_at)
-				VALUES (${userId},${keyHash},${requestId},'pending',NOW()+INTERVAL '5 minutes')
+				VALUES (${userId},${keyHash},${requestId},${CLAIM_STATE.Pending},NOW()+INTERVAL '5 minutes')
 				ON CONFLICT (user_id,key_hash) DO UPDATE SET request_id=EXCLUDED.request_id, expires_at=EXCLUDED.expires_at, created_at=NOW()
-				WHERE inference_request_claims.state='pending' AND inference_request_claims.expires_at<=NOW()
-				AND NOT EXISTS (SELECT 1 FROM usage_records WHERE request_id=inference_request_claims.request_id AND status IN ('completed','free_tier'))
-				AND NOT EXISTS (SELECT 1 FROM inference_credit_reservations WHERE request_id=inference_request_claims.request_id AND state IN ('held','reconciliation'))
+				WHERE inference_request_claims.state=${CLAIM_STATE.Pending} AND inference_request_claims.expires_at<=NOW()
+				AND NOT EXISTS (SELECT 1 FROM usage_records WHERE request_id=inference_request_claims.request_id AND status IN (${USAGE_STATUS.Completed}, ${USAGE_STATUS.FreeTier}))
+				AND NOT EXISTS (SELECT 1 FROM inference_credit_reservations WHERE request_id=inference_request_claims.request_id AND state IN (${RESERVATION_STATE.Held}, ${RESERVATION_STATE.Reconciliation}))
 				RETURNING request_id`);
 			if (!admitted.rows.length) {
-				const prior = await db.execute(sql`SELECT request_id, state, EXISTS (SELECT 1 FROM usage_records WHERE request_id=inference_request_claims.request_id AND status IN ('completed','free_tier')) AS billed
+				const prior = await db.execute(sql`SELECT request_id, state, EXISTS (SELECT 1 FROM usage_records WHERE request_id=inference_request_claims.request_id AND status IN (${USAGE_STATUS.Completed}, ${USAGE_STATUS.FreeTier})) AS billed
 					FROM inference_request_claims WHERE user_id=${userId} AND key_hash=${keyHash}`);
 				const row = prior.rows[0];
-				return conflict(row?.state === "completed" || row?.billed === true, String(row?.request_id ?? requestId));
+				return conflict(row?.state === CLAIM_STATE.Completed || row?.billed === true, String(row?.request_id ?? requestId));
 			}
 		} catch (err) {
 			logger.error({ err }, "[inference] idempotency admission unavailable");
@@ -54,12 +57,12 @@ export function inferenceIdempotency(): MiddlewareHandler<OmaEnv> {
 			if (finalized) return;
 			finalized = true;
 			try {
-				if (completed) await db.execute(sql`UPDATE inference_request_claims SET state='completed' WHERE request_id=${requestId}`);
+				if (completed) await db.execute(sql`UPDATE inference_request_claims SET state=${CLAIM_STATE.Completed} WHERE request_id=${requestId}`);
 				// Delivery can fail after billing committed. Keep that key held so
 				// retrying an ambiguous response cannot issue a second charge.
-				else await db.execute(sql`DELETE FROM inference_request_claims WHERE request_id=${requestId} AND state='pending'
-					AND NOT EXISTS (SELECT 1 FROM usage_records WHERE request_id=${requestId} AND status IN ('completed','free_tier'))
-					AND NOT EXISTS (SELECT 1 FROM inference_credit_reservations WHERE request_id=${requestId} AND state IN ('held','reconciliation'))`);
+				else await db.execute(sql`DELETE FROM inference_request_claims WHERE request_id=${requestId} AND state=${CLAIM_STATE.Pending}
+					AND NOT EXISTS (SELECT 1 FROM usage_records WHERE request_id=${requestId} AND status IN (${USAGE_STATUS.Completed}, ${USAGE_STATUS.FreeTier}))
+					AND NOT EXISTS (SELECT 1 FROM inference_credit_reservations WHERE request_id=${requestId} AND state IN (${RESERVATION_STATE.Held}, ${RESERVATION_STATE.Reconciliation}))`);
 			} catch (err) { logger.warn({ err, requestId }, "[inference] retry claim finalization failed; claim remains held"); }
 		}
 		try { await next(); } catch (err) { await finalize(false); throw err; }
@@ -73,7 +76,7 @@ export function inferenceIdempotency(): MiddlewareHandler<OmaEnv> {
 				try {
 					const { done, value } = await reader.read();
 					if (terminated) return;
-					if (done) { terminated = true; const outcome = c.get("inferenceOutcome"); await finalize(outcome !== "error" && outcome !== "aborted"); controller.close(); }
+					if (done) { terminated = true; const outcome = c.get("inferenceOutcome"); await finalize(outcome !== INFERENCE_PHASE.Error && outcome !== INFERENCE_PHASE.Aborted); controller.close(); }
 					else controller.enqueue(value);
 				} catch (err) { if (!terminated) { terminated = true; await finalize(false); controller.error(err); } }
 			},
