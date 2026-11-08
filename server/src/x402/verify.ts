@@ -19,6 +19,7 @@ import {
 } from "./settlement-cache.js";
 import { SERVER_TREASURY } from "./treasury.js";
 import type { PaymentPayload, PaymentResponse, PaymentSignature } from "./types.js";
+import { isSuccessfulReceipt } from "./receipt-status.js";
 
 function checkTransferAmount(
 		rawAmount: bigint,
@@ -61,7 +62,7 @@ async function verifyUsdcTransferReceipt(
 
 				const receipt = await client.getTransactionReceipt({ hash: txHash });
 
-				if (!receipt || receipt.status !== "success") {
+				if (!isSuccessfulReceipt(receipt)) {
 						return { valid: false, error: "Transaction failed or not found" };
 				}
 

@@ -5,6 +5,7 @@ import { creditBalances, deposits, paymentCreditClaims, paymentCreditPolicy } fr
 import { config } from "../config.js";
 import { getPublicClient } from "./rpc-client.js";
 import { paymentCreditAmounts } from "../x402/funding-recovery.js";
+import { isSuccessfulReceipt } from "../x402/receipt-status.js";
 
 export class PaymentCreditConflictError extends Error {
 	readonly status = 409;
@@ -52,7 +53,7 @@ export async function creditConfirmedUsdcPayment(payment: ConfirmedPayment): Pro
 				if (!policy) throw new Error("Payment credit policy is missing; apply the durable credit migration");
 				const client = getPublicClient();
 				const receipt = await client.getTransactionReceipt({ hash: txHash as `0x${string}` });
-				if (receipt.status !== "success" || !receipt.blockHash) throw new Error("Payment is not confirmed on chain");
+				if (!isSuccessfulReceipt(receipt) || !receipt.blockHash) throw new Error("Payment is not confirmed on chain");
 				const block = await client.getBlock({ blockHash: receipt.blockHash });
 				if (Number(block.timestamp) * 1000 < policy.recoveryNotBefore.getTime()) {
 					throw new PaymentCreditConflictError("Payment predates durable credit records and requires manual reconciliation. Contact support with the transaction hash.", "payment_reconciliation_required");

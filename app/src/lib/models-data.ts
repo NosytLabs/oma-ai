@@ -9,6 +9,7 @@ import {
 	type ModelPrivacy,
 } from "@/lib/api/model-metadata";
 import {
+	isModelAvailable,
 	parseModelUnavailabilityCause,
 	type ModelUnavailabilityCause,
 } from "@/lib/model-availability";
@@ -632,8 +633,9 @@ const tier: Tier =
 						} : curated?.metadataVerification,
 						// Absent means "no signal" (older cache / static fallback),
 						// which must read as available so a missing flag never hides
-						// a working model.
-						available: entry.available !== false,
+						// a working model. The rule itself lives in lib/model-availability
+						// so this decision cannot drift from the other ten call sites.
+						available: isModelAvailable(entry),
 						unavailableReason: entry.unavailable_reason,
 					unavailableCause: parseModelUnavailabilityCause(entry.unavailable_cause),
 					};

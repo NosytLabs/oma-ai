@@ -1,6 +1,7 @@
 import { decodeEventLog, formatUnits, parseAbiItem, type Hex } from "viem";
 import { USDC_BASE, USDC_DECIMALS } from "../constants.js";
 import { parseUsdcAtomic } from "./facilitator-signing.js";
+import { isSuccessfulReceipt } from "./receipt-status.js";
 
 const transfer = parseAbiItem("event Transfer(address indexed from, address indexed to, uint256 value)");
 
@@ -9,7 +10,7 @@ export function readTreasuryTransfer(receipt: {
   status: string;
   logs: readonly { address: string; data: Hex; topics: readonly Hex[] }[];
 }, treasury: string): { payFrom: string; amount: string } | null {
-  if (receipt.status !== "success") return null;
+  if (!isSuccessfulReceipt(receipt)) return null;
   const payments: { payFrom: string; amount: string }[] = [];
   for (const log of receipt.logs) {
     if (log.address.toLowerCase() !== USDC_BASE.toLowerCase()) continue;

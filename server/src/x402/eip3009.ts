@@ -19,6 +19,7 @@ import { parseUsdcAtomic } from "./facilitator-signing.js";
 import { consumeNonce } from "./replay.js";
 import { SERVER_TREASURY } from "./treasury.js";
 import type { PaymentPayload, PaymentResponse } from "./types.js";
+import { isSuccessfulReceipt } from "./receipt-status.js";
 
 // ============================================================
 // EIP-3009 transferWithAuthorization (Base USDC)
@@ -378,7 +379,7 @@ export async function submitEip3009TransferAndConfirm(
 		throw pending;
 	}
 
-	if (receipt.status !== "success") {
+	if (!isSuccessfulReceipt(receipt)) {
 		// Terminal: the transaction mined and reverted, so the funds did not
 		// move. Retrying the same authorization is pointless (the nonce is
 		// spent) and the payer must be told to sign a new one.
