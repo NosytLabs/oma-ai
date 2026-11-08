@@ -4,6 +4,7 @@ import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db/client.js";
 import { creditBalances, polarWebhookEvents } from "../db/schema.js";
+import { POLAR_EVENT_PROCESSING } from "./polar-webhook-state.js";
 
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 const integerAmount = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
@@ -46,7 +47,7 @@ export async function reconcilePolarOrderCredit(
 	});
 	const key = `order-credit:${snapshot.id}`;
 	const inserted = await tx.insert(polarWebhookEvents).values({
-		polarEventId: key, eventType: "order.credit-ledger.v1", payload: JSON.stringify(incoming), processed: 1,
+		polarEventId: key, eventType: "order.credit-ledger.v1", payload: JSON.stringify(incoming), processed: POLAR_EVENT_PROCESSING.Processed,
 	}).onConflictDoNothing().returning({ id: polarWebhookEvents.id });
 	const [record] = await tx.select().from(polarWebhookEvents).where(eq(polarWebhookEvents.polarEventId, key)).for("update");
 	if (!record || record.eventType !== "order.credit-ledger.v1") throw new Error("Polar order ledger is missing or conflicting");
@@ -60,7 +61,7 @@ export async function reconcilePolarOrderCredit(
 		// Existing installations may have credited this order before this ledger
 		// existed. Never guess an opening balance or grant a second time.
 		const historical = await tx.execute(sql`SELECT id FROM polar_webhook_events
-			WHERE event_type IN ('order.paid','order.refunded') AND processed=1
+			WHERE event_type IN ('order.paid','order.refunded') AND processed=${POLAR_EVENT_PROCESSING.Processed}
 			AND polar_event_id<>${eventId} AND payload::jsonb #>> '{data,id}'=${snapshot.id} LIMIT 1`);
 		if (historical.rows.length) throw new Error("Legacy Polar order requires an opening-ledger reconciliation");
 		await tx.insert(creditBalances).values({

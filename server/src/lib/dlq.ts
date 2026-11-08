@@ -4,6 +4,11 @@ import { settlementDlq, settlements } from "../db/schema.js";
 import { logger } from "./logger.js";
 import type { SettledSettlementRecord } from "../x402/types.js";
 import { databaseErrorMetadata } from "./database-error.js";
+import {
+	SETTLEMENT_DLQ_MAX_ATTEMPTS,
+	isSettlementDlqAbandoned,
+	settlementDlqBackoffMs,
+} from "./settlement-dlq-state.js";
 
 /**
  * Durable retry queue for x402 settlements.
@@ -35,14 +40,8 @@ import { databaseErrorMetadata } from "./database-error.js";
  */
 
 
-/** Exponential backoff, capped, plus a ceiling on retries before we give up. */
-const MAX_ATTEMPTS = 12;
-const BASE_BACKOFF_MS = 1_000;
-const MAX_BACKOFF_MS = 5 * 60_000;
-
-function backoffMs(attempts: number): number {
-	return Math.min(BASE_BACKOFF_MS * 2 ** (attempts - 1), MAX_BACKOFF_MS);
-}
+// The retry ceiling and the backoff curve live in ./settlement-dlq-state.ts,
+// next to the vocabulary that names an entry's state.
 
 /**
  * Record a settlement that was accepted on-chain but could not be persisted.
@@ -128,7 +127,7 @@ export async function drainSettlementDlq(batchSize = 25): Promise<DrainResult> {
 		due = await db
 			.select()
 			.from(settlementDlq)
-			.where(and(lte(settlementDlq.nextAttemptAt, new Date()), lt(settlementDlq.attempts, MAX_ATTEMPTS)))
+			.where(and(lte(settlementDlq.nextAttemptAt, new Date()), lt(settlementDlq.attempts, SETTLEMENT_DLQ_MAX_ATTEMPTS)))
 			.orderBy(asc(settlementDlq.nextAttemptAt))
 			.limit(batchSize);
 	} catch (err) {
@@ -170,10 +169,10 @@ export async function drainSettlementDlq(batchSize = 25): Promise<DrainResult> {
 				.set({
 					attempts,
 					lastError: errorText,
-					nextAttemptAt: new Date(Date.now() + backoffMs(attempts)),
+					nextAttemptAt: new Date(Date.now() + settlementDlqBackoffMs(attempts)),
 				})
 				.where(eq(settlementDlq.id, entry.id));
-			if (attempts >= MAX_ATTEMPTS) {
+			if (isSettlementDlqAbandoned(attempts)) {
 				result.abandoned++;
 				logger.error(
 					{ err, txHash: entry.txHash, attempts },

@@ -35,6 +35,7 @@ import { logger } from "../lib/logger.js";
 import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { user } from "../db/schema.js";
+import { isAccountBlocked } from "../lib/account-state.js";
 
 const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 
@@ -142,8 +143,8 @@ async function rejectIfSuspended(
 				if (!u) {
 						return c.json({ error: { message: "Unauthorized", type: "authentication_error" } }, 401);
 				}
-				if (u.banned || u.suspended) {
-						return c.json(SUSPENDED_PAYLOAD, 403);
+				if (isAccountBlocked(u)) {
+					return c.json(SUSPENDED_PAYLOAD, 403);
 				}
 		} catch (err) {
 				logger.error(
@@ -413,16 +414,25 @@ export function requireAdmin() {
 				// Admin gate — accept either (1) user.role === 'admin' OR
 				// (2) the user's linked EVM wallet is in ADMIN_WALLET_ADDRESSES.
 				const [u] = await db
-						.select({ evmAddress: user.evmAddress, role: user.role, suspended: user.suspended })
-						.from(user)
-						.where(eq(user.id, userId))
-						.limit(1);
+					.select({
+						evmAddress: user.evmAddress,
+						role: user.role,
+						banned: user.banned,
+						suspended: user.suspended,
+					})
+					.from(user)
+					.where(eq(user.id, userId))
+					.limit(1);
 
 				// Even admins must obey suspension (defense in depth — e.g. a
 				// compromised admin session shouldn't be able to act after the
 				// primary admin has flagged the account).
-				if (u?.suspended) {
-						return c.json(SUSPENDED_PAYLOAD, 403);
+				//
+				// This gate reads the same derivation as sessionAuth/bearerAuth, so
+				// an account flagged through either the legacy `banned` flag or the
+				// `suspended` flag is blocked here too.
+				if (u && isAccountBlocked(u)) {
+					return c.json(SUSPENDED_PAYLOAD, 403);
 				}
 
 				if (u?.role === "admin") {

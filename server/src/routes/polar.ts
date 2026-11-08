@@ -39,6 +39,7 @@ import { logger } from "../lib/logger.js";
 import { logPaymentEvent } from "../lib/payment-observability.js";
 import { errorResponse } from "../lib/error-response.js";
 import { reconcilePolarOrderCredit } from "../lib/polar-order-credit.js";
+import { POLAR_EVENT_PROCESSING, isPolarEventProcessed } from "../lib/polar-webhook-state.js";
 
 export const polarRoutes = new Hono<OmaEnv>();
 
@@ -247,12 +248,12 @@ async function polarWebhookHandler(c: Context<OmaEnv>) {
 		// on driver-specific error shapes (Drizzle wraps Postgres errors).
 		try {
 			const inserted = await db.insert(polarWebhookEvents).values({
-				polarEventId: eventId, eventType: event.type, payload: rawBody, processed: 0,
+				polarEventId: eventId, eventType: event.type, payload: rawBody, processed: POLAR_EVENT_PROCESSING.Pending,
 			}).onConflictDoNothing().returning({ id: polarWebhookEvents.id });
 			if (inserted.length === 0) {
 				const [existing] = await db.select({ processed: polarWebhookEvents.processed })
 					.from(polarWebhookEvents).where(eq(polarWebhookEvents.polarEventId, eventId)).limit(1);
-				if (existing?.processed === 1) {
+				if (isPolarEventProcessed(existing?.processed)) {
 					logPaymentEvent({ kind: "polar", outcome: "double_spend_blocked", signature: eventId, latencyMs: Date.now() - startedAt });
 					return c.json({ ok: true, duplicate: true });
 				}
@@ -297,7 +298,7 @@ async function polarWebhookHandler(c: Context<OmaEnv>) {
 					);
 					// SECURITY (audit 2026-09-27 / P0): returning 200 here told Polar
 					// "handled" while the customer paid real money and got nothing —
-					// the webhook row stayed processed=0 with no repair path.
+					// the webhook row stayed processed=0 (Pending) with no repair path.
 					// Returning 5xx makes Polar retry until the payload is correct.
 					logPaymentEvent({
 						kind: "polar",
@@ -343,9 +344,9 @@ async function polarWebhookHandler(c: Context<OmaEnv>) {
 async function markEventProcessed(eventId: string): Promise<void> {
 		await db
 				.update(polarWebhookEvents)
-				.set({ processed: 1 })
+				.set({ processed: POLAR_EVENT_PROCESSING.Processed })
 				.where(
-						sql`${polarWebhookEvents.polarEventId} = ${eventId} AND ${polarWebhookEvents.processed} = 0`,
+						sql`${polarWebhookEvents.polarEventId} = ${eventId} AND ${polarWebhookEvents.processed} = ${POLAR_EVENT_PROCESSING.Pending}`,
 				);
 }
 
@@ -358,8 +359,8 @@ async function processInTransaction(
 ): Promise<void> {
 		try {
 				await db.transaction(async (tx) => {
-						const claimed = await tx.update(polarWebhookEvents).set({ processed: 1 })
-							.where(sql`${polarWebhookEvents.polarEventId} = ${eventId} AND ${polarWebhookEvents.processed} = 0`)
+						const claimed = await tx.update(polarWebhookEvents).set({ processed: POLAR_EVENT_PROCESSING.Processed })
+							.where(sql`${polarWebhookEvents.polarEventId} = ${eventId} AND ${polarWebhookEvents.processed} = ${POLAR_EVENT_PROCESSING.Pending}`)
 							.returning({ id: polarWebhookEvents.id });
 						if (claimed.length === 0) return;
 						await step(tx);

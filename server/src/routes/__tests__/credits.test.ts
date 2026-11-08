@@ -2,7 +2,7 @@
  * Tests for /v1/credits/* routes (balance and transactions).
  *
  * Covers the two endpoints exposed by credits.ts:
- *   GET  /v1/credits/balance       — active batches + aggregate balance
+ *   GET  /v1/credits/balance       — aggregate balance (+ legacy empty batches)
  *   GET  /v1/credits/transactions  — combined deposit + usage history
  *
  * Auth middleware is stubbed to set userId="user_1". DB is mocked per-test.
@@ -51,7 +51,6 @@ vi.mock("../../db/client.js", () => ({ db: mockDb }));
 
 vi.mock("../../db/schema.js", () => ({
 	creditBalances: { userId: "userId" },
-	creditBatches: { userId: "userId", remainingCents: "remainingCents", expiresAt: "expiresAt", usedAt: "usedAt", createdAt: "createdAt" },
 	deposits: { userId: "userId", createdAt: "createdAt" },
 	usageRecords: { userId: "userId", createdAt: "createdAt" },
 }));
@@ -96,8 +95,8 @@ beforeEach(() => {
 describe("credits routes", () => {
 	describe("GET /v1/credits/balance", () => {
 		it("returns empty batches and zero balance when user has no rows", async () => {
-			// Promise.all([batches, balances]) — both return []
-			mockSelectReturns([], []);
+			// Promise.all([balances]) — the balance table has no row
+			mockSelectReturns([]);
 			const res = await creditRequest("get", "/v1/credits/balance");
 			expect(res.status).toBe(200);
 			const data = await res.json();
@@ -105,24 +104,15 @@ describe("credits routes", () => {
 			expect(data.balanceCents).toBe("0");
 		});
 
-		it("returns active batches and aggregate balance", async () => {
-			mockSelectReturns(
-				[
-					{
-						id: "batch_1",
-						amountCents: "5000",
-						remainingCents: "3000",
-						expiresAt: new Date("2027-01-01"),
-						paymentMethod: "usdc",
-					},
-				],
-				[{ balanceCents: "3000" }],
-			);
+		it("returns the aggregate balance and no active batches", async () => {
+			// `credit_batches` is a legacy table with no writer; the route no
+			// longer queries it and always reports an empty list, while the
+			// aggregate balance stays authoritative.
+			mockSelectReturns([{ balanceCents: "3000" }]);
 			const res = await creditRequest("get", "/v1/credits/balance");
 			expect(res.status).toBe(200);
 			const data = await res.json();
-			expect(data.activeBatches).toHaveLength(1);
-			expect(data.activeBatches[0].remainingCents).toBe("3000");
+			expect(data.activeBatches).toEqual([]);
 			expect(data.balanceCents).toBe("3000");
 		});
 
@@ -130,14 +120,14 @@ describe("credits routes", () => {
 			["-0.00000001", "0.00000001"],
 			["-9007199254740993.12345678", "9007199254740993.12345678"],
 		])("keeps refunded balance %s out of spendable credits with exact debt", async (balanceCents, debtCents) => {
-			mockSelectReturns([], [{ balanceCents }]);
+			mockSelectReturns([{ balanceCents }]);
 			const res = await creditRequest("get", "/v1/credits/balance");
 			expect(res.status).toBe(200);
 			expect(await res.json()).toMatchObject({ balanceCents: "0", debtCents, activeBatches: [] });
 		});
 
 		it("omits debt from an ordinary positive balance", async () => {
-			mockSelectReturns([], [{ balanceCents: "0.00000001" }]);
+			mockSelectReturns([{ balanceCents: "0.00000001" }]);
 			const data = await (await creditRequest("get", "/v1/credits/balance")).json();
 			expect(data.balanceCents).toBe("0.00000001");
 			expect(data).not.toHaveProperty("debtCents");

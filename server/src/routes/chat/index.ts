@@ -44,6 +44,7 @@ import { isWebsiteChatRequest, WEBSITE_CHAT_PATH } from "../../inference/website
 import { isFreeWebsiteModel } from "../../inference/free-website-model.js";
 import { reservationQuote, reserveInferenceCredits, failInferenceReservation } from "../../inference/credit-reservations.js";
 import { boundedDefaultOutput } from "../../inference/token-utils.js";
+import { inferenceFailureOutcome, shouldReleaseInferenceReservation } from "../../inference/attempt-outcome.js";
 
 /**
 	* Check if a model is eligible for the anonymous free website chat path.
@@ -296,7 +297,11 @@ for (const path of ["/v1/chat/completions", WEBSITE_CHAT_PATH]) chatRoutes.post(
 
 						return c.json(data);
 				} catch (err) {
-						if (reserved) await failInferenceReservation(requestId, !providerStarted || (err instanceof ProviderError && err.executionRejected && !err.billingUncertain)).catch(failure => logger.error({ err: failure, requestId }, "[chat] reservation finalization requires reconciliation"));
+						if (reserved) await failInferenceReservation(requestId, shouldReleaseInferenceReservation(inferenceFailureOutcome({
+						providerStarted,
+						executionRejected: err instanceof ProviderError && err.executionRejected,
+						billingUncertain: err instanceof ProviderError && err.billingUncertain,
+					}))).catch(failure => logger.error({ err: failure, requestId }, "[chat] reservation finalization requires reconciliation"));
 						if (err instanceof ProviderError) {
 								return c.json(
 										{

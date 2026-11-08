@@ -24,6 +24,7 @@ import { createAnthropicStream, anthropicStopReason } from "./stream.js";
 import { logger } from "../../lib/logger.js";
 import { inferenceIdempotency } from "../../middleware/inference-idempotency.js";
 import { reservationQuote, reserveInferenceCredits, failInferenceReservation } from "../../inference/credit-reservations.js";
+import { inferenceFailureOutcome, shouldReleaseInferenceReservation } from "../../inference/attempt-outcome.js";
 
 
 /** Convert OpenAI non-streaming response → Anthropic message */
@@ -215,7 +216,11 @@ anthropicRoutes.post(
 						const anthropicMsg = toAnthropicMessage(data, actualModelId, requestId, { promptTokens: actualPromptTokens, outputTokens });
 						return c.json(anthropicMsg);
 				} catch (err) {
-						if (reserved) await failInferenceReservation(requestId, !providerStarted || (err instanceof ProviderError && err.executionRejected && !err.billingUncertain)).catch(failure => logger.error({ err: failure, requestId }, "[anthropic] reservation finalization requires reconciliation"));
+						if (reserved) await failInferenceReservation(requestId, shouldReleaseInferenceReservation(inferenceFailureOutcome({
+						providerStarted,
+						executionRejected: err instanceof ProviderError && err.executionRejected,
+						billingUncertain: err instanceof ProviderError && err.billingUncertain,
+					}))).catch(failure => logger.error({ err: failure, requestId }, "[anthropic] reservation finalization requires reconciliation"));
 						if (err instanceof ProviderError) {
 								const status = err.status >= 500 ? 502 : err.status;
 								return c.json(

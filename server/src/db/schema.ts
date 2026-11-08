@@ -514,6 +514,15 @@ export const usageRecords = pgTable(
 		],
 );
 
+/**
+ * Legacy table. `credit_balances` superseded it: balances are a single row
+ * per user, and nothing in the server writes a batch. The table is empty in
+ * production (verified against the live database) and the balance route no
+ * longer queries it -- it still returns `activeBatches: []` so the response
+ * shape is unchanged.
+ *
+ * Kept in the schema for compatibility; dropping it needs a migration.
+ */
 export const creditBatches = pgTable(
 		"credit_batches",
 		{
@@ -690,6 +699,12 @@ export const polarWebhookEvents = pgTable(
 		],
 );
 
+/**
+ * Legacy table. No subscription create/list/deliver path exists anywhere in
+ * the server, and `last_notification_status` is never read or written. The
+ * table is empty in production. Kept in the schema for compatibility;
+ * dropping it needs a migration.
+ */
 export const webhookSubscriptions = pgTable(
 		"webhook_subscriptions",
 		{

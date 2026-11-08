@@ -16,7 +16,7 @@
 	*/
 import { Hono } from "hono";
 import { z } from "zod";
-import { and, desc, eq, gt, isNull, isNotNull } from "drizzle-orm";
+import { and, desc, eq, isNotNull } from "drizzle-orm";
 import { normalizeUsageStatus } from "../lib/usage-status.js";
 import type { OmaEnv } from "../types.js";
 import { sessionOrBearerAuth } from "../auth/middleware.js";
@@ -25,7 +25,6 @@ import { readCreditHoldTotals } from "../lib/credit-holds.js";
 import { publicCreditBalance } from "../lib/public-credit-balance.js";
 import {
 		creditBalances,
-		creditBatches,
 		deposits,
 		usageRecords,
 } from "../db/schema.js";
@@ -39,20 +38,7 @@ creditsRoutes.get("/v1/credits/balance", sessionOrBearerAuth, async (c) => {
 		c.header("Cache-Control", "no-store");
 		const userId = c.get("userId");
 
-		const [batches, balances, holds] = await Promise.all([
-				db
-						.select()
-						.from(creditBatches)
-						.where(
-								and(
-										eq(creditBatches.userId, userId),
-										gt(creditBatches.remainingCents, "0"),
-										gt(creditBatches.expiresAt, new Date()),
-										isNull(creditBatches.usedAt),
-								),
-						)
-						.orderBy(desc(creditBatches.createdAt))
-						.limit(50),
+		const [balances, holds] = await Promise.all([
 				db
 						.select()
 						.from(creditBalances)
@@ -62,13 +48,13 @@ creditsRoutes.get("/v1/credits/balance", sessionOrBearerAuth, async (c) => {
 		]);
 
 		return c.json({
-				activeBatches: batches.map((b) => ({
-						id: b.id,
-						amountCents: b.amountCents,
-						remainingCents: b.remainingCents,
-						expiresAt: b.expiresAt.toISOString(),
-						paymentMethod: b.paymentMethod ?? "usdc",
-				})),
+				// `credit_batches` is a legacy table: it has no writer anywhere in the
+				// server and is empty in production (verified against the live
+				// database), so querying it only cost a round trip per balance read to
+				// produce an empty array. The field stays in the response so the wire
+				// shape is unchanged; `balanceCents` is the authoritative figure. See
+				// the KNOWN GAP note above.
+				activeBatches: [],
 				...publicCreditBalance(balances[0]?.balanceCents),
 				...holds,
 		});
