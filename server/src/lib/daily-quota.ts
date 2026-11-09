@@ -10,7 +10,7 @@ const MAX_LOCAL_COUNTERS = 10_000;
 interface Counter { used: number; resetAt: number }
 const counters = new Map<string, Counter>();
 
-export interface DailyQuota {
+interface DailyQuota {
 	used: number;
 	remaining: number;
 	limit: number;

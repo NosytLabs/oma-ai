@@ -42,7 +42,7 @@ export const PENDING_SETTLEMENT_STATE = {
 	Reverted: "reverted",
 } as const;
 
-export type PendingSettlementState =
+type PendingSettlementState =
 	(typeof PENDING_SETTLEMENT_STATE)[keyof typeof PENDING_SETTLEMENT_STATE];
 
 /**
@@ -61,7 +61,7 @@ export function parsePendingSettlementState(
 	return null;
 }
 
-export interface PendingSettlementRecord {
+interface PendingSettlementRecord {
 	txHash: string;
 	networkId: string;
 	amount: string;

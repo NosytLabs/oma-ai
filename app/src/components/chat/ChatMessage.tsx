@@ -151,6 +151,18 @@ export const ChatMessage = memo(function ChatMessage({
 			) : undefined;
 		const hasReasoning =
 				!isUser && !!msg.reasoning && msg.reasoning.trim().length > 0;
+		// The assistant's visible phase, derived once: the avatar state, its aria
+		// label and the orb all read the same answer instead of four copies of the
+		// same ternary that could drift apart.
+		const assistantPhase = (() => {
+			if (msg.searchResults && msg.searchResults.length > 0) {
+				return { orb: "searching", label: "Searching the web" } as const;
+			}
+			if (hasReasoning && !msg.content) {
+				return { orb: "solving", label: "Reasoning" } as const;
+			}
+			return { orb: "composing", label: "Composing response" } as const;
+		})();
 		const waitingForFirstToken = isWaitingForFirstToken({
 				streaming: isStreaming,
 				content: msg.content,
@@ -213,11 +225,7 @@ export const ChatMessage = memo(function ChatMessage({
 												prefersReducedMotion ? (
 														<span
 																aria-label={
-																		msg.searchResults && msg.searchResults.length > 0
-																				? "Searching the web"
-																				: hasReasoning && !msg.content
-																						? "Reasoning"
-																						: "Composing response"
+																		assistantPhase.label
 																}
 																role="status"
 																className="relative inline-flex h-4 w-4 items-center justify-center"
@@ -228,20 +236,12 @@ export const ChatMessage = memo(function ChatMessage({
 												) : (
 														<ThinkingOrb
 																state={
-																		msg.searchResults && msg.searchResults.length > 0
-																				? "searching"
-																				: hasReasoning && !msg.content
-																						? "solving"
-																						: "composing"
+																		assistantPhase.orb
 																}
 																size={20}
 																theme="auto"
 																aria-label={
-																		msg.searchResults && msg.searchResults.length > 0
-																				? "Searching the web"
-																				: hasReasoning && !msg.content
-																						? "Reasoning"
-																						: "Composing response"
+																		assistantPhase.label
 																}
 														/>
 												)

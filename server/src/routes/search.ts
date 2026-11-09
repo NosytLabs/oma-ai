@@ -16,7 +16,7 @@ import { logger } from "../lib/logger.js";
 	* account, same as free chat completions.
 	*/
 
-export type SearchResult = {
+type SearchResult = {
 	title: string;
 	url: string;
 	snippet: string;

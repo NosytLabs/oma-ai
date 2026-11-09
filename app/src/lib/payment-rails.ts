@@ -45,7 +45,7 @@ export const PAYMENT_RAIL_STATE = {
 	Unknown: "unknown",
 } as const;
 
-export type PaymentRailState =
+type PaymentRailState =
 	(typeof PAYMENT_RAIL_STATE)[keyof typeof PAYMENT_RAIL_STATE];
 
 type RailStatus = {

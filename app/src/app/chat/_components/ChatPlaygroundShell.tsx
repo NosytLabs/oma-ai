@@ -59,6 +59,7 @@ import { ChatSettingsPanel } from "./ChatSettingsPanel";
 import { ChatSystemPromptPanel } from "./ChatSystemPromptPanel";
 import { MemoizedChatToolbar } from "./ChatToolbar";
 import { MessagesList } from "./MessagesList";
+import { isModelAvailable } from "@/lib/model-availability";
 
 /** Retains the existing interactive-mode preference across the renderer upgrade. */
 const UI_MODE_STORAGE_KEY = "oma_chat_ui_mode";
@@ -296,12 +297,15 @@ function ShellContent() {
 	const guestNeedsSignIn = isReady && !isAuthenticated && !freeModelSelected;
 	const verifiedFreeSelection =
 		catalogStatus === "live" && !isModelUnavailable && freeModelSelected;
-	const guestAccess = guestNeedsSignIn
+	// One named derivation for "what can a guest do right now?". The union is
+	// the vocabulary; ChatEmptyState's string prop stays the wire form so its
+	// behavior is unchanged.
+	const guestAccess: GuestAccess = guestNeedsSignIn
 		? "sign-in"
 		: verifiedFreeSelection && isReady ? "free" : "unknown";
 	const freeAlternative = catalogStatus === "live"
-		? liveModels.find((item) => item.id === FREE_DEFAULT_CHAT_MODEL && item.available !== false)
-			?? liveModels.find((item) => isFreeChatModel(item.id) && item.available !== false)
+		? liveModels.find((item) => item.id === FREE_DEFAULT_CHAT_MODEL && isModelAvailable(item))
+			?? liveModels.find((item) => isFreeChatModel(item.id) && isModelAvailable(item))
 		: undefined;
 	const loginHref = buildLoginHref(playgroundHrefForModel(model));
 
@@ -979,6 +983,9 @@ function ShellLoadingFallback() {
 		</div>
 	);
 }
+
+/** The guest's actionable state, derived from auth + catalog + selection. */
+type GuestAccess = "free" | "sign-in" | "unknown";
 
 export function ChatPlaygroundShell() {
 	return (

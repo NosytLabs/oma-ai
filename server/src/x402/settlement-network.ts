@@ -16,7 +16,7 @@ export const SETTLEMENT_NETWORK = {
 	Base: "base",
 } as const;
 
-export type SettlementNetwork =
+type SettlementNetwork =
 	(typeof SETTLEMENT_NETWORK)[keyof typeof SETTLEMENT_NETWORK];
 
 /** Wire/CAIP-2 form -> canonical internal id. Unknown -> null. */

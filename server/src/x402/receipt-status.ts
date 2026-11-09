@@ -21,7 +21,7 @@ export const TX_RECEIPT_STATUS = {
 	Reverted: "reverted",
 } as const;
 
-export type TxReceiptStatus =
+type TxReceiptStatus =
 	(typeof TX_RECEIPT_STATUS)[keyof typeof TX_RECEIPT_STATUS];
 
 /**
