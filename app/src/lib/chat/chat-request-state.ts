@@ -112,8 +112,8 @@ export function applyChatRequestEvent(
 	event: ChatRequestEvent,
 	error: string | null = null,
 ): ChatRequestState {
-	const phase = nextChatRequestPhase(state.phase, event);
-	if (phase === state.phase && error === state.error) return state;
+	const phase = TRANSITIONS[state.phase][event];
+	if (phase === undefined) return state;
 	return { phase, error: phase === CHAT_REQUEST_PHASE.Failed ? error : null };
 }
 
