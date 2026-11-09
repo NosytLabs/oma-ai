@@ -58,6 +58,23 @@ describe("chat request machine", () => {
 		expect(isChatRequestInFlight(state)).toBe(false);
 	});
 
+	it("preserves the original failure when late events are ignored", () => {
+		const failed = applyChatRequestEvent(
+			applyChatRequestEvent(INITIAL_CHAT_REQUEST_STATE, CHAT_REQUEST_EVENT.Send),
+			CHAT_REQUEST_EVENT.Fail,
+			"Provider unavailable; retry this message.",
+		);
+		for (const event of [
+			CHAT_REQUEST_EVENT.FirstToken,
+			CHAT_REQUEST_EVENT.Settled,
+			CHAT_REQUEST_EVENT.Cancel,
+			CHAT_REQUEST_EVENT.Fail,
+		]) {
+			expect(applyChatRequestEvent(failed, event)).toBe(failed);
+			expect(applyChatRequestEvent(failed, event, "late error")).toBe(failed);
+		}
+	});
+
 	it("accepts a cancel that lands after the in-flight flag was cleared", () => {
 		// The Stop button clears `loading` before the aborted fetch rejects.
 		const state = applyChatRequestEvent(INITIAL_CHAT_REQUEST_STATE, CHAT_REQUEST_EVENT.Cancel);

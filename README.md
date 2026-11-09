@@ -6,6 +6,8 @@ billing and a browser chat workspace.
 [Website](https://www.oma-ai.com) · [Customer docs](https://www.oma-ai.com/docs) ·
 [Repository documentation](docs/README.md) · [Security policy](SECURITY.md)
 
+For lifecycle changes, start with the [state and recovery map](docs/STATE-MACHINES.md).
+
 ## Product
 
 - OpenAI chat completions and an Anthropic Messages adapter for text and
