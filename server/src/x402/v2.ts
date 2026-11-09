@@ -23,15 +23,12 @@
 import { USDC_BASE, USDC_DECIMALS } from "../constants.js";
 import { formatUnits } from "viem";
 import { parseUsdcAtomic } from "./facilitator-signing.js";
+import { CAIP2_BASE_MAINNET, parseSettlementNetwork } from "./settlement-network.js";
 import type { PaymentSignature } from "./facilitator.js";
 
-/** CAIP-2 id for Base mainnet (the only network OMA settles on today). */
-export const CAIP2_BASE_MAINNET = "eip155:8453";
-
-const CAIP2_TO_INTERNAL: Record<string, string> = {
-		[CAIP2_BASE_MAINNET]: "base",
-		base: "base",
-};
+// The settlement network vocabulary lives in ./settlement-network.ts; the
+// CAIP-2 constant is re-exported so existing importers keep working.
+export { CAIP2_BASE_MAINNET } from "./settlement-network.js";
 
 /** Atomic USDC units → decimal string ("100000" → "0.10"). */
 export function atomicToDecimal(atomic: bigint): string {
@@ -86,7 +83,7 @@ export function parseXPaymentHeader(headerValue: string): PaymentSignature {
 		if (requirements.scheme !== "exact") {
 				throw new Error(`Unsupported scheme in X-PAYMENT: ${requirements.scheme} (expected "exact")`);
 		}
-		const internalNetwork = CAIP2_TO_INTERNAL[requirements.network];
+		const internalNetwork = parseSettlementNetwork(requirements.network);
 		if (!internalNetwork) {
 				throw new Error(`Unsupported network in X-PAYMENT: ${requirements.network} (expected ${CAIP2_BASE_MAINNET})`);
 		}

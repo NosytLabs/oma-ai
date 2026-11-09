@@ -13,6 +13,7 @@ import { base } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 import { config } from "../config.js";
 import { USDC_BASE, USDC_DECIMALS } from "../constants.js";
+import { SETTLEMENT_NETWORK } from "./settlement-network.js";
 import { logger } from "../lib/logger.js";
 import { createBaseTransport, getPublicClient } from "../lib/rpc-client.js";
 import { parseUsdcAtomic } from "./facilitator-signing.js";
@@ -20,6 +21,7 @@ import { consumeNonce } from "./replay.js";
 import { SERVER_TREASURY } from "./treasury.js";
 import type { PaymentPayload, PaymentResponse } from "./types.js";
 import { isSuccessfulReceipt } from "./receipt-status.js";
+import { recordPendingSettlement } from "./pending-settlements.js";
 
 // ============================================================
 // EIP-3009 transferWithAuthorization (Base USDC)
@@ -372,10 +374,32 @@ export async function submitEip3009TransferAndConfirm(
 			{ err, txHash },
 			"[FACILITATOR] settlement unconfirmed; returning hash for reconciliation",
 		);
+		// Give the broadcast a durable home BEFORE the error leaves. The hash
+		// in the client-facing error is the x402 contract; this row is the
+		// server's own record, so a client that drops the hash still leaves a
+		// reconcilable trail. Never throws: the original failure is what the
+		// caller must see.
 		const pending = new Error(
 			`Settlement transaction ${txHash} was not confirmed; payment not credited`,
 		) as Error & { txHash?: string };
 		pending.txHash = txHash;
+		try {
+			await recordPendingSettlement(
+				{
+					txHash,
+					// Submission itself is hardwired to Base (the only settlement
+					// chain), so the pending row records that network, not whatever
+					// the request declared.
+					networkId: SETTLEMENT_NETWORK.Base,
+					amount: formatUnits(BigInt(auth.value), USDC_DECIMALS),
+					payee: auth.to,
+					payer: auth.from,
+				},
+				err,
+			);
+		} catch (recordErr) {
+			logger.error({ err: recordErr, txHash }, "[FACILITATOR] failed to record pending settlement");
+		}
 		throw pending;
 	}
 

@@ -556,6 +556,52 @@ export const settlementDlq = pgTable(
 	],
 );
 
+/**
+ * A settlement that was BROADCAST on chain but whose receipt never arrived
+ * within the confirmation window -- the x402 spec's non-terminal
+ * `settlement_pending`, which previously existed only as an error message.
+ * The broadcast hash was returned to the client and logged; if the client
+ * dropped it, the transfer could confirm later with no durable record, and
+ * the payment was simply lost.
+ *
+ * The row is written at the moment of the timeout and is reconciled by the
+ * settlement drain: the chain receipt (or its absence) resolves the row to
+ * `confirmed` or `reverted`. It does NOT credit anyone by itself -- a
+ * confirmed row is the evidence an operator (or a future automated flow)
+ * needs to credit the payment deliberately, without risking a double credit.
+ */
+export const pendingSettlements = pgTable(
+		"pending_settlements",
+		{
+				id: uuid("id").defaultRandom().primaryKey(),
+				txHash: text("tx_hash").notNull(),
+				networkId: text("network_id").notNull(),
+				amount: text("amount").notNull(),
+				payee: text("payee").notNull(),
+				payer: text("payer").notNull(),
+				broadcastAt: timestamp("broadcast_at", { withTimezone: true })
+						.defaultNow()
+						.notNull(),
+				// Vocabulary: x402/pending-settlements.ts PENDING_SETTLEMENT_STATE.
+				status: text("status").notNull().default("pending"),
+				// Set once the chain answers; a reverted row keeps the receipt for
+				// the audit trail.
+				receipt: text("receipt"),
+				resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+				lastError: text("last_error"),
+				createdAt: timestamp("created_at", { withTimezone: true })
+						.defaultNow()
+						.notNull(),
+		},
+		(t) => [
+				uniqueIndex("idx_pending_settlements_txhash_network_unique").on(
+						t.txHash,
+						t.networkId,
+				),
+				index("idx_pending_settlements_status").on(t.status),
+		],
+);
+
 export const settlements = pgTable(
 		"settlements",
 		{

@@ -13,6 +13,10 @@ import { securityHeaders } from "./middleware/security.js";
 import { originGuard } from "./middleware/origin-guard.js";
 import { logger } from "./lib/logger.js";
 import { drainSettlementDlq, getSettlementDlqLength } from "./lib/dlq.js";
+import {
+	countPendingSettlements,
+	reconcilePendingSettlements,
+} from "./x402/pending-settlements.js";
 import { auth } from "./auth.js";
 import { initAuth } from "./auth/middleware.js";
 import { ensureCatalogLoaded } from "./inference/models.js";
@@ -399,7 +403,25 @@ app.post("/internal/drain-settlement-dlq", async (c) => {
 		if (result.recovered > 0 || result.abandoned > 0) {
 			logger.info({ ...result, remaining }, "[DLQ] Settlement drain completed");
 		}
-		return c.json({ ...result, remaining });
+		// Same schedule, one more question: which broadcast-but-unconfirmed
+		// settlements has the chain answered since the last pass? Additive
+		// fields -- existing scheduler consumers keep reading the DLQ shape.
+		const pendingReconciled = await reconcilePendingSettlements();
+		const pendingRemaining = await countPendingSettlements();
+		if (pendingReconciled.confirmed > 0 || pendingReconciled.reverted > 0) {
+			logger.info(
+				{ ...pendingReconciled, remaining: pendingRemaining },
+				"[PENDING-SETTLEMENT] reconciliation pass completed",
+			);
+		}
+		return c.json({
+			...result,
+			remaining,
+			pending: {
+				...pendingReconciled,
+				remaining: pendingRemaining,
+			},
+		});
 	} catch (err) {
 		logger.error({ err }, "[DLQ] Settlement drain failed");
 		return c.json({ error: { message: "settlement drain failed", type: "server_error" } }, 500);
