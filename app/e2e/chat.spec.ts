@@ -147,6 +147,8 @@ test.describe("Chat playground", () => {
 		await expect(page.getByRole("listitem").filter({ hasText: "Second useful step." })).toBeVisible();
 		await expect(input).toHaveValue("");
 		await expect(input).toBeEnabled();
+		await expect(page.getByRole("button", { name: "Stop waiting for the response", exact: true })).toBeHidden();
+		await expect(page.getByRole("button", { name: "Stop generating", exact: true })).toBeHidden();
 		await expect(page.getByRole("button", { name: "Stop generation", exact: true })).toBeHidden();
 		await expect(page.getByRole("button", { name: "Copy message", exact: true })).toBeVisible();
 		await expect(page.getByRole("button", { name: "Regenerate response", exact: true })).toBeVisible();
@@ -161,7 +163,9 @@ test.describe("Chat playground", () => {
 		await input.fill("Keep this response pending until I stop it.");
 		await input.press("Enter");
 		await pending.started;
-		const stop = page.getByRole("button", { name: "Stop generation", exact: true });
+		// No response bytes have arrived: assert the sending-phase action,
+		// not the legacy label used when no request phase is supplied.
+		const stop = page.getByRole("button", { name: "Stop waiting for the response", exact: true });
 		await expect(stop).toBeVisible();
 		await expect(input).toBeDisabled();
 		await stop.click();
@@ -169,6 +173,7 @@ test.describe("Chat playground", () => {
 		// abort could hide a broken Stop button.
 		await expect(stop).toBeHidden();
 		await expect(input).toBeEnabled();
+		await expect(page.getByRole("button", { name: "Send message", exact: true })).toBeVisible();
 		await pending.release();
 
 		chatApi.replyNext("The next request completed after cancellation.");
