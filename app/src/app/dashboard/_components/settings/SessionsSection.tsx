@@ -35,47 +35,80 @@ function getDeviceName(userAgent: string | null): string {
 	return device;
 }
 
+/**
+ * The one machine behind this section: nothing is pending, a sign-out is
+ * running, a revoke (of one session or of all others) is being confirmed or
+ * is running. One state variable replaces the five booleans that could
+ * previously disagree with each other.
+ */
+type SessionActionState =
+	| { kind: "idle" }
+	| { kind: "signing-out" }
+	| { kind: "confirm-revoke"; sessionId: string }
+	| { kind: "revoking"; sessionId: string }
+	| { kind: "confirm-revoke-others" }
+	| { kind: "revoking-others" };
+
 export function SessionsSection({
 	sessions,
 	onSignOutCurrent,
 	onRevokeSession,
 	onRevokeOthers,
 }: SessionsSectionProps) {
-	const [signingOut, setSigningOut] = useState(false);
-	const [revokingId, setRevokingId] = useState<string | null>(null);
-	const [revokingOthers, setRevokingOthers] = useState(false);
-	const [confirmRevokeId, setConfirmRevokeId] = useState<string | null>(null);
-	const [confirmRevokeOthers, setConfirmRevokeOthers] = useState(false);
+	const [action, setAction] = useState<SessionActionState>({ kind: "idle" });
+	// Derived views keep every existing read site unchanged. The union makes
+	// the illegal combinations unrepresentable: a confirm prompt cannot be open
+	// while a revoke is running, and only one confirm prompt can exist at a
+	// time (previously confirmRevokeId and confirmRevokeOthers could both be
+	// set, and revokingId could race revokingOthers).
+	const signingOut = action.kind === "signing-out";
+	const revokingOthers = action.kind === "revoking-others";
+	const confirmRevokeOthers = action.kind === "confirm-revoke-others";
+	const revokingId = action.kind === "revoking" ? action.sessionId : null;
+	const confirmRevokeId =
+		action.kind === "confirm-revoke" ? action.sessionId : null;
 
 	const otherSessions = sessions.filter((s) => !s.isCurrent);
 
 	const handleSignOut = async () => {
 		if (!onSignOutCurrent || signingOut) return;
-		setSigningOut(true);
+		setAction({ kind: "signing-out" });
 		try {
 			await onSignOutCurrent();
 		} finally {
-			setSigningOut(false);
+			setAction({ kind: "idle" });
 		}
 	};
 
 	const handleRevoke = async (id: string) => {
 		if (!onRevokeSession || revokingId) return;
-		setRevokingId(id);
+		setAction({ kind: "revoking", sessionId: id });
 		try {
-			if (await onRevokeSession(id) !== false) setConfirmRevokeId(null);
+			const ok = (await onRevokeSession(id)) !== false;
+			setAction(ok ? { kind: "idle" } : { kind: "confirm-revoke", sessionId: id });
 		} finally {
-			setRevokingId(null);
+			// A rejected revoke returns to its own confirm prompt, not idle;
+			// anything else lands on idle.
+			setAction((prev) =>
+				prev.kind === "revoking" && prev.sessionId === id
+					? ({ kind: "confirm-revoke", sessionId: id } as SessionActionState)
+					: prev,
+			);
 		}
 	};
 
 	const handleRevokeOthers = async () => {
 		if (!onRevokeOthers || revokingOthers || otherSessions.length === 0) return;
-		setRevokingOthers(true);
+		setAction({ kind: "revoking-others" });
 		try {
-			if (await onRevokeOthers() !== false) setConfirmRevokeOthers(false);
+			const ok = (await onRevokeOthers()) !== false;
+			setAction(ok ? { kind: "idle" } : { kind: "confirm-revoke-others" });
 		} finally {
-			setRevokingOthers(false);
+			setAction((prev) =>
+				prev.kind === "revoking-others"
+					? ({ kind: "confirm-revoke-others" } as SessionActionState)
+					: prev,
+			);
 		}
 	};
 
@@ -111,7 +144,7 @@ export function SessionsSection({
 							</button>
 							<button
 								type="button"
-								onClick={() => setConfirmRevokeOthers(false)}
+								onClick={() => setAction({ kind: "idle" })}
 								disabled={revokingOthers}
 								className="rounded-[var(--radius-md)] border border-border px-3 py-1.5 text-xs font-semibold text-text-secondary"
 							>
@@ -121,7 +154,7 @@ export function SessionsSection({
 					) : (
 					<button
 						type="button"
-						onClick={() => setConfirmRevokeOthers(true)}
+						onClick={() => setAction({ kind: "confirm-revoke-others" })}
 						disabled={revokingOthers}
 						className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-error/30 bg-error/10 px-3 py-1.5 text-xs font-semibold text-error transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:border-error/50 hover:bg-error/20 active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error"
 					>
@@ -221,7 +254,7 @@ export function SessionsSection({
 										</button>
 										<button
 											type="button"
-											onClick={() => setConfirmRevokeId(null)}
+											onClick={() => setAction({ kind: "idle" })}
 											disabled={revokingId === session.id}
 											className="rounded-[var(--radius-md)] border border-border px-3 py-2 text-xs font-semibold text-text-secondary"
 										>
@@ -231,7 +264,7 @@ export function SessionsSection({
 								) : (
 								<button
 									type="button"
-									onClick={() => setConfirmRevokeId(session.id)}
+									onClick={() => setAction({ kind: "confirm-revoke", sessionId: session.id })}
 									disabled={revokingId === session.id}
 									className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-[var(--radius-md)] border border-border bg-surface px-4 py-2 text-xs font-semibold text-text-secondary transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:border-error/40 hover:text-error hover:bg-error/10 active:scale-[0.97] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error"
 								>

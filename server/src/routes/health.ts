@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import type { OmaEnv } from "../types.js";
 import { db } from "../db/client.js";
 import { sql } from "drizzle-orm";
-import { redisHealthCheck } from "../lib/redis-client.js";
+import { redisConnectionState, redisHealthCheck } from "../lib/redis-client.js";
 import { logger } from "../lib/logger.js";
 
 export const healthRoutes = new Hono<OmaEnv>();
@@ -49,7 +49,16 @@ healthRoutes.get("/health/db", async (c) => {
 healthRoutes.get("/ready", async (c) => {
   const checks: Record<
     string,
-    { ok: boolean; status: string; latencyMs?: number; error?: string }
+    {
+      ok: boolean;
+      status: string;
+      latencyMs?: number;
+      error?: string;
+      state?: string;
+      reason?: string;
+      failedAttempts?: number;
+      retryInMs?: number;
+    }
   > = {};
 
   const dbStart = Date.now();
@@ -73,11 +82,18 @@ healthRoutes.get("/ready", async (c) => {
   try {
     const redis = await redisHealthCheck();
     const redisOk = redis.status === "ok";
+    // `state` is additive: operators can tell "not configured" from "auth
+    // failure" from "outage" instead of one undifferentiated "degraded".
+    const conn = redisConnectionState();
     checks.redis = {
       ok: redisOk,
       status: redisOk ? "ok" : "degraded",
       latencyMs: redis.latency,
       error: redisOk ? undefined : redis.status,
+      state: conn.state,
+      reason: conn.reason,
+      failedAttempts: conn.failedAttempts,
+      retryInMs: conn.retryInMs ?? undefined,
     };
   } catch (err) {
     // Public responses omit driver details.

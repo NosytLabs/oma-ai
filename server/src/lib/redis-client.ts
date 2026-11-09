@@ -1,5 +1,11 @@
 import { Redis } from "@upstash/redis";
 import { config } from "../config.js";
+import {
+	REDIS_CONNECTION_STATE,
+	type RedisConnectionSnapshot,
+	type RedisConnectionState,
+	parseRedisConnectionState,
+} from "./redis-connection-state.js";
 import { logger } from "./logger.js";
 
 // Serverless/HTTP Redis client backed by Upstash (@upstash/redis). Works on
@@ -19,7 +25,7 @@ let redisReady = false;
 let failedAttempts = 0;
 let nextRetryAt = 0;
 let generation = 0;
-let lastFailureStatus = "disconnected";
+let lastFailureStatus: RedisConnectionState = REDIS_CONNECTION_STATE.Disconnected;
 
 const RETRY_BASE_MS = 1_000;
 const RETRY_MAX_MS = 30_000;
@@ -81,7 +87,7 @@ async function verifyConnection(force = false): Promise<HealthResult> {
 			failedAttempts = Math.min(failedAttempts + 1, 6);
 			const retryAfterMs = Math.min(RETRY_BASE_MS * 2 ** (failedAttempts - 1), RETRY_MAX_MS);
 			nextRetryAt = Date.now() + retryAfterMs;
-			lastFailureStatus = redis ? "error" : "disconnected";
+			lastFailureStatus = redis ? REDIS_CONNECTION_STATE.Error : REDIS_CONNECTION_STATE.Disconnected;
 			logger.warn({ ...failureDetails(error), retryAfterMs }, "[redis] connection check failed");
 			return { status: lastFailureStatus };
 		}
@@ -106,12 +112,30 @@ export async function closeRedisClient(): Promise<void> {
 	redisReady = false;
 	failedAttempts = 0;
 	nextRetryAt = 0;
-	lastFailureStatus = "disconnected";
+	lastFailureStatus = REDIS_CONNECTION_STATE.Disconnected;
 	pingPromise = null;
 }
 
 export function isRedisReady(): boolean {
 	return redisReady;
+}
+
+/**
+ * The connection's state as an explicit snapshot: what is happening, how many
+ * attempts have failed, when the next attempt lands, and (when not ready) the
+ * reason from the same taxonomy the client logs. Additive -- every existing
+ * caller keeps asking isRedisReady()/getRedisClient().
+ */
+export function redisConnectionState(): RedisConnectionSnapshot {
+	const state = parseRedisConnectionState(redisReady ? "ok" : lastFailureStatus);
+	const retryInMs =
+		!redisReady && nextRetryAt > Date.now() ? nextRetryAt - Date.now() : null;
+	return {
+		state,
+		failedAttempts,
+		retryInMs,
+		...(state === REDIS_CONNECTION_STATE.Ready ? {} : { reason: lastFailureStatus }),
+	};
 }
 
 export async function redisHealthCheck(): Promise<HealthResult> {
