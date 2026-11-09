@@ -32,14 +32,25 @@ import { databaseErrorMetadata } from "../lib/database-error.js";
 import { getPublicClient } from "../lib/rpc-client.js";
 import { isSuccessfulReceipt } from "./receipt-status.js";
 
-/** The states a broadcast-but-unconfirmed settlement can be in. */
+/**
+ * The states of an in-flight settlement.
+ *
+ * The table started as the record of a broadcast whose receipt never arrived;
+ * it now carries every settlement that is not yet durable, so the
+ * Verified-but-unsettled window (previously held only in an in-memory cache
+ * that restarts and LRU eviction could drop) survives a restart too.
+ */
 export const PENDING_SETTLEMENT_STATE = {
-	/** Broadcast, receipt not yet seen. */
+	/** Payment verified, settlement submitted, receipt not yet seen. */
 	Pending: "pending",
+	/** Payment verified but settlement not yet submitted. */
+	Verified: "verified",
 	/** The chain confirmed the transfer; the payment happened. */
 	Confirmed: "confirmed",
 	/** The transaction mined but reverted; the funds did not move. */
 	Reverted: "reverted",
+	/** The settlement is durable in the `settlements` table. */
+	Settled: "settled",
 } as const;
 
 type PendingSettlementState =
@@ -56,8 +67,10 @@ export function parsePendingSettlementState(
 	raw: string | null | undefined,
 ): PendingSettlementState | null {
 	if (raw === PENDING_SETTLEMENT_STATE.Pending) return PENDING_SETTLEMENT_STATE.Pending;
+	if (raw === PENDING_SETTLEMENT_STATE.Verified) return PENDING_SETTLEMENT_STATE.Verified;
 	if (raw === PENDING_SETTLEMENT_STATE.Confirmed) return PENDING_SETTLEMENT_STATE.Confirmed;
 	if (raw === PENDING_SETTLEMENT_STATE.Reverted) return PENDING_SETTLEMENT_STATE.Reverted;
+	if (raw === PENDING_SETTLEMENT_STATE.Settled) return PENDING_SETTLEMENT_STATE.Settled;
 	return null;
 }
 
@@ -99,6 +112,70 @@ export async function recordPendingSettlement(
 			"[PENDING-SETTLEMENT] CRITICAL: could not record unconfirmed broadcast -- manual reconciliation required",
 		);
 		return false;
+	}
+}
+
+/**
+ * Record a VERIFIED payment whose settlement is about to be submitted.
+ *
+ * This closes the restart window: between verification and a durable
+ * settlements row, the only record of the payment used to be an in-memory
+ * cache entry. The row is idempotent on (txHash, networkId) and never throws.
+ */
+export async function recordVerifiedSettlement(
+	record: PendingSettlementRecord,
+): Promise<boolean> {
+	try {
+		await db
+			.insert(pendingSettlements)
+			.values({
+				txHash: record.txHash,
+				networkId: record.networkId,
+				amount: record.amount,
+				payee: record.payee,
+				payer: record.payer,
+				status: PENDING_SETTLEMENT_STATE.Verified,
+			})
+			// The same payment re-verified (retry, restart, second route hit)
+			// must not duplicate the row.
+			.onConflictDoNothing();
+		return true;
+	} catch (err) {
+		logger.error(
+			{ err: databaseErrorMetadata(err), txHash: record.txHash },
+			"[PENDING-SETTLEMENT] could not record verified payment",
+		);
+		return false;
+	}
+}
+
+/**
+ * Mark an in-flight settlement as durably present in `settlements`. Called
+ * from the settle path; never throws.
+ */
+export async function markSettlementDurable(txHash: string, networkId: string): Promise<void> {
+	try {
+		await db
+			.update(pendingSettlements)
+			.set({
+				status: PENDING_SETTLEMENT_STATE.Settled,
+				resolvedAt: new Date(),
+				lastError: null,
+			})
+			.where(
+				and(
+					eq(pendingSettlements.txHash, txHash),
+					eq(pendingSettlements.networkId, networkId),
+					// Never overwrite a chain-resolved state: confirmed/reverted
+					// are facts about the money; settled is a fact about our ledger.
+					sql`${pendingSettlements.status} IN (${PENDING_SETTLEMENT_STATE.Verified}, ${PENDING_SETTLEMENT_STATE.Pending})`,
+				),
+			);
+	} catch (err) {
+		logger.warn(
+			{ err: databaseErrorMetadata(err), txHash },
+			"[PENDING-SETTLEMENT] could not mark settlement durable",
+		);
 	}
 }
 

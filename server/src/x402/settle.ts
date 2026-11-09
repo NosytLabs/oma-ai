@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { settlements } from "../db/schema.js";
 import { addSettlementToDlq } from "../lib/dlq.js";
+import { markSettlementDurable } from "./pending-settlements.js";
 import { logger } from "../lib/logger.js";
 import { getRedisClient } from "../lib/redis-client.js";
 import { createReceiptPayload, signReceipt } from "./facilitator-signing.js";
@@ -93,6 +94,9 @@ export async function settlePaymentAsync(
 								receipt: existingDb[0].receipt,
 						};
 						atomicCacheSet(cacheKey, record);
+						// The settlement already exists; close out any in-flight row left
+						// over from before a restart.
+						await markSettlementDurable(txHash, networkId);
 						return { settled: true, receipt: existingDb[0].receipt };
 				}
 
@@ -145,6 +149,7 @@ export async function settlePaymentAsync(
 														{ txHash, amount, networkId, payee, attempt },
 														"[FACILITATOR] Settlement persisted to DB",
 												);
+												await markSettlementDurable(txHash, networkId);
 												result = { settled: true, receipt };
 												break;
 										} catch (err) {

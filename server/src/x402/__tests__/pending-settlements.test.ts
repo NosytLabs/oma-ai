@@ -28,8 +28,10 @@ vi.mock("../../lib/logger.js", () => ({
 
 import {
 	PENDING_SETTLEMENT_STATE,
+	markSettlementDurable,
 	parsePendingSettlementState,
 	recordPendingSettlement,
+	recordVerifiedSettlement,
 } from "../pending-settlements";
 
 function insertChain() {
@@ -93,5 +95,59 @@ describe("recordPendingSettlement", () => {
 			throw new Error("db down");
 		});
 		await expect(recordPendingSettlement(record, new Error("timeout"))).resolves.toBe(false);
+	});
+});
+
+describe("recordVerifiedSettlement", () => {
+	it("inserts a verified row idempotently", async () => {
+		const chain = insertChain();
+		mocks.insert.mockReturnValue(chain);
+		await expect(recordVerifiedSettlement(record)).resolves.toBe(true);
+		expect(chain.values).toHaveBeenCalledWith(
+			expect.objectContaining({
+				txHash: "0xabc",
+				status: PENDING_SETTLEMENT_STATE.Verified,
+			}),
+		);
+		expect(chain.onConflictDoNothing).toHaveBeenCalled();
+	});
+
+	it("survives a database failure without throwing", async () => {
+		mocks.insert.mockImplementation(() => {
+			throw new Error("db down");
+		});
+		await expect(recordVerifiedSettlement(record)).resolves.toBe(false);
+	});
+});
+
+describe("markSettlementDurable", () => {
+	it("narrows the update to rows still in flight", async () => {
+		const c: any = {};
+		c.set = vi.fn(() => c);
+		c.where = vi.fn(() => Promise.resolve());
+		mocks.update.mockReturnValue(c);
+		await markSettlementDurable("0xabc", "base");
+		expect(c.set).toHaveBeenCalledWith(
+			expect.objectContaining({ status: PENDING_SETTLEMENT_STATE.Settled }),
+		);
+		expect(c.where).toHaveBeenCalled();
+	});
+
+	it("never throws when the update fails", async () => {
+		mocks.update.mockImplementation(() => {
+			throw new Error("db down");
+		});
+		await expect(markSettlementDurable("0xabc", "base")).resolves.toBeUndefined();
+	});
+});
+
+describe("parsePendingSettlementState -- extended vocabulary", () => {
+	it("knows verified and settled", () => {
+		expect(parsePendingSettlementState("verified")).toBe(
+			PENDING_SETTLEMENT_STATE.Verified,
+		);
+		expect(parsePendingSettlementState("settled")).toBe(
+			PENDING_SETTLEMENT_STATE.Settled,
+		);
 	});
 });

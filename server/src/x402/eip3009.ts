@@ -21,7 +21,7 @@ import { consumeNonce } from "./replay.js";
 import { SERVER_TREASURY } from "./treasury.js";
 import type { PaymentPayload, PaymentResponse } from "./types.js";
 import { isSuccessfulReceipt } from "./receipt-status.js";
-import { recordPendingSettlement } from "./pending-settlements.js";
+import { recordPendingSettlement, recordVerifiedSettlement } from "./pending-settlements.js";
 
 // ============================================================
 // EIP-3009 transferWithAuthorization (Base USDC)
@@ -591,6 +591,17 @@ export async function verifyEip3009Payment(
 		}
 
 		const amount = formatUnits(authAtomic, USDC_DECIMALS);
+
+		// Durable before settlement starts: between here and a settlements row,
+		// the only record of this payment was an in-memory cache entry that a
+		// restart or LRU eviction could drop. Never throws.
+		await recordVerifiedSettlement({
+			txHash,
+			networkId: payload.networkId,
+			amount,
+			payee: auth.to,
+			payer: auth.from,
+		});
 
 		return {
 				valid: true,

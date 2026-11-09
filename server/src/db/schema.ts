@@ -557,18 +557,25 @@ export const settlementDlq = pgTable(
 );
 
 /**
- * A settlement that was BROADCAST on chain but whose receipt never arrived
- * within the confirmation window -- the x402 spec's non-terminal
- * `settlement_pending`, which previously existed only as an error message.
- * The broadcast hash was returned to the client and logged; if the client
- * dropped it, the transfer could confirm later with no durable record, and
- * the payment was simply lost.
+ * The durable record of every settlement that is NOT yet in the `settlements`
+ * table. Two windows write here:
  *
- * The row is written at the moment of the timeout and is reconciled by the
- * settlement drain: the chain receipt (or its absence) resolves the row to
- * `confirmed` or `reverted`. It does NOT credit anyone by itself -- a
- * confirmed row is the evidence an operator (or a future automated flow)
+ *   - `verified`: the payment verified and settlement is being submitted --
+ *     previously this window existed only in an in-memory cache that a
+ *     restart or LRU eviction could drop.
+ *   - `pending`: the transfer was broadcast but the receipt wait timed out
+ *     (the x402 spec's non-terminal `settlement_pending`), which previously
+ *     existed only as an error message the client could drop.
+ *
+ * The settlement drain reconciles `pending` rows against the chain and
+ * resolves them to `confirmed` or `reverted`; the settle path marks rows
+ * `settled` once the settlements row is durable. Nothing here credits anyone:
+ * a confirmed row is the evidence an operator (or a future automated flow)
  * needs to credit the payment deliberately, without risking a double credit.
+ *
+ * Vocabulary: x402/pending-settlements.ts PENDING_SETTLEMENT_STATE. The
+ * `broadcast_at` column name predates the broadened semantics; it is the
+ * moment the row was created for the settlement.
  */
 export const pendingSettlements = pgTable(
 		"pending_settlements",
