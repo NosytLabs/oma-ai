@@ -31,7 +31,7 @@
     "@opentelemetry/resources": "^2.12.1",
     "@opentelemetry/sdk-node": "^0.223.1",
     "@opentelemetry/semantic-conventions": "^1.45.0",
-    "@polar-sh/sdk": "^1.0.2",
+    "@polar-sh/sdk": "^1.1.0",
     "@upstash/redis": "^1.41.0",
     "better-auth": "1.7.12",
     "dotenv": "^18.0.10",
