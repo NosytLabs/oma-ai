@@ -188,8 +188,8 @@ importers:
         specifier: ^0.223.1
         version: 0.223.1(@opentelemetry/api@1.9.1)
       '@opentelemetry/resources':
-        specifier: ^2.12.1
-        version: 2.12.1(@opentelemetry/api@1.9.1)
+        specifier: ^3.1.1
+        version: 3.1.1(@opentelemetry/api@1.9.1)
       '@opentelemetry/sdk-node':
         specifier: ^0.223.1
         version: 0.223.1(@opentelemetry/api@1.9.1)
