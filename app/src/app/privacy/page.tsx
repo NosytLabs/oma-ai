@@ -244,14 +244,14 @@ export default function PrivacyPage() {
 											key={k}
 											className="grid grid-cols-2 gap-2 px-4 py-2 border-b border-border last:border-b-0"
 										>
-											<dt className="text-text-muted text-[11.5px]">{k}</dt>
+											<dt className="text-text-muted text-xs">{k}</dt>
 											<dd className="text-text-secondary tabular-nums truncate text-right">
 												{v}
 											</dd>
 										</div>
 									))}
 								</dl>
-								<div className="px-4 py-2.5 border-t border-border text-[11px] text-text-tertiary">
+								<div className="px-4 py-2.5 border-t border-border text-xs text-text-tertiary">
 									Questions?{" "}
 									<a
 										href="mailto:support@nosytlabs.com"
@@ -489,10 +489,10 @@ export default function PrivacyPage() {
 									<span className="text-[13px] sm:text-sm text-text-bright">
 										{k}
 									</span>
-									<span className="text-[11px] sm:text-xs text-warning tabular-nums">
+									<span className="text-xs text-warning tabular-nums">
 										{v}
 									</span>
-									<span className="col-span-2 text-[11px] text-text-muted sm:col-span-1 sm:text-xs">
+									<span className="col-span-2 text-xs text-text-muted sm:col-span-1">
 										{note}
 									</span>
 								</li>
@@ -542,13 +542,13 @@ export default function PrivacyPage() {
 										{name}
 									</span>
 									<span className="text-[12.5px] text-text-muted">{role}</span>
-									<span className="col-span-2 text-[11px] text-text-muted sm:col-span-1 sm:text-xs">
+									<span className="col-span-2 text-xs text-text-muted sm:col-span-1">
 										{note}
 									</span>
 								</li>
 							))}
 						</ul>
-						<p className="mt-4 text-[11px] text-text-muted">
+						<p className="mt-4 text-xs text-text-muted">
 							<span className="text-accent" aria-hidden="true">
 								~
 							</span>{" "}
@@ -601,7 +601,7 @@ export default function PrivacyPage() {
 										{name}
 									</span>
 									<span className="text-[12.5px] text-text-muted">{role}</span>
-									<span className="col-span-2 text-[11px] text-text-muted sm:col-span-1 sm:text-xs">
+									<span className="col-span-2 text-xs text-text-muted sm:col-span-1">
 										{note}
 									</span>
 								</li>
@@ -671,7 +671,7 @@ export default function PrivacyPage() {
 						className="border-t border-border-subtle container-page py-14 sm:py-18 lg:py-22"
 					>
 						<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-							<p className="text-[11px] sm:text-xs text-text-muted">
+							<p className="text-xs text-text-muted">
 								Questions?{" "}
 								<a
 									href="mailto:support@nosytlabs.com"
@@ -680,7 +680,7 @@ export default function PrivacyPage() {
 									support@nosytlabs.com
 								</a>
 							</p>
-							<ul className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] sm:text-xs">
+							<ul className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
 								{[
 									{ href: "/terms", label: "Terms" },
 									{ href: "/", label: "Home" },
