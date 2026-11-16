@@ -13,10 +13,6 @@ import {
 	type Model,
 	PROVIDER_COLORS,
 } from "@/lib/models-data";
-import {
-	MODEL_METADATA_VERIFICATION,
-	modelMetadataVerificationLabel,
-} from "@/lib/api/model-metadata";
 import { modelUnavailabilityCauseLabel } from "@/lib/model-availability";
 
 interface ModelCardProps {
@@ -32,16 +28,6 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 	const inModalities = model.inputModalities ?? ["text"];
 	const outModalities = model.outputModalities ?? ["text"];
 	const isNonChat = model.modality !== "chat";
-	// Verification has three states, not two: verified, unverified, and a
-	// status this client does not know. An unknown status is never treated as
-	// verified -- it is shown as unknown.
-	const verificationStatus = model.metadataVerification?.status ?? null;
-	const unverified = verificationStatus === MODEL_METADATA_VERIFICATION.Unverified;
-	const verificationUnknown =
-		model.metadataVerification != null && verificationStatus === null;
-	// Anything the provider has not confirmed is labelled as OMA
-	// configuration rather than presented as a provider guarantee.
-	const limitsUnconfirmed = unverified || verificationUnknown;
 
 	// "text" input is universal — every catalog model accepts it — so it
 	// adds no information and just fills the row with identical badges.
@@ -116,24 +102,7 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 					</div>
 				</div>
 
-				{unverified && (
-					<div className="mt-4 space-y-1 text-xs leading-relaxed text-text-muted">
-						<p className="font-medium text-text-secondary">Configured features</p>
-						<p>Provider support is unverified.</p>
-						<p>Configured modalities: {inModalities.join(", ")} input → {outModalities.join(", ")} output</p>
-					</div>
-				)}
 
-				{verificationUnknown && (
-					<div className="mt-4 space-y-1 text-xs leading-relaxed text-text-muted">
-						<p className="font-medium text-text-secondary">Provider verification unknown</p>
-						<p>
-							The provider catalog status could not be read, so provider support is
-							not confirmed.
-						</p>
-						<p>Configured modalities: {inModalities.join(", ")} input → {outModalities.join(", ")} output</p>
-					</div>
-				)}
 
 				{hasBadges && (
 					<div className="mt-4 flex flex-wrap gap-2">
@@ -161,12 +130,12 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 							return (
 								<span
 									key={`${m}-${isOutput ? "out" : "in"}`}
-									title={limitsUnconfirmed ? `${badge.title} is configured by OMA; provider support is ${modelMetadataVerificationLabel(verificationStatus).toLowerCase()}` : badge.title}
+									title={badge.title}
 									className={`px-2.5 py-1 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider border ${
 										neutral ? "bg-surface text-text-secondary border-border" : badge.cls
 									}`}
 								>
-									{badge.label}{limitsUnconfirmed ? " (configured)" : ""}
+									{badge.label}
 								</span>
 							);
 						})}
@@ -178,13 +147,13 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 								key={String(cap)}
 								className="px-2.5 py-1 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider bg-surface text-text-secondary border border-border"
 							>
-								{limitsUnconfirmed && cap === "agents" ? "tool calling" : cap}{limitsUnconfirmed ? " (configured)" : ""}
+								{cap}
 							</span>
 						))}
 						{displayCaps.length > 3 && (
 							<span
 								className="px-2.5 py-1 rounded-sm text-[9.5px] font-mono font-bold uppercase tracking-wider text-text-muted cursor-help border border-transparent"
-								title={`${limitsUnconfirmed ? `Additional configured features (provider ${modelMetadataVerificationLabel(verificationStatus).toLowerCase()})` : "Additional capabilities"}: ${displayCaps
+								title={`Additional capabilities: ${displayCaps
 									.slice(3)
 									.join(", ")}`}
 							>
@@ -198,7 +167,7 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 				<div className="mt-auto pt-4 border-t border-border/50 flex flex-wrap items-center justify-between gap-2 text-xs">
 					<span className="text-[11px] text-text-secondary font-mono tabular-nums">
 						{model.contextLength && model.contextLength !== "0"
-							? limitsUnconfirmed ? `Context ${modelMetadataVerificationLabel(verificationStatus).toLowerCase()}` : `${model.contextLength} ctx`
+							? `${model.contextLength} ctx`
 							: "—"}
 					</span>
 					<div className="flex items-center gap-2 text-[11px] font-mono tabular-nums">

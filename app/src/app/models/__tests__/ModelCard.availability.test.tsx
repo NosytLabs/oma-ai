@@ -50,14 +50,33 @@ describe("ModelCard availability", () => {
 		expect(screen.getByText(/try in chat/i)).toBeTruthy();
 	});
 
-	it("labels configured features and modalities when provider support is unverified", () => {
-		const openbroker = MODELS.find((entry) => entry.id === "minimax-m2-7")!;
-		render(<ModelCard model={openbroker} index={0} />);
+	it("presents catalog features plainly, with no unverified notices", () => {
+		const { container } = render(
+			<ModelCard
+				model={model({
+					metadataVerification: { status: "unverified" },
+					inputModalities: ["text", "image"],
+					outputModalities: ["text"],
+					capabilities: ["reasoning"],
+				})}
+			/>,
+		);
 
-		expect(screen.getByText("Configured features")).toBeInTheDocument();
-		expect(screen.getByText("Provider support is unverified.")).toBeInTheDocument();
-		expect(screen.getByText("reasoning (configured)")).toBeInTheDocument();
-		expect(screen.getByText("Configured modalities: text input → text output")).toBeInTheDocument();
+		// Mandate 2026-11-16: an entry badged "unverified" reads broken.
+		// The card shows the catalog entry plainly; verification provenance
+		// is rendered on the model detail page instead.
+		expect(screen.queryByText(/unverified/i)).not.toBeInTheDocument();
+		expect(screen.queryByText(/configured/i)).not.toBeInTheDocument();
+		// The configured context value is shown, not hidden behind a status.
+		expect(screen.getByText("180K ctx")).toBeInTheDocument();
+		// Modality and capability badges carry their plain labels.
+		expect(screen.getByTitle("Accepts image input")).toBeInTheDocument();
+		expect(screen.getByText("reasoning")).toBeInTheDocument();
+
+		const inputBadges = container.querySelector('[aria-label="Accepted input types"]');
+		expect(inputBadges).not.toBeNull();
+		expect(inputBadges?.textContent).toContain("image");
+		expect(inputBadges?.textContent).not.toContain("text");
 	});
 
 	/**
