@@ -11,7 +11,7 @@ export default function Loading() {
 			role="status"
 			aria-label="Loading deposit page"
 		>
-			<div className="animate-pulse">
+			<div className="animate-pulse motion-reduce:animate-none">
 				{/* Header: icon box + title/subtitle, matching UnifiedDepositHeader */}
 				<div className="mb-8 flex items-start gap-3 sm:items-center sm:gap-4">
 					<div className="h-12 w-12 shrink-0 rounded-[var(--radius-lg)] border border-border-bright bg-surface" />

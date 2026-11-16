@@ -91,14 +91,14 @@ export function StatsStrip() {
 								className="mt-2 font-geometric text-[1.875rem] font-medium leading-none tracking-tight tabular-nums text-text-bright sm:text-[2.125rem]"
 							>
 								{stat.live && liveLoading ? (
-									<span className="block h-[1.875rem] w-14 animate-pulse rounded bg-surface-elevated sm:h-[2.125rem]" aria-hidden="true" />
+									<span className="block h-[1.875rem] w-14 animate-pulse rounded bg-surface-elevated motion-reduce:animate-none sm:h-[2.125rem]" aria-hidden="true" />
 								) : (
 									stat.value
 								)}
 							</p>
 							<p className="mt-2 text-[12px] leading-snug text-text-secondary">
 								{stat.live && liveLoading ? (
-									<span className="block h-3 w-24 animate-pulse rounded bg-surface-elevated" aria-hidden="true" />
+									<span className="block h-3 w-24 animate-pulse rounded bg-surface-elevated motion-reduce:animate-none" aria-hidden="true" />
 								) : (
 									stat.hint
 								)}

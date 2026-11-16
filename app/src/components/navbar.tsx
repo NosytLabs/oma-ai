@@ -78,7 +78,7 @@ function NavbarContent({ search }: { search: string }) {
 				<div className="flex shrink-0 items-center gap-1 sm:gap-2">
 					<ThemeToggle />
 					{isPending ? (
-						<div className="inline-flex h-10 w-20 items-center justify-center rounded-sm border border-border bg-surface" aria-label="Loading account" role="status"><span className="h-2 w-10 animate-pulse rounded-full bg-border" aria-hidden="true" /></div>
+						<div className="inline-flex h-10 w-20 items-center justify-center rounded-sm border border-border bg-surface" aria-label="Loading account" role="status"><span className="h-2 w-10 animate-pulse rounded-full bg-border motion-reduce:animate-none" aria-hidden="true" /></div>
 					) : isConnected ? (
 						<NavbarUserMenu key={user?.id ?? "account"} evmAddress={evmAddress} email={user?.email ?? null} onSignOut={() => signOut({ callbackURL: "/" })} />
 					) : (
