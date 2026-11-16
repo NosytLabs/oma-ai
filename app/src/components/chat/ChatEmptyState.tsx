@@ -83,9 +83,13 @@ export function ChatEmptyState({
 				</div>
 			)}
 
+			{/* No opacity:0 start for the prompt chips: the site rule
+				(globals.css reveal-target) is that content is never hidden
+				waiting on an animation — a stalled/throttled motion runtime
+				left these chips at partial opacity, i.e. barely readable
+				(~2.6:1 effective contrast). */}
 			{onPickPrompt && (
 				<m.ul
-					initial={{ opacity: 0 }}
 					animate={{ opacity: 1 }}
 					transition={{ delay: 0.2, ...springs.soft }}
 					className="mb-6 grid w-full max-w-2xl list-none grid-cols-1 gap-2 p-0 sm:grid-cols-3"
@@ -95,7 +99,7 @@ export function ChatEmptyState({
 							<button
 								type="button"
 								onClick={() => onPickPrompt(prompt)}
-								className="flex h-full min-h-11 w-full items-center justify-center rounded-[var(--radius-lg)] border border-border bg-surface/60 px-3 py-2 text-left text-xs leading-relaxed text-text-secondary transition-colors duration-200 ease-out hover:border-accent/40 hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+								className="flex h-full min-h-11 w-full items-center justify-center rounded-[var(--radius-lg)] border border-border-hi bg-surface-elevated px-3 py-2 text-left text-xs leading-relaxed text-text transition-colors duration-200 ease-out hover:border-accent/40 hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 							>
 								{prompt}
 							</button>
