@@ -68,7 +68,19 @@ export async function proxy(req: NextRequest, options: { websiteChat?: boolean }
 			signal: AbortSignal.any([req.signal, AbortSignal.timeout(270_000)]),
 		} as RequestInit);
 
-		return proxyResponse(res);
+		const out = proxyResponse(res);
+		// Site settings are anonymous global config (payment-rail status,
+		// maintenance mode), identical for every visitor, and the backend
+		// takes ~1.3s to produce them. Give the response the same short
+		// public cache as the catalog so /pricing and /deposit do not sit
+		// on "Checking…" through a full backend round-trip every view.
+		if (req.method === "GET" && path === "/v1/site-settings" && res.status === 200) {
+			out.headers.set(
+				"Cache-Control",
+				"public, max-age=60, s-maxage=60, stale-while-revalidate=300",
+			);
+		}
+		return out;
 	} catch (err) {
 		if (req.signal.aborted) {
 			return NextResponse.json({ error: { message: "Request canceled", code: "request_canceled" } }, { status: 499 });

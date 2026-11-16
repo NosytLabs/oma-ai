@@ -15,6 +15,9 @@ export const GET = withRateLimit(
 				method: "GET",
 				headers: { accept: "application/json" },
 				signal: AbortSignal.timeout(60_000),
+				// The catalog changes rarely; cache the upstream response so
+				// repeat requests do not each pay the backend's full latency.
+				next: { revalidate: 60 },
 			});
 			const body = await res.text();
 			const out = new NextResponse(body, {
@@ -24,7 +27,14 @@ export const GET = withRateLimit(
 				},
 			});
 			const cacheControl = res.headers.get("cache-control");
-			if (cacheControl) out.headers.set("cache-control", cacheControl);
+			if (cacheControl) {
+				out.headers.set("cache-control", cacheControl);
+			} else if (res.ok) {
+				out.headers.set(
+					"cache-control",
+					"public, max-age=60, s-maxage=60, stale-while-revalidate=300",
+				);
+			}
 			return out;
 		} catch {
 			return NextResponse.json(
