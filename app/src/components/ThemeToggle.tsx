@@ -195,7 +195,7 @@ export function ThemeToggle() {
 				}}
 				aria-haspopup="menu"
 				aria-expanded={open}
-				aria-controls="theme-menu"
+				aria-controls={open ? "theme-menu" : undefined}
 				aria-label={`Accent theme: ${activeLabel}. Change accent theme`}
 				title={`Accent theme · ${activeLabel}`}
 				data-theme-toggle

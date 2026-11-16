@@ -581,9 +581,9 @@ function DepositInterfaceContent({ onDeposit }: {
 
 									{recent.length > 0 && (
 										<div className="border-t border-border pt-4">
-											<h4 className="mb-2 text-xs font-medium uppercase tracking-wider text-text-muted">
+											<h2 className="mb-2 text-xs font-medium uppercase tracking-wider text-text-muted">
 												Recent deposits
-											</h4>
+											</h2>
 											<ul className="space-y-2">
 												{recent.slice(0, 3).map((d) => (
 													<li
@@ -633,9 +633,9 @@ function DepositInterfaceContent({ onDeposit }: {
 					{step === "complete" && (
 						<div className="py-6 text-center">
 							<CheckCircle2 className="mx-auto h-10 w-10 text-success" />
-							<h3 className="mt-3 text-lg font-bold text-text-bright">
+							<h2 className="mt-3 text-lg font-bold text-text-bright">
 								Deposit recorded
-							</h3>
+							</h2>
 							<p className="mt-1 text-sm text-text-secondary">
 								Your credit balance will update automatically once the watcher
 								confirms the on-chain transfer (typically &lt; 60 s on Base).
@@ -653,9 +653,9 @@ function DepositInterfaceContent({ onDeposit }: {
 					{step === "error" && (
 						<div className="py-6 text-center">
 							<AlertTriangle className="mx-auto h-10 w-10 text-red" />
-							<h3 className="mt-3 text-lg font-bold text-text-bright">
+							<h2 className="mt-3 text-lg font-bold text-text-bright">
 								Deposit submission failed
-							</h3>
+							</h2>
 							<p className="mt-1 text-sm text-text-secondary">{error}</p>
 							{broadcastDeposit && connectedAddress?.toLowerCase() !== broadcastDeposit.fromAddress.toLowerCase() && <div className="mt-4 space-y-2">
 								<p className="text-xs text-text-secondary">Connect the sending wallet: <span className="font-mono">{shortAddr(broadcastDeposit.fromAddress)}</span></p>

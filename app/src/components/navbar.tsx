@@ -86,7 +86,7 @@ function NavbarContent({ search }: { search: string }) {
 					)}
 					<button ref={mobileToggleRef} type="button" onClick={() => setMobileOpen(!mobileOpen)}
 						className="inline-flex h-11 w-11 items-center justify-center rounded-sm text-text-secondary transition-colors hover:bg-surface hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent lg:hidden"
-						aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"} aria-expanded={mobileOpen} aria-controls="mobile-menu">
+						aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"} aria-expanded={mobileOpen} aria-controls={mobileOpen ? "mobile-menu" : undefined}>
 						{mobileOpen ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
 					</button>
 				</div>

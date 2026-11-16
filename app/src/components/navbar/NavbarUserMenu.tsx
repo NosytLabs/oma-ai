@@ -25,7 +25,7 @@ export function NavbarUserMenu({ evmAddress, email, onSignOut }: NavbarUserMenuP
 
 	return (
 		<div ref={containerRef} onKeyDown={onKeyDown} onBlur={onBlur} className="relative">
-			<button ref={toggleRef} type="button" onClick={() => setOpen(!open)} aria-label="Account menu" aria-expanded={open} aria-controls="user-menu"
+			<button ref={toggleRef} type="button" onClick={() => setOpen(!open)} aria-label="Account menu" aria-expanded={open} aria-controls={open ? "user-menu" : undefined}
 				className={`inline-flex h-11 items-center gap-2 rounded-sm border px-3 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${open ? "border-accent/60 bg-surface text-accent" : "border-border text-text-secondary hover:bg-surface hover:text-text-bright"}`}>
 				<UserRound className="h-4 w-4" aria-hidden="true" />
 				<span className="hidden max-w-28 truncate sm:inline">{identity}</span>
