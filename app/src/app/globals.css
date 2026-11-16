@@ -1329,6 +1329,17 @@
 		text-decoration: underline;
 		text-underline-offset: 2px;
 	}
+	/* In-text links inside prose/legal content must be identifiable without
+	   hover (WCAG 1.4.1): always underlined at rest. Scoped to links that opt
+	   in via this class — nav, buttons and chrome links are unaffected. */
+	.prose-link {
+		text-decoration: underline;
+		text-decoration-thickness: 2px;
+		text-underline-offset: 2px;
+	}
+	.prose-link:hover {
+		text-decoration: none;
+	}
 	.markdown-content blockquote {
 		border-left: 2px solid var(--color-border-hi);
 		padding-left: 0.75em;

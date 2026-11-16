@@ -263,7 +263,7 @@ export default function TermsPage() {
 									Questions?{" "}
 									<a
 										href="mailto:support@nosytlabs.com"
-										className="text-accent hover:underline underline-offset-2"
+										className="prose-link text-accent"
 									>
 										support@nosytlabs.com
 									</a>
@@ -542,14 +542,14 @@ export default function TermsPage() {
 								Questions about these Terms?{" "}
 								<a
 									href="mailto:support@nosytlabs.com"
-									className="font-medium text-accent underline decoration-2 underline-offset-2 hover:no-underline"
+									className="prose-link font-medium text-accent"
 								>
 									support@nosytlabs.com
 								</a>
 								, or reach us via{" "}
 								<Link
 									href="/docs"
-									className="font-medium text-accent underline decoration-2 underline-offset-2 hover:no-underline"
+									className="prose-link font-medium text-accent"
 								>
 									our docs
 								</Link>
