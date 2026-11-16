@@ -122,9 +122,9 @@ function CheckoutContent() {
 						<CreditCard className="h-4 w-4" aria-hidden="true" aria-label="Credit card icon" />
 					</div>
 					<div className="min-w-0">
-						<h3 className="text-sm font-semibold text-text-bright">
+						<h2 className="text-sm font-semibold text-text-bright">
 							Buy credits with a card
-						</h3>
+						</h2>
 						<p className="mt-1 text-[12px] leading-relaxed text-text-secondary">
 							Pay with Visa, Mastercard, or Apple Pay via Polar. No wallet, no
 							USDC required. Credits land in your account the moment the

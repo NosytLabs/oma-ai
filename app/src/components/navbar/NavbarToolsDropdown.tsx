@@ -24,7 +24,7 @@ export function NavbarToolsDropdown({ open, onOpenChange }: NavbarToolsDropdownP
 				type="button"
 				onClick={() => onOpenChange(!open)}
 				aria-expanded={open}
-				aria-controls="tools-menu"
+				aria-controls={open ? "tools-menu" : undefined}
 				aria-label="Tools menu"
 				className={`inline-flex h-11 items-center gap-1.5 rounded-sm px-3 text-[13px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
 					isToolsActive || open ? "bg-accent-dim text-accent" : "text-text-secondary hover:bg-surface hover:text-text-bright"

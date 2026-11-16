@@ -170,7 +170,7 @@ function RailUnavailable({
 	return (
 		<div className="space-y-3 rounded-[var(--radius-lg)] border border-border bg-surface/50 p-6 text-center">
 			<Icon className="mx-auto h-8 w-8 text-text-muted" aria-hidden="true" />
-			<h3 className="text-md font-semibold text-text-bright">{title}</h3>
+			<h2 className="text-md font-semibold text-text-bright">{title}</h2>
 			<p className="mx-auto max-w-md text-xs leading-relaxed text-text-secondary">
 				{reason}
 			</p>
@@ -188,9 +188,9 @@ function X402Info() {
 						<Zap className="h-4 w-4" aria-hidden="true" />
 					</div>
 					<div className="min-w-0">
-						<h3 className="text-sm font-semibold text-text-bright">
+						<h2 className="text-sm font-semibold text-text-bright">
 							x402 — agent USDC settlement
-						</h3>
+						</h2>
 						<p className="mt-1 text-[12px] leading-relaxed text-text-secondary">
 							Sign in with the wallet that will pay. Your agent signs a USDC
 							authorization on Base; verification broadcasts the transfer and
@@ -321,7 +321,7 @@ export default function DepositPage() {
 							role="tab"
 							id={`${tablistId}-tab-${m.key}`}
 							aria-selected={isActive}
-							aria-controls={`${tablistId}-panel-${m.key}`}
+							aria-controls={isActive ? `${tablistId}-panel-${m.key}` : undefined}
 							tabIndex={isActive ? 0 : -1}
 							onClick={() => { methodChosen.current = true; setMethod(m.key); }}
 							className={`flex min-w-0 flex-col items-center gap-0.5 rounded-[var(--radius-md)] px-1.5 py-2 text-center transition-[background-color,color,box-shadow] duration-200 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-void sm:items-start sm:gap-1 sm:px-3 sm:py-2.5 sm:text-left ${
