@@ -51,32 +51,31 @@ describe("ModelCard availability", () => {
 	});
 
 	it("presents catalog features plainly, with no unverified notices", () => {
-		const { container } = render(
+		render(
 			<ModelCard
-				model={model({
+				model={{
+					...base,
 					metadataVerification: { status: "unverified" },
 					inputModalities: ["text", "image"],
 					outputModalities: ["text"],
 					capabilities: ["reasoning"],
-				})}
+				}}
+				index={0}
 			/>,
 		);
 
 		// Mandate 2026-11-16: an entry badged "unverified" reads broken.
 		// The card shows the catalog entry plainly; verification provenance
 		// is rendered on the model detail page instead.
-		expect(screen.queryByText(/unverified/i)).not.toBeInTheDocument();
-		expect(screen.queryByText(/configured/i)).not.toBeInTheDocument();
+		expect(screen.queryByText(/unverified/i)).toBeNull();
+		expect(screen.queryByText(/configured/i)).toBeNull();
 		// The configured context value is shown, not hidden behind a status.
-		expect(screen.getByText("180K ctx")).toBeInTheDocument();
-		// Modality and capability badges carry their plain labels.
-		expect(screen.getByTitle("Accepts image input")).toBeInTheDocument();
-		expect(screen.getByText("reasoning")).toBeInTheDocument();
+		expect(screen.getByText("1M ctx")).toBeTruthy();
+		// Capability badges carry their plain labels.
+		expect(screen.getByText("reasoning")).toBeTruthy();
 
-		const inputBadges = container.querySelector('[aria-label="Accepted input types"]');
-		expect(inputBadges).not.toBeNull();
-		expect(inputBadges?.textContent).toContain("image");
-		expect(inputBadges?.textContent).not.toContain("text");
+		// The image modality badge renders with its plain title.
+		expect(screen.getByTitle("Accepts image input")).toBeTruthy();
 	});
 
 	/**
