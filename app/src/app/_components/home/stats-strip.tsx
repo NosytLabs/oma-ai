@@ -74,10 +74,18 @@ export function StatsStrip() {
 								aria-live="polite"
 								className="mt-2 font-geometric text-[1.875rem] font-medium leading-none tracking-tight tabular-nums text-text-bright sm:text-[2.125rem]"
 							>
-								{stat.value}
+								{stat.live && liveCount == null ? (
+									<span className="block h-[1.875rem] w-14 animate-pulse rounded bg-surface-elevated sm:h-[2.125rem]" aria-hidden="true" />
+								) : (
+									stat.value
+								)}
 							</p>
 							<p className="mt-2 text-[12px] leading-snug text-text-secondary">
-								{stat.hint}
+								{stat.live && liveCount == null ? (
+									<span className="block h-3 w-24 animate-pulse rounded bg-surface-elevated" aria-hidden="true" />
+								) : (
+									stat.hint
+								)}
 							</p>
 						</Reveal>
 					</li>

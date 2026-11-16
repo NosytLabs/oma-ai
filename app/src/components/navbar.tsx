@@ -78,14 +78,15 @@ function NavbarContent({ search }: { search: string }) {
 				<div className="flex shrink-0 items-center gap-1 sm:gap-2">
 					<ThemeToggle />
 					{isPending ? (
-						<div className="h-10 w-20 animate-pulse rounded-sm border border-border bg-surface" aria-label="Loading account" role="status" />
+						<div className="inline-flex h-10 w-20 items-center justify-center rounded-sm border border-border bg-surface" aria-label="Loading account" role="status"><span className="h-2 w-10 animate-pulse rounded-full bg-border" aria-hidden="true" /></div>
 					) : isConnected ? (
 						<NavbarUserMenu key={user?.id ?? "account"} evmAddress={evmAddress} email={user?.email ?? null} onSignOut={() => signOut({ callbackURL: "/" })} />
 					) : (
 						<Link href={loginHref} onClick={() => saveChatDraftForSignIn()} aria-label="Sign in or create an account" className="btn-mono btn-primary inline-flex px-3 text-xs sm:px-4">Sign in</Link>
 					)}
+					{/* While the menu is open the toggle hides: the slide-in panel renders its own close button, and showing this X as well put two overlapping close controls at phone widths. */}
 					<button ref={mobileToggleRef} type="button" onClick={() => setMobileOpen(!mobileOpen)}
-						className="inline-flex h-11 w-11 items-center justify-center rounded-sm text-text-secondary transition-colors hover:bg-surface hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent lg:hidden"
+						className={`inline-flex h-11 w-11 items-center justify-center rounded-sm text-text-secondary transition-colors hover:bg-surface hover:text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent lg:hidden ${mobileOpen ? "invisible" : ""}`}
 						aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"} aria-expanded={mobileOpen} aria-controls={mobileOpen ? "mobile-menu" : undefined}>
 						{mobileOpen ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
 					</button>

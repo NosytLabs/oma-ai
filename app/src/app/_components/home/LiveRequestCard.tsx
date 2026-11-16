@@ -46,7 +46,7 @@ const ROUNDS: DemoRound[] = [
 
 type Phase = "typing" | "streaming" | "settled" | "pause";
 
-const TYPE_SPEED_MS = 6;
+const TYPE_SPEED_MS = 2;
 const TOKEN_SPEED_MS = 28;
 const SETTLE_HOLD_MS = 2600;
 const PAUSE_MS = 500;
