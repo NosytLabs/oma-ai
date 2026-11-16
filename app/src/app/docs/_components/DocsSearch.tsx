@@ -276,7 +276,7 @@ export function DocsSearch() {
 						</div>
 
 						{/* Footer */}
-						<div className="flex items-center justify-between border-t border-border px-4 py-2 text-[10px] text-text-tertiary">
+						<div className="flex items-center justify-between border-t border-border px-4 py-2 text-xs text-text-tertiary">
 							<div className="flex items-center gap-3">
 								<span>↑↓ Navigate</span>
 								<span>↵ Select</span>
