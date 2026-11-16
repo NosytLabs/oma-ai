@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { DEFAULT_API_URL } from "@/lib/config";
 import { CheckCircle2, XCircle, AlertCircle } from "lucide-react";
-import { BreadcrumbListJsonLd } from "@/components/json-ld";
 import { FREE_DEFAULT_CHAT_MODEL } from "@/lib/model-utils";
 
 // The page's entire purpose is to report gateway health *right now*. It reads
@@ -178,9 +177,6 @@ export default async function StatusPage() {
 
 	return (
 		<section className="page-shell">
-			<BreadcrumbListJsonLd
-				items={[{ name: "Home", url: "/" }, { name: "Status", url: "/status" }]}
-			/>
 			<div className="container-page page-content mx-auto max-w-2xl">
 				<span className="section-eyebrow-caps">Live status</span>
 				<h1 className="h1-page mt-4 text-text-bright">

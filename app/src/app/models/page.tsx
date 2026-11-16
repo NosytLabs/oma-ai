@@ -12,7 +12,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { Suspense, useMemo } from "react";
-import { BreadcrumbListJsonLd } from "@/components/json-ld";
+import { BreadcrumbListJsonLd, ServiceJsonLd } from "@/components/json-ld";
+import SITE_URL from "@/lib/site";
 import { InViewFade } from "@/components/motion/in-view-fade";
 import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { MODEL_PAGES, TIER_COLORS, TIER_ORDER } from "@/lib/models-data";
@@ -325,6 +326,11 @@ export default function ModelsPage() {
 					{ name: "Home", url: "/" },
 					{ name: "Models", url: "/models" },
 				]}
+			/>
+			<ServiceJsonLd
+				name="OMA AI model catalog"
+				description="Catalog of GLM, Qwen, DeepSeek and more with transparent per-token pricing, provider routing and OpenAI-compatible endpoints."
+				url={`${SITE_URL}/models`}
 			/>
 			<Suspense fallback={<ModelsSeoFallback />}>
 				<ModelsPageInner />

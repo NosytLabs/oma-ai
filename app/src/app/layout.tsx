@@ -10,7 +10,7 @@ import { Navbar } from "@/components/navbar";
 import { Providers } from "@/components/providers";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ToastProviderClient } from "@/components/ui/ToastProviderClient";
-import { OrganizationJsonLd, SoftwareApplicationJsonLd, WebSiteJsonLd } from "@/components/json-ld";
+import { SitewideJsonLd } from "@/components/sitewide-json-ld";
 import { MaintenanceBanner } from "@/components/shared/MaintenanceBanner";
 import "./globals.css";
 
@@ -146,9 +146,7 @@ export default function RootLayout({
 				    pre-paint bootstrap can never drift from ThemeProvider's
 				    isValidTheme / picker list. */}
 				<script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
-				<OrganizationJsonLd />
-				<WebSiteJsonLd />
-				<SoftwareApplicationJsonLd />
+				<SitewideJsonLd />
 			</head>
 			<body className="flex min-h-dvh flex-col bg-void text-text font-sans antialiased overflow-x-clip">
 				{/* Legacy no-JS fallback. globals.css also carries a
