@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { ModelCard } from "../_components/ModelCard";
-import { MODELS, type Model } from "@/lib/models-data";
+import type { Model } from "@/lib/models-data";
 
 const base: Model = {
 	id: "claude-opus-5",
@@ -50,14 +50,32 @@ describe("ModelCard availability", () => {
 		expect(screen.getByText(/try in chat/i)).toBeTruthy();
 	});
 
-	it("labels configured features and modalities when provider support is unverified", () => {
-		const openbroker = MODELS.find((entry) => entry.id === "minimax-m2-7")!;
-		render(<ModelCard model={openbroker} index={0} />);
+	it("presents catalog features plainly, with no unverified notices", () => {
+		render(
+			<ModelCard
+				model={{
+					...base,
+					metadataVerification: { status: "unverified", sourceUrl: "", verifiedAt: "", note: "" },
+					inputModalities: ["text", "image"],
+					outputModalities: ["text"],
+					capabilities: ["reasoning"],
+				}}
+				index={0}
+			/>,
+		);
 
-		expect(screen.getByText("Configured features")).toBeInTheDocument();
-		expect(screen.getByText("Provider support is unverified.")).toBeInTheDocument();
-		expect(screen.getByText("reasoning (configured)")).toBeInTheDocument();
-		expect(screen.getByText("Configured modalities: text input → text output")).toBeInTheDocument();
+		// Mandate 2026-11-16: an entry badged "unverified" reads broken.
+		// The card shows the catalog entry plainly; verification provenance
+		// is rendered on the model detail page instead.
+		expect(screen.queryByText(/unverified/i)).toBeNull();
+		expect(screen.queryByText(/configured/i)).toBeNull();
+		// The configured context value is shown, not hidden behind a status.
+		expect(screen.getByText("1M ctx")).toBeTruthy();
+		// Capability badges carry their plain labels.
+		expect(screen.getByText("reasoning")).toBeTruthy();
+
+		// The image modality badge renders with its plain title.
+		expect(screen.getByTitle("Accepts image input")).toBeTruthy();
 	});
 
 	/**
