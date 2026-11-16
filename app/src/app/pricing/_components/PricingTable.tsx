@@ -26,6 +26,12 @@ export function PricingTable({
 	categories,
 	categoryStyles,
 }: PricingTableProps) {
+	// Enabled-only is the default view: the header stat counts enabled
+	// models, so the table must open on the same set or the two disagree
+	// (12 enabled in the header vs "Showing 20 of 20" in the table).
+	// Unavailable models stay one toggle away, badged and struck through.
+	const [enabledOnly, setEnabledOnly] = useState(true);
+
 	// Search, provider filter, context filter
 	const [searchQuery, setSearchQuery] = useState("");
 	const [selectedProvider, setSelectedProvider] = useState<string>("all");
@@ -49,6 +55,11 @@ export function PricingTable({
 	// Filter logic
 	const filteredModels = useMemo(() => {
 		return models.filter((m) => {
+			// Availability filter — only once live availability is known;
+			// while checking (or when the catalog call failed) the static
+			// list is reference data and nothing is hidden on a guess.
+			if (enabledOnly && availabilityStatus === "live" && m.available === false) return false;
+
 			// Category filter (by tier)
 			if (category !== "all" && m.category !== category) return false;
 
@@ -69,7 +80,7 @@ export function PricingTable({
 
 			return true;
 		});
-	}, [models, category, selectedProvider, minContext, searchQuery]);
+	}, [models, category, selectedProvider, minContext, searchQuery, enabledOnly, availabilityStatus]);
 
 	// Sorting logic
 	const sortedModels = useMemo(() => {
@@ -199,22 +210,35 @@ export function PricingTable({
 
 				<div className="mt-4 flex items-center justify-between text-xs text-text-muted font-mono">
 					<span aria-live="polite">
-						Showing {sortedModels.length} of {models.filter(m => category === "all" || m.category === category).length} models
+						Showing {sortedModels.length} of {models.filter(m => (category === "all" || m.category === category) && (!enabledOnly || availabilityStatus !== "live" || m.available !== false)).length} models
 					</span>
-					{(searchQuery || selectedProvider !== "all" || minContext > 0) && (
-						<button
-							type="button"
-							onClick={() => {
-								setSearchQuery("");
-								setSelectedProvider("all");
-								setMinContext(0);
-							}}
-							aria-label="Clear all search and filter criteria"
-							className="rounded px-1 text-[var(--color-accent)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-						>
-							Clear filters
-						</button>
-					)}
+					<span className="flex items-center gap-4">
+						<label className="flex cursor-pointer items-center gap-2">
+							<input
+								type="checkbox"
+								checked={enabledOnly}
+								onChange={(e) => setEnabledOnly(e.target.checked)}
+								aria-label="Show enabled models only"
+								className="h-4 w-4 accent-[var(--color-accent)]"
+							/>
+							Enabled only
+						</label>
+						{(searchQuery || selectedProvider !== "all" || minContext > 0 || !enabledOnly) && (
+							<button
+								type="button"
+								onClick={() => {
+									setSearchQuery("");
+									setSelectedProvider("all");
+									setMinContext(0);
+									setEnabledOnly(true);
+								}}
+								aria-label="Clear all search and filter criteria"
+								className="rounded px-1 text-[var(--color-accent)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+							>
+								Clear filters
+							</button>
+						)}
+					</span>
 				</div>
 			</div>
 

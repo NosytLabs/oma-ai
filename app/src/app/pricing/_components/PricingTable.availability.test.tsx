@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { PricingTable } from "./PricingTable";
 import type { PricedModel } from "../_lib/pricing-utils";
 
@@ -40,6 +40,12 @@ function renderTable(model: PricedModel) {
 describe("PricingTable availability", () => {
 	it.each([false, true, undefined])("marks prices and context consistently when availability is %s", (available) => {
 		renderTable({ ...base, available });
+		if (available === false) {
+			// The table opens on enabled models only; an unavailable row is
+			// behind the toggle by design (see PricingTable).
+			expect(screen.queryByText("Claude Opus 5")).not.toBeInTheDocument();
+			fireEvent.click(screen.getByRole("checkbox", { name: /enabled models only/i }));
+		}
 		const cells = screen.getByRole("row", { name: /Claude Opus 5/ }).querySelectorAll("td");
 		if (available === false) {
 			expect(screen.getByText("Unavailable")).toBeInTheDocument();
