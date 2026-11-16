@@ -48,15 +48,16 @@ describe("LiveRequestCard phase badge", () => {
 		render(<LiveRequestCard />);
 		expect(badge()).toHaveTextContent(/sending/i);
 
-		// Run past the typing phase (request is ~350 chars x 6ms).
+		// Run past the typing phase (request is ~265 chars x 2ms, plus the
+		// 350ms start delay and the 220ms pre-stream pause).
 		act(() => {
-			vi.advanceTimersByTime(4000);
+			vi.advanceTimersByTime(1500);
 		});
 		expect(badge()).toHaveTextContent(/streaming/i);
 
-		// Past the stream + settle hold.
+		// Past the stream (reply is ~91 chars x 28ms) into the settle hold.
 		act(() => {
-			vi.advanceTimersByTime(2000);
+			vi.advanceTimersByTime(2500);
 		});
 		expect(badge()).toHaveTextContent(/complete/i);
 	});

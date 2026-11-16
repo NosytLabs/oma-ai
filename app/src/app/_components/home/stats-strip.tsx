@@ -6,7 +6,8 @@
 	*/
 
 import { Reveal } from "@/app/_components/home/reveal";
-import { MIN_INPUT_PRICE_LABEL } from "@/lib/models-data";
+import { loadRawModelEntries, MIN_INPUT_PRICE_LABEL } from "@/lib/models-data";
+import { useEffect, useState } from "react";
 import { useLiveModelCount } from "./use-live-count";
 
 const STATS: { label: string; value: string; hint: string; live?: boolean }[] =
@@ -36,6 +37,21 @@ const STATS: { label: string; value: string; hint: string; live?: boolean }[] =
 
 export function StatsStrip() {
 	const liveCount = useLiveModelCount();
+	// The count hook deliberately keeps the count null both while the
+	// catalog loads AND when it cannot be read. Track settlement locally
+	// (same deduped loader, no extra request) so the skeleton only shows
+	// while the request is actually in flight; an unreadable catalog then
+	// falls back to the plain unknown markers instead of pulsing forever.
+	const [catalogSettled, setCatalogSettled] = useState(false);
+	useEffect(() => {
+		let alive = true;
+		loadRawModelEntries().then(
+			() => { if (alive) setCatalogSettled(true); },
+			() => { if (alive) setCatalogSettled(true); },
+		);
+		return () => { alive = false; };
+	}, []);
+	const liveLoading = liveCount == null && !catalogSettled;
 	const stats = STATS.map((s) =>
 		s.live && liveCount != null
 			? { ...s, value: `${liveCount}`, hint: "enabled in the current catalog" }
@@ -74,14 +90,14 @@ export function StatsStrip() {
 								aria-live="polite"
 								className="mt-2 font-geometric text-[1.875rem] font-medium leading-none tracking-tight tabular-nums text-text-bright sm:text-[2.125rem]"
 							>
-								{stat.live && liveCount == null ? (
+								{stat.live && liveLoading ? (
 									<span className="block h-[1.875rem] w-14 animate-pulse rounded bg-surface-elevated sm:h-[2.125rem]" aria-hidden="true" />
 								) : (
 									stat.value
 								)}
 							</p>
 							<p className="mt-2 text-[12px] leading-snug text-text-secondary">
-								{stat.live && liveCount == null ? (
+								{stat.live && liveLoading ? (
 									<span className="block h-3 w-24 animate-pulse rounded bg-surface-elevated" aria-hidden="true" />
 								) : (
 									stat.hint
