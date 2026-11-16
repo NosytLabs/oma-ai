@@ -134,7 +134,7 @@ const nextConfig: NextConfig = {
 							key: "Cache-Control",
 							value: isDev
 								? "no-cache, no-store, must-revalidate"
-								: "public, s-maxage=3600, stale-while-revalidate=86400",
+								: "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400",
 						},
 					],
 				}),
@@ -191,7 +191,7 @@ function generateContentSecurityPolicy(): string {
 		"https://oma-ai.com",
 		// GA4 beacons post here; the wildcard covers regional endpoints.
 		process.env.NEXT_PUBLIC_GA_ID
-			? "https://www.google-analytics.com https://region1.google-analytics.com"
+			? "https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com"
 			: null,
 	]
 		.filter(Boolean)
