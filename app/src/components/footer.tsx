@@ -29,10 +29,10 @@ export function Footer() {
 	const { isAuthenticated, isDemo } = useAuth();
 	const sections: FooterSection[] = [
 		{ title: "Product", links: primaryLinks },
-		{ title: "Resources", links: [
-			...toolsLinks.filter((link) => link.href !== "/deposit"),
-			{ label: "Glossary", href: "/glossary" },
-		] },
+		// Resources is the shared Tools list verbatim — one definition
+		// (nav-links toolsLinks) drives the navbar dropdown, the mobile
+		// menu and this column, so the menus cannot drift apart again.
+		{ title: "Resources", links: toolsLinks },
 		{ title: "Account", links: isAuthenticated && !isDemo ? accountLinks : [
 			{ label: "Sign in", href: "/login" },
 			{ label: "Buy credits", href: "/deposit" },

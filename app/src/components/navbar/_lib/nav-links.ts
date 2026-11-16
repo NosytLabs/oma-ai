@@ -67,6 +67,12 @@ export const toolsLinks: NavItem[] = [
 		desc: "5-minute walkthrough",
 	},
 	{
+		href: "/glossary",
+		label: "Glossary",
+		icon: BookOpen,
+		desc: "Plain-English definitions",
+	},
+	{
 		href: "/faq",
 		label: "FAQ",
 		icon: CircleHelp,
