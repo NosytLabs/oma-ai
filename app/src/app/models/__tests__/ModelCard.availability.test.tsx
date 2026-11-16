@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { ModelCard } from "../_components/ModelCard";
-import { MODELS, type Model } from "@/lib/models-data";
+import type { Model } from "@/lib/models-data";
 
 const base: Model = {
 	id: "claude-opus-5",
