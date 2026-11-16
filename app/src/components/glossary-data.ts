@@ -161,10 +161,10 @@ export const GLOSSARY_TERMS_BY_SLUG: Record<GlossarySlug, GlossaryTerm> = Object
 
 export const RELATED_TERMS: Record<GlossarySlug, readonly GlossarySlug[]> = {
 	api: ["api-key", "sdk", "openai-compatible"], "api-key": ["api", "credits", "rate-limit"],
-	token: ["context-window", "prompt", "credits"], "context-window": ["token", "model", "prompt"],
-	model: ["provider", "gateway", "context-window"], prompt: ["token", "inference", "context-window"],
+	token: ["context-window", "prompt", "credits", "embedding"], "context-window": ["token", "model", "prompt"],
+	model: ["provider", "gateway", "context-window"], prompt: ["token", "inference", "context-window", "temperature-top-p"],
 	inference: ["model", "prompt", "latency"], streaming: ["latency", "token", "api"],
-	provider: ["model", "gateway", "latency"], gateway: ["api", "provider", "model"],
+	provider: ["model", "gateway", "latency", "zero-data-retention"], gateway: ["api", "provider", "model"],
 	"openai-compatible": ["api", "sdk", "gateway"], embedding: ["token", "model", "inference"],
 	"temperature-top-p": ["inference", "token", "prompt"], latency: ["streaming", "provider", "rate-limit"],
 	"rate-limit": ["api-key", "latency", "credits"], "http-status-402": ["credits", "x402", "usdc"],
