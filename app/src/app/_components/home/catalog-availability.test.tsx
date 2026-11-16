@@ -26,7 +26,9 @@ describe("homepage catalog availability", () => {
 		render(<StatsStrip />);
 		const row = screen.getByText("Models enabled").closest("li")!;
 		await waitFor(() => expect(loadEntries).toHaveBeenCalled());
-		expect(within(row).getByText("—")).toBeInTheDocument();
+		// While the request is in flight the row shows a skeleton; once it
+		// settles with no readable catalog, the unknown marker appears.
+		await waitFor(() => expect(within(row).getByText("—")).toBeInTheDocument());
 	});
 
 	it("chooses an available chat model for the copyable SDK example", async () => {
