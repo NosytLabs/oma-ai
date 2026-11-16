@@ -102,6 +102,26 @@ const nextConfig: NextConfig = {
 					{ key: "Cache-Control", value: "no-store, no-cache, must-revalidate" },
 				],
 			},
+			// Public, anonymous, slow-changing GETs are the exception to the
+			// blanket /api no-store above (later matching rules win for the
+			// same header key). Measured 2026-11-16: the backend takes ~2.5s
+			// for /api/v1/models and ~1.3s for /api/v1/site-settings, and with
+			// no-store every page paid that in full — the catalog fetch gates
+			// the home stats strip, /models, /pricing, /chat and the deposit
+			// payment badges. A 60s shared cache with SWR keeps availability
+			// fresh enough while removing the wait for repeat views.
+			{
+				source: "/api/v1/models",
+				headers: [
+					{ key: "Cache-Control", value: "public, max-age=60, s-maxage=60, stale-while-revalidate=300" },
+				],
+			},
+			{
+				source: "/api/v1/site-settings",
+				headers: [
+					{ key: "Cache-Control", value: "public, max-age=60, s-maxage=60, stale-while-revalidate=300" },
+				],
+			},
 			// Keep app/auth surfaces dynamic. These routes either vary by the
 			// session or render the heavy authenticated shell; caching them at
 			// the edge risks serving one user's response to another.
