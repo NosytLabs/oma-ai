@@ -50,7 +50,7 @@ for (const vp of VIEWPORTS) {
 
     test(`${vp.name} · navbar hamburger opens & closes mobile menu`, async ({ page }) => {
       await page.goto("/", { waitUntil: "load" });
-      const toggle = page.locator('button[aria-controls="mobile-menu"]');
+      const toggle = page.locator('button[aria-label="Open navigation menu"]');
       if (!(await toggle.isVisible().catch(() => false))) return; // desktop: no hamburger
       await toggle.click();
       const menu = page.locator("#mobile-menu");
@@ -71,7 +71,7 @@ for (const vp of VIEWPORTS) {
         await expect(page.locator("header a[href='/pricing']").first()).toBeVisible();
       } else {
         await expect(desktopLink).toBeHidden();
-        await expect(page.locator('button[aria-controls="mobile-menu"]')).toBeVisible();
+        await expect(page.locator('button[aria-label="Open navigation menu"]')).toBeVisible();
       }
     });
 
