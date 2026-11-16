@@ -155,14 +155,14 @@ function Fields({ schema }: { schema: Schema }) {
 			<table className="w-full text-left text-sm">
 				<thead>
 					<tr>
-						<th className="p-2">Field</th>
-						<th className="p-2">Contract</th>
+						<th scope="col" className="p-2">Field</th>
+						<th scope="col" className="p-2">Contract</th>
 					</tr>
 				</thead>
 				<tbody>
 					{Object.entries(value.properties).map(([key, field]) => (
 						<tr key={key} className="border-t border-border align-top">
-							<th className="p-2 font-mono font-normal">
+							<th scope="row" className="p-2 font-mono font-normal">
 								{key}
 								{value.required?.includes(key) ? " *" : ""}
 							</th>
@@ -249,10 +249,10 @@ function EndpointReference() {
 									{operation.description && <p>{operation.description}</p>}
 									{operation.parameters?.map((parameter) => (
 										<div key={`${parameter.in}-${parameter.name}`}>
-											<h4 className="font-mono text-text">
+											<h3 className="font-mono text-text">
 												{parameter.in}: {parameter.name}
 												{parameter.required ? " (required)" : " (optional)"}
-											</h4>
+											</h3>
 											<p>{parameter.description}</p>
 											<code className="text-xs">
 												{schemaSummary(parameter.schema ?? {})}
@@ -262,14 +262,14 @@ function EndpointReference() {
 									{Object.entries(operation.requestBody?.content ?? {}).map(
 										([type, body]) => (
 											<div key={type}>
-												<h4 className="mb-2 font-medium text-text">
+												<h3 className="mb-2 font-medium text-text">
 													Request, {type}
-												</h4>
+												</h3>
 												{body.schema && <Fields schema={body.schema} />}
 											</div>
 										),
 									)}
-									<h4 className="font-medium text-text">Responses</h4>
+									<h3 className="font-medium text-text">Responses</h3>
 									<dl className="space-y-2">
 										{Object.entries(operation.responses ?? {}).map(
 											([status, response]) => (
@@ -458,9 +458,9 @@ export function DocsContent() {
 						<table className="w-full text-left text-xs">
 							<thead>
 								<tr>
-									<th className="p-2">API model ID</th>
-									<th className="p-2">Context tokens</th>
-									<th className="p-2">Max output tokens</th>
+									<th scope="col" className="p-2">API model ID</th>
+									<th scope="col" className="p-2">Context tokens</th>
+									<th scope="col" className="p-2">Max output tokens</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -540,9 +540,9 @@ export function DocsContent() {
 						<table className="w-full text-left">
 							<thead>
 								<tr>
-									<th className="p-2">Model</th>
-									<th className="p-2">Requests/minute</th>
-									<th className="p-2">Tokens/minute</th>
+									<th scope="col" className="p-2">Model</th>
+									<th scope="col" className="p-2">Requests/minute</th>
+									<th scope="col" className="p-2">Tokens/minute</th>
 								</tr>
 							</thead>
 							<tbody>
