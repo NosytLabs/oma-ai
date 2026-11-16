@@ -130,6 +130,19 @@ describe("model detail", () => {
 		expect(screen.getByLabelText(`${oma.name} cURL example`)).toHaveTextContent('"model": "deepseek-v4-flash-0731-openbroker"');
 	});
 
+	it("renders the model name H1 before the provider-picker H2 on a shared page", () => {
+		const venice = MODELS.find((entry) => entry.id === "deepseek-v4-flash-0731")!;
+		const oma = MODELS.find((entry) => entry.id === "deepseek-v4-flash-0731-openbroker")!;
+		const { container } = render(<ModelDetail model={venice} availability={true} routes={[{ model: venice, availability: true }, { model: oma, availability: false }]} />);
+		const headings = Array.from(container.querySelectorAll("h1, h2"));
+		// The provider picker is a section of the page, not its title: the
+		// page's single H1 must come first in document order so heading
+		// navigation lands on the model name, not on an H2 with no H1 above it.
+		expect(headings[0]?.tagName).toBe("H1");
+		expect(headings[0]).toHaveTextContent(venice.name);
+		expect(headings.map((h) => h.textContent)).toContain("Choose a provider");
+	});
+
 	it("opens the selected provider from a shared page link", () => {
 		const venice = MODELS.find((entry) => entry.id === "deepseek-v4-flash-0731")!;
 		const oma = MODELS.find((entry) => entry.id === "deepseek-v4-flash-0731-openbroker")!;

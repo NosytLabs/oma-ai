@@ -74,22 +74,6 @@ export function ModelDetail({ routes, ...initial }: ModelRouteDetails & { routes
 						<ArrowLeft className="h-4 w-4" aria-hidden="true" /> All models
 					</Link>
 				</nav>
-				{routes && routes.length > 1 && (
-					<section aria-labelledby="provider-routes-heading" className="mb-8 rounded-[var(--radius-xl)] border border-border bg-panel p-5">
-						<h2 id="provider-routes-heading" className="font-display text-xl font-medium text-text-bright">Choose a provider</h2>
-						<p className="mt-2 text-sm text-text-secondary">Compare this model’s providers. Each provider has its own API ID, pricing, limits and availability.</p>
-						<div className="mt-4 grid gap-3 sm:grid-cols-2">
-							{routes.map((route) => (
-								<button key={route.model.id} id={route.model.id} type="button" aria-pressed={selectedRouteId === route.model.id} onClick={() => { setSelectedRouteId(route.model.id); window.history.replaceState(null, "", `#${route.model.id}`); }} className={`rounded-[var(--radius-lg)] border p-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${selectedRouteId === route.model.id ? "border-accent bg-accent/5" : "border-border bg-surface"}`}>
-									<span className="block font-medium text-text-bright">{route.model.provider}</span>
-									<span className="mt-1 block text-sm text-text-secondary">{formatPricePerMillion(route.model.inputPricePer1M)}/M input · {formatPricePerMillion(route.model.outputPricePer1M)}/M output</span>
-									<span className="mt-1 block text-xs text-text-muted">{route.availability === false ? "Currently unavailable" : route.availability === true ? "Enabled" : "Availability unconfirmed"}</span>
-								</button>
-							))}
-						</div>
-					</section>
-				)}
-
 				<header className="mb-8 flex flex-col justify-between gap-6 lg:flex-row lg:items-start">
 					<div className="min-w-0 max-w-3xl">
 						<div className="mb-4 flex flex-wrap items-center gap-3 text-xs text-text-secondary">
@@ -115,6 +99,23 @@ export function ModelDetail({ routes, ...initial }: ModelRouteDetails & { routes
 						<Link href="/pricing" className="inline-flex min-h-8 items-center text-sm text-text-secondary hover:text-accent">Compare pricing →</Link>
 					</div>
 				</header>
+
+				{routes && routes.length > 1 && (
+					<section aria-labelledby="provider-routes-heading" className="mb-8 rounded-[var(--radius-xl)] border border-border bg-panel p-5">
+						<h2 id="provider-routes-heading" className="font-display text-xl font-medium text-text-bright">Choose a provider</h2>
+						<p className="mt-2 text-sm text-text-secondary">Compare this model’s providers. Each provider has its own API ID, pricing, limits and availability.</p>
+						<div className="mt-4 grid gap-3 sm:grid-cols-2">
+							{routes.map((route) => (
+								<button key={route.model.id} id={route.model.id} type="button" aria-pressed={selectedRouteId === route.model.id} onClick={() => { setSelectedRouteId(route.model.id); window.history.replaceState(null, "", `#${route.model.id}`); }} className={`rounded-[var(--radius-lg)] border p-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${selectedRouteId === route.model.id ? "border-accent bg-accent/5" : "border-border bg-surface"}`}>
+									<span className="block font-medium text-text-bright">{route.model.provider}</span>
+									<span className="mt-1 block text-sm text-text-secondary">{formatPricePerMillion(route.model.inputPricePer1M)}/M input · {formatPricePerMillion(route.model.outputPricePer1M)}/M output</span>
+									<span className="mt-1 block text-xs text-text-muted">{route.availability === false ? "Currently unavailable" : route.availability === true ? "Enabled" : "Availability unconfirmed"}</span>
+								</button>
+							))}
+						</div>
+					</section>
+				)}
+
 
 				{availability !== true && (
 					<p role="status" className={`mb-6 rounded-[var(--radius-lg)] border px-4 py-3 text-sm leading-relaxed ${unavailable ? "border-amber/25 bg-amber/5 text-text-secondary" : "border-border bg-panel text-text-muted"}`}>
