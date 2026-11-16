@@ -55,7 +55,7 @@ describe("ModelCard availability", () => {
 			<ModelCard
 				model={{
 					...base,
-					metadataVerification: { status: "unverified" },
+					metadataVerification: { status: "unverified", sourceUrl: "", verifiedAt: "", note: "" },
 					inputModalities: ["text", "image"],
 					outputModalities: ["text"],
 					capabilities: ["reasoning"],
