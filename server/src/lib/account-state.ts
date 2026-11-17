@@ -30,6 +30,12 @@ type AccountAccessState =
 interface AccountAccessFlags {
 	banned?: boolean | null;
 	suspended?: boolean | null;
+	/**
+	 * When a timed ban ends. Better Auth records it on the user row, but the
+	 * derivation used to ignore it, so a ban written with an expiry behaved
+	 * as permanent on every OMA-enforced path.
+	 */
+	banExpires?: Date | string | null;
 }
 
 /**
@@ -39,19 +45,37 @@ interface AccountAccessFlags {
  * writes, so it is the more specific and more current statement about the
  * account. A missing row is treated as allowed -- callers that need the row
  * to exist check for it separately.
+ *
+ * A ban whose `banExpires` has passed has lapsed: the account is allowed
+ * again without anyone clearing the flag by hand. `suspended` has no expiry
+ * column, so it is never time-lifted. An unparseable expiry fails closed --
+ * the ban stands -- because a corrupt timestamp must not read as "expired".
  */
 export function accountAccessState(
 	flags: AccountAccessFlags | null | undefined,
+	now: Date = new Date(),
 ): AccountAccessState {
 	if (!flags) return ACCOUNT_ACCESS_STATE.Allowed;
 	if (flags.suspended) return ACCOUNT_ACCESS_STATE.Suspended;
-	if (flags.banned) return ACCOUNT_ACCESS_STATE.Banned;
+	if (flags.banned) {
+		if (flags.banExpires) {
+			const expires =
+				flags.banExpires instanceof Date
+					? flags.banExpires
+					: new Date(flags.banExpires);
+			if (!Number.isNaN(expires.getTime()) && expires.getTime() <= now.getTime()) {
+				return ACCOUNT_ACCESS_STATE.Allowed;
+			}
+		}
+		return ACCOUNT_ACCESS_STATE.Banned;
+	}
 	return ACCOUNT_ACCESS_STATE.Allowed;
 }
 
 /** True when the account must be rejected. */
 export function isAccountBlocked(
 	flags: AccountAccessFlags | null | undefined,
+	now?: Date,
 ): boolean {
-	return accountAccessState(flags) !== ACCOUNT_ACCESS_STATE.Allowed;
+	return accountAccessState(flags, now) !== ACCOUNT_ACCESS_STATE.Allowed;
 }
