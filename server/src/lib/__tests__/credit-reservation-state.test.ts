@@ -35,7 +35,12 @@ describe("credit reservation state vocabulary", () => {
 		expect(canTransitionReservationState(RESERVATION_STATE.Held, RESERVATION_STATE.Reconciliation)).toBe(true);
 		expect(canTransitionReservationState(RESERVATION_STATE.Held, RESERVATION_STATE.Settled)).toBe(true);
 		expect(canTransitionReservationState(RESERVATION_STATE.Reconciliation, RESERVATION_STATE.Settled)).toBe(true);
-		expect(canTransitionReservationState(RESERVATION_STATE.Reconciliation, RESERVATION_STATE.Released)).toBe(false);
+		// Reconciliation -> released exists in the table because the operator
+		// writer performs it (full refund, admin-gated, both tables in one
+		// transaction). No automatic path calls it: failInferenceReservation
+		// only ever moves `held` rows, and the sweep only settles. The table
+		// names what the operator may do, not what the system does alone.
+		expect(canTransitionReservationState(RESERVATION_STATE.Reconciliation, RESERVATION_STATE.Released)).toBe(true);
 		expect(canTransitionReservationState(RESERVATION_STATE.Settled, RESERVATION_STATE.Released)).toBe(false);
 	});
 });
