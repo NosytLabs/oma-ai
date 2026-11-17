@@ -136,7 +136,7 @@ async function rejectIfSuspended(
 ): Promise<Response | undefined> {
 		try {
 				const [u] = await db
-						.select({ banned: user.banned, suspended: user.suspended })
+						.select({ banned: user.banned, suspended: user.suspended, banExpires: user.banExpires })
 						.from(user)
 						.where(eq(user.id, userId))
 						.limit(1);
@@ -419,6 +419,7 @@ export function requireAdmin() {
 						role: user.role,
 						banned: user.banned,
 						suspended: user.suspended,
+						banExpires: user.banExpires,
 					})
 					.from(user)
 					.where(eq(user.id, userId))
