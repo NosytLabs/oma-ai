@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
 	insert: vi.fn(),
 	select: vi.fn(),
 	update: vi.fn(),
+	getTransactionReceipt: vi.fn(),
 }));
 
 vi.mock("../../db/client.js", () => ({
@@ -25,14 +26,24 @@ vi.mock("../../db/client.js", () => ({
 vi.mock("../../lib/logger.js", () => ({
 	logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
 }));
+vi.mock("../../lib/rpc-client.js", () => ({
+	getPublicClient: () => ({
+		getTransactionReceipt: (...a: unknown[]) => mocks.getTransactionReceipt(...a),
+	}),
+}));
 
 import {
 	PENDING_SETTLEMENT_STATE,
+	PENDING_SETTLEMENT_TRANSITIONS,
+	canTransitionPendingSettlementState,
+	countSettlementsAwaitingResolution,
 	markSettlementDurable,
 	parsePendingSettlementState,
+	reconcilePendingSettlements,
 	recordPendingSettlement,
 	recordVerifiedSettlement,
 } from "../pending-settlements";
+import { pendingSettlements, settlements } from "../../db/schema.js";
 
 function insertChain() {
 	const c: any = {};
@@ -149,5 +160,145 @@ describe("parsePendingSettlementState -- extended vocabulary", () => {
 		expect(parsePendingSettlementState("settled")).toBe(
 			PENDING_SETTLEMENT_STATE.Settled,
 		);
+	});
+});
+
+describe("pending settlement transitions", () => {
+	it("covers every state exactly once", () => {
+		expect(Object.keys(PENDING_SETTLEMENT_TRANSITIONS).sort()).toEqual(
+			Object.values(PENDING_SETTLEMENT_STATE).sort(),
+		);
+	});
+
+	it("resolves both in-flight states the same way", () => {
+		for (const from of [PENDING_SETTLEMENT_STATE.Verified, PENDING_SETTLEMENT_STATE.Pending]) {
+			expect(canTransitionPendingSettlementState(from, PENDING_SETTLEMENT_STATE.Settled)).toBe(true);
+			expect(canTransitionPendingSettlementState(from, PENDING_SETTLEMENT_STATE.Confirmed)).toBe(true);
+			expect(canTransitionPendingSettlementState(from, PENDING_SETTLEMENT_STATE.Reverted)).toBe(true);
+		}
+	});
+
+	it("keeps resolved states terminal", () => {
+		for (const from of [PENDING_SETTLEMENT_STATE.Confirmed, PENDING_SETTLEMENT_STATE.Reverted, PENDING_SETTLEMENT_STATE.Settled]) {
+			expect(PENDING_SETTLEMENT_TRANSITIONS[from]).toEqual([]);
+		}
+	});
+});
+
+/** Chainable select double that dispatches rows on the table passed to .from(). */
+function selectChain(rowsByTable: Map<unknown, unknown[]>) {
+	let table: unknown;
+	const chain: any = {};
+	chain.from = vi.fn((t: unknown) => {
+		table = t;
+		return chain;
+	});
+	chain.where = vi.fn(() => chain);
+	chain.orderBy = vi.fn(() => chain);
+	chain.groupBy = vi.fn(() => Promise.resolve(rowsByTable.get(table) ?? []));
+	chain.limit = vi.fn(() => Promise.resolve(rowsByTable.get(table) ?? []));
+	return chain;
+}
+
+function updateChain() {
+	const c: any = {};
+	c.set = vi.fn(() => c);
+	c.where = vi.fn(() => Promise.resolve());
+	return c;
+}
+
+const inFlightRow = {
+	id: "row-1",
+	txHash: "0xabc",
+	networkId: "base",
+	amount: "1.50",
+	payee: "0xpayee",
+	payer: "0xpayer",
+	status: PENDING_SETTLEMENT_STATE.Verified,
+	broadcastAt: new Date(),
+	receipt: null,
+	resolvedAt: null,
+	lastError: null,
+	createdAt: new Date(),
+};
+
+describe("reconcilePendingSettlements -- verified rows are visible", () => {
+	beforeEach(() => {
+		mocks.getTransactionReceipt.mockReset();
+	});
+
+	it("closes a verified row whose settlement is already durable", async () => {
+		const rows = new Map<unknown, unknown[]>([
+			[pendingSettlements, [inFlightRow]],
+			[settlements, [{ id: "settlement-1" }]],
+		]);
+		mocks.select.mockImplementation(() => selectChain(rows));
+		const update = updateChain();
+		mocks.update.mockReturnValue(update);
+
+		const result = await reconcilePendingSettlements();
+
+		expect(result.scanned).toBe(1);
+		expect(result.recoveredSettled).toBe(1);
+		expect(update.set).toHaveBeenCalledWith(
+			expect.objectContaining({ status: PENDING_SETTLEMENT_STATE.Settled }),
+		);
+		expect(mocks.getTransactionReceipt).not.toHaveBeenCalled();
+	});
+
+	it("resolves a verified row from its chain receipt", async () => {
+		const rows = new Map<unknown, unknown[]>([
+			[pendingSettlements, [inFlightRow]],
+			[settlements, []],
+		]);
+		mocks.select.mockImplementation(() => selectChain(rows));
+		const update = updateChain();
+		mocks.update.mockReturnValue(update);
+		mocks.getTransactionReceipt.mockResolvedValue({ status: "success" });
+
+		const result = await reconcilePendingSettlements();
+
+		expect(result.confirmed).toBe(1);
+		expect(update.set).toHaveBeenCalledWith(
+			expect.objectContaining({ status: PENDING_SETTLEMENT_STATE.Confirmed }),
+		);
+	});
+
+	it("leaves a verified row with no durable row and no receipt counted, not lost", async () => {
+		const rows = new Map<unknown, unknown[]>([
+			[pendingSettlements, [inFlightRow]],
+			[settlements, []],
+		]);
+		mocks.select.mockImplementation(() => selectChain(rows));
+		mocks.update.mockReturnValue(updateChain());
+		mocks.getTransactionReceipt.mockResolvedValue(null);
+
+		const result = await reconcilePendingSettlements();
+
+		expect(result.stillVerified).toBe(1);
+		expect(result.confirmed).toBe(0);
+		expect(result.recoveredSettled).toBe(0);
+	});
+});
+
+describe("countSettlementsAwaitingResolution", () => {
+	it("counts verified and confirmed rows alongside pending", async () => {
+		const rows = new Map<unknown, unknown[]>([
+			[
+				pendingSettlements,
+				[
+					{ status: "pending", count: 2 },
+					{ status: "verified", count: 3 },
+					{ status: "confirmed", count: 5 },
+				],
+			],
+		]);
+		mocks.select.mockImplementation(() => selectChain(rows));
+
+		await expect(countSettlementsAwaitingResolution()).resolves.toEqual({
+			pending: 2,
+			verified: 3,
+			confirmed: 5,
+		});
 	});
 });
