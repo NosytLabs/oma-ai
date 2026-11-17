@@ -48,7 +48,7 @@ import { rateLimit } from "./middleware/rate-limit.js";
 import { demoModeGuard } from "./middleware/demo-mode-guard.js";
 import { db } from "./db/client.js";
 import { siteSettings, depositRecoveryState } from "./db/schema.js";
-import { runRecoveryIteration } from "./lib/deposit-recovery.js";
+import { expireStalePendingDeposits, runRecoveryIteration } from "./lib/deposit-recovery.js";
 import { getPublicClient } from "./lib/rpc-client.js";
 
 // Fail-fast admin address validation. Runs at startup, not at module
@@ -370,7 +370,12 @@ app.post("/internal/recover-deposits", async (c) => {
 				target: depositRecoveryState.depositAddress,
 				set: { lastBlock: nextBlock },
 			});
-		return c.json({ fromBlock: fromBlock.toString(), processedThrough: nextBlock.toString() });
+		// Same tick, the other half of the deposit lifecycle: pending rows
+		// whose transfer never landed expire instead of waiting forever.
+		// Additive field -- existing scheduler consumers keep reading the
+		// recovery shape.
+		const expiredDeposits = await expireStalePendingDeposits();
+		return c.json({ fromBlock: fromBlock.toString(), processedThrough: nextBlock.toString(), expiredDeposits });
 	} catch (err) {
 		logger.error({ err }, "[deposit-recovery] internal ticker failed");
 		return c.json({ error: { message: "deposit recovery failed", type: "server_error" } }, 500);

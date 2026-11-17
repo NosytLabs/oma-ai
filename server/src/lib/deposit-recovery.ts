@@ -2,7 +2,7 @@ import { parseAbi, getAddress, formatUnits } from "viem";
 import { db } from "../db/client.js";
 import { DEPOSIT_STATUS } from "./deposit-status.js";
 import { deposits } from "../db/schema.js";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, inArray, lt, sql } from "drizzle-orm";
 import { logger } from "../lib/logger.js";
 import { logPaymentEvent } from "./payment-observability.js";
 import { creditConfirmedUsdcPayment } from "./payment-credit.js";
@@ -87,7 +87,7 @@ export async function processTransfer(
 								await db
 										.update(deposits)
 										.set({ status: DEPOSIT_STATUS.Failed })
-										.where(eq(deposits.id, existingDeposit.id));
+										.where(and(eq(deposits.id, existingDeposit.id), inArray(deposits.status, [DEPOSIT_STATUS.Pending, DEPOSIT_STATUS.Settling])));
 								logPaymentEvent({
 										kind: "usdc_deposit",
 										outcome: "attribution_mismatch",
@@ -112,7 +112,7 @@ export async function processTransfer(
 				await db
 					.update(deposits)
 					.set({ status: DEPOSIT_STATUS.Failed })
-					.where(eq(deposits.id, existingDeposit.id));
+					.where(and(eq(deposits.id, existingDeposit.id), inArray(deposits.status, [DEPOSIT_STATUS.Pending, DEPOSIT_STATUS.Settling])));
 				logPaymentEvent({
 					kind: "usdc_deposit",
 					outcome: "amount_mismatch",
@@ -177,5 +177,45 @@ export async function runRecoveryIteration(
 		} catch (err) {
 				logger.error({ err, fromBlock }, "[deposit-recovery] iteration failed, will retry from same block");
 				return fromBlock;
+		}
+}
+
+/**
+ * How long a deposit may sit in `pending` before it is decided as `expired`.
+ *
+ * A pending row is created when the user submits a txHash for a transfer
+ * they have already signed, so a real transfer confirms within minutes and
+ * the recovery scan above credits it. Seven days is far beyond any chain
+ * delay: a row still pending after that is a transfer that never landed
+ * (never broadcast, wrong network, dropped), and without this writer it
+ * stayed `pending` forever -- the client renders "awaiting on-chain
+ * confirmation" for a payment that will never arrive.
+ */
+export const PENDING_DEPOSIT_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * Move stale `pending` deposits to `expired`. Guarded by the current status
+ * in the same statement, so a deposit the recovery scan is concurrently
+ * completing is never expired underneath it. Returns how many rows expired.
+ * Never throws: the caller is a scheduled tick that must survive a bad pass.
+ */
+export async function expireStalePendingDeposits(
+		now: Date = new Date(),
+		ttlMs: number = PENDING_DEPOSIT_TTL_MS,
+): Promise<number> {
+		try {
+				const cutoff = new Date(now.getTime() - ttlMs);
+				const expired = await db
+						.update(deposits)
+						.set({ status: DEPOSIT_STATUS.Expired })
+						.where(and(eq(deposits.status, DEPOSIT_STATUS.Pending), lt(deposits.createdAt, cutoff)))
+						.returning({ id: deposits.id });
+				if (expired.length) {
+						logger.info({ count: expired.length, cutoff: cutoff.toISOString() }, "[deposit-recovery] expired stale pending deposits");
+				}
+				return expired.length;
+		} catch (err) {
+				logger.error({ err }, "[deposit-recovery] pending-deposit expiry pass failed");
+				return 0;
 		}
 }
