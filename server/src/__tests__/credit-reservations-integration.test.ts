@@ -28,7 +28,7 @@ vi.mock("../inference/models.js", () => {
 import { db } from "../db/client.js";
 import { chatRoutes } from "../routes/chat/index.js";
 import { anthropicRoutes } from "../routes/anthropic/index.js";
-import { failInferenceReservation, reservationQuote, reserveInferenceCredits, settleInferenceReservation } from "../inference/credit-reservations.js";
+import { failInferenceReservation, reservationQuote, reserveInferenceCredits, resolveReconciliationReservation, settleInferenceReservation, sweepReconciledReservations } from "../inference/credit-reservations.js";
 import { readCreditHoldTotals } from "../lib/credit-holds.js";
 import { creditsRoutes } from "../routes/credits.js";
 import { depositRoutes } from "../routes/deposit/index.js";
@@ -234,5 +234,79 @@ describe.skipIf(!fixture.url)("paid admission reservations (real Postgres)", () 
 		await reserveInferenceCredits("buyer", "fractional-boundary", 0.00000001);
 		expect(await db.transaction(tx => settleInferenceReservation(tx, "buyer", "fractional-boundary", 0.00000002, true))).toBe(false);
 		expect(Number((await query("select balance_cents from credit_balances")).rows[0].balance_cents)).toBe(0.59999999);
+	});
+
+	// The reconciliation exit: a hold parked in `reconciliation` used to keep
+	// the user's credits forever. These tests park a hold the way the
+	// ambiguous-failure path does (balance already reduced by the hold) and
+	// resolve it through the operator writer and the evidence sweep.
+	const parkReconciliationHold = async (requestId: string, receiptState = "reconciliation", charged = "0.0126") => {
+		await query(`insert into inference_credit_reservations(request_id,user_id,reserved_cents,state) values ('${requestId}','buyer',0.4128,'reconciliation')`);
+		await query(`insert into inference_financial_receipts(request_id,reserved_cents,charged_cents,state) values ('${requestId}',0.4128,${charged},'${receiptState}')`);
+		await query("update credit_balances set balance_cents=0.1872");
+	};
+	const adminPost = (path: string, body: unknown = {}) => app.request(path, {
+		method: "POST", headers: { "X-Test-Admin": "yes", "Content-Type": "application/json" }, body: JSON.stringify(body),
+	});
+
+	it("settles a reconciliation hold at the receipt charge and refunds the unused hold", async () => {
+		await parkReconciliationHold("recon-settle");
+		const response = await adminPost("/v1/admin/credit-holds/recon-settle/settle");
+		expect(response.status).toBe(200);
+		expect(await response.json()).toMatchObject({ outcome: "settled", chargedCents: "0.01260000", refundedCents: "0.40020000" });
+		const balance = (await query("select balance_cents,total_used_cents from credit_balances")).rows[0];
+		expect(Number(balance.balance_cents)).toBeCloseTo(0.5874, 8);
+		expect(Number(balance.total_used_cents)).toBeCloseTo(0.0126, 8);
+		expect((await query("select state from inference_credit_reservations")).rows).toEqual([{ state: "settled" }]);
+		expect((await query("select state from inference_financial_receipts")).rows).toEqual([{ state: "settled" }]);
+		// A duplicate resolution cannot double-refund: the hold is terminal now.
+		expect((await adminPost("/v1/admin/credit-holds/recon-settle/settle")).status).toBe(409);
+		expect(Number((await query("select balance_cents from credit_balances")).rows[0].balance_cents)).toBeCloseTo(0.5874, 8);
+	});
+
+	it("releases a reconciliation hold with a full refund when the operator decides the charge must not stand", async () => {
+		await parkReconciliationHold("recon-release");
+		const response = await adminPost("/v1/admin/credit-holds/recon-release/release");
+		expect(response.status).toBe(200);
+		expect(await response.json()).toMatchObject({ outcome: "released", refundedCents: "0.41280000" });
+		expect(Number((await query("select balance_cents from credit_balances")).rows[0].balance_cents)).toBeCloseTo(0.6, 8);
+		expect((await query("select state from inference_credit_reservations")).rows).toEqual([{ state: "released" }]);
+		expect((await query("select state from inference_financial_receipts")).rows).toEqual([{ state: "released" }]);
+	});
+
+	it("settles at an explicit operator charge and records it on the receipt", async () => {
+		await parkReconciliationHold("recon-explicit");
+		const response = await adminPost("/v1/admin/credit-holds/recon-explicit/settle", { chargeCents: 0.02 });
+		expect(response.status).toBe(200);
+		expect(Number((await query("select balance_cents from credit_balances")).rows[0].balance_cents)).toBeCloseTo(0.58, 8);
+		expect(Number((await query("select charged_cents from inference_financial_receipts")).rows[0].charged_cents)).toBeCloseTo(0.02, 8);
+	});
+
+	it("refuses a charge above the hold and leaves the hold parked", async () => {
+		await parkReconciliationHold("recon-overcharge");
+		expect((await adminPost("/v1/admin/credit-holds/recon-overcharge/settle", { chargeCents: 0.5 })).status).toBe(409);
+		expect((await query("select state from inference_credit_reservations")).rows).toEqual([{ state: "reconciliation" }]);
+		expect(Number((await query("select balance_cents from credit_balances")).rows[0].balance_cents)).toBeCloseTo(0.1872, 8);
+		await expect(resolveReconciliationReservation("recon-overcharge", { action: "settle", chargeCents: 0.5 })).rejects.toThrow(/exceeds the reserved hold/);
+	});
+
+	it("refuses to resolve a hold that is not in reconciliation, and keeps resolution admin-only", async () => {
+		await query("insert into inference_credit_reservations(request_id,user_id,reserved_cents,state) values ('still-held','buyer',0.4128,'held')");
+		expect((await adminPost("/v1/admin/credit-holds/still-held/settle")).status).toBe(409);
+		expect((await app.request("/v1/admin/credit-holds/still-held/settle", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })).status).toBe(403);
+		expect((await adminPost("/v1/admin/credit-holds/no-such-hold/settle")).status).toBe(404);
+	});
+
+	it("sweep auto-settles a parked hold whose receipt already settled, at the recorded charge", async () => {
+		await parkReconciliationHold("recon-sweep", "settled");
+		await expect(sweepReconciledReservations()).resolves.toEqual({ scanned: 1, settled: 1, skipped: 0 });
+		expect((await query("select state from inference_credit_reservations")).rows).toEqual([{ state: "settled" }]);
+		expect(Number((await query("select balance_cents from credit_balances")).rows[0].balance_cents)).toBeCloseTo(0.5874, 8);
+	});
+
+	it("sweep skips a receipt whose recorded charge exceeds the hold", async () => {
+		await parkReconciliationHold("recon-sweep-overcharge", "settled", "0.5");
+		await expect(sweepReconciledReservations()).resolves.toEqual({ scanned: 1, settled: 0, skipped: 1 });
+		expect((await query("select state from inference_credit_reservations")).rows).toEqual([{ state: "reconciliation" }]);
 	});
 });
