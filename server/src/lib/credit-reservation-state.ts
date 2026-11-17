@@ -20,7 +20,9 @@ export const RESERVATION_STATE = {
 	/**
 	 * The outcome was ambiguous (timeout, cancelled stream, provider
 	 * overcharge). The hold is retained because the provider may still have
-	 * billed us — a human or the reconciliation job must settle it.
+	 * billed us — a human or the reconciliation job must settle it. An
+	 * operator may also release it through the admin writer (full refund);
+	 * no automatic path ever does.
 	 */
 	Reconciliation: "reconciliation",
 	/** The inference was billed; the receipt is final. */
@@ -54,9 +56,11 @@ export const OPEN_RESERVATION_STATES: readonly ReservationState[] = [
  * Legal transitions.
  *
  * `held` can settle, be released (safe: the provider never ran) or be
- * parked in `reconciliation` (ambiguous). `reconciliation` can only be
- * settled — the ambiguity is resolved by evidence, never by giving the
- * money back silently. Released and settled are terminal.
+ * parked in `reconciliation` (ambiguous). `reconciliation` resolves by
+ * evidence: settled at the recorded charge, or — only through the explicit
+ * operator writer in `inference/credit-reservations.ts`, never an automatic
+ * path — released with a full refund when the operator decides the charge
+ * must not stand. Released and settled are terminal.
  */
 export const RESERVATION_STATE_TRANSITIONS: Record<
 	ReservationState,
@@ -70,6 +74,7 @@ export const RESERVATION_STATE_TRANSITIONS: Record<
 	[RESERVATION_STATE.Reconciliation]: [
 		RESERVATION_STATE.Reconciliation,
 		RESERVATION_STATE.Settled,
+		RESERVATION_STATE.Released,
 	],
 	[RESERVATION_STATE.Released]: [],
 	[RESERVATION_STATE.Settled]: [],

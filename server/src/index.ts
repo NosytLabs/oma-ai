@@ -18,6 +18,7 @@ import {
 	countSettlementsAwaitingResolution,
 	reconcilePendingSettlements,
 } from "./x402/pending-settlements.js";
+import { sweepReconciledReservations } from "./inference/credit-reservations.js";
 import { auth } from "./auth.js";
 import { initAuth } from "./auth/middleware.js";
 import { ensureCatalogLoaded } from "./inference/models.js";
@@ -413,6 +414,10 @@ app.post("/internal/drain-settlement-dlq", async (c) => {
 		// settlements has the chain answered since the last pass? Additive
 		// fields -- existing scheduler consumers keep reading the DLQ shape.
 		const pendingReconciled = await reconcilePendingSettlements();
+		// And the reservation side of reconciliation: holds whose financial
+		// receipt already settled auto-settle at the recorded charge, so a
+		// user's credits cannot stay parked after the evidence arrived.
+		const reservationSweep = await sweepReconciledReservations();
 		const pendingRemaining = await countPendingSettlements();
 		// Verified rows stuck in the verify-to-settle window and confirmed
 		// rows awaiting a credit decision are operator-visible numbers, not
@@ -433,6 +438,7 @@ app.post("/internal/drain-settlement-dlq", async (c) => {
 				verifiedRemaining: awaitingResolution.verified,
 				confirmedAwaitingCredit: awaitingResolution.confirmed,
 			},
+			reconciliation: reservationSweep,
 		});
 	} catch (err) {
 		logger.error({ err }, "[DLQ] Settlement drain failed");
