@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import type { Context } from "hono";
 import { z } from "zod";
 import { sql } from "drizzle-orm";
 import type { OmaEnv } from "../types.js";
@@ -6,6 +7,8 @@ import { db } from "../db/client.js";
 import { sessionOrBearerAuth, requireAdmin } from "../auth/middleware.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { OPEN_RESERVATION_STATES, RESERVATION_STATES } from "../lib/credit-reservation-state.js";
+import { resolveReconciliationReservation } from "../inference/credit-reservations.js";
+import { ProviderError } from "../inference/provider-route.js";
 
 /** Native operator diagnostics; the website blocks /api/v1/admin/* entirely. */
 export const adminCreditHoldsRoutes = new Hono<OmaEnv>();
@@ -42,6 +45,46 @@ adminCreditHoldsRoutes.get("/v1/admin/credit-holds/:requestId", async c => {
 	if (!result.rows.length) return c.json({ error: { message: "Credit hold not found" } }, 404);
 	return c.json({ hold: result.rows[0] });
 });
+
+/**
+ * The reconciliation exit. A hold parked in `reconciliation` kept the
+ * user's credits forever — these are the only writers that move it out,
+ * both admin-gated by the router middleware above. `settle` charges the
+ * receipt's recorded charge unless the operator passes an explicit
+ * `chargeCents`; `release` refunds the whole hold. Both refuse (409) a
+ * hold that is not in `reconciliation`, and settle refuses a charge above
+ * the hold — the money math lives in `resolveReconciliationReservation`.
+ */
+const settleBody = z.object({ chargeCents: z.number().finite().min(0).optional() });
+async function resolveHold(c: Context<OmaEnv>, action: "settle" | "release") {
+	c.header("Cache-Control", "no-store");
+	const requestId = c.req.param("requestId") ?? "";
+	if (!requestId || requestId.length > 256) return c.json({ error: { message: "Invalid request ID" } }, 400);
+	let chargeCents: number | undefined;
+	if (action === "settle") {
+		const raw = await c.req.json().catch(() => ({}));
+		const parsed = settleBody.safeParse(raw ?? {});
+		if (!parsed.success) return c.json({ error: { message: "Invalid resolution body" } }, 400);
+		chargeCents = parsed.data.chargeCents;
+	}
+	try {
+		const result = await resolveReconciliationReservation(
+			requestId,
+			action === "settle" ? { action, chargeCents } : { action },
+		);
+		return c.json(result);
+	} catch (err) {
+		if (err instanceof ProviderError) {
+			return c.json(
+				{ error: { message: err.message } },
+				err.status as 400 | 404 | 409,
+			);
+		}
+		throw err;
+	}
+}
+adminCreditHoldsRoutes.post("/v1/admin/credit-holds/:requestId/settle", c => resolveHold(c, "settle"));
+adminCreditHoldsRoutes.post("/v1/admin/credit-holds/:requestId/release", c => resolveHold(c, "release"));
 
 /** Detached receipts also cover accounts deleted while inference was running. */
 adminCreditHoldsRoutes.get("/v1/admin/credit-holds-receipts", async c => {
