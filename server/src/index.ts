@@ -15,6 +15,7 @@ import { logger } from "./lib/logger.js";
 import { drainSettlementDlq, getSettlementDlqLength } from "./lib/dlq.js";
 import {
 	countPendingSettlements,
+	countSettlementsAwaitingResolution,
 	reconcilePendingSettlements,
 } from "./x402/pending-settlements.js";
 import { auth } from "./auth.js";
@@ -413,6 +414,10 @@ app.post("/internal/drain-settlement-dlq", async (c) => {
 		// fields -- existing scheduler consumers keep reading the DLQ shape.
 		const pendingReconciled = await reconcilePendingSettlements();
 		const pendingRemaining = await countPendingSettlements();
+		// Verified rows stuck in the verify-to-settle window and confirmed
+		// rows awaiting a credit decision are operator-visible numbers, not
+		// just log lines. Additive fields on the same ops result.
+		const awaitingResolution = await countSettlementsAwaitingResolution();
 		if (pendingReconciled.confirmed > 0 || pendingReconciled.reverted > 0) {
 			logger.info(
 				{ ...pendingReconciled, remaining: pendingRemaining },
@@ -425,6 +430,8 @@ app.post("/internal/drain-settlement-dlq", async (c) => {
 			pending: {
 				...pendingReconciled,
 				remaining: pendingRemaining,
+				verifiedRemaining: awaitingResolution.verified,
+				confirmedAwaitingCredit: awaitingResolution.confirmed,
 			},
 		});
 	} catch (err) {

@@ -15,18 +15,24 @@
  * - `recordPendingSettlement` is idempotent on (txHash, networkId) and never
  *   throws: the caller is already on an error path that must surface the
  *   original failure.
- * - `reconcilePendingSettlements` asks the chain for each pending row's
- *   receipt and resolves it to `confirmed` or `reverted`. It does NOT credit
- *   anyone: a confirmed row is the evidence for a deliberate credit decision,
- *   not an automatic one (the payment's reservation, if any, already went to
- *   reconciliation through its own path).
+ * - `reconcilePendingSettlements` asks the chain for each in-flight row's
+ *   receipt and resolves it to `confirmed` or `reverted`. It scans `verified`
+ *   rows as well as `pending` ones: a crash between `recordVerifiedSettlement`
+ *   and `markSettlementDurable` used to leave a verified payment invisible --
+ *   never reconciled, never counted. A verified row whose settlement is
+ *   already durable in `settlements` is closed as `settled`; one with a chain
+ *   receipt resolves like a pending row; one with neither stays `verified`
+ *   and is counted, so the gap is visible instead of silent. The reconciler
+ *   does NOT credit anyone: a confirmed row is the evidence for a deliberate
+ *   credit decision, not an automatic one (the payment's reservation, if
+ *   any, already went to reconciliation through its own path).
  * - Nothing deletes rows: a resolved row is the audit trail of what happened
  *   to the money.
  */
 
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { pendingSettlements } from "../db/schema.js";
+import { pendingSettlements, settlements } from "../db/schema.js";
 import { logger } from "../lib/logger.js";
 import { databaseErrorMetadata } from "../lib/database-error.js";
 import { getPublicClient } from "../lib/rpc-client.js";
@@ -73,6 +79,50 @@ export function parsePendingSettlementState(
 	if (raw === PENDING_SETTLEMENT_STATE.Settled) return PENDING_SETTLEMENT_STATE.Settled;
 	return null;
 }
+
+/**
+ * Legal transitions.
+ *
+ * `verified` and `pending` are the two in-flight states; both resolve the
+ * same way -- to `settled` when the durable ledger row exists, or to the
+ * chain facts `confirmed` / `reverted` when a receipt answers. `confirmed`
+ * is an audit end-state (the credit decision is a separate, deliberate
+ * step), as are `reverted` and `settled`. Until this table existed the
+ * machine had no named transitions at all, and the reconciler's scan covered
+ * only half of the in-flight states.
+ */
+export const PENDING_SETTLEMENT_TRANSITIONS: Record<
+	PendingSettlementState,
+	readonly PendingSettlementState[]
+> = {
+	[PENDING_SETTLEMENT_STATE.Verified]: [
+		PENDING_SETTLEMENT_STATE.Settled,
+		PENDING_SETTLEMENT_STATE.Confirmed,
+		PENDING_SETTLEMENT_STATE.Reverted,
+	],
+	[PENDING_SETTLEMENT_STATE.Pending]: [
+		PENDING_SETTLEMENT_STATE.Settled,
+		PENDING_SETTLEMENT_STATE.Confirmed,
+		PENDING_SETTLEMENT_STATE.Reverted,
+	],
+	[PENDING_SETTLEMENT_STATE.Confirmed]: [],
+	[PENDING_SETTLEMENT_STATE.Reverted]: [],
+	[PENDING_SETTLEMENT_STATE.Settled]: [],
+};
+
+/** True when `next` is a legal successor of `current`. */
+export function canTransitionPendingSettlementState(
+	current: PendingSettlementState,
+	next: PendingSettlementState,
+): boolean {
+	return PENDING_SETTLEMENT_TRANSITIONS[current].includes(next);
+}
+
+/** States the reconciler is responsible for: everything still in flight. */
+const IN_FLIGHT_SETTLEMENT_STATES: readonly PendingSettlementState[] = [
+	PENDING_SETTLEMENT_STATE.Verified,
+	PENDING_SETTLEMENT_STATE.Pending,
+];
 
 interface PendingSettlementRecord {
 	txHash: string;
@@ -184,12 +234,15 @@ interface ReconcileResult {
 	confirmed: number;
 	reverted: number;
 	stillPending: number;
+	stillVerified: number;
+	recoveredSettled: number;
 	failed: number;
 }
 
 /**
- * Ask the chain about every pending broadcast. Resolves rows in place; never
- * throws (the drain runs on a schedule and must survive one bad row).
+ * Ask the chain about every in-flight settlement -- `pending` broadcasts and
+ * `verified` payments alike. Resolves rows in place; never throws (the drain
+ * runs on a schedule and must survive one bad row).
  */
 export async function reconcilePendingSettlements(
 	batchSize = 25,
@@ -199,6 +252,8 @@ export async function reconcilePendingSettlements(
 		confirmed: 0,
 		reverted: 0,
 		stillPending: 0,
+		stillVerified: 0,
+		recoveredSettled: 0,
 		failed: 0,
 	};
 
@@ -207,11 +262,11 @@ export async function reconcilePendingSettlements(
 		due = await db
 			.select()
 			.from(pendingSettlements)
-			.where(eq(pendingSettlements.status, PENDING_SETTLEMENT_STATE.Pending))
+			.where(inArray(pendingSettlements.status, [...IN_FLIGHT_SETTLEMENT_STATES]))
 			.orderBy(asc(pendingSettlements.broadcastAt))
 			.limit(batchSize);
 	} catch (err) {
-		logger.error({ err: databaseErrorMetadata(err) }, "[PENDING-SETTLEMENT] could not read pending rows");
+		logger.error({ err: databaseErrorMetadata(err) }, "[PENDING-SETTLEMENT] could not read in-flight rows");
 		return result;
 	}
 
@@ -222,20 +277,52 @@ export async function reconcilePendingSettlements(
 		try {
 			return getPublicClient();
 		} catch (err) {
-			logger.error({ err: databaseErrorMetadata(err) }, "[PENDING-SETTLEMENT] no chain client; leaving rows pending");
+			logger.error({ err: databaseErrorMetadata(err) }, "[PENDING-SETTLEMENT] no chain client; leaving rows in flight");
 			return null;
 		}
 	})();
-	if (!client) return { ...result, stillPending: result.scanned };
+	if (!client) {
+		for (const row of due) {
+			if (row.status === PENDING_SETTLEMENT_STATE.Verified) result.stillVerified++;
+			else result.stillPending++;
+		}
+		return result;
+	}
 
 	for (const row of due) {
 		try {
+			// A durable settlements row is the strongest evidence: the settle
+			// step finished and only the durable-mark was lost. Close the row
+			// as settled without asking the chain anything.
+			const [durable] = await db
+				.select({ id: settlements.id })
+				.from(settlements)
+				.where(and(eq(settlements.txHash, row.txHash), eq(settlements.networkId, row.networkId)))
+				.limit(1);
+			if (durable) {
+				await db
+					.update(pendingSettlements)
+					.set({
+						status: PENDING_SETTLEMENT_STATE.Settled,
+						resolvedAt: new Date(),
+						lastError: null,
+					})
+					.where(and(eq(pendingSettlements.id, row.id), inArray(pendingSettlements.status, [...IN_FLIGHT_SETTLEMENT_STATES])));
+				result.recoveredSettled++;
+				logger.info(
+					{ txHash: row.txHash, networkId: row.networkId },
+					"[PENDING-SETTLEMENT] settlement already durable; closed verified/pending row as settled",
+				);
+				continue;
+			}
+
 			const receipt = await client.getTransactionReceipt({
 				hash: row.txHash as `0x${string}`,
 			});
 			if (!receipt) {
-				// Not mined yet -- genuinely still pending.
-				result.stillPending++;
+				// Not mined yet -- genuinely still in flight.
+				if (row.status === PENDING_SETTLEMENT_STATE.Verified) result.stillVerified++;
+				else result.stillPending++;
 				continue;
 			}
 			if (isSuccessfulReceipt(receipt)) {
@@ -247,7 +334,7 @@ export async function reconcilePendingSettlements(
 						resolvedAt: new Date(),
 						lastError: null,
 					})
-					.where(eq(pendingSettlements.id, row.id));
+					.where(and(eq(pendingSettlements.id, row.id), inArray(pendingSettlements.status, [...IN_FLIGHT_SETTLEMENT_STATES])));
 				result.confirmed++;
 				logger.warn(
 					{ txHash: row.txHash, networkId: row.networkId, amount: row.amount },
@@ -261,7 +348,7 @@ export async function reconcilePendingSettlements(
 						receipt: JSON.stringify(receipt),
 						resolvedAt: new Date(),
 					})
-					.where(eq(pendingSettlements.id, row.id));
+					.where(and(eq(pendingSettlements.id, row.id), inArray(pendingSettlements.status, [...IN_FLIGHT_SETTLEMENT_STATES])));
 				result.reverted++;
 				logger.info(
 					{ txHash: row.txHash, networkId: row.networkId },
@@ -275,10 +362,10 @@ export async function reconcilePendingSettlements(
 				.set({
 					lastError: JSON.stringify(databaseErrorMetadata(err)),
 				})
-				.where(and(eq(pendingSettlements.id, row.id), eq(pendingSettlements.status, PENDING_SETTLEMENT_STATE.Pending)));
+				.where(and(eq(pendingSettlements.id, row.id), inArray(pendingSettlements.status, [...IN_FLIGHT_SETTLEMENT_STATES])));
 			logger.warn(
 				{ err: databaseErrorMetadata(err), txHash: row.txHash },
-				"[PENDING-SETTLEMENT] reconciliation attempt failed; row stays pending",
+				"[PENDING-SETTLEMENT] reconciliation attempt failed; row stays in flight",
 			);
 		}
 	}
@@ -297,6 +384,43 @@ export async function countPendingSettlements(): Promise<number> {
 		logger.error({ err: databaseErrorMetadata(err) }, "[PENDING-SETTLEMENT] could not count pending rows");
 		return 0;
 	}
+}
+
+/**
+ * Depth of every state that still needs an operator's eyes, for the drain
+ * route's ops result: `verified` rows the reconciler could not resolve (the
+ * crash window this module exists to close) and `confirmed` rows awaiting a
+ * credit decision. Before this, only `pending` was counted anywhere, so a
+ * stuck verified payment moved no dashboard number.
+ */
+export async function countSettlementsAwaitingResolution(): Promise<{
+	pending: number;
+	verified: number;
+	confirmed: number;
+}> {
+	const counts = { pending: 0, verified: 0, confirmed: 0 };
+	try {
+		const rows = await db
+			.select({ status: pendingSettlements.status, count: sql<number>`count(*)::int` })
+			.from(pendingSettlements)
+			.where(
+				inArray(pendingSettlements.status, [
+					PENDING_SETTLEMENT_STATE.Pending,
+					PENDING_SETTLEMENT_STATE.Verified,
+					PENDING_SETTLEMENT_STATE.Confirmed,
+				]),
+			)
+			.groupBy(pendingSettlements.status);
+		for (const row of rows) {
+			const state = parsePendingSettlementState(row.status);
+			if (state === PENDING_SETTLEMENT_STATE.Pending) counts.pending = row.count;
+			else if (state === PENDING_SETTLEMENT_STATE.Verified) counts.verified = row.count;
+			else if (state === PENDING_SETTLEMENT_STATE.Confirmed) counts.confirmed = row.count;
+		}
+	} catch (err) {
+		logger.error({ err: databaseErrorMetadata(err) }, "[PENDING-SETTLEMENT] could not count awaiting-resolution rows");
+	}
+	return counts;
 }
 
 // The receipt predicate is the same fail-closed rule the x402 paths use.
