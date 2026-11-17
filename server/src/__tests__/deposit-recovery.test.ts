@@ -368,4 +368,43 @@ describe("deposit-recovery lib", () => {
 						);
 				});
 		});
+
+		describe("expireStalePendingDeposits", () => {
+				it("expires stale pending deposits and reports how many", async () => {
+						const set = vi.fn().mockReturnThis();
+						const where = vi.fn().mockReturnThis();
+						const returning = vi.fn().mockResolvedValue([{ id: "dep_1" }, { id: "dep_2" }]);
+						vi.mocked(db.update as any).mockReturnValue({ set, where, returning });
+
+						const count = await depositRecovery.expireStalePendingDeposits(new Date("2026-11-17T00:00:00Z"));
+
+						expect(count).toBe(2);
+						expect(set).toHaveBeenCalledWith({ status: "expired" });
+						expect(where).toHaveBeenCalled();
+						expect(logger.info).toHaveBeenCalledWith(
+								expect.objectContaining({ count: 2 }),
+								"[deposit-recovery] expired stale pending deposits",
+						);
+				});
+
+				it("reports zero quietly when nothing is stale", async () => {
+						vi.mocked(db.update as any).mockReturnValue({
+								set: vi.fn().mockReturnThis(),
+								where: vi.fn().mockReturnThis(),
+								returning: vi.fn().mockResolvedValue([]),
+						});
+
+						await expect(depositRecovery.expireStalePendingDeposits()).resolves.toBe(0);
+						expect(logger.info).not.toHaveBeenCalled();
+				});
+
+				it("never throws on a database failure", async () => {
+						vi.mocked(db.update as any).mockImplementation(() => {
+								throw new Error("db down");
+						});
+
+						await expect(depositRecovery.expireStalePendingDeposits()).resolves.toBe(0);
+						expect(logger.error).toHaveBeenCalled();
+				});
+		});
 });
