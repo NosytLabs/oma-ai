@@ -51,8 +51,10 @@ type PaymentRailState =
 type RailStatus = {
 	key: RailKey;
 	label: string;
-	/** Short badge text for cards. */
-	badge: "Available" | "Paused" | "Unavailable" | "Checking…";
+	/** Short badge text for cards. Unknown renders a neutral dash: the
+	 * settings have not loaded, so the badge must not assert (or appear
+	 * to be resolving) an availability state in SSR/initial HTML. */
+	badge: "Available" | "Paused" | "Unavailable" | "—";
 	/** True when the user can complete a deposit/checkout for this rail. */
 	actionable: boolean;
 	/** One-line reason when not actionable. */
@@ -64,7 +66,7 @@ const RAIL_STATE_BADGE: Record<PaymentRailState, RailStatus["badge"]> = {
 	[PAYMENT_RAIL_STATE.Available]: "Available",
 	[PAYMENT_RAIL_STATE.Paused]: "Paused",
 	[PAYMENT_RAIL_STATE.Unavailable]: "Unavailable",
-	[PAYMENT_RAIL_STATE.Unknown]: "Checking…",
+	[PAYMENT_RAIL_STATE.Unknown]: "—",
 };
 
 const RAILS: readonly { key: RailKey; label: string }[] = [
@@ -127,7 +129,10 @@ function railReason(
 	state: PaymentRailState,
 ): string | null {
 	if (state === PAYMENT_RAIL_STATE.Available) return null;
-	if (!settings) return "Checking payment availability…";
+	// Not loaded yet: no reason caption. Any text here is baked into the
+	// SSR/initial HTML and reads as a statement about availability
+	// before the settings have actually resolved.
+	if (!settings) return null;
 	if (settings.paymentStatusAvailable === false) {
 		return "Payment availability could not be checked. Please try again shortly.";
 	}
@@ -151,8 +156,8 @@ function railReason(
 
 /**
  * Derive per-rail status from public site settings.
- * Unknown settings stay non-actionable (Checking…) so we never flash
- * "Available" for a rail the server has not confirmed.
+ * Unknown settings stay non-actionable (neutral "—" badge, no reason)
+ * so we never flash "Available" for a rail the server has not confirmed.
  */
 export function railStatuses(
 	settings: SitePaymentSettings | null | undefined,
@@ -179,7 +184,7 @@ export function railByKey(
 			label: key,
 			badge: RAIL_STATE_BADGE[PAYMENT_RAIL_STATE.Unknown],
 			actionable: false,
-			reason: "Checking payment availability…",
+			reason: null,
 		}
 	);
 }

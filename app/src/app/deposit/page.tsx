@@ -156,6 +156,22 @@ function PaymentMethodsInfo({
 	);
 }
 
+/**
+ * Neutral placeholder while the site settings are still loading.
+ * The initial render must not present the "not available" panel: that
+ * state is only true once availability has actually resolved to
+ * unavailable. Mirrors the dynamic-import loading placeholders above.
+ */
+function RailLoading({ className }: { className: string }) {
+	return (
+		<div
+			role="status"
+			aria-label="Loading payment availability"
+			className={`${className} w-full animate-pulse rounded-[var(--radius-lg)] bg-surface/40`}
+		/>
+	);
+}
+
 function RailUnavailable({
 	icon: Icon,
 	title,
@@ -277,6 +293,10 @@ export default function DepositPage() {
 
 	const usdc = railByKey(siteSettings, "usdc");
 	const card = railByKey(siteSettings, "card");
+	// Settings not loaded yet: rails are non-actionable, but that is a
+	// loading state, not an availability verdict — render the neutral
+	// placeholder instead of the unavailable panel.
+	const settingsLoading = siteSettings === null;
 
 	return (
 		<m.div
@@ -359,6 +379,8 @@ export default function DepositPage() {
 						{method === "crypto" &&
 							(usdc.actionable ? (
 								<UnifiedDepositInterface />
+							) : settingsLoading ? (
+								<RailLoading className="h-96" />
 							) : (
 								<RailUnavailable
 									icon={Coins}
@@ -377,6 +399,8 @@ export default function DepositPage() {
 						{method === "card" &&
 							(card.actionable ? (
 								<FiatCheckoutPanel />
+							) : settingsLoading ? (
+								<RailLoading className="h-72" />
 							) : (
 								<RailUnavailable
 									icon={Banknote}

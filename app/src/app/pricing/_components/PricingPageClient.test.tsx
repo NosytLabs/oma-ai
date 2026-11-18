@@ -63,7 +63,7 @@ describe("pricing availability and rates", () => {
 		render(<PricingPage />);
 		expect(screen.getByRole("status")).toHaveTextContent("Loading model catalog");
 		expect(within(screen.getByText("Starts at").parentElement!).getByText("—")).toBeInTheDocument();
-		expect(screen.getAllByText("Checking").length).toBeGreaterThan(0);
+		expect(screen.queryByText("Checking")).not.toBeInTheDocument();
 	});
 
 	it("identifies the loader's static fallback as unverified after a failed request", async () => {
