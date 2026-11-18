@@ -24,13 +24,14 @@ describe("railStatuses", () => {
 		const card = railByKey({ maintenanceMode: false, cardPaymentsEnabled: false, cryptoPaymentsEnabled: true, polarConfigured: false }, "card");
 		expect(card.badge).toBe("Unavailable");
 	});
-	it("shows Checking while payment availability is loading", () => {
+	it("shows a neutral placeholder while payment availability is loading", () => {
 		const rails = railStatuses(null);
 		expect(rails.map((r) => r.badge)).toEqual([
-			"Checking…",
-			"Checking…",
-			"Checking…",
+			"—",
+			"—",
+			"—",
 		]);
+		expect(rails.map((r) => r.reason)).toEqual([null, null, null]);
 		expect(railByKey(null, "usdc").actionable).toBe(false);
 		expect(railByKey(null, "card").actionable).toBe(false);
 		expect(railByKey(null, "x402").actionable).toBe(false);
