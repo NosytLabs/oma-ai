@@ -1,5 +1,6 @@
 import originGuardPaths from "./middleware/origin-guard-paths.json" with { type: "json" };
 import "dotenv/config";
+import { timingSafeEqual } from "node:crypto";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { cors } from "hono/cors";
@@ -56,6 +57,19 @@ import { getPublicClient } from "./lib/rpc-client.js";
 // Fail-fast admin address validation. Runs at startup, not at module
 // import, so test imports of the auth middleware don't exit the process.
 initAuth();
+
+// Constant-time RECOVERY_TOKEN comparison (same length-checked
+// timingSafeEqual pattern as auth/api-keys.ts), used by the /internal/*
+// routes below instead of a plain === on the bearer token.
+function recoveryTokenMatches(token?: string | null, expected?: string | null): boolean {
+	if (!token || !expected) return false;
+	const bufToken = Buffer.from(token, "utf8");
+	const bufExpected = Buffer.from(expected, "utf8");
+	if (bufToken.length !== bufExpected.length) {
+		return false;
+	}
+	return timingSafeEqual(bufToken, bufExpected);
+}
 
 // ---------------------------------------------------------------
 // Neon Functions mode.
@@ -344,7 +358,7 @@ app.post("/internal/recover-deposits", async (c) => {
 	const expected = process.env.RECOVERY_TOKEN;
 	const fromNeonScheduler = process.env.NEON_FUNCTION === "1" &&
 		!c.req.header("x-oma-proxy-secret") && Boolean(c.req.header("x-neon-trigger-invocation-id"));
-	const authorized = fromNeonScheduler || (Boolean(expected) && token === expected);
+	const authorized = fromNeonScheduler || recoveryTokenMatches(token, expected);
 	if (!authorized) {
 		return c.json({ error: { message: "forbidden", type: "forbidden" } }, 403);
 	}
@@ -400,7 +414,7 @@ app.post("/internal/drain-settlement-dlq", async (c) => {
 	const expected = process.env.RECOVERY_TOKEN;
 	const fromNeonScheduler = process.env.NEON_FUNCTION === "1" &&
 		!c.req.header("x-oma-proxy-secret") && Boolean(c.req.header("x-neon-trigger-invocation-id"));
-	const authorized = fromNeonScheduler || (Boolean(expected) && token === expected);
+	const authorized = fromNeonScheduler || recoveryTokenMatches(token, expected);
 	if (!authorized) {
 		return c.json({ error: { message: "forbidden", type: "forbidden" } }, 403);
 	}
