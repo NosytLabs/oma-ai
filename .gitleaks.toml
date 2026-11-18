@@ -1,5 +1,8 @@
 title = "OMA-AI Gitleaks Config"
 
+[extend]
+useDefault = true
+
 [allowlist]
 description = "OMA AI allowlist rules"
 paths = [
@@ -7,6 +10,8 @@ paths = [
   '''app/src/app/docs/.*''',
   '''app/src/app/models/page\.tsx$''',
   '''server/src/__tests__/.*\.test\.ts$''',
+  '''server/src/.*/__tests__/.*\.test\.ts$''',
+  '''server/\.env\.example$''',
   '''server/vitest\.setup\.ts$''',
   '''app/src/.*\.test\.ts$''',
   '''app/src/.*\.test\.tsx$''',
