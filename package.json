@@ -55,7 +55,6 @@
     "url": "git+https://github.com/NosytLabs/oma-ai.git"
   },
   "devDependencies": {
-    "eslint-plugin-react-hooks": "^7.1.1",
     "knip": "^5.88.1"
   }
 }

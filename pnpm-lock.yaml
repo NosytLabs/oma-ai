@@ -33,9 +33,6 @@ importers:
 
   .:
     devDependencies:
-      eslint-plugin-react-hooks:
-        specifier: ^7.1.1
-        version: 7.1.1(eslint@10.14.0(jiti@2.7.0))
       knip:
         specifier: ^5.88.1
         version: 5.88.1(@types/node@24.19.2)(typescript@6.0.3)
