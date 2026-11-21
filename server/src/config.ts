@@ -117,7 +117,7 @@ const envSchema = z.object({
 		FREE_SIGNUP_CENTS: z.coerce.number().min(0).max(100000).default(0),
 
 		// OpenTelemetry configuration
-		OTEL_EXPORTER_OTLP_ENDPOINT: z.string().min(1).default("http://localhost:4318").optional(),
+		OTEL_EXPORTER_OTLP_ENDPOINT: z.string().min(1).optional(),
 		OTEL_SERVICE_NAME: z.string().min(1).default("oma-server").optional(),
 
 		// Optional path whose directory holds models-overrides.json (runtime catalog is code-loaded).

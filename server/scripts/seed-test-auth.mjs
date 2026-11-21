@@ -59,7 +59,9 @@ try {
 
 		const verifyUrl = new URL("/api/auth/magic-link/verify", appOrigin);
 		verifyUrl.searchParams.set("token", token);
-		verifyUrl.searchParams.set("callbackURL", identity.role === "admin" ? "/admin" : "/dashboard");
+		// The website has no /admin page (the admin surface is the /v1/admin/*
+		// API on the server); both roles land on the dashboard after verify.
+		verifyUrl.searchParams.set("callbackURL", "/dashboard");
 		console.log(`${user.role}: ${user.email}`);
 		console.log(`  magic link: ${verifyUrl.toString()}`);
 	}

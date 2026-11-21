@@ -26,6 +26,11 @@ let failedAttempts = 0;
 let nextRetryAt = 0;
 let generation = 0;
 let lastFailureStatus: RedisConnectionState = REDIS_CONNECTION_STATE.Disconnected;
+// Failure reason from the same taxonomy the client logs (see failureDetails),
+// surfaced to operators through redisConnectionState().
+let lastFailureReason: string | null = null;
+// One-shot flag so the "no endpoint configured" degrade logs a single line.
+let endpointDegradeLogged = false;
 
 const RETRY_BASE_MS = 1_000;
 const RETRY_MAX_MS = 30_000;
@@ -65,7 +70,28 @@ function failureDetails(error: unknown): { reason: string; status?: number } {
 	return { reason, ...(status === undefined ? {} : { status }) };
 }
 
+// @upstash/redis speaks HTTPS REST only. A plain redis:// URL or a missing
+// token can never produce a working client, and the environment cannot change
+// while the process runs, so treat that as "not configured": degrade once
+// instead of scheduling retries that can only fail the same way.
+function restEndpointConfigured(): boolean {
+	const url = config.UPSTASH_REDIS_REST_URL ?? config.REDIS_URL;
+	const token = config.UPSTASH_REDIS_REST_TOKEN ?? config.REDIS_TOKEN;
+	return typeof url === "string" && url.startsWith("https://") && !!token;
+}
+
 async function verifyConnection(force = false): Promise<HealthResult> {
+	if (!restEndpointConfigured()) {
+		if (!endpointDegradeLogged) {
+			endpointDegradeLogged = true;
+			lastFailureReason = "missing_configuration";
+			logger.info(
+				"[redis] no HTTPS REST endpoint configured -- staying on the in-memory fallback " +
+					"(set UPSTASH_REDIS_REST_URL/TOKEN for shared rate limiting)",
+			);
+		}
+		return { status: REDIS_CONNECTION_STATE.Disconnected };
+	}
 	if (pingPromise) return pingPromise;
 	if (redisReady && !force) return { status: "ok" };
 	if (Date.now() < nextRetryAt) return { status: lastFailureStatus };
@@ -79,6 +105,7 @@ async function verifyConnection(force = false): Promise<HealthResult> {
 			redisReady = true;
 			failedAttempts = 0;
 			nextRetryAt = 0;
+			lastFailureReason = null;
 			if (recovered) logger.info("[redis] connection recovered");
 			return { status: "ok", latency: Date.now() - start };
 		} catch (error) {
@@ -88,7 +115,9 @@ async function verifyConnection(force = false): Promise<HealthResult> {
 			const retryAfterMs = Math.min(RETRY_BASE_MS * 2 ** (failedAttempts - 1), RETRY_MAX_MS);
 			nextRetryAt = Date.now() + retryAfterMs;
 			lastFailureStatus = redis ? REDIS_CONNECTION_STATE.Error : REDIS_CONNECTION_STATE.Disconnected;
-			logger.warn({ ...failureDetails(error), retryAfterMs }, "[redis] connection check failed");
+			const failure = failureDetails(error);
+			lastFailureReason = failure.reason;
+			logger.warn({ ...failure, retryAfterMs }, "[redis] connection check failed");
 			return { status: lastFailureStatus };
 		}
 	});
@@ -113,6 +142,8 @@ export async function closeRedisClient(): Promise<void> {
 	failedAttempts = 0;
 	nextRetryAt = 0;
 	lastFailureStatus = REDIS_CONNECTION_STATE.Disconnected;
+	lastFailureReason = null;
+	endpointDegradeLogged = false;
 	pingPromise = null;
 }
 
@@ -134,7 +165,9 @@ export function redisConnectionState(): RedisConnectionSnapshot {
 		state,
 		failedAttempts,
 		retryInMs,
-		...(state === REDIS_CONNECTION_STATE.Ready ? {} : { reason: lastFailureStatus }),
+		...(state === REDIS_CONNECTION_STATE.Ready
+			? {}
+			: { reason: lastFailureReason ?? lastFailureStatus }),
 	};
 }
 
