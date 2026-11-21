@@ -207,7 +207,7 @@ project, apply every migration and confirm the table count matches
 psql "$DATABASE_URL" -c "SELECT count(*) FROM pg_tables WHERE schemaname='public';"
 psql "$DATABASE_URL" -c "SELECT hash FROM drizzle.__drizzle_migrations ORDER BY id;"
 npx --yes neon@6.2.3 triggers list \
-  --project-id gentle-pine-02694891 --branch br-patient-sun-b5k0ln0f
+  --project-id <new-project-id> --branch <new-branch>
 ```
 
 A missing table surfaces as PostgreSQL `42P01` in the function logs (for
