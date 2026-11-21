@@ -55,6 +55,6 @@
     "url": "git+https://github.com/NosytLabs/oma-ai.git"
   },
   "devDependencies": {
-    "knip": "^5.88.1"
+    "knip": "^6.45.1"
   }
 }
