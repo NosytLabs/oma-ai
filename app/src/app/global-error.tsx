@@ -80,7 +80,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
 					</h1>
 					<p
 						style={{
-							color: "#b4bbb0",
+							color: BRAND_COLORS.textMuted,
 							maxWidth: "32rem",
 							lineHeight: 1.6,
 							margin: "0 0 1.5rem",

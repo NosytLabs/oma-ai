@@ -27,6 +27,11 @@ export default function Loading() {
 						className="animate-shimmer h-1.5 w-48 max-w-full rounded-full bg-surface-elevated"
 						aria-hidden="true"
 					/>
+					<div aria-hidden="true" className="flex w-64 max-w-full flex-col gap-2 pt-1">
+						<span className="block h-2 w-full animate-pulse rounded bg-surface-elevated" />
+						<span className="block h-2 w-4/5 animate-pulse rounded bg-surface-elevated" />
+						<span className="block h-2 w-2/3 animate-pulse rounded bg-surface-elevated" />
+					</div>
 				</div>
 			</div>
 		</div>

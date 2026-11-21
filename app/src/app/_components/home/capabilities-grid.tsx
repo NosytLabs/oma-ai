@@ -426,17 +426,11 @@ export function CapabilitiesGrid() {
 	/>
 	Budget from {MIN_INPUT_PRICE_LABEL} / 1M tokens
 	</span>
-	<span aria-hidden="true" className="text-border">
-	·
-	</span>
+	<span className="text-border">·<span className="sr-only">, </span></span>
 	<span>USDC at 1:1 USD — no markup</span>
-	<span aria-hidden="true" className="text-border">
-	·
-	</span>
+	<span className="text-border">·<span className="sr-only">, </span></span>
 	<span>Credits never expire</span>
-	<span aria-hidden="true" className="text-border">
-	·
-	</span>
+	<span className="text-border">·<span className="sr-only">, </span></span>
 	<span>Circuit-breaker failover</span>
 	</div>
 	</Reveal>

@@ -148,6 +148,7 @@ export default function GettingStartedPage() {
 									<div className="min-w-0">
 										<h2 className="text-base font-display font-medium text-text-bright">
 											<span className="mr-2 font-geometric tabular-nums text-accent text-sm">0{i + 1}</span>
+											<span aria-hidden="true" className="mr-2 text-border">·</span>
 											{step.title}
 										</h2>
 										<div className="mt-2 text-sm leading-relaxed text-text-secondary">{step.body}</div>

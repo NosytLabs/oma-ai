@@ -185,7 +185,8 @@ export default async function StatusPage() {
 				<p className="page-intro">
 					Live health of the services behind OMA. This page checks
 					liveness and dependency readiness when you load it. Refresh to re-check. No account
-					needed.
+					needed. A dependency in fallback mode can show as degraded while the gateway keeps
+					serving requests.
 				</p>
 
 				{/*
@@ -212,7 +213,7 @@ export default async function StatusPage() {
 								/>
 							) : (
 								<XCircle
-									className="h-5 w-5 mt-0.5 text-red-400 shrink-0"
+									className="h-5 w-5 mt-0.5 text-error shrink-0"
 									strokeWidth={1.75}
 									aria-hidden="true"
 								/>
