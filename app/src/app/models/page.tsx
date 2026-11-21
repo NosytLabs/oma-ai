@@ -3,6 +3,7 @@
 import {
 	Brain,
 	Check,
+	ChevronDown,
 	Link2,
 	Search,
 	Sparkles,
@@ -155,16 +156,19 @@ function ModelsPageInner() {
 						/>
 					</div>
 
-					<div className="flex items-center gap-3 rounded-[var(--radius-xl)] border border-border bg-panel px-4">
+					<div className="relative flex items-center gap-3 rounded-[var(--radius-xl)] border border-border bg-panel px-4">
 						<label htmlFor="models-sort" className="text-sm text-text-muted">Sort by</label>
 						<select
 							id="models-sort"
 							value={sortBy}
 							onChange={(event) => handleSort(event.target.value as SortKey)}
-							className="min-h-12 flex-1 bg-panel py-3 pr-2 text-sm text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+							className="min-h-12 flex-1 appearance-none bg-panel py-3 pr-8 text-sm text-text-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 						>
 							{SORT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
 						</select>
+						<div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+							<ChevronDown className="h-4 w-4 text-text-muted" aria-hidden="true" />
+						</div>
 					</div>
 				</div>
 
