@@ -122,6 +122,17 @@ const nextConfig: NextConfig = {
 					{ key: "Cache-Control", value: "public, max-age=60, s-maxage=60, stale-while-revalidate=300" },
 				],
 			},
+			// Provider logos are static brand assets that only change with a
+			// deploy. They were served with the default
+			// `public, max-age=0, must-revalidate` (verified live 2026-11-20),
+			// so every page view revalidated every logo. Cache them for a
+			// year, immutable.
+			{
+				source: "/logos/:path*",
+				headers: [
+					{ key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+				],
+			},
 			// Keep app/auth surfaces dynamic. These routes either vary by the
 			// session or render the heavy authenticated shell; caching them at
 			// the edge risks serving one user's response to another.
