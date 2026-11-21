@@ -29,9 +29,40 @@ describe("ModelCard availability", () => {
 	it("flags an unavailable model instead of advertising it as usable", () => {
 		render(<ModelCard model={{ ...base, available: false }} index={0} />);
 
-		expect(screen.getByText(/unavailable/i)).toBeTruthy();
+		// The flag now appears in more than one element (badge + the
+		// visible reason line), so match all of them.
+		expect(screen.getAllByText(/unavailable/i).length).toBeGreaterThan(0);
 		// No dead-end CTA into a chat that will 503.
 		expect(screen.queryByText(/try in chat/i)).toBeNull();
+	});
+
+	it("shows the policy-block reason on the card, not only in a tooltip", () => {
+		// The reason string existed in the data (and in the badge's title
+		// attribute) but was never rendered as visible text.
+		render(
+			<ModelCard
+				model={{ ...base, available: false, unavailableCause: "policy_blocked" }}
+				index={0}
+			/>,
+		);
+
+		expect(screen.getByText("Blocked by this deployment's provider policy")).toBeTruthy();
+	});
+
+	it("shows the operator's reason when the catalog carries one", () => {
+		render(
+			<ModelCard
+				model={{
+					...base,
+					available: false,
+					unavailableReason:
+						"Temporarily paused after repeated upstream output. Please choose MiniMax M2.7.",
+				}}
+				index={0}
+			/>,
+		);
+
+		expect(screen.getByText(/Temporarily paused after repeated upstream output/)).toBeTruthy();
 	});
 
 	it("keeps the chat CTA for an available model", () => {

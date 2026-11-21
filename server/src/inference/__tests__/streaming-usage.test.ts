@@ -44,6 +44,19 @@ describe("upstream usage metering", () => {
 		const second = await parseNonStreamingResponse(Response.json({ choices: [{ message: { content: "", reasoning_content: "think", tool_calls: [{ function: { arguments: '{"a":2}' } }] } }], usage: { prompt_tokens: "21", completion_tokens: -1 } }), args);
 		expect(second).toMatchObject({ promptTokens: 99, outputTokens: estimateTokens("think") + estimateTokens('{"a":2}') });
 	});
+	it("errors the stream and records an error when the upstream stalls mid-stream", async () => {
+		const encoder = new TextEncoder();
+		const upstream = new Response(new ReadableStream({ start(controller) {
+			controller.enqueue(encoder.encode(frame({ choices: [{ delta: { content: "hel" } }] })));
+			// The upstream then goes silent: no more chunks, no close.
+			// Before the idle bound this held the client stream open forever.
+		} }));
+		const proxied = createStreamingProxy(upstream, { ...args, idleTimeoutMs: 25 });
+		await expect(new Response(proxied).text()).rejects.toThrow(/stalled/);
+		await vi.waitFor(() => expect(recordUsage).toHaveBeenCalledTimes(1));
+		expect(recordUsage).toHaveBeenCalledWith(expect.objectContaining({ status: "error" }));
+		expect(recordUsage).not.toHaveBeenCalledWith(expect.objectContaining({ status: "completed" }));
+	});
 	it("records an upstream SSE error as failed instead of billing it as completed", async () => {
 		await expect(stream([frame({ choices: [{ delta: { content: "partial" } }] }), frame({ error: { message: "private provider detail" } })])).rejects.toThrow("Upstream stream failed");
 		expect(recordUsage).toHaveBeenCalledWith(expect.objectContaining({ status: "error" }));
