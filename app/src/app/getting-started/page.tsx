@@ -3,6 +3,7 @@ import { API_V1_BASE } from "@/lib/site";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, CreditCard, KeyRound, MessageSquare, Rocket, Terminal, Wallet } from "lucide-react";
 import { MODEL_COUNT } from "@/lib/models-data";
+import { FREE_DEFAULT_CHAT_MODEL_LABEL } from "@/lib/model-utils";
 import { InViewFade } from "@/components/motion/in-view-fade";
 import { BreadcrumbListJsonLd } from "@/components/json-ld";
 import { CopyableCode } from "@/components/copyable-code";
@@ -33,7 +34,7 @@ const STEPS = [
 				Open the <Link href="/chat" className="text-accent underline underline-offset-2 decoration-accent/40 hover:decoration-accent">chat playground</Link> and send a
 				message. Guests get 20 free messages a day across available OMA-AI
 				website-chat models, and 100 a day once you sign in. No credit card,
-				nothing to install. MiniMax M2.7 is the default. Check the model catalog
+				nothing to install. {FREE_DEFAULT_CHAT_MODEL_LABEL} is the default. Check the model catalog
 				for current availability; paused routes cannot accept requests.
 			</>
 		),

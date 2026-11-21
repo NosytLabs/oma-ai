@@ -28,6 +28,13 @@ export const FREE_CHAT_MODEL_IDS = new Set<string>([
  */
 export const FREE_DEFAULT_CHAT_MODEL = "minimax-m2-7";
 
+/**
+ * Human-readable label for the default free-chat model.
+ * Single source for user-facing copy (getting-started, FAQ) so the
+ * name cannot drift from the model id above.
+ */
+export const FREE_DEFAULT_CHAT_MODEL_LABEL = "MiniMax M2.7";
+
 export const FREE_TIER_LABELS: Record<string, { label: string; tooltip: string }> = {
 	"zai-org-glm-5-3": {
 		label: "Free",

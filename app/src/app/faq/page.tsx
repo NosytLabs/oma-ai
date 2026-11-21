@@ -3,6 +3,7 @@ import { API_V1_BASE } from "@/lib/site";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { MODEL_COUNT } from "@/lib/models-data";
+import { FREE_DEFAULT_CHAT_MODEL_LABEL } from "@/lib/model-utils";
 import { BreadcrumbListJsonLd, FAQPageJsonLd } from "@/components/json-ld";
 import { FAQContent } from "./_components/FAQContent";
 import { PageShell } from "@/app/_components/page-shell";
@@ -67,7 +68,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "Do I need to know how to code?",
-				a: "No. You can try AI immediately in the free chat playground at /chat — no account needed. Guests can use available OMA-AI website-chat models with a daily message cap. MiniMax M2.7 is the default; check the model catalog for current availability. You only need the API (and an API key) when you want to build something, like an app or a script.",
+				a: `No. You can try AI immediately in the free chat playground at /chat — no account needed. Guests can use available OMA-AI website-chat models with a daily message cap. ${FREE_DEFAULT_CHAT_MODEL_LABEL} is the default; check the model catalog for current availability. You only need the API (and an API key) when you want to build something, like an app or a script.`,
 			},
 			{
 				q: "How do I start using it?",
