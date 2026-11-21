@@ -15,7 +15,7 @@ describe("ModelsPage", () => {
 		await act(async () => {
 			await waitFor(() => {
 				expect(
-					screen.getByRole("heading", { name: /every model/i }),
+					screen.getByRole("heading", { name: /curated models, clearly priced/i }),
 				).toBeInTheDocument();
 			});
 		});
@@ -42,7 +42,7 @@ describe("ModelsPage", () => {
 			await waitFor(() => {
 				// Wording must NOT claim every catalogued model is usable —
 				// Routes can be unavailable when provider credentials are missing.
-				expect(screen.getByText(/provider routes in the catalog/i)).toBeInTheDocument();
+				expect(screen.getByText(/models in the catalog/i)).toBeInTheDocument();
 			});
 		});
 	});

@@ -1,16 +1,15 @@
 import type { Metadata } from "next";
-import { MODEL_COUNT } from "@/lib/models-data";
 import { DocsContent } from "./DocsContent";
 import Link from "next/link";
 
 export const metadata: Metadata = {
 	title: "API Documentation — OpenAI-compatible AI inference",
-	description: `OpenAI-compatible AI inference reference. ${MODEL_COUNT} models, request schemas, context limits, rate limits and prepaid billing.`,
+	description: "OpenAI-compatible AI inference reference: request schemas, context limits, rate limits, and prepaid billing.",
 	alternates: { canonical: "/docs" },
 	openGraph: {
 		locale: "en_US",
 		title: "API Documentation — OMA AI Gateway",
-		description: `OpenAI-compatible AI inference reference. ${MODEL_COUNT} models behind one endpoint. Wallet auth and x402 settlement on Base.`,
+		description: "OpenAI-compatible AI inference reference. Wallet auth and x402 settlement on Base.",
 		url: "/docs",
 		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA API Documentation" }],
 		type: "article",
@@ -18,7 +17,7 @@ export const metadata: Metadata = {
 	twitter: {
 		card: "summary_large_image",
 		title: "API Documentation — OMA AI Gateway",
-		description: `OpenAI-compatible AI inference reference. ${MODEL_COUNT} models behind one endpoint.`,
+		description: "OpenAI-compatible AI inference reference.",
 		images: ["/og-image.png"],
 	},
 	robots: { index: true, follow: true },

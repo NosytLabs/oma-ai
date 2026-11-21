@@ -49,7 +49,7 @@ export function FinalCTA() {
 	>
 	Build with OMA.
 	<br />
-	<span className="gradient-text-accent">Call any model.</span>
+	<span className="gradient-text-accent">Call a catalog model.</span>
 	</h2>
 				<p className="text-base leading-relaxed text-text-secondary sm:text-lg">
 					Explore the catalog, test the playground, then create an API key when your

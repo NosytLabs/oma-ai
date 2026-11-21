@@ -182,7 +182,7 @@ const copy: Record<
 			{
 				icon: Coins,
 				label: "Credits never expire",
-				description: "Use across every curated model",
+				description: "Use across the model catalog",
 			},
 		],
 	},

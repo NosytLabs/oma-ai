@@ -215,7 +215,7 @@ describe("HomePage", () => {
 			expect(
     screen.getByRole("heading", { name: /Build with OMA/i }),
 			).toBeInTheDocument();
-			expect(screen.getByText(/Call any model/i)).toBeInTheDocument();
+			expect(screen.getByText(/Call a catalog model/i)).toBeInTheDocument();
 		});
 	});
 });

@@ -100,7 +100,7 @@ function PaymentMethodsInfo({
 				: r.key === "card"
 					? "Visa, Mastercard, Apple Pay via Polar. No wallet, no USDC required."
 					: "Agents authorize a USDC transfer on Base, then claim credits with the paying wallet’s session.",
-		badge: r.badge,
+		badge: r.badge === "—" ? "Checking…" : r.badge,
 		reason: r.reason,
 	}));
 

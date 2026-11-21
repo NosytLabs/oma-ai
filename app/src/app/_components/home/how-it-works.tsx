@@ -56,7 +56,7 @@ const STEPS: Step[] = [
 		n: "04",
 		title: "Send your first request",
 		description:
-			"Point any OpenAI-compatible SDK at OMA. One key, one endpoint, every curated model.",
+			"Point any OpenAI-compatible SDK at OMA. One key and one endpoint for the catalog — switch models by changing the model ID.",
 		icon: Terminal,
 	},
 ];

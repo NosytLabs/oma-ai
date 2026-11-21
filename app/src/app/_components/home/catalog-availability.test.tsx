@@ -42,6 +42,6 @@ describe("homepage catalog availability", () => {
 		loadEntries.mockResolvedValue([{ id: "offline", modality: "chat", available: false }]);
 		render(<CodeExample />);
 		await waitFor(() => expect(loadEntries).toHaveBeenCalled());
-		expect(screen.getByLabelText("OpenAI-compatible OMA SDK client setup code example").textContent).toContain('model: "YOUR_AVAILABLE_MODEL_ID"');
+		expect(screen.getByLabelText("OpenAI-compatible OMA SDK client setup code example").textContent).toContain('model: "minimax-m2-7"');
 	});
 });

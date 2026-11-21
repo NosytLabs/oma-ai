@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { API_V1_BASE } from "@/lib/site";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Cpu, Shield, Wallet } from "lucide-react";
-import { MODEL_COUNT } from "@/lib/models-data";
 import { InViewFade } from "@/components/motion/in-view-fade";
 import { BreadcrumbListJsonLd } from "@/components/json-ld";
 import { PageShell } from "@/app/_components/page-shell";
@@ -27,7 +26,7 @@ const PILLARS = [
 	{
 		icon: Cpu,
 		title: "Open Model Access",
-		body: `One OpenAI-compatible API across ${MODEL_COUNT} curated models and multiple providers, with circuit-breaker protection and configured fallbacks where available.`,
+		body: "One OpenAI-compatible API for a curated model catalog, with provider routing, circuit breakers, and configured fallbacks.",
 	},
 	{
 		icon: Wallet,
@@ -36,7 +35,7 @@ const PILLARS = [
 	},
 	{
 		icon: Shield,
-		title: "Minimal OMA retention",
+		title: "Minimal data retention",
 		body: "SIWE wallet auth and magic-link email. OMA meters billing metadata but does not persist prompt or completion content; inference providers process requests as described in Privacy.",
 	},
 ] as const;

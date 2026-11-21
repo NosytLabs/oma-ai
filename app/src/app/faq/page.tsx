@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { API_V1_BASE } from "@/lib/site";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { MODEL_COUNT } from "@/lib/models-data";
 import { FREE_DEFAULT_CHAT_MODEL_LABEL } from "@/lib/model-utils";
 import { BreadcrumbListJsonLd, FAQPageJsonLd } from "@/components/json-ld";
 import { FAQContent } from "./_components/FAQContent";
@@ -76,7 +75,7 @@ const FAQ_GROUPS: { heading: string; items: { q: string; a: string }[] }[] = [
 			},
 			{
 				q: "What can I do with it?",
-				a: `Chat, write code, summarize documents, analyze data, work with image inputs, and more — across ${MODEL_COUNT} models from many providers through one API.`,
+				a: "Chat, write code, and summarize documents. Some models accept image inputs. Pick a model from the catalog and call it through one OpenAI-compatible API.",
 			},
 			{
 				q: "Is there a free tier?",

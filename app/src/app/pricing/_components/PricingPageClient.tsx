@@ -274,7 +274,7 @@ export default function PricingPage() {
 			<div className="container-page">
 				<div className="page-hero gap-4 pt-8 pb-8 before:hidden sm:pt-10 sm:pb-10 lg:gap-5 lg:pt-12 lg:pb-12">
 					<span className="section-eyebrow-caps">AI API pricing</span>
-					<h1 className="h1-page text-text-bright max-w-4xl">Pricing for every model.</h1>
+					<h1 className="h1-page text-text-bright max-w-4xl">Model pricing.</h1>
 					<p className="page-intro mt-0">
 						Compare model rates, then add prepaid credits. Pay only for the
 						tokens you use, with no monthly fee.

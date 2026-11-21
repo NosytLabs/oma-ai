@@ -34,7 +34,7 @@ const response = await client.chat.completions.create({
 }
 
 export function CodeExample() {
-	const [modelId, setModelId] = useState("YOUR_AVAILABLE_MODEL_ID");
+	const [modelId, setModelId] = useState("minimax-m2-7");
 	useEffect(() => {
 		let active = true;
 		void loadRawModelEntries().then((entries) => {
@@ -63,7 +63,7 @@ export function CodeExample() {
 								</span>
 							</>
 						}
-						subhead="Drop-in OpenAI compatibility. Swap in your baseURL, keep your SDK, and move per-request or per-team. There is no platform lock-in."
+						subhead="Drop-in OpenAI compatibility. Point your SDK at OMA's baseURL and switch models by changing one ID — no new integration per provider."
 					/>
 				</Reveal>
 

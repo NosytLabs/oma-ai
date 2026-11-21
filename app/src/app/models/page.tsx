@@ -88,14 +88,14 @@ function ModelsPageInner() {
 					<div>
 						<span className="section-eyebrow-caps">AI Model Catalog</span>
 						<h1 className="display-headline mt-3 text-text-bright">
-							Every model, one&nbsp;catalog.
+							Curated models, clearly priced.
 						</h1>
 						<p className="page-intro max-w-2xl">
 							Compare chat models, token prices, and context windows.
 							Choose a model to explore its capabilities or try it in chat.
 						</p>
 						<p className="mt-4 font-mono text-xs uppercase tracking-[0.18em] text-text-muted">
-							{totalModels} provider routes in the catalog
+							{totalModels} models in the catalog
 							{availableCount !== null && (
 								<>
 									{" "}
@@ -269,7 +269,7 @@ function ModelsSeoFallback() {
 				<Breadcrumb items={[{ label: "Models" }]} />
 				<span className="section-eyebrow-caps">AI Model Catalog</span>
 				<h1 className="display-headline mt-3 text-text-bright">
-					Every model, one catalog.
+					Curated models, clearly priced.
 				</h1>
 				<p className="page-intro max-w-2xl">
 					Browse OMA&apos;s curated language-model catalog before the interactive

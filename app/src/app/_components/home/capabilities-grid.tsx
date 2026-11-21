@@ -279,14 +279,14 @@ export function CapabilitiesGrid() {
 		eyebrowVariant="caps"
 		headline={
 		<>
-		Three stories.
+		Three funding paths.
 		<br />
 		<span className="text-accent font-bold not-italic">
 		One inference surface.
 		</span>
 		</>
 		}
-		subhead="Pay with credits, settle USDC via x402, or route privately. No subscription, no vendor lock-in."
+		subhead="Pay with prepaid credits, settle USDC on Base via x402, or route through a private upstream. No subscription."
 	/>
 	</Reveal>
 

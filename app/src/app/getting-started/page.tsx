@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { API_V1_BASE } from "@/lib/site";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, CreditCard, KeyRound, MessageSquare, Rocket, Terminal, Wallet } from "lucide-react";
-import { MODEL_COUNT } from "@/lib/models-data";
 import { FREE_DEFAULT_CHAT_MODEL_LABEL } from "@/lib/model-utils";
 import { InViewFade } from "@/components/motion/in-view-fade";
 import { BreadcrumbListJsonLd } from "@/components/json-ld";
@@ -107,7 +106,7 @@ reply = client.chat.completions.create(
 print(reply.choices[0].message.content)`;
 
 const NEXT_STEPS = [
-	{ label: "Browse", title: `Browse ${MODEL_COUNT} models`, href: "/models" },
+	{ label: "Browse", title: "Browse the model catalog", href: "/models" },
 	{ label: "Pricing", title: "See what things cost", href: "/pricing" },
 	{ label: "Learn", title: "Read the FAQ", href: "/faq" },
 	{ label: "I'm a developer", title: "Jump to the API docs", href: "/docs" },
