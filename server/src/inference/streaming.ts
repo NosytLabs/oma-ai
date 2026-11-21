@@ -18,6 +18,17 @@ function tokenCount(value: unknown): number | null {
 	return typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : null;
 }
 
+/**
+ * Longest the streaming proxy waits for the next upstream chunk before
+ * treating the stream as stalled. The gateway bounds time-to-headers
+ * (180 s for oma-ai routes) and the router bounds the whole attempt
+ * (240 s), but once an upstream returned 200 its body reads were
+ * unbounded: a provider that stalls mid-stream held the guest's chat
+ * open forever (observed live 2026-11-20 — "STREAMING…", 0 tokens, no
+ * error). A stall now finalizes usage as an error and errors the stream.
+ */
+export const UPSTREAM_STREAM_IDLE_TIMEOUT_MS = 60_000;
+
 /** Args for createStreamingProxy — outputTokens is calculated during streaming. */
 export interface StreamingProxyArgs {
 	userId: string;
@@ -39,6 +50,8 @@ export interface StreamingProxyArgs {
 	reservation?: boolean;
 	/** Signal the terminal inference outcome before an outer response guard sees EOF. */
 	onFinalized?: (status: InferencePhase) => void;
+	/** Override for UPSTREAM_STREAM_IDLE_TIMEOUT_MS (tests use a short window). */
+	idleTimeoutMs?: number;
 }
 
 /**
@@ -125,11 +138,29 @@ export function createStreamingProxy(
 			} catch { /* Malformed upstream SSE lines pass through unchanged. */ }
 		}
 
+		const idleTimeoutMs = recordArgs.idleTimeoutMs ?? UPSTREAM_STREAM_IDLE_TIMEOUT_MS;
+		async function readWithIdleTimeout(): Promise<{ done: boolean; value?: Uint8Array }> {
+				let timer: ReturnType<typeof setTimeout> | undefined;
+				try {
+						return await Promise.race([
+								reader.read(),
+								new Promise<never>((_, reject) => {
+										timer = setTimeout(
+												() => reject(new Error(`Upstream stream stalled: no data for ${idleTimeoutMs}ms`)),
+												idleTimeoutMs,
+										);
+								}),
+						]);
+				} finally {
+						if (timer) clearTimeout(timer);
+				}
+		}
+
 		return new ReadableStream<Uint8Array>({
 				async pull(controller) {
 						if (terminated) return;
 						try {
-								const { done, value } = await reader.read();
+								const { done, value } = await readWithIdleTimeout();
 								// Cancellation resolves an in-flight read. Do not close or meter twice.
 								if (terminated) return;
 								if (done) {

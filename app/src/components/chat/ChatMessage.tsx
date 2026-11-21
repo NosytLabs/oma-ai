@@ -180,7 +180,11 @@ export const ChatMessage = memo(function ChatMessage({
 			isAssistant &&
 			!isStreaming &&
 			!msg.content.trim() &&
-			!msg.reasoning?.trim()
+			!msg.reasoning?.trim() &&
+			// An interrupted attempt keeps its (empty) bubble so the
+			// "Interrupted" marker in the metadata row stays visible;
+			// without this exemption the marker would never render.
+			!msg.interrupted
 		) {
 			return null;
 		}
@@ -459,6 +463,15 @@ export const ChatMessage = memo(function ChatMessage({
 												>
 														<AlertTriangle className="w-2.5 h-2.5" aria-hidden="true" />
 														Truncated
+												</span>
+										)}
+										{!isUser && msg.interrupted && (
+												<span
+														className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-[color-mix(in_srgb,var(--color-warning)_10%,transparent)] border border-[var(--color-warning)]/30 rounded-[var(--radius-sm)] text-[var(--color-warning)] text-[9px] font-mono uppercase tracking-wider"
+														title="This response did not finish — it was stopped or the connection stalled."
+												>
+														<AlertTriangle className="w-2.5 h-2.5" aria-hidden="true" />
+														Interrupted
 												</span>
 										)}
 										{!isUser && msg.degenerate && (

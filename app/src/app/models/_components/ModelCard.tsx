@@ -218,9 +218,18 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, index }) => {
 						: `Input ${typeof model.inputPricePer1M === "number" ? formatPricePerMillion(model.inputPricePer1M) : "?"} per 1M tokens, output ${typeof model.outputPricePer1M === "number" ? formatPricePerMillion(model.outputPricePer1M) : "?"} per 1M tokens`}
 				</span>
 				{unavailable ? (
-					<p className="mt-3 text-[11px] font-mono font-semibold uppercase tracking-wider text-text-muted">
-						Temporarily offline
-					</p>
+					<div className="mt-3">
+						<p className="text-[11px] font-mono font-semibold uppercase tracking-wider text-text-muted">
+							Temporarily offline
+						</p>
+						{/* The reason was previously only in the badge's tooltip
+						    (title attribute) — invisible on touch devices and
+						    undiscoverable on desktop. Render the same string
+						    the server/catalog supplied; nothing new is invented. */}
+						<p className="mt-1 text-xs leading-relaxed text-text-muted">
+							{unavailableNote}
+						</p>
+					</div>
 				) : (
 					<div className="mt-3">
 						<Link href={playgroundHrefForModel(model.id)} className="inline-flex min-h-6 items-center gap-1.5 rounded-sm text-[11px] font-mono font-semibold uppercase tracking-wider text-accent/70 hover:text-accent transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel">

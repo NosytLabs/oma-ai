@@ -1,10 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Message } from "@/components/chat";
 import {
 	consumeSSE,
+	createStreamWatchdog,
 	createThinkRouter,
 	handleChatResponseStatus,
 	MAX_MESSAGE_LENGTH,
+	StreamStallError,
 	stripPendingAssistant,
 } from "@/lib/chat-stream";
 
@@ -126,6 +128,78 @@ describe("consumeSSE", () => {
 			blocks.push(b.data),
 		);
 		expect(blocks).toEqual([["a"], ["last"]]);
+	});
+
+	it("reports activity for every chunk read", async () => {
+		let activity = 0;
+		await consumeSSE(streamOf(["data: a\n\n", "data: b\n\n"]).getReader(), () => {}, () => {
+			activity++;
+		});
+		expect(activity).toBe(2);
+	});
+});
+
+describe("createStreamWatchdog", () => {
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
+	it("aborts with phase first-data when no data ever arrives", () => {
+		vi.useFakeTimers();
+		const parent = new AbortController();
+		const watchdog = createStreamWatchdog(parent.signal, { firstDataMs: 1_000, idleMs: 500 });
+		expect(watchdog.signal.aborted).toBe(false);
+		vi.advanceTimersByTime(999);
+		expect(watchdog.signal.aborted).toBe(false);
+		vi.advanceTimersByTime(1);
+		expect(watchdog.signal.aborted).toBe(true);
+		expect(watchdog.stalledPhase()).toBe("first-data");
+		watchdog.dispose();
+	});
+
+	it("switches to the idle window once data arrives", () => {
+		vi.useFakeTimers();
+		const parent = new AbortController();
+		const watchdog = createStreamWatchdog(parent.signal, { firstDataMs: 1_000, idleMs: 500 });
+		vi.advanceTimersByTime(900);
+		watchdog.activity();
+		// Past the first-data deadline, but inside the idle window.
+		vi.advanceTimersByTime(400);
+		expect(watchdog.signal.aborted).toBe(false);
+		vi.advanceTimersByTime(100);
+		expect(watchdog.signal.aborted).toBe(true);
+		expect(watchdog.stalledPhase()).toBe("idle");
+		watchdog.dispose();
+	});
+
+	it("mirrors a parent abort without claiming a stall", () => {
+		vi.useFakeTimers();
+		const parent = new AbortController();
+		const watchdog = createStreamWatchdog(parent.signal, { firstDataMs: 1_000, idleMs: 500 });
+		parent.abort();
+		expect(watchdog.signal.aborted).toBe(true);
+		expect(watchdog.stalledPhase()).toBeNull();
+		watchdog.dispose();
+	});
+
+	it("does not fire after dispose", () => {
+		vi.useFakeTimers();
+		const parent = new AbortController();
+		const watchdog = createStreamWatchdog(parent.signal, { firstDataMs: 1_000, idleMs: 500 });
+		watchdog.dispose();
+		vi.advanceTimersByTime(5_000);
+		expect(watchdog.signal.aborted).toBe(false);
+		expect(watchdog.stalledPhase()).toBeNull();
+	});
+
+	it("StreamStallError carries phase, partial flag and an actionable message", () => {
+		const first = new StreamStallError("first-data", false);
+		expect(first.stallPhase).toBe("first-data");
+		expect(first.partial).toBe(false);
+		expect(first.message).toMatch(/did not respond in time/i);
+		const idle = new StreamStallError("idle", true);
+		expect(idle.partial).toBe(true);
+		expect(idle.message).toMatch(/partial answer has been kept/i);
 	});
 });
 

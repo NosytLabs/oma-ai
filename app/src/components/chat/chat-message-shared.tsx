@@ -53,6 +53,14 @@ export interface Message {
 	// the token budget). The UI shows a RETRY hint so the user knows the
 	// answer is incomplete rather than reacting to unbalanced markdown.
 	truncated?: boolean;
+	/**
+	 * The stream ended before completion (user stop, stall timeout, or a
+	 * dropped connection). The message is kept — with this marker — instead
+	 * of the placeholder being silently deleted, so the attempt stays
+	 * visible in the conversation. Empty interrupted placeholders are
+	 * excluded from the history sent upstream (see sanitizeHistory).
+	 */
+	interrupted?: boolean;
 	finishReason?: "stop" | "length" | "content_filter" | "tool_calls" | "function_call" | null;
 	/** Catalog id that served the reply (may differ from the selected model after failover). */
 	model?: string;

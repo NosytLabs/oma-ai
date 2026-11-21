@@ -10,9 +10,11 @@ import { api } from "@/lib/api";
 import {
 	BATCH_INTERVAL_MS,
 	consumeSSE,
+	createStreamWatchdog,
 	createThinkRouter,
 	handleChatResponseStatus,
 	MAX_MESSAGE_LENGTH,
+	StreamStallError,
 	type DailyQuota,
 } from "@/lib/chat-stream";
 import { log } from "@/lib/logger";
@@ -334,6 +336,13 @@ export function useStreamingChat(
 			} = params;
 			const { options: live, signal } = request;
 			assertRequestActive(request);
+			// Stall watchdog: bounds the wait for response data (first chunk
+			// and inter-chunk gaps) so a provider that accepts the request
+			// and then goes silent fails as a visible error instead of an
+			// endless "STREAMING…" state. The user Stop path uses the
+			// request signal and is unaffected — a watchdog abort is
+			// distinguishable via stalledPhase().
+			const watchdog = createStreamWatchdog(signal);
 			const updateAssistant = (update: (message: Message) => Message) => {
 				if (signal.aborted || !request.isCurrent()) return;
 				setMsgs((prev) => {
@@ -397,14 +406,24 @@ export function useStreamingChat(
 							? { stream_options: { include_usage: true } }
 							: {}),
 					}),
-					signal,
+					signal: watchdog.signal,
 				});
 			};
 
 			// Measure from dispatch so provider queueing and key-repair retries
 			// are visible, rather than reporting only the response body's read time.
 			const startTime = Date.now();
-			let response = await doFetch();
+			let response: Response;
+			try {
+				response = await doFetch();
+			} catch (err) {
+				const stallPhase = watchdog.stalledPhase();
+				watchdog.dispose();
+				if (stallPhase) throw new StreamStallError(stallPhase, false);
+				throw err;
+			}
+			// Headers arrived — the remaining wait is bounded by the idle window.
+			watchdog.activity();
 			assertRequestActive(request);
 
 			// Paid models only: logged-in users on a new device may have a session
@@ -419,19 +438,34 @@ export function useStreamingChat(
 				const repaired = await ensureChatKeyOnce(request);
 				assertRequestActive(request);
 				if (repaired && !signal.aborted) {
-					response = await doFetch();
+					try {
+						response = await doFetch();
+					} catch (err) {
+						const stallPhase = watchdog.stalledPhase();
+						watchdog.dispose();
+						if (stallPhase) throw new StreamStallError(stallPhase, false);
+						throw err;
+					}
+					watchdog.activity();
 				}
 			}
 
 			// Sync free-tier quota from headers and classify the status
 			// (401 auth, 429 rate limit, other non-OK → HTTP error). Throws
 			// the user-facing Error for anything non-2xx.
-			await handleChatResponseStatus(response, {
-				freeModel: freeModelSelected,
-				onDailyQuota: (quota) => {
-					if (request.isCurrent() && !signal.aborted) live.onDailyQuota?.(quota);
-				},
-			});
+			try {
+				await handleChatResponseStatus(response, {
+					freeModel: freeModelSelected,
+					onDailyQuota: (quota) => {
+						if (request.isCurrent() && !signal.aborted) live.onDailyQuota?.(quota);
+					},
+				});
+			} catch (err) {
+				const stallPhase = watchdog.stalledPhase();
+				watchdog.dispose();
+				if (stallPhase) throw new StreamStallError(stallPhase, false);
+				throw err;
+			}
 			assertRequestActive(request);
 
 			// Surface server failover (OpenRouter-style transparency).
@@ -561,10 +595,15 @@ export function useStreamingChat(
 					await consumeSSE(reader, (block) => {
 						assertRequestActive(request);
 						for (const d of block.data) processData(d);
-					});
+					}, watchdog.activity);
 					assertRequestActive(request);
 					if (receivedDelta && !receivedDone && !finishReason) throw new Error("Stream ended before completion.");
 				} catch (error) {
+					const stallPhase = watchdog.stalledPhase();
+					if (stallPhase && !signal.aborted) {
+						watchdog.dispose();
+						throw new StreamStallError(stallPhase, receivedDelta);
+					}
 					if (receivedDelta && !signal.aborted && request.isCurrent()) {
 						// Keep the last buffered text even when the reader fails between UI updates.
 						router.flushTail();
@@ -579,10 +618,20 @@ export function useStreamingChat(
 					}
 					throw error;
 				}
+				watchdog.dispose();
 				router.flushTail();
 				flushToState(true);
 			} else {
-				const data = await response.json();
+				let data: Awaited<ReturnType<Response["json"]>>;
+				try {
+					data = await response.json();
+				} catch (err) {
+					const stallPhase = watchdog.stalledPhase();
+					watchdog.dispose();
+					if (stallPhase) throw new StreamStallError(stallPhase, false);
+					throw err;
+				}
+				watchdog.dispose();
 				assertRequestActive(request);
 				let content = data.choices?.[0]?.message?.content || "";
 				let reasoning = data.choices?.[0]?.message?.reasoning_content || "";
@@ -642,6 +691,15 @@ export function useStreamingChat(
 			const removePending = (setMessages: Dispatch<SetStateAction<Message[]>>, assistantId: string) => {
 				setMessages((previous) => request.isCurrent()
 					? previous.filter((message) => message.id !== assistantId || message.content !== "" || Boolean(message.reasoning))
+					: previous);
+			};
+			// A stopped or stalled attempt must stay visible: keep the
+			// placeholder (even when still empty) and mark it interrupted
+			// instead of deleting it, so the conversation shows that a
+			// reply was attempted and did not finish.
+			const markInterrupted = (setMessages: Dispatch<SetStateAction<Message[]>>, assistantId: string) => {
+				setMessages((previous) => request.isCurrent()
+					? previous.map((message) => message.id === assistantId ? { ...message, interrupted: true } : message)
 					: previous);
 			};
 
@@ -710,6 +768,12 @@ export function useStreamingChat(
 				assistantMessage,
 			];
 
+			// Whether the completion request actually started. A stop that
+			// lands during the pre-flight web search cancels a send that
+			// never reached the model — the placeholder is stripped as
+			// before. A stop during the completion itself keeps the
+			// placeholder, marked interrupted.
+			let completionStarted = false;
 			try {
 				// Run web search once per prompt. In compare mode we reuse the
 				// same context for both streams so we don't double the search
@@ -726,6 +790,7 @@ export function useStreamingChat(
 
 				// Fire both streams in parallel. Use Promise.allSettled so one stream
 				// failing doesn't leave the other running as a zombie.
+				completionStarted = true;
 				const primaryPromise = streamChatCompletion({
 					model: live.model,
 					history: primaryHistory,
@@ -774,24 +839,49 @@ export function useStreamingChat(
 					live.setCompareError(
 						`${live.compareModel} failed — ${message}`,
 					);
-					removePending(live.setCompareMessages, compareAssistantId);
+					if (err instanceof StreamStallError) {
+						markInterrupted(live.setCompareMessages, compareAssistantId);
+					} else {
+						removePending(live.setCompareMessages, compareAssistantId);
+					}
 				}
 			} catch (err: unknown) {
 				if (!request.isCurrent()) {
 					if (options?.throwOnError) throw new Error("The conversation changed before the response finished.");
 					return;
 				}
-				removePending(live.setMessages, assistantId);
-				if (live.compareMode) removePending(live.setCompareMessages, compareAssistantId);
 				const aborted =
 					abortController.signal.aborted ||
 					(err instanceof Error && err.name === "AbortError");
 				if (aborted) {
 					// The caller stopped the run: record it as canceled rather
-					// than failed, so the UI can say what happened.
+					// than failed, so the UI can say what happened. When the
+					// completion had started, the placeholder is KEPT and
+					// marked interrupted — deleting it erased the attempt
+					// from the conversation entirely. A stop during the
+					// pre-flight search never reached the model, so the
+					// placeholder is stripped as before.
+					if (completionStarted) {
+						markInterrupted(live.setMessages, assistantId);
+						if (live.compareMode) markInterrupted(live.setCompareMessages, compareAssistantId);
+					} else {
+						removePending(live.setMessages, assistantId);
+						if (live.compareMode) removePending(live.setCompareMessages, compareAssistantId);
+					}
 					live.setRequestPhase?.(CHAT_REQUEST_PHASE.Canceled);
 					if (options?.throwOnError) throw new Error("Response stopped.");
+				} else if (err instanceof StreamStallError) {
+					// The provider went silent inside the watchdog window.
+					// Keep whatever partial answer arrived, mark the attempt,
+					// and surface the stall as the request error.
+					markInterrupted(live.setMessages, assistantId);
+					if (live.compareMode) removePending(live.setCompareMessages, compareAssistantId);
+					live.setError(err.message);
+					live.setRequestPhase?.(CHAT_REQUEST_PHASE.Failed, err.message);
+					if (options?.throwOnError) throw err;
 				} else {
+					removePending(live.setMessages, assistantId);
+					if (live.compareMode) removePending(live.setCompareMessages, compareAssistantId);
 					// Network failures (backend down / CORS) surface as TypeError —
 					// translate to a friendly message rather than a cryptic "fetch failed".
 					let message: string;

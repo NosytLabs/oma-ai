@@ -10,6 +10,87 @@ import { parseSSEBlock, type SSEBlock } from "@/lib/sse-parser";
 export const MAX_MESSAGE_LENGTH = 100 * 1024;
 export const BATCH_INTERVAL_MS = 250;
 
+/**
+ * Client-side stream stall bounds. The gateway's own inference budget is
+ * 240 s, but a guest who sends a message and gets no data at all cannot
+ * tell a slow provider from a dead one — the audit on 2026-11-20 watched
+ * the free chat sit on "STREAMING…" for over two minutes with no error.
+ * The watchdog aborts the request well before the gateway budget expires
+ * so the failure surfaces as an error the user can act on:
+ *   - first-data: no response chunk at all within the window (covers a
+ *     stalled upstream host selection that never returns headers/body).
+ *   - idle: chunks arrived, then nothing for the window (covers an
+ *     upstream that returns 200 and then stalls mid-body, which neither
+ *     the gateway's streaming proxy nor this reader otherwise bounds).
+ */
+export const STREAM_FIRST_DATA_TIMEOUT_MS = 75_000;
+export const STREAM_IDLE_TIMEOUT_MS = 60_000;
+
+export type StreamStallPhase = "first-data" | "idle";
+
+/** The stream produced no data inside the watchdog window. */
+export class StreamStallError extends Error {
+	readonly stallPhase: StreamStallPhase;
+	/** True when at least one delta arrived before the stall. */
+	readonly partial: boolean;
+	constructor(stallPhase: StreamStallPhase, partial: boolean) {
+		super(
+			stallPhase === "first-data"
+				? "The model did not respond in time. Try again, or pick another model."
+				: "The response stalled before it finished. The partial answer has been kept.",
+		);
+		this.name = "StreamStallError";
+		this.stallPhase = stallPhase;
+		this.partial = partial;
+	}
+}
+
+export interface StreamWatchdog {
+	/** Signal that aborts when the parent aborts OR the stall window lapses. */
+	signal: AbortSignal;
+	/** Call on every chunk of response data; switches first-data → idle timing. */
+	activity: () => void;
+	/** The stall phase that fired, or null when the abort came from the parent. */
+	stalledPhase: () => StreamStallPhase | null;
+	dispose: () => void;
+}
+
+export function createStreamWatchdog(
+	parent: AbortSignal,
+	opts: { firstDataMs?: number; idleMs?: number } = {},
+): StreamWatchdog {
+	const firstDataMs = opts.firstDataMs ?? STREAM_FIRST_DATA_TIMEOUT_MS;
+	const idleMs = opts.idleMs ?? STREAM_IDLE_TIMEOUT_MS;
+	const controller = new AbortController();
+	let phase: StreamStallPhase | null = null;
+	let timer: ReturnType<typeof setTimeout> | null = null;
+	let disposed = false;
+	const arm = (ms: number, nextPhase: StreamStallPhase) => {
+		if (timer) clearTimeout(timer);
+		timer = setTimeout(() => {
+			phase = nextPhase;
+			controller.abort();
+		}, ms);
+	};
+	arm(firstDataMs, "first-data");
+	const onParentAbort = () => controller.abort();
+	if (parent.aborted) controller.abort();
+	else parent.addEventListener("abort", onParentAbort, { once: true });
+	return {
+		signal: controller.signal,
+		activity: () => {
+			if (disposed || phase) return;
+			arm(idleMs, "idle");
+		},
+		stalledPhase: () => phase,
+		dispose: () => {
+			disposed = true;
+			if (timer) clearTimeout(timer);
+			parent.removeEventListener("abort", onParentAbort);
+		},
+	};
+}
+
 export interface DailyQuota {
 	remaining: number;
 	limit: number;
@@ -146,6 +227,7 @@ export function createThinkRouter(handlers: ThinkRouterHandlers): ThinkRouter {
 export async function consumeSSE(
 	reader: ReadableStreamDefaultReader<Uint8Array>,
 	onBlock: (block: SSEBlock) => void,
+	onActivity?: () => void,
 ): Promise<void> {
 	const decoder = new TextDecoder();
 	const SSE_BUFFER_MAX_BYTES = 1024 * 1024;
@@ -154,6 +236,7 @@ export async function consumeSSE(
 		while (true) {
 			const { done, value } = await reader.read();
 			if (done) break;
+			onActivity?.();
 			sseBuffer += decoder.decode(value, { stream: true });
 			if (sseBuffer.length > SSE_BUFFER_MAX_BYTES) {
 				throw new Error(
