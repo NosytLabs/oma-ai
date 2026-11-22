@@ -70,14 +70,16 @@ function failureDetails(error: unknown): { reason: string; status?: number } {
 	return { reason, ...(status === undefined ? {} : { status }) };
 }
 
-// @upstash/redis speaks HTTPS REST only. A plain redis:// URL or a missing
+// @upstash/redis speaks HTTP(S) REST only. A native redis:// URL or a missing
 // token can never produce a working client, and the environment cannot change
 // while the process runs, so treat that as "not configured": degrade once
-// instead of scheduling retries that can only fail the same way.
+// instead of scheduling retries that can only fail the same way. Plain http://
+// REST endpoints are legitimate (local proxies, test fixtures), so both
+// schemes count as configured.
 function restEndpointConfigured(): boolean {
 	const url = config.UPSTASH_REDIS_REST_URL ?? config.REDIS_URL;
 	const token = config.UPSTASH_REDIS_REST_TOKEN ?? config.REDIS_TOKEN;
-	return typeof url === "string" && url.startsWith("https://") && !!token;
+	return typeof url === "string" && (url.startsWith("https://") || url.startsWith("http://")) && !!token;
 }
 
 async function verifyConnection(force = false): Promise<HealthResult> {
@@ -86,7 +88,7 @@ async function verifyConnection(force = false): Promise<HealthResult> {
 			endpointDegradeLogged = true;
 			lastFailureReason = "missing_configuration";
 			logger.info(
-				"[redis] no HTTPS REST endpoint configured -- staying on the in-memory fallback " +
+				"[redis] no HTTP(S) REST endpoint configured -- staying on the in-memory fallback " +
 					"(set UPSTASH_REDIS_REST_URL/TOKEN for shared rate limiting)",
 			);
 		}
