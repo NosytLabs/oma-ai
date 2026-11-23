@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { DocsContent } from "./DocsContent";
 import Link from "next/link";
+import { TechArticleJsonLd } from "@/components/json-ld";
+import SITE_URL from "@/lib/site";
 
 export const metadata: Metadata = {
 	title: "API Documentation — OpenAI-compatible AI inference",
@@ -26,6 +28,11 @@ export const metadata: Metadata = {
 export default function DocsPage() {
 	return (
 		<>
+			<TechArticleJsonLd
+				headline="API Documentation — OpenAI-compatible AI inference"
+				description="OpenAI-compatible AI inference reference: request schemas, context limits, rate limits, and prepaid billing."
+				url={`${SITE_URL}/docs`}
+			/>
 			<DocsContent />
 			<nav aria-label="Documentation resources" className="border-t border-border bg-surface px-4 py-5 text-sm text-text-secondary sm:px-6 lg:pl-80">
 				<span className="mx-auto flex max-w-5xl flex-wrap gap-x-5 gap-y-2">

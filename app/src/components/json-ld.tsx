@@ -171,3 +171,35 @@ export function FAQPageJsonLd({
 		/>
 	);
 }
+
+/** TechArticle for the API documentation hub. */
+export function TechArticleJsonLd({
+	headline,
+	description,
+	url,
+	image = `${SITE_URL}/og-image.png`,
+}: {
+	headline: string;
+	description: string;
+	url: string;
+	image?: string;
+}) {
+	const data = {
+		"@context": "https://schema.org",
+		"@type": "TechArticle",
+		headline,
+		description,
+		url,
+		image,
+		author: { "@id": `${SITE_URL}/#organization` },
+		publisher: { "@id": `${SITE_URL}/#organization` },
+		mainEntityOfPage: url,
+	};
+
+	return (
+		<script
+			type="application/ld+json"
+			dangerouslySetInnerHTML={{ __html: safeJsonStringify(data) }}
+		/>
+	);
+}
