@@ -14,26 +14,17 @@ describe("railStatuses", () => {
 	])("disables every payment option when the site cannot accept funding", (status, badge) => {
 		const rails = railStatuses({
 			...status, cardPaymentsEnabled: true, cryptoPaymentsEnabled: true,
-			usdcDepositConfigured: true, polarConfigured: true, x402Configured: true,
+			usdcDepositConfigured: true, x402Configured: true,
 		});
-		expect(rails.map(rail => rail.badge)).toEqual([badge, badge, badge]);
+		expect(rails.map(rail => rail.badge)).toEqual([badge, badge]);
 		expect(rails.every(rail => !rail.actionable && rail.reason)).toBe(true);
 	});
 
-	it("shows unavailable for an unconfigured card provider even when the effective toggle is off", () => {
-		const card = railByKey({ maintenanceMode: false, cardPaymentsEnabled: false, cryptoPaymentsEnabled: true, polarConfigured: false }, "card");
-		expect(card.badge).toBe("Unavailable");
-	});
 	it("shows a neutral placeholder while payment availability is loading", () => {
 		const rails = railStatuses(null);
-		expect(rails.map((r) => r.badge)).toEqual([
-			"—",
-			"—",
-			"—",
-		]);
-		expect(rails.map((r) => r.reason)).toEqual([null, null, null]);
+		expect(rails.map((r) => r.badge)).toEqual(["—", "—"]);
+		expect(rails.map((r) => r.reason)).toEqual([null, null]);
 		expect(railByKey(null, "usdc").actionable).toBe(false);
-		expect(railByKey(null, "card").actionable).toBe(false);
 		expect(railByKey(null, "x402").actionable).toBe(false);
 	});
 
@@ -43,28 +34,12 @@ describe("railStatuses", () => {
 			cardPaymentsEnabled: true,
 			cryptoPaymentsEnabled: true,
 			usdcDepositConfigured: false,
-			polarConfigured: true,
 		};
 		const usdc = railByKey(settings, "usdc");
 		expect(usdc.badge).toBe("Unavailable");
 		expect(usdc.actionable).toBe(false);
 		expect(usdc.reason).toMatch(/unavailable|not available/i);
 		expect(usdc.reason).not.toMatch(/server|configured|setup/i);
-		// card still fine
-		expect(railByKey(settings, "card").actionable).toBe(true);
-	});
-
-	it("marks card Paused when operator disables card payments", () => {
-		const settings: SitePaymentSettings = {
-			maintenanceMode: false,
-			cardPaymentsEnabled: false,
-			cryptoPaymentsEnabled: true,
-			usdcDepositConfigured: true,
-			polarConfigured: true,
-		};
-		const card = railByKey(settings, "card");
-		expect(card.badge).toBe("Paused");
-		expect(card.actionable).toBe(false);
 	});
 
 	it("never shows Available for USDC when paused even if address configured", () => {
@@ -73,7 +48,6 @@ describe("railStatuses", () => {
 			cardPaymentsEnabled: true,
 			cryptoPaymentsEnabled: false,
 			usdcDepositConfigured: true,
-			polarConfigured: true,
 		};
 		const usdc = railByKey(settings, "usdc");
 		expect(usdc.badge).toBe("Paused");
@@ -86,7 +60,6 @@ describe("railStatuses", () => {
 			cardPaymentsEnabled: true,
 			cryptoPaymentsEnabled: true,
 			usdcDepositConfigured: false,
-			polarConfigured: false,
 			x402Configured: false,
 		};
 		const x402 = railByKey(settings, "x402");
@@ -100,7 +73,6 @@ describe("railStatuses", () => {
 			cardPaymentsEnabled: true,
 			cryptoPaymentsEnabled: true,
 			usdcDepositConfigured: false,
-			polarConfigured: false,
 			x402Configured: true,
 		};
 		const x402 = railByKey(settings, "x402");
@@ -115,12 +87,11 @@ describe("paymentRailState", () => {
 		cardPaymentsEnabled: true,
 		cryptoPaymentsEnabled: true,
 		usdcDepositConfigured: true,
-		polarConfigured: true,
 		x402Configured: true,
 	};
 
 	it("is Unknown when the settings have not loaded", () => {
-		for (const key of ["usdc", "card", "x402"] as const) {
+		for (const key of ["usdc", "x402"] as const) {
 			expect(paymentRailState(null, key)).toBe(PAYMENT_RAIL_STATE.Unknown);
 			expect(paymentRailState(undefined, key)).toBe(PAYMENT_RAIL_STATE.Unknown);
 		}
@@ -128,13 +99,12 @@ describe("paymentRailState", () => {
 
 	it("is Available for every configured rail", () => {
 		expect(paymentRailState(base, "usdc")).toBe(PAYMENT_RAIL_STATE.Available);
-		expect(paymentRailState(base, "card")).toBe(PAYMENT_RAIL_STATE.Available);
 		expect(paymentRailState(base, "x402")).toBe(PAYMENT_RAIL_STATE.Available);
 	});
 
 	it("never reports Available when the site cannot confirm payment status", () => {
 		const settings = { ...base, paymentStatusAvailable: false };
-		for (const key of ["usdc", "card", "x402"] as const) {
+		for (const key of ["usdc", "x402"] as const) {
 			expect(paymentRailState(settings, key)).toBe(
 				PAYMENT_RAIL_STATE.Unavailable,
 			);
@@ -143,7 +113,7 @@ describe("paymentRailState", () => {
 
 	it("pauses every rail during maintenance", () => {
 		const settings = { ...base, maintenanceMode: true };
-		for (const key of ["usdc", "card", "x402"] as const) {
+		for (const key of ["usdc", "x402"] as const) {
 			expect(paymentRailState(settings, key)).toBe(PAYMENT_RAIL_STATE.Paused);
 		}
 	});
@@ -156,13 +126,6 @@ describe("paymentRailState", () => {
 				"usdc",
 			),
 		).toBe(PAYMENT_RAIL_STATE.Paused);
-		// Card: an unconfigured provider outranks the operator toggle.
-		expect(
-			paymentRailState(
-				{ ...base, cardPaymentsEnabled: false, polarConfigured: false },
-				"card",
-			),
-		).toBe(PAYMENT_RAIL_STATE.Unavailable);
 	});
 
 	it("drives the badge, actionability and reason from the one state", () => {
@@ -171,7 +134,6 @@ describe("paymentRailState", () => {
 			cardPaymentsEnabled: false,
 			cryptoPaymentsEnabled: true,
 			usdcDepositConfigured: false,
-			polarConfigured: false,
 			x402Configured: false,
 		};
 		for (const rail of railStatuses(settings)) {

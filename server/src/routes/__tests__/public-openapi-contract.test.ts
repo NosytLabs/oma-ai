@@ -22,12 +22,8 @@ describe("public API contract matches implemented request protocols", () => {
 		expect(spec.paths["/v1/deposit/status"].get).not.toHaveProperty("parameters");
 	});
 
-	it("requires a configured checkout plan and keeps provider product IDs internal", () => {
-		const schema = spec.paths["/v1/checkout"].post.requestBody.content["application/json"].schema;
-		expect(schema.required).toEqual(["plan"]);
-		expect(schema.properties.plan.enum).toEqual(["hobby", "builder", "scale"]);
-		expect(schema.properties).not.toHaveProperty("productId");
-		expect(schema.properties).not.toHaveProperty("cancelUrl");
+	it("does not advertise the removed card checkout endpoint", () => {
+		expect(spec.paths).not.toHaveProperty("/v1/checkout");
 	});
 
 	it("matches export format defaults and supported date filters", () => {

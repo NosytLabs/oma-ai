@@ -26,8 +26,6 @@ const mockDb = vi.hoisted(() => {
 vi.mock("../../db/client.js", () => ({ db: mockDb }));
 
 const mockConfig = vi.hoisted(() => ({
-	POLAR_ACCESS_TOKEN: "polar_test_token",
-	POLAR_HOBBY_PRODUCT_ID: "prod_hobby",
 	USDC_DEPOSIT_ADDRESS: "0xabc",
 	FACILITATOR_MODE: "live",
 	FACILITATOR_PRIVATE_KEY: "0x" + "1".repeat(64),
@@ -55,8 +53,6 @@ describe("GET /v1/site-settings", () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mockConfig.POLAR_ACCESS_TOKEN = "polar_test_token";
-		mockConfig.POLAR_HOBBY_PRODUCT_ID = "prod_hobby";
 		mockConfig.USDC_DEPOSIT_ADDRESS = "0xabc";
 		mockConfig.FACILITATOR_MODE = "live";
 		mockConfig.FACILITATOR_PRIVATE_KEY = "0x" + "1".repeat(64);
@@ -81,7 +77,6 @@ describe("GET /v1/site-settings", () => {
 		expect(body.cryptoPaymentsEnabled).toBe(true);
 		// Env-derived (no DB column) — should reflect config
 		expect(body.usdcDepositConfigured).toBe(true);
-		expect(body.polarConfigured).toBe(true);
 		expect(body.x402Configured).toBe(true);
 	});
 
@@ -109,18 +104,7 @@ describe("GET /v1/site-settings", () => {
 		expect(body.paymentStatusAvailable).toBe(false);
 		expect(res.headers.get("cache-control")).toBe("no-store");
 		expect(body.usdcDepositConfigured).toBe(true);
-		expect(body.polarConfigured).toBe(true);
 		expect(body.x402Configured).toBe(true);
-	});
-
-	it("reports polarConfigured=false when Polar token or product id missing", async () => {
-		mockConfig.POLAR_ACCESS_TOKEN = "";
-		mockDb.limit.mockResolvedValueOnce([]);
-
-		const res = await app.request("/v1/site-settings");
-		expect(res.status).toBe(200);
-		const body = (await res.json()) as Record<string, unknown>;
-		expect(body.polarConfigured).toBe(false);
 	});
 
 	it("reports x402Configured=false unless the live facilitator is complete", async () => {

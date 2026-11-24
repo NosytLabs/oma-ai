@@ -159,12 +159,6 @@ const envSchema = z.object({
 		// ===========================================================================
 		X402_FACILITATOR_PROVIDER: z.enum(["coinbase-cdp", "quicknode"]).default("coinbase-cdp"),
 
-		// Polar.sh merchant of record configuration
-		POLAR_ACCESS_TOKEN: z.string().min(1).optional(),
-		POLAR_WEBHOOK_SECRET: z.string().min(1).optional(),
-		POLAR_ORGANIZATION_ID: z.string().min(1).optional(),
-		POLAR_SERVER: z.enum(["production", "sandbox"]).optional().default("production"),
-
 		// USDC deposit receiver on Base. Operator wallet that credits user balances
 		// after on-chain transfer confirmation. Empty in dev = surface a 503 instead
 		// of accepting deposits to nowhere.
@@ -175,37 +169,9 @@ const envSchema = z.object({
 		USDC_DEPOSIT_NETWORK: z.enum(["base"]).default("base"),
 		USDC_DEPOSIT_MIN_CENTS: z.coerce.number().int().positive().default(100),  // $1
 		USDC_DEPOSIT_MAX_CENTS: z.coerce.number().int().positive().default(1000000), // $10,000
-		// Per-plan Polar product UUIDs. Get these from Polar dashboard → Products.
-		POLAR_HOBBY_PRODUCT_ID: z.string().min(1).optional(),
-		POLAR_BUILDER_PRODUCT_ID: z.string().min(1).optional(),
-		POLAR_SCALE_PRODUCT_ID: z.string().min(1).optional(),
 });
 
 type Config = z.infer<typeof envSchema>;
-
-type PolarConfiguration = Pick<
-	Config,
-	| "POLAR_ACCESS_TOKEN"
-	| "POLAR_WEBHOOK_SECRET"
-	| "POLAR_HOBBY_PRODUCT_ID"
-	| "POLAR_BUILDER_PRODUCT_ID"
-	| "POLAR_SCALE_PRODUCT_ID"
->;
-
-/**
- * Card checkout is intentionally opt-in. Once enabled, all credit plans and
- * the signed webhook path must be present so we never accept an order that
- * cannot be reconciled to a credit grant.
- */
-export function getPolarConfigurationErrors(config: PolarConfiguration): string[] {
-	if (!config.POLAR_ACCESS_TOKEN) return [];
-	const missing: string[] = [];
-	if (!config.POLAR_WEBHOOK_SECRET) missing.push("POLAR_WEBHOOK_SECRET");
-	if (!config.POLAR_HOBBY_PRODUCT_ID) missing.push("POLAR_HOBBY_PRODUCT_ID");
-	if (!config.POLAR_BUILDER_PRODUCT_ID) missing.push("POLAR_BUILDER_PRODUCT_ID");
-	if (!config.POLAR_SCALE_PRODUCT_ID) missing.push("POLAR_SCALE_PRODUCT_ID");
-	return missing;
-}
 
 export function getX402ProviderConfigurationErrors(config: { X402_FACILITATOR_PROVIDER?: string }): string[] {
 	// QuickNode's public x402 product provides pay-per-request access to
@@ -333,27 +299,6 @@ if (config.FACILITATOR_MODE === "live" && isProductionEnv) {
 			throw new Error("FATAL: USDC_DEPOSIT_ADDRESS is a placeholder address. Set a real address in production.");
 		}
 	}
-
-// SECURITY (audit 7.5): Reject Polar sandbox mode in production. Operators
-// who accidentally point POLAR_SERVER=sandbox at the production build will
-// silently collect revenue into a sandbox account — never the operator's
-// real merchant of record. Fail-fast at startup.
-if (isProductionEnv && config.POLAR_SERVER === "sandbox") {
-		console.error(
-				"[FATAL] POLAR_SERVER='sandbox' is not allowed in production. Set POLAR_SERVER='production' or unset (defaults to production).",
-		);
-	process.exit(1);
-}
-
-if (isProductionEnv) {
-	const missingPolarSettings = getPolarConfigurationErrors(config);
-	if (missingPolarSettings.length > 0) {
-		throw new Error(
-			`FATAL: POLAR_ACCESS_TOKEN enables card checkout but these settings are missing: ${missingPolarSettings.join(", ")}. ` +
-			"Set the complete Polar card rail configuration or unset POLAR_ACCESS_TOKEN to keep cards disabled.",
-		);
-	}
-}
 
 // SECURITY (A12): Require a Base RPC endpoint in production.
 if (isProductionEnv && !config.CHAIN_RPC_URL) {
