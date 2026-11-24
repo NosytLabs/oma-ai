@@ -373,8 +373,7 @@ try {
 	await pool.query("DELETE FROM deposits WHERE id=$1", [pendingDeposit.depositId]);
 	await request("/v1/deposit/usdc/challenge", { method: "POST", cookie: first.cookie, body: { fromAddress: "bad" }, expected: 400 });
 	await request("/v1/deposit/usdc", { method: "POST", cookie: first.cookie, body: {}, expected: 400 });
-	await request("/v1/checkout", { method: "POST", cookie: first.cookie, body: { productId: "stale-contract", successUrl: origin, cancelUrl: origin }, expected: 400 });
-	await request("/v1/checkout", { method: "POST", cookie: first.cookie, body: { plan: "hobby" }, expected: 503 });
+	await request("/v1/checkout", { method: "POST", cookie: first.cookie, body: { plan: "hobby" }, expected: 404 });
 	await request("/x402/settle", { method: "POST", cookie: first.cookie, body: { txHash: "invalid", networkId: "base" }, expected: 400 });
 	for (const fields of [{ max_tokens: 0 }, { max_tokens: 1.5 }, { temperature: -0.01 }, { temperature: 2.01 }, { top_p: -0.01 }, { top_p: 1.01 }, { messages: [] }, { models: Array(9).fill("x") }]) {
 		await request("/v1/chat/completions", { method: "POST", cookie: first.cookie, expected: 400, body: { model: "", messages: [{ role: "user", content: "Bounds check" }], ...fields } });
@@ -402,7 +401,7 @@ try {
 	for (const query of ["?format=xml", "?since=invalid", "?since=2026-02-02T00%3A00%3A00Z&until=2026-01-01T00%3A00%3A00Z"]) await request(`/v1/export/usage${query}`, { cookie: first.cookie, expected: 400 });
 	for (const query of ["limit=0", "limit=501", "model=" + "x".repeat(151), "cursor=" + "x".repeat(513), "provider=other"]) await request(`/v1/usage?${query}`, { cookie: first.cookie, expected: 400 });
 	for (const query of ["limit=0", "limit=201", "status=other"]) await request(`/v1/refunds?${query}`, { cookie: first.cookie, expected: 400 });
-	pass("real HTTP contract checks cover signed pending deposits without crediting, exact checkout/challenge envelopes, completion bounds, Anthropic conversion, CSV/JSON exports and private filter bounds");
+	pass("real HTTP contract checks cover signed pending deposits without crediting, exact challenge envelopes, completion bounds, Anthropic conversion, CSV/JSON exports and private filter bounds");
 
 	await request("/v1/keys", { method: "POST", expected: 401, body: { name: "No session" } });
 	await request("/v1/keys/not-a-uuid", { method: "DELETE", cookie: first.cookie, expected: 400 });
@@ -590,7 +589,6 @@ try {
 		["/v1/deposit/usdc", "GET"],
 		["/v1/deposit/usdc/challenge", "POST", { fromAddress: `0x${"12".repeat(20)}` }],
 		["/v1/deposit/usdc", "POST", {}],
-		["/v1/checkout", "POST", { plan: "hobby" }],
 		["/x402/verify", "POST", {}],
 	]) {
 		const paused = await request(path, { method, body, cookie: first.cookie, expected: 503 });
@@ -598,7 +596,7 @@ try {
 	}
 	await request("/v1/admin/site-settings", { method: "POST", cookie: first.cookie, body: { cryptoPaymentsEnabled: true, cardPaymentsEnabled: true } });
 	await request("/x402/verify", { method: "POST", expected: 400 });
-	pass("admin funding pauses protect direct deposits, wallet challenges, card checkout and x402 transfers and can be reversed");
+	pass("admin funding pauses protect direct deposits, wallet challenges and x402 transfers and can be reversed");
 	await pool.query(`INSERT INTO "user" (id, name, email, email_verified) VALUES ('admin-test-target', 'Operator test target', 'operator-target@local.test', true)`);
 	await request("/v1/admin/credit-adjust", { method: "POST", cookie: first.cookie, body: { userId: "admin-test-target", deltaCents: -10, reason: "Reject missing balance" }, expected: 400 });
 	assert.equal((await pool.query("SELECT 1 FROM credit_balances WHERE user_id = 'admin-test-target'")).rowCount, 0, "A rejected deduction must not create a ledger row");
