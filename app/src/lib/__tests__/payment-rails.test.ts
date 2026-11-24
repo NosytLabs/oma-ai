@@ -16,14 +16,14 @@ describe("railStatuses", () => {
 			...status, cardPaymentsEnabled: true, cryptoPaymentsEnabled: true,
 			usdcDepositConfigured: true, x402Configured: true,
 		});
-		expect(rails.map(rail => rail.badge)).toEqual([badge, badge, badge]);
+		expect(rails.map(rail => rail.badge)).toEqual([badge, badge]);
 		expect(rails.every(rail => !rail.actionable && rail.reason)).toBe(true);
 	});
 
 	it("shows a neutral placeholder while payment availability is loading", () => {
 		const rails = railStatuses(null);
 		expect(rails.map((r) => r.badge)).toEqual(["—", "—"]);
-		expect(rails.map((r) => r.reason)).toEqual([null, null, null]);
+		expect(rails.map((r) => r.reason)).toEqual([null, null]);
 		expect(railByKey(null, "usdc").actionable).toBe(false);
 		expect(railByKey(null, "x402").actionable).toBe(false);
 	});
