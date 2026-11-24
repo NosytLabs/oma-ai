@@ -7,7 +7,7 @@ import { springs } from "@/lib/animation";
 import nextDynamic from "next/dynamic";
 import { AnimatePresence } from "@/lib/framer-motion-client";
 import { useEffect, useId, useRef, useState } from "react";
-import { Banknote, Coins, Zap } from "lucide-react";
+import { Coins, Zap } from "lucide-react";
 
 import { UnifiedDepositHeader } from "./_components/UnifiedDepositHeader";
 import {
@@ -34,24 +34,7 @@ const UnifiedDepositInterface = nextDynamic(
 	},
 );
 
-const FiatCheckoutPanel = nextDynamic(
-	() =>
-		import("./_components/FiatCheckoutPanel").then((m) => ({
-			default: m.FiatCheckoutPanel,
-		})),
-	{
-		ssr: true,
-		loading: () => (
-			<div
-				role="status"
-				className="h-72 w-full animate-pulse rounded-[var(--radius-lg)] bg-surface/40"
-				aria-label="Loading card checkout"
-			/>
-		),
-	},
-);
-
-type MethodKey = "crypto" | "card" | "x402";
+type MethodKey = "crypto" | "x402";
 
 const METHODS: {
 	key: MethodKey;
@@ -59,7 +42,7 @@ const METHODS: {
 	icon: typeof Coins;
 	tag: string;
 	desc: string;
-	rail: "usdc" | "card" | "x402";
+	rail: "usdc" | "x402";
 }[] = [
 	{
 		key: "crypto",
@@ -68,14 +51,6 @@ const METHODS: {
 		tag: "Wallet",
 		desc: "Connect your wallet and send USDC on Base — credited automatically.",
 		rail: "usdc",
-	},
-	{
-		key: "card",
-		label: "Card",
-		icon: Banknote,
-		tag: "Visa · Mastercard",
-		desc: "Card checkout when available — no wallet needed.",
-		rail: "card",
 	},
 	{
 		key: "x402",
@@ -97,9 +72,7 @@ function PaymentMethodsInfo({
 		desc:
 			r.key === "usdc"
 				? "Pay with your wallet — USDC sent directly to the Base treasury. Credits apply after confirmation."
-				: r.key === "card"
-					? "Visa, Mastercard, Apple Pay via Polar. No wallet, no USDC required."
-					: "Agents authorize a USDC transfer on Base, then claim credits with the paying wallet’s session.",
+				: "Agents authorize a USDC transfer on Base, then claim credits with the paying wallet’s session.",
 		badge: r.badge === "—" ? "Checking…" : r.badge,
 		reason: r.reason,
 	}));
@@ -115,7 +88,7 @@ function PaymentMethodsInfo({
 				<Zap className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
 				Payment methods
 			</h2>
-			<div className="grid gap-3 sm:grid-cols-3">
+			<div className="grid gap-3 sm:grid-cols-2">
 				{methods.map((m) => (
 					<div
 						key={m.name}
@@ -265,7 +238,6 @@ export default function DepositPage() {
 		const normalized =
 			requested === "usdc" ? "crypto" : requested;
 		const hasExplicitMethod =
-			normalized === "card" ||
 			normalized === "x402" ||
 			normalized === "crypto";
 		if (hasExplicitMethod && !methodChosen.current) setMethod(normalized);
@@ -277,7 +249,7 @@ export default function DepositPage() {
 				const settings = data as SitePaymentSettings;
 				setSiteSettings(settings);
 				// When the URL did not pin a rail, open the first actionable one
-				// so local/dev without USDC_DEPOSIT_ADDRESS lands on card/x402
+				// so local/dev without USDC_DEPOSIT_ADDRESS lands on x402
 				// instead of a dead "USDC not available" panel.
 				if (hasExplicitMethod || methodChosen.current) return;
 				const preferred = METHODS.find((m) => {
@@ -292,7 +264,6 @@ export default function DepositPage() {
 	}, []);
 
 	const usdc = railByKey(siteSettings, "usdc");
-	const card = railByKey(siteSettings, "card");
 	// Settings not loaded yet: rails are non-actionable, but that is a
 	// loading state, not an availability verdict — render the neutral
 	// placeholder instead of the unavailable panel.
@@ -329,7 +300,7 @@ export default function DepositPage() {
 					setMethod(next.key);
 					document.getElementById(`${tablistId}-tab-${next.key}`)?.focus();
 				}}
-				className="mt-6 grid grid-cols-3 gap-1 rounded-[var(--radius-lg)] border border-border bg-surface/40 p-1 sm:gap-2"
+				className="mt-6 grid grid-cols-2 gap-1 rounded-[var(--radius-lg)] border border-border bg-surface/40 p-1 sm:gap-2"
 			>
 				{METHODS.map((m) => {
 					const Icon = m.icon;
@@ -391,26 +362,6 @@ export default function DepositPage() {
 									}
 									reason={
 										usdc.reason ??
-										"This payment method is not available right now."
-									}
-									fallback="Check the payment methods below for current availability."
-								/>
-							))}
-						{method === "card" &&
-							(card.actionable ? (
-								<FiatCheckoutPanel />
-							) : settingsLoading ? (
-								<RailLoading className="h-72" />
-							) : (
-								<RailUnavailable
-									icon={Banknote}
-									title={
-										card.badge === "Paused"
-											? "Card payments are paused"
-											: "Card checkout is not available"
-									}
-									reason={
-										card.reason ??
 										"This payment method is not available right now."
 									}
 									fallback="Check the payment methods below for current availability."

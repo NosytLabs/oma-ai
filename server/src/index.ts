@@ -43,7 +43,6 @@ import { usageRoutes } from "./routes/usage.js";
 import { usageSummaryRoutes } from "./routes/usage-summary.js";
 import { adminTreasuryRoutes } from "./routes/admin-treasury.js";
 import { openapiRoutes } from "./routes/openapi.js";
-import { polarRoutes } from "./routes/polar.js";
 import { adminRoutes } from "./routes/admin.js";
 import type { OmaEnv } from "./types.js";
 import { generateCorrelationId } from "./tracing.js";
@@ -556,11 +555,6 @@ app.route("/", dailyUsageRoutes);
 app.route("/", usageRoutes);
 app.route("/", usageSummaryRoutes);
 app.route("/", adminTreasuryRoutes);
-
-// Polar.sh checkout + webhook (no auth on webhook routes; signature-verified).
-// polarRoutes dual-mounts POST /webhooks/polar and POST /api/webhook/polar
-// with the same rate-limited, signature-verified handler.
-app.route("/", polarRoutes);
 
 // Admin operator endpoints (site-settings, credit-adjust, user-suspend, list-users).
 // All require session/bearer auth + requireAdmin().

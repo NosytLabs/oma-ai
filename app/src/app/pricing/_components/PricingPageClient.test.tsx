@@ -37,7 +37,7 @@ describe("pricing availability and rates", () => {
 
 	it.each([
 		{ maintenanceMode: true, cardPaymentsEnabled: false, cryptoPaymentsEnabled: false },
-		{ maintenanceMode: false, cardPaymentsEnabled: true, cryptoPaymentsEnabled: false, polarConfigured: true },
+		{ maintenanceMode: false, cardPaymentsEnabled: true, cryptoPaymentsEnabled: false },
 	])("opens the payment chooser rather than pinning a potentially paused method (%j)", async (settings) => {
 		loadModels.mockResolvedValue([]);
 		vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify(settings)));
@@ -54,7 +54,7 @@ describe("pricing availability and rates", () => {
 		vi.mocked(fetch).mockRejectedValue(new Error("network unavailable"));
 		render(<PricingPage />);
 		const methods = screen.getByRole("region", { name: "Payment methods" });
-		await waitFor(() => expect(within(methods).getAllByText("Unavailable")).toHaveLength(3));
+		await waitFor(() => expect(within(methods).getAllByText("Unavailable")).toHaveLength(2));
 		expect(within(methods).queryByText("Checking…")).not.toBeInTheDocument();
 	});
 

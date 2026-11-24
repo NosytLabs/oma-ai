@@ -7,7 +7,6 @@ interface DepositApi {
 	userId: string | null;
 	sessionUsers: Array<string | null>;
 	externalNavigations: string[];
-	holdCheckout: () => HeldRequest;
 	holdChallenge: () => HeldRequest;
 	switchAccount: (userId: string) => Promise<void>;
 }
@@ -39,7 +38,6 @@ export const test = base.extend<{ depositApi: DepositApi }>({
 		};
 		const api: DepositApi = {
 			userId: "deposit-account-a", sessionUsers: [], externalNavigations: [],
-			holdCheckout: () => hold("/api/v1/checkout", { id: "synthetic-checkout", url: "https://checkout.polar.sh/synthetic-never-open" }),
 			holdChallenge: () => hold("/api/v1/deposit/usdc/challenge", { token: "synthetic-challenge", nonce: "synthetic-nonce", expiresAt: Date.now() + 300_000 }),
 			switchAccount: async userId => {
 				api.userId = userId;
@@ -67,7 +65,7 @@ export const test = base.extend<{ depositApi: DepositApi }>({
 			}
 			const receiver = receive.get(url.pathname);
 			if (receiver && request.method() === "POST") { receive.delete(url.pathname); held.add(route); receiver(route); return; }
-			if (url.pathname === "/api/v1/site-settings") { await route.fulfill({ json: { maintenanceMode: false, cardPaymentsEnabled: true, cryptoPaymentsEnabled: true, usdcDepositConfigured: true, polarConfigured: true, x402Configured: true } }); return; }
+			if (url.pathname === "/api/v1/site-settings") { await route.fulfill({ json: { maintenanceMode: false, cardPaymentsEnabled: true, cryptoPaymentsEnabled: true, usdcDepositConfigured: true, x402Configured: true } }); return; }
 			if (url.pathname === "/api/v1/deposit/usdc" && request.method() === "GET") { await route.fulfill({ json: { depositAddress: treasury, network: "base", chainId: 8453, usdcContract: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", minDepositCents: 100, maxDepositCents: 1_000_000, creditsPerCent: 1 } }); return; }
 			if (url.pathname === "/api/v1/deposit/status") { await route.fulfill({ json: { deposits: [] } }); return; }
 			if (url.pathname === "/api/v1/balance") { await route.fulfill({ json: { balanceCents: 1000 } }); return; }

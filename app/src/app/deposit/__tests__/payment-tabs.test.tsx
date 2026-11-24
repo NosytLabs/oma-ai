@@ -19,24 +19,24 @@ describe("deposit payment method keyboard navigation", () => {
 		let finishSettings!: (value: Response) => void;
 		vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>(resolve => { finishSettings = resolve; })));
 		render(<DepositPage />);
-		const [usdc, card] = screen.getAllByRole("tab");
+		const [usdc, x402] = screen.getAllByRole("tab");
 		if (input === "keyboard") { usdc.focus(); fireEvent.keyDown(usdc, { key: "ArrowRight" }); }
-		else fireEvent.click(card);
-		expect(card).toHaveAttribute("aria-selected", "true");
-		await act(async () => { finishSettings(new Response(JSON.stringify({ maintenanceMode: false, cardPaymentsEnabled: true, cryptoPaymentsEnabled: true, usdcDepositConfigured: false, polarConfigured: false, x402Configured: true }), { headers: { "content-type": "application/json" } })); });
-		expect(card).toHaveAttribute("aria-selected", "true");
-		expect(screen.getByRole("tabpanel")).toHaveAttribute("aria-labelledby", card.id);
+		else fireEvent.click(x402);
+		expect(x402).toHaveAttribute("aria-selected", "true");
+		await act(async () => { finishSettings(new Response(JSON.stringify({ maintenanceMode: false, cardPaymentsEnabled: true, cryptoPaymentsEnabled: true, usdcDepositConfigured: false, x402Configured: true }), { headers: { "content-type": "application/json" } })); });
+		expect(x402).toHaveAttribute("aria-selected", "true");
+		expect(screen.getByRole("tabpanel")).toHaveAttribute("aria-labelledby", x402.id);
 	});
 
 	it("selects and focuses methods with arrow keys, including wrapping", () => {
 		render(<DepositPage />);
-		const [usdc, card, x402] = screen.getAllByRole("tab");
+		const [usdc, x402] = screen.getAllByRole("tab");
 		usdc.focus();
 		fireEvent.keyDown(usdc, { key: "ArrowRight" });
-		expect(card).toHaveFocus();
-		expect(card).toHaveAttribute("aria-selected", "true");
-		expect(screen.getByRole("tabpanel")).toHaveAttribute("aria-labelledby", card.id);
-		fireEvent.keyDown(card, { key: "ArrowLeft" });
+		expect(x402).toHaveFocus();
+		expect(x402).toHaveAttribute("aria-selected", "true");
+		expect(screen.getByRole("tabpanel")).toHaveAttribute("aria-labelledby", x402.id);
+		fireEvent.keyDown(x402, { key: "ArrowLeft" });
 		expect(usdc).toHaveFocus();
 		fireEvent.keyDown(usdc, { key: "ArrowLeft" });
 		expect(x402).toHaveFocus();
@@ -46,7 +46,7 @@ describe("deposit payment method keyboard navigation", () => {
 
 	it("jumps to the last and first methods with End and Home", () => {
 		render(<DepositPage />);
-		const [usdc, , x402] = screen.getAllByRole("tab");
+		const [usdc, x402] = screen.getAllByRole("tab");
 		usdc.focus();
 		fireEvent.keyDown(usdc, { key: "End" });
 		expect(x402).toHaveFocus();

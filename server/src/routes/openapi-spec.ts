@@ -457,12 +457,6 @@ const spec = {
 				} },
 			},
 		},
-		"/v1/checkout": { post: {
-            summary: "Create a Polar checkout for a prepaid credit pack", security: [{ SessionCookie: [] }, { BearerAuth: [] }, { ApiKeyHeader: [] }],
-            description: "Choose a configured plan. successUrl is optional; only allowed app origins are honored, otherwise the server uses its dashboard success URL. The Polar webhook delivers credits after payment. productId and cancelUrl are not request fields.",
-            requestBody: { required: true, content: { "application/json": { schema: { type: "object", required: ["plan"], properties: { plan: { type: "string", enum: ["hobby", "builder", "scale"] }, successUrl: { type: "string", format: "uri" } } } } } },
-            responses: { "200": { description: "Hosted checkout created", content: { "application/json": { schema: { type: "object", required: ["id", "url", "plan", "creditsOnSuccess"], properties: { id: { type: "string" }, url: { type: "string", format: "uri" }, plan: { type: "string", enum: ["hobby", "builder", "scale"] }, creditsOnSuccess: { type: "integer" } } } } } }, "400": { description: "Invalid plan or successUrl" }, "401": { description: "Authentication required" }, "429": { description: "Checkout rate limit exceeded" }, "503": { description: "Card funding unavailable, paused or unconfigured" } },
-        } },
         "/v1/credits/balance": { get: {
             summary: "Prepaid balance, credit holds and active batches", security: [{ SessionCookie: [] }, { BearerAuth: [] }, { ApiKeyHeader: [] }],
             responses: { "200": { description: "Nonnegative spendable balance, optional refund shortfall and reserved/reconciliation holds in decimal-string cents", content: { "application/json": { schema: { type: "object", required: ["activeBatches", "balanceCents", "reservedCents", "reconciliationCents"], properties: { activeBatches: { type: "array", maxItems: 50, items: { type: "object" } }, ...publicBalanceProperties, reservedCents: { type: "string" }, reconciliationCents: { type: "string" } } } } } }, "401": { description: "Authentication required" } },

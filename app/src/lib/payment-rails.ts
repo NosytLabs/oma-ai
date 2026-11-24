@@ -4,7 +4,7 @@
 	* Mirrors public GET /v1/site-settings so home/pricing/deposit never
 	* claim a rail is Available while the same env would 503 that rail.
 	*
-	* The site's settings arrive as a set of independent booleans (and three
+	* The site's settings arrive as a set of independent booleans (and two
 	* optional "is this configured" flags). The badge, the actionability and
 	* the reason were three parallel expressions per rail, each re-deciding
 	* the same question -- so they could disagree, and the per-rail
@@ -20,13 +20,11 @@ export type SitePaymentSettings = {
 	cryptoPaymentsEnabled: boolean;
 	/** Server has USDC_DEPOSIT_ADDRESS set. */
 	usdcDepositConfigured?: boolean;
-	/** Polar token + at least one product id present. */
-	polarConfigured?: boolean;
 	/** Live x402 facilitator has signing key, RPC, and treasury configured. */
 	x402Configured?: boolean;
 };
 
-type RailKey = "usdc" | "card" | "x402";
+type RailKey = "usdc" | "x402";
 
 /**
  * The state of one payment rail.
@@ -71,7 +69,6 @@ const RAIL_STATE_BADGE: Record<PaymentRailState, RailStatus["badge"]> = {
 
 const RAILS: readonly { key: RailKey; label: string }[] = [
 	{ key: "usdc", label: "USDC (Base)" },
-	{ key: "card", label: "Card · Polar" },
 	{ key: "x402", label: "x402 Agent Settle" },
 ];
 
@@ -87,8 +84,6 @@ const RAILS: readonly { key: RailKey; label: string }[] = [
  * - Site maintenance pauses every rail.
  * - USDC reports "Paused" before "Unavailable" (an operator toggle is a
  *   temporary condition, a missing deposit address is a configuration one).
- * - Card reports "Unavailable" before "Paused" (an unconfigured Polar
- *   provider is not something a user can wait out).
  * - x402 follows the USDC order.
  */
 export function paymentRailState(
@@ -106,13 +101,6 @@ export function paymentRailState(
 		return settings.usdcDepositConfigured === true
 			? PAYMENT_RAIL_STATE.Available
 			: PAYMENT_RAIL_STATE.Unavailable;
-	}
-
-	if (key === "card") {
-		if (settings.polarConfigured !== true) return PAYMENT_RAIL_STATE.Unavailable;
-		return settings.cardPaymentsEnabled === false
-			? PAYMENT_RAIL_STATE.Paused
-			: PAYMENT_RAIL_STATE.Available;
 	}
 
 	// x402
@@ -143,11 +131,6 @@ function railReason(
 		return state === PAYMENT_RAIL_STATE.Paused
 			? "USDC deposits are temporarily paused."
 			: "USDC deposits are not available right now.";
-	}
-	if (key === "card") {
-		return state === PAYMENT_RAIL_STATE.Paused
-			? "Card payments are temporarily paused."
-			: "Card payments are not available right now.";
 	}
 	return state === PAYMENT_RAIL_STATE.Paused
 		? "New x402 funding is temporarily paused."

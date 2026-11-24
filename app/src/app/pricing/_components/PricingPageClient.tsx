@@ -4,7 +4,6 @@ import {
 	ArrowRight,
 	ChevronDown,
 	Coins,
-	CreditCard,
 	HelpCircle,
 	Rocket,
 	Zap,
@@ -67,12 +66,6 @@ const CATEGORY_STYLES: Record<Category, { active: string; inactive: string }> =
 	};
 
 const PAYMENT_METHODS = [
-	{
-		key: "card",
-		icon: CreditCard,
-		title: "Card checkout",
-		desc: "Buy a credit pack with Polar’s secure checkout. No wallet required.",
-	},
 	{
 		key: "usdc",
 		icon: Coins,
@@ -414,7 +407,7 @@ export default function PricingPage() {
 							</h2>
 							<div className="h-px flex-1 bg-border" />
 						</div>
-						<div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 							{PAYMENT_METHODS.map((method) => {
 								const Icon = method.icon;
 								const availability = railByKey(siteSettings, method.key);
