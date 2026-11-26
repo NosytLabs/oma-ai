@@ -42,6 +42,7 @@ import { useApiHealth } from "@/components/api-status";
 import { OmaWordmark } from "@/components/ui/oma-logo";
 import { signIn } from "@/lib/auth-client";
 import { useAuth } from "@/lib/hooks/useAuth";
+import { useAsyncState } from "@/lib/state/use-async-state";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { safeLoginNext } from "@/lib/login-href";
 
@@ -56,6 +57,17 @@ const LazyWalletSignInPanel = dynamic(
 );
 
 type Method = "magic" | "wallet";
+
+/**
+ * What a completed magic-link send reports. `revision` is the email-field
+ * revision the send started with: if the user has since edited the email,
+ * the "check your inbox" hint must not claim the new address was mailed
+ * (same contract the old request-ref dance enforced, now derived).
+ */
+interface MagicSendResult {
+	delivered: boolean;
+	revision: number;
+}
 
 function magicLinkVerificationError(code: string): string {
 	// Better Auth consumes tokens once; invalid, expired and reused links all
@@ -130,17 +142,26 @@ function LoginInner() {
 	const tabsRef = useRef<HTMLDivElement>(null);
 	const [email, setEmail] = useState("");
 	const emailRevision = useRef(0);
-	const magicRequest = useRef<object | null>(null);
-	const [magicSubmitting, setMagicSubmitting] = useState(false);
+	// The magic-link send is an explicit op: `magic.isBusy` is "submitting",
+	// a resolved op is "sent". `useAsyncState` owns the latest-request-wins
+	// guard the `magicRequest` ref used to hand-roll, so a stale send cannot
+	// overwrite a newer one's feedback.
+	const magic = useAsyncState<MagicSendResult>({ concurrency: "reject-new" });
+	// "Check your inbox" shows only while the email is unchanged since the
+	// send that succeeded — editing the field hides the stale hint.
+	const magicSent =
+		magic.state.status === "success" &&
+		magic.state.data !== null &&
+		magic.state.data.delivered &&
+		emailRevision.current === magic.state.data.revision;
+	const magicSubmitting = magic.isBusy;
 	const [walletSubmitting, setWalletSubmitting] = useState(false);
-	const [magicSent, setMagicSent] = useState(false);
 	const [error, setError] = useState<string | null>(() => verificationFailed ? magicLinkVerificationError(verificationCode) : null);
 	const [next, setNext] = useState("/dashboard");
 	const handleWalletSubmitting = useCallback((value: boolean) => {
 		if (value) walletAttemptedRef.current = true;
 		setWalletSubmitting(value);
 	}, []);
-	useEffect(() => () => { magicRequest.current = null; }, []);
 
 	useEffect(() => {
 		setMounted(true);
@@ -148,7 +169,7 @@ function LoginInner() {
 		const requested = searchParams?.get("method");
 		if (verificationFailed) {
 			setMethod("magic");
-			setMagicSent(false);
+			magic.reset();
 			setError(magicLinkVerificationError(verificationCode));
 		} else if (requested === "wallet" || requested === "magic") {
 			setMethod(requested);
@@ -191,47 +212,44 @@ function LoginInner() {
 	const handleMagic = useCallback(
 		async (e: FormEvent<HTMLFormElement>) => {
 			e.preventDefault();
-			if (magicRequest.current) return;
 			setError(null);
-			setMagicSent(false);
 			if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
 				setError("Enter a valid email address");
 				return;
 			}
-			const request = {};
 			const revision = emailRevision.current;
-			magicRequest.current = request;
-			const ownsRequest = () => magicRequest.current === request;
-			const ownsFeedback = () => ownsRequest() && emailRevision.current === revision;
-			setMagicSubmitting(true);
 			try {
-				const safeNext = safeLoginNext(next);
-				const absoluteCallback = `${window.location.origin}${safeNext}`;
-				const errorCallback = new URL("/login", window.location.origin);
-				errorCallback.searchParams.set("method", "magic");
-				errorCallback.searchParams.set("next", safeNext);
-				const result = await signIn.magicLink({
-					email,
-					callbackURL: absoluteCallback,
-					errorCallbackURL: errorCallback.toString(),
+				const result = await magic.run(async () => {
+					const safeNext = safeLoginNext(next);
+					const absoluteCallback = `${window.location.origin}${safeNext}`;
+					const errorCallback = new URL("/login", window.location.origin);
+					errorCallback.searchParams.set("method", "magic");
+					errorCallback.searchParams.set("next", safeNext);
+					const sent = await signIn.magicLink({
+						email,
+						callbackURL: absoluteCallback,
+						errorCallbackURL: errorCallback.toString(),
+					});
+					if (sent.error) {
+						throw new Error(sent.error.message ?? "Failed to send magic link");
+					}
+					// Feedback only if the email has not been edited since this
+					// send started — the same contract `ownsFeedback` enforced.
+					return { delivered: emailRevision.current === revision, revision };
 				});
-				if (result.error) {
-					throw new Error(result.error.message ?? "Failed to send magic link");
-				}
-				if (ownsFeedback()) {
-					setMagicSent(true);
+				if (result?.delivered) {
 					toast.success(`Magic link sent to ${email}`);
 				}
 			} catch (err) {
-				if (ownsFeedback()) handleError(err, "Failed to send magic link");
-			} finally {
-				if (ownsRequest()) {
-					magicRequest.current = null;
-					setMagicSubmitting(false);
+				// An error belongs to the email it was sent to: if the user has
+				// edited the field since, do not pin the old failure on the new
+				// address (and a fresh request is already free to run).
+				if (emailRevision.current === revision) {
+					handleError(err, "Failed to send magic link");
 				}
 			}
 		},
-		[email, next, toast, handleError],
+		[email, next, toast, handleError, magic],
 	);
 
 	return (
@@ -349,7 +367,6 @@ function LoginInner() {
 											const value = e.target.value.trim();
 											if (value !== email) emailRevision.current++;
 											setEmail(value);
-											if (magicSent) setMagicSent(false);
 										}}
 										aria-invalid={error ? "true" : undefined}
 										aria-describedby={error ? "email-error" : undefined}

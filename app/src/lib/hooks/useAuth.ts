@@ -46,9 +46,33 @@ interface BetterAuthSession {
 	};
 }
 
+/**
+ * The auth session lifecycle, explicit.
+ *
+ * The hook used to expose four independent booleans (`isPending`, `isReady`,
+ * `isDemo`, `isAuthenticated`) whose combinations overlapped: nothing stopped
+ * "isReady && isAuthenticated && isDemo" from being read as three facts when
+ * it is one state. `authStatus` is the single state; the booleans below are
+ * DERIVED views of it, so they can never disagree.
+ */
+export const AUTH_STATUS = {
+	/** Session not resolved yet (pre-mount, or Better Auth still fetching). */
+	Loading: "loading",
+	/** Resolved: no session and no demo cookie. */
+	Unauthenticated: "unauthenticated",
+	/** Resolved: only the `oma-demo-public` preview cookie, no real session. */
+	Demo: "demo",
+	/** Resolved: a real Better Auth session. */
+	Authenticated: "authenticated",
+} as const;
+
+export type AuthStatus = (typeof AUTH_STATUS)[keyof typeof AUTH_STATUS];
+
 interface UseAuthResult {
 	data: BetterAuthSession | null;
 	user: BetterAuthUser | null;
+	/** The explicit session state. Prefer this over the derived booleans. */
+	authStatus: AuthStatus;
 	isAuthenticated: boolean;
 	/** True when only the `oma-demo-public` demo cookie is present (no real
 	 * Better Auth session). Consumers should treat this as "preview mode":
@@ -117,9 +141,22 @@ export function useAuth(): UseAuthResult {
 
 	const isReady = hasMounted && (!session.isPending || pendingTimedOut);
 
+	// The explicit state machine: exactly one branch is ever true.
+	const authStatus: AuthStatus = !isReady
+		? AUTH_STATUS.Loading
+		: user
+			? AUTH_STATUS.Authenticated
+			: demoActive
+				? AUTH_STATUS.Demo
+				: AUTH_STATUS.Unauthenticated;
+
 	return {
 		data,
 		user,
+		authStatus,
+		// Legacy derived views, byte-identical to the pre-machine behavior so
+		// no consumer sees a changed rendering window. New consumers should
+		// read `authStatus` instead.
 		isAuthenticated: !!user || demoActive,
 		isDemo: demoActive && !user,
 		isPending: session.isPending && !pendingTimedOut,
