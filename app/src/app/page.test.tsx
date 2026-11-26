@@ -122,7 +122,7 @@ describe("HomePage", () => {
 		// verbatim): the privacy promise leads, not the model-switching
 		// mechanics every other gateway also claims.
 		expect(h1.textContent).toMatch(/Your AI\. Your keys\./i);
-		expect(h1.textContent).toMatch(/Nobody else's business/i);
+		expect(h1.textContent).toMatch(/Nobody else’s business/i);
 		expect(h1.textContent).not.toMatch(/Every model/i);
 	});
 

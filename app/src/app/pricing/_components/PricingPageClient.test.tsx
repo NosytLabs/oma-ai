@@ -44,10 +44,10 @@ describe("pricing availability and rates", () => {
 		render(<PricingPage />);
 		await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("0 enabled models"));
 		const methods = screen.getByRole("region", { name: "Payment methods" });
-		// Both rails report unavailable under these settings, and neither
-		// card links straight to a deposit for a specific method — the
-		// choice happens on the credits page, not here.
-		expect(within(methods).getAllByText("Unavailable")).toHaveLength(2);
+		// Both rails report paused under these settings (maintenance mode /
+		// crypto switched off), and neither card links straight to a deposit
+		// for a specific method — the choice happens on the credits page.
+		expect(within(methods).getAllByText("Paused")).toHaveLength(2);
 		for (const link of within(methods).queryAllByRole("link")) {
 			expect(link).not.toHaveAttribute("href", "/deposit");
 		}
