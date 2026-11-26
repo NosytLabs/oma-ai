@@ -14,11 +14,12 @@
  */
 
 import { AnimatePresence, m } from "@/lib/framer-motion-client";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { AlertTriangle, Loader2, RotateCcw, X } from "lucide-react";
 import { useFocusTrap } from "@/lib/hooks/useFocusTrap";
 import { useToast } from "@/components/ui/Toast";
 import { api, type UsageRecord } from "@/lib/api";
+import { useAsyncState } from "@/lib/state/use-async-state";
 import { formatUsdPrecise, toDollars } from "@/lib/utils";
 import { resolveModelDisplayName } from "@/lib/dashboard-aggregate";
 
@@ -54,45 +55,39 @@ function RefundRequestForm({
 	const panelRef = useRef<HTMLDivElement>(null);
 	const toast = useToast();
 	const [reason, setReason] = useState("");
-	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const currentView = useRef(true);
-	const pending = useRef(false);
+	// The refund submission is an explicit op: `reject-new` refuses a second
+	// submit while one is in flight (the old `pending` ref's job) and the
+	// unmount guard drops feedback after the dialog closes.
+	const refund = useAsyncState<{ ok: true }>({ concurrency: "reject-new" });
 
 	useFocusTrap({ active: !!record, containerRef: panelRef, onClose: onDismiss });
-
-	useEffect(() => {
-		currentView.current = true;
-		return () => { currentView.current = false; };
-	}, []);
 
 	const trimmed = reason.trim();
 	const tooShort = trimmed.length > 0 && trimmed.length < MIN_REASON_LEN;
 	const tooLong = trimmed.length > MAX_REASON_LEN;
-	const canSubmit = trimmed.length >= MIN_REASON_LEN && !tooLong && !submitting;
+	const canSubmit = trimmed.length >= MIN_REASON_LEN && !tooLong && !refund.isBusy;
 
 	const handleSubmit = async (event: React.FormEvent) => {
 		event.preventDefault();
-		if (!canSubmit || pending.current) return;
-		pending.current = true;
-		setSubmitting(true);
+		if (!canSubmit) return;
 		setError(null);
 		try {
-			await api.refunds.create({ usageId: record.id, reason: trimmed });
-			// The submitted mutation may finish after this view closes. Refresh
-			// its owner's data, but never dismiss or edit another row's dialog.
-			onSubmitted?.();
-			if (!currentView.current) return;
+			// `onSubmitted` is a parent-data refresh that must run even if this
+			// dialog closes before the request settles, so it lives inside the
+			// task (not gated by the unmount guard).
+			const result = await refund.run(async () => {
+				await api.refunds.create({ usageId: record.id, reason: trimmed });
+				onSubmitted?.();
+				return { ok: true as const };
+			});
+			if (result === null) return; // discarded: dialog closed first
 			toast.success("Refund request submitted. Check Refund activity for the decision.");
 			onDismiss();
 		} catch (e) {
-			if (!currentView.current) return;
 			const msg = e instanceof Error ? e.message : "Request failed. Try again in a moment.";
 			setError(msg);
 			toast.error(msg);
-		} finally {
-			pending.current = false;
-			if (currentView.current) setSubmitting(false);
 		}
 	};
 
@@ -171,7 +166,7 @@ function RefundRequestForm({
 								rows={5}
 								placeholder="Tell us what went wrong. Specifics (model, prompt, expected vs. actual output) help us resolve faster."
 								className="mt-2 block w-full resize-y rounded-[var(--radius-md)] border border-border bg-panel p-3 font-sans text-[13px] leading-relaxed text-text-bright placeholder:text-text-muted focus:outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-60"
-								disabled={submitting}
+								disabled={refund.isBusy}
 								aria-describedby="refund-reason-help"
 							/>
 							<div id="refund-reason-help" className="mt-1.5 flex items-center justify-between text-[11px] text-text-muted">
@@ -206,7 +201,7 @@ function RefundRequestForm({
 							<button
 								type="button"
 								onClick={onDismiss}
-								disabled={submitting}
+								disabled={refund.isBusy}
 								className="rounded-[var(--radius-md)] border border-border bg-surface px-4 py-2 text-[12.5px] font-semibold text-text-secondary transition-colors hover:bg-surface-elevated hover:text-text-bright disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 							>
 								Cancel
@@ -216,7 +211,7 @@ function RefundRequestForm({
 								disabled={!canSubmit}
 								className="inline-flex items-center justify-center gap-2 rounded-[var(--radius-md)] border border-accent/40 bg-accent px-4 py-2 text-[12.5px] font-semibold text-[var(--color-accent-fg)] transition-colors hover:bg-accent-hover disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 							>
-								{submitting ? (
+								{refund.isBusy ? (
 									<>
 										<Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
 										Sending…
