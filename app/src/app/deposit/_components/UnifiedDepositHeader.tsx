@@ -19,7 +19,7 @@ export function UnifiedDepositHeader() {
 				<div className="min-w-0 flex-1">
 					<h1 className="h1-utility text-text-bright">Add credits</h1>
 					<p className="text-sm text-text-secondary">
-						Fund your prepaid API balance. Choose an available payment method below.
+						Fund your prepaid API balance with USDC on Base. There is no card option — your payment never touches a card network.
 					</p>
 				</div>
 			</div>

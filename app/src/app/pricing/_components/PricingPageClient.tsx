@@ -6,14 +6,12 @@ import {
 	Coins,
 	HelpCircle,
 	Rocket,
-	Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { InViewFade } from "@/components/motion/in-view-fade";
 import { MODELS, formatPricePerMillion, loadModels, type Model } from "@/lib/models-data";
 import SITE_URL from "@/lib/site";
-import { CREDIT_PLANS } from "@/lib/credit-utils";
 import {
 	toPricedModel,
 	type Category,
@@ -69,60 +67,22 @@ const PAYMENT_METHODS = [
 	{
 		key: "usdc",
 		icon: Coins,
-		title: "USDC on Base",
-		desc: "Transfer USDC on Base to your deposit address. Credits apply after confirmation.",
+		title: "USDC deposit",
+		desc: "Send USDC on Base from your wallet to fund a prepaid balance. Credits apply after confirmation, and every request draws the balance down per token, in real time.",
 	},
 	{
 		key: "x402",
 		icon: Rocket,
 		href: "/docs#x402",
-		title: "x402 for agents",
-		desc: "Fund an account with a signed USDC payment on Base, then use an API key. Sign in with the paying wallet.",
+		title: "x402 pay-per-use",
+		desc: "Agents authorize a USDC transfer on Base, settle through x402, and credit the same balance — no card, no checkout, no human in the loop. Built for automated workflows.",
 	},
 ] as const;
-
-// Tiers render from the single CREDIT_PLANS source (lib/credit-utils.ts).
-// Marketing-only copy + recommended badges are layered on top here so the
-// pricing UI can evolve without touching the deposit flow that consumes it.
-const CREDIT_PACKS: Array<{
-	name: string;
-	price: string;
-	credits: string;
-	description: string;
-	badge?: string;
-}> = CREDIT_PLANS.map((p) => {
-	const tierCopy: Record<string, { description: string; badge?: string }> = {
-		Hobby: {
-			description: "A small start for side projects and first experiments.",
-		},
-		Builder: {
-			description: "A larger balance for regular development and testing.",
-			badge: "Recommended",
-		},
-		Scale: {
-			description: "For high-volume workloads and larger prepaid balances.",
-			badge: "High volume",
-		},
-	};
-	// Note: 1 credit = $0.01, so a pack is NOT "credits at 1:1 USD" —
-	// $10 buys 1,000 credits. Stating the real rate here keeps the card
-	// consistent with the FAQ and the credits page.
-	const copy = tierCopy[p.tag] ?? {
-		description: `${p.credits.toLocaleString()} credits (1 credit = $0.01).`,
-	};
-	return {
-		name: p.tag,
-		price: `$${p.usd}`,
-		credits: `${p.credits.toLocaleString()} credits`,
-		description: copy.description,
-		badge: copy.badge,
-	};
-});
 
 const FAQ_ITEMS = [
 	{
 		q: "How is API usage billed?",
-		a: "Each API request uses prepaid credits at the model’s listed input and output token rates. Your dashboard shows recorded requests, token counts and charges. All credit packs use the same exchange rate; larger packs do not change model prices.",
+		a: "Each API request uses prepaid credits at the model's listed input and output token rates. Your dashboard shows recorded requests, token counts and charges. All balances use the same exchange rate; the amount you deposit does not change model prices.",
 	},
 	{
 		q: "Do credits expire?",
@@ -135,6 +95,10 @@ const FAQ_ITEMS = [
 	{
 		q: "What is x402?",
 		a: "x402 lets agents fund with USDC on Base without a card: sign the payment envelope, verify at /x402/verify, settle to credit your account, then spend with an API key. Ideal for agents and automated workflows.",
+	},
+	{
+		q: "What does OMA keep about me?",
+		a: "Your ledger: recorded requests, token counts, and charges, which you can clear from your settings. Website chat conversations are saved locally in your browser, not on our servers. Requests are processed by the provider behind the model you select, and that provider's retention policy applies upstream. Full detail is on the privacy page.",
 	},
 ];
 
@@ -258,19 +222,13 @@ export default function PricingPage() {
 					answer: item.a,
 				}))}
 			/>
-			{/* ── Ambient background ── */}
-			<div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-				<div className="absolute inset-x-0 top-0 h-[480px] bg-[radial-gradient(ellipse_at_top,color-mix(in_srgb,var(--color-accent)_18%,transparent)_0%,transparent_70%)]" />
-				<div className="absolute inset-0 bg-grid opacity-[0.35] mask-radial" />
-			</div>
-
 			<div className="container-page">
 				<div className="page-hero gap-4 pt-8 pb-8 before:hidden sm:pt-10 sm:pb-10 lg:gap-5 lg:pt-12 lg:pb-12">
-					<span className="section-eyebrow-caps">AI API pricing</span>
-					<h1 className="h1-page text-text-bright max-w-4xl">Model pricing.</h1>
+					<span className="section-eyebrow-caps">AI API Pricing</span>
+					<h1 className="h1-page text-text-bright max-w-4xl">Pay per use. Nothing else.</h1>
+					<div aria-hidden="true" className="rule-draw h-[3px] w-44 bg-accent" />
 					<p className="page-intro mt-0">
-						Compare model rates, then add prepaid credits. Pay only for the
-						tokens you use, with no monthly fee.
+						Compare model rates, then add prepaid credits. You pay only for the tokens you use — funded with USDC, never a card, and never a subscription.
 					</p>
 					<div className="meta-strip">
 						<span role="status">
@@ -278,12 +236,11 @@ export default function PricingPage() {
 								? `${modelCount} enabled ${modelCount === 1 ? "model" : "models"}`
 								: availabilityStatus === "checking" ? "Loading model catalog" : "Live catalog unavailable"}
 						</span>
-						<span>Usage-based billing</span>
 					</div>
 				</div>
 
 				<InViewFade>
-					<div className="mb-10 grid grid-cols-1 gap-4 md:grid-cols-2">
+					<div className="mb-10 grid grid-cols-1 gap-4 md:grid-cols-3">
 						<m.div
 							whileHover={{ y: -4 }}
 							transition={springs.card}
@@ -293,7 +250,10 @@ export default function PricingPage() {
 								Starts at
 							</p>
 							<p className="mt-3 font-geometric text-3xl font-medium tabular-nums tracking-tight text-[var(--color-text-bright)]">
-								{lowestInputPrice}
+								<span>{lowestInputPrice}</span>
+								{availabilityStatus === "live" && modelCount > 0 && (
+									<span className="ml-2 text-base font-normal text-[var(--color-text-muted)]">/ 1M input tokens</span>
+								)}
 							</p>
 							<p className="mt-2 text-sm leading-relaxed text-[var(--color-text)]">
 								{availabilityStatus === "checking"
@@ -318,6 +278,19 @@ export default function PricingPage() {
 								One balance for every API model. Add what you need and track your spending in the dashboard.
 							</p>
 						</m.div>
+						<m.div
+							whileHover={{ y: -4 }}
+							transition={springs.card}
+							className="surface-card flex flex-col p-5 rounded-[var(--radius-xl)] border border-border transition-[border-color,box-shadow] duration-200 ease-out hover:border-accent/30 hover:shadow-[var(--shadow-md)]"
+						>
+							<p className="text-[11px] font-mono uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
+								Monthly fee
+							</p>
+							<p className="mt-3 font-geometric text-3xl font-medium tabular-nums tracking-tight text-[var(--color-text-bright)]">None</p>
+							<p className="mt-2 text-sm leading-relaxed text-[var(--color-text)]">
+								You pay only for the tokens you use — never a subscription.
+							</p>
+						</m.div>
 					</div>
 				</InViewFade>
 
@@ -331,8 +304,7 @@ export default function PricingPage() {
 								</h2>
 							</div>
 							<p className="hidden max-w-sm text-right text-sm leading-relaxed text-text md:block">
-								Filter by tier to find the most cost-effective model that still fits your
-								latency and context needs.
+								One balance for every API model, at the rates below. Availability is live: a model marked offline cannot be called or charged.
 							</p>
 						</div>
 						<PricingTable
@@ -346,66 +318,13 @@ export default function PricingPage() {
 					</section>
 				</InViewFade>
 
-				<InViewFade delay={0.2}>
-					<section className="relative border-t border-border-subtle py-14 sm:py-18 lg:py-22" aria-labelledby="polar-tiers-heading">
-						<div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-							<div>
-								<span className="section-eyebrow-caps">Buy credits upfront</span>
-								<h2 id="polar-tiers-heading" className="h2-page mt-3 text-text-bright">
-									Choose a starting balance.
-								</h2>
-							</div>
-							<p className="max-w-md text-sm leading-relaxed text-text-secondary sm:text-right">
-								Prepaid credits, with the same model rates at every balance. Choose an available payment method on the credits page.
-							</p>
-						</div>
-						<div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-							{CREDIT_PACKS.map((tier) => {
-								const recommended = tier.name === "Builder";
-								return (
-									<m.article
-										key={tier.name}
-										whileHover={{ y: -4 }}
-										transition={springs.card}
-										className={`relative flex h-full flex-col rounded-[var(--radius-md)] border p-6 transition-[border-color,box-shadow] duration-200 ease-out shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] ${recommended ? "border-accent bg-accent/5 ring-1 ring-accent/20" : "border-border bg-surface"}`}
-									>
-										{tier.badge && (
-											<span className="absolute -top-3 right-6 rounded-sm bg-accent px-3 py-1 text-[10px] font-mono font-semibold uppercase tracking-wider text-void shadow-sm">
-												{tier.badge}
-											</span>
-										)}
-										<p className="text-xs font-mono uppercase tracking-[0.18em] text-text-muted">
-											{tier.name}
-										</p>
-										<p className="mt-5 font-geometric text-4xl font-semibold tabular-nums tracking-tight text-text-bright">
-											{tier.price}
-										</p>
-										<p className="mt-2 font-mono text-sm font-medium text-accent">{tier.credits}</p>
-										<p className="mt-5 flex-1 text-sm leading-relaxed text-text-secondary">
-											{tier.description}
-										</p>
-										<Link
-											href="/deposit"
-											className={`${recommended ? "btn-mono btn-primary" : "btn-mono"} mt-8 w-full`}
-										>
-											Choose payment method
-											<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-										</Link>
-									</m.article>
-								);
-							})}
-						</div>
-					</section>
-				</InViewFade>
-
 				<InViewFade delay={0.4}>
-					<section aria-labelledby="payment-methods-heading" className="relative border-t border-border-subtle py-14 sm:py-18 lg:py-22">
-						<div className="mb-6 flex items-center gap-2">
-							<div className="h-px flex-1 bg-border" />
-							<h2 id="payment-methods-heading" className="text-xs font-mono text-text-muted uppercase tracking-widest">
-								Payment methods
+					<section aria-label="Payment methods" className="relative border-t border-border-subtle py-14 sm:py-18 lg:py-22">
+						<div className="mb-6">
+							<p className="page-kicker">How funding works</p>
+							<h2 className="h2-page mt-3 text-text-bright">
+								Two ways in. Both are USDC.
 							</h2>
-							<div className="h-px flex-1 bg-border" />
 						</div>
 						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 							{PAYMENT_METHODS.map((method) => {
@@ -443,6 +362,28 @@ export default function PricingPage() {
 						</div>
 					</section>
 				</InViewFade>
+
+			{/* ── Billing Notes (COPY.md §2 — ruled list, numbered) ── */}
+			<div className="mb-12 p-5 rounded-[var(--radius-xl)] border border-border bg-surface/50 shadow-sm">
+				<p className="text-xs font-mono font-semibold uppercase tracking-widest text-text-muted mb-4">
+					Billing notes
+				</p>
+				<ol className="grid grid-cols-1 gap-2 md:grid-cols-2">
+					{[
+						"1 credit = $0.01; credits are non-redeemable and non-transferable.",
+						"Credits never expire while your account is active.",
+						"Credits appear after your payment is confirmed.",
+						"Usage is billed per token at the listed rates and deducted in real time.",
+						"OMA accepts USDC on Base only. There is no card payment option.",
+					].map((note, i) => (
+						<li key={note} className="flex items-start gap-3">
+							<span aria-hidden="true" className="ledger-figures font-mono text-xs text-accent">{String(i + 1).padStart(2, "0")}</span>
+							<span className="text-xs text-text-secondary">{note}</span>
+						</li>
+					))}
+				</ol>
+			</div>
+
 			{/* ── FAQ ── */}
 				<InViewFade delay={0.5}>
 					<div id="faq" className="mb-12 scroll-mt-20">
@@ -465,68 +406,6 @@ export default function PricingPage() {
 					</div>
 				</div>
 				</InViewFade>
-
-				{/* ── CTA ── */}
-				<div className="relative mb-12 overflow-hidden rounded-[var(--radius-md)] py-10">
-					<div
-						aria-hidden="true"
-						className="pointer-events-none absolute inset-0 -z-10"
-					>
-						<div className="absolute inset-0 bg-gradient-to-b from-accent/5 via-transparent to-transparent" />
-					</div>
-					<div className="flex flex-col items-center gap-5">
-						<h2 className="h2-page text-text-bright text-center">
-							Start building today
-						</h2>
-						<div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center sm:gap-3">
-							<Link
-								href="/login?next=/dashboard"
-								className="btn-mono btn-primary w-full sm:w-auto"
-							>
-								<Zap className="h-3.5 w-3.5" aria-hidden="true" />
-								<span>Get API key</span>
-								<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-							</Link>
-							<Link
-								href="/deposit"
-								className="btn-mono w-full sm:w-auto"
-							>
-								<Coins className="h-3.5 w-3.5" aria-hidden="true" />
-								<span>View payment methods</span>
-							</Link>
-						</div>
-						<p className="text-center font-mono text-[11px] uppercase tracking-[0.14em] text-text-muted">
-							No credit card required to start
-						</p>
-						<Link
-							href="/models"
-							className="inline-flex min-h-11 items-center justify-center font-mono text-xs text-text-muted transition-colors duration-200 ease-out hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-						>
-							View all models
-						</Link>
-					</div>
-				</div>
-
-			{/* ── Billing Notes ── */}
-			<div className="mb-12 sm:mb-16 p-5 rounded-[var(--radius-xl)] border border-border bg-surface/50 shadow-sm">
-					<p className="text-xs font-mono font-semibold uppercase tracking-widest text-text-muted mb-4">
-						Billing notes
-					</p>
-					<div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-						{[
-						"1 credit = $0.01; credits are non-redeemable and non-transferable",
-						"Credits never expire while your account is active",
-						"Credits appear after your payment is confirmed",
-						"Billed per token at the listed rates, deducted in real-time",
-						"Card purchases via Polar appear as 'NOSYT' on your statement",
-						].map((note) => (
-							<div key={note} className="flex items-start gap-2">
-								<div className="mt-1.5 h-1 w-1 rounded-full bg-accent" />
-								<span className="text-xs text-text-secondary">{note}</span>
-							</div>
-						))}
-					</div>
-				</div>
 			</div>
 		</div>
 	);

@@ -210,7 +210,9 @@ export function PricingTable({
 
 				<div className="mt-4 flex items-center justify-between text-xs text-text-muted font-mono">
 					<span aria-live="polite">
-						Showing {sortedModels.length} of {models.filter(m => (category === "all" || m.category === category) && (!enabledOnly || availabilityStatus !== "live" || m.available !== false)).length} models
+						{availabilityStatus === "checking"
+							? "Loading models…"
+							: `Showing ${sortedModels.length} of ${models.filter(m => (category === "all" || m.category === category) && (!enabledOnly || availabilityStatus !== "live" || m.available !== false)).length} models`}
 					</span>
 					<span className="flex items-center gap-4">
 						<label className="flex cursor-pointer items-center gap-2">
@@ -314,14 +316,26 @@ export function PricingTable({
 						</thead>
 						{/* key=category re-triggers stagger on filter change */}
 						<tbody key={`${category}-${sortField}-${sortOrder}-${selectedProvider}-${minContext}-${searchQuery}`}>
-							{sortedModels.length > 0 ? (
+							{availabilityStatus === "checking" ? (
+								<>
+									{Array.from({ length: 8 }, (_, r) => (
+										<tr key={r} aria-hidden="true" className="border-b border-[var(--color-border)]">
+											{Array.from({ length: 5 }, (_, c) => (
+												<td key={c} className="px-4 py-3">
+													<span className="block h-4 animate-pulse rounded-[var(--radius-sm)] bg-[var(--color-surface-elevated)] motion-reduce:animate-none" style={{ width: `${[70, 45, 30, 30, 40][c]}%` }} />
+												</td>
+											))}
+										</tr>
+									))}
+								</>
+							) : sortedModels.length > 0 ? (
 								sortedModels.map((mm, i) => (
 									<tr
 										key={mm.id}
 										style={{
 											animation: `fadeInUp 0.3s ease-out ${Math.min(i, 20) * 0.035}s both`,
 										}}
-										className={`border-b border-[var(--color-border)]/50 transition-colors duration-200 ease-out hover:bg-[var(--color-surface-elevated)]/50 ${i % 2 === 1 ? "bg-[var(--color-surface-elevated)]/30" : ""}`}
+										className="border-b border-[var(--color-border)] transition-colors duration-200 ease-out hover:bg-[var(--color-surface-elevated)]/50"
 									>
 										<td className="px-4 py-3">
 											<div className="flex items-center gap-2">

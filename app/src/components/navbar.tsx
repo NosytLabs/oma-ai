@@ -12,7 +12,6 @@ import { isCurrentNavLink, primaryLinks } from "./navbar/_lib/nav-links";
 import { NavbarMobileMenu } from "./navbar/NavbarMobileMenu";
 import { NavbarToolsDropdown } from "./navbar/NavbarToolsDropdown";
 import { NavbarUserMenu } from "./navbar/NavbarUserMenu";
-import { ThemeToggle } from "./ThemeToggle";
 
 export function Navbar() {
 	return <Suspense fallback={<NavbarContent search="" />}><NavbarWithSearch /></Suspense>;
@@ -76,7 +75,6 @@ function NavbarContent({ search }: { search: string }) {
 					</div>
 				</div>
 				<div className="flex shrink-0 items-center gap-1 sm:gap-2">
-					<ThemeToggle />
 					{isPending ? (
 						<div className="inline-flex h-10 w-20 items-center justify-center rounded-sm border border-border bg-surface" aria-label="Loading account" role="status"><span className="h-2 w-10 animate-pulse rounded-full bg-border motion-reduce:animate-none" aria-hidden="true" /></div>
 					) : isConnected ? (

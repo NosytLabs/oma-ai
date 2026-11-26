@@ -38,15 +38,19 @@ describe("pricing availability and rates", () => {
 	it.each([
 		{ maintenanceMode: true, cardPaymentsEnabled: false, cryptoPaymentsEnabled: false },
 		{ maintenanceMode: false, cardPaymentsEnabled: true, cryptoPaymentsEnabled: false },
-	])("opens the payment chooser rather than pinning a potentially paused method (%j)", async (settings) => {
+	])("presents both funding rails without pinning a potentially paused method (%j)", async (settings) => {
 		loadModels.mockResolvedValue([]);
 		vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify(settings)));
 		render(<PricingPage />);
 		await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("0 enabled models"));
-		const packs = screen.getByRole("region", { name: "Choose a starting balance." });
-		const links = within(packs).getAllByRole("link");
-		expect(links).toHaveLength(3);
-		for (const link of links) expect(link).toHaveAttribute("href", "/deposit");
+		const methods = screen.getByRole("region", { name: "Payment methods" });
+		// Both rails report unavailable under these settings, and neither
+		// card links straight to a deposit for a specific method — the
+		// choice happens on the credits page, not here.
+		expect(within(methods).getAllByText("Unavailable")).toHaveLength(2);
+		for (const link of within(methods).queryAllByRole("link")) {
+			expect(link).not.toHaveAttribute("href", "/deposit");
+		}
 	});
 
 	it("stops reporting payment availability as checking after the settings request fails", async () => {
@@ -98,7 +102,6 @@ describe("pricing availability and rates", () => {
 		loadModels.mockResolvedValue([]);
 		render(<PricingPage />);
 		await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("0 enabled models"));
-		expect(screen.getByText("High volume")).toBeInTheDocument();
 		expect(screen.getByText(/Eligible models can be used free in website chat/)).toBeInTheDocument();
 		expect(screen.queryByText(/best value per credit|3 OMA-AI models|\$1\.00 in trial credit/i)).not.toBeInTheDocument();
 	});

@@ -1,138 +1,72 @@
-"use client";
+import { Reveal } from "@/app/_components/home/reveal";
 
 /**
-	* HowItWorks — section 4 of the homepage.
-	* 4-step process (stack on mobile, 2-up on tablet, 4-up on desktop).
-	* Numbered indicators use mono tabular numerals.
-	*
-	* Spec-sheet polish (2026-08-16):
-	* - Card radius tightened to --radius-md (was --radius-lg) so the
-	*   four panels read as drafted panels, not pillows.
-	* - Step numbers bumped to 5xl with negative letter-spacing so they
-	*   feel like spec-sheet markers rather than display ornaments.
-	* - Title typography lifted to font-display so the editorial voice
-	*   carries through (was generic sans).
-	*/
+ * Section 03 — Four steps to first request (2026-11 revamp).
+ * A ruled ledger row per step, mono numerals. Copy is COPY.md §1 verbatim.
+ */
 
-import { Key, Rocket, Wallet, Terminal } from "lucide-react";
-import {
-	Reveal,
-	RevealStagger,
-} from "@/app/_components/home/reveal";
-import { SectionHeader } from "@/app/_components/home/section-header";
-import { cn } from "@/components/ui/utils";
-import type { LucideIcon } from "lucide-react";
-
-interface Step {
-	n: string;
-	title: string;
-	description: string;
-	icon: LucideIcon;
-}
-
-const STEPS: Step[] = [
+const STEPS: { heading: string; body: string }[] = [
 	{
-		n: "01",
-		title: "Create your account",
-		description:
-			"Use a passwordless email link or sign in with an EVM wallet via SIWE. No password to remember.",
-		icon: Wallet,
+		heading: "Sign in with your wallet",
+		body: "Connect an EVM wallet and sign in via SIWE — or use a passwordless email link if you prefer. No password either way.",
 	},
 	{
-		n: "02",
-		title: "Get your API key",
-		description:
-			"One key accesses the catalog within its model and IP restrictions. Rotate or revoke it from your dashboard.",
-		icon: Key,
+		heading: "Get your API key",
+		body: "One key accesses the catalog within its model and IP restrictions. Rotate or revoke it from your dashboard at any time.",
 	},
 	{
-		n: "03",
-		title: "Fund credits or use x402",
-		description:
-			"Deposit USDC on Base, use card checkout when available, or settle USDC via x402 to credit the same balance.",
-		icon: Rocket,
+		heading: "Fund credits, or settle per use",
+		body: "Deposit USDC on Base to hold a prepaid balance, or let x402 settle USDC per use and credit the same balance. No card option exists.",
 	},
 	{
-		n: "04",
-		title: "Send your first request",
-		description:
-			"Point any OpenAI-compatible SDK at OMA. One key and one endpoint for the catalog — switch models by changing the model ID.",
-		icon: Terminal,
+		heading: "Send your first request",
+		body: "Point any OpenAI-compatible SDK at OMA. One key and one endpoint for the catalog — switch models by changing the model ID.",
 	},
 ];
 
 export function HowItWorks() {
 	return (
-		<section
-			aria-labelledby="how-it-works-headline"
-			className="relative border-t border-border-subtle py-12 sm:py-16 lg:py-20"
-		>
-			<div className="container-page">
+		<section aria-labelledby="steps-heading" className="border-b border-border">
+			<div className="container-page py-16 sm:py-20">
 				<Reveal>
-					<SectionHeader
-						id="how-it-works-headline"
-						eyebrow="Onboarding"
-						eyebrowVariant="caps"
-						headline={
-							<>
-								Four steps
-								<br />
-								<span className="gradient-text-accent">to first request.</span>
-							</>
-						}
-						subhead="Sign in, create a key, fund credits (or use x402), then point your OpenAI SDK at OMA and call."
-					/>
+					<p className="font-mono text-[11px] font-medium uppercase tracking-[0.22em] text-accent">
+						03 — Four steps to first request
+					</p>
+					<h2
+						id="steps-heading"
+						className="section-headline mt-4 text-text-bright"
+					>
+						Four steps to first request.
+					</h2>
 				</Reveal>
-
-				<RevealStagger
-					as="ol"
-					className="mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 relative"
-					amount={0.2}
-				>
-					{STEPS.map((step, idx) => (
-						<li key={step.n} className="reveal-child lift relative">
-							<StepCard step={step} isLast={idx === STEPS.length - 1} />
+				<ol className="mt-12">
+					{STEPS.map((step, i) => (
+						<li
+							key={step.heading}
+							className="border-t border-border py-6 last:border-b sm:py-7"
+						>
+							<Reveal>
+								<div className="grid gap-3 sm:grid-cols-[4rem_minmax(0,1fr)] sm:gap-6">
+									<span
+										aria-hidden="true"
+										className="ledger-figures font-mono text-sm text-accent"
+									>
+										0{i + 1}
+									</span>
+									<div>
+										<h3 className="font-display text-lg font-semibold text-text-bright">
+											{step.heading}
+										</h3>
+										<p className="mt-2 max-w-2xl text-sm leading-relaxed text-text-secondary">
+											{step.body}
+										</p>
+									</div>
+								</div>
+							</Reveal>
 						</li>
 					))}
-				</RevealStagger>
+				</ol>
 			</div>
 		</section>
-	);
-}
-
-function StepCard({ step, isLast }: { step: Step; isLast: boolean }) {
-	const Icon = step.icon;
-	return (
-		<div
-			className="lift relative h-full rounded-[var(--radius-md)] border border-border bg-panel/60 p-6 flex flex-col gap-5 transition-[border-color,box-shadow] duration-200 ease-out hover:shadow-[0_12px_24px_-10px_rgba(0,0,0,1)] hover:bg-panel hover:border-accent/40"
-		>
-			<div className="flex items-center justify-between">
-				<span className="font-geometric tabular-nums text-5xl sm:text-6xl font-bold text-accent leading-none tracking-tight">
-					{step.n}
-				</span>
-				<div
-					className={cn(
-						"flex h-10 w-10 items-center justify-center rounded-[var(--radius-sm)]",
-						"bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] text-accent",
-					)}
-				>
-					<Icon className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
-				</div>
-			</div>
-			<div>
-				<h3 className="font-display text-xl sm:text-2xl font-medium tracking-tight text-text-bright">
-					{step.title}
-				</h3>
-				<p className="mt-2 text-sm text-text-secondary leading-relaxed">
-					{step.description}
-				</p>
-			</div>
-			{!isLast && (
-				<div
-					className="hidden lg:block absolute top-1/2 -right-3 w-px h-12 -translate-y-1/2 bg-gradient-to-b from-transparent via-accent to-transparent opacity-50"
-					aria-hidden="true"
-				/>
-			)}
-		</div>
 	);
 }

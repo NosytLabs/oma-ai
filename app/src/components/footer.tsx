@@ -49,7 +49,7 @@ export function Footer() {
 				<div className="grid gap-10 py-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
 					<div className="flex max-w-sm flex-col gap-3">
 						<Link href="/" prefetch={false} aria-label="OMA home" className="inline-flex min-h-11 w-fit items-center rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"><OmaNavLockup size="sm" /></Link>
-						<p className="text-[13px] leading-relaxed text-text-secondary">One gateway for a curated model catalog. OpenAI-compatible APIs, prepaid credits with USDC on Base, and free website chat for eligible models.</p>
+						<p className="text-[13px] leading-relaxed text-text-secondary">OpenAI-compatible API gateway. Multi-model routing, wallet-based auth, and USDC credits on Base.</p>
 					</div>
 					<nav aria-label="Footer navigation" className="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-4">
 						{sections.map((section) => <div key={section.title} className="min-w-0">

@@ -10,6 +10,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { Coins, Zap } from "lucide-react";
 
 import { UnifiedDepositHeader } from "./_components/UnifiedDepositHeader";
+import { BalanceStrip } from "./_components/BalanceStrip";
 import {
 	railByKey,
 	railStatuses,
@@ -46,7 +47,7 @@ const METHODS: {
 }[] = [
 	{
 		key: "crypto",
-		label: "USDC",
+		label: "USDC (Base)",
 		icon: Coins,
 		tag: "Wallet",
 		desc: "Connect your wallet and send USDC on Base — credited automatically.",
@@ -283,6 +284,8 @@ export default function DepositPage() {
 			</div>
 
 			<UnifiedDepositHeader />
+
+			<BalanceStrip />
 
 			<div
 				role="tablist"

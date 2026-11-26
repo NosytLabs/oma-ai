@@ -9,17 +9,17 @@ import { HomeView } from "./_components/home";
 // under the title. Availability changes hourly; a build-time constant in
 // static metadata cannot track it, so the number is simply left out.
 const DESCRIPTION =
-	"Access a curated AI model catalog through Chat Completions, with prepaid API credits, free eligible website chat and USDC funding on Base.";
+	"One OpenAI-compatible API for a curated model catalog. Sign in with your wallet, pay per use in USDC on Base, and keep your card — and your identity — out of it.";
 
 export const metadata: Metadata = {
 	title: {
-		absolute: "OMA · Open Model Access — AI inference, USDC on Base",
+		absolute: "OMA · Open Model Access — Private AI inference, paid in USDC",
 	},
 	description: DESCRIPTION,
 	alternates: { canonical: "/" },
 	openGraph: {
 		locale: "en_US",
-		title: "OMA · Open Model Access — AI inference, USDC on Base",
+		title: "OMA · Open Model Access — Private AI inference, paid in USDC",
 		description: DESCRIPTION,
 		url: "/",
 		images: [{ url: "/og-image.png", width: 1280, height: 720, alt: "OMA" }],
