@@ -22,16 +22,16 @@
 @theme inline {
 	/* ----- Font families ----- */
 	--font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
-	--font-mono: ui-monospace, "SF Mono", "Menlo", monospace;
-	--font-display: var(--font-display), var(--font-body), ui-serif, Georgia,
-		serif;
+	--font-mono: var(--font-mono), ui-monospace, "SF Mono", "Menlo", monospace;
+	--font-display: var(--font-display), var(--font-body), ui-sans-serif,
+		system-ui, sans-serif;
 	/* Space Grotesk — geometric sans-serif for spec-sheet precision
 	   (KPI numerals, "OMA gateway" small-caps blocks, sharp labels).
 	   Brand identity keeps Instrument Serif italic for hero emotional
 	   words; Space Grotesk plays second-fiddle to keep OMA's editorial
 	   tone while making metric blocks feel like a real product spec. */
-	--font-geometric: var(--font-geometric), var(--font-body), ui-sans-serif,
-		system-ui, sans-serif;
+	--font-geometric: var(--font-mono), ui-monospace, "SF Mono", "Menlo",
+		monospace;
 
 	/* ----- Type scale (refined) ----- */
 	--text-xs: 0.75rem;       /* 12 */
@@ -64,85 +64,86 @@
 
 @theme {
 	/* Core palette */
-	--color-void: #07090a;
-	--color-void-deep: #04060a;
-	--color-panel: #0d1110;
-	--color-surface: #11161a;
-	--color-surface-elevated: #161c22;
-	--color-surface-hi: #1d242c;
-	--color-surface-2: #161c22;
-	--color-border: rgba(255, 255, 255, 0.06);
-	--color-border-hi: rgba(255, 255, 255, 0.12);
-	--color-border-strong: rgba(255, 255, 255, 0.2);
-	--color-border-bright: rgba(255, 255, 255, 0.12);
-	--color-border-subtle: rgba(255, 255, 255, 0.04);
+	--color-void: oklch(0.155 0.012 168);
+	--color-void-deep: oklch(0.135 0.011 168);
+	--color-panel: oklch(0.195 0.014 168);
+	--color-surface: oklch(0.225 0.015 168);
+	--color-surface-elevated: oklch(0.255 0.016 168);
+	--color-surface-hi: oklch(0.295 0.017 168);
+	--color-surface-2: oklch(0.255 0.016 168);
+	--color-border: oklch(0.300 0.014 168);
+	--color-border-hi: oklch(0.380 0.016 168);
+	--color-rule: oklch(0.780 0.125 84 / 0.35);
+	--color-border-strong: oklch(0.450 0.018 168);
+	--color-border-bright: oklch(0.380 0.016 168);
+	--color-border-subtle: oklch(0.255 0.013 168);
 
 	/* Text — mirrors :root above (≥4.5:1 contrast on void) */
-	--color-text-bright: #f9f9f9;
-	--color-text: #e2e8f0;
-	--color-text-secondary: #b8c3d1;
-	--color-text-muted: #8b97a8;
-	--color-text-tertiary: #8b97a8;
-	--color-text-primary: #f9f9f9;
-	--color-text-inverse: #07090a;
+	--color-text-bright: oklch(0.930 0.012 96);
+	--color-text: oklch(0.880 0.014 96);
+	--color-text-secondary: oklch(0.780 0.016 110);
+	--color-text-muted: oklch(0.700 0.018 130);
+	--color-text-tertiary: oklch(0.700 0.018 130);
+	--color-text-primary: oklch(0.930 0.012 96);
+	--color-text-inverse: oklch(0.155 0.012 168);
 
 	/* Accent + secondary ramps */
-	--color-accent: #46d39a;
-	--color-accent-bright: #6ee7b7;
-	--color-accent-hover: #6ee7b7;
-	--color-accent-fg: #07090a;
-	--color-accent-dim: rgba(70, 211, 154, 0.1);
-	--color-accent-soft: rgba(70, 211, 154, 0.06);
-	--color-accent-glow: rgba(70, 211, 154, 0.5);
-	--color-accent-shadow: rgba(70, 211, 154, 0.15);
-	--color-secondary: #e8c468;
-	--color-tertiary: #6ea8fe;
-	--color-violet: #a78bfa;
-	--color-info: #58a6ff;
-	--color-warning: #f0b429;
-	--color-error: #f87171;
-	--color-error-glow: rgba(248, 113, 113, 0.45);
-	--color-success: #34d399;
-	--color-success-glow: rgba(52, 211, 153, 0.45);
+	--color-accent: oklch(0.780 0.125 84);
+	--color-accent-bright: oklch(0.825 0.120 84);
+	--color-accent-hover: oklch(0.720 0.120 82);
+	--color-accent-fg: oklch(0.200 0.030 80);
+	--color-accent-dim: oklch(0.780 0.125 84 / 0.10);
+	--color-accent-soft: oklch(0.780 0.125 84 / 0.06);
+	--color-accent-glow: oklch(0.780 0.125 84 / 0.5);
+	--color-accent-shadow: oklch(0.780 0.125 84 / 0.15);
+	--color-secondary: oklch(0.800 0.110 130);
+	--color-tertiary: oklch(0.800 0.130 70);
+	--color-violet: oklch(0.720 0.110 300);
+	--color-info: oklch(0.780 0.070 225);
+	--color-warning: oklch(0.800 0.130 70);
+	--color-error: oklch(0.700 0.170 22);
+	--color-error-glow: oklch(0.700 0.170 22 / 0.45);
+	--color-success: oklch(0.760 0.140 162);
+	--color-success-glow: oklch(0.760 0.140 162 / 0.45);
 	--color-pink: #f472b6;
 
 	/* Dim variants */
-	--color-secondary-dim: rgba(232, 196, 104, 0.12);
-	--color-tertiary-dim: rgba(110, 168, 254, 0.12);
-	--color-violet-dim: rgba(167, 139, 250, 0.12);
-	--color-warning-dim: rgba(240, 180, 41, 0.12);
-	--color-error-dim: rgba(248, 113, 113, 0.12);
-	--color-error-bg: rgba(248, 113, 113, 0.12);
-	--color-success-dim: rgba(52, 211, 153, 0.12);
+	--color-secondary-dim: oklch(0.800 0.110 130 / 0.12);
+	--color-tertiary-dim: oklch(0.800 0.130 70 / 0.12);
+	--color-violet-dim: oklch(0.720 0.110 300 / 0.12);
+	--color-warning-dim: oklch(0.800 0.130 70 / 0.12);
+	--color-error-dim: oklch(0.700 0.170 22 / 0.12);
+	--color-error-bg: oklch(0.700 0.170 22 / 0.12);
+	--color-success-dim: oklch(0.760 0.140 162 / 0.12);
 	--color-pink-dim: rgba(244, 114, 182, 0.12);
-	--color-info-dim: rgba(96, 165, 250, 0.12);
+	--color-info-dim: oklch(0.780 0.070 225 / 0.12);
 
 	/* Provider brand colors */
-	--color-provider-venice: #a78bfa;
-	--color-provider-oma-ai: oklch(0.7 0.15 145);
+	--color-provider-venice: oklch(0.720 0.110 300);
+	--color-provider-oma-ai: oklch(0.780 0.125 84);
 
 	/* Short color aliases used across the app (red/blue/amber danger states).
 	   Registering them here gives every opacity modifier (/5 … /80) for free —
 	   previously only a hand-written subset existed and the rest were no-ops. */
-	--color-red: #f87171;
-	--color-blue: #58a6ff;
-	--color-amber: #f0b429;
-	--color-amber-dim: rgba(240, 180, 41, 0.12);
-	--color-danger: #f87171;
+	--color-red: oklch(0.700 0.170 22);
+	--color-blue: oklch(0.780 0.070 225);
+	--color-amber: oklch(0.800 0.130 70);
+	--color-amber-dim: oklch(0.800 0.130 70 / 0.12);
+	--color-danger: oklch(0.700 0.170 22);
 
 	/* Modal scrim — bg-overlay/60 etc. Previously undefined: every backdrop
 	   that used it rendered fully transparent. */
-	--color-overlay: #04060a;
+	--color-overlay: oklch(0.135 0.011 168);
 
 	/* Shadows — registered in @theme so shadow-sm/md/lg/xl resolve to values
 	   tuned for the void background instead of Tailwind's light-theme defaults
 	   (rgb(0 0 0 / 0.1) is invisible on #07090a). */
 	--shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-	--shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
-	--shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.55);
+	--shadow-md: 0 4px 16px rgb(0 0 0 / 0.45);
+	--shadow-lg: 0 12px 32px rgb(0 0 0 / 0.5);
 	--shadow-xl: 0 30px 80px rgba(0, 0, 0, 0.6);
 	--shadow-2xl: 0 40px 100px rgba(0, 0, 0, 0.65);
-	--shadow-overlay: 0 16px 40px rgba(0, 0, 0, 0.55);
+	--shadow-overlay: 0 12px 32px rgb(0 0 0 / 0.5);
 	--shadow-dropdown: 0 12px 32px rgba(0, 0, 0, 0.5);
 	--shadow-message-inset: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 
@@ -155,10 +156,10 @@
 	   feel. Trimmed 1 step tighter so containers read as drafted panels,
 	   not pillows — gives the marketing site the spec-sheet precision
 	   users expect from an API gateway. */
-	--radius-sm: 0.25rem;
+	--radius-sm: 0.3125rem;
 	--radius-md: 0.5rem;
-	--radius-lg: 0.625rem;
-	--radius-xl: 0.875rem;
+	--radius-lg: 0.75rem;
+	--radius-xl: 1rem;
 	--radius-2xl: 1.125rem;
 	--radius-3xl: 1.5rem;
 	--radius-4xl: 1.75rem;
@@ -196,42 +197,43 @@
 
 @layer base {
 	:root {
-		/* Core palette — emerald accent on near-black void */
-		--color-void: #07090a;
-		--color-void-deep: #04060a;
-		--color-panel: #0d1110;
-		--color-surface: #11161a;
-		--color-surface-elevated: #161c22;
-		--color-surface-hi: #1d242c;
-		--color-border: rgba(255, 255, 255, 0.06);
-		--color-border-hi: rgba(255, 255, 255, 0.12);
-		--color-border-strong: rgba(255, 255, 255, 0.2);
+		/* Core palette — The Numbered Account: brass on deep ink-green */
+		--color-void: oklch(0.155 0.012 168);
+		--color-void-deep: oklch(0.135 0.011 168);
+		--color-panel: oklch(0.195 0.014 168);
+		--color-surface: oklch(0.225 0.015 168);
+		--color-surface-elevated: oklch(0.255 0.016 168);
+		--color-surface-hi: oklch(0.295 0.017 168);
+		--color-border: oklch(0.300 0.014 168);
+		--color-border-hi: oklch(0.380 0.016 168);
+		--color-rule: oklch(0.780 0.125 84 / 0.35);
+		--color-border-strong: oklch(0.450 0.018 168);
 
 		/* Text — tuned for ≥4.5:1 contrast on void (#07090a)
 		   muted/tertiary bumped from #64748b (4.4:1) to #8b97a8 (~5.9:1)
 		   so small UI labels remain legible per WCAG AA. */
-		--color-text-bright: #f9f9f9;
-		--color-text: #e2e8f0;
-		--color-text-secondary: #b8c3d1;
-		--color-text-muted: #8b97a8;
-		--color-text-tertiary: #8b97a8;
+		--color-text-bright: oklch(0.930 0.012 96);
+		--color-text: oklch(0.880 0.014 96);
+		--color-text-secondary: oklch(0.780 0.016 110);
+		--color-text-muted: oklch(0.700 0.018 130);
+		--color-text-tertiary: oklch(0.700 0.018 130);
 
-		/* Accent — emerald */
-		--color-accent: #46d39a;
-		--color-accent-bright: #6ee7b7;
-		--color-accent-dim: rgba(70, 211, 154, 0.1);
-		--color-accent-soft: rgba(70, 211, 154, 0.06);
-		--color-accent-glow: rgba(70, 211, 154, 0.5);
-		--color-accent-shadow: rgba(70, 211, 154, 0.15);
+		/* Accent — brass (the single accent; status hues excepted) */
+		--color-accent: oklch(0.780 0.125 84);
+		--color-accent-bright: oklch(0.825 0.120 84);
+		--color-accent-dim: oklch(0.780 0.125 84 / 0.10);
+		--color-accent-soft: oklch(0.780 0.125 84 / 0.06);
+		--color-accent-glow: oklch(0.780 0.125 84 / 0.5);
+		--color-accent-shadow: oklch(0.780 0.125 84 / 0.15);
 
 		/* Secondary accents (used sparingly) */
-		--color-secondary: #e8c468;  /* amber */
-		--color-tertiary: #6ea8fe;   /* soft blue */
-		--color-violet: #a78bfa;
-		--color-info: #58a6ff;
-		--color-warning: #f0b429;
-		--color-error: #f87171;
-		--color-success: #34d399;
+		--color-secondary: oklch(0.800 0.110 130);  /* amber */
+		--color-tertiary: oklch(0.800 0.130 70);   /* soft blue */
+		--color-violet: oklch(0.720 0.110 300);
+		--color-info: oklch(0.780 0.070 225);
+		--color-warning: oklch(0.800 0.130 70);
+		--color-error: oklch(0.700 0.170 22);
+		--color-success: oklch(0.760 0.140 162);
 
 		/* Radii + shadows live in @theme above — do NOT re-declare them here.
 		   @layer base outranks Tailwind's theme layer, so a partial override
@@ -258,7 +260,7 @@
 		--foreground: var(--color-text);
 
 		/* Legacy aliases for any module that still references the old names */
-		--color-border-subtle: rgba(255, 255, 255, 0.04);
+		--color-border-subtle: oklch(0.255 0.013 168);
 		--color-border-bright: var(--color-border-hi);
 		--color-text-primary: var(--color-text-bright);
 		/* Text placed ON accent/error/success fills must be dark (void), not
@@ -267,24 +269,24 @@
 		--color-accent-fg: var(--color-void);
 		--color-accent-hover: var(--color-accent-bright);
 		--color-accent-muted: var(--color-text-muted);
-		--color-info-dim: rgba(96, 165, 250, 0.12);
-		--color-success-dim: rgba(52, 211, 153, 0.12);
+		--color-info-dim: oklch(0.780 0.070 225 / 0.12);
+		--color-success-dim: oklch(0.760 0.140 162 / 0.12);
 		--color-bg: var(--color-void);
 		--color-bg-elevated: var(--color-panel);
 		--color-accent-dim-soft: var(--color-accent-soft);
 
 		/* Dim variants — used for subtle glows, tints, and capability chips */
-		--color-secondary-dim: rgba(232, 196, 104, 0.12);
-		--color-tertiary-dim: rgba(110, 168, 254, 0.12);
-		--color-violet-dim: rgba(167, 139, 250, 0.12);
-		--color-warning-dim: rgba(240, 180, 41, 0.12);
-		--color-error-dim: rgba(248, 113, 113, 0.12);
+		--color-secondary-dim: oklch(0.800 0.110 130 / 0.12);
+		--color-tertiary-dim: oklch(0.800 0.130 70 / 0.12);
+		--color-violet-dim: oklch(0.720 0.110 300 / 0.12);
+		--color-warning-dim: oklch(0.800 0.130 70 / 0.12);
+		--color-error-dim: oklch(0.700 0.170 22 / 0.12);
 		--color-pink: #f472b6;
 		--color-pink-dim: rgba(244, 114, 182, 0.12);
 
 		/* Provider-specific colors (for charts, brand indicators, status dots) */
-		--color-provider-venice: #a78bfa;      /* violet */
-		--color-provider-oma-ai: oklch(0.7 0.15 145); /* green */
+		--color-provider-venice: oklch(0.720 0.110 300);      /* violet */
+		--color-provider-oma-ai: oklch(0.780 0.125 84); /* green */
 	}
 
 	/* No light mode right now — the site is dark-first by design. */
@@ -351,7 +353,7 @@
 	}
 
 	code, pre, kbd {
-		font-family: ui-monospace, "SF Mono", "Menlo", monospace;
+		font-family: var(--font-mono), ui-monospace, "SF Mono", "Menlo", monospace;
 	}
 }
 
@@ -521,7 +523,6 @@
 		height: 6px;
 		border-radius: 9999px;
 		background: var(--color-accent);
-		box-shadow: 0 0 10px var(--color-accent-glow);
 	}
 
 	.text-display {
@@ -583,13 +584,10 @@
 		letter-spacing: -0.005em;
 		line-height: 1;
 		border-radius: var(--radius-sm);
-		border: 1px solid color-mix(in srgb, var(--color-accent) 50%, transparent);
-		background: linear-gradient(135deg, var(--color-accent), var(--color-accent-hover));
+		border: 1px solid var(--color-accent);
+		background: var(--color-accent);
 		color: var(--color-accent-fg);
-		box-shadow:
-			inset 0 1px 0 color-mix(in srgb, white 18%, transparent),
-			0 0 0 1px color-mix(in srgb, var(--color-accent) 25%, transparent),
-			0 8px 24px -16px var(--color-accent-glow);
+		box-shadow: var(--shadow-sm);
 		transition: background-color 180ms ease-out, border-color 180ms ease-out,
 			box-shadow 180ms ease-out, color 180ms ease-out, transform 180ms ease-out;
 		cursor: pointer;
@@ -597,48 +595,11 @@
 		white-space: nowrap;
 	}
 	.btn-primary:hover {
-		box-shadow:
-			inset 0 1px 0 color-mix(in srgb, white 22%, transparent),
-			0 0 0 1px color-mix(in srgb, var(--color-accent) 40%, transparent),
-			0 0 22px -4px var(--color-accent-glow),
-			0 12px 28px -16px var(--color-accent-glow);
+		background: var(--color-accent-hover);
+		border-color: var(--color-accent-hover);
 	}
 	.btn-primary:active {
 		transform: scale(0.97);
-	}
-	/* Sheen — animatedbuttons #25 pattern adapted to --color-accent.
-	   Pure CSS, GPU-composited transform, prefers-reduced-motion safe. */
-	.btn-primary {
-		position: relative;
-		isolation: isolate;
-		overflow: hidden;
-	}
-	.btn-primary::before {
-		content: "";
-		position: absolute;
-		inset: 0;
-		background: linear-gradient(
-			115deg,
-			transparent 35%,
-			rgba(255, 255, 255, 0.35) 50%,
-			transparent 65%
-		);
-		transform: translateX(-110%);
-		transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1);
-		pointer-events: none;
-		z-index: 1;
-	}
-	.btn-primary:hover::before {
-		transform: translateX(110%);
-	}
-	.btn-primary > * {
-		position: relative;
-		z-index: 2;
-	}
-	@media (prefers-reduced-motion: reduce) {
-		.btn-primary::before {
-			display: none;
-		}
 	}
 	.btn-primary:disabled,
 	.btn-primary[aria-disabled="true"] {
@@ -646,10 +607,6 @@
 		cursor: not-allowed;
 		transform: none;
 		box-shadow: none;
-	}
-	.btn-primary:disabled::before,
-	.btn-primary[aria-disabled="true"]::before {
-		display: none;
 	}
 
 	.btn-secondary {
@@ -1652,68 +1609,28 @@
 }
 
 /* ============================================================================
-   Theme variants
+   The Numbered Account — one theme ("ledger")
    ----------------------------------------------------------------------------
-   ThemeProvider sets [data-theme="..."] on <html>. Default emerald has no
-   attribute (base :root tokens win). Variants only retune the accent ramp
-   and complementary secondaries — void/surface/text stay locked so layout
-   never breaks.
+   The 4-theme accent picker (emerald / amber / mono / synth) was retired
+   in the 2026-11 revamp: the palette above IS the theme. No data-theme
+   variants remain; ThemeProvider keeps a single "ledger" theme.
    ========================================================================== */
 
-/* Explicit emerald alias (optional data-theme="emerald") — same as :root */
-html[data-theme="emerald"] {
-	--color-accent: #46d39a;
-	--color-accent-bright: #6ee7b7;
-	--color-accent-dim: rgba(70, 211, 154, 0.1);
-	--color-accent-soft: rgba(70, 211, 154, 0.06);
-	--color-accent-glow: rgba(70, 211, 154, 0.5);
-	--color-accent-shadow: rgba(70, 211, 154, 0.15);
-	--color-secondary: #e8c468;
-	--color-tertiary: #6ea8fe;
-	--color-accent-fg: #07090a;
-	--color-accent-hover: #6ee7b7;
+/* Brass rule that draws itself under the hero headline (600 ms, once).
+   Reduced motion: the rule is simply present. */
+@keyframes rule-draw {
+	from { transform: scaleX(0); }
+	to { transform: scaleX(1); }
+}
+.rule-draw {
+	transform-origin: left center;
+	animation: rule-draw 600ms ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+	.rule-draw { animation: none; }
 }
 
-html[data-theme="amber"] {
-	--color-accent: #f0b429;
-	--color-accent-bright: #fbbf24;
-	--color-accent-dim: rgba(240, 180, 41, 0.12);
-	--color-accent-soft: rgba(240, 180, 41, 0.07);
-	--color-accent-glow: rgba(240, 180, 41, 0.5);
-	--color-accent-shadow: rgba(240, 180, 41, 0.18);
-	--color-secondary: #46d39a;
-	--color-tertiary: #6ea8fe;
-	--color-accent-fg: #07090a;
-	--color-accent-hover: #fbbf24;
-}
-
-html[data-theme="mono"] {
-	--color-accent: #e8e8e6;
-	--color-accent-bright: #ffffff;
-	--color-accent-dim: rgba(232, 232, 230, 0.12);
-	--color-accent-soft: rgba(232, 232, 230, 0.07);
-	--color-accent-glow: rgba(232, 232, 230, 0.4);
-	--color-accent-shadow: rgba(232, 232, 230, 0.18);
-	--color-secondary: #b3b3b1;
-	--color-tertiary: #8a8a88;
-	--color-violet: #b3b3b1;
-	/* Keep the Venice provider color in sync with the greyed violet — without
-	   this the Venice badge (text-violet) goes grey while chart slices using
-	   --color-provider-venice stayed purple. */
-	--color-provider-venice: #b3b3b1;
-	--color-accent-fg: #07090a;
-	--color-accent-hover: #ffffff;
-}
-
-html[data-theme="synth"] {
-	--color-accent: #a78bfa;
-	--color-accent-bright: #c4b5fd;
-	--color-accent-dim: rgba(167, 139, 250, 0.12);
-	--color-accent-soft: rgba(167, 139, 250, 0.07);
-	--color-accent-glow: rgba(167, 139, 250, 0.5);
-	--color-accent-shadow: rgba(167, 139, 250, 0.18);
-	--color-secondary: #f472b6;
-	--color-tertiary: #38bdf8;
-	--color-accent-fg: #07090a;
-	--color-accent-hover: #c4b5fd;
+/* Ledger figures: prices, balances and counts align in columns. */
+.ledger-figures {
+	font-variant-numeric: tabular-nums;
 }

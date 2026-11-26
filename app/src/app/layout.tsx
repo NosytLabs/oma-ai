@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Instrument_Serif, Geist, Space_Grotesk } from "next/font/google";
+import { Inter, JetBrains_Mono, Montserrat } from "next/font/google";
 import { BRAND_COLORS } from "@/lib/brand";
 import SITE_URL from "@/lib/site";
 import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/themes";
@@ -14,10 +14,11 @@ import { SitewideJsonLd } from "@/components/sitewide-json-ld";
 import { MaintenanceBanner } from "@/components/shared/MaintenanceBanner";
 import "./globals.css";
 
-const display = Instrument_Serif({
+// Montserrat — the display face of "The Numbered Account" (2026-11
+// revamp): headlines, the wordmark and big numerals. Semi-bold / bold.
+const display = Montserrat({
 	subsets: ["latin"],
-	weight: "400",
-	style: ["normal", "italic"],
+	weight: ["600", "700"],
 	variable: "--font-display",
 	display: "swap",
 	// Not used on every page's first paint — don't preload, or the browser
@@ -25,20 +26,17 @@ const display = Instrument_Serif({
 	preload: false,
 });
 
-// Space Grotesk — geometric sans for sharper, spec-sheet type used on
-// stat numerals, KPI blocks, and "OMA gateway" small caps sections
-// where Instrument Serif would feel editorial instead of precise.
-// Brand identity keeps Instrument Serif (italic) for hero emotional
-// words; Space Grotesk is the precision counterpart.
-const geometric = Space_Grotesk({
+// JetBrains Mono — keys, prices, balances, code: the ledger figures.
+const mono = JetBrains_Mono({
 	subsets: ["latin"],
-	weight: ["400", "500", "600", "700"],
-	variable: "--font-geometric",
+	weight: ["400", "500"],
+	variable: "--font-mono",
 	display: "swap",
 	preload: false,
 });
 
-const body = Geist({
+// Inter — body text and UI.
+const body = Inter({
 	subsets: ["latin"],
 	variable: "--font-body",
 	display: "swap",
@@ -49,13 +47,6 @@ const body = Geist({
 	// paint cost, but the warning is silenced everywhere.
 	preload: false,
 });
-
-// Note: we previously loaded Geist_Mono from Google Fonts as --font-mono,
-// but next/font kept injecting a preload link even with preload: false,
-// causing a "woff2 preloaded but not used" warning on routes without mono
-// text. The system stack (ui-monospace, SF Mono, Menlo, monospace) defined
-// in globals.css is more than good enough for the few mono labels. Drop the
-// web font entirely — saves ~14 KB and silences the console warning.
 
 export const viewport: Viewport = {
 	themeColor: [
@@ -77,17 +68,17 @@ export const metadata: Metadata = {
 		canonical: "/",
 	},
 	title: {
-		default: "OMA · Open Model Access — AI inference, USDC on Base",
+		default: "OMA · Open Model Access — Private AI inference, paid in USDC",
 		template: "%s · OMA",
 	},
 	description:
-		"A curated AI model catalog, Chat Completions, prepaid credits, email or wallet sign-in, and USDC funding on Base.",
+		"One OpenAI-compatible API for a curated model catalog. Sign in with your wallet, pay per use in USDC on Base, and keep your card — and your identity — out of it.",
 	openGraph: {
 		locale: "en_US",
 		siteName: "OMA",
-		title: "OMA · Open Model Access — AI inference, USDC on Base",
+		title: "OMA · Open Model Access — Private AI inference, paid in USDC",
 		description:
-			"A curated AI model catalog, Chat Completions, prepaid credits, email or wallet sign-in, and USDC funding on Base.",
+			"One OpenAI-compatible API for a curated model catalog. Sign in with your wallet, pay per use in USDC on Base, and keep your card — and your identity — out of it.",
 		type: "website",
 		url: SITE_URL,
 		images: [
@@ -139,7 +130,7 @@ export default function RootLayout({
 		<html
 			lang="en"
 			suppressHydrationWarning
-			className={`${display.variable} ${body.variable} ${geometric.variable}`}
+			className={`${display.variable} ${body.variable} ${mono.variable}`}
 		>
 			<head>
 				{/* Theme ids + storage key are interpolated from @/lib/themes so the

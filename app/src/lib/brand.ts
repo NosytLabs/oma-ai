@@ -2,8 +2,8 @@
 	* Brand color constants for OMA.
 	*
 	* These MUST be kept in sync with the CSS custom properties in `globals.css`:
-	*   --color-void:    #07090a
-	*   --color-accent:  #46d39a
+	*   --color-void:    oklch(0.155 0.012 168)
+	*   --color-accent:  oklch(0.780 0.125 84)
 	*
 	* Use these in places where CSS variables can't reach (Next.js `ImageResponse`,
 	* static `manifest.json`, PWA `theme_color`, HTML `<meta>` tags, generated SVGs).
@@ -12,18 +12,18 @@
 	*/
 
 export const BRAND_COLORS = {
-	/** Deep near-black background. Matches `--color-void`. */
-	void: "#07090a",
+	/** Deep ink-green background. Matches `--color-void`. */
+	void: "#0d1512",
 	/** Elevated panel / card surface. Matches `--color-panel`. */
-	panel: "#0d1110",
-	/** Primary accent (emerald). Matches `--color-accent`. */
-	accent: "#46d39a",
+	panel: "#141d19",
+	/** Primary accent (brass). Matches `--color-accent`. */
+	accent: "#dfa63c",
 	/** Hover / glow accent. Matches `--color-accent-bright`. */
-	accentBright: "#6ee7b7",
+	accentBright: "#eebd55",
 	/** Headlines. Matches `--color-text-bright`. */
-	textBright: "#f5f7f3",
+	textBright: "#ede9db",
 	/** Body text. Matches `--color-text`. */
-	text: "#d8dcd6",
+	text: "#dcd8c9",
 	/** Meta / captions. Matches `--color-text-muted`. */
-	textMuted: "#9aa394",
+	textMuted: "#a8ad9d",
 } as const;

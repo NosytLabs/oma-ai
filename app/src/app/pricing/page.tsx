@@ -3,9 +3,9 @@ import PricingPageClient from "./_components/PricingPageClient";
 import Link from "next/link";
 
 // Counts, availability and signup offers are live facts, not build-time claims.
-const TITLE = "Pricing — AI models, USDC on Base";
+const TITLE = "Pricing — Pay-per-use AI models, USDC on Base";
 const DESCRIPTION =
-	"Compare per-token model prices for OMA’s OpenAI-compatible API. Use prepaid credits, pay with USDC on Base, and track usage with no monthly fee.";
+	"Compare per-token model prices for OMA's OpenAI-compatible API. Prepaid credits funded with USDC on Base, or x402 pay-per-use. No monthly fee, no credit card.";
 
 export const metadata: Metadata = {
 	title: TITLE,

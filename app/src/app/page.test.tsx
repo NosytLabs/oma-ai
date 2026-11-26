@@ -118,12 +118,11 @@ describe("HomePage", () => {
 		renderWithQueryClient(<HomePage />);
 		const h1 = await screen.findByRole("heading", { level: 1 });
 		expect(h1).toBeInTheDocument();
-		// "One endpoint / Every model" was category table stakes — OpenRouter,
-		// Together, Replicate and HF all lead with the same idea — and "Every
-		// model" was an overclaim while 18 of 20 catalog entries were dark.
-		// The headline now sells model switching, which is the actual outcome.
-		expect(h1.textContent).toMatch(/One API/i);
-		expect(h1.textContent).toMatch(/Switch models/i);
+		// The 2026-11 "Numbered Account" headline (COPY.md §1, approved
+		// verbatim): the privacy promise leads, not the model-switching
+		// mechanics every other gateway also claims.
+		expect(h1.textContent).toMatch(/Your AI\. Your keys\./i);
+		expect(h1.textContent).toMatch(/Nobody else’s business/i);
 		expect(h1.textContent).not.toMatch(/Every model/i);
 	});
 
@@ -140,7 +139,7 @@ describe("HomePage", () => {
 	it("renders the primary CTA", async () => {
 		renderWithQueryClient(<HomePage />);
 		const ctaLinks = await screen.findAllByRole("link", {
-			name: /get api key/i,
+			name: /start with your wallet/i,
 		});
 		expect(ctaLinks.length).toBeGreaterThan(0);
 		// Must carry an explicit destination: a bare /login resolves to the
@@ -148,19 +147,16 @@ describe("HomePage", () => {
 		expect(ctaLinks[0]).toHaveAttribute("href", "/login?next=/dashboard");
 	});
 
-	it("anchors the hero on a derived price, not a hardcoded figure", async () => {
-		// The hero previously said nothing about price above the fold while
-		// the stats strip 4 screens down carried the only figure. The number
-		// must come from the shared catalog-derived label.
+	it("carries the derived catalog price in the catalog section", async () => {
+		// The revamp hero carries no price line (COPY.md §1); the price
+		// anchor moved to the catalog ledger table, where the cheapest
+		// model's input rate must be the shared catalog-derived label —
+		// never a hardcoded figure.
 		renderWithQueryClient(<HomePage />);
 		await screen.findByRole("heading", { level: 1 });
-		// Match on the whole hero text node: the label is interpolated
-		// alongside copy, so it is not its own element.
-		expect(document.body.textContent).toContain(
-			`From ${MIN_INPUT_PRICE_LABEL}/1M input tokens`,
-		);
-		// Funding availability must be qualified alongside the price anchor.
-		expect(document.body.textContent).toMatch(/USDC · card when available/i);
+		expect(document.body.textContent).toContain(MIN_INPUT_PRICE_LABEL);
+		// The retired card wording must not survive anywhere on the page.
+		expect(document.body.textContent).not.toMatch(/card when available/i);
 		expect(document.body.textContent).toMatch(/no monthly fee/i);
 	});
 
@@ -171,41 +167,44 @@ describe("HomePage", () => {
 		expect(pricing).toHaveAttribute("href", "/pricing");
 	});
 
-	it("renders the trust strip with provider wordmarks", async () => {
+	it("renders the catalog section with live-shaped rows", async () => {
 		renderWithQueryClient(<HomePage />);
 		await waitFor(() => {
-			expect(screen.getByText(/routing through/i)).toBeInTheDocument();
-			expect(screen.getAllByText("Venice").length).toBeGreaterThan(0);
-			expect(screen.getAllByText("OMA-AI").length).toBeGreaterThan(0);
+			expect(
+				screen.getByRole("heading", { name: /One key\. A curated catalog\./i }),
+			).toBeInTheDocument();
+			expect(screen.getByRole("link", { name: /browse all models/i })).toHaveAttribute("href", "/models");
 		});
 	});
 
-	it("renders the capabilities section as three pillars", async () => {
+	it("renders the privacy section as three cards", async () => {
 		renderWithQueryClient(<HomePage />);
 		await waitFor(() => {
-			expect(screen.getByText("Prepaid credits")).toBeInTheDocument();
-			expect(screen.getByText("x402 on Base")).toBeInTheDocument();
-			expect(screen.getByText("Multi-provider routing")).toBeInTheDocument();
-			expect(screen.getAllByText("OpenAI-compatible").length).toBeGreaterThan(0);
-			expect(screen.getByText("Live routing + failover")).toBeInTheDocument();
+			expect(
+				screen.getByRole("heading", { name: /Private by construction, not by promise\./i }),
+			).toBeInTheDocument();
+			expect(screen.getByText("Your wallet is your account")).toBeInTheDocument();
+			expect(screen.getByText("No card, ever")).toBeInTheDocument();
+			expect(screen.getByText("Chats stay in your browser")).toBeInTheDocument();
 		});
 	});
 
 	it("renders the how-it-works steps", async () => {
 		renderWithQueryClient(<HomePage />);
 		await waitFor(() => {
-			expect(screen.getByText(/create your account/i)).toBeInTheDocument();
-			expect(screen.getByText(/fund credits or use x402/i)).toBeInTheDocument();
+			expect(screen.getByText(/sign in with your wallet/i)).toBeInTheDocument();
+			expect(screen.getByText(/fund credits, or settle per use/i)).toBeInTheDocument();
 		});
 		expect(screen.getAllByText(/get your api key/i).length).toBeGreaterThan(0);
 	});
 
-	it("renders the stats section with honest metrics", async () => {
+	it("renders the pay-per-use section with the credit rate", async () => {
 		renderWithQueryClient(<HomePage />);
 		await waitFor(() => {
-			const signalEl = screen.getByText(/product facts/i);
-			expect(signalEl).toBeInTheDocument();
-			expect(screen.getByText(/per 1M tokens/i)).toBeInTheDocument();
+			expect(
+				screen.getByRole("heading", { name: /Pay per use, in the open\./i }),
+			).toBeInTheDocument();
+			expect(screen.getByText(/\$1 = 100 credits/)).toBeInTheDocument();
 		});
 	});
 
@@ -213,9 +212,9 @@ describe("HomePage", () => {
 		renderWithQueryClient(<HomePage />);
 		await waitFor(() => {
 			expect(
-    screen.getByRole("heading", { name: /Build with OMA/i }),
+				screen.getByRole("heading", { name: /Open an account with a wallet\./i }),
 			).toBeInTheDocument();
-			expect(screen.getByText(/Call a catalog model/i)).toBeInTheDocument();
+			expect(screen.getByRole("link", { name: /get a key/i })).toHaveAttribute("href", "/login?next=/dashboard");
 		});
 	});
 });
@@ -249,7 +248,7 @@ describe("Footer", () => {
 
 	it("uses the product's Base capitalization", () => {
 		renderWithQueryClient(<Footer />);
-		expect(screen.getByText(/USDC on Base/)).toBeInTheDocument();
+		expect(screen.getByText(/USDC credits on Base/)).toBeInTheDocument();
 	});
 
 	it("renders the current copyright year and owner", () => {

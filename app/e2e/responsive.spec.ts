@@ -75,17 +75,9 @@ for (const vp of VIEWPORTS) {
       }
     });
 
-    test(`${vp.name} · theme toggle cycles through themes`, async ({ page }) => {
+    test(`${vp.name} · single ledger theme — no accent picker`, async ({ page }) => {
       await page.goto("/", { waitUntil: "load" });
-      const toggle = page.locator('button[data-theme-toggle]');
-      await expect(toggle).toBeVisible();
-      await toggle.click();
-      const menu = page.locator("#theme-menu");
-      await expect(menu).toBeVisible();
-      await menu.locator('button[aria-label="Amber"]').click();
-      await expect(page.locator('html')).toHaveAttribute("data-theme", "amber");
-      await toggle.click();
-      await menu.locator('button[aria-label="Emerald"]').click();
+      await expect(page.locator('button[data-theme-toggle]')).toHaveCount(0);
       const attr = await page.evaluate(() => document.documentElement.getAttribute("data-theme"));
       expect(attr).toBeNull();
     });

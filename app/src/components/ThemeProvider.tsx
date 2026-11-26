@@ -1,15 +1,15 @@
 "use client";
 
 /**
-	* ThemeProvider — 4 accent themes on a locked dark void.
+	* ThemeProvider — one theme: "ledger" (The Numbered Account).
 	*
-	* emerald — default OMA brand (terminal emerald)
-	* amber — warm CRT / mainframe
-	* mono — grayscale austere
-	* synth — violet network-op
+	* The 4-theme accent picker was retired in the 2026-11 revamp; the
+	* ink-green + brass palette in globals.css is the only theme. The
+	* provider shape is unchanged so existing consumers keep working;
+	* stored legacy theme ids fail isValidTheme and fall back to ledger.
 	*
 	* Persistence: localStorage `oma-theme`
-	* DOM: `data-theme` on <html> (emerald removes attribute so :root wins)
+	* DOM: `data-theme` on <html> (the default removes the attribute)
 	* FOUC: layout.tsx inline script applies stored theme before paint
 	*/
 
@@ -35,18 +35,12 @@ export type { Theme } from "@/lib/themes";
 
 /** Canonical accent hex per theme — keep in sync with globals.css */
 export const THEME_ACCENTS: Readonly<Record<Theme, string>> = {
-	emerald: "#46d39a",
-	amber: "#f0b429",
-	mono: "#e8e8e6",
-	synth: "#a78bfa",
+	ledger: "#dfa63c",
 };
 
 /** Browser chrome color for each accent, kept dark enough for readable icons. */
 const THEME_CHROME: Readonly<Record<Theme, string>> = {
-	emerald: "#07090a",
-	amber: "#0b0a07",
-	mono: "#0a0a0a",
-	synth: "#09070d",
+	ledger: "#0d1512",
 };
 
 export const THEME_LIST: ReadonlyArray<{
@@ -54,10 +48,7 @@ export const THEME_LIST: ReadonlyArray<{
 	name: string;
 	hint: string;
 }> = [
-	{ id: "emerald", name: "Emerald", hint: "default · brand" },
-	{ id: "amber", name: "Amber", hint: "retro · CRT" },
-	{ id: "mono", name: "Mono", hint: "grayscale · austere" },
-	{ id: "synth", name: "Synth", hint: "violet · network" },
+	{ id: "ledger", name: "Ledger", hint: "the numbered account" },
 ];
 
 interface ThemeContextValue {

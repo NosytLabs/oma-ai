@@ -28,7 +28,7 @@ const ROUNDS: DemoRound[] = [
 	modelLabel: "Claude Opus 5",
 	prompt: "Summarize OMA in one sentence.",
 	reply:
-	"One gateway for the OMA catalog. Fund credits with USDC, or card checkout when available.",
+	"One gateway for the OMA catalog. Fund credits with USDC on Base.",
 	},
 	{
 	model: "minimax-m2-7",

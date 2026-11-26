@@ -162,8 +162,8 @@ describe("shared page-shell layout contract", () => {
 describe("manifest brand wiring", () => {
 	it("uses void background and references brand icons that exist on disk", () => {
 		const m = manifest();
-		expect(m.background_color).toBe("#07090a");
-		expect(m.theme_color).toBe("#07090a");
+		expect(m.background_color).toBe("#0d1512");
+		expect(m.theme_color).toBe("#0d1512");
 		expect(m.icons?.length).toBeGreaterThan(0);
 		for (const icon of m.icons ?? []) {
 			const rel = icon.src.replace(/^\//, "");
