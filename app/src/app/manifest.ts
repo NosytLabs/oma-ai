@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
 		name: "OMA AI — Open Model Access",
 		short_name: "OMA",
 		description:
-			"One gateway. Curated models on OpenAI-compatible terms. Pay with USDC, x402, or card when enabled.",
+			"One gateway. Curated models on OpenAI-compatible terms. Pay with USDC, x402.",
 		start_url: "/",
 		display: "standalone",
 		background_color: BRAND_COLORS.void,
