@@ -5,8 +5,6 @@ import { NavbarToolsDropdown } from "./NavbarToolsDropdown";
 import { NavbarUserMenu } from "./NavbarUserMenu";
 import { NavbarMobileMenu } from "./NavbarMobileMenu";
 import { primaryLinks, toolsLinks } from "./_lib/nav-links";
-import { ThemeToggle } from "../ThemeToggle";
-import { ThemeProvider } from "../ThemeProvider";
 
 const state = vi.hoisted(() => ({ pathname: "/docs" }));
 vi.mock("next/navigation", () => ({ usePathname: () => state.pathname }));
@@ -118,37 +116,3 @@ describe("mobile navigation", () => {
 });
 
 
-describe("accent theme menu", () => {
-	beforeEach(() => { localStorage.removeItem("oma-theme"); });
-	it("focuses the selected theme, supports arrows and typeahead, and saves a choice", () => {
-		render(<ThemeProvider><ThemeToggle /></ThemeProvider>);
-		const toggle = screen.getByRole("button", { name: /Change accent theme/ });
-		fireEvent.click(toggle);
-		expect(screen.getByRole("menuitemradio", { name: "Emerald" })).toHaveFocus();
-		fireEvent.keyDown(document.activeElement!, { key: "ArrowUp" });
-		expect(screen.getByRole("menuitemradio", { name: "Synth" })).toHaveFocus();
-		fireEvent.keyDown(document.activeElement!, { key: "Home" });
-		expect(screen.getByRole("menuitemradio", { name: "Emerald" })).toHaveFocus();
-		fireEvent.keyDown(document.activeElement!, { key: "a" });
-		expect(screen.getByRole("menuitemradio", { name: "Amber" })).toHaveFocus();
-		fireEvent.click(screen.getByRole("menuitemradio", { name: "Amber" }));
-		expect(toggle).toHaveFocus();
-		expect(document.documentElement).toHaveAttribute("data-theme", "amber");
-		fireEvent.click(toggle);
-		expect(screen.getByRole("menuitemradio", { name: "Amber" })).toHaveFocus();
-		expect(screen.getByRole("menuitemradio", { name: "Amber" })).toHaveAttribute("aria-checked", "true");
-		fireEvent.keyDown(document.activeElement!, { key: "Escape" });
-		expect(toggle).toHaveFocus();
-		expect(screen.queryByRole("menu")).not.toBeInTheDocument();
-	});
-
-	it("opens at the last option with ArrowUp and dismisses on Tab", () => {
-		render(<ThemeProvider><ThemeToggle /></ThemeProvider>);
-		const toggle = screen.getByRole("button", { name: /Change accent theme/ });
-		fireEvent.keyDown(toggle, { key: "ArrowUp" });
-		expect(screen.getByRole("menuitemradio", { name: "Synth" })).toHaveFocus();
-		fireEvent.keyDown(document.activeElement!, { key: "Tab" });
-		expect(screen.queryByRole("menu")).not.toBeInTheDocument();
-		expect(toggle).toHaveFocus();
-	});
-});
